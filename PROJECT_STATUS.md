@@ -39,12 +39,9 @@ LibralCore / KAGURA / KAGRRA / TGAXIS / AEGIS / KB
 - **懸念事項:** AI作業時の読込・追記ルールの徹底が必要
 - **次回作業:** 各プロジェクトへserver-core参照ルールを適用
 
-
-### 2026-06-16 16:59
-
-- **内容:** cd /home/admin1/server-core
-- **変更ファイル:** tail -60 PROJECT_STATUS.md
-- **結果:** git status --shortcd /home/admin1/server-core
-- **懸念事項:** 
-- **次回作業:** cat <<'EOF' >> PROJECT_STATUS.md
-
+### 2026-06-16 17:05
+- **内容:** PROJECT_STATUS.md の誤追記ブロックを整理し、add-status.sh による追記運用へ移行。
+- **変更ファイル:** PROJECT_STATUS.md / add-status.sh
+- **結果:** add-status.sh は正常。PROJECT_STATUS.md の末尾を正常な作業履歴へ差し替え。
+- **懸念事項:** 手入力でヒアドキュメントやMarkdownを直接貼るとシェルに誤投入されるため、今後は必ず add-status.sh を使用する。
+- **次回作業:** git diff で内容確認後、commit/push する。
