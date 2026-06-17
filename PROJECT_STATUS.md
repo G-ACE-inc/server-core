@@ -45,3 +45,10 @@ LibralCore / KAGURA / KAGRRA / TGAXIS / AEGIS / KB
 - **結果:** add-status.sh は正常。PROJECT_STATUS.md の末尾を正常な作業履歴へ差し替え。
 - **懸念事項:** 手入力でヒアドキュメントやMarkdownを直接貼るとシェルに誤投入されるため、今後は必ず add-status.sh を使用する。
 - **次回作業:** git diff で内容確認後、commit/push する。
+
+### 2026-06-17
+- **内容:** プロジェクト別 構成・ドキュメント・報告ルール（PROJECT STRUCTURE / DOC / REPORT RULE）を server-core v1.1 へ統合。
+- **変更ファイル:** SERVER_CORE_PROTOCOL.md / CORE.md / KB.md / PROJECT_STATUS.md
+- **結果:** 各プロジェクト共通で PROJECT_INDEX.md、docs/STRUCTURE.md、docs/DOC_INDEX.md、docs/WORK_REPORT.md を必須化。不要・重複ファイルは削除せず archive/YYYY-MM-DD/ へ退避する方針を追加。GitHub push は許可、本番デプロイは人間確認後のみと定義。
+- **懸念事項:** PROJECT_STATUS.md は追記専用のため、今後も上書き更新禁止。
+- **次回作業:** 各実プロジェクトへ PROJECT_INDEX.md / docs/STRUCTURE.md / docs/DOC_INDEX.md / docs/WORK_REPORT.md を適用する。
