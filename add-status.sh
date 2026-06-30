@@ -1,27 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
 
-cd /home/admin1/server-core
-
-echo ""
-echo "=== PROJECT_STATUS.md 追記ツール ==="
-
-read -p "作業内容: " WORK
-read -p "変更ファイル: " FILES
-read -p "結果: " RESULT
-read -p "懸念事項: " ISSUE
-read -p "次回作業: " NEXT
-
-cat <<EOT >> PROJECT_STATUS.md
-
-### $(date '+%Y-%m-%d %H:%M')
-
-- **内容:** ${WORK}
-- **変更ファイル:** ${FILES}
-- **結果:** ${RESULT}
-- **懸念事項:** ${ISSUE}
-- **次回作業:** ${NEXT}
-
-EOT
-
-echo "PROJECT_STATUS.md 更新完了"
+echo "DISABLED: PROJECT_STATUS.mdの自動追記は禁止されています。" >&2
+echo "管理者の明示指示がある場合だけ更新してください。" >&2
+exit 1

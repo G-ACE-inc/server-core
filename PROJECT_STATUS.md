@@ -1,54 +1,70 @@
-# Current Server Status
-最終更新: 2026-06-16
+# CURRENT SERVER STATUS
 
-## サーバー情報
-VPS: 3 Core / 4GB RAM / 50GB SSD
-Docker運用
+最終更新: 2026-06-30
 
-## 現在稼働
-- entrybot2-production
-- gatebot-app
-- gatebot-postgres
+## 文書の役割
+本ファイルは、現在有効なサーバー全体の状態と、主要ユニットの正本への入口だけを記載する。
 
-## 確認済事項
-Docker稼働正常 / メモリ余裕あり / ディスク余裕あり
+作業履歴、詳細仕様、設計判断全文は記載しない。
 
-## 構想中プロジェクト
-LibralCore / KAGURA / KAGRRA / TGAXIS / AEGIS / KB
+管理者の明示的な変更指示がない限り、AI・作業者による書き換え・追記・削除・置換を禁止する。
 
-## 現在の課題
-サーバー共通ルール整備 / KB整備 / Module標準化 / プロジェクト構造統一
+## Server Core
+- 配置先: `/home/admin1/server-core`
+- 用途: 全Project共通の統治領域
+- 更新権限: 管理者の明示指示がある場合のみ
 
-## TODO
-- [x] server-core構築
-- [x] CORE.md整備
-- [x] KB.md整備
-- [x] PROJECT_STATUS運用開始
+## Workspace
+- 配置領域: `/home/admin1/workspace`
+- 既存の統合Workspace内で各ProjectをModuleとして扱う
+- TGServer専用Workspaceは作成しない
+- 存在未確認のWorkspaceファイルを記載しない
 
-## 作業履歴
-### 2026-06-16
-- 内容: Server共通憲法作成
-- 結果: 初版作成完了
-- 次回: server-core運用開始
+## TGServer
+- 正式名称: TGServer
+- 正本パス: `/home/admin1/projects/TGserver`
+- 管理方法: 既存統合Workspace内のProject / Module
+- Docker方針: Docker / Docker Composeで確定済み
+- 現在フェーズ: コード配置後 / 初期セットアップ前 / 起動前確認
 
-### 2026-06-16
+## TGServer 未実施
+- 依存導入
+- 環境設定
+- build
+- Docker起動
+- 疎通試験
+- デバッグ
+- V8連結
+- 本番運用
 
-- **内容:** server-core v1.0 必須5ファイルを配置しGitHub管理下へ登録
-- **変更ファイル:** README.md / SERVER_CORE_PROTOCOL.md / CORE.md / KB.md / PROJECT_STATUS.md
-- **結果:** 正常完了
-- **懸念事項:** AI作業時の読込・追記ルールの徹底が必要
-- **次回作業:** 各プロジェクトへserver-core参照ルールを適用
+## TGServer 詳細正本
+- `/home/admin1/projects/TGserver/PROJECT_INDEX.md`
+- `/home/admin1/projects/TGserver/docs/STRUCTURE.md`
+- `/home/admin1/projects/TGserver/docs/SPEC_v1.5.md`
 
-### 2026-06-16 17:05
-- **内容:** PROJECT_STATUS.md の誤追記ブロックを整理し、add-status.sh による追記運用へ移行。
-- **変更ファイル:** PROJECT_STATUS.md / add-status.sh
-- **結果:** add-status.sh は正常。PROJECT_STATUS.md の末尾を正常な作業履歴へ差し替え。
-- **懸念事項:** 手入力でヒアドキュメントやMarkdownを直接貼るとシェルに誤投入されるため、今後は必ず add-status.sh を使用する。
-- **次回作業:** git diff で内容確認後、commit/push する。
+## ログとキャッシュ
+- 永続ログ正本: Telegram
+- 検索インデックス: Meilisearch
+- dedup / hot-cache: Redis
+- サーバー共通分離ディスクキャッシュ: `/home/admin1/logs`
+- VPS: 処理場。永続ログ保管庫ではない
 
-### 2026-06-17
-- **内容:** プロジェクト別 構成・ドキュメント・報告ルール（PROJECT STRUCTURE / DOC / REPORT RULE）を server-core v1.1 へ統合。
-- **変更ファイル:** SERVER_CORE_PROTOCOL.md / CORE.md / KB.md / PROJECT_STATUS.md
-- **結果:** 各プロジェクト共通で PROJECT_INDEX.md、docs/STRUCTURE.md、docs/DOC_INDEX.md、docs/WORK_REPORT.md を必須化。不要・重複ファイルは削除せず archive/YYYY-MM-DD/ へ退避する方針を追加。GitHub push は許可、本番デプロイは人間確認後のみと定義。
-- **懸念事項:** PROJECT_STATUS.md は追記専用のため、今後も上書き更新禁止。
-- **次回作業:** 各実プロジェクトへ PROJECT_INDEX.md / docs/STRUCTURE.md / docs/DOC_INDEX.md / docs/WORK_REPORT.md を適用する。
+`/home/admin1/logs` は、送信待ち、再送、処理途中、障害時一時退避などに限定する。
+
+永続ログ、Telegram原本の長期複製、KB、仕様書、コードを置かない。
+
+## V8
+- 状態: 未実装
+- 開始条件: TGServer検証完了後
+- ログ連携: 初回実装時からTGServerへ送信
+
+## KB
+- 状態: 未実装
+- TGServerからの直接送信: 禁止
+- 生ログの直接投入: 禁止
+- V8推論結果の自動投入: 禁止
+
+## 次回作業
+TGServerの正本文書、実ファイル、環境変数、Docker構成、cache実装の現状を照合する。
+
+管理者の承認前に、本番起動、デプロイ、公開を行わない。
