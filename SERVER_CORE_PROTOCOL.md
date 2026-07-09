@@ -153,11 +153,19 @@ KBシステムは未実装である。
 判定主体、基準、承認方法、保存形式、格納先は、KB設計時に管理者が確定する。
 
 ## V8
-V8はTGserverの検証完了後に実装を開始する。
+Astera v8はV8認知前処理Projectとして `/home/admin1/projects/astera_v8` に配置する。
 
-V8は初回実装時点からTGserverへログを送信する。
+Astera v8は問いの意味判定、認知前処理、用途テンプレート自動判定、5本柱処理、8段判断材料出力を担当する。
+
+Astera v8はログの永続保存、検索、KB登録を担当しない。
+
+Astera v8はTGserverへ `P002` として構造化ログを送信する。
+
+Astera v8の未送信ログ一時状態は `/home/admin1/logs/astera-v8/outbox` だけに置き、TGserverの2xx受領後に削除する。
 
 V8の推論結果を自動的にKBへ送信してはならない。
+
+Astera v8の詳細仕様、構成、API、Domain Template Catalog、Production ChecklistはAstera v8側の正本文書を正とする。
 
 ## Docker運用
 本番運用はDocker / Docker Composeに統一する。

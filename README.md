@@ -42,6 +42,7 @@ AI・作業者は、管理者の明示的な変更指示がない限り、Server
 - `scripts/ai-auto-commit.sh`: 自動commit / push支援スクリプト
 - `scripts/github-skill-path.sh`: GitHub skill参照パス解決スクリプト
 - TGserver詳細: `/home/admin1/projects/TGserver` 側の正本文書
+- Astera v8詳細: `/home/admin1/projects/astera_v8` 側の正本文書
 
 ## 主要原則
 - 全作業は `/home/admin1/workspace/G-ACE.code-workspace` 内で行い、Workspace内の `codex.serverCore.*` 設定を運用ヒントとして扱う。
@@ -49,6 +50,7 @@ AI・作業者は、管理者の明示的な変更指示がない限り、Server
 - READMEは入口と要約だけを持ち、詳細ルールを重複させない。
 - 通常作業で読む範囲は `docs/LOAD_SCOPE.md` に限定する。
 - Server Coreの構造、運用、手順、自動化を変更した場合は、READMEと該当正本文書を変更後の正規仕様として更新してから作業を終える。
+- Project実装詳細は各Project側の正本文書を正とし、Server Coreには入口、責務境界、現在状態だけを置く。
 
 ## 正本文書同期
 変更内容は、作業報告や改善メモとして残さない。

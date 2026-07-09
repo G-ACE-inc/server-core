@@ -43,6 +43,8 @@ Workspaceには、次のServer Core情報を設定として持たせる。
 - `codex.serverCore.requiredStartFiles`
 - `codex.serverCore.requiredStartRule`
 - `codex.serverCore.finishRule`
+- `codex.serverCore.projectEntrypoints`
+- `codex.serverCore.activeRuntimeContainers`
 - `codex.serverCore.neverUseAsNormalContext`
 
 これらはVS Code標準機能ではなく、AI・作業者向けの明示的な運用ヒントである。
@@ -68,6 +70,35 @@ Workspaceには、次のServer Core情報を設定として持たせる。
 - 実ファイルと正本文書が一致していることを確認する。
 - `scripts/ai-auto-commit.sh --push` でGitHubへcommit / pushする。
 - 本番起動、公開、切替は管理者の明示承認なしに行わない。
+
+## Project entrypoints
+`codex.serverCore.projectEntrypoints` は主要Projectの正本入口を示す。
+
+通常作業ではWorkspace folderを増やさず、`/home/admin1/projects` 配下の各Project正本を入口として参照する。
+
+現在の主要Project入口:
+
+- TGserver: `/home/admin1/projects/TGserver`
+- Astera v8: `/home/admin1/projects/astera_v8`
+
+Astera v8の詳細正本:
+
+- `/home/admin1/projects/astera_v8/STRUCTURE.md`
+- `/home/admin1/projects/astera_v8/README.md`
+- `/home/admin1/projects/astera_v8/docs/API_REFERENCE.md`
+- `/home/admin1/projects/astera_v8/docs/DOMAIN_TEMPLATE_CATALOG.md`
+- `/home/admin1/projects/astera_v8/docs/PRODUCTION_CHECKLIST.md`
+
+## Active runtime containers
+`codex.serverCore.activeRuntimeContainers` は、現在の主要稼働コンテナ確認ヒントである。
+
+- `astera-v8`
+- `tgserver-tgs-1`
+- `tgserver-conversation-collector-1`
+- `tgserver-meilisearch-1`
+- `tgserver-redis-1`
+
+実状態は必ず `docker ps` と対象Project側の正本文書で確認する。
 
 ## Normal context exclusions
 `codex.serverCore.neverUseAsNormalContext` は次を示す。

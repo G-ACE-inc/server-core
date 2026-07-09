@@ -40,7 +40,7 @@
 - Docker構成と実稼働コンテナの照合
 - cache実装の現状確認
 - 疎通試験結果の確認
-- V8連結
+- Astera v8ログ連携状態の継続確認
 - 本番運用
 
 ## TGserver 詳細正本
@@ -60,11 +60,23 @@
 永続ログ、Telegram原本の長期複製、KB、仕様書、コードを置かない。
 
 ## V8
-- 状態: 要確認
+- 正式名称: Astera v8
+- 正本パス: `/home/admin1/projects/astera_v8`
+- 状態: 実装済み / Docker起動済み / API疎通確認済み
 - 稼働確認済みコンテナ: `astera-v8`
-- 開始条件: TGserver検証完了後
-- ログ連携: 初回実装時からTGserverへ送信
-- 注意: Server Core上ではV8実装詳細を正本管理しない。詳細は対象Project側の正本文書を確認する。
+- Docker方針: Docker / Docker Composeで確定済み
+- ログ連携: TGserver `P002` へ送信
+- ログ一時状態: `/home/admin1/logs/astera-v8/outbox`
+- 現在仕様: 自動Domain Router / Template Lens、5本柱処理、8段Markdown出力、事実確認・危機察知エビデンス出力
+- 検証済み: `npm run verify` 相当のテスト、smoke、`GET /healthz`、`POST /process`
+- 注意: Server Core上ではAstera v8実装詳細を正本管理しない。詳細はAstera v8側の正本文書を確認する。
+
+## Astera v8 詳細正本
+- `/home/admin1/projects/astera_v8/STRUCTURE.md`
+- `/home/admin1/projects/astera_v8/README.md`
+- `/home/admin1/projects/astera_v8/docs/API_REFERENCE.md`
+- `/home/admin1/projects/astera_v8/docs/DOMAIN_TEMPLATE_CATALOG.md`
+- `/home/admin1/projects/astera_v8/docs/PRODUCTION_CHECKLIST.md`
 
 ## KB
 - 状態: 未実装

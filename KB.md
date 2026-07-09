@@ -43,6 +43,16 @@
 - 将来も正式な判定基準を通過した情報だけを登録候補とする。
 - 判定主体、基準、承認方法、形式、格納先は未確定である。
 
+### Astera v8
+- Astera v8は `/home/admin1/projects/astera_v8` に配置する。
+- Astera v8は問いの意味判定、認知前処理、用途テンプレート自動判定、5本柱処理、8段判断材料出力を担当する。
+- Astera v8はユーザーに用途テンプレートを選ばせず、自動Domain Router / Template Lensで内部処理する。
+- Astera v8のHTTP `/process` は通常 `text/plain` の8段Markdownを返す。
+- Astera v8は事実確認と危機察知にエビデンスカードまたはエビデンスギャップを含める。
+- Astera v8はTGserverへ `P002` として構造化ログを送信する。
+- Astera v8の未送信ログ一時状態は `/home/admin1/logs/astera-v8/outbox` に限定する。
+- Astera v8の推論結果をKBへ自動投入しない。
+
 ### 秘密情報
 - `.env` は原則commit禁止である。
 - 共有が必要な環境変数は、値を含まない `.env.example` に記載する。
