@@ -3,9 +3,14 @@
 ## 作業開始前
 1. `pwd` を確認する。
 2. `git status --short --branch` を対象リポジトリで確認する。
-3. Server Core正本を読む。
-4. 対象Projectの正本文書を読む。
-5. `docker ps` で稼働状態を確認する。
+3. `README.md` と `docs/LOAD_SCOPE.md` を読む。
+4. Server Core正本を読む。
+5. 対象Projectの正本文書を読む。
+6. `docker ps` で稼働状態を確認する。
+
+通常作業では、`archive/`, `.github/`, `scripts/` を読まない。
+
+必要な場合だけ、目的に合う該当ファイルを限定して読む。
 
 ## 変更前
 1. 変更対象ファイルを特定する。
@@ -40,3 +45,4 @@
 2. `archive/YYYY-MM-DD/` へ置く。
 3. ファイル名で元用途と退避理由が分かるようにする。
 4. 秘密情報を含むファイルはarchiveへ置かない。
+5. archive内の文書を通常読込対象にしない。

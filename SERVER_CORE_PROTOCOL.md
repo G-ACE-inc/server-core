@@ -28,10 +28,17 @@ AI・作業者は、管理者の明示的な変更指示がない限り、ルー
 
 ## Server Core読込順序
 1. `README.md`
-2. `SERVER_CORE_PROTOCOL.md`
-3. `CORE.md`
-4. `KB.md`
-5. `PROJECT_STATUS.md`
+2. `docs/LOAD_SCOPE.md`
+3. `SERVER_CORE_PROTOCOL.md`
+4. `CORE.md`
+5. `KB.md`
+6. `PROJECT_STATUS.md`
+
+作業開始時に読む範囲は `docs/LOAD_SCOPE.md` を正とする。
+
+`archive/`, `.github/`, `scripts/` は、通常読込対象ではない。
+
+対象作業に必要な場合だけ、該当ファイルを限定して読む。
 
 ## Project構造
 各Projectは、最初に構成図を作成し、構成図に従ってファイルを配置する。
@@ -192,6 +199,10 @@ AI・作業者は、管理者の明示指示なしに `.env` を作成、変更�
 退避時は、現行正本から参照されないことを確認する。
 
 秘密情報を含むファイルはarchiveへ移動してはならない。管理者判断で安全な方法により処理する。
+
+archive配下は通常読込禁止である。
+
+archive内の内容は現在状態、現在仕様、現在ルールとして扱ってはならない。
 
 ## 保護対象
 次のServer Core文書は保護対象とする。

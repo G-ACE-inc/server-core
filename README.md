@@ -16,16 +16,20 @@ AI・作業者は、管理者の明示的な変更指示がない限り、Server
 作業開始時は、以下の順に確認する。
 
 1. `README.md`
-2. `SERVER_CORE_PROTOCOL.md`
-3. `CORE.md`
-4. `KB.md`
-5. `PROJECT_STATUS.md`
+2. `docs/LOAD_SCOPE.md`
+3. `SERVER_CORE_PROTOCOL.md`
+4. `CORE.md`
+5. `KB.md`
+6. `PROJECT_STATUS.md`
+
+`docs/LOAD_SCOPE.md` に通常読込対象外と書かれたファイル、ディレクトリを、AIが作業開始時に読んではならない。
 
 ## 正本の役割
 - `CORE.md`: 共通思想
 - `SERVER_CORE_PROTOCOL.md`: 共通運用規則
 - `KB.md`: Server Core上の確認済み知識・判断記録
 - `PROJECT_STATUS.md`: 現在状態と正本入口
+- `docs/LOAD_SCOPE.md`: AIが読む範囲と読まない範囲
 - `docs/STRUCTURE.md`: Server Core自身の構造定義
 - `docs/GLOSSARY.md`: 用語と正式表記
 - `docs/PROJECT_TEMPLATE.md`: Project新規作成テンプレート
@@ -41,6 +45,7 @@ AI・作業者は、管理者の明示的な変更指示がない限り、Server
 ## 主要原則
 - 詳細な運用規則は `SERVER_CORE_PROTOCOL.md` を正とする。
 - READMEは入口と要約だけを持ち、詳細ルールを重複させない。
+- 通常作業で読む範囲は `docs/LOAD_SCOPE.md` に限定する。
 
 ## PROJECT_STATUS運用
 `PROJECT_STATUS.md` は現在状態と正本入口だけを記載する。

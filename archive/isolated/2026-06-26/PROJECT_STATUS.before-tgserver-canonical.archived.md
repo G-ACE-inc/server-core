@@ -1,3 +1,11 @@
+# ARCHIVED OLD WORK HISTORY - DO NOT LOAD AS CURRENT CONTEXT
+
+このファイルは旧 `PROJECT_STATUS.md` の履歴退避である。
+
+現在状態、現在仕様、現在ルールではない。
+
+AI・作業者は、旧履歴確認を明示された場合だけ読む。
+
 # Current Server Status
 最終更新: 2026-06-16
 

@@ -5,6 +5,8 @@
 
 ## ルート直下
 - `README.md`: 入口と要約
+- `.aiignore`: AI向けの通常読込除外ヒント
+- `.cursorignore`: Cursor系ツール向けの通常読込除外ヒント
 - `SERVER_CORE_PROTOCOL.md`: 共通運用規則
 - `CORE.md`: LibralCore共通思想
 - `KB.md`: 確認済み知識と判断記録
@@ -16,6 +18,7 @@
 - `archive/`: 旧版、退避ファイル
 
 ## docs
+- `LOAD_SCOPE.md`: AIが読む範囲と読まない範囲
 - `STRUCTURE.md`: Server Core自身の構造
 - `GLOSSARY.md`: 用語と正式表記
 - `PROJECT_TEMPLATE.md`: 新規Project用テンプレート
@@ -29,6 +32,10 @@
 `archive/YYYY-MM-DD/` を基本形式とする。
 
 秘密情報を含むファイルはarchiveへ退避しない。
+
+archive配下は通常読込禁止とする。
+
+archive内の文書を現在状態、現在仕様、現在ルールとして扱わない。
 
 ## 禁止
 - ルート直下への一時ファイル作成

@@ -30,6 +30,7 @@ jobs:
           test -f CORE.md
           test -f KB.md
           test -f PROJECT_STATUS.md
+          test -f docs/LOAD_SCOPE.md
           test -f docs/STRUCTURE.md
           test -f docs/GLOSSARY.md
           test -f docs/PROJECT_TEMPLATE.md
@@ -41,6 +42,14 @@ jobs:
           test -x scripts/ai-auto-commit.sh
           test -x scripts/resolve-codex-skill.sh
           test -x scripts/github-skill-path.sh
+
+      - name: Load scope isolation
+        run: |
+          set -euo pipefail
+          grep -q 'archive/' docs/LOAD_SCOPE.md
+          grep -q '.github/' docs/LOAD_SCOPE.md
+          grep -q 'scripts/' docs/LOAD_SCOPE.md
+          grep -q '通常読込禁止' docs/LOAD_SCOPE.md
 
       - name: No tracked env files
         run: |
