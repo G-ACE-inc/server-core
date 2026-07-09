@@ -81,7 +81,7 @@ done <<< "$changed_files"
 
 if [[ ${#scan_files[@]} -gt 0 ]]; then
   secret_hits="$(
-    grep -nEI '(api[_-]?key|secret|token|password|credential|session)[[:alnum:]_ -]*[:=][[:space:]]*["'\'']?[A-Za-z0-9_./+=-]{12,}' "${scan_files[@]}" 2>/dev/null || true
+    grep -nEI '(api[_-]?key|secret|token|password|credential|session)[[:alnum:]_ -]*[:=][[:space:]]*["]?[A-Za-z0-9_./+=-]{12,}' "${scan_files[@]}" 2>/dev/null || true
   )"
   if [[ -n "$secret_hits" ]]; then
     echo "ERROR: refusing to commit likely secret material:" >&2

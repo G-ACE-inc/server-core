@@ -75,7 +75,7 @@ jobs:
           set -euo pipefail
           hits="$(
             git grep -nEI \
-              '(api[_-]?key|secret|token|password|credential|session)[[:alnum:]_ -]*[:=][[:space:]]*["'\'']?[A-Za-z0-9_./+=-]{12,}' \
+              '(api[_-]?key|secret|token|password|credential|session)[[:alnum:]_ -]*[:=][[:space:]]*["]?[A-Za-z0-9_./+=-]{12,}' \
               -- \
               ':!docs/**' \
               ':!archive/**' \
