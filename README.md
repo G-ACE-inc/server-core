@@ -26,16 +26,16 @@ AI・作業者は、管理者の明示的な変更指示がない限り、Server
 - `SERVER_CORE_PROTOCOL.md`: 共通運用規則
 - `KB.md`: Server Core上の確認済み知識・判断記録
 - `PROJECT_STATUS.md`: 現在状態と正本入口
-- TGServer詳細: `/home/admin1/projects/TGserver` 側の正本文書
+- `docs/STRUCTURE.md`: Server Core自身の構造定義
+- `docs/GLOSSARY.md`: 用語と正式表記
+- `docs/PROJECT_TEMPLATE.md`: Project新規作成テンプレート
+- `docs/DEPLOY_RUNBOOK.md`: 承認後のデプロイ手順
+- `docs/OPERATION_CHECKLIST.md`: 作業前後の確認手順
+- TGserver詳細: `/home/admin1/projects/TGserver` 側の正本文書
 
 ## 主要原則
-- AIは管理者承認なしに正本を変更しない。
-- Telegramを生ログの永続正本とする。
-- VPSを永続ログ保管庫にしない。
-- `/home/admin1/logs` は全体共通の分離ディスクキャッシュとする。
-- KBシステムは未実装である。
-- TGServerからKBへ直接送信しない。
-- 本番運用はDocker / Docker Composeで確定済みである。
+- 詳細な運用規則は `SERVER_CORE_PROTOCOL.md` を正とする。
+- READMEは入口と要約だけを持ち、詳細ルールを重複させない。
 
 ## PROJECT_STATUS運用
 `PROJECT_STATUS.md` は現在状態と正本入口だけを記載する。
@@ -52,6 +52,8 @@ AI・作業者は、管理者の明示的な変更指示がない限り、Server
 ファイル変更を伴う作業は、作業完了時に `git diff` を確認し、意味のある作業単位でcommitを作成する。
 
 pushは、管理者が許可したリポジトリ、ブランチ、対象範囲で実行する。
+
+詳細なcommit / push / PR基準は `SERVER_CORE_PROTOCOL.md` と `docs/OPERATION_CHECKLIST.md` を正とする。
 
 ## 最重要
 記録されていない作業は存在しないものとして扱う。
