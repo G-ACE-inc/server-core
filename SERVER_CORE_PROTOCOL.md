@@ -49,6 +49,8 @@ AI・作業者は、管理者の明示的な変更指示がない限り、ルー
 
 標準Workspaceの正規仕様は `docs/G_ACE_WORKSPACE.md` を正とする。
 
+Workspace内の `codex.serverCore.*` 設定は、全作業で参照する運用ヒントとして扱う。
+
 Workspace設定を変更した場合は、`docs/G_ACE_WORKSPACE.md` と `README.md` を同時に確認し、必要な場合は更新する。
 
 ## Project構造

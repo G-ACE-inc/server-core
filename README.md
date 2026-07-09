@@ -44,6 +44,7 @@ AI・作業者は、管理者の明示的な変更指示がない限り、Server
 - TGserver詳細: `/home/admin1/projects/TGserver` 側の正本文書
 
 ## 主要原則
+- 全作業は `/home/admin1/workspace/G-ACE.code-workspace` 内で行い、Workspace内の `codex.serverCore.*` 設定を運用ヒントとして扱う。
 - 詳細な運用規則は `SERVER_CORE_PROTOCOL.md` を正とする。
 - READMEは入口と要約だけを持ち、詳細ルールを重複させない。
 - 通常作業で読む範囲は `docs/LOAD_SCOPE.md` に限定する。
