@@ -46,6 +46,16 @@ AI・作業者は、管理者の明示的な変更指示がない限り、Server
 - 詳細な運用規則は `SERVER_CORE_PROTOCOL.md` を正とする。
 - READMEは入口と要約だけを持ち、詳細ルールを重複させない。
 - 通常作業で読む範囲は `docs/LOAD_SCOPE.md` に限定する。
+- Server Coreの構造、運用、手順、自動化を変更した場合は、READMEと該当正本文書を変更後の正規仕様として更新してから作業を終える。
+
+## 正本文書同期
+変更内容は、作業報告や改善メモとして残さない。
+
+変更後に有効な仕様、手順、構造、制約として、READMEと該当する正本文書へ反映する。
+
+READMEは常に現在有効な入口、読込順序、正本一覧を示す。
+
+詳細は `SERVER_CORE_PROTOCOL.md` と `docs/OPERATION_CHECKLIST.md` を正とする。
 
 ## PROJECT_STATUS運用
 `PROJECT_STATUS.md` は現在状態と正本入口だけを記載する。
