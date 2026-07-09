@@ -1,0 +1,95 @@
+name: server-core-guard
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-core-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Required files
+        run: |
+          set -euo pipefail
+          test -f README.md
+          test -f SERVER_CORE_PROTOCOL.md
+          test -f CORE.md
+          test -f KB.md
+          test -f PROJECT_STATUS.md
+          test -f docs/STRUCTURE.md
+          test -f docs/GLOSSARY.md
+          test -f docs/PROJECT_TEMPLATE.md
+          test -f docs/DEPLOY_RUNBOOK.md
+          test -f docs/OPERATION_CHECKLIST.md
+          test -f docs/AUTO_COMMIT.md
+          test -f docs/GITHUB_FREE_MAX.md
+          test -x scripts/ai-auto-commit.sh
+
+      - name: No tracked env files
+        run: |
+          set -euo pipefail
+          blocked="$(
+            git ls-files |
+              grep -E '(^|/)\.env($|\.)' |
+              grep -Ev '(^|/)\.env\.example$' || true
+          )"
+          if [ -n "$blocked" ]; then
+            echo "$blocked"
+            exit 1
+          fi
+
+      - name: No legacy TGserver spelling
+        run: |
+          set -euo pipefail
+          hits="$(
+            git grep -n 'TGServer' -- '*.md' ':!docs/GLOSSARY.md' ':!archive/**' || true
+          )"
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            exit 1
+          fi
+
+      - name: PROJECT_STATUS is not a work log
+        run: |
+          set -euo pipefail
+          if grep -nE '^### [0-9]{4}-[0-9]{2}-[0-9]{2}' PROJECT_STATUS.md; then
+            exit 1
+          fi
+
+      - name: Secret pattern guard
+        run: |
+          set -euo pipefail
+          hits="$(
+            git grep -nEI \
+              '(api[_-]?key|secret|token|password|credential|session)[[:alnum:]_ -]*[:=][[:space:]]*["'\'']?[A-Za-z0-9_./+=-]{12,}' \
+              -- \
+              ':!docs/**' \
+              ':!archive/**' \
+              ':!.github/workflows/server-core-guard.yml' \
+              ':!scripts/ai-auto-commit.sh' || true
+          )"
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            exit 1
+          fi
+
+      - name: Shell syntax
+        run: |
+          set -euo pipefail
+          while IFS= read -r file; do
+            bash -n "$file"
+          done < <(git ls-files '*.sh')

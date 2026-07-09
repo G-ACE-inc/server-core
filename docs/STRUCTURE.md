@@ -10,6 +10,8 @@
 - `KB.md`: 確認済み知識と判断記録
 - `PROJECT_STATUS.md`: 現在状態と正本入口
 - `add-status.sh`: PROJECT_STATUS自動追記を禁止するための互換スクリプト
+- `scripts/`: 作業自動化スクリプト
+- `.github/`: GitHub上のPR、Issue、Actions、Dependabot設定
 - `docs/`: 手順、テンプレート、用語表
 - `archive/`: 旧版、退避ファイル
 
@@ -19,6 +21,8 @@
 - `PROJECT_TEMPLATE.md`: 新規Project用テンプレート
 - `DEPLOY_RUNBOOK.md`: 承認後のデプロイ手順
 - `OPERATION_CHECKLIST.md`: 作業前後の確認手順
+- `AUTO_COMMIT.md`: AI作業後の自動commit手順
+- `GITHUB_FREE_MAX.md`: GitHub無料枠の最大活用設定
 
 ## archive
 `archive/YYYY-MM-DD/` を基本形式とする。

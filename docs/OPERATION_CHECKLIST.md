@@ -21,6 +21,8 @@
 5. 意味のある作業単位に分けてstageする。
 6. commit messageは変更内容が一文で分かるものにする。
 
+標準では `scripts/ai-auto-commit.sh --push` を使う。
+
 ## push前
 1. `git log -1 --oneline` を確認する。
 2. `git status --short --branch` を確認する。

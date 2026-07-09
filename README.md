@@ -31,6 +31,9 @@ AI・作業者は、管理者の明示的な変更指示がない限り、Server
 - `docs/PROJECT_TEMPLATE.md`: Project新規作成テンプレート
 - `docs/DEPLOY_RUNBOOK.md`: 承認後のデプロイ手順
 - `docs/OPERATION_CHECKLIST.md`: 作業前後の確認手順
+- `docs/AUTO_COMMIT.md`: AI作業後の自動commit手順
+- `docs/GITHUB_FREE_MAX.md`: GitHub無料枠の最大活用設定
+- `scripts/ai-auto-commit.sh`: 自動commit / push支援スクリプト
 - TGserver詳細: `/home/admin1/projects/TGserver` 側の正本文書
 
 ## 主要原則

@@ -1,0 +1,39 @@
+name: AI task
+description: Request AI-assisted work with clear scope and commit behavior.
+title: "[AI] "
+labels:
+  - ai-task
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be changed or investigated?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Files, directories, or repositories that are in scope.
+    validations:
+      required: true
+  - type: dropdown
+    id: commit
+    attributes:
+      label: Commit behavior
+      options:
+        - Auto commit and push when done
+        - Auto commit only
+        - Do not commit
+    validations:
+      required: true
+  - type: checkboxes
+    id: guardrails
+    attributes:
+      label: Guardrails
+      options:
+        - label: Do not edit `.env` or secret files.
+          required: true
+        - label: Do not deploy, publish, or switch production without explicit approval.
+          required: true
