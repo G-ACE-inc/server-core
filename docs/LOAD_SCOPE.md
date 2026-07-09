@@ -24,6 +24,7 @@ AIが作業開始時に読む範囲を固定し、古い履歴、補助スクリ
 - 自動commit確認: `docs/AUTO_COMMIT.md`
 - GitHub無料枠設定: `docs/GITHUB_FREE_MAX.md`
 - GitHub skill確認: `docs/GITHUB_SKILL.md`
+- G-ACE Workspace確認: `docs/G_ACE_WORKSPACE.md`
 - 自動化実行: `scripts/ai-auto-commit.sh`
 - GitHub skill path解決: `scripts/github-skill-path.sh`
 

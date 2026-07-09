@@ -19,10 +19,11 @@
 - 構造正本: `/home/admin1/server-core/docs/STRUCTURE.md`
 
 ## Workspace
-- 配置領域: `/home/admin1/workspace`
+- 標準Workspace: `/home/admin1/workspace/G-ACE.code-workspace`
+- Workspace folders: `/home/admin1/server-core`, `/home/admin1/projects`
 - 既存の統合Workspace内で各ProjectをModuleとして扱う
 - TGserver専用Workspaceは作成しない
-- 存在未確認のWorkspaceファイルを記載しない
+- `/home/admin1/logs`, `/home/admin1/backups`, `/home/admin1/kb`, `/home/admin1/workspace` は通常Workspace folderに含めない
 
 ## TGserver
 - 正式名称: TGserver

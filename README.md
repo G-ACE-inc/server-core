@@ -38,6 +38,7 @@ AI・作業者は、管理者の明示的な変更指示がない限り、Server
 - `docs/AUTO_COMMIT.md`: AI作業後の自動commit手順
 - `docs/GITHUB_FREE_MAX.md`: GitHub無料枠の最大活用設定
 - `docs/GITHUB_SKILL.md`: Codex GitHub skillの参照方法
+- `docs/G_ACE_WORKSPACE.md`: G-ACE.code-workspaceの正規仕様
 - `scripts/ai-auto-commit.sh`: 自動commit / push支援スクリプト
 - `scripts/github-skill-path.sh`: GitHub skill参照パス解決スクリプト
 - TGserver詳細: `/home/admin1/projects/TGserver` 側の正本文書

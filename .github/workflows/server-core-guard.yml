@@ -39,6 +39,7 @@ jobs:
           test -f docs/AUTO_COMMIT.md
           test -f docs/GITHUB_FREE_MAX.md
           test -f docs/GITHUB_SKILL.md
+          test -f docs/G_ACE_WORKSPACE.md
           test -x scripts/ai-auto-commit.sh
           test -x scripts/resolve-codex-skill.sh
           test -x scripts/github-skill-path.sh

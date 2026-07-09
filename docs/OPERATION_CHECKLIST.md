@@ -26,6 +26,8 @@
 5. 作業報告、改善内容、修繕内容、変更履歴を正本文書の本文に書かない。
 6. 実ファイルの変更と正本文書の内容が一致していることを確認する。
 
+Workspace設定を変更した場合は、`/home/admin1/workspace/G-ACE.code-workspace` と `docs/G_ACE_WORKSPACE.md` が一致していることを確認する。
+
 ## commit前
 1. `git diff` を確認する。
 2. `git status --short` を確認する。

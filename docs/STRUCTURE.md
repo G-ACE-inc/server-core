@@ -27,6 +27,7 @@
 - `AUTO_COMMIT.md`: AI作業後の自動commit手順
 - `GITHUB_FREE_MAX.md`: GitHub無料枠の最大活用設定
 - `GITHUB_SKILL.md`: Codex GitHub skillの参照方法
+- `G_ACE_WORKSPACE.md`: G-ACE.code-workspaceの正規仕様
 
 ## archive
 `archive/YYYY-MM-DD/` を基本形式とする。
