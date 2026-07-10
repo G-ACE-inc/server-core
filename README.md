@@ -42,7 +42,7 @@ AI・作業者は、管理者の明示的な変更指示がない限り、Server
 - `scripts/ai-auto-commit.sh`: 自動commit / push支援スクリプト
 - `scripts/github-skill-path.sh`: GitHub skill参照パス解決スクリプト
 - TGserver詳細: `/home/admin1/projects/TGserver` 側の正本文書
-- Astera v8詳細: `/home/admin1/projects/astera_v8` 側の正本文書
+- Astera v8詳細: `/home/admin1/projects/astera_v8` 側の正本文書。問いを星図に変える、Multi-Perspective Cognition Runtime。
 
 ## 主要原則
 - 全作業は `/home/admin1/workspace/G-ACE.code-workspace` 内で行い、Workspace内の `codex.serverCore.*` 設定を運用ヒントとして扱う。
