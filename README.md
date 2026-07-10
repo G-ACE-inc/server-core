@@ -1,87 +1,83 @@
-# SERVER-CORE MANAGEMENT INDEX
+# Server Core — 全プロジェクト共通管理基盤
 
 ## 概要
-`/home/admin1/server-core/` は、全Projectに適用される最上位の共通ルール・共通コンテキストを置く領域である。
 
-## 管理者
-本環境の管理者はユーザーである。
+`Server Core` (`/home/admin1/server-core/`) は、すべてのプロジェクトに共通して適用されるルール、設定、およびコンテキストを集中管理する最上位の領域です。このリポジトリは、環境全体の一貫性と効率性を保つための「正本」として機能します。
 
-AI・作業者は、管理者の明示的な変更指示がない限り、Server Core正本を書き換え・追記・削除・置換してはならない。
+## 管理者とAI/作業者の役割
 
-管理者から明示的な変更指示がある場合は、指定された対象と範囲に限って変更する。
+*   **管理者**: 本環境の最終的な意思決定者はユーザー様（管理者）です。
+*   **AI/作業者**: 管理者からの明確な指示がない限り、`Server Core`の「正本」を直接変更（書き換え、追記、削除、置換）してはなりません。変更指示がある場合のみ、その指示された対象と範囲に限定して変更を実行します。
+    *   質問、疑問、検討、提案、操作方法の説明は、**変更指示として扱いません**。
 
-質問、疑問、検討、提案、操作方法の説明は、それだけでは変更指示として扱わない。
+## 読込順序 (作業開始時)
 
-## 読込順序
-作業開始時は、以下の順に確認する。
+作業を開始する際は、以下のドキュメントをこの順序で確認してください。
 
-1. `README.md`
-2. `docs/LOAD_SCOPE.md`
-3. `SERVER_CORE_PROTOCOL.md`
-4. `CORE.md`
-5. `KB.md`
-6. `PROJECT_STATUS.md`
+1.  `README.md` (このファイル)
+2.  `docs/LOAD_SCOPE.md`: AIが読み込むべき範囲と、そうでない範囲を定義。
+3.  `SERVER_CORE_PROTOCOL.md`: 共通運用規則の詳細。
+4.  `CORE.md`: 共通思想。
+5.  `KB.md`: `Server Core`上の確認済み知識および判断記録。
+6.  `PROJECT_STATUS.md`: 現在のプロジェクトの状態と、各プロジェクト正本への入口。
 
-`docs/LOAD_SCOPE.md` に通常読込対象外と書かれたファイル、ディレクトリを、AIが作業開始時に読んではならない。
+**重要**: `docs/LOAD_SCOPE.md`で「通常読込対象外」と指定されたファイルやディレクトリは、AIは作業開始時に読み込んではなりません。
 
-## 正本の役割
-- `CORE.md`: 共通思想
-- `SERVER_CORE_PROTOCOL.md`: 共通運用規則
-- `KB.md`: Server Core上の確認済み知識・判断記録
-- `PROJECT_STATUS.md`: 現在状態と正本入口
-- `docs/LOAD_SCOPE.md`: AIが読む範囲と読まない範囲
-- `docs/STRUCTURE.md`: Server Core自身の構造定義
-- `docs/GLOSSARY.md`: 用語と正式表記
-- `docs/PROJECT_TEMPLATE.md`: Project新規作成テンプレート
-- `docs/DEPLOY_RUNBOOK.md`: 承認後のデプロイ手順
-- `docs/OPERATION_CHECKLIST.md`: 作業前後の確認手順
-- `docs/AUTO_COMMIT.md`: AI作業後の自動commit手順
-- `docs/GITHUB_FREE_MAX.md`: GitHub無料枠の最大活用設定
-- `docs/GITHUB_SKILL.md`: Codex GitHub skillの参照方法
-- `docs/G_ACE_WORKSPACE.md`: G-ACE.code-workspaceの正規仕様
-- `scripts/ai-auto-commit.sh`: 自動commit / push支援スクリプト
-- `scripts/github-skill-path.sh`: GitHub skill参照パス解決スクリプト
-- TGserver詳細: `/home/admin1/projects/TGserver` 側の正本文書
-- Astera v8詳細: `/home/admin1/projects/astera_v8` 側の正本文書。問いを星図に変える、Multi-Perspective Cognition Runtime。
+## 主要な「正本」文書とその役割
 
-## 主要原則
-- 全作業は `/home/admin1/workspace/G-ACE.code-workspace` 内で行い、Workspace内の `codex.serverCore.*` 設定を運用ヒントとして扱う。
-- 詳細な運用規則は `SERVER_CORE_PROTOCOL.md` を正とする。
-- READMEは入口と要約だけを持ち、詳細ルールを重複させない。
-- 通常作業で読む範囲は `docs/LOAD_SCOPE.md` に限定する。
-- Server Coreの構造、運用、手順、自動化を変更した場合は、READMEと該当正本文書を変更後の正規仕様として更新してから作業を終える。
-- Project実装詳細は各Project側の正本文書を正とし、Server Coreには入口、責務境界、現在状態だけを置く。
+`Server Core`には、以下のような重要な文書が含まれており、それぞれ特定の役割を担っています。
 
-## 正本文書同期
-変更内容は、作業報告や改善メモとして残さない。
+*   `CORE.md`: 全プロジェクトに共通する思想や理念を定義します。
+*   `SERVER_CORE_PROTOCOL.md`: 共通の運用規則やガイドラインを詳細に記述します。
+*   `KB.md`: 過去の決定、確認事項、知見などを記録した知識ベースです。
+*   `PROJECT_STATUS.md`: 現在進行中のプロジェクトの状態と、各プロジェクトの公式ドキュメントへのリンクを提供します。
+*   `docs/LOAD_SCOPE.md`: AIがコードベースを読み込む際の範囲を指定します。
+*   `docs/STRUCTURE.md`: `Server Core`自体のディレクトリ構造を定義します。
+*   `docs/GLOSSARY.md`: プロジェクト固有の用語とその正式な表記を定義します。
+*   `docs/PROJECT_TEMPLATE.md`: 新しいプロジェクトを作成する際のテンプレートです。
+*   `docs/DEPLOY_RUNBOOK.md`: 承認されたデプロイ手順を記述します。
+*   `docs/OPERATION_CHECKLIST.md`: 作業前後に行うべき確認事項のリストです。
+*   `docs/AUTO_COMMIT.md`: AIによる自動コミット手順を定義します。
+*   `docs/GITHUB_FREE_MAX.md`: GitHub無料枠を最大限活用するための設定。
+*   `docs/GITHUB_SKILL.md`: CursorのGitHubスキル参照方法。
+*   `docs/G_ACE_WORKSPACE.md`: `G-ACE.code-workspace`の正規仕様。
+*   `scripts/ai-auto-commit.sh`: 自動コミットとプッシュを支援するスクリプト。
+*   `scripts/github-skill-path.sh`: GitHubスキル参照パスを解決するスクリプト。
+*   **各プロジェクトの正本**:
+    *   `TGserver詳細`: `/home/admin1/projects/TGserver`リポジリの正本文書。Telegram連携クラウドログストレージサーバー。
+    *   `Astera v8詳細`: `/home/admin1/projects/astera_v8`リポジリの正本文書。問いを星図に変える、AIコグニションランタイム。
 
-変更後に有効な仕様、手順、構造、制約として、READMEと該当する正本文書へ反映する。
+## 運用原則
 
-READMEは常に現在有効な入口、読込順序、正本一覧を示す。
+*   **作業環境**: すべての作業は`/home/admin1/workspace/G-ACE.code-workspace`内で行われ、Workspace内の`codex.serverCore.*`設定が運用上のヒントとして扱われます。
+*   **詳細規則**: 詳細な運用規則は`SERVER_CORE_PROTOCOL.md`を正とします。
+*   **READMEの役割**: `README.md`は、システムへの「入口」と「要約」のみを提供し、詳細なルールを重複させません。
+*   **AIの読込範囲**: 通常の作業でAIが読み込む範囲は`docs/LOAD_SCOPE.md`に限定されます。
+*   **更新時の対応**: `Server Core`の構造、運用、手順、自動化に変更があった場合は、`README.md`と該当する正本文書を、変更後の正規仕様として更新してから作業を終了します。
+*   **プロジェクト実装**: 各プロジェクトの実装詳細は、それぞれのプロジェクト側の正本文書を正とします。`Server Core`には、そのプロジェクトへの入口、責任範囲、現在の状態のみを記述します。
 
-詳細は `SERVER_CORE_PROTOCOL.md` と `docs/OPERATION_CHECKLIST.md` を正とする。
+## 正本文書の同期
 
-## PROJECT_STATUS運用
-`PROJECT_STATUS.md` は現在状態と正本入口だけを記載する。
+変更内容は、作業報告や改善メモとして残すのではなく、**変更後に有効な仕様、手順、構造、制約として、`README.md`と該当する正本文書へ直接反映します**。
+`README.md`は常に、現在有効な「入口」、ドキュメントの「読込順序」、および「正本一覧」を示す必要があります。
+詳細は`SERVER_CORE_PROTOCOL.md`と`docs/OPERATION_CHECKLIST.md`を正とします。
 
-自動追記、毎作業終了時の無条件追記、AI独自判断による追記を禁止する。
+## PROJECT_STATUSの運用
 
-管理者から明示的な状態更新指示がある場合だけ更新する。
-
-`add-status.sh` による自動追記運用は廃止する。
+`PROJECT_STATUS.md`は、現在の状態と正本への入口のみを記載します。
+*   自動追記、毎作業終了時の無条件追記、AI独自の判断による追記は禁止します。
+*   管理者からの明確な状態更新指示がある場合にのみ更新します。
+*   `add-status.sh`による自動追記運用は廃止します。
 
 ## GitHub運用
-作業履歴の正本は GitHub上のcommit / PR とする。
 
-ファイル変更を伴う作業は、作業完了時に `git diff` を確認し、意味のある作業単位でcommitを作成する。
+*   **作業履歴の正本**: GitHub上のコミット（commit）およびプルリクエスト（PR）を、作業履歴の「正本」とします。
+*   **コミット**: ファイル変更を伴う作業は、作業完了時に`git diff`を確認し、意味のある作業単位でコミットを作成します。
+*   **プッシュ**: プッシュは、管理者が許可したリポジトリ、ブランチ、および対象範囲でのみ実行します。
+*   **詳細**: 詳細なコミット、プッシュ、PRの基準は`SERVER_CORE_PROTOCOL.md`と`docs/OPERATION_CHECKLIST.md`を正とします。
 
-pushは、管理者が許可したリポジトリ、ブランチ、対象範囲で実行する。
+## 最重要事項
 
-詳細なcommit / push / PR基準は `SERVER_CORE_PROTOCOL.md` と `docs/OPERATION_CHECKLIST.md` を正とする。
-
-## 最重要
-記録されていない作業は存在しないものとして扱う。
-
-ただし、AIが独自判断で記録を追記してはならない。
-
-記録更新は、管理者の明示指示がある場合だけ行う。
+*   記録されていない作業は、存在しないものとして扱われます。
+*   AIが独自の判断で記録を追記してはなりません。
+*   記録の更新は、管理者の明確な指示がある場合にのみ実行します。
