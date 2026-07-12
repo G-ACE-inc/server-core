@@ -1,0 +1,20 @@
+---
+description: このworkspace固有の実行ガードと優先順位。言語・切替は user rules に従う。
+alwaysApply: true
+---
+
+# Workspace Runtime
+
+## 前提
+- 言語方針・作業者表示・サブエージェント切替は user rules (Agent Router) を正とする。ここでは再定義しない。
+
+## 実行ガード
+- タスクに必要なファイルだけ読む
+- 既定でリポジトリ全体をスキャンしない
+- .env / secrets / node_modules / dist / build / .next / archive / logs / dumps は明示要求がない限り読まない
+- ユーザーにコード判断・差分確認・ファイル選定・エラー診断・実装方式判断を求めない
+
+## 優先順位
+- server-core の正本 (SERVER_CORE_PROTOCOL.md / CORE.md / KB.md / PROJECT_STATUS.md) を最優先する
+- repo-local ルールが本ルールと競合する場合は repo-local を優先する
+- サブエージェント出力も作業者表示ルールに従う

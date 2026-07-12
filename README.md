@@ -44,13 +44,14 @@
 *   `scripts/ai-auto-commit.sh`: 自動コミットとプッシュを支援するスクリプト。
 *   `scripts/github-skill-path.sh`: GitHubスキル参照パスを解決するスクリプト。
 *   **各プロジェクトの正本**:
-    *   `TGserver詳細`: `/home/admin1/projects/TGserver`リポジリの正本文書。Telegram連携クラウドログストレージサーバー。
-    *   `Astera v8詳細`: `/home/admin1/projects/astera_v8`リポジリの正本文書。問いを星図に変える、AIコグニションランタイム。
+    *   `TGserver詳細`: `/home/admin1/projects/TGserver`リポジトリの正本文書。Telegram連携クラウドログストレージサーバー。
+    *   `Astera v8詳細`: `/home/admin1/projects/astera_v8`リポジトリの正本文書。問いを星図に変える、AIコグニションランタイム。
 
 ## 運用原則
 
 *   **作業環境**: すべての作業は`/home/admin1/workspace/G-ACE.code-workspace`内で行われ、Workspace内の`codex.serverCore.*`設定が運用上のヒントとして扱われます。
 *   **詳細規則**: 詳細な運用規則は`SERVER_CORE_PROTOCOL.md`を正とします。
+*   **5層アーキテクチャ**: `CORE.md`が定める5層（Layer 1:部品 / Layer 2:Module / Layer 3:機能束 / Layer 4:System / Layer 5:Application）を全Projectで必須とします。層の省略・改名・逆転依存は違反です。
 *   **READMEの役割**: `README.md`は、システムへの「入口」と「要約」のみを提供し、詳細なルールを重複させません。
 *   **AIの読込範囲**: 通常の作業でAIが読み込む範囲は`docs/LOAD_SCOPE.md`に限定されます。
 *   **更新時の対応**: `Server Core`の構造、運用、手順、自動化に変更があった場合は、`README.md`と該当する正本文書を、変更後の正規仕様として更新してから作業を終了します。

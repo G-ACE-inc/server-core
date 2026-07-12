@@ -66,6 +66,26 @@ AIが勝手にファイルを増やすこと、重複ファイルを放置する
 
 Project内で一時ログや作業用ログを使う場合は、用途、保存期間、削除条件をProject側の `STRUCTURE.md` または仕様書に明記する。
 
+## 5層アーキテクチャの強制
+
+各Projectは、構成図と `STRUCTURE.md` の中で次の5層を必須定義とする。未定義、名称変更、順序変更、統合、飛び越し、層の省略は違反である。
+
+- Layer 1：部品。小さな共通処理。例: Hash生成、時刻正規化、秘密情報除去。
+- Layer 2：Module。単独で意味のある最小機能。例: 重複判定、Source検証、正本保存。
+- Layer 3：機能束。複数Moduleを順序統合する単位。例: KB登録Pipeline、検索Pipeline。
+- Layer 4：System。astera-kbサービス全体。
+- Layer 5：Application。管理UI、利用画面、外部向け製品。
+
+依存制約は次のとおりとする。
+
+- Layer 1はLayer 2以上をimportしない。
+- Layer 2はLayer 3以上をimportしない。
+- Layer 3はLayer 4以上をimportしない。
+- Layer 4はLayer 5以上をimportしない。
+- 上位層は下位層のみを利用し、下位層は上位層を利用しない。
+- 循環依存、層逆転、境界外参照、別名による迂回は禁止する。
+- `STRUCTURE.md` にこの5層定義がないProjectは、構造未完了として扱う。
+
 ## 正本文書同期
 Server Coreまたは対象Projectの構造、仕様、手順、自動化、運用ルールを変更した場合は、変更後に有効な正規版として正本文書を更新してから作業を終える。
 

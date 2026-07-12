@@ -36,6 +36,18 @@
 - 一時ファイル、cache、logsの保存場所と削除条件
 - 作成禁止ファイルまたは作成禁止ディレクトリ
 
+## 5層アーキテクチャ必須項目
+
+新規Projectの `docs/STRUCTURE.md` には、次を必ず含める。
+
+- Layer 1〜Layer 5 の定義と各Layerの責務
+- 依存方向は高層から低層への一方向のみ
+- Layer 1はLayer 2以上をimportしない
+- Layer 2はLayer 3以上をimportしない
+- Layer 3はLayer 4以上をimportしない
+- Layer 4はLayer 5以上をimportしない
+- 循環依存、層の省略、層の改名、層の統合を禁止する
+
 ## docs/DOC_INDEX.md 最小項目
 - 正本文書
 - 補助文書
