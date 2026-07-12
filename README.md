@@ -140,7 +140,7 @@ Project固有の構造、仕様、API、環境変数、Test、Deployment、運�
 
 主要入口:
 
-- TGserver: `/home/admin1/projects/TGServer`
+- TGserver: `/home/admin1/projects/TGserver`
 - Astera v8: `/home/admin1/projects/astera_v8`
 
 実在Path、Git状態、Docker状態は作業開始時に実環境で確認する。
