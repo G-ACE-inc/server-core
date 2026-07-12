@@ -45,6 +45,16 @@ Workspace設定を変更した場合は、`/home/admin1/workspace/G-ACE.code-wor
 3. push先remoteとbranchを確認する。
 4. 管理者が許可したリポジトリ、ブランチ、対象範囲であることを確認する。
 
+## 作業終了条件（必須）
+ファイル変更を伴う作業は、以下がすべて完了して初めて「終了」とする。
+
+1. 変更ファイルがcommit済みであること
+2. commitがorigin/mainへpush済みであること
+3. `git status` が `nothing to commit, working tree clean` を示すこと
+4. 複数リポジトリを変更した場合は、それぞれで上記が完了していること
+
+上記を満たさずに作業を終了することを禁止する。
+
 ## PROJECT_STATUS更新時
 1. 作業履歴を書かない。
 2. 現在状態と正本入口だけを書く。

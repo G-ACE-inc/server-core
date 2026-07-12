@@ -208,7 +208,7 @@ Astera v8の詳細仕様、構成、API、Domain Template Catalog、Production C
 
 ファイル変更を伴う作業は、作業完了時に `git diff` を確認し、意味のある作業単位でcommitを作成する。
 
-AI・作業者は、管理者が明示的に禁止した場合を除き、ファイル変更を伴う作業の完了時に `scripts/ai-auto-commit.sh --push` を実行する。
+AI・作業者は、ファイル変更を伴う作業の完了時に必ず `scripts/ai-auto-commit.sh --push` を実行する。管理者が明示的に禁止した場合を除き、commit / pushなしで作業を終了することを禁止する。commit / pushをせずに作業を終了した場合、その作業は未完了として扱う。
 
 自動commitの標準手順は `docs/AUTO_COMMIT.md` を正とする。
 
