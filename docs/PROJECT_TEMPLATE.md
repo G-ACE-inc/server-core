@@ -1,65 +1,115 @@
 # PROJECT TEMPLATE
 
 ## 目的
-新規Projectを作成するときの最小構成を定義する。
+新規Projectを、不要なファイルと文書を増やさず、実装・検証・運用に必要な最小構成から開始する。
 
-## 必須ファイル
-- `PROJECT_INDEX.md`
+## 最小必須構成
 - `README.md`
-- `docs/STRUCTURE.md`
-- `docs/DOC_INDEX.md`
-- `docs/SPEC.md` または `docs/SPEC_vX.Y.md`
 - `.gitignore`
-- `.env.example` が必要なProjectでは値なしで作成する
+- 技術スタックに対応する実装入口
+- 環境変数が必要な場合だけ、値を含まない `.env.example`
 
-## 推奨ファイル
-- `docs/DEPLOY_RUNBOOK.md`
-- `docs/OPERATION_CHECKLIST.md`
-- `docs/SECURITY.md`
-- `archive/YYYY-MM-DD/`
+`PROJECT_INDEX.md`、`docs/STRUCTURE.md`、`docs/DOC_INDEX.md`、`docs/SPEC.md` を名称だけを理由に一律作成してはならない。
 
-## PROJECT_INDEX.md 最小項目
+## README.md 最小項目
 - Project名
 - 目的
-- 正本パス
-- 主要Module
-- 正本文書一覧
+- 実装入口
+- 起動・検証方法
 - 現在フェーズ
 - 本番運用可否
 - 管理者承認が必要な操作
+- 正本が別にある場合だけ、その入口
 
-## docs/STRUCTURE.md 最小項目
-- ルート直下の役割
-- `src/` または実装ディレクトリの役割
-- `docs/` の役割
-- `archive/` の扱い
-- 一時ファイル、cache、logsの保存場所と削除条件
-- 作成禁止ファイルまたは作成禁止ディレクトリ
+## Single Source of Truth
+同じ情報を複数箇所へ記録しない。
 
-## 5層アーキテクチャ必須項目
+正本の優先順位は次とする。
+1. コード上のInterface、型、Schema
+2. 単一のModule登録情報またはManifest
+3. README.md
+4. 必要な場合だけ追加する正本文書
 
-新規Projectの `docs/STRUCTURE.md` には、次を必ず含める。
+コードまたはManifestから取得できる情報を、手書き文書へ重複記載しない。
 
-- Layer 1〜Layer 5 の定義と各Layerの責務
-- 依存方向は高層から低層への一方向のみ
-- Layer 1はLayer 2以上をimportしない
-- Layer 2はLayer 3以上をimportしない
-- Layer 3はLayer 4以上をimportしない
-- Layer 4はLayer 5以上をimportしない
-- 循環依存、層の省略、層の改名、層の統合を禁止する
+## 追加文書を作る条件
+次のいずれかがあり、READMEまたはコード正本だけでは安全に管理できない場合だけ作成する。
 
-## docs/DOC_INDEX.md 最小項目
-- 正本文書
-- 補助文書
-- 旧版または退避文書
-- 読込順序
+- 複数の実装入口または複数Systemがある
+- 公開契約、運用、セキュリティ、デプロイを独立管理する必要がある
+- 構造、状態所有者、障害範囲が複雑である
+- 法令、監査、外部提供のため独立文書が必要である
+- 文書の独立更新が実装変更より明確に多い
+
+追加候補:
+- `PROJECT_INDEX.md`: 複数の正本入口を案内する必要がある場合
+- `docs/STRUCTURE.md`: 物理構造と所有境界の説明がREADMEでは不足する場合
+- `docs/SPEC.md`: 公開仕様または業務仕様を独立管理する必要がある場合
+- `docs/DEPLOY_RUNBOOK.md`: 本番デプロイ手順を持つ場合
+- `docs/OPERATION_CHECKLIST.md`: 継続運用手順を持つ場合
+- `docs/SECURITY.md`: Project固有のセキュリティ境界を持つ場合
+- `docs/DOC_INDEX.md`: 正本文書が複数存在し、読込順序が必要な場合
+
+追加理由を説明できない文書は作成しない。
+
+## 5段階層型モジュラーアーキテクチャ
+論理順序は次で固定する。
+
+```text
+Part
+  ↓
+Feature
+  ↓
+Component
+  ↓
+System
+  ↓
+Application System
+```
+
+5段は論理分類であり、ファイル、ディレクトリ、パッケージ、Module、リポジトリへ機械的に変換しない。
+
+すべての関数、クラス、ファイルを分類しない。責務混在、交換、再利用、Module境界、依存・状態所有者、障害範囲を判断する対象だけ分類する。
+
+## Module化判定
+Moduleは5段の階層名ではない。
+
+新規Moduleは次をすべて満たす場合だけ作成する。
+- Coreが登録、有効化、停止、依存解決、状態確認、交換、更新、復旧を管理する必要がある
+- 公開契約を定義できる
+- 依存、設定、状態の所有範囲を定義できる
+- 障害時と復旧時の動作を定義できる
+- Module化の効果が境界管理コストを上回る
+
+満たさない場合は既存Module内のPart、FeatureまたはComponentとして実装する。
+
+## 物理分離
+権限・機密、障害、実行環境、起動停止、デプロイ、状態・データ所有、依存環境の隔離が必要な場合だけ物理分離を優先する。
+
+次だけでは新規ファイル、ディレクトリ、パッケージ、Moduleを作らない。
+- 再利用できそう
+- テストしやすそう
+- 将来交換するかもしれない
+- ファイルが長い
+- 5段上の分類が異なる
+- 見た目を整理したい
+
+## テスト最小項目
+変更前に次を定義する。
+- 入力
+- 実行条件
+- 期待出力
+- 変更される状態
+- 変更されてはならない状態
+- 依存停止時の結果
+- 復旧後の結果
+
+プロセス起動、エラーなし、`True`、空配列、HTTP 200だけでは合格にしない。
 
 ## 環境変数
 `.env` はcommit禁止とする。
 
 共有が必要なキーは `.env.example` に値なしで記載する。
-
-例:
 
 ```env
 SERVICE_TOKEN=
@@ -67,12 +117,15 @@ REDIS_URL=
 ```
 
 ## GitHub
-初回作成時は、最小構成をcommitしてから実装を開始する。
+最小構成をcommitしてから実装を開始する。
 
-作業履歴はcommit / PRを正本とする。
+作業履歴はcommit / PRを正本とし、現在仕様の文書へ作業履歴を混在させない。
 
 ## 禁止
-- 構成図なしで実装を始めること
-- READMEだけに仕様を書くこと
-- 作業履歴をPROJECT_STATUSへ蓄積すること
+- 5段を物理ディレクトリへ変換すること
+- Part、Feature、Componentごとの文書を作ること
+- 処理を渡すだけの中継ファイルを作ること
+- 将来利用だけを理由に共通化すること
+- READMEと追加文書へ同じ情報を重複記載すること
+- 構造判断なしで実装を始めること
 - 秘密情報をcommitすること

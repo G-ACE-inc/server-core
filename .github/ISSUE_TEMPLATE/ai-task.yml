@@ -1,5 +1,6 @@
-name: AI task
-description: Request AI-assisted work with clear scope and commit behavior.
+name: AI作業
+
+description: 最小コンテキストでAI作業の目的、境界、期待結果を固定する。
 title: "[AI] "
 labels:
   - ai-task
@@ -7,33 +8,64 @@ body:
   - type: textarea
     id: goal
     attributes:
-      label: Goal
-      description: What should be changed or investigated?
+      label: 変更目的
+      description: 何を実現、修正、調査するかを記載する。
     validations:
       required: true
+
+  - type: textarea
+    id: target
+    attributes:
+      label: 対象責務
+      description: 対象Module、Part、Feature、Component、System、Application System、または対象ファイルを記載する。分類が不要なら無理に付けない。
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 最小コンテキスト
+      description: 確認できる範囲で、公開契約、直接依存、設定・状態の所有者、期待結果、障害時動作を記載する。既存コードから確認できる内容は重複記載しない。
+      placeholder: |
+        公開契約:
+        直接依存:
+        設定・状態の所有者:
+        期待結果:
+        障害時動作:
+    validations:
+      required: false
+
   - type: textarea
     id: scope
     attributes:
-      label: Scope
-      description: Files, directories, or repositories that are in scope.
+      label: 変更範囲
+      description: 変更対象と対象外を記載する。AIは対象コード、公開契約、直接依存、関連テストから開始する。
     validations:
       required: true
+
   - type: dropdown
     id: commit
     attributes:
-      label: Commit behavior
+      label: commit動作
       options:
-        - Auto commit and push when done
-        - Auto commit only
-        - Do not commit
+        - 完了後にcommitとpush
+        - commitのみ
+        - commitしない
     validations:
       required: true
+
   - type: checkboxes
     id: guardrails
     attributes:
-      label: Guardrails
+      label: 必須Guard
       options:
-        - label: Do not edit `.env` or secret files.
+        - label: 5段を理由にファイル、ディレクトリ、パッケージ、Moduleを機械的に増やさない。
           required: true
-        - label: Do not deploy, publish, or switch production without explicit approval.
+        - label: 既存構造への統合を優先し、読込範囲は必要時だけ段階拡張する。
+          required: true
+        - label: `.env` または秘密情報を作成、変更、表示、commitしない。
+          required: true
+        - label: 明示承認なしに本番デプロイ、起動、公開、切替を行わない。
+          required: true
+        - label: 起動成功、True、空結果、HTTP 200だけで検証完了としない。
           required: true

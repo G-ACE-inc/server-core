@@ -9,12 +9,24 @@ alwaysApply: true
 - 言語方針・作業者表示・サブエージェント切替は user rules (Agent Router) を正とする。ここでは再定義しない。
 
 ## 実行ガード
-- タスクに必要なファイルだけ読む
+- 最初に `README.md`、`docs/LOAD_SCOPE.md`、指定対象だけを読む
+- `SERVER_CORE_PROTOCOL.md`、`CORE.md`、`KB.md`、`PROJECT_STATUS.md` は現在作業に必要なものだけ読む
+- 対象コード、公開契約、直接依存、関連テストから開始する
+- 所有者不明、未宣言依存、対象外テスト失敗、循環依存、複数Module影響が確認された場合だけ読込範囲を1段階ずつ拡張する
 - 既定でリポジトリ全体をスキャンしない
-- .env / secrets / node_modules / dist / build / .next / archive / logs / dumps は明示要求がない限り読まない
-- ユーザーにコード判断・差分確認・ファイル選定・エラー診断・実装方式判断を求めない
+- .env / secrets / node_modules / dist / build / .next / archive / logs / dumps は明示要求または直接必要性がない限り読まない
+- ユーザーにコード判断、差分確認、ファイル選定、エラー診断、実装方式判断を求めず、現物から判断する
+
+## Architecture Guard
+- 5段は `Part → Feature → Component → System → Application System` の論理分類とする
+- 5段をファイル、ディレクトリ、パッケージ、Moduleへ機械的に変換しない
+- ModuleはCoreがLifecycleを管理する必要がある単位だけにする
+- 既存構造への統合を優先し、分類名を理由に新規ファイルを作らない
+- 実行成功ではなく、期待出力、状態、障害時動作、復旧結果で合否を決める
 
 ## 優先順位
-- server-core の正本 (SERVER_CORE_PROTOCOL.md / CORE.md / KB.md / PROJECT_STATUS.md) を最優先する
-- repo-local ルールが本ルールと競合する場合は repo-local を優先する
-- サブエージェント出力も作業者表示ルールに従う
+- Architecture判断は `CORE.md` を正とする
+- 共通運用判断は `SERVER_CORE_PROTOCOL.md` を正とする
+- 読込範囲は `docs/LOAD_SCOPE.md` を正とする
+- repo-local 仕様がServer Core共通規則より具体的で、両者が矛盾しない場合はrepo-localを優先する
+- サブエージェント出力も同じGuardに従う

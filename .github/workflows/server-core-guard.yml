@@ -44,13 +44,66 @@ jobs:
           test -x scripts/resolve-codex-skill.sh
           test -x scripts/github-skill-path.sh
 
-      - name: Load scope isolation
+      - name: Five-stage architecture contract
         run: |
           set -euo pipefail
+          grep -q '5段階層型モジュラーアーキテクチャ' CORE.md
+          grep -q '^Part$' CORE.md
+          grep -q '^Feature$' CORE.md
+          grep -q '^Component$' CORE.md
+          grep -q '^System$' CORE.md
+          grep -q '^Application System$' CORE.md
+          grep -q 'Moduleは5段の階層名ではない' CORE.md
+          grep -q '既存構造への統合を優先' CORE.md
+
+      - name: No legacy layer model
+        run: |
+          set -euo pipefail
+          hits="$(
+            git grep -nE 'Layer[[:space:]]+[1-5]|5層アーキテクチャ' \
+              -- '*.md' '*.mdc' \
+              ':!archive/**' \
+              ':!.github/workflows/server-core-guard.yml' || true
+          )"
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            exit 1
+          fi
+
+      - name: No physical five-stage directories
+        run: |
+          set -euo pipefail
+          hits="$(
+            git ls-files |
+              grep -E '(^|/)(parts|features|components|systems|application-systems)/' || true
+          )"
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            exit 1
+          fi
+
+      - name: Progressive load scope
+        run: |
+          set -euo pipefail
+          grep -q '最小開始範囲' docs/LOAD_SCOPE.md
+          grep -q 'Level 1: 局所' docs/LOAD_SCOPE.md
+          grep -q 'Level 2: 境界' docs/LOAD_SCOPE.md
+          grep -q 'Level 3: Module' docs/LOAD_SCOPE.md
+          grep -q 'Level 4: System' docs/LOAD_SCOPE.md
+          grep -q '読込範囲を拡張する条件' docs/LOAD_SCOPE.md
+          grep -q 'リポジトリ全体を既定でスキャン' docs/LOAD_SCOPE.md
           grep -q 'archive/' docs/LOAD_SCOPE.md
           grep -q '.github/' docs/LOAD_SCOPE.md
           grep -q 'scripts/' docs/LOAD_SCOPE.md
-          grep -q '通常読込禁止' docs/LOAD_SCOPE.md
+
+      - name: Minimum project template
+        run: |
+          set -euo pipefail
+          grep -q '最小必須構成' docs/PROJECT_TEMPLATE.md
+          grep -q '一律作成してはならない' docs/PROJECT_TEMPLATE.md
+          grep -q 'Single Source of Truth' docs/PROJECT_TEMPLATE.md
+          grep -q 'Module化判定' docs/PROJECT_TEMPLATE.md
+          grep -q 'HTTP 200だけでは合格にしない' docs/PROJECT_TEMPLATE.md
 
       - name: No tracked env files
         run: |
@@ -88,7 +141,7 @@ jobs:
           set -euo pipefail
           hits="$(
             git grep -nEI \
-              '(api[_-]?key|secret|token|password|credential|session)[[:alnum:]_ -]*[:=][[:space:]]*["]?[A-Za-z0-9_./+=-]{12,}' \
+              '(api[_-]?key|secret|token|password|credential|session)[[:alnum:]_ -]*[:=][[:space:]]*[\"]?[A-Za-z0-9_./+=-]{12,}' \
               -- \
               ':!docs/**' \
               ':!archive/**' \
