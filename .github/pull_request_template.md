@@ -1,11 +1,33 @@
-## Summary
+## 変更目的
 - TBD
 
-## Checks
-- [ ] `git diff` reviewed
-- [ ] No `.env` or secret material included
-- [ ] `scripts/ai-auto-commit.sh --no-push` or equivalent checks passed
-- [ ] No production deploy/start/switch performed without approval
+## 対象責務
+- 対象Moduleまたは対象責務:
+- 公開契約への影響:
+- 設定・状態所有者への影響:
 
-## Notes
+## 変更内容
+- TBD
+
+## 検証結果
+- 入力・実行条件:
+- 期待出力:
+- 変更された状態:
+- 変更されてはならない状態:
+- 障害時動作:
+- 復旧結果:
+
+## 確認
+- [ ] `git diff` を確認した
+- [ ] 対象外変更を含めていない
+- [ ] `.env` または秘密情報を含めていない
+- [ ] 5段を理由に物理構造を増やしていない
+- [ ] 新規ModuleはModule化判定を満たしている、または新規Moduleを作成していない
+- [ ] Module内部実装への外部参照と循環依存がない
+- [ ] 同じ設計情報を複数箇所へ重複記載していない
+- [ ] 起動成功、True、空結果、HTTP 200だけで合格にしていない
+- [ ] `scripts/ai-auto-commit.sh --no-push` または同等の確認を実施した
+- [ ] 明示承認なしに本番デプロイ、起動、公開、切替を行っていない
+
+## 補足
 - TBD
