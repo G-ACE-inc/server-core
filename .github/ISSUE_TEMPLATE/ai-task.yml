@@ -17,7 +17,7 @@ body:
     id: target
     attributes:
       label: 対象責務
-      description: 対象Module、Part、Feature、Component、System、Application System、または対象ファイルを記載する。分類が不要なら無理に付けない。
+      description: 対象Module、Part、Feature、Component、System、Application System、または対象ファイルを記載する。分類は判断に必要な範囲へ行う。
     validations:
       required: true
 
@@ -25,7 +25,7 @@ body:
     id: context
     attributes:
       label: 最小コンテキスト
-      description: 確認できる範囲で、再利用候補、入力・出力、直接依存と制約、関連テスト、期待結果を記載する。既存Codeから確認できる内容は重複記載しない。
+      description: 再利用候補、入力・出力、直接依存と制約、関連テスト、期待結果を記載する。既存Codeに正本がある内容は参照先を記載する。
       placeholder: |
         再利用候補:
         入力・出力:
@@ -57,19 +57,19 @@ body:
   - type: checkboxes
     id: guardrails
     attributes:
-      label: 必須Guard
+      label: 実行確認
       options:
-        - label: LibralCoreは開発時の再利用、Code生成、局所修正の判断にだけ使用する。
+        - label: LibralCoreを再利用、Code生成、局所修正の判断に使用する。
           required: true
         - label: 新規Code生成前に、同じ責務を持つ既存資産を確認する。
           required: true
-        - label: 5段を理由にファイル、ディレクトリ、パッケージ、Moduleを機械的に増やさない。
+        - label: 物理構造を対象Projectの規模、再利用範囲、依存、検証、運用上の実益で決定する。
           required: true
-        - label: 既存構造への統合を優先し、読込範囲は必要時だけ段階拡張する。
+        - label: 既存構造への統合を優先し、読込範囲を必要な段階まで拡張する。
           required: true
-        - label: `.env` または秘密情報を作成、変更、表示、commitしない。
+        - label: 秘密情報はGit管理外の環境で扱う。
           required: true
-        - label: 明示承認なしに本番デプロイ、起動、公開、切替を行わない。
+        - label: 本番デプロイ、起動、公開、切替は明示承認後に行う。
           required: true
-        - label: 起動成功、True、空結果、HTTP 200だけで検証完了としない。
+        - label: 期待出力、状態変化、主要失敗条件、回帰結果で検証する。
           required: true
