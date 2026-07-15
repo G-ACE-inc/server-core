@@ -5,7 +5,7 @@
 
 人間、AI、自動処理のすべてに適用する。
 
-Server CoreはApplication Systemを接続・実行する中央Coreではない。LibralCoreは開発AI向けの開発方法論であり、共通Runtime、アプリ接続基盤、Module登録・起動・停止機構ではない。
+LibralCoreは開発時の設計、Code生成、再利用、局所修正へ適用し、各Application Systemの実行構造には関与しない。
 
 ## 管理者と変更権限
 本環境の最終決定者は管理者である。
@@ -71,7 +71,7 @@ System
 Application System
 ```
 
-5段は論理分類であり、物理構造ではない。完成物を理解、分解、再利用、再構成するための開発上の構造であり、Runtime階層やアプリ接続順序ではない。
+5段は論理分類であり、物理構造ではない。完成物を理解、分解、再利用、再構成するための開発上の構造であり、各Application Systemの実行構造を指定しない。
 
 次を禁止する。
 - Partを理由に1ファイルを作ること
@@ -87,8 +87,6 @@ Application System
 Moduleは5段の階層名ではない。
 
 Moduleは、同一Project内または別Projectで再利用、交換、独立修正しやすいように、1つの目的と責務へまとめた開発上の再利用単位である。
-
-ModuleはLibralCoreまたは中央Coreへの登録、Runtime上のLoad・Unload、起動・停止、Required・Optional分類、Health・Readiness管理、アプリ間接続を意味しない。
 
 新規Moduleは、次をすべて満たす場合だけ作成する。
 
@@ -140,7 +138,6 @@ Module間または再利用境界では、公開Interfaceまたは型、Event、
 - 非公開Classまたは内部状態への参照
 - 宣言されていない依存
 - 循環依存
-- LibralCore接続用の中央Core、Registry、Runtime、Plugin Hostを追加すること
 
 既存資産を利用しない場合は、複雑化、性能、品質、依存、互換性などの具体的理由を確認する。
 
@@ -311,8 +308,7 @@ archive配下は通常読込禁止とし、現在状態、現在仕様、現在�
 - 実装変更だけを行い、必要な正本同期を省略すること
 - 作業報告や変更履歴を現在仕様へ混在させること
 - 目的、責務、境界の確認なしで実装すること
-- LibralCoreをRuntime、アプリ接続基盤、中央Core、Module Registry、Plugin Hostとして扱うこと
-- 既存Application SystemへLibralCore接続・登録・依存を追加すること
+- LibralCoreをApplication Systemの実行構造として実装すること
 - 5段を物理構造へ機械変換すること
 - 目的のないファイル、文書、Moduleの追加
 - ルート直下への雑ファイル作成
