@@ -19,7 +19,7 @@ alwaysApply: true
 
 ## Architecture Guard
 - LibralCoreは再利用によって開発時間、AIコンテキスト、Token、実装・修正・検証コストを削減する開発方法論とする
-- LibralCoreをアプリ接続基盤、共通Runtime、中央Core、Module Registry、Plugin Hostとして扱わない
+- LibralCoreは開発時の設計、Code生成、再利用、局所修正へ適用し、各Application Systemの実行構造には関与しない
 - 5段は `Part → Feature → Component → System → Application System` の論理分類とする
 - 5段をファイル、ディレクトリ、パッケージ、Moduleへ機械的に変換しない
 - Moduleは再利用、交換、独立修正しやすい開発上の責務単位とする
