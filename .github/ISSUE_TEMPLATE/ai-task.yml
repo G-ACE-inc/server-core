@@ -1,6 +1,6 @@
 name: AI作業
 
-description: 最小コンテキストでAI作業の目的、境界、期待結果を固定する。
+description: 最小コンテキストでAI作業の目的、再利用候補、変更範囲、期待結果を固定する。
 title: "[AI] "
 labels:
   - ai-task
@@ -25,13 +25,13 @@ body:
     id: context
     attributes:
       label: 最小コンテキスト
-      description: 確認できる範囲で、公開契約、直接依存、設定・状態の所有者、期待結果、障害時動作を記載する。既存コードから確認できる内容は重複記載しない。
+      description: 確認できる範囲で、再利用候補、入力・出力、直接依存と制約、関連テスト、期待結果を記載する。既存Codeから確認できる内容は重複記載しない。
       placeholder: |
-        公開契約:
-        直接依存:
-        設定・状態の所有者:
+        再利用候補:
+        入力・出力:
+        直接依存と制約:
+        関連テスト:
         期待結果:
-        障害時動作:
     validations:
       required: false
 
@@ -39,7 +39,7 @@ body:
     id: scope
     attributes:
       label: 変更範囲
-      description: 変更対象と対象外を記載する。AIは対象コード、公開契約、直接依存、関連テストから開始する。
+      description: 変更対象と対象外を記載する。AIは対象Code、直接依存、関連テストから開始する。
     validations:
       required: true
 
@@ -59,6 +59,10 @@ body:
     attributes:
       label: 必須Guard
       options:
+        - label: LibralCoreは開発時の再利用、Code生成、局所修正の判断にだけ使用する。
+          required: true
+        - label: 新規Code生成前に、同じ責務を持つ既存資産を確認する。
+          required: true
         - label: 5段を理由にファイル、ディレクトリ、パッケージ、Moduleを機械的に増やさない。
           required: true
         - label: 既存構造への統合を優先し、読込範囲は必要時だけ段階拡張する。
