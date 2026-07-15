@@ -1,147 +1,185 @@
-# Server Core — 全Project共通開発・運用基盤
+# Server Core — 全Project共通統治基盤
 
 ## 目的
-`Server Core`（`/home/admin1/server-core`）は、G-ACE環境内の全Projectへ適用する共通の開発思想、AI読込規則、作業手順、GitHub運用、Workspace方針を管理する統治領域である。
 
-本リポジトリはApplication Systemを実行・接続するRuntimeではない。各Projectの実装詳細や実行制御を集約せず、開発時の共通方針と正本入口だけを保持する。
+`Server Core`（`/home/admin1/server-core`）は、G-ACE環境内の全Projectへ適用する共通思想、運用規則、読込範囲、作業手順、GitHub運用、Workspace方針を管理する最上位の統治領域である。
 
-## LibralCore
-LibralCoreは、開発AIが再利用可能な設計とCodeを効率よく生成・修正するための開発方法論である。
+本Repository自体はApplicationや業務Systemではない。各Projectの実装詳細を集約せず、全Projectへ共通適用する規則と、各正本への入口だけを保持する。
 
-目的は、再利用によって次を減らすことである。
-- 開発時間
-- AIコンテキストとToken
-- 新規Code生成量
-- 重複実装
-- 修正範囲
-- 検証と手戻りコスト
-
-LibralCoreは次ではない。
-- アプリ接続基盤
-- 共通Runtime
-- Plugin Framework
-- Module登録・起動・停止機構
-- アプリ共通の必須SDK
-- 全Application Systemを一元実行する中央Core
-
-各Application Systemは単独で成立し、LibralCoreへの接続、登録、常駐、通信、依存を一切前提としない。詳細は `CORE.md` を正とする。
+LibralCoreは、開発AIが再利用可能な設計とCodeを効率よく生成・修正するための開発概念、設計方針、開発スタイルである。アプリ接続基盤、共通Runtime、Plugin Framework、Module登録・起動・停止機構ではなく、各Application Systemへの接続・依存を前提としない。
 
 ## 管理者と変更権限
-- 最終決定者は管理者である。
-- AI・作業者は、管理者が明示した対象と範囲だけを変更する。
-- 質問、疑問、検討、提案、操作説明は変更承認として扱わない。
-- 実装済み、検証済み、稼働中などの状態は、実ファイル、実行結果、対象Project正本で確認する。
 
-## 最小読込
-作業開始時は次だけを読む。
+- 最終決定者は管理者である。
+- AI・作業者は、管理者の明示的な変更指示がある対象と範囲だけを変更する。
+- 質問、疑問、検討、提案、操作方法の説明は変更承認として扱わない。
+- 実装済み・検証済み・稼働中などの状態は、実File、実行結果、対象Projectの正本文書で確認する。
+
+## 作業開始時の読込順序
 
 1. `README.md`
 2. `docs/LOAD_SCOPE.md`
-3. 指定された対象ファイルまたは対象Project入口
+3. `SERVER_CORE_PROTOCOL.md`
+4. `CORE.md`
+5. `KB.md`
+6. `PROJECT_STATUS.md`
 
-開発方針判断時だけ `CORE.md`、共通運用判断時だけ `SERVER_CORE_PROTOCOL.md`、確認済み判断の照合時だけ `KB.md` を読む。
+`archive/`、`.github/`、`scripts/`は通常読込対象ではない。現在の作業に直接必要なFileだけを限定して読む。
 
-最初からリポジトリ全体を読まない。詳細は `docs/LOAD_SCOPE.md` を正とする。
+## 正本文書
 
-## 正本
-| ファイル | 役割 |
+| File | 役割 |
 |---|---|
-| `README.md` | Server Coreの入口と現行要約 |
-| `docs/LOAD_SCOPE.md` | 最小読込と段階拡張条件 |
-| `CORE.md` | LibralCore開発方法論と5段の正本 |
-| `SERVER_CORE_PROTOCOL.md` | 全Project共通の作業・運用規則 |
-| `KB.md` | 管理者が確定した判断Register |
+| `README.md` | Server Coreの入口、読込順序、現行構成の要約 |
+| `docs/LOAD_SCOPE.md` | AI・作業者が読む範囲と読まない範囲 |
+| `SERVER_CORE_PROTOCOL.md` | 全Project共通の運用規則 |
+| `CORE.md` | LibralCore開発方法論と5段Architecture原則 |
+| `KB.md` | Server Coreで確認済みの知識・判断Register |
 | `PROJECT_STATUS.md` | 現在状態と各Project正本への入口 |
-| `docs/GLOSSARY.md` | 正式名称と表記 |
-| `docs/PROJECT_TEMPLATE.md` | 新規Projectの最小開発構成 |
+| `docs/STRUCTURE.md` | Server Core自身のDirectory構造 |
+| `docs/GLOSSARY.md` | 正式名称、表記、責務境界 |
 | `docs/G_ACE_WORKSPACE.md` | G-ACE Workspaceの正規仕様 |
 
-同じ情報を複数ファイルへ重複記載しない。
+`KB.md`はServer Core内の判断Registerであり、Knowledge Base System本体ではない。KB Systemの設計・実装・状態は対象Repository側の正本文書を正とする。
 
-## 5段階層型モジュラーアーキテクチャ
-開発AIが設計とCodeを組み立てる論理順序は次とする。
+## 現行Repository構成
 
 ```text
-Part
-  ↓
-Feature
-  ↓
-Component
-  ↓
-System
-  ↓
-Application System
+server-core/
+├── README.md
+├── SERVER_CORE_PROTOCOL.md
+├── CORE.md
+├── KB.md
+├── PROJECT_STATUS.md
+├── add-status.sh
+├── .aiignore
+├── .cursorignore
+├── .cursor/
+│   ├── agents -> /home/admin1/.cursor/agents
+│   └── rules/
+│       └── 00_agent_runtime.mdc
+├── docs/
+│   ├── LOAD_SCOPE.md
+│   ├── STRUCTURE.md
+│   ├── GLOSSARY.md
+│   ├── PROJECT_TEMPLATE.md
+│   ├── DEPLOY_RUNBOOK.md
+│   ├── OPERATION_CHECKLIST.md
+│   ├── AUTO_COMMIT.md
+│   ├── GITHUB_FREE_MAX.md
+│   ├── GITHUB_SKILL.md
+│   └── G_ACE_WORKSPACE.md
+├── scripts/
+│   ├── ai-auto-commit.sh
+│   ├── resolve-codex-skill.sh
+│   └── github-skill-path.sh
+├── .github/
+│   ├── workflows/server-core-guard.yml
+│   ├── ISSUE_TEMPLATE/ai-task.yml
+│   ├── pull_request_template.md
+│   └── dependabot.yml
+└── archive/
+    ├── README.md
+    └── isolated/
+        ├── README.md
+        └── 2026-06-26/
+            └── PROJECT_STATUS.before-tgserver-canonical.archived.md
 ```
 
-5段は再利用と局所修正のための論理構造であり、Runtime階層、アプリ接続順序、物理ディレクトリ構造ではない。
+### `add-status.sh`
 
-Moduleは、同一Project内または別Projectで再利用、交換、独立修正しやすいように責務をまとめた開発上の再利用単位である。LibralCoreへの登録や起動・停止を意味しない。
+旧運用からの呼出しを安全に停止する互換Guardである。`PROJECT_STATUS.md`へ追記せず、エラー終了してGitHub commit / PRを作業履歴の正本として案内する。
 
-## AIコンテキスト
-通常変更は次を起点とする。
+### Cursor Runtime
 
-1. 目的と期待結果
-2. 対象責務
-3. 再利用候補
-4. 入力・出力
-5. 直接依存と制約
-6. 関連テスト
+- `.cursor/agents`は共通Agent定義 `/home/admin1/.cursor/agents` への参照である。
+- `.cursor/rules/00_agent_runtime.mdc`はWorkspace固有の読込Guardと優先順位を適用する。
+- `.aiignore`と`.cursorignore`は、`archive/`、`.github/`、`scripts/`を通常Contextから除外する補助設定である。
 
-対象Code、直接依存、関連テストから開始し、責務または影響範囲を特定できない場合だけ段階的に読込範囲を拡張する。
+### GitHub Automation
 
-## 再利用優先順位
-```text
-既存資産をそのまま利用
-  ↓
-設定・引数・型の調整
-  ↓
-薄いAdapter
-  ↓
-共通部分の抽出
-  ↓
-目的を満たさない場合だけ新規実装
-```
+- `.github/workflows/server-core-guard.yml`: 必須File、Load Scope、Secret、表記、Shell構文を確認する軽量CI
+- `.github/dependabot.yml`: GitHub Actions Dependencyを週次確認
+- `.github/pull_request_template.md`: PR確認項目
+- `.github/ISSUE_TEMPLATE/ai-task.yml`: AI作業のGoal、Scope、Guardrailを固定するIssue Template
 
-既存資産を利用しない場合は、複雑化、性能、品質、依存、互換性などの具体的理由を確認する。
+### Script
 
-## Project作成
-新規Projectで一律に必須とするのは、`README.md`、`.gitignore`、実装入口、および必要な場合の値なし `.env.example` だけとする。
+- `scripts/ai-auto-commit.sh`: 差分、`.env`、Secret Pattern、`git diff --check`、Shell構文を確認してcommitし、指定時にpushする
+- `scripts/resolve-codex-skill.sh`: Codex Plugin SkillのVersion非依存Path Resolver
+- `scripts/github-skill-path.sh`: GitHub Plugin Skill用Wrapper
 
-追加文書や追加構造は、開発、再利用、検証、運用コストを実際に下げる場合だけ作る。詳細は `docs/PROJECT_TEMPLATE.md` を正とする。
+## 共通Architecture原則
 
-## Workspace
-標準Workspace:
+全Projectは次の5段を、開発AIが完成物を理解・分解・再利用・再構成するための論理構造として使用する。
+
+1. Part
+2. Feature
+3. Component
+4. System
+5. Application System
+
+5段はRuntime階層、アプリ接続順序、物理Directory構造ではない。Moduleは、同一Project内または別Projectで再利用・交換・独立修正しやすいように責務をまとめた開発上の再利用単位であり、LibralCoreへの登録、起動、停止を意味しない。詳細は`CORE.md`と`SERVER_CORE_PROTOCOL.md`を正とする。
+
+## 標準Workspace
+
+標準Workspaceは次とする。
 
 ```text
 /home/admin1/workspace/G-ACE.code-workspace
 ```
 
-通常Folder:
+通常Folderは次に限定する。
+
 - `/home/admin1/server-core`
 - `/home/admin1/projects`
 
-`/home/admin1/logs`、`/home/admin1/backups`、`/home/admin1/kb`、`/home/admin1/workspace` は通常作業Folderに含めない。
+`/home/admin1/logs`、`/home/admin1/backups`、`/home/admin1/kb`、`/home/admin1/workspace`は通常作業Folderに含めない。
 
-## Project正本入口
+## Project正本
+
+Project固有の構造、仕様、API、環境変数、Test、Deployment、運用状態は各Project側の正本文書を正とする。
+
+主要入口:
+
 - TGserver: `/home/admin1/projects/TGserver`
 - Astera v8: `/home/admin1/projects/astera_v8`
 
-Project固有の構造、仕様、API、環境変数、テスト、デプロイ、運用状態は各Project側の正本を使用する。
+実在Path、Git状態、Docker状態は作業開始時に実環境で確認する。
 
-## GitHubと検証
-- 作業履歴の正本はGitHub commit / PRとする。
-- ファイル変更は差分と検証結果を確認し、意味のある単位でcommit / pushする。
-- mainへの直接pushは、管理者が許可した正本更新または小規模運用文書更新に限る。
+## 作業原則
+
+- 目的 → 設計 → 構造 → 実装 → 検証 → 運用の順序を飛ばさない。
+- 新規Code生成前に、同じ責務を持つ既存の設計、Code、Module、型、Schema、Test、Templateを確認する。
+- 既存資産は、そのまま利用 → 設定・型調整 → 薄いAdapter → 共通部分抽出 → 新規実装の順で判断する。
+- Project構造は各Projectの`STRUCTURE.md`を正とする。
+- 実Fileと正本文書を一致させる。
+- 作業報告や変更履歴を正本文書の本文へ混在させない。
+- 不要・重複・旧版Fileは即削除せず、秘密情報を含まないことを確認して`archive/YYYY-MM-DD/`へ退避する。
+- `.env`、Token、Password、Session、CredentialをGit管理へ含めない。
+- 本番運用はDocker / Docker Composeを基本とする。
+- 本番起動、公開、切替、Deploymentは管理者の明示承認後に行う。
+
+## GitHub運用
+
+- 作業履歴の正本はGitHub commit / PRである。
+- File変更を伴う作業は、差分と検証結果を確認し、意味のある単位でcommit / pushする。
+- 標準手順は`docs/AUTO_COMMIT.md`と`scripts/ai-auto-commit.sh`を正とする。
+- mainへの直接pushは、管理者が明示した正本更新または小規模な運用文書更新に限定する。
 - 実装変更、複数Project変更、高Risk変更はPRを優先する。
-- 本番起動、公開、切替、デプロイは管理者の明示承認後に行う。
 
-検証はプロセス起動、エラーなし、`True`、空配列、HTTP 200だけで合格にしない。具体例または実データで期待結果と回帰を確認する。
+## 状態確認
+
+現在のサーバー状態と主要Project入口は`PROJECT_STATUS.md`を確認する。
+
+`PROJECT_STATUS.md`は作業履歴の保管先ではない。管理者の明示指示がある場合だけ、確認済みの現在状態へ更新する。
 
 ## 最重要
+
 - LibralCoreをRuntimeまたはアプリ連結基盤として扱わない。
-- 既存Application SystemへLibralCore依存を追加しない。
-- 再利用候補を確認せずに同じ責務をゼロから生成しない。
-- 5段を物理構造へ変換しない。
-- Moduleを実行時管理単位として共通定義しない。
-- 同じ情報とCodeを重複管理しない。
-- 期待結果が確認されるまで完了扱いにしない。
+- 既存Application SystemへLibralCore接続・登録・依存を追加しない。
+- 再利用候補を確認せず、同じ責務をゼロから生成しない。
+- 未確認の状態を断定しない。
+- 実行していない処理を完了扱いしない。
+- 未実装機能を実装済みとして扱わない。
+- 記録されていない作業は存在しないものとして扱う。
