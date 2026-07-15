@@ -1,23 +1,32 @@
 # SERVER CORE GLOSSARY
 
 ## 正式表記
-- Server Core: 全Projectに適用する共通統治領域。
-- LibralCore: 再利用、分離、着脱、蓄積、継承を重視する開発思想。
-- Project: 目的を持つ実装・運用単位。Module集合体であることを必須としない。
-- Part: 1つの変更理由を持つ最小責務。
-- Feature: Partを組み合わせ、1つの機能結果を提供する論理単位。
-- Component: Featureをまとめ、明確な入出力境界を持つ論理機能ブロック。
-- System: Componentを制御し、状態または処理フローを管理する論理単位。
-- Application System: Systemを統合し、目的または業務を完結させる最上位の論理構造。
-- Module: Coreが登録、有効化、停止、依存解決、状態確認、交換、更新、復旧を管理するLifecycle単位。5段の階層名ではない。
-- Core: ModuleのLifecycle、依存、公開契約、Health・Readiness、縮退・復旧を管理する領域。
-- Required Module: Application Systemの成立に必要なModule。
-- Optional Module: 停止しても他機能を継続できる追加機能Module。
-- 公開契約: ModuleまたはComponentが外部へ公開するInterface、型、Schema、入出力条件。
+- Server Core: 全Projectに適用する共通の開発・運用統治領域。
+- LibralCore: 開発AIが再利用可能な設計とCodeを効率よく生成・修正するための開発概念、設計方針、開発スタイル。実行時Coreではない。
+- Project: 目的を持つ開発・実装・運用単位。
+- Part: 1責務を持つ最小の再利用可能部品。
+- Feature: 1つ以上のPartを組み合わせ、1つの機能結果を提供する論理単位。
+- Component: 関連Featureをまとめ、明確な入出力と依存境界を持つ論理単位。
+- System: Componentを組み合わせ、まとまった処理、状態、業務領域を成立させる論理単位。
+- Application System: 必要なSystemを統合して利用目的を完結させる完成物。
+- Module: 同一Project内または別Projectで再利用、交換、独立修正しやすいように、1つの目的と責務へまとめた開発上の再利用単位。実行時の登録・起動・停止を意味しない。
+- 再利用候補: 現在の目的と同じ、または調整によって利用可能な既存の設計、Code、Module、型、Schema、テスト、Template。
+- Adapter: 既存資産を変更せず、入出力、型、設定、呼出方式の差だけを吸収する薄い変換境界。
 - Single Source of Truth: 同じ情報を複数箇所へ重複管理せず、1つの正本へ集約する原則。
 - TGserver: Telegramログの受付、仕分け、配送、保存制御、検索を担当するProject。
 - V8: TGserver検証完了後にログ連携する対象Projectまたは実行系。
 - KB: 確認済み知識を将来蓄積する領域。現時点では未実装。
+
+## LibralCoreの禁止解釈
+LibralCoreを次の意味で使用しない。
+
+- アプリ接続基盤
+- 共通Runtime
+- Plugin HostまたはPlugin Framework
+- Moduleの登録・起動・停止機構
+- Service Mesh、API Gateway、Message Bus、Orchestrator
+- 全Application Systemの中央実行Core
+- 各Application Systemへ必須導入するSDKまたは依存パッケージ
 
 ## 5段階層型モジュラーアーキテクチャ
 正式順序は次とする。
@@ -34,12 +43,12 @@ System
 Application System
 ```
 
-5段は論理分類であり、ファイル、ディレクトリ、パッケージ、Module、リポジトリ、プロセス、コンテナ、デプロイ単位とは一対一対応させない。
+5段は、開発AIが完成物を理解、分解、再利用、再構成するための論理構造である。Runtime階層、アプリ接続順序、物理構造ではない。
 
 ## 表記ルール
 - 最上位表記は必ず `Application System` とする。
 - `ApplicationSystems`、`Application Systems`、`Application`、`App` を5段の最上位名称として使用しない。
-- `Module` と `Core` は固有の設計用語として英語表記を維持する。
+- `LibralCore`、`Module`、`Part`、`Feature`、`Component`、`System`、`Application System` は固有の設計用語として英語表記を維持する。
 - `TGserver` を正式表記とする。
 - `TGServer` は旧表記として扱い、新規文書では使わない。
 - `GitHub` を正式表記とする。
