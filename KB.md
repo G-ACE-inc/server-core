@@ -12,6 +12,17 @@
 
 ## 確認済み判断
 
+### LibralCoreの正式定義
+- LibralCoreは、開発AIが再利用可能な設計とCodeを効率よく生成・修正するための開発概念、設計方針、開発スタイルである。
+- LibralCoreは、アプリ接続基盤、共通Runtime、Plugin Framework、Service Mesh、API Gateway、Orchestratorではない。
+- 各Application Systemは単独で成立し、LibralCoreへの接続、登録、常駐、通信、依存を前提としない。
+- LibralCoreの目的は、既存資産の再利用によって開発時間、AIコンテキスト、Token、Code生成、修正、検証コストを削減し、効果を最大化することである。
+- 5段 `Part → Feature → Component → System → Application System` は、開発AIが完成物を理解、分解、再利用、再構成するための論理構造であり、Runtime階層やアプリ接続順序ではない。
+- Moduleは、同一Project内または別Projectで再利用、交換、独立修正しやすいように責務をまとめた開発上の再利用単位である。
+- Moduleは、Coreへの登録、起動、停止、Load、Unload、Required、Optional、Health、Readiness、縮退、復旧を共通前提としない。
+- 個別Projectが実行時Module機構を必要とする場合は、そのProject固有設計として扱い、LibralCore共通原則へ混在させない。
+- 既存Application SystemへLibralCoreを接続または依存させる作業は行わず、開発時の設計、Code生成、再利用、局所修正の判断へ適用する。
+
 ### 管理者権限
 - ルールの最終決定者は管理者である。
 - AIは管理者の明示指示なしに正本を変更しない。
@@ -65,3 +76,4 @@
 - 確定済みDocker方針をCODEXの判断待ちとしない。
 - 状態、履歴、仕様を混同しない。
 - 生ログ、cache、索引、知識を混同しない。
+- 開発方法論とRuntime Architectureを混同しない。
