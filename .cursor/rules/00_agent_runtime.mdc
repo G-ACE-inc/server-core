@@ -6,31 +6,30 @@ alwaysApply: true
 # Workspace Runtime
 
 ## 前提
-- 言語方針・作業者表示・サブエージェント切替は user rules (Agent Router) を正とする。ここでは再定義しない。
+- 言語方針・作業者表示・サブエージェント切替は user rules (Agent Router) を正とする。
 
-## 実行ガード
-- 最初に `README.md`、`docs/LOAD_SCOPE.md`、指定対象だけを読む
-- `SERVER_CORE_PROTOCOL.md`、`CORE.md`、`KB.md`、`PROJECT_STATUS.md` は現在作業に必要なものだけ読む
-- 対象Code、直接依存、関連テストから開始する
-- 責務不明、再利用可否不明、対象外テスト失敗、循環依存、複数Module影響が確認された場合だけ読込範囲を1段階ずつ拡張する
-- 既定でリポジトリ全体をスキャンしない
-- .env / secrets / node_modules / dist / build / .next / archive / logs / dumps は明示要求または直接必要性がない限り読まない
-- ユーザーにCode判断、差分確認、ファイル選定、エラー診断、実装方式判断を求めず、現物から判断する
+## 実行手順
+- `README.md`、`docs/LOAD_SCOPE.md`、指定対象から開始する
+- 現在作業に必要な正本を読む
+- 対象Code、直接依存、関連テストを確認する
+- 目的、期待結果、対象責務、再利用候補、入力・出力、制約を確定する
+- 読込範囲は、対象 → 境界 → 再利用単位 → Systemの順で必要な段階まで拡張する
+- .env / secrets / node_modules / dist / build / .next / archive / logs / dumps は、作業に直接必要な対象だけを読む
+- Code判断、差分確認、ファイル選定、エラー診断、実装方式は現物から判断する
 
 ## Architecture Guard
 - LibralCoreは再利用によって開発時間、AIコンテキスト、Token、実装・修正・検証コストを削減する開発方法論とする
-- LibralCoreは開発時の設計、Code生成、再利用、局所修正へ適用し、各Application Systemの実行構造には関与しない
-- 5段は `Part → Feature → Component → System → Application System` の論理分類とする
-- 5段をファイル、ディレクトリ、パッケージ、Moduleへ機械的に変換しない
+- 5段は `Part → Feature → Component → System → Application System` の論理構造として使用する
+- 物理構造は対象Projectの規模、再利用範囲、変更範囲、依存、検証、運用上の実益で決定する
 - Moduleは再利用、交換、独立修正しやすい開発上の責務単位とする
 - 新規Code生成前に既存の設計、Code、Module、型、Schema、テスト、Templateを確認する
 - 既存資産は、そのまま利用 → 設定・型調整 → 薄いAdapter → 共通部分抽出 → 新規実装の順で判断する
-- 既存構造への統合を優先し、分類名を理由に新規ファイルを作らない
-- 実行成功ではなく、期待出力、状態、主要失敗条件、回帰結果で合否を決める
+- 既存構造への統合を優先する
+- 期待出力、状態、主要失敗条件、回帰結果で合否を決める
 
 ## 優先順位
 - 開発方法論とArchitecture判断は `CORE.md` を正とする
 - 共通運用判断は `SERVER_CORE_PROTOCOL.md` を正とする
 - 読込範囲は `docs/LOAD_SCOPE.md` を正とする
-- repo-local 仕様がServer Core共通規則より具体的で、両者が矛盾しない場合はrepo-localを優先する
-- サブエージェント出力も同じGuardに従う
+- repo-local仕様がServer Core共通規則より具体的で、両者が整合する場合はrepo-localを優先する
+- サブエージェント出力も同じ実行手順に従う
