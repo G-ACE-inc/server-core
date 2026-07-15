@@ -44,6 +44,31 @@ jobs:
           test -x scripts/resolve-codex-skill.sh
           test -x scripts/github-skill-path.sh
 
+      - name: LibralCore development-method contract
+        run: |
+          set -euo pipefail
+          grep -q '開発AIが再利用可能な設計とCodeを効率よく生成・修正するための開発概念' CORE.md
+          grep -q '開発時にのみ適用し、各Application Systemの実行構造には関与しない' CORE.md
+          grep -q '開発上の再利用単位' CORE.md
+          grep -q '既存資産をそのまま利用' CORE.md
+          grep -q '開発時間、AIコンテキスト、Token' CORE.md
+          grep -q 'LibralCoreの正式定義' KB.md
+
+      - name: No runtime-core architecture assumptions
+        run: |
+          set -euo pipefail
+          hits="$(
+            git grep -nE \
+              'Moduleは、Coreが|CoreがLifecycle|Required Module|Optional Module|Health・Readiness管理|Module登録情報|Lifecycleと障害時動作|Coreの責務は次に限定|必要な処理Routing|アプリ接続基盤|共通Runtime|Module Registry|Plugin Host|中央Core' \
+              -- '*.md' '*.mdc' '*.yml' '*.yaml' \
+              ':!archive/**' \
+              ':!.github/workflows/server-core-guard.yml' || true
+          )"
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            exit 1
+          fi
+
       - name: Five-stage architecture contract
         run: |
           set -euo pipefail
@@ -86,11 +111,12 @@ jobs:
         run: |
           set -euo pipefail
           grep -q '最小開始範囲' docs/LOAD_SCOPE.md
-          grep -q 'Level 1: 局所' docs/LOAD_SCOPE.md
+          grep -q 'Level 1: 対象' docs/LOAD_SCOPE.md
           grep -q 'Level 2: 境界' docs/LOAD_SCOPE.md
-          grep -q 'Level 3: Module' docs/LOAD_SCOPE.md
+          grep -q 'Level 3: 再利用単位' docs/LOAD_SCOPE.md
           grep -q 'Level 4: System' docs/LOAD_SCOPE.md
           grep -q '読込範囲を拡張する条件' docs/LOAD_SCOPE.md
+          grep -q '再利用探索' docs/LOAD_SCOPE.md
           grep -q 'リポジトリ全体を既定でスキャン' docs/LOAD_SCOPE.md
           grep -q 'archive/' docs/LOAD_SCOPE.md
           grep -q '.github/' docs/LOAD_SCOPE.md
@@ -99,10 +125,12 @@ jobs:
       - name: Minimum project template
         run: |
           set -euo pipefail
+          grep -q '開発開始前の確認' docs/PROJECT_TEMPLATE.md
           grep -q '最小必須構成' docs/PROJECT_TEMPLATE.md
           grep -q '一律作成してはならない' docs/PROJECT_TEMPLATE.md
           grep -q 'Single Source of Truth' docs/PROJECT_TEMPLATE.md
           grep -q 'Module化判定' docs/PROJECT_TEMPLATE.md
+          grep -q '再利用候補を確認せず' docs/PROJECT_TEMPLATE.md
           grep -q 'HTTP 200だけでは合格にしない' docs/PROJECT_TEMPLATE.md
 
       - name: No tracked env files
