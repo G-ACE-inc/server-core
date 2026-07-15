@@ -6,7 +6,7 @@
 
 本Repository自体はApplicationや業務Systemではない。各Projectの実装詳細を集約せず、全Projectへ共通適用する規則と、各正本への入口だけを保持する。
 
-LibralCoreは、開発AIが再利用可能な設計とCodeを効率よく生成・修正するための開発概念、設計方針、開発スタイルである。アプリ接続基盤、共通Runtime、Plugin Framework、Module登録・起動・停止機構ではなく、各Application Systemへの接続・依存を前提としない。
+LibralCoreは、開発AIが再利用可能な設計とCodeを効率よく生成・修正するための開発概念、設計方針、開発スタイルである。開発時にのみ適用し、各Application Systemの実行構造には関与しない。
 
 ## 管理者と変更権限
 
@@ -119,7 +119,7 @@ server-core/
 4. System
 5. Application System
 
-5段はRuntime階層、アプリ接続順序、物理Directory構造ではない。Moduleは、同一Project内または別Projectで再利用・交換・独立修正しやすいように責務をまとめた開発上の再利用単位であり、LibralCoreへの登録、起動、停止を意味しない。詳細は`CORE.md`と`SERVER_CORE_PROTOCOL.md`を正とする。
+5段は各Application Systemの実行構造や物理Directory構造を指定しない。Moduleは、同一Project内または別Projectで再利用・交換・独立修正しやすいように責務をまとめた開発上の再利用単位である。詳細は`CORE.md`と`SERVER_CORE_PROTOCOL.md`を正とする。
 
 ## 標準Workspace
 
@@ -176,8 +176,7 @@ Project固有の構造、仕様、API、環境変数、Test、Deployment、運�
 
 ## 最重要
 
-- LibralCoreをRuntimeまたはアプリ連結基盤として扱わない。
-- 既存Application SystemへLibralCore接続・登録・依存を追加しない。
+- LibralCoreは開発時の再利用、Code生成、局所修正の判断にだけ使用する。
 - 再利用候補を確認せず、同じ責務をゼロから生成しない。
 - 未確認の状態を断定しない。
 - 実行していない処理を完了扱いしない。
