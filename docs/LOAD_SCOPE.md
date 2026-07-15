@@ -3,7 +3,7 @@
 ## 目的
 AIが必要な情報だけを段階的に読み、古い履歴、対象外Code、補助スクリプトを現在仕様として誤読することと、不要なコンテキスト・Token消費を防ぐ。
 
-LibralCoreは開発方法論であり、共通Runtime、中央Core、アプリ接続基盤ではない。Application System全体や接続基盤を既定で読ませない。
+LibralCoreは開発時の設計、Code生成、再利用、局所修正へ適用する。Application System全体を既定で読ませない。
 
 ## 最小開始範囲
 作業開始時に自動で読むのは次に限定する。
@@ -119,7 +119,6 @@ LibralCoreは開発方法論であり、共通Runtime、中央Core、アプリ�
 - 旧履歴確認では `archive/` 内の該当ファイルだけを読む。
 
 ## 禁止
-- LibralCore接続用の中央Core、Runtime、Registry、Plugin Hostを探すこと
 - Application System全体を既定でスキャンすること
 - リポジトリ全体を既定でスキャンすること
 - archive内の情報を現在状態として扱うこと
