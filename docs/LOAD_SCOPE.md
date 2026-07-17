@@ -26,6 +26,7 @@ AIが必要な情報だけを段階的に読み、コンテキストとToken消�
 - GitHub無料枠設定: `docs/GITHUB_FREE_MAX.md`
 - GitHub skill確認: `docs/GITHUB_SKILL.md`
 - G-ACE Workspace確認: `docs/G_ACE_WORKSPACE.md`
+- Cloudflare Tunnel運用（Astera v8）: `docs/CLOUDFLARE_OPERATIONS.md`、`operations/cloudflare.json`
 
 同じ目的の情報がCode、Manifest、文書へ重複している場合は、実際に利用される型、Schema、テスト、設定、単一Manifest、正本文書の順で正本を判断する。
 
