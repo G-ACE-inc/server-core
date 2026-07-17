@@ -87,19 +87,24 @@ GPG 秘密鍵・GPG-Core ライブラリは cloudflared Container にマウン�
 
 ## 9. Preview 運用
 
-1. 管理者が Cloudflare ダッシュボードで Tunnel `astera-v8-prod` を作成する（`preview_apply` 承認）
-2. Tunnel Token を取得し、`CLOUDFLARE_TUNNEL_TOKEN` として `.env` に追記する
-3. `secure_up.sh --profile cloudflare --secret CLOUDFLARE_TUNNEL_TOKEN:CLOUDFLARE_TUNNEL_TOKEN_FILE:astera_v8_cloudflare_tunnel_token <project-path>` を実行する
-4. cloudflare Profile が起動する
-5. `cloudflare_ops.py verify` で疎通を確認する
-6. `preview.asterav8.jp` でアクセスを確認する
+承認 Gate: Gate7〜Gate11 を順番に通過すること。
+
+1. 管理者が Cloudflare ダッシュボードで Tunnel `astera-v8-prod` を作成する（`Gate7:Tunnelだけ作成` 承認後）
+2. Tunnel Token を取得し、`astera_v8/.env` に `CLOUDFLARE_TUNNEL_TOKEN=<token>` を追記する（平文 `.env` は一時的な入力専用。作業後は必ず削除する）
+3. `gpg --encrypt --recipient <key-id> --output astera_v8/.env.gpg astera_v8/.env` で暗号化し、平文 `.env` を削除する（`Gate8:Token暗号化・Runtime-Secret生成` 承認後）
+4. Preview 用 Route と Access を作成する（`Gate9:Preview-Route・Access作成` 承認後）
+5. `secure_up.sh --profile cloudflare --secret CLOUDFLARE_TUNNEL_TOKEN:CLOUDFLARE_TUNNEL_TOKEN_FILE:astera_v8_cloudflare_tunnel_token <project-path>` を実行して cloudflare Profile を起動する（`Gate10:Docker起動` 承認後）
+6. `cloudflare_ops.py verify` で疎通を確認する
+7. `preview.asterav8.jp` で実利用・障害復旧を検証する（`Gate11:Preview実利用・障害復旧検証` 承認後）
 
 ## 10. 本番昇格
 
-1. Preview 運用で問題がないことを確認する
-2. 管理者が `production_apply` を承認する
+承認 Gate: Gate12〜Gate13 を順番に通過すること。
+
+1. Gate11 の Preview 実利用・障害復旧検証が完了していることを確認する
+2. 管理者が `Gate12:api.asterav8.jp本番公開` を承認する
 3. DNS に `api.asterav8.jp` CNAME を追加する
-4. `/signup` のブロックを解除するかを管理者が判断する
+4. `/signup` の公開可否を管理者が個別判断する（`Gate13:/signup公開可否の個別判断`）
 5. `cloudflare_ops.py verify` で本番疎通を確認する
 
 ## 11. 通常運用
