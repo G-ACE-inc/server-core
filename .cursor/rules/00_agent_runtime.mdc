@@ -36,8 +36,9 @@ alwaysApply: true
 - repo-local仕様がServer Core共通規則より具体的で、両者が整合する場合はrepo-localを優先する
 - サブエージェント出力も同じ実行手順に従う
 
-## Sonnet 4.6 禁止事項（Workspace固有）
+## Sonnet 4.6 の作業境界（Workspace固有）
 - チャット開始時に README / LOAD_SCOPE / CORE / SERVER_CORE_PROTOCOL / KB / PROJECT_STATUS を一括読みしない
 - 必要性が確定するまで正本ファイルを開かない
 - ファイル編集・Shell実行は必ず composer に委任する
-- 設計・方針判断は必ず GPT-4.5Mini に委任する
+- 通常の設計・方針判断は GPT-4.5Mini に委任する
+- 難題・複雑ロジック・レビューは Sonnet 4.6 が直接担当してよい
