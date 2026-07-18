@@ -80,6 +80,7 @@ Workspaceには、次のServer Core情報を設定として持たせる。
 
 - TGserver: `/home/admin1/projects/TGserver`
 - Astera v8: `/home/admin1/projects/astera_v8`
+- Astera App: `/home/admin1/projects/astera-app`
 
 Astera v8の詳細正本:
 
@@ -92,6 +93,7 @@ Astera v8の詳細正本:
 ## Active runtime containers
 `codex.serverCore.activeRuntimeContainers` は、現在の主要稼働コンテナ確認ヒントである。
 
+- `astera-app`
 - `astera-v8`
 - `tgserver-tgs-1`
 - `tgserver-conversation-collector-1`

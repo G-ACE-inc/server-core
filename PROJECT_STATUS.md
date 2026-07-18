@@ -71,6 +71,17 @@
 - 検証済み: `npm run verify` 相当のテスト、smoke、`GET /healthz`、`POST /process`
 - 注意: Server Core上ではAstera v8実装詳細を正本管理しない。詳細はAstera v8側の正本文書を確認する。
 
+## Astera App (Frontend)
+- 正式名称: Astera App
+- 正本パス: `/home/admin1/projects/astera-app`
+- リポジトリ: `https://github.com/seigo-gace/astera-app`
+- 状態: 実装済み / Docker起動済み / HTTP疎通確認済み（8080）
+- 稼働確認済みコンテナ: `astera-app`
+- Docker方針: Docker / Docker Composeで確定済み
+- 構成: React + TypeScript + Vite → nginx:alpine 静的配信
+- API接続先: `https://api.asterav8.jp`
+- 正本ファイル: `Dockerfile`, `docker-compose.yml`, `nginx.conf`
+
 ## Astera v8 詳細正本
 - `/home/admin1/projects/astera_v8/STRUCTURE.md`
 - `/home/admin1/projects/astera_v8/README.md`
