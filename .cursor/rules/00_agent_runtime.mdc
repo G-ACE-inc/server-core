@@ -35,3 +35,9 @@ alwaysApply: true
 - 読込範囲は `docs/LOAD_SCOPE.md` を正とする
 - repo-local仕様がServer Core共通規則より具体的で、両者が整合する場合はrepo-localを優先する
 - サブエージェント出力も同じ実行手順に従う
+
+## Sonnet 4.6 禁止事項（Workspace固有）
+- チャット開始時に README / LOAD_SCOPE / CORE / SERVER_CORE_PROTOCOL / KB / PROJECT_STATUS を一括読みしない
+- 必要性が確定するまで正本ファイルを開かない
+- ファイル編集・Shell実行は必ず composer に委任する
+- 設計・方針判断は必ず GPT-4.5Mini に委任する
