@@ -63,8 +63,9 @@
 - 正式名称: Astera v8
 - 正本パス: `/home/admin1/projects/astera_v8`
 - 状態: 実装済み / Docker起動済み / API疎通確認済み
-- 稼働確認済みコンテナ: `astera-v8`
+- 稼働確認済みコンテナ: `astera-v8-evidence-main`, `astera-v8-evidence-search`, `astera-v8-evaluator`
 - Docker方針: Docker / Docker Composeで確定済み
+- 起動ファイル: `docker-compose.evidence.yml`
 - ログ連携: TGserver `P002` へ送信
 - ログ一時状態: `/home/admin1/logs/astera-v8/outbox`
 - 現在仕様: 自動Domain Router / Template Lens、5本柱処理、8段Markdown出力、事実確認・危機察知エビデンス出力
