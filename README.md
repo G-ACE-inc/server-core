@@ -102,6 +102,7 @@ Project固有の構造、仕様、API、環境変数、テスト、デプロイ�
 
 ## GitHubと検証
 - 作業履歴の正本はGitHub commit / PRとする。
+- ファイル変更を伴う作業完了時は、管理者が明示禁止した場合を除き、`SERVER_CORE_PROTOCOL.md` Git 節に従い commit / push まで行う。commit / push なしで終了した作業は未完了として扱う。
 - ファイル変更は差分と検証結果を確認し、意味のある単位でcommit / pushする。
 - mainへの直接pushは、管理者が許可した正本更新または小規模運用文書更新に使用する。
 - 実装変更、複数Project変更、高Risk変更はPRを使用する。

@@ -9,6 +9,7 @@ alwaysApply: true
 - 言語方針・作業者表示・サブエージェント切替は user rules (Agent Router) を正とする。
 
 ## 実行手順（最小コンテキスト）
+- チャット冒頭から、常駐Serverの実装・検証・起動は docker compose / Dockerfile を正とする。ホストの npm start / node / python / pm2 / systemctl start で常駐させない。
 - 作業開始時は、ユーザーがこのメッセージで明示した対象ファイル・対象Project・対象Codeだけを読む
 - チャット開始時に読むのはユーザーが指定した対象のみとし、正本一覧を一括で読まない
 - `README.md`、`docs/LOAD_SCOPE.md`、`CORE.md`、`SERVER_CORE_PROTOCOL.md`、`KB.md`、`PROJECT_STATUS.md` などの正本は、必要性が確定した時点で必要なものだけを読む
@@ -18,6 +19,13 @@ alwaysApply: true
 - 読込範囲は、対象 → 境界 → 再利用単位 → Systemの順で必要な段階まで拡張する
 - .env / secrets / node_modules / dist / build / .next / archive / logs / dumps は、作業に直接必要な対象だけを読む
 - Code判断、差分確認、ファイル選定、エラー診断、実装方式は現物から判断する
+
+## 作業完了とGit（必須）
+- ファイル変更を伴う作業完了時は、管理者が明示的に禁止した場合を除き、必ず commit / push まで行う。commit / push なしで終了した作業は未完了として扱う。
+- README.md は新規作成しない。ただし既存 README の該当節は、作業内容に応じてこまめに更新する。
+- 管理者が明示禁止したときだけ commit / push を行わない。
+- `SERVER_CORE_PROTOCOL.md` の Git 節を正とする。Cursor の「依頼時のみ commit」より、このワークスペースでは PROTOCOL を優先する。
+- composer は作業完了時に `scripts/ai-auto-commit.sh --push` を実行する。無ければ同等の status / diff / log 確認のうえ秘密を除いて commit / push する。
 
 ## Architecture Guard
 - LibralCoreは再利用によって開発時間、AIコンテキスト、Token、実装・修正・検証コストを削減する開発方法論とする
@@ -42,3 +50,4 @@ alwaysApply: true
 - ファイル編集・Shell実行は必ず composer に委任する
 - 通常の設計・方針判断は GPT-4.5Mini に委任する
 - 難題・複雑ロジック・レビューは Sonnet 4.6 が直接担当してよい
+- 常駐起動・検証は docker compose / Dockerfile を正とし、ホストの npm start / node / systemctl start で常駐させない。既存稼働中プロセスは止めず、衝突時は別ポートか別 profile で並行起動する。

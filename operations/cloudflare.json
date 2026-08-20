@@ -6,7 +6,7 @@
   "tunnel_name": "astera-v8-prod",
   "preview_hostname": "preview.asterav8.jp",
   "production_hostname": "api.asterav8.jp",
-  "origin_url": "http://127.0.0.1:7373",
+  "origin_url": "http://127.0.0.1:7375",
   "metrics_url": "http://127.0.0.1:20241/metrics",
   "compose_profile": "cloudflare",
   "compose_service": "astera-v8-cloudflared",

@@ -1,6 +1,6 @@
 # CURRENT SERVER STATUS
 
-状態確認日: 2026-07-09
+状態確認日: 2026-08-20
 
 確認範囲: server-core / TGserver正本パス / Workspace入口 / Docker稼働状況
 
@@ -15,7 +15,7 @@
 - 配置先: `/home/admin1/server-core`
 - 用途: 全Project共通の統治領域
 - 更新権限: 管理者の明示指示がある場合のみ
-- 作業履歴正本: GitHub commit / PR
+- 作業履歴正本: GitHub commit / PR（作業完了時は `SERVER_CORE_PROTOCOL.md` Git 節に従い commit / push 必須）
 - 構造正本: `/home/admin1/server-core/docs/STRUCTURE.md`
 
 ## Workspace

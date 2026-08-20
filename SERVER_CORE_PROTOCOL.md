@@ -232,7 +232,7 @@ Astera v8は `/home/admin1/projects/astera_v8` に配置する。
 未送信ログ一時状態は `/home/admin1/logs/astera-v8/outbox` だけに置き、TGserverの2xx受領後に削除する。
 
 ## Docker
-本番運用はDocker / Docker Composeに統一する。
+本番運用の正規起動経路は Docker / Docker Compose のみとする。Docker は必須である。
 
 本番常駐で次を禁止する。
 - node直接常駐
@@ -241,6 +241,10 @@ Astera v8は `/home/admin1/projects/astera_v8` に配置する。
 - nohup
 - screen常駐
 - tmux常駐
+
+ホスト常駐は例外ではなく禁止する。
+
+README、package.json scripts、start.sh、運用手順、CI など、どこから起動しても本番常駐は Docker Compose に寄せる。
 
 短時間の確認、修正、検証用スクリプトは本番常駐と区別する。
 
