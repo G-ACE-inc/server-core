@@ -53,6 +53,8 @@ Workspaceには、次のServer Core情報を設定として持たせる。
 ## Workspace shared secrets
 この Workspace の Hugging Face 利用は各Project実装ではなく、Vault 既存 `POST /internal/v1/actions/http` 経由とする。正本は `operations/huggingface.json`。Secret id は `hf-token`、consumer は `g-ace-workspace`。Token を読み出さない。Vault が Header 注入する。投入は既存 `POST /internal/v1/secrets`。投入スクリプト追加禁止。GPG-Core は使わない。
 
+Cloudflare Account API も同様。正本は `operations/cloudflare-account.json`。Secret id は `cf-account-api`。利用は Vault `POST /internal/v1/actions/http`、投入は既存 `POST /internal/v1/secrets`。Tunnel 契約 `operations/cloudflare.json` とは別。スクリプト追加禁止。GPG-Core は使わない。
+
 ## Workspace rule
 `codex.serverCore.workspaceRule` は次を示す。
 
