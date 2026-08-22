@@ -55,6 +55,8 @@ Workspaceには、次のServer Core情報を設定として持たせる。
 
 Cloudflare Account API も同様。正本は `operations/cloudflare-account.json`。Secret id は `cf-account-api`。利用は Vault `POST /internal/v1/actions/http`、投入は既存 `POST /internal/v1/secrets`。Tunnel 契約 `operations/cloudflare.json` とは別。スクリプト追加禁止。GPG-Core は使わない。
 
+使用時の手順は `docs/WORKSPACE_SHARED_SECRETS.md` を正とする。
+
 ## Workspace rule
 `codex.serverCore.workspaceRule` は次を示す。
 
