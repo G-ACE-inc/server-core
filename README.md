@@ -38,6 +38,7 @@ Architecture判断時は `CORE.md`、共通運用判断時は `SERVER_CORE_PROTO
 | `docs/G_ACE_WORKSPACE.md` | G-ACE Workspaceの正規仕様 |
 | `docs/CLOUDFLARE_OPERATIONS.md` | Astera v8 Cloudflare Tunnel統合設計・実運用正本 |
 | `operations/cloudflare.json` | Astera v8 Cloudflare運用定義（認証情報なし） |
+| `operations/huggingface.json` | Hugging Face Access Token 契約（認証情報なし、workspace共有Secret契約） |
 
 同じ情報は1つの正本へ集約する。Architecture定義は `CORE.md`、正式表記は `docs/GLOSSARY.md` を正とする。
 
