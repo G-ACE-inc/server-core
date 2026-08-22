@@ -51,7 +51,7 @@ Workspaceには、次のServer Core情報を設定として持たせる。
 これらはVS Code標準機能ではなく、AI・作業者向けの明示的な運用ヒントである。
 
 ## Workspace shared secrets
-Hugging Face Access Token は workspace 全体の共有Secret契約である。正本は `operations/huggingface.json` にあり、実値は server-core に置かない。各Projectは独自 helper を増やさない。Runtime 化は GPG-Core が担い、キーは `HF_TOKEN_FILE` を優先し `HF_TOKEN` を代替とする。
+Hugging Face Access Token は workspace 全体の共有Secret契約である。正本は `operations/huggingface.json` にあり、実値は server-core に置かない。秘密管理は Libral Vault（`/home/admin1/projects/libral-vault`）に統一し、Secret id は `hf-token` である。取得は Vault の既存 `useSecret` を用い、平文 Secret File は作らない。各Projectは独自 helper を増やさない。GPG-Core は使わない。
 
 ## Workspace rule
 `codex.serverCore.workspaceRule` は次を示す。

@@ -2,8 +2,7 @@
   "schema_version": "1.0",
   "scope": "workspace",
   "provider": "huggingface",
-  "secret_provider_path": "/home/admin1/projects/GPG-Core",
-  "runtime_secret_environment_name": "HF_TOKEN_FILE",
-  "fallback_environment_name": "HF_TOKEN",
-  "container_secret_path": "/run/secrets/hf_token"
+  "secret_provider": "libral-vault",
+  "secret_provider_path": "/home/admin1/projects/libral-vault",
+  "secret_id": "hf-token"
 }
