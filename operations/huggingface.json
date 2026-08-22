@@ -4,5 +4,13 @@
   "provider": "huggingface",
   "secret_provider": "libral-vault",
   "secret_provider_path": "/home/admin1/projects/libral-vault",
-  "secret_id": "hf-token"
+  "vault_origin": "http://127.0.0.1:8791",
+  "store_path": "/internal/v1/secrets",
+  "use_path": "/internal/v1/actions/http",
+  "secret_id": "hf-token",
+  "consumer": "g-ace-workspace",
+  "allowed_consumers": ["g-ace-workspace"],
+  "allowlist_origin": "https://huggingface.co",
+  "secret_header": "authorization",
+  "secret_prefix": "Bearer "
 }
