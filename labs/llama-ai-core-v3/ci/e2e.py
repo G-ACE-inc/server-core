@@ -88,9 +88,15 @@ def main():
     if r1[0]!=200 or r2[0]!=200: fail(f'first_two_failed:{r1[0]},{r2[0]}')
     if st3!=429: fail(f'third_expected_429_got_{st3}:{out3}')
 
-    st,metrics=req('GET',BASE+'/metrics',KEY)
-    if st!=200 or not isinstance(metrics,str) or not metrics.strip(): fail('metrics')
+    metrics_status=None; metrics=None
+    for _ in range(30):
+        metrics_status,metrics=req('GET',BASE+'/metrics',KEY)
+        if metrics_status==200 and isinstance(metrics,str) and metrics.strip(): break
+        time.sleep(1)
+    else:
+        fail(f'metrics_not_ready:status={metrics_status}:body={metrics!r}')
+
     print('REAL_LLAMA_SWAP_CI_E2E=PASS')
-    print(json.dumps({'roles':len(ROLE_TO_MODEL),'third_concurrent_status':st3,'scout_thinking':False,'diagnoser_thinking':True}))
+    print(json.dumps({'roles':len(ROLE_TO_MODEL),'third_concurrent_status':st3,'scout_thinking':False,'diagnoser_thinking':True,'metrics_ready':True}))
 
 if __name__=='__main__': main()
