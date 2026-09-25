@@ -1,0 +1,61 @@
+data_dir: /var/lib/vector
+sources:
+  ai_syslog:
+    type: syslog
+    address: 127.0.0.1:15140
+    mode: tcp
+    max_length: 65536
+transforms:
+  tgserver_envelope:
+    type: remap
+    inputs: [ai_syslog]
+    source: |
+      raw = to_string(.message) ?? ""
+      component = to_string(.appname) ?? to_string(.component_id) ?? "ai-core"
+      ts = to_timestamp(.timestamp) ?? now()
+      sev = downcase(to_string(.severity) ?? "info")
+      if sev == "emerg" || sev == "alert" || sev == "crit" || sev == "err" || sev == "error" {
+        sev = "error"
+      } else if sev == "warning" || sev == "warn" {
+        sev = "warn"
+      } else if sev == "debug" {
+        sev = "debug"
+      } else if sev == "trace" {
+        sev = "trace"
+      } else {
+        sev = "info"
+      }
+      safe = redact(raw, filters: [
+        r'(?i)authorization\s*[:=]\s*bearer\s+[^\s,;]+',
+        r'(?i)(api[_-]?key|token|secret|password)\s*[:=]\s*[^\s,;]+',
+        r'(?i)sk-[A-Za-z0-9_\-+/=]{12,}'
+      ])
+      safe = slice(safe, 0, 4000) ?? safe
+      payload = {"component": component, "text": safe, "source": "ai-core-system-log"}
+      . = {
+        "project_id": "P004",
+        "severity": sev,
+        "timestamp": format_timestamp!(ts, format: "%+"),
+        "hint": component,
+        "message": encode_json(payload)
+      }
+sinks:
+  tgserver:
+    type: http
+    inputs: [tgserver_envelope]
+    uri: http://127.0.0.1:3000/ingest
+    method: post
+    encoding:
+      codec: json
+    framing:
+      method: bytes
+    batch:
+      max_events: 1
+      timeout_secs: 0.2
+    buffer:
+      type: disk
+      max_size: 268435488
+      when_full: block
+    healthcheck:
+      enabled: true
+      uri: http://127.0.0.1:3000/health
