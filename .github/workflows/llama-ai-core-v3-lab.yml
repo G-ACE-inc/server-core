@@ -1,0 +1,163 @@
+name: llama-ai-core-v3-lab
+
+on:
+  push:
+    branches: ["lab/llama-ai-core-v3-20260925"]
+    paths:
+      - "labs/llama-ai-core-v3/**"
+      - ".github/workflows/llama-ai-core-v3-lab.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-runtime-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: labs/llama-ai-core-v3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start four OpenAI-compatible mock llama backends
+        run: |
+          set -euo pipefail
+          python3 ci/mock_llama_server.py --port 18081 --model-id granite-test >/tmp/granite.log 2>&1 & echo $! >> /tmp/ai-core-pids
+          python3 ci/mock_llama_server.py --port 18082 --model-id qwen3-test >/tmp/qwen3.log 2>&1 & echo $! >> /tmp/ai-core-pids
+          python3 ci/mock_llama_server.py --port 18083 --model-id ministral-test >/tmp/ministral.log 2>&1 & echo $! >> /tmp/ai-core-pids
+          python3 ci/mock_llama_server.py --port 18084 --model-id coder-test >/tmp/coder.log 2>&1 & echo $! >> /tmp/ai-core-pids
+          for p in 18081 18082 18083 18084; do
+            for i in $(seq 1 100); do curl -fsS "http://127.0.0.1:${p}/health" >/dev/null && break; sleep .1; done
+            curl -fsS "http://127.0.0.1:${p}/health"
+          done
+
+      - name: Build pinned real llama-swap v257 image
+        run: |
+          set -euo pipefail
+          docker build --pull -t ai-core-llama-swap:ci -f Dockerfile.llama-swap .
+          docker run --rm ai-core-llama-swap:ci -version
+
+      - name: Validate exact llama-swap configuration with real binary
+        env:
+          LLAMA_SWAP_API_KEY: ci-test-key
+        run: |
+          set -euo pipefail
+          docker run --rm --network host \
+            -e LLAMA_SWAP_API_KEY \
+            -v "$PWD/ci/config.yaml:/etc/llama-swap/config.yaml:ro" \
+            ai-core-llama-swap:ci \
+            -config /etc/llama-swap/config.yaml -validate
+
+      - name: Start real llama-swap container
+        env:
+          LLAMA_SWAP_API_KEY: ci-test-key
+        run: |
+          set -euo pipefail
+          docker run -d --name ai-core-llama-swap-ci --network host \
+            --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+            --tmpfs /tmp:size=32m,mode=1777 \
+            --cpus 0.50 --memory 256m --pids-limit 128 \
+            -e LLAMA_SWAP_API_KEY \
+            -v "$PWD/ci/config.yaml:/etc/llama-swap/config.yaml:ro" \
+            ai-core-llama-swap:ci \
+            -config /etc/llama-swap/config.yaml -listen 127.0.0.1:18080 -watch-config=false
+          for i in $(seq 1 100); do curl -fsS http://127.0.0.1:18080/health >/dev/null && break; sleep .1; done
+          curl -fsS http://127.0.0.1:18080/health
+
+      - name: Real llama-swap routing/auth/filter/concurrency/metrics E2E
+        run: |
+          set -euo pipefail
+          python3 ci/e2e.py
+
+      - name: Start mock TGserver HTTP ingest
+        run: |
+          set -euo pipefail
+          python3 ci/mock_tgserver.py --capture /tmp/tgserver-capture.jsonl >/tmp/tgserver.log 2>&1 & echo $! >> /tmp/ai-core-pids
+          for i in $(seq 1 100); do curl -fsS http://127.0.0.1:3000/health >/dev/null && break; sleep .1; done
+          curl -fsS http://127.0.0.1:3000/health
+
+      - name: Validate and run real Vector 0.58.0 transport
+        run: |
+          set -euo pipefail
+          VECTOR='timberio/vector:0.58.0-debian@sha256:1c1ea358c617ea0b23003d5af87f7a678b30f8f7096437e680380c47fc13d2d9'
+          docker pull "$VECTOR"
+          docker run --rm --network host \
+            -v "$PWD/ci/vector.yaml:/etc/vector/vector.yaml:ro" \
+            "$VECTOR" validate --no-environment /etc/vector/vector.yaml
+          docker volume create ai-core-vector-ci >/dev/null
+          docker run -d --name ai-core-vector-ci --network host \
+            --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+            --tmpfs /tmp:size=32m,mode=1777 \
+            -v "$PWD/ci/vector.yaml:/etc/vector/vector.yaml:ro" \
+            -v ai-core-vector-ci:/var/lib/vector \
+            "$VECTOR" --config /etc/vector/vector.yaml
+          python3 - <<'PY'
+          import socket,time
+          for _ in range(100):
+              try:
+                  with socket.create_connection(('127.0.0.1',15140),timeout=.2):
+                      print('VECTOR_LISTENER=PASS'); break
+              except OSError: time.sleep(.1)
+          else: raise SystemExit('VECTOR_LISTENER=FAIL')
+          PY
+
+      - name: Real Docker syslog to Vector to TGserver transport and redaction gate
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            --log-driver=syslog \
+            --log-opt syslog-address=tcp://127.0.0.1:15140 \
+            --log-opt syslog-format=rfc5424micro \
+            --log-opt tag=ci-test \
+            --log-opt mode=non-blocking \
+            --log-opt max-buffer-size=2m \
+            alpine:3.20 sh -c 'echo "Authorization: Bearer TOPSECRET api_key=NEVERSEEME hello-ai-core"'
+          python3 - <<'PY'
+          import json,time
+          from pathlib import Path
+          p=Path('/tmp/tgserver-capture.jsonl')
+          for _ in range(100):
+              lines=[x for x in p.read_text().splitlines() if x.strip()] if p.exists() else []
+              if lines: break
+              time.sleep(.1)
+          else: raise SystemExit('VECTOR_TGSERVER_DELIVERY=FAIL:no payload')
+          obj=json.loads(lines[-1])
+          assert obj['project_id']=='P004',obj
+          assert obj['severity'] in {'error','warn','info','debug','trace'},obj
+          msg=obj['message']
+          assert 'hello-ai-core' in msg,msg
+          assert 'TOPSECRET' not in msg,msg
+          assert 'NEVERSEEME' not in msg,msg
+          print('VECTOR_TGSERVER_DELIVERY=PASS')
+          PY
+
+      - name: Evidence summary
+        run: |
+          set -euo pipefail
+          echo 'REAL_LLAMA_SWAP_BINARY=PASS'
+          echo 'LLAMA_SWAP_CONFIG_VALIDATE=PASS'
+          echo 'ROLE_ROUTING_9=PASS'
+          echo 'QWEN3_THINKING_SPLIT=PASS'
+          echo 'GLOBAL_CONCURRENCY_2_THIRD_429=PASS'
+          echo 'LLAMA_SWAP_METRICS=PASS'
+          echo 'VECTOR_REAL_BINARY=PASS'
+          echo 'DOCKER_SYSLOG_OPTIONS=PASS'
+          echo 'VECTOR_TO_TGSERVER_HTTP=PASS'
+          echo 'CONTABO_REAL_RUNTIME=PENDING'
+
+      - name: Dump service logs on failure
+        if: failure()
+        run: |
+          docker logs ai-core-llama-swap-ci 2>&1 || true
+          docker logs ai-core-vector-ci 2>&1 || true
+          cat /tmp/granite.log /tmp/qwen3.log /tmp/ministral.log /tmp/coder.log /tmp/tgserver.log 2>/dev/null || true
+          cat /tmp/tgserver-capture.jsonl 2>/dev/null || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rm -f ai-core-llama-swap-ci ai-core-vector-ci >/dev/null 2>&1 || true
+          docker volume rm ai-core-vector-ci >/dev/null 2>&1 || true
+          if [ -f /tmp/ai-core-pids ]; then xargs -r kill < /tmp/ai-core-pids 2>/dev/null || true; fi
