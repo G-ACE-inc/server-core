@@ -1,0 +1,81 @@
+healthCheckTimeout: 30
+logLevel: info
+logToStdout: proxy
+metricsMaxInMemory: 50
+captureBuffer: 0
+performance:
+  disabled: true
+sendLoadingState: false
+includeAliasesInList: false
+globalTTL: 0
+unloadTimeout: 10
+globalConcurrencyLimit: 2
+apiKeys:
+  - "${env.LLAMA_SWAP_API_KEY}"
+models: {}
+peers:
+  granite-core:
+    proxy: http://127.0.0.1:18081
+    models: [granite-test]
+    timeouts: { responseHeader: 30 }
+  qwen3-scout-core:
+    proxy: http://127.0.0.1:18082
+    models: [qwen3-test]
+    filters:
+      setParams:
+        chat_template_kwargs:
+          enable_thinking: false
+    timeouts: { responseHeader: 30 }
+  qwen3-think-core:
+    proxy: http://127.0.0.1:18082
+    models: [qwen3-test]
+    filters:
+      setParams:
+        chat_template_kwargs:
+          enable_thinking: true
+    timeouts: { responseHeader: 30 }
+  ministral-core:
+    proxy: http://127.0.0.1:18083
+    models: [ministral-test]
+    timeouts: { responseHeader: 30 }
+  coder-core:
+    proxy: http://127.0.0.1:18084
+    models: [coder-test]
+    timeouts: { responseHeader: 30 }
+selectors:
+  evidence-reader:
+    strategy: pin
+    targets: [granite-core/granite-test]
+    name: Evidence Reader
+  researcher:
+    strategy: pin
+    targets: [granite-core/granite-test]
+    name: Researcher
+  constructive-analyst:
+    strategy: pin
+    targets: [qwen3-think-core/qwen3-test]
+    name: Constructive Analyst
+  causal-scout:
+    strategy: pin
+    targets: [qwen3-scout-core/qwen3-test]
+    name: Causal Scout
+  diagnoser:
+    strategy: pin
+    targets: [qwen3-think-core/qwen3-test]
+    name: Diagnoser
+  adversarial-auditor:
+    strategy: pin
+    targets: [ministral-core/ministral-test]
+    name: Adversarial Auditor
+  local-reviewer:
+    strategy: pin
+    targets: [ministral-core/ministral-test]
+    name: Local Reviewer
+  code-scout:
+    strategy: pin
+    targets: [coder-core/coder-test]
+    name: Code Scout
+  patch-engineer:
+    strategy: pin
+    targets: [coder-core/coder-test]
+    name: Patch Engineer
