@@ -4,7 +4,8 @@ logToStdout: proxy
 metricsMaxInMemory: 50
 captureBuffer: 0
 performance:
-  disabled: true
+  disabled: false
+  every: 15s
 sendLoadingState: false
 includeAliasesInList: false
 globalTTL: 0
