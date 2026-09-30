@@ -30,6 +30,7 @@ jobs:
           test -f CORE.md
           test -f KB.md
           test -f PROJECT_STATUS.md
+          test -f docs/SERVER_CORE_DESIGN.md
           test -f docs/LOAD_SCOPE.md
           test -f docs/STRUCTURE.md
           test -f docs/GLOSSARY.md
@@ -66,6 +67,17 @@ jobs:
           grep -q '論理構造として使用する' CORE.md
           grep -q '物理構造は、対象Projectの規模' CORE.md
 
+      - name: Server-core routed workspace contract
+        run: |
+          set -euo pipefail
+          grep -q 'server-core/README.md' docs/LOAD_SCOPE.md
+          grep -q 'docs/LOAD_SCOPE.md' README.md
+          grep -q 'SERVER CORE DESIGN' docs/SERVER_CORE_DESIGN.md
+          grep -q 'Documentation Gate' docs/SERVER_CORE_DESIGN.md
+          grep -q 'GitHub Work Report Contract' docs/SERVER_CORE_DESIGN.md
+          grep -q 'server-coreを共通入口' docs/G_ACE_WORKSPACE.md
+          grep -q 'server-core/README.md' .cursor/rules/00_agent_runtime.mdc
+
       - name: Progressive load scope
         run: |
           set -euo pipefail
@@ -89,6 +101,8 @@ jobs:
           grep -q 'Single Source of Truth' docs/PROJECT_TEMPLATE.md
           grep -q 'Module化判定' docs/PROJECT_TEMPLATE.md
           grep -q 'AIへ渡す最小情報' docs/PROJECT_TEMPLATE.md
+          grep -q 'Documentation Gate' docs/PROJECT_TEMPLATE.md
+          grep -q 'System / Feature-bundle Document' docs/PROJECT_TEMPLATE.md
           grep -q '実行順序' docs/PROJECT_TEMPLATE.md
           grep -q '期待出力、状態変化、既存機能回帰' docs/PROJECT_TEMPLATE.md
 
@@ -135,6 +149,8 @@ jobs:
               ':!.github/workflows/server-core-guard.yml' \
               ':!scripts/ai-auto-commit.sh' || true
           )"
+          # Dynamic environment lookups are variable assignments, not embedded secret values.
+          hits="$(printf '%s\n' "$hits" | grep -Ev '=[[:space:]]*(os\.environ\.get|check_token_not_in_env)\(' || true)"
           if [ -n "$hits" ]; then
             echo "$hits"
             exit 1
