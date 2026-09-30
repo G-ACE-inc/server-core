@@ -55,14 +55,13 @@ Source/CI PASSをServer Runtime PASSとして扱わない。
 | GitHub commit / push | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
 | 新規Project / Repository構成 | `docs/PROJECT_TEMPLATE.md` |
-| Shared Project / MCP / Tool / Secret入口 | `docs/WORKSPACE_REGISTRY.md` |
+| Shared Project / MCP / Tool / Secret / Runtime入口 | `docs/WORKSPACE_REGISTRY.md` + 必要な実Runtime readback |
 | 再利用KB設計 | `docs/KB_REUSE_DESIGN.md` |
 | Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
 | Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
 | Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
 | 用語 | `docs/GLOSSARY.md` |
 | server-core構造 | `docs/STRUCTURE.md` |
-| Current runtime / Project入口 | `PROJECT_STATUS.md`（内容の日付を確認し、実状態の代用にしない） |
 
 ## 共通開発ループ
 
@@ -216,7 +215,7 @@ Cleanupは安全性を優先し、未送信、再送待ち、Recovery中、所�
 | `CORE.md` | LibralCore開発方法論 |
 | `SERVER_CORE_PROTOCOL.md` | 共通運用規則 |
 | `docs/G_ACE_WORKSPACE.md` | Workspace正規仕様 |
-| `docs/WORKSPACE_REGISTRY.md` | Project / MCP / Tool / Secret Contract発見入口 |
+| `docs/WORKSPACE_REGISTRY.md` | Project / MCP / Tool / Secret Contract / Runtime発見入口 |
 | `docs/KB_REUSE_DESIGN.md` | F:再利用開発KBの設計基準線 |
 | `docs/STORAGE_LIFECYCLE.md` | Log / Cache / Cleanup / Backup / Recovery設計基準線 |
 | `docs/AUTO_COMMIT.md` | GitHub作業履歴化 |
@@ -224,7 +223,6 @@ Cleanupは安全性を優先し、未送信、再送待ち、Recovery中、所�
 | `docs/PROJECT_TEMPLATE.md` | Project構成とDocument作成条件 |
 | `docs/WORKSPACE_SHARED_SECRETS.md` | Shared Secret / Token契約 |
 | `docs/STRUCTURE.md` | server-core構造 |
-| `PROJECT_STATUS.md` | Current状態の補助Registry。実Runtime readbackを代替しない |
 
 ## Approval Boundary
 
