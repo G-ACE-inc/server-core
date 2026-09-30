@@ -77,12 +77,10 @@ README.md
   - Commit = Work Report、Push、Remote Readback
 - `DEPLOY_RUNBOOK.md`
   - Confirmed GitHub revision -> Server Deploy -> Runtime Verify
-- `OPERATION_CHECKLIST.md`
-  - 作業前後確認
 - `GITHUB_FREE_MAX.md`
-  - GitHub無料枠運用
+  - GitHub無料枠運用。通常Routing対象外
 - `GITHUB_SKILL.md`
-  - Codex GitHub skill resolver
+  - Codex GitHub skill resolver。該当Tool利用時だけ読む
 - `CLOUDFLARE_OPERATIONS.md`
   - Cloudflare固有運用
 - `WORKSPACE_SHARED_SECRETS.md`
@@ -147,7 +145,7 @@ Discovery入口は `docs/WORKSPACE_REGISTRY.md`。
 
 実装本体は各所有Project / Runtimeに置く。
 
-DebugAI MCPはDebugAI側で実装・検証後に登録する。Current状態でMCP実装済みとは扱わない。
+DebugAI MCPはDebugAI PR #22でSource / CI / stdio Protocolまで検証済みだが、Live Contabo Runtime接続とWorkspace MCP登録は未実施。利用可能済みと断定せず、詳細状態は `docs/WORKSPACE_REGISTRY.md` を正とする。
 
 Master PC `F:` 1TBを利用する再利用開発KBは、server-core外部の実データ領域とし、server-coreにはaccess / lifecycle contractだけを置く。
 
