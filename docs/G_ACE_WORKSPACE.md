@@ -103,9 +103,11 @@ Workspace共通Tool/MCPはserver-coreを発見入口とする。
 
 server-coreが管理するのは **接続契約・用途・所有先・権限境界** であり、各Tool本体をserver-coreへ移植しない。
 
+Discovery authorityは `docs/WORKSPACE_REGISTRY.md`。
+
 現在 `.cursor/mcp.json` に存在するMCPは実設定を正とし、未登録MCPを利用可能として扱わない。
 
-DebugAIは独立Project/runtime。現在確認済みの共通利用経路はCLI / HTTP。MCP AdapterはDebugAI側で実装・検証された後にWorkspace共通Registryへ登録する。
+DebugAIは独立Project/runtime。MCP AdapterはDebugAI PR #22でSource / CI / stdio Protocolまで検証済みだが、Contabo Live Runtime接続とWorkspace MCP登録は未実施。`AVAILABLE_VERIFIED`とは扱わない。
 
 ## Workspace Shared Secrets
 
@@ -131,6 +133,8 @@ server-coreはKB access / registration / lifecycle / safety contractのみを管
 
 VPS / Workspace AIから利用するには、実装・検証済みAPI/MCP等のbridgeを使用する。PC driveへの直接アクセスを前提にしない。
 
+Design authorityは `docs/KB_REUSE_DESIGN.md`。
+
 ## Server / Runtime
 
 本番常駐は原則Docker / Docker Compose。
@@ -150,7 +154,7 @@ Common boundary:
 
 自動Cleanupでは、未送信、再送待ち、Recovery中、所有者不明、Active volume等を削除しない。
 
-Retention / cleanup / backup / recoveryはServer運用標準で管理し、Project固有条件がある場合はProject側契約を優先する。
+Retention / cleanup / backup / recoveryは `docs/STORAGE_LIFECYCLE.md` を正とし、Project固有条件がある場合はProject側契約を優先する。
 
 ## Normal Context Exclusions
 
@@ -177,6 +181,6 @@ Tool追加はTask数を増やすこと自体を目的にせず、全Projectで�
 
 ## Current-state Warning
 
-Workspace文書、`PROJECT_STATUS.md`、registryの記載は探索入口であり、Current Runtimeの証明ではない。
+`docs/WORKSPACE_REGISTRY.md` やREADMEの記載は探索入口であり、Current Runtimeの証明ではない。
 
 Container / Port / Domain / Provider / Deploy状態を判断する場合は必ず実状態をreadbackする。
