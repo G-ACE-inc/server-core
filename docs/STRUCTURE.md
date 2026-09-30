@@ -45,9 +45,9 @@ README.md
 - `docs/`
   - Design、Routing、Registry、運用標準、Template、用語
 - `operations/`
-  - Secret値を持たないProvider / shared contract manifest
+  - Secret値を持たないProvider / shared contract / audit policy manifest
 - `scripts/`
-  - 共通自動化
+  - 共通自動化・read-only audit
 - `archive/`
   - 旧版・退避。通常Context対象外
 
@@ -88,6 +88,35 @@ README.md
 - `WORKSPACE_SHARED_SECRETS.md`
   - Vault経由のWorkspace Shared Secret / Token利用
 
+## operations/
+
+Provider / shared-secret等の**値を持たない契約**と、安全な共通Audit policyを置く。
+
+現在確認対象:
+- `cloudflare.json`
+- `cloudflare-account.json`
+- `huggingface.json`
+- `storage-lifecycle.json`
+  - Storage auditは`audit_only`
+  - generic delete / prune / volume deleteを許可しない
+
+Secret / Token値をoperationsへ保存しない。
+
+## scripts/
+
+- `ai-auto-commit.sh`
+  - GitHub work report commit / push補助
+- `resolve-codex-skill.sh`, `github-skill-path.sh`
+  - GitHub skill resolver
+- `init-dev-workspace.sh`
+  - Workspace初期化補助
+- `cloudflare_ops.py`
+  - Cloudflare運用補助
+- `storage_lifecycle_audit.py`
+  - Storage / disk / Docker状態のread-only audit
+  - delete / prune / rotate等のmutation機能を持たない
+  - `--self-test`で決定論的Safety contractを検証
+
 ## .cursor/
 
 - `.cursor/rules/00_agent_runtime.mdc`
@@ -102,17 +131,6 @@ README.md
   - 未登録MCPを利用可能と扱わない
 - `.cursor/agents`
   - Agent関連参照
-
-## operations/
-
-Provider / shared-secret等の**値を持たない契約**を置く。
-
-現在確認対象:
-- `cloudflare.json`
-- `cloudflare-account.json`
-- `huggingface.json`
-
-Secret / Token値をoperationsへ保存しない。
 
 ## Shared Capability Boundary
 
