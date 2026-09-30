@@ -4,7 +4,7 @@
 
 G-ACE Workspace内のAI / Developerが必ずserver-coreを入口にしつつ、今回の作業に必要な情報だけを段階的に読み、Context・Token・探索時間を増やさず確実に作業する。
 
-## Bootstrap
+## 最小開始範囲
 
 Workspace内の作業開始時は次の順を固定する。
 
@@ -52,35 +52,35 @@ README以外のserver-core正本を新CHAT/新Taskで一括読込しない。
 
 存在しないDocumentを推測で作成済み扱いしない。
 
-### Level 1: Target Boundary
+### Level 1: 対象
 - 対象Source
 - Input / Output
 - 直接依存
 - 関連Test
 - 明示された再利用候補
 
-通常変更はLevel 1から開始する。
+読込はLevel 1から開始する。通常変更もLevel 1で閉じられるならそこで止める。
 
-### Level 2: Adjacent Boundary
+### Level 2: 境界
 次の場合だけ拡張する。
 - 呼出元 / 呼出先が必要
 - Config / State ownerが不明
 - Interface / Schema契約の確認が必要
 - 近接再利用候補の確認が必要
 
-### Level 3: Reuse Unit
+### Level 3: 再利用単位
 次の場合だけModule / Component範囲へ拡張する。
 - 同じ責務の既存実装比較が必要
 - Adapter / shared contract検討が必要
 - 責務混在 / 循環依存の可能性がある
 
-### Level 4: System / Repository
+### Level 4: System
 次の場合だけSystem / Repository全体へ拡張する。
 - 複数Component / Moduleへ影響
 - 影響範囲を局所情報で閉じられない
 - Masterが全体監査 / 全コード確認 / 横断調査を明示
 
-## Reuse Search
+## 再利用探索
 
 新規Code・Module・Document作成前に、必要範囲で次を確認する。
 
@@ -105,6 +105,8 @@ README以外のserver-core正本を新CHAT/新Taskで一括読込しない。
 
 以下は通常Contextへ入れない。
 - `archive/`
+- `.github/`（GitHub Actions / PR / Issue等がTask対象の場合を除く）
+- `scripts/`（Script自体がTask対象の場合を除く）
 - `.git/`
 - `node_modules/`
 - `dist/` / `build/` / `.next/`
@@ -112,7 +114,7 @@ README以外のserver-core正本を新CHAT/新Taskで一括読込しない。
 - backups
 - Secret / credential実値
 
-GitHub Actions修正など、その領域自体がTask対象の場合だけ必要ファイルを読む。
+Task対象になった場合だけ必要Fileへ限定して読む。
 
 ## Documentation Read Rule
 
@@ -128,7 +130,7 @@ DesignとCurrent実装が違う場合、DesignをCurrentへ合わせて履歴を
 
 Current状態が必要なら対象Provider / Docker / GitHub / Endpoint等をreadbackする。
 
-## Read Completion
+## 読込完了条件
 
 作業開始に必要な読込は、次を説明・確認できた時点で止める。
 - 目的と期待結果
