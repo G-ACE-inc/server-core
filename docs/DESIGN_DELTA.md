@@ -81,6 +81,51 @@ Supporting consistency updates are tracked by the same branch/PR and GitHub hist
 ### Verification state
 The acceptance gate is `server-core-guard` on the final branch/PR HEAD. The CI result is the verification evidence; this Design Delta does not copy a mutable CI status into the architecture baseline.
 
+## 2026-09-30 — Return Project-specific Cloudflare implementation ownership to the owning Project
+
+### Baseline design
+`docs/SERVER_CORE_DESIGN.md` defines server-core as the Workspace command center and explicitly excludes Project-specific implementation bodies and runtime internals.
+
+### Actual change
+`docs/CLOUDFLARE_OPERATIONS.md` is changed from an Astera v8-specific Tunnel/Token/Container runbook into a Workspace-wide Cloudflare command contract.
+
+server-core keeps only:
+- routing;
+- shared access paths;
+- approval boundary;
+- provider verification contract;
+- Secret boundary;
+- common tooling entry.
+
+Project-specific hostnames, origins, Docker/Compose services, runtime secret paths and release procedures belong to the owning Project.
+
+### Reason / root cause
+The old document made server-core the authority for a specific Application's Cloudflare runtime details. That contradicted the command-center responsibility boundary and could cause stale Project runtime facts to be treated as Workspace-wide truth.
+
+### Evidence
+The previous file contained Astera-specific hostname, origin port, tunnel name, container, token path and release gates while the server-core baseline says Project-specific runtime implementation remains owned by the target Project.
+
+### Affected scope
+- `docs/CLOUDFLARE_OPERATIONS.md`
+- `docs/WORKSPACE_REGISTRY.md`
+- Cloudflare task routing through `docs/LOAD_SCOPE.md`
+
+### Applied commit
+Cloudflare authority correction commit:
+
+```text
+af9abd3e9d402f73430d7c97f270463a62f75f18
+```
+
+### Compatibility / migration / rollback
+- Git history retains the former Astera-specific runbook as historical evidence.
+- No live Cloudflare resource is changed by this documentation correction.
+- Astera-specific live values must be read from the owning Project/current provider state before use.
+- Restoring the old server-core file as Current Authority would reintroduce ownership ambiguity and stale-runtime risk.
+
+### Verification state
+The final branch/PR must pass `server-core-guard`. Live Cloudflare runtime is not modified or claimed verified by this documentation change.
+
 ## Update rule
 
 When a later architecture decision changes the server-core baseline, append a new section. Do not rewrite or delete prior accepted deltas merely because the current implementation changed.
