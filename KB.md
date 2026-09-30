@@ -3,7 +3,7 @@
 ## 文書の役割
 本ファイルは、Server Coreで確認された知識、判断理由、障害原因、解決方法を記録する。
 
-本ファイルは、将来実装するKBシステムではない。
+本ファイルは再利用開発KB本体ではない。KB本体のDesignは `docs/KB_REUSE_DESIGN.md`、実データはserver-core外部に置く。
 
 ## 変更制御
 管理者の明示的な変更指示がない限り、AI・作業者による書き換え・追記・削除・置換を禁止する。
@@ -26,8 +26,19 @@
 - 作業履歴の正本はGitHub上のcommit / PRとする。
 - ファイル変更を伴う作業は、作業完了時に意味のある作業単位でcommitを作成する。
 - `PROJECT_STATUS.md` は作業履歴の保存先としない。
-- READMEは入口、SERVER_CORE_PROTOCOLは運用規則、docs配下は実務手順として役割を分離する。
-- mainへの直接pushは、管理者が許可した正本更新または小規模な運用文書更新に限る。
+- READMEは入口、SERVER_CORE_PROTOCOLは共通運用規則、docs配下は設計・Routing・実務手順として役割を分離する。
+- main merge、Production deploy、公開、Force push、Branch削除はMasterの明示指示なしに実行しない。
+
+### Workspace Authority
+- G-ACE Workspace内のAI / Developerは `server-core/README.md` を共通入口とする。
+- 次に `docs/LOAD_SCOPE.md` でTaskをRoutingし、必要なAuthorityだけ読む。
+- server-core正本を新Task開始時に一括読込しない。
+- 対象ProjectではProject READMEを入口にし、必要なDesign / Tree / Delta / System Document / Source / Testだけ読む。
+
+### GitHub作業履歴
+- Commitは単なる保存ではなく、実作業と変更履歴を追う作業報告として扱う。
+- Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
+- Designとの差を正式採用した場合、CommitだけでなくDesign Deltaへ理由とEvidenceを残す。
 
 ### TGserver
 - Telegramを生ログの永続正本とする。
@@ -38,38 +49,48 @@
 - TGserverは意味判定を行わない。
 
 ### 共通分離キャッシュ
-- `/home/admin1/logs` は全体共通の分離ディスクキャッシュである。
-- 送信待ち、再送、処理途中、障害時一時退避だけに使う。
-- 永続ログ、監査ログ、Telegram原本の複製、KBには使わない。
-- 正常処理後または保持期限後に削除可能なデータだけを置く。
+- `/home/admin1/logs` は全体共通の分離ディスク一時領域である。
+- 送信待ち、再送、処理途中、障害時一時退避など、削除条件を定義できるOperational Stateに限定する。
+- 永続ログ、監査正本、Telegram原本の長期複製、KB、仕様書、Source Codeには使わない。
 - Redisのhot-cacheとは別責務である。
+- Cleanup / Retention / Backup / Recoveryの共通設計は `docs/STORAGE_LIFECYCLE.md` を正とする。
 
-### KBシステム
-- KBシステムは未実装である。
-- TGserverからKBへ直接送信しない。
-- 生ログやV8推論結果を自動投入しない。
-- 将来も正式な判定基準を通過した情報だけを登録候補とする。
-- 判定主体、基準、承認方法、形式、格納先は未確定である。
+### 再利用開発KB
+- KB runtime / bridgeは現在 `NOT_IMPLEMENTED` である。
+- 実データのTarget StorageはMaster PCの `F:` 1 TB driveとする。
+- 目的はvalidated reusable code/module/pattern/schema/interface/test/template/procedure/development knowledgeを蓄積し、Workspace内AIが再利用できるようにすること。
+- server-coreにはKB data本体を置かず、Access / Registration / Lifecycle / Safety Contractだけを持たせる。
+- VPSからPC `F:` を直接読める前提を置かない。実装・検証済みAPI/MCP等のBridgeを使用する。
+- TGserverからKBへ生ログを直接送信しない。
+- 生ログやV8推論結果を無判定で自動投入しない。
+- 未検証AI出力、Secret、Token、credentialをvalidated KB assetとして登録しない。
+- 登録条件・検索・version/supersede・backup/recoveryのDesign Baselineは `docs/KB_REUSE_DESIGN.md` とする。
+
+### Shared MCP / Tool
+- Workspace共通Capabilityの発見入口は `docs/WORKSPACE_REGISTRY.md`。
+- Registryに記載されているだけで実利用可能と断定しない。
+- Cloudflare API MCPは `.cursor/mcp.json` に登録済みである。
+- DebugAIのCurrent verified shared accessはCLI / HTTPである。
+- DebugAI MCPはDebugAI側の実装・検証・Workspace登録が閉じるまで `NOT_IMPLEMENTED` とする。
+- Reuse KB MCPもBridge実装・検証まで `NOT_IMPLEMENTED` とする。
 
 ### Astera v8
 - Astera v8は `/home/admin1/projects/astera_v8` に配置する。
 - Astera v8は問いの意味判定、認知前処理、用途テンプレート自動判定、5本柱処理、8段判断材料出力を担当する。
-- Astera v8はユーザーに用途テンプレートを選ばせず、自動Domain Router / Template Lensで内部処理する。
-- Astera v8のHTTP `/process` は通常 `text/plain` の8段Markdownを返す。
-- Astera v8は事実確認と危機察知にエビデンスカードまたはエビデンスギャップを含める。
 - Astera v8はTGserverへ `P002` として構造化ログを送信する。
 - Astera v8の未送信ログ一時状態は `/home/admin1/logs/astera-v8/outbox` に限定する。
-- Astera v8の推論結果をKBへ自動投入しない。
+- Astera v8の推論結果を無判定でKBへ自動投入しない。
 
 ### 秘密情報
 - `.env` は原則commit禁止である。
 - 共有が必要な環境変数は、値を含まない `.env.example` に記載する。
+- Workspace共有Secretは値を各Projectへ複製せず、既存Broker/Vault契約を使う。
 - 秘密情報の漏洩が疑われる場合は、該当credentialの失効または再発行を優先する。
 
 ## 運用上の教訓
-- 未確認の事実を状態文書へ書かない。
+- 未確認の事実をCurrent状態文書へ書かない。
 - 実行していない処理を完了と記録しない。
-- 存在しないWorkspaceを作成済みと記録しない。
-- 確定済みDocker方針をCODEXの判断待ちとしない。
-- 状態、履歴、仕様を混同しない。
-- 生ログ、cache、索引、知識を混同しない。
+- RegistryとRuntime readbackを混同しない。
+- 状態、履歴、Design、Current仕様を混同しない。
+- 生ログ、cache、index、knowledge assetを混同しない。
+- 再利用可能性を確認する前に新規Code / Module / Documentを増やさない。
