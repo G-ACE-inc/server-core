@@ -19,7 +19,7 @@ server-core README / LOAD_SCOPE
 
 Project固有情報をserver-coreへコピーしない。
 
-## 開発開始前
+## 開発開始前の確認
 
 新規Code生成前に確認する。
 
@@ -41,6 +41,18 @@ Project固有情報をserver-coreへコピーしない。
 - 環境変数が必要な場合だけ値なし `.env.example`
 
 Design / Tree / Delta / System Documentは必要条件を満たした場合だけ追加する。
+
+## Single Source of Truth
+
+同じ情報を複数Documentへ重複管理しない。
+
+基本責務:
+- Code上のInterface / Type / Schema / Test: executable contract
+- Design: architecture / responsibility / boundary baseline
+- README: current completed / verified entry point
+- Project Tree: navigation index
+- Design Delta: intentional difference / rationale
+- Commit / PR: chronological work history
 
 ## README Contract
 
@@ -193,6 +205,18 @@ Moduleは再利用、交換、独立修正の実益がある責務単位とす�
 
 条件を満たさない場合は既存Module内のPart/Feature/Componentとして実装する。
 
+## AIへ渡す最小情報
+
+通常TaskでAIへ渡す起点:
+- 目的と期待結果
+- 対象責務
+- 再利用候補
+- Input / Output
+- 直接依存と制約
+- 関連Test
+
+不足した時だけLOAD_SCOPEに従って広げる。
+
 ## Test / Verification
 
 変更内容に応じて確認する。
@@ -204,6 +228,8 @@ Moduleは再利用、交換、独立修正の実益がある責務単位とす�
 - regression
 - important failure cases
 - Runtime / Provider readback when relevant
+
+合格は、期待出力、状態変化、既存機能回帰、主要失敗条件を必要範囲で確認して判定する。
 
 Process起動、Error無し、HTTP 200、Build成功、CI greenだけではPASSとしない。
 
