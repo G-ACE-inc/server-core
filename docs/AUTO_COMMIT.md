@@ -146,6 +146,6 @@ Production起動・公開・切替を含むかどうかはCommit/Pushとは別Ap
 
 - 未実行TestをPASSとCommit本文へ書く
 - 失敗や未検証を隠す
-- `PROJECT_STATUS.md`等を時系列作業日誌の代替にする
+- Current仕様Documentを時系列作業日誌の代替にする
 - Secret値をCommit message / Diff / Documentへ書く
 - DesignをCurrent実装へ上書きして差分履歴を消す
