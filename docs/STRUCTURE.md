@@ -36,7 +36,7 @@ README.md
 - `operations/`
   - Secret値を持たないProvider / shared contract / audit-policy manifests
 - `scripts/`
-  - 共通自動化・resolver・read-only audit
+  - 共通自動化・resolver・Workspace wiring/verification・read-only audit
 - `archive/`
   - 旧版・退避。Current Authorityではなく通常Context対象外
 
@@ -74,7 +74,7 @@ README.md
 - `STORAGE_LIFECYCLE.md`
   - Log / Cache / Cleanup / Backup / Recovery / Disk pressure Design Baseline
 - `CLOUDFLARE_OPERATIONS.md`
-  - Cloudflare固有運用契約
+  - Cloudflare共通Provider運用契約
 
 ### Task-specific support
 - `GITHUB_FREE_MAX.md`
@@ -109,7 +109,14 @@ Secret / Token値をoperationsへ保存しない。
 - `resolve-codex-skill.sh`, `github-skill-path.sh`
   - GitHub skill resolver
 - `init-dev-workspace.sh`
-  - Workspace initialization helper
+  - `/home/admin1/workspace/G-ACE.code-workspace` の決定論的生成
+  - server-core-first Folder順、Context除外、Project rule symlinkを整える
+  - non-symlink rules pathは破壊せずfail-closed
+  - 完了前にWorkspace verifierを実行する
+- `workspace_command_center_check.py`
+  - Workspaceがserver-core司令室へ正しく配線されているかread-only検証
+  - README / LOAD_SCOPE / Agent kernel / Workspace JSON / rules symlinkを確認
+  - `WORKSPACE_COMMAND_CENTER=PASS|FAIL` を出力
 - `cloudflare_ops.py`
   - Cloudflare operations helper
 - `storage_lifecycle_audit.py`

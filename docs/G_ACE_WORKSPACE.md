@@ -48,6 +48,8 @@ APPROVAL_BOUNDARY
 - `/home/admin1/server-core`
 - `/home/admin1/projects`
 
+標準Workspace fileでは **server-coreを第1Folder、projectsを第2Folder** とする。これにより司令室AuthorityをWorkspaceの先頭へ固定する。
+
 通常Workspace Contextへ含めない:
 - `/home/admin1/workspace`
 - `/home/admin1/kb`
@@ -57,7 +59,47 @@ APPROVAL_BOUNDARY
 
 Task対象になった場合だけ必要範囲を開く。
 
-## 5. Project Entry
+## 5. Mechanical Workspace Enforcement
+
+文書だけでserver-core-firstを宣言せず、Workspace配線を機械的に作成・検証する。
+
+Authority:
+- initializer: `scripts/init-dev-workspace.sh`
+- verifier: `scripts/workspace_command_center_check.py`
+- Agent kernel: `.cursor/rules/00_agent_runtime.mdc`
+
+標準初期化:
+
+```bash
+/home/admin1/server-core/scripts/init-dev-workspace.sh
+```
+
+Project directoryを同時に作る場合:
+
+```bash
+/home/admin1/server-core/scripts/init-dev-workspace.sh --project <project-name>
+```
+
+initializerは最低限次を保証する。
+- `server-core/README.md` / `docs/LOAD_SCOPE.md` / Agent kernelが存在することを先に確認する
+- `/home/admin1/workspace/G-ACE.code-workspace` を決定論的に生成する
+- Workspace Folder順を `server-core -> projects` に固定する
+- heavy/generated領域をWorkspace search/filesから除外する
+- `/home/admin1/projects/.cursor/rules` をserver-core `.cursor/rules` へのsymlinkとして維持する
+- 既存のnon-symlink rules directoryを勝手に削除せずfail-closedにする
+- 作成後にverifierを実行し、配線が一致しなければ成功扱いしない
+
+単独検証:
+
+```bash
+python3 /home/admin1/server-core/scripts/workspace_command_center_check.py --root /home/admin1
+```
+
+`WORKSPACE_COMMAND_CENTER=PASS` が出た場合だけ、Workspace配線のSource-side contractが成立していると扱う。
+
+これはLive WorkspaceでAIが実際に正しく判断したことまで証明するものではない。実Serverへ反映後は同じverifierをServer上で実行し、Runtime/readbackを別途確認する。
+
+## 6. Project Entry
 
 対象ProjectではREADMEを入口にする。
 
@@ -70,7 +112,7 @@ READMEから、存在する場合は次へ直接到達できる状態を標準�
 
 対象Source、直接依存、関連Testから開始し、必要時だけ `docs/LOAD_SCOPE.md` のLevelに従ってContextを広げる。
 
-## 6. Development Routine
+## 7. Development Routine
 
 ```text
 server-core command center
@@ -90,7 +132,7 @@ server-core command center
   -> deploy/runtime only when authorized
 ```
 
-## 7. Documentation Gate
+## 8. Documentation Gate
 
 作業終了前に必ず判定する。
 
@@ -105,7 +147,7 @@ Requiredなのに未更新ならDocumentation Completeではない。
 
 DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
 
-## 8. GitHub Work History
+## 9. GitHub Work History
 
 GitHub commit / PRは実作業履歴の正本。
 
@@ -129,7 +171,7 @@ RUNTIME
 PRODUCTION
 ```
 
-## 9. Shared MCP / Tool / DebugAI
+## 10. Shared MCP / Tool / DebugAI
 
 共有Capabilityの発見入口は `docs/WORKSPACE_REGISTRY.md`。
 
@@ -139,7 +181,7 @@ server-coreが管理するのは接続契約・owner・permission boundary・ava
 
 DebugAIは独立Project/runtime。Source mainへのMCP実装反映とWorkspace Live登録/Runtime verificationは別状態として扱う。
 
-## 10. Shared Secrets
+## 11. Shared Secrets
 
 Secret / Token実値を各Projectへ複製しない。
 
@@ -147,7 +189,7 @@ Secret / Token実値を各Projectへ複製しない。
 
 ProjectはShared Secretが必要な場合、既存Contractを確認してBroker経由で利用する。既存Contractが無ければ勝手なtoken copy/helperを作らない。
 
-## 11. Reusable Development KB
+## 12. Reusable Development KB
 
 再利用開発KBのTarget data storageはMaster PC `F:` 1TB。
 
@@ -157,7 +199,7 @@ VPS / Workspace AIからPC filesystemを直接読める前提は禁止。実装�
 
 Authority: `docs/KB_REUSE_DESIGN.md`。
 
-## 12. Server / Runtime
+## 13. Server / Runtime
 
 本番常駐は原則Docker / Docker Compose。
 
@@ -167,7 +209,7 @@ Deployはconfirmed GitHub revisionを起点にし、必要なMaster承認後に�
 
 Authority: `docs/DEPLOY_RUNBOOK.md`。
 
-## 13. Logs / Cache / Cleanup / Backup
+## 14. Logs / Cache / Cleanup / Backup
 
 Authority: `docs/STORAGE_LIFECYCLE.md`。
 
@@ -181,7 +223,7 @@ Common boundary:
 
 未送信、retry、recovery、unknown ownership、active/persistent volumeをgeneric auto-deleteしない。
 
-## 14. Normal Context Exclusions
+## 15. Normal Context Exclusions
 
 通常検索・Context・watcherから原則除外:
 - `.git`
@@ -196,7 +238,7 @@ Common boundary:
 - `node_modules`
 - cache / dumps
 
-## 15. Runtime Readback Rule
+## 16. Runtime Readback Rule
 
 README / Registry / historical reportをCurrent Runtimeの代用にしない。
 
@@ -204,7 +246,7 @@ Container / Port / Domain / Provider / Deploy状態がTask判断に必要なら�
 
 未確認は `UNKNOWN / NOT_VERIFIED / NOT_EXECUTED` を維持する。
 
-## 16. Completion Rule
+## 17. Completion Rule
 
 Workspace Taskが完了と言えるのは、Taskに必要な範囲で次が閉じた場合だけ。
 - correct Project/authority routing;

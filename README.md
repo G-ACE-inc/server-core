@@ -111,6 +111,31 @@ Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Production�
 | server-core構造 | `docs/STRUCTURE.md` |
 | server-core設計判断 / 差分 | `docs/SERVER_CORE_DESIGN.md` + `docs/DESIGN_DELTA.md` |
 
+## Workspace Mechanical Enforcement
+
+server-core-firstを文書だけで要求せず、Workspace配線をSource/CIで検証する。
+
+```text
+scripts/init-dev-workspace.sh
+  -> G-ACE.code-workspace生成
+  -> server-coreを第1Folderへ固定
+  -> projectsを第2Folderへ固定
+  -> heavy/generated context除外
+  -> projects/.cursor/rules -> server-core/.cursor/rules
+  -> workspace_command_center_check.py
+```
+
+Authority: `docs/G_ACE_WORKSPACE.md`。
+
+Source/CI verification済み:
+- deterministic Workspace generation
+- correct Folder order
+- shared Agent-rule symlink
+- invalid WorkspaceをverifierがFAILするnegative gate
+- non-symlink rules pathを破壊せずfail-closed
+
+Live `/home/admin1` Workspaceへの反映・readbackはServer Runtime状態であり、Source/CI PASSとは別に扱う。
+
 ## Documentation Contract
 
 ### README
@@ -204,11 +229,13 @@ Runtime値はRegistryや古い報告から推測せず、必要時に実readback
 Source/CIで確認されているものとLive Runtimeを分離する。
 
 - server-core command-center routing / documentation contracts: SOURCE / CI verified
+- Workspace command-center wiring initializer/verifier: SOURCE / CI verified
 - read-only Storage Audit source: SOURCE / CI verified
 - DebugAI MCP source: DebugAI mainへmerge済み、source-side CI verified; Workspace registration / live runtimeは別状態
 - F: reusable KB bridge/runtime: NOT_IMPLEMENTED
 - generic storage cleanup mutation: NOT_IMPLEMENTED
 - current server storage audit: NOT_VERIFIED
+- live `/home/admin1` Workspace command-center wiring: NOT_VERIFIED after this source change
 
 これらのRuntime pendingを理由にMD設計を未完成扱いにはしない。逆にMDが完成していてもRuntime PASSとはしない。
 
