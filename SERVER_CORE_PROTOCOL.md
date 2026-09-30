@@ -1,10 +1,10 @@
 # SERVER CORE OPERATION PROTOCOL
 
-## 目的
+## Purpose
 
-本規則はG-ACE Workspace全体で共通に適用する運用・変更権限・GitHub・Runtime・Secret・Storage境界だけを定める。
+G-ACE Workspace全体で共通に適用する、Authority・変更権限・GitHub・Runtime・Secret・Storageの**共通境界だけ**を定める。
 
-詳細な開発方法論、Project構成、Context routing、Deploy、Storage lifecycle等をここへ重複記載しない。Taskに応じて `README.md` -> `docs/LOAD_SCOPE.md` から該当Authorityを読む。
+開発方法論、Project構成、Context routing、Deploy、KB、Storage lifecycle等の詳細をここへ重複記載しない。作業は `README.md` -> `docs/LOAD_SCOPE.md` から必要Authorityだけ読む。
 
 人間、AI、自動処理のすべてに適用する。
 
@@ -25,8 +25,6 @@ Masterの明示指示なしに次を実行しない。
 
 ## Workspace Entry
 
-Workspace作業は必ず次から開始する。
-
 ```text
 server-core/README.md
   -> server-core/docs/LOAD_SCOPE.md
@@ -35,36 +33,21 @@ server-core/README.md
   -> 必要なProject Authority / Source / Testだけ
 ```
 
-全正本の一括読込を行わない。
+全正本を一括読込しない。
 
-標準Workspaceは `/home/admin1/workspace/G-ACE.code-workspace`。
-
-通常Folder:
-- `/home/admin1/server-core`
-- `/home/admin1/projects`
-
-通常Contextに含めない:
-- `/home/admin1/logs`
-- `/home/admin1/backups`
-- `/home/admin1/kb`
-- `/home/admin1/workspace`
-- archive / build / dist / node_modules / cache / dumps
-
-Workspace正規仕様は `docs/G_ACE_WORKSPACE.md`。
+Workspace正規仕様は `docs/G_ACE_WORKSPACE.md`、共有Capability / Project / Runtime discoveryは `docs/WORKSPACE_REGISTRY.md` を正とする。
 
 ## Development Boundary
 
-開発方法論・再利用・5段Architecture・Module判断は `CORE.md` を正とする。
-
-Project構成、README / Design / Project Tree / Design Delta / System Document作成条件、Documentation Gateは `docs/PROJECT_TEMPLATE.md` を正とする。
-
-DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
-
-公開契約は可能な限りCode上のInterface / Type / Schemaを正本とし、Project固有の詳細は各Projectに置く。
+- 開発方法論・再利用・5段Architecture・Module判断: `CORE.md`
+- Project構成、README / Design / Project Tree / Design Delta / System Document、Documentation Gate: `docs/PROJECT_TEMPLATE.md`
+- DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
+- Project固有の実装・Design・System仕様は各Project側に置く。
+- 公開契約は可能な限りCode上のInterface / Type / Schemaを正本とする。
 
 ## Validation
 
-変更の合否は、必要範囲で以下を確認する。
+必要範囲で以下を確認する。
 - Input
 - execution condition
 - expected output
@@ -80,19 +63,17 @@ Process起動、Error無し、`True`、空配列、HTTP 200、Build成功、CI g
 
 ## Documentation / Work History
 
-Current仕様を示す正本文書へ作業日誌を混在させない。
+Current仕様Documentへ作業日誌を混在させない。
 
-作業履歴の正本はGitHub commit / PR。
+作業履歴の正本はGitHub commit / PR。Commitは実作業報告として扱う。
 
-完成・検証状態、Project構造、Designとの差、完成System等が変わった場合はDocumentation Gateに従い該当文書を更新する。
+完成・検証状態、Project構造、Designとの差、完成System等が変わった場合はDocumentation Gateに従う。
 
-Commit作業報告、Push、Remote Readbackは `docs/AUTO_COMMIT.md` を正とする。
+Commit / Push / Remote Readbackは `docs/AUTO_COMMIT.md` を正とする。
 
 ## GitHub / Deploy
 
-GitHubへ保存されたrevisionとServer Runtimeを別状態として扱う。
-
-標準経路:
+GitHub revisionとServer Runtimeを別状態として扱う。
 
 ```text
 implementation / fix
@@ -110,33 +91,31 @@ implementation / fix
 
 Deploy詳細は `docs/DEPLOY_RUNBOOK.md`。
 
-Server上の直接Source修正を正式開発履歴の代替にしない。Runtimeで修正が必要になった場合も、原則としてRepository開発Loopへ戻す。
+Server上の直接Source修正を正式開発履歴の代替にしない。Runtime修正が必要でも原則Repository開発Loopへ戻す。
 
-## Shared Capability Discovery
+## Shared Capability Boundary
 
-Workspace共通Project / MCP / Tool / Secret Contract / Runtime入口は `docs/WORKSPACE_REGISTRY.md` をDiscovery Authorityとする。
+server-coreは共有Capabilityの実装本体を抱え込まず、Discovery・接続契約・所有者・権限境界を管理する。
 
-Registry記載だけでCurrent Runtimeを証明しない。必要時は実設定・実Provider・Endpoint・Docker・GitHub等をreadbackする。
+Discovery Authority: `docs/WORKSPACE_REGISTRY.md`
 
-Capability本体をserver-coreへ移植しない。server-coreは入口・契約・所有者・権限境界を管理する。
+Registry記載だけでCurrent Runtimeを証明しない。必要時は実設定・Provider・Endpoint・Docker・GitHub等をreadbackする。
 
-## DebugAI
+### DebugAI
 
 DebugAIは独立Project/runtime。
 
-Current verified shared accessはCLI / HTTP。DebugAI MCPはDebugAI側で実装・検証され、Workspace設定へ登録されるまで `NOT_IMPLEMENTED` とする。
+CLI / HTTPに加え、MCP AdapterはDebugAI PR #22でSource / CI / stdio Protocolまで検証済み。Contabo Live DebugAI Runtime接続とWorkspace MCP登録は未実施なので、Workspace上の `AVAILABLE_VERIFIED` とは扱わない。
 
-## Knowledge Base
+### Reusable KB
 
 再利用開発KBのDesign Baselineは `docs/KB_REUSE_DESIGN.md`。
 
-Target storageはMaster PC `F:` 1 TB drive。
+Target storageはMaster PC `F:` 1 TB drive。server-coreはKB data本体を保持せずAccess / Registration / Lifecycle / Safety Contractだけを管理する。
 
-server-coreはKB data本体を保持せず、Access / Registration / Lifecycle / Safety Contractを管理する。
+VPSからPC filesystemを直接読める前提を置かず、実装・検証済みAPI/MCP等のBridgeを使う。
 
-Server/VPSからPC filesystemを直接読める前提を置かない。実装・検証済みAPI/MCP等のBridgeを使用する。
-
-次を禁止する。
+禁止:
 - 生ログの直接KB化
 - 判定基準なしの自動知識化
 - 未検証AI出力をvalidated assetとして登録
@@ -157,7 +136,7 @@ Server/VPSからPC filesystemを直接読める前提を置かない。実装・
 
 Generic automatic cleanupはfail-closedにする。
 
-自動削除禁止:
+次を自動削除しない。
 - owner不明
 - active use
 - 未送信 / retry pending
@@ -172,12 +151,7 @@ Generic automatic cleanupはfail-closedにする。
 
 本番常駐の標準経路はDocker / Docker Compose。
 
-本番常駐で次を原則禁止する。
-- node直接常駐
-- python直接常駐
-- pm2 / nohup / screen / tmux常駐
-
-短時間の診断・検証Commandと本番常駐を区別する。
+Hostのnode / python / pm2 / nohup / screen / tmux等を新しい本番常駐経路として追加しない。短時間の診断・検証Commandとは区別する。
 
 Container起動だけでRuntime PASSとせず、必要なEndpoint / Output / State / side effectまで確認する。
 
@@ -210,16 +184,3 @@ Workspace共有Secretは `docs/WORKSPACE_SHARED_SECRETS.md` を正とし、各Pr
 - `/home/admin1/logs` を永続保管庫として使う
 - KBへの無判定直接投入
 - Server cleanupでowner不明・active・recovery dataを削除
-
-## Related Authorities
-
-- Development methodology: `CORE.md`
-- Workspace routing: `docs/LOAD_SCOPE.md`
-- Workspace contract: `docs/G_ACE_WORKSPACE.md`
-- Project/document standard: `docs/PROJECT_TEMPLATE.md`
-- Shared registry: `docs/WORKSPACE_REGISTRY.md`
-- Reuse KB design: `docs/KB_REUSE_DESIGN.md`
-- Storage lifecycle: `docs/STORAGE_LIFECYCLE.md`
-- GitHub work report: `docs/AUTO_COMMIT.md`
-- Deploy: `docs/DEPLOY_RUNBOOK.md`
-- Shared secrets: `docs/WORKSPACE_SHARED_SECRETS.md`
