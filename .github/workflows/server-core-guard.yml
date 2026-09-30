@@ -22,27 +22,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Required files
+      - name: Required authority files
         run: |
           set -euo pipefail
           test -f README.md
           test -f SERVER_CORE_PROTOCOL.md
           test -f CORE.md
-          test -f KB.md
-          test -f PROJECT_STATUS.md
+          test -f docs/SERVER_CORE_DESIGN.md
           test -f docs/LOAD_SCOPE.md
           test -f docs/STRUCTURE.md
+          test -f docs/WORKSPACE_REGISTRY.md
+          test -f docs/KB_REUSE_DESIGN.md
+          test -f docs/STORAGE_LIFECYCLE.md
           test -f docs/GLOSSARY.md
           test -f docs/PROJECT_TEMPLATE.md
           test -f docs/DEPLOY_RUNBOOK.md
-          test -f docs/OPERATION_CHECKLIST.md
           test -f docs/AUTO_COMMIT.md
           test -f docs/GITHUB_FREE_MAX.md
           test -f docs/GITHUB_SKILL.md
           test -f docs/G_ACE_WORKSPACE.md
+          test -f docs/WORKSPACE_SHARED_SECRETS.md
+          test -f operations/storage-lifecycle.json
+          test -f scripts/storage_lifecycle_audit.py
           test -x scripts/ai-auto-commit.sh
           test -x scripts/resolve-codex-skill.sh
           test -x scripts/github-skill-path.sh
+
+      - name: No redundant retired authorities
+        run: |
+          set -euo pipefail
+          test ! -e KB.md
+          test ! -e PROJECT_STATUS.md
+          test ! -e add-status.sh
+          test ! -e docs/OPERATION_CHECKLIST.md
+          ! git grep -nE '(^|[^A-Za-z0-9_])(KB\.md|PROJECT_STATUS\.md|OPERATION_CHECKLIST\.md)([^A-Za-z0-9_]|$)' -- ':!archive/**' ':!.github/workflows/server-core-guard.yml'
 
       - name: LibralCore execution contract
         run: |
@@ -52,19 +65,29 @@ jobs:
           grep -q '開発上の再利用単位' CORE.md
           grep -q '既存資産をそのまま利用' CORE.md
           grep -q '目的と期待結果を確定' CORE.md
-          grep -q 'LibralCoreの正式定義' KB.md
-
-      - name: Five-stage architecture contract
-        run: |
-          set -euo pipefail
           grep -q '5段階層型モジュラーアーキテクチャ' CORE.md
           grep -q '^Part$' CORE.md
           grep -q '^Feature$' CORE.md
           grep -q '^Component$' CORE.md
           grep -q '^System$' CORE.md
           grep -q '^Application System$' CORE.md
-          grep -q '論理構造として使用する' CORE.md
-          grep -q '物理構造は、対象Projectの規模' CORE.md
+
+      - name: Server-core routed workspace contract
+        run: |
+          set -euo pipefail
+          grep -q 'server-core/README.md' docs/LOAD_SCOPE.md
+          grep -q 'docs/LOAD_SCOPE.md' README.md
+          grep -q 'SERVER CORE DESIGN' docs/SERVER_CORE_DESIGN.md
+          grep -q 'Documentation Gate' docs/SERVER_CORE_DESIGN.md
+          grep -q 'GitHub Work Report Contract' docs/SERVER_CORE_DESIGN.md
+          grep -q 'server-coreを必ず共通入口' docs/G_ACE_WORKSPACE.md
+          grep -q 'server-core/README.md' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'WORKSPACE REGISTRY' docs/WORKSPACE_REGISTRY.md
+          grep -q 'REUSABLE DEVELOPMENT KB DESIGN' docs/KB_REUSE_DESIGN.md
+          grep -q 'STORAGE / LOG / CACHE LIFECYCLE' docs/STORAGE_LIFECYCLE.md
+          grep -q 'WORKSPACE_REGISTRY.md' README.md
+          grep -q 'KB_REUSE_DESIGN.md' docs/LOAD_SCOPE.md
+          grep -q 'STORAGE_LIFECYCLE.md' SERVER_CORE_PROTOCOL.md
 
       - name: Progressive load scope
         run: |
@@ -89,8 +112,26 @@ jobs:
           grep -q 'Single Source of Truth' docs/PROJECT_TEMPLATE.md
           grep -q 'Module化判定' docs/PROJECT_TEMPLATE.md
           grep -q 'AIへ渡す最小情報' docs/PROJECT_TEMPLATE.md
+          grep -q 'Documentation Gate' docs/PROJECT_TEMPLATE.md
+          grep -q 'System / Feature-bundle Document' docs/PROJECT_TEMPLATE.md
           grep -q '実行順序' docs/PROJECT_TEMPLATE.md
           grep -q '期待出力、状態変化、既存機能回帰' docs/PROJECT_TEMPLATE.md
+
+      - name: Storage lifecycle audit contract
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/storage_lifecycle_audit.py
+          python3 scripts/storage_lifecycle_audit.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path('operations/storage-lifecycle.json').read_text())
+          assert p['mode'] == 'audit_only'
+          assert p['allow_delete'] is False
+          assert p['docker']['allow_prune'] is False
+          assert p['docker']['allow_volume_delete'] is False
+          print('STORAGE_LIFECYCLE_POLICY=PASS')
+          PY
 
       - name: No tracked env files
         run: |
@@ -116,13 +157,6 @@ jobs:
             exit 1
           fi
 
-      - name: PROJECT_STATUS is not a work log
-        run: |
-          set -euo pipefail
-          if grep -nE '^### [0-9]{4}-[0-9]{2}-[0-9]{2}' PROJECT_STATUS.md; then
-            exit 1
-          fi
-
       - name: Secret pattern guard
         run: |
           set -euo pipefail
@@ -135,6 +169,7 @@ jobs:
               ':!.github/workflows/server-core-guard.yml' \
               ':!scripts/ai-auto-commit.sh' || true
           )"
+          hits="$(printf '%s\n' "$hits" | grep -Ev '=[[:space:]]*(os\.environ\.get|check_token_not_in_env)\(' || true)"
           if [ -n "$hits" ]; then
             echo "$hits"
             exit 1

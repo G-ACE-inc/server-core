@@ -1,69 +1,180 @@
 # PROJECT TEMPLATE
 
 ## 目的
-新規Projectを、既存資産の再利用を優先し、短時間・低コンテキスト・低コストで開発できる状態から開始する。
+
+新規Projectまたは既存Projectの整備時に、server-coreを共通入口として、低Context・再利用優先・引継ぎ可能なRepository構造を作る。
+
+このTemplateは大量のDocument作成を要求するものではない。必要な正本だけを作る。
+
+## Workspace Integration
+
+ProjectはG-ACE Workspace内ではserver-core共通ルールに従う。
+
+```text
+server-core README / LOAD_SCOPE
+  -> Project README
+  -> Project固有Authority
+  -> Source / Test
+```
+
+Project固有情報をserver-coreへコピーしない。
 
 ## 開発開始前の確認
-新規Code生成前に次を確認する。
+
+新規Code生成前に確認する。
 
 1. 目的と期待結果
-2. 同じ責務を持つ既存の設計、Code、Module、型、Schema、テスト、Template
-3. そのまま利用できるか
-4. 設定・引数・型の調整で利用できるか
-5. 薄いAdapterで利用できるか
+2. 同じ責務を持つ既存Design / Code / Module / Type / Schema / Test / Template
+3. そのまま利用可能か
+4. 設定・引数・型調整で利用可能か
+5. 薄いAdapterで利用可能か
 6. 共通部分を抽出できるか
-7. 新規実装が必要か
+7. 新規実装が本当に必要か
 
-既存資産を利用しない場合は、複雑化、性能、品質、依存、互換性などの具体的理由を確認する。
+既存資産を利用しない場合は、複雑化、性能、品質、依存、互換性等の具体的理由を確認する。
 
 ## 最小必須構成
+
 - `README.md`
 - `.gitignore`
-- 技術スタックに対応する実装入口
-- 環境変数が必要な場合だけ、値を含まない `.env.example`
+- 技術Stackに対応する実装入口
+- 環境変数が必要な場合だけ値なし `.env.example`
 
-追加ファイルと追加文書は、開発、再利用、検証、運用コストを下げる場合に作成する。
-
-## README.md 最小項目
-- Project名
-- 目的と期待結果
-- 実装入口
-- 起動・検証方法
-- 主な再利用資産がある場合の入口
-- 現在フェーズ
-- 本番運用可否
-- 管理者承認が必要な操作
-- 正本が別にある場合の入口
+Design / Tree / Delta / System Documentは必要条件を満たした場合だけ追加する。
 
 ## Single Source of Truth
-同じ情報は1つの正本へ集約する。
 
-正本の優先順位は次とする。
-1. Code上の型、Schema、Interface、テスト
-2. 実際に利用する単一の設定またはManifest
-3. README.md
-4. 必要な場合の追加正本文書
+同じ情報を複数Documentへ重複管理しない。
 
-## 追加文書を作る条件
-次のいずれかがあり、追加文書が開発・再利用・検証・運用コストを下げる場合に作成する。
+基本責務:
+- Code上のInterface / Type / Schema / Test: executable contract
+- Design: architecture / responsibility / boundary baseline
+- README: current completed / verified entry point
+- Project Tree: navigation index
+- Design Delta: intentional difference / rationale
+- Commit / PR: chronological work history
 
-- 複数の実装入口または複数Systemがある
-- 公開契約、運用、セキュリティ、デプロイを独立管理する必要がある
-- 構造、状態所有者、障害範囲が複雑である
-- 法令、監査、外部提供のため独立文書が必要である
-- 文書の独立更新が実装変更より明確に多い
+## README Contract
 
-追加候補:
-- `PROJECT_INDEX.md`: 複数の正本入口を案内する必要がある場合
-- `docs/STRUCTURE.md`: 物理構造と所有境界の説明がREADMEでは不足する場合
-- `docs/SPEC.md`: 公開仕様または業務仕様を独立管理する必要がある場合
-- `docs/DEPLOY_RUNBOOK.md`: 本番デプロイ手順を持つ場合
-- `docs/OPERATION_CHECKLIST.md`: 継続運用手順を持つ場合
-- `docs/SECURITY.md`: Project固有のセキュリティ境界を持つ場合
-- `docs/DOC_INDEX.md`: 正本文書が複数存在し、読込順序が必要な場合
+READMEはProjectのCurrent State Entry Pointとする。
+
+最低限:
+- Project名 / Purpose
+- Current completed / verified state
+- main entry point
+- run / test / verify方法
+- Designへのリンク（存在する場合）
+- Project Treeへのリンク（存在する場合）
+- Design Deltaへのリンク（存在する場合）
+- completed System / Feature-bundle documentsへのリンク（存在する場合）
+- Production / Runtime状態を記載する場合は確認境界を明確化
+
+READMEをDesign正本として使わない。
+
+## Design Contract
+
+DesignはArchitecture / Contract / Boundary / ResponsibilityのBaselineを保存する。
+
+Current実装に合わせて履歴を消す上書きをしない。
+
+Architecture自体を正式変更する場合は、旧Baseline、変更理由、新しいDecision、適用Commitを追跡できる状態にする。
+
+## Project Tree
+
+次の場合に作成する。
+- RepositoryがREADMEだけでは主要構造を辿りにくい
+- 複数のentry point / module / systemがある
+- AIが対象Source探索で不要なRepository全読込を繰り返す可能性がある
+
+Treeは単なるPath一覧ではなく、主要File/Directoryの責務、Entry Point、関連Design、関連Testを記録する。
+
+更新条件:
+- File/Directory追加・削除・移動
+- 主要責務変更
+- Entry Point変更
+- 構造変更
+
+build / dist / dependency / cache等は通常載せない。
+
+## Design Delta
+
+実装がDesign Baselineと意図的に異なる場合に使用する。
+
+最低項目:
+- Baseline design
+- Actual change
+- Reason / root cause
+- Evidence
+- Affected scope
+- Applied commit
+- Compatibility / migration / rollback considerations
+
+Design DeltaをDesignのCurrent化に使わない。
+
+## System / Feature-bundle Document
+
+次の場合に作成または既存Documentを更新する。
+- 複数Featureが1つのSystem責務を形成した
+- reusable Moduleとして完成した
+- 安定した内部/外部Interfaceを持つ
+- State/Data ownershipが複雑
+- Runtime / Failure / Recovery / Security / Operation理解が保守に必要
+- READMEだけでは別AI / Developerへ説明なしで引継げない
+
+Document内容は対象Systemに必要なものだけ選ぶ。
+
+候補項目:
+- Purpose / Scope
+- Architecture / Component / Module
+- Entry points
+- Interface / Contract
+- Dependencies
+- State / Data ownership
+- Processing flow
+- Failure / Recovery
+- Security boundary
+- Configuration
+- Runtime / Deployment
+- Tests / Verification
+- Current verified state
+- Design / Delta relationship
+- Source / Test map
+- Extension / compatibility constraints
+
+不要な空セクションをTemplate充足のためだけに作らない。
+
+## Specialized Documents
+
+以下は条件がある場合だけ分離する。
+
+- Contract: API / CLI / MCP / Event / Webhook等の安定契約が複雑
+- Data/State Ownership: 永続状態や複数Systemの所有境界が複雑
+- Operations / Recovery: 常駐Serviceや障害復旧が必要
+- Security: Secret/Auth/Permission/Public endpoint/User data等の境界が重要
+- Verification / Acceptance: 完成条件・E2E・Provider検証を独立管理する価値がある
+- Migration / Compatibility: Schema/API/Storage/Runtime移行がある
+- ADR: 重要なTradeoffを伴うArchitecture decisionを後から説明する必要がある
+
+## Documentation Gate
+
+作業完了前に判定する。
+
+```text
+README_UPDATE_REQUIRED=YES/NO
+PROJECT_TREE_UPDATE_REQUIRED=YES/NO
+DESIGN_DELTA_REQUIRED=YES/NO
+SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
+```
+
+判定:
+- Current completed / verified state変更 -> README YES
+- File/Directory/主要責務/Entry Point変更 -> Tree YES
+- Designとの差を正式採用 -> Delta YES
+- 説明なし引継ぎが困難な完成System/Feature bundle/Module -> System Document YES/UPDATE_EXISTING
+
+Requiredなのに未更新ならDocumentation Completeではない。
 
 ## 5段階層型モジュラーアーキテクチャ
-開発AIが設計とCodeを組み立てる論理順序は次で固定する。
 
 ```text
 Part
@@ -77,88 +188,76 @@ System
 Application System
 ```
 
-5段は、完成物を理解、分解、再利用、再構成するための論理構造として使用する。
-
-分類は、再利用範囲、修正範囲、責務混在、依存、テスト対象を判断する対象へ行う。
+5段は論理分類であり、各段を必ず別File/Directoryにする規則ではない。
 
 ## Module化判定
-Moduleは、同一Project内または別Projectで再利用、交換、独立修正しやすいように、1つの目的と責務へまとめた開発上の再利用単位である。
 
-新規Moduleは次を満たし、再利用または修正コストを下げる場合に作成する。
-- 目的と責務を一文で説明できる
-- 公開契約を定義できる
-- 入力、出力、依存、前提条件を明確にできる
-- 依存、設定、状態の所有範囲を定義できる
-- Application System固有の値や環境を設定またはAdapterへ分離できる
-- 隠れたGlobal Stateや暗黙依存を持たない
-- 単独または境界単位でテストできる
-- 再利用時に必要なコンテキストを対象範囲へ限定できる
-- 追加ファイル、Interface、変換、保守コストより効果が大きい
+Moduleは再利用、交換、独立修正の実益がある責務単位とする。
 
-条件を満たさない責務は、既存Module内のPart、FeatureまたはComponentとして実装する。
+新規Moduleの目安:
+- 目的/責務を一文で説明可能
+- Public contractを定義可能
+- Input/Output/Dependency/State ownerが明確
+- Application固有値をConfig/Adapterへ分離可能
+- 単独または境界単位でTest可能
+- 再利用時のContextを限定可能
+- 追加保守Costより効果が大きい
 
-## 物理分離
-物理分離は、次の効果が明確に得られる場合に行う。
-- 権限または機密情報を隔離できる
-- 障害範囲を限定できる
-- 実行環境を分けられる
-- 起動・停止またはデプロイを独立できる
-- 状態またはデータ所有を明確にできる
-- 依存環境を隔離できる
-- 再利用、変更、テストの対象範囲を小さくできる
+条件を満たさない場合は既存Module内のPart/Feature/Componentとして実装する。
 
 ## AIへ渡す最小情報
+
+通常TaskでAIへ渡す起点:
 - 目的と期待結果
 - 対象責務
 - 再利用候補
-- 入力・出力
+- Input / Output
 - 直接依存と制約
-- 関連テスト
+- 関連Test
 
-読込は対象Codeから開始し、必要な場合に境界、再利用単位、Systemへ拡張する。
+不足した時だけLOAD_SCOPEに従って広げる。
 
-## テスト最小項目
-変更前に次を定義する。
-- 入力
-- 実行条件
-- 期待出力
-- 変更される状態
-- 変更されてはならない状態
-- 依存停止時の結果
-- 復旧後の結果
-- 既存機能で維持すべき結果
-- 異常入力または主要失敗条件の結果
+## Test / Verification
 
-合格は、期待出力、状態変化、既存機能回帰、主要失敗条件の結果で判定する。
+変更内容に応じて確認する。
+- Input
+- execution condition
+- expected output
+- changed state
+- state that must not change
+- regression
+- important failure cases
+- Runtime / Provider readback when relevant
 
-## 環境変数
-共有が必要なキーは `.env.example` に値なしで記載する。
+合格は、期待出力、状態変化、既存機能回帰、主要失敗条件を必要範囲で確認して判定する。
 
-```env
-SERVICE_TOKEN=
-REDIS_URL=
-```
-
-実値はGit管理外の環境へ設定する。
+Process起動、Error無し、HTTP 200、Build成功、CI greenだけではPASSとしない。
 
 ## GitHub
-最小構成をcommitしてから実装を開始する。
 
-作業履歴はcommit / PRを正本とし、現在仕様は正本文書へ記録する。
+Commit / PRを実作業履歴の正本とする。
+
+Commitは必要に応じてPurpose、material changes、affected scope、verification、documentation、remaining/unverified workを追える作業報告にする。
+
+Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionを別状態として扱う。
+
+## Secret / Environment
+
+共有が必要なkey名は値なし `.env.example` に記載可能。
+
+Secret / Token実値をGitへ保存しない。Workspace共有Secret契約がある場合はserver-core側の契約を利用し、Projectへ実値を複製しない。
 
 ## 実行順序
+
 ```text
-目的と期待結果を確定
-  ↓
-再利用候補を確認
-  ↓
-必要な範囲だけ5段で整理
-  ↓
-最小構成を決定
-  ↓
-設計・実装
-  ↓
-期待結果と回帰を検証
-  ↓
-必要な正本だけ更新
+目的と期待結果
+  -> server-core routing
+  -> Project README
+  -> 必要なBaseline / Source / Test
+  -> reuse check
+  -> implementation / debug
+  -> verification
+  -> documentation gate
+  -> GitHub work report
+  -> remote verification
 ```

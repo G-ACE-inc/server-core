@@ -1,53 +1,132 @@
 ---
-description: このworkspace固有の実行ガードと優先順位。言語・切替は user rules に従う。
+description: G-ACE Workspace共通のAI実行入口・Context Routing・完了境界。
 alwaysApply: true
 ---
 
-# Workspace Runtime
+# G-ACE Workspace Runtime
 
-## 前提
-- 言語方針・作業者表示・サブエージェント切替は user rules (Agent Router) を正とする。
+## Authority Entry
 
-## 実行手順（最小コンテキスト）
-- チャット冒頭から、常駐Serverの実装・検証・起動は docker compose / Dockerfile を正とする。ホストの npm start / node / python / pm2 / systemctl start で常駐させない。
-- 作業開始時は、ユーザーがこのメッセージで明示した対象ファイル・対象Project・対象Codeだけを読む
-- チャット開始時に読むのはユーザーが指定した対象のみとし、正本一覧を一括で読まない
-- `README.md`、`docs/LOAD_SCOPE.md`、`CORE.md`、`SERVER_CORE_PROTOCOL.md`、`KB.md`、`PROJECT_STATUS.md` などの正本は、必要性が確定した時点で必要なものだけを読む
-- 現在作業に必要な正本だけを必要になった時点で読む
-- 対象Code、直接依存、関連テストを確認する
-- 目的、期待結果、対象責務、再利用候補、入力・出力、制約を確定する
-- 読込範囲は、対象 → 境界 → 再利用単位 → Systemの順で必要な段階まで拡張する
-- .env / secrets / node_modules / dist / build / .next / archive / logs / dumps は、作業に直接必要な対象だけを読む
-- Code判断、差分確認、ファイル選定、エラー診断、実装方式は現物から判断する
+Workspace内で作業するAI / Agent / Composerは、Project固有作業へ入る前にserver-coreを共通入口として扱う。
 
-## 作業完了とGit（必須）
-- ファイル変更を伴う作業完了時は、管理者が明示的に禁止した場合を除き、必ず commit / push まで行う。commit / push なしで終了した作業は未完了として扱う。
-- README.md は新規作成しない。ただし既存 README の該当節は、作業内容に応じてこまめに更新する。
-- 管理者が明示禁止したときだけ commit / push を行わない。
-- `SERVER_CORE_PROTOCOL.md` の Git 節を正とする。Cursor の「依頼時のみ commit」より、このワークスペースでは PROTOCOL を優先する。
-- composer は作業完了時に `scripts/ai-auto-commit.sh --push` を実行する。無ければ同等の status / diff / log 確認のうえ秘密を除いて commit / push する。
+開始順:
 
-## Architecture Guard
-- LibralCoreは再利用によって開発時間、AIコンテキスト、Token、実装・修正・検証コストを削減する開発方法論とする
-- 5段は `Part → Feature → Component → System → Application System` の論理構造として使用する
-- 物理構造は対象Projectの規模、再利用範囲、変更範囲、依存、検証、運用上の実益で決定する
-- Moduleは再利用、交換、独立修正しやすい開発上の責務単位とする
-- 新規Code生成前に既存の設計、Code、Module、型、Schema、テスト、Templateを確認する
-- 既存資産は、そのまま利用 → 設定・型調整 → 薄いAdapter → 共通部分抽出 → 新規実装の順で判断する
-- 既存構造への統合を優先する
-- 期待出力、状態、主要失敗条件、回帰結果で合否を決める
+```text
+1. /home/admin1/server-core/README.md
+2. /home/admin1/server-core/docs/LOAD_SCOPE.md
+3. 今回のTaskに必要なserver-core正本だけ
+4. 対象Project README
+5. 対象Project内の必要なDesign / Project Tree / Design Delta / System Document / Source / Testだけ
+```
 
-## 優先順位
-- 開発方法論とArchitecture判断は `CORE.md` を正とする
-- 共通運用判断は `SERVER_CORE_PROTOCOL.md` を正とする
-- 読込範囲は `docs/LOAD_SCOPE.md` を正とする
-- repo-local仕様がServer Core共通規則より具体的で、両者が整合する場合はrepo-localを優先する
-- サブエージェント出力も同じ実行手順に従う
+server-coreの全正本を一括読込しない。
 
-## Sonnet 4.6 の作業境界（Workspace固有）
-- チャット開始時に README / LOAD_SCOPE / CORE / SERVER_CORE_PROTOCOL / KB / PROJECT_STATUS を一括読みしない
-- 必要性が確定するまで正本ファイルを開かない
-- ファイル編集・Shell実行は必ず composer に委任する
-- 通常の設計・方針判断は GPT-4.5Mini に委任する
-- 難題・複雑ロジック・レビューは Sonnet 4.6 が直接担当してよい
-- 常駐起動・検証は docker compose / Dockerfile を正とし、ホストの npm start / node / systemctl start で常駐させない。既存稼働中プロセスは止めず、衝突時は別ポートか別 profile で並行起動する。
+同一Task範囲で一度確認済みの内容は、変更または情報不足が無ければ毎ターン再読込しない。
+
+## Context Loading
+
+対象ProjectではREADMEを入口とし、通常は対象Source・Input/Output・直接依存・関連Testから開始する。
+
+必要な場合だけ次の順で拡張する。
+
+```text
+Target Boundary
+  -> Adjacent Boundary
+  -> Reuse Unit / Module / Component
+  -> System / Repository
+```
+
+`.env` / secrets / node_modules / dist / build / `.next` / archive / logs / dumps / cache / backupsは通常Contextへ入れない。Task対象になった場合だけ必要範囲を読む。
+
+## Development Rules
+
+- 目的と期待結果を最初に固定する。
+- 新規Code生成前に既存Design / Code / Module / Type / Schema / Test / Template / 登録済み共有資産の再利用可否を確認する。
+- 再利用は `そのまま利用 -> 設定・型調整 -> 薄いAdapter -> 共通部分抽出 -> 新規実装` の順で判断する。
+- 公開契約、Input、Output、依存方向、設定所有者、状態所有者を必要範囲で明確にする。
+- DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
+- 実装がDesignと意図的に異なる場合はDesign Deltaへ差分、理由、Evidence、適用Commitを残す。
+- 実装済み / 完成 / 稼働はREADMEだけで判断せず、Source / Test / Runtime Evidenceで確認する。
+
+## LibralCore
+
+共通開発方法論は `/home/admin1/server-core/CORE.md` を必要時に読む。
+
+論理構造:
+
+```text
+Part -> Feature -> Component -> System -> Application System
+```
+
+物理分割は分類のためではなく、再利用、交換、権限、障害範囲、状態所有、独立検証、運用上の実益がある場合に行う。
+
+## Verification
+
+次だけでPASSにしない。
+- Process起動
+- Error無し
+- HTTP 200
+- `true`
+- 空配列
+- Build成功
+- Test runner終了
+- CI green
+
+必要な範囲でInput、実行条件、期待出力、状態変化、変化してはならない状態、回帰、主要失敗条件、Runtime/Provider readbackを確認する。
+
+未確認 / 未実行 / 未検証を推測でPASSへ変えない。
+
+## Documentation Gate
+
+作業終了前に判定する。
+
+```text
+README_UPDATE_REQUIRED=YES/NO
+PROJECT_TREE_UPDATE_REQUIRED=YES/NO
+DESIGN_DELTA_REQUIRED=YES/NO
+SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
+```
+
+Requiredなのに未更新ならDocumentation Completeとしない。
+
+System / Feature bundle / reusable ModuleがREADMEだけでは説明なしに引継げない場合は、既存Documentを更新するか技術Documentを作成しREADMEから到達可能にする。
+
+## GitHub Work History
+
+ファイル変更を伴う完成作業では、管理者が明示禁止した場合を除き、対象Repositoryの運用に従ってcommit / pushし、可能ならremote readbackまで確認する。
+
+Commitは実作業報告として、必要に応じて目的、主要変更、影響範囲、検証、Document更新、残作業を追える内容にする。
+
+Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
+
+## Approval Boundary
+
+Masterの明示指示なしに次を行わない。
+- main / PR merge
+- Production deploy / 公開 / 切替
+- Force push / Branch削除 / reset --hard / rebase
+- 既存Service stop / restart / recreate
+- Cloudflare / Hugging Face等のResource作成・変更・削除
+- Secret追加・削除・rotation
+- 新規Model download
+- 新規Repository / Project / Space作成
+
+## Runtime
+
+本番常駐の標準経路はDocker / Docker Composeとする。
+
+Hostの `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` を本番常駐経路として追加しない。
+
+ServerはRuntime / Processing環境であり、GitHub Source履歴やProject Designの代替正本にしない。
+
+## Shared Workspace Capabilities
+
+共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。
+
+Secret値をChat / Git / Log / Documentへ出さない。
+
+未登録・未実装・未検証のCapabilityを利用可能と扱わない。
+
+## Final Rule
+
+Masterの現在の明示指示を最優先とする。手抜き、中抜き、必要工程を落とす簡略化、捏造、推測補完、未実行の実行済み扱い、未検証のPASS扱いは禁止する。

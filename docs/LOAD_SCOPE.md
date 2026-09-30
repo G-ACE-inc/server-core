@@ -1,120 +1,150 @@
-# SERVER CORE LOAD SCOPE
+# SERVER CORE LOAD SCOPE / ROUTER
 
 ## 目的
-AIが必要な情報だけを段階的に読み、コンテキストとToken消費を最小化する。
+
+G-ACE Workspace内のAI / Developerが必ずserver-coreを入口にしつつ、今回の作業に必要な情報だけを段階的に読み、Context・Token・探索時間を増やさず確実に作業する。
 
 ## 最小開始範囲
-作業開始時は次を読む。
 
-1. `README.md`
-2. `docs/LOAD_SCOPE.md`
-3. ユーザーが指定した対象ファイルまたは対象Projectの入口
+Workspace内の作業開始時は次の順を固定する。
 
-## 目的別の正本読込
-現在作業に必要な正本を読む。
+```text
+1. server-core/README.md
+2. server-core/docs/LOAD_SCOPE.md
+3. 今回の作業に必要なserver-core正本だけ
+4. 対象Project README
+5. 対象Project内の必要なDesign / Tree / Delta / System Document / Source / Testだけ
+```
 
-- LibralCore、5段、Module、再利用、物理分割: `CORE.md`
-- 共通作業、GitHub、Docker、秘密情報、archive: `SERVER_CORE_PROTOCOL.md`
-- 管理者が確定した判断の照合: `KB.md`
-- 現在状態またはProject入口: `PROJECT_STATUS.md`
-- Server Core自身の構造: `docs/STRUCTURE.md`
-- 用語または正式表記: `docs/GLOSSARY.md`
-- 新規Project作成: `docs/PROJECT_TEMPLATE.md`
-- デプロイ承認後: `docs/DEPLOY_RUNBOOK.md`
-- 作業手順確認: `docs/OPERATION_CHECKLIST.md`
-- 自動commit確認: `docs/AUTO_COMMIT.md`
-- GitHub無料枠設定: `docs/GITHUB_FREE_MAX.md`
-- GitHub skill確認: `docs/GITHUB_SKILL.md`
-- G-ACE Workspace確認: `docs/G_ACE_WORKSPACE.md`
-- Cloudflare Tunnel運用（Astera v8）: `docs/CLOUDFLARE_OPERATIONS.md`、`operations/cloudflare.json`
-- Hugging Face Access Token 契約（workspace共有）: `operations/huggingface.json`
-- Cloudflare Account API 契約（workspace共有）: `operations/cloudflare-account.json`
-- Workspace共有Secretの使用: `docs/WORKSPACE_SHARED_SECRETS.md`
+README以外のserver-core正本を新CHAT/新Taskで一括読込しない。
 
-同じ目的の情報がCode、Manifest、文書へ重複している場合は、実際に利用される型、Schema、テスト、設定、単一Manifest、正本文書の順で正本を判断する。
+同じTask範囲で一度確認済みの正本は、変更や情報不足が無い限り毎ターン再読込しない。
 
-## AIへ渡す最小情報
-通常変更では次を起点とする。
+## Task Routing
 
-1. 目的と期待結果
-2. 対象責務
-3. 再利用候補
-4. 入力・出力
-5. 直接依存と制約
-6. 関連テスト
+| Task | server-coreで追加読込するAuthority |
+|---|---|
+| 開発方法論 / 責務 / 5段 / Module / 再利用 | `CORE.md` |
+| 共通運用 / 禁止事項 / Server境界 | `SERVER_CORE_PROTOCOL.md` |
+| Workspace設定・入口 | `docs/G_ACE_WORKSPACE.md` |
+| Git / Commit / Push | `docs/AUTO_COMMIT.md` |
+| Deploy | `docs/DEPLOY_RUNBOOK.md` |
+| 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
+| Project / MCP / Tool / shared capability / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` + 必要な実Runtime readback |
+| Reusable KB / F: storage / KB bridge | `docs/KB_REUSE_DESIGN.md` |
+| Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
+| Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
+| Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
+| 用語 | `docs/GLOSSARY.md` |
+| server-core構造 | `docs/STRUCTURE.md` |
+| server-core設計判断 | `docs/SERVER_CORE_DESIGN.md` |
 
-既存Codeから確認できる内容は、その正本を参照する。
+複合作業では必要なAuthorityだけ組み合わせる。
 
-## 段階的読込
+## Target Repository Loading
+
+対象Projectへ入った後はREADMEを入口とする。
+
+### Level 0: Repository Entry
+- README Current State
+- Designへのリンク
+- Project Treeへのリンク
+- Design Deltaへのリンク
+- Completed System / Feature-bundle Documentへのリンク
+
+存在しないDocumentを推測で作成済み扱いしない。
 
 ### Level 1: 対象
-- 対象Code
-- 入力・出力
+- 対象Source
+- Input / Output
 - 直接依存
-- 関連テスト
+- 関連Test
 - 明示された再利用候補
 
+読込はLevel 1から開始する。通常変更もLevel 1で閉じられるならそこで止める。
+
 ### Level 2: 境界
-- 呼出元
-- 呼出先
-- 設定
-- 状態所有者
-- 近接する再利用候補
+次の場合だけ拡張する。
+- 呼出元 / 呼出先が必要
+- Config / State ownerが不明
+- Interface / Schema契約の確認が必要
+- 近接再利用候補の確認が必要
 
 ### Level 3: 再利用単位
-- 対象ModuleまたはComponent全体
-- 同じ責務を持つ既存実装
-- 利用側との差分
-- Adapterまたは設定調整の候補
+次の場合だけModule / Component範囲へ拡張する。
+- 同じ責務の既存実装比較が必要
+- Adapter / shared contract検討が必要
+- 責務混在 / 循環依存の可能性がある
 
 ### Level 4: System
-- 関連System
-- 複数ComponentまたはModuleへの影響
-- 必要な場合の対象リポジトリ全体
-
-読込はLevel 1から開始し、次の条件が確認された場合に1段階ずつ拡張する。
-
-- 対象責務を特定するために追加情報が必要
-- 入力、出力、依存、状態所有者の特定に追加情報が必要
-- 再利用候補が目的を満たすか判断するために追加情報が必要
-- 宣言されていない依存が見つかった
-- 変更対象外のテストが失敗した
-- 循環依存または内部実装参照の可能性がある
-- 変更が複数Component、Module、Systemへ影響する
-- 期待結果を満たすために対象外変更が必要
+次の場合だけSystem / Repository全体へ拡張する。
+- 複数Component / Moduleへ影響
+- 影響範囲を局所情報で閉じられない
+- Masterが全体監査 / 全コード確認 / 横断調査を明示
 
 ## 再利用探索
-新規Code生成前に、対象責務と同じ既存資産を必要範囲で検索する。
 
-検索順序:
-1. 対象Project内
-2. 管理者が指定した関連ProjectまたはLibrary
-3. 利用可能な既存Module、型、Schema、テスト、Template
-4. 外部情報が必要な場合の公式資料
+新規Code・Module・Document作成前に、必要範囲で次を確認する。
 
-検索範囲は、再利用可能性を判断するために必要な範囲へ限定する。
+```text
+対象Project内
+  -> Workspace Registryで既存共有Capability確認
+  -> Workspace内の既存共有資産
+  -> 登録済みKB / Tool / MCP（利用可能・検証済みの場合）
+  -> 必要な場合だけ公式外部資料
+```
 
-## 通常読込範囲
-通常作業では、対象Code、直接依存、関連テスト、必要な正本を読む。
+Registryは探索入口であり、CapabilityのCurrent Runtimeを証明しない。
 
-次の領域は、ユーザーが明示した場合または作業に直接必要な場合に対象を限定して読む。
+再利用判断:
 
+```text
+そのまま利用
+  -> 設定 / 引数 / 型調整
+  -> 薄いAdapter
+  -> 共通部分抽出
+  -> 新規実装
+```
+
+## Normal Context Exclusions
+
+以下は通常Contextへ入れない。
 - `archive/`
-- `.github/`
-- `scripts/`
-- `.env`、secrets、credential
+- `.github/`（GitHub Actions / PR / Issue等がTask対象の場合を除く）
+- `scripts/`（Script自体がTask対象の場合を除く）
+- `.git/`
 - `node_modules/`
-- `dist/`、`build/`、`.next/`
-- `logs/`、dumps、cache
+- `dist/` / `build/` / `.next/`
+- logs / dumps / cache
+- backups
+- Secret / credential実値
 
-例:
-- GitHub Actions修正では対象workflowを読む。
-- 自動commit修正では `scripts/ai-auto-commit.sh` を読む。
-- 旧履歴確認では `archive/` 内の該当ファイルを読む。
+Task対象になった場合だけ必要Fileへ限定して読む。
+
+## Documentation Read Rule
+
+READMEはCurrent State入口。DesignはBaseline。Design Deltaは意図的差分と理由。Commitは実作業履歴。
+
+DesignとCurrent実装が違う場合、DesignをCurrentへ合わせて履歴を消さない。
+
+完成したFeature束 / System / reusable ModuleについてREADMEだけでは引継ぎ不能な場合、既存Documentを更新するかSystem/Module Documentを作成しREADMEから到達可能にする。
+
+## Runtime / Registry Rule
+
+`docs/WORKSPACE_REGISTRY.md` やREADMEに書かれたContainer / Port / Domain / Runtime状態は探索入口であり、実Runtimeの代用ではない。
+
+Current状態が必要なら対象Provider / Docker / GitHub / Endpoint等をreadbackする。
 
 ## 読込完了条件
-- 目的と期待結果を説明できる
-- 対象責務を特定できる
-- 再利用候補を判断できる
-- 入力、出力、直接依存、制約を確認できる
-- 関連テストと影響範囲を確認できる
+
+作業開始に必要な読込は、次を説明・確認できた時点で止める。
+- 目的と期待結果
+- 対象責務
+- Design上の基準線（必要な場合）
+- 入力 / 出力
+- 直接依存 / 制約
+- 再利用候補
+- 関連Test / Verify方法
+- 影響範囲
+
+不足が発生した場合だけ次Levelへ進む。
