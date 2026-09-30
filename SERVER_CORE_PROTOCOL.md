@@ -1,8 +1,13 @@
 # SERVER CORE OPERATION PROTOCOL
 
+Version: 2026-09-30
+Role: G-ACE Workspace Command Centerの共通運用・承認・安全境界。
+
 ## Purpose
 
-G-ACE Workspace全体で共通に適用する、Authority・変更権限・GitHub・Runtime・Secret・Storageの**共通境界だけ**を定める。
+G-ACE Workspace全体で共通に適用するAuthority、変更権限、GitHub、Runtime、Secret、Storageの**共通境界だけ**を定める。
+
+server-coreは司令室としてTaskをRouting/Dispatchするが、Project固有実装のownerにはならない。
 
 開発方法論、Project構成、Context routing、Deploy、KB、Storage lifecycle等の詳細をここへ重複記載しない。作業は `README.md` -> `docs/LOAD_SCOPE.md` から必要Authorityだけ読む。
 
@@ -23,7 +28,7 @@ Masterの明示指示なしに次を実行しない。
 - Provider resourceの作成・変更・削除
 - 新規Model download
 
-## Workspace Entry
+## Workspace Entry / Command Dispatch
 
 ```text
 server-core/README.md
@@ -35,7 +40,10 @@ server-core/README.md
 
 全正本を一括読込しない。
 
-Workspace正規仕様は `docs/G_ACE_WORKSPACE.md`、共有Capability / Project / Runtime discoveryは `docs/WORKSPACE_REGISTRY.md` を正とする。
+Workspace正規仕様: `docs/G_ACE_WORKSPACE.md`  
+Discovery: `docs/WORKSPACE_REGISTRY.md`  
+server-core Design: `docs/SERVER_CORE_DESIGN.md`  
+Design差分: `docs/DESIGN_DELTA.md`
 
 ## Development Boundary
 
@@ -47,7 +55,7 @@ Workspace正規仕様は `docs/G_ACE_WORKSPACE.md`、共有Capability / Project 
 
 ## Validation
 
-必要範囲で以下を確認する。
+必要範囲で確認する。
 - Input
 - execution condition
 - expected output
@@ -95,7 +103,7 @@ Server上の直接Source修正を正式開発履歴の代替にしない。Runti
 
 ## Shared Capability Boundary
 
-server-coreは共有Capabilityの実装本体を抱え込まず、Discovery・接続契約・所有者・権限境界を管理する。
+server-coreは共有Capabilityの実装本体を抱え込まず、Discovery・接続契約・所有者・権限境界・Availability stateを管理する。
 
 Discovery Authority: `docs/WORKSPACE_REGISTRY.md`
 
@@ -105,7 +113,9 @@ Registry記載だけでCurrent Runtimeを証明しない。必要時は実設定
 
 DebugAIは独立Project/runtime。
 
-CLI / HTTPに加え、MCP AdapterはDebugAI PR #22でSource / CI / stdio Protocolまで検証済み。Contabo Live DebugAI Runtime接続とWorkspace MCP登録は未実施なので、Workspace上の `AVAILABLE_VERIFIED` とは扱わない。
+Current source authorityは `seigo-gace/debug-ai` main。MCP Adapterを含むSourceはmainへmerge済みでsource-side verification済み。
+
+ただし、Contabo Live DebugAI MCP Runtime接続とWorkspace MCP登録は別状態であり、確認完了までWorkspace上の `AVAILABLE_VERIFIED` とは扱わない。
 
 ### Reusable KB
 
@@ -132,9 +142,9 @@ VPSからPC filesystemを直接読める前提を置かず、実装・検証済�
 - Redis: dedup / hot-cache
 - `/home/admin1/logs`: temporary operational disk state
 - VPS: processing/runtime environment
-- `/home/admin1/backups`: backup area。単なるcleanup対象ではない
+- `/home/admin1/backups`: backup area。generic cleanup対象ではない
 
-Generic automatic cleanupはfail-closedにする。
+Generic automatic cleanupはfail-closed。
 
 次を自動削除しない。
 - owner不明
@@ -184,3 +194,4 @@ Workspace共有Secretは `docs/WORKSPACE_SHARED_SECRETS.md` を正とし、各Pr
 - `/home/admin1/logs` を永続保管庫として使う
 - KBへの無判定直接投入
 - Server cleanupでowner不明・active・recovery dataを削除
+- server-coreへProject固有実装を司令室都合だけで移す
