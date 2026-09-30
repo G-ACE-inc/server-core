@@ -46,6 +46,8 @@ jobs:
           test -f docs/CLOUDFLARE_OPERATIONS.md
           test -f operations/storage-lifecycle.json
           test -f scripts/storage_lifecycle_audit.py
+          test -f scripts/workspace_command_center_check.py
+          test -x scripts/init-dev-workspace.sh
           test -x scripts/ai-auto-commit.sh
           test -x scripts/resolve-codex-skill.sh
           test -x scripts/github-skill-path.sh
@@ -71,12 +73,39 @@ jobs:
           grep -q 'Formalize server-core as the G-ACE Workspace command center' docs/DESIGN_DELTA.md
           grep -q 'COMMAND ROUTER' docs/LOAD_SCOPE.md
           grep -q 'Command-Center Dispatch' docs/G_ACE_WORKSPACE.md
+          grep -q 'Mechanical Workspace Enforcement' docs/G_ACE_WORKSPACE.md
           grep -q 'G-ACE WORKSPACE REGISTRY' docs/WORKSPACE_REGISTRY.md
           grep -q 'Dispatch Rule' docs/WORKSPACE_REGISTRY.md
           grep -q 'Availability Gate' docs/WORKSPACE_REGISTRY.md
           grep -q 'WORKSPACE SHARED SECRETS' docs/WORKSPACE_SHARED_SECRETS.md
           grep -q 'Add-New-Contract Gate' docs/WORKSPACE_SHARED_SECRETS.md
           grep -q 'Command Center' docs/STRUCTURE.md
+
+      - name: Workspace command-center wiring
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          ln -s "$PWD" "$tmp/server-core"
+          bash scripts/init-dev-workspace.sh --root "$tmp" --project smoke-project
+          python3 scripts/workspace_command_center_check.py --root "$tmp"
+          test -d "$tmp/projects/smoke-project"
+          test -L "$tmp/projects/.cursor/rules"
+          test "$(readlink "$tmp/projects/.cursor/rules")" = "$tmp/server-core/.cursor/rules"
+          python3 - "$tmp/workspace/G-ACE.code-workspace" <<'PY'
+          import json, sys
+          p = json.load(open(sys.argv[1], encoding='utf-8'))
+          assert [x['name'] for x in p['folders']] == ['server-core', 'projects']
+          assert p['settings']['search.exclude']['**/node_modules'] is True
+          assert p['settings']['files.exclude']['**/archive'] is True
+          print('WORKSPACE_FILE_CONTRACT=PASS')
+          PY
+          printf '{"folders":[]}' > "$tmp/workspace/G-ACE.code-workspace"
+          if python3 scripts/workspace_command_center_check.py --root "$tmp"; then
+            echo 'Verifier failed to reject invalid workspace' >&2
+            exit 1
+          fi
+          echo 'WORKSPACE_COMMAND_CENTER_NEGATIVE_GATE=PASS'
 
       - name: Provider ownership boundary
         run: |
@@ -224,3 +253,4 @@ jobs:
           while IFS= read -r file; do
             bash -n "$file"
           done < <(git ls-files '*.sh')
+          python3 -m py_compile scripts/workspace_command_center_check.py
