@@ -33,9 +33,10 @@ Source/CIで確認済み:
 - F: 1 TB reusable-development KB Design Baseline
 - Storage / Log / Cache / Backup / Recovery Design Baseline
 - read-only Storage Lifecycle Audit source + deterministic self-test
+- DebugAI MCP AdapterのSource / CI / stdio Protocol verification（DebugAI PR #22。Live Runtime/Workspace登録は未実施）
 
 未実装 / 未Runtime検証:
-- DebugAI MCP Adapter
+- DebugAI MCPのContabo Live Runtime接続 / Workspace登録
 - Reuse KB API/MCP bridge
 - F: KB runtime/data store
 - Storage cleanup mutation / automatic deletion
@@ -175,7 +176,7 @@ server-coreは共有Capabilityの**入口・契約・所有関係**を管理し�
 
 Secret / Token実値はChat・Git・文書・Logへ保存しない。
 
-DebugAIは独立Project/runtimeとして扱う。現在確認済みの共通接続はCLI / HTTPであり、DebugAI MCPは実装・検証後に共通Registryへ登録する。
+DebugAIは独立Project/runtimeとして扱う。CLI / HTTPに加え、MCP AdapterはDebugAI PR #22でSource / CI / stdio Protocolまで検証済み。Contabo上のLive DebugAI Runtime接続とWorkspace MCP登録は未実施なので `AVAILABLE_VERIFIED` とは扱わない。詳細状態は `docs/WORKSPACE_REGISTRY.md` を正とする。
 
 再利用開発KBはMaster PCの `F:` 1TB領域を実データ置場候補とし、server-coreにはデータ本体ではなくアクセス・登録・安全契約だけを持たせる。設計は `docs/KB_REUSE_DESIGN.md`。VPSからPC driveへ直接アクセスできるものとして扱わない。
 
