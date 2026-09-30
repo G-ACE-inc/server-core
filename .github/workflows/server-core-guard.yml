@@ -29,6 +29,7 @@ jobs:
           test -f SERVER_CORE_PROTOCOL.md
           test -f CORE.md
           test -f docs/SERVER_CORE_DESIGN.md
+          test -f docs/DESIGN_DELTA.md
           test -f docs/LOAD_SCOPE.md
           test -f docs/STRUCTURE.md
           test -f docs/WORKSPACE_REGISTRY.md
@@ -42,6 +43,7 @@ jobs:
           test -f docs/GITHUB_SKILL.md
           test -f docs/G_ACE_WORKSPACE.md
           test -f docs/WORKSPACE_SHARED_SECRETS.md
+          test -f docs/CLOUDFLARE_OPERATIONS.md
           test -f operations/storage-lifecycle.json
           test -f scripts/storage_lifecycle_audit.py
           test -x scripts/ai-auto-commit.sh
@@ -56,6 +58,34 @@ jobs:
           test ! -e add-status.sh
           test ! -e docs/OPERATION_CHECKLIST.md
           ! git grep -nE '(^|[^A-Za-z0-9_])(KB\.md|PROJECT_STATUS\.md|OPERATION_CHECKLIST\.md)([^A-Za-z0-9_]|$)' -- ':!archive/**' ':!.github/workflows/server-core-guard.yml'
+
+      - name: Command center authority contract
+        run: |
+          set -euo pipefail
+          grep -q 'G-ACE Workspace Command Center' README.md
+          grep -q 'Workspace command center' docs/SERVER_CORE_DESIGN.md
+          grep -q 'Command Center Responsibilities' docs/SERVER_CORE_DESIGN.md
+          grep -q 'Command Flow' docs/SERVER_CORE_DESIGN.md
+          grep -q 'Command-Center Invariants' docs/SERVER_CORE_DESIGN.md
+          grep -q 'SERVER CORE DESIGN DELTA' docs/DESIGN_DELTA.md
+          grep -q 'Formalize server-core as the G-ACE Workspace command center' docs/DESIGN_DELTA.md
+          grep -q 'COMMAND ROUTER' docs/LOAD_SCOPE.md
+          grep -q 'Command-Center Dispatch' docs/G_ACE_WORKSPACE.md
+          grep -q 'G-ACE WORKSPACE REGISTRY' docs/WORKSPACE_REGISTRY.md
+          grep -q 'Dispatch Rule' docs/WORKSPACE_REGISTRY.md
+          grep -q 'Availability Gate' docs/WORKSPACE_REGISTRY.md
+          grep -q 'WORKSPACE SHARED SECRETS' docs/WORKSPACE_SHARED_SECRETS.md
+          grep -q 'Add-New-Contract Gate' docs/WORKSPACE_SHARED_SECRETS.md
+          grep -q 'Command Center' docs/STRUCTURE.md
+
+      - name: Provider ownership boundary
+        run: |
+          set -euo pipefail
+          grep -q 'WORKSPACE COMMAND CONTRACT' docs/CLOUDFLARE_OPERATIONS.md
+          grep -q 'Project-specific Cloudflare Documentation' docs/CLOUDFLARE_OPERATIONS.md
+          grep -q 'server-coreはCloudflareを.*司令室' docs/CLOUDFLARE_OPERATIONS.md
+          ! grep -q 'api\.asterav8\.jp' docs/CLOUDFLARE_OPERATIONS.md
+          ! grep -q 'astera-v8-prod' docs/CLOUDFLARE_OPERATIONS.md
 
       - name: LibralCore execution contract
         run: |
@@ -72,19 +102,15 @@ jobs:
           grep -q '^System$' CORE.md
           grep -q '^Application System$' CORE.md
 
-      - name: Server-core routed workspace contract
+      - name: Routed workspace contract
         run: |
           set -euo pipefail
           grep -q 'server-core/README.md' docs/LOAD_SCOPE.md
           grep -q 'docs/LOAD_SCOPE.md' README.md
-          grep -q 'SERVER CORE DESIGN' docs/SERVER_CORE_DESIGN.md
           grep -q 'Documentation Gate' docs/SERVER_CORE_DESIGN.md
           grep -q 'GitHub Work Report Contract' docs/SERVER_CORE_DESIGN.md
-          grep -q 'server-coreを必ず共通入口' docs/G_ACE_WORKSPACE.md
+          grep -q 'server-core司令室' docs/G_ACE_WORKSPACE.md
           grep -q 'server-core/README.md' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'WORKSPACE REGISTRY' docs/WORKSPACE_REGISTRY.md
-          grep -q 'REUSABLE DEVELOPMENT KB DESIGN' docs/KB_REUSE_DESIGN.md
-          grep -q 'STORAGE / LOG / CACHE LIFECYCLE' docs/STORAGE_LIFECYCLE.md
           grep -q 'WORKSPACE_REGISTRY.md' README.md
           grep -q 'KB_REUSE_DESIGN.md' docs/LOAD_SCOPE.md
           grep -q 'STORAGE_LIFECYCLE.md' SERVER_CORE_PROTOCOL.md
@@ -92,14 +118,12 @@ jobs:
       - name: Progressive load scope
         run: |
           set -euo pipefail
-          grep -q '最小開始範囲' docs/LOAD_SCOPE.md
-          grep -q 'Level 1: 対象' docs/LOAD_SCOPE.md
-          grep -q 'Level 2: 境界' docs/LOAD_SCOPE.md
-          grep -q 'Level 3: 再利用単位' docs/LOAD_SCOPE.md
-          grep -q 'Level 4: System' docs/LOAD_SCOPE.md
-          grep -q '読込はLevel 1から開始' docs/LOAD_SCOPE.md
-          grep -q '再利用探索' docs/LOAD_SCOPE.md
-          grep -q '読込完了条件' docs/LOAD_SCOPE.md
+          grep -q 'Level 1: Target Boundary' docs/LOAD_SCOPE.md
+          grep -q 'Level 2: Adjacent Boundary' docs/LOAD_SCOPE.md
+          grep -q 'Level 3: Reuse Unit' docs/LOAD_SCOPE.md
+          grep -q 'Level 4: System / Repository' docs/LOAD_SCOPE.md
+          grep -q 'Reuse Search Order' docs/LOAD_SCOPE.md
+          grep -q 'Stop Reading Condition' docs/LOAD_SCOPE.md
           grep -q 'archive/' docs/LOAD_SCOPE.md
           grep -q '.github/' docs/LOAD_SCOPE.md
           grep -q 'scripts/' docs/LOAD_SCOPE.md
@@ -117,9 +141,28 @@ jobs:
           grep -q '実行順序' docs/PROJECT_TEMPLATE.md
           grep -q '期待出力、状態変化、既存機能回帰' docs/PROJECT_TEMPLATE.md
 
+      - name: GitHub work-report and deploy contracts
+        run: |
+          set -euo pipefail
+          grep -q 'Commit = Work Report' docs/AUTO_COMMIT.md
+          grep -q 'REMOTE_READBACK' docs/AUTO_COMMIT.md
+          grep -q 'confirmed GitHub revision' docs/DEPLOY_RUNBOOK.md
+          grep -q 'Runtime Verification' docs/DEPLOY_RUNBOOK.md
+
+      - name: KB design contract
+        run: |
+          set -euo pipefail
+          grep -q 'Command-Center Boundary' docs/KB_REUSE_DESIGN.md
+          grep -q 'Registration Contract' docs/KB_REUSE_DESIGN.md
+          grep -q 'MCP / API Bridge' docs/KB_REUSE_DESIGN.md
+          grep -q 'Document / Runtime Completion Boundary' docs/KB_REUSE_DESIGN.md
+
       - name: Storage lifecycle audit contract
         run: |
           set -euo pipefail
+          grep -q 'Safe Deletion Gate' docs/STORAGE_LIFECYCLE.md
+          grep -q 'SAFE_TO_DELETE' docs/STORAGE_LIFECYCLE.md
+          grep -q 'Document / Runtime Completion Boundary' docs/STORAGE_LIFECYCLE.md
           python3 -m py_compile scripts/storage_lifecycle_audit.py
           python3 scripts/storage_lifecycle_audit.py --self-test
           python3 - <<'PY'

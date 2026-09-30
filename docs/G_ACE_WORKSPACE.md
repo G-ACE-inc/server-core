@@ -1,45 +1,63 @@
 # G-ACE WORKSPACE
 
-## 目的
+Version: 2026-09-30
+Role: G-ACE Workspaceでserver-core司令室を必ず起点にして作業するための正規運用契約。
 
-`/home/admin1/workspace/G-ACE.code-workspace` を、Workspace内の全Projectで **server-coreを必ず共通入口として使う** 開発・運用Workspaceとして定義する。
+## 1. Purpose
 
-server-coreを共通入口として、全AI / Developerが同じRoutingと共通運用境界から対象Projectへ入る。
+標準Workspace `/home/admin1/workspace/G-ACE.code-workspace` では、AI / Developerはserver-coreを共通Command Centerとして使用する。
 
-Projectごとの実装・Designは各Project側に置き、server-coreは共通開発標準、GitHub運用、共有Tool/MCP/Secret契約、Server運用境界を提供する。
+server-coreはTask routing、共通Authority、shared capability discovery、GitHub work history、operations boundaryを管理する。Project固有Design / Source / Test / Runtime logicは各Projectが所有する。
 
-## Authority Entry
+## 2. Mandatory Entry
 
 Workspace作業は必ず次から開始する。
 
 ```text
 /home/admin1/server-core/README.md
   -> /home/admin1/server-core/docs/LOAD_SCOPE.md
-  -> 今回必要なserver-core正本だけ
+  -> 今回必要なserver-core Authorityだけ
   -> 対象Project README
-  -> 対象Projectの必要範囲だけ
+  -> 対象Projectの必要Authority / Source / Testだけ
 ```
 
-全server-core正本の一括読込を禁止する。
+server-core全正本の一括読込は禁止する。
 
-## Workspace Folders
+## 3. Command-Center Dispatch
+
+Taskを受けたAI / Developerは次を決める。
+
+```text
+PURPOSE
+TARGET_PROJECT
+TARGET_RESPONSIBILITY
+REQUIRED_SERVER_CORE_AUTHORITY
+REQUIRED_PROJECT_AUTHORITY
+REUSE_CANDIDATES
+VERIFY_PATH
+APPROVAL_BOUNDARY
+```
+
+対象Projectや責務が不明な場合は `docs/WORKSPACE_REGISTRY.md` でownerを確認する。
+
+既存ownerを確認せず新規Project / Module / Toolを作らない。
+
+## 4. Workspace Folders
 
 通常Folder:
 - `/home/admin1/server-core`
 - `/home/admin1/projects`
 
-通常Folderに含めない:
+通常Workspace Contextへ含めない:
 - `/home/admin1/workspace`
 - `/home/admin1/kb`
 - `/home/admin1/logs`
 - `/home/admin1/backups`
+- archive / build / dist / node_modules / cache / dumps
 
-理由:
-- server-coreを共通Authority入口にする
-- projectsを実作業対象集合として扱う
-- logs / backups / kb / workspaceを通常検索・誤編集・Context肥大から隔離する
+Task対象になった場合だけ必要範囲を開く。
 
-## Project Entry
+## 5. Project Entry
 
 対象ProjectではREADMEを入口にする。
 
@@ -50,16 +68,16 @@ READMEから、存在する場合は次へ直接到達できる状態を標準�
 - completed System / Feature-bundle / Module documents
 - run / test / verify entry points
 
-対象Code、直接依存、関連Testから開始し、必要な時だけ `docs/LOAD_SCOPE.md` のLevelに従って範囲を拡張する。
+対象Source、直接依存、関連Testから開始し、必要時だけ `docs/LOAD_SCOPE.md` のLevelに従ってContextを広げる。
 
-## Development Routine
+## 6. Development Routine
 
 ```text
-server-core entry
+server-core command center
   -> target Project README
   -> required Design / Tree / Delta / System Document
   -> repository / branch / HEAD / status
-  -> Source / direct dependencies / tests
+  -> Source / direct dependency / tests
   -> reuse check
   -> implementation / debug
   -> diff
@@ -67,14 +85,14 @@ server-core entry
   -> documentation gate
   -> GitHub commit as work report
   -> push / remote readback
-  -> PR / CI if required
+  -> PR / CI when required
+  -> approval boundary
+  -> deploy/runtime only when authorized
 ```
 
-Master承認が必要なMerge / Production / Provider変更等は自動で越えない。
+## 7. Documentation Gate
 
-## Documentation Gate
-
-作業完了時に最低限次を判定する。
+作業終了前に必ず判定する。
 
 ```text
 README_UPDATE_REQUIRED=YES/NO
@@ -83,80 +101,87 @@ DESIGN_DELTA_REQUIRED=YES/NO
 SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
 ```
 
-Requiredなのに未更新ならDocumentation Completeとしない。
+Requiredなのに未更新ならDocumentation Completeではない。
 
-DesignはCurrent実装へ合わせて履歴が消える形で上書きしない。
+DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
 
-## GitHub Work History
+## 8. GitHub Work History
 
-GitHub commit / PRは作業履歴の正本とする。
+GitHub commit / PRは実作業履歴の正本。
 
-Commitは可能な範囲で、目的・主要変更・影響範囲・検証・Document更新・残作業を後から追える作業報告にする。
+Commitは必要に応じて目的、主要変更、影響範囲、検証、Document更新、残作業を後から追えるWork Reportにする。
 
-標準commit/pushは `docs/AUTO_COMMIT.md` を正とする。
+Authority: `docs/AUTO_COMMIT.md`。
 
-Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
+次を別状態として扱う。
 
-## Shared Tools / MCP
+```text
+SOURCE
+TEST
+COMMIT
+PUSH
+REMOTE_READBACK
+PR
+CI
+MERGE
+DEPLOY
+RUNTIME
+PRODUCTION
+```
 
-Workspace共通Tool/MCPはserver-coreを発見入口とする。
+## 9. Shared MCP / Tool / DebugAI
 
-server-coreが管理するのは **接続契約・用途・所有先・権限境界** であり、各Tool本体をserver-coreへ移植しない。
+共有Capabilityの発見入口は `docs/WORKSPACE_REGISTRY.md`。
 
-Discovery authorityは `docs/WORKSPACE_REGISTRY.md`。
+server-coreが管理するのは接続契約・owner・permission boundary・availability stateであり、Capability本体ではない。
 
-現在 `.cursor/mcp.json` に存在するMCPは実設定を正とし、未登録MCPを利用可能として扱わない。
+`.cursor/mcp.json` 等の実設定とRegistry文書を分離する。文書記載だけでMCP利用可能とは扱わない。
 
-DebugAIは独立Project/runtime。MCP AdapterはDebugAI PR #22でSource / CI / stdio Protocolまで検証済みだが、Contabo Live Runtime接続とWorkspace MCP登録は未実施。`AVAILABLE_VERIFIED`とは扱わない。
+DebugAIは独立Project/runtime。Source mainへのMCP実装反映とWorkspace Live登録/Runtime verificationは別状態として扱う。
 
-## Workspace Shared Secrets
+## 10. Shared Secrets
 
-Secret / Token値を各Projectへ複製しない。
+Secret / Token実値を各Projectへ複製しない。
 
-既存共有契約:
-- Hugging Face: Vault `POST /internal/v1/actions/http`、`secret_id=hf-token`、`consumer=g-ace-workspace`
-- Cloudflare Account API: Vault `POST /internal/v1/actions/http`、`secret_id=cf-account-api`
+共有契約は `docs/WORKSPACE_SHARED_SECRETS.md`、発見入口は `docs/WORKSPACE_REGISTRY.md`。
 
-Token値を読み出し、Chat / Git / Log / Documentへ保存しない。
+ProjectはShared Secretが必要な場合、既存Contractを確認してBroker経由で利用する。既存Contractが無ければ勝手なtoken copy/helperを作らない。
 
-詳細は `docs/WORKSPACE_SHARED_SECRETS.md` を正とする。
+## 11. Reusable Development KB
 
-## Knowledge Base
+再利用開発KBのTarget data storageはMaster PC `F:` 1TB。
 
-再利用開発KBの実データはserver-coreへ置かない。
+server-coreはAccess / Registration / Lifecycle / Safety Contractを持ち、data本体は持たない。
 
-Target:
-- Master PC `F:` 1TB storage
-- 用途: validated reusable code/module/pattern/schema/interface/test/template/procedure/development knowledge
+VPS / Workspace AIからPC filesystemを直接読める前提は禁止。実装・検証済みAPI/MCP等のbridgeを使う。
 
-server-coreはKB access / registration / lifecycle / safety contractのみを管理する。
+Authority: `docs/KB_REUSE_DESIGN.md`。
 
-VPS / Workspace AIから利用するには、実装・検証済みAPI/MCP等のbridgeを使用する。PC driveへの直接アクセスを前提にしない。
-
-Design authorityは `docs/KB_REUSE_DESIGN.md`。
-
-## Server / Runtime
+## 12. Server / Runtime
 
 本番常駐は原則Docker / Docker Compose。
 
-ServerはRuntime/処理環境であり、Project Source履歴・Design・Documentの正本をServerだけに置かない。
+ServerはRuntime/Processing環境であり、Project Source履歴・Design・Documentの正本をServerだけに置かない。
 
-Deployは、GitHub上で対象revisionを確認し、必要なMaster承認後に対象Project Runbookに従う。
+Deployはconfirmed GitHub revisionを起点にし、必要なMaster承認後に対象Project/共通Runbookへ従う。
 
-## Logs / Cache / Cleanup
+Authority: `docs/DEPLOY_RUNBOOK.md`。
+
+## 13. Logs / Cache / Cleanup / Backup
+
+Authority: `docs/STORAGE_LIFECYCLE.md`。
 
 Common boundary:
-- Telegram: owning Project contractで定義されたdurable raw log authority
+- Telegram: owning Project contractで定義されたdurable raw-log authority
 - Meilisearch: rebuildable search index
 - Redis: dedup / hot cache
-- `/home/admin1/logs`: temporary disk state
-- VPS: processing environment
+- `/home/admin1/logs`: temporary operational disk state
+- `/home/admin1/backups`: backup area; generic cleanup対象ではない
+- VPS: processing/runtime environment
 
-自動Cleanupでは、未送信、再送待ち、Recovery中、所有者不明、Active volume等を削除しない。
+未送信、retry、recovery、unknown ownership、active/persistent volumeをgeneric auto-deleteしない。
 
-Retention / cleanup / backup / recoveryは `docs/STORAGE_LIFECYCLE.md` を正とし、Project固有条件がある場合はProject側契約を優先する。
-
-## Normal Context Exclusions
+## 14. Normal Context Exclusions
 
 通常検索・Context・watcherから原則除外:
 - `.git`
@@ -171,16 +196,23 @@ Retention / cleanup / backup / recoveryは `docs/STORAGE_LIFECYCLE.md` を正と
 - `node_modules`
 - cache / dumps
 
-## Workspace Tasks
+## 15. Runtime Readback Rule
 
-Workspaceには少なくとも次の入口を維持する。
-- server-core routing / load scope確認
-- server-core auto commit and push
+README / Registry / historical reportをCurrent Runtimeの代用にしない。
 
-Tool追加はTask数を増やすこと自体を目的にせず、全Projectで反復利用する実益がある場合だけ行う。
+Container / Port / Domain / Provider / Deploy状態がTask判断に必要なら、対象Provider / Docker / Endpoint / Repositoryを実readbackする。
 
-## Current-state Warning
+未確認は `UNKNOWN / NOT_VERIFIED / NOT_EXECUTED` を維持する。
 
-`docs/WORKSPACE_REGISTRY.md` やREADMEの記載は探索入口であり、Current Runtimeの証明ではない。
+## 16. Completion Rule
 
-Container / Port / Domain / Provider / Deploy状態を判断する場合は必ず実状態をreadbackする。
+Workspace Taskが完了と言えるのは、Taskに必要な範囲で次が閉じた場合だけ。
+- correct Project/authority routing;
+- implementation or requested work;
+- required verification;
+- Documentation Gate;
+- GitHub work history;
+- required remote/CI/runtime evidence;
+- approval boundary compliance。
+
+司令室の役割は「何でも実装すること」ではなく、**Workspace全体の作業を正しいowner・正しいAuthority・正しいEvidenceへ導くこと**である。

@@ -1,90 +1,138 @@
-# Server Core — G-ACE Workspace共通開発・運用基盤
+# Server Core — G-ACE Workspace Command Center
 
-`server-core` は、G-ACE Workspace内の全ProjectでAI・開発者が同じ入口、同じ開発ルール、同じGitHub履歴、同じ共有Tool/Secret契約、同じServer運用境界を使うための共通基盤である。
+`server-core` は、G-ACE Workspace全体の**司令室**である。
 
-各Project固有の実装・Design・System仕様をserver-coreへ集約しない。server-coreは共通標準と共通入口を管理する。
+各Projectの実装本体を抱え込む場所ではない。Workspaceで作業するAI / Developerが、**どのProjectで、何を読み、どの共通Tool/MCP/Secret/KBを使い、どう検証し、どうGitHubへ残し、どのApproval Boundaryまで進めるか**を決める共通Command Centerである。
 
-## 作業開始 — 必ずここから
+## 必ずここから開始
 
-Workspace内で作業を開始するAI / Developerは、最初にこのREADMEを入口とする。
-
-次に `docs/LOAD_SCOPE.md` を読み、**今回の作業に必要なserver-core正本だけ**を選ぶ。全正本を一括で読まない。
+Workspace内の作業開始順は固定する。
 
 ```text
 server-core/README.md
   -> docs/LOAD_SCOPE.md
-  -> 今回必要なserver-core正本だけ
+  -> 今回必要なserver-core Authorityだけ
   -> 対象Project README
   -> 必要なDesign / Project Tree / Design Delta / System Document
   -> 対象Source / 直接依存 / 関連Test
 ```
 
-設計基準線: [`docs/SERVER_CORE_DESIGN.md`](docs/SERVER_CORE_DESIGN.md)
+server-coreの全正本を一括読込しない。
 
-## Current Completed / Verified Scope
+設計基準線: [`docs/SERVER_CORE_DESIGN.md`](docs/SERVER_CORE_DESIGN.md)  
+設計差分: [`docs/DESIGN_DELTA.md`](docs/DESIGN_DELTA.md)
 
-Source/CIで確認済み:
-- server-core起点のWorkspace Routing
-- progressive context loading
-- README / Design / Tree / Delta / System Document運用
-- Commit = work report
-- confirmed GitHub revisionを起点にするDeploy contract
-- shared Project / MCP / Tool / Secret-contract Discovery Registry
-- F: 1 TB reusable-development KB Design Baseline
-- Storage / Log / Cache / Backup / Recovery Design Baseline
-- read-only Storage Lifecycle Audit source + deterministic self-test
-- DebugAI MCP AdapterのSource / CI / stdio Protocol verification（DebugAI PR #22。Live Runtime/Workspace登録は未実施）
+## 司令室としての役割
 
-未実装 / 未Runtime検証:
-- DebugAI MCPのContabo Live Runtime接続 / Workspace登録
-- Reuse KB API/MCP bridge
-- F: KB runtime/data store
-- Storage cleanup mutation / automatic deletion
-- latest Server storage audit実行
+server-coreはWorkspace全体について次を担当する。
 
-Source/CI PASSをServer Runtime PASSとして扱わない。
+1. **Task Intake / Routing**
+   - 依頼内容を分類し、対象Project・Authority・必要Contextを決める。
+2. **Authority / Context Control**
+   - 必要な正本だけを段階的に読ませる。
+3. **Project Dispatch**
+   - 実作業を所有Projectへ送る。Project固有実装をserver-coreへ吸収しない。
+4. **Shared Capability Control**
+   - MCP / Tool / Skill / DebugAI / KB / Secret Contract / Provider Contractの発見入口を持つ。
+5. **Development / Verification Governance**
+   - 再利用、Design、Delta、Tree、Test、Documentation Gate、PASS条件を統一する。
+6. **GitHub Work History**
+   - Commit / PRを実作業履歴として残す。
+7. **Runtime / Operations Governance**
+   - confirmed GitHub revisionからのDeploy、Docker、Log/Cache/Cleanup、Backup/Recovery、安全境界を統一する。
 
-## 作業ルーティング
-
-| 今回の作業 | 追加で読む正本 |
-|---|---|
-| 開発方法論 / 責務 / Module / 再利用 | `CORE.md` |
-| 共通運用・禁止事項・Server運用境界 | `SERVER_CORE_PROTOCOL.md` |
-| Context / 読込範囲 | `docs/LOAD_SCOPE.md` |
-| Workspace運用 | `docs/G_ACE_WORKSPACE.md` |
-| GitHub commit / push | `docs/AUTO_COMMIT.md` |
-| Deploy | `docs/DEPLOY_RUNBOOK.md` |
-| 新規Project / Repository構成 | `docs/PROJECT_TEMPLATE.md` |
-| Shared Project / MCP / Tool / Secret / Runtime入口 | `docs/WORKSPACE_REGISTRY.md` + 必要な実Runtime readback |
-| 再利用KB設計 | `docs/KB_REUSE_DESIGN.md` |
-| Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
-| Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
-| Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
-| 用語 | `docs/GLOSSARY.md` |
-| server-core構造 | `docs/STRUCTURE.md` |
-
-## 共通開発ループ
+## Command Flow
 
 ```text
-README
-  -> 必要なDesign / Tree / Delta / System Document
-  -> Repository / Branch / HEAD / Status
-  -> Target Source / Dependency / Test
-  -> 既存資産の再利用確認
-  -> 実装 / Debug
-  -> Diff
-  -> Test / Verify
-  -> Documentation Gate
-  -> Commit = 作業報告
-  -> Push
-  -> Remote Readback
-  -> 必要ならPR / CI
-  -> Master承認が必要な境界を越えた後だけDeploy / Production
+REQUEST
+  -> ROUTE
+  -> LOAD REQUIRED AUTHORITY
+  -> DISPATCH TO PROJECT
+  -> REUSE CHECK
+  -> IMPLEMENT / DEBUG
+  -> VERIFY
+  -> DOCUMENTATION GATE
+  -> COMMIT = WORK REPORT
+  -> PUSH / REMOTE READBACK / PR / CI
+  -> APPROVAL BOUNDARY
+  -> DEPLOY / RUNTIME VERIFY only when authorized
 ```
 
-### Documentation Gate
+Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
 
-作業完了前に必要性を判定する。
+## Current Documentation State
+
+司令室MDとして現在の正本セットは以下。
+
+### Command / Routing
+- `README.md` — Workspace共通Command Center入口
+- `docs/SERVER_CORE_DESIGN.md` — server-core設計基準線
+- `docs/DESIGN_DELTA.md` — 設計差分と理由
+- `docs/LOAD_SCOPE.md` — Task routing / progressive context loading
+- `docs/G_ACE_WORKSPACE.md` — Workspace正規運用
+- `docs/STRUCTURE.md` — server-core Project Tree / Navigation
+
+### Development / GitHub
+- `CORE.md` — LibralCore開発方法論
+- `SERVER_CORE_PROTOCOL.md` — 共通運用・禁止・Approval Boundary
+- `docs/PROJECT_TEMPLATE.md` — Project/Document標準
+- `docs/AUTO_COMMIT.md` — Commit = Work Report / Push / Remote Readback
+- `docs/DEPLOY_RUNBOOK.md` — confirmed GitHub revisionからRuntime verificationまでの共通Deploy境界
+
+### Shared Platform
+- `docs/WORKSPACE_REGISTRY.md` — Project / MCP / Tool / Secret Contract / Runtime discovery
+- `docs/WORKSPACE_SHARED_SECRETS.md` — Vault経由Shared Secret / Token契約
+- `docs/KB_REUSE_DESIGN.md` — F: 1TB reusable-development KB設計
+- `docs/STORAGE_LIFECYCLE.md` — Log / Cache / Cleanup / Backup / Recovery設計
+- `docs/CLOUDFLARE_OPERATIONS.md` — Cloudflare固有運用
+
+### Support
+- `docs/GLOSSARY.md` — 正式用語
+- `docs/GITHUB_FREE_MAX.md` — GitHub無料枠Task時のみ
+- `docs/GITHUB_SKILL.md` — GitHub Skill resolver利用時のみ
+
+## Task Routing
+
+| Task | 追加で読むAuthority |
+|---|---|
+| 開発方法論 / 責務 / Module / 再利用 | `CORE.md` |
+| 共通運用 / 禁止 / Approval Boundary | `SERVER_CORE_PROTOCOL.md` |
+| Context / 読込範囲 | `docs/LOAD_SCOPE.md` |
+| Workspace運用 | `docs/G_ACE_WORKSPACE.md` |
+| Git / Commit / Push | `docs/AUTO_COMMIT.md` |
+| Deploy | `docs/DEPLOY_RUNBOOK.md` |
+| 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
+| Project / MCP / Tool / DebugAI / Secret / Runtime発見 | `docs/WORKSPACE_REGISTRY.md` |
+| Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
+| 再利用KB | `docs/KB_REUSE_DESIGN.md` |
+| Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
+| Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
+| 用語 | `docs/GLOSSARY.md` |
+| server-core構造 | `docs/STRUCTURE.md` |
+| server-core設計判断 / 差分 | `docs/SERVER_CORE_DESIGN.md` + `docs/DESIGN_DELTA.md` |
+
+## Documentation Contract
+
+### README
+Current completed / verified stateと入口を示す。Design正本にはしない。
+
+### Design
+Architecture / Contract / Boundary / ResponsibilityのBaseline。
+
+Current実装へ合わせて履歴を消す上書きを禁止する。
+
+### Design Delta
+Designとの差を正式採用する場合、差分・理由・Evidence・影響範囲・適用Commit・Compatibility/rollbackを残す。
+
+### Project Tree
+主要File/Directoryの責務、Entry Point、関連Design/Testを示すNavigation Index。
+
+### System / Module Document
+READMEだけでは別AI/Developerへ説明なしで引継げない完成単位のみ作成/更新する。
+
+## Documentation Gate
+
+作業完了前に必ず判定する。
 
 ```text
 README_UPDATE_REQUIRED=YES/NO
@@ -93,139 +141,86 @@ DESIGN_DELTA_REQUIRED=YES/NO
 SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
 ```
 
-- Currentの完成・検証状態が変わった: README更新
-- File/Directory/主要責務/Entry Pointが変わった: Project Tree更新
-- Designとの差を正式採用した: Design Deltaへ差分・理由・Evidence・Commitを記録
-- 完成したFeature束/System/再利用Moduleを説明なしで引き継ぐ必要がある: System/Module Documentを作成または更新
+Requiredなのに未更新ならDocumentation Completeではない。
 
-DesignはCurrent実装に合わせて履歴を消す形で上書きしない。
+## GitHub = Work History Authority
 
-## GitHub = 作業履歴正本
+Commitは単なる保存点ではなく作業報告として扱う。
 
-Commitは単なる保存ではなく実作業報告として扱う。可能な範囲で、目的、主要変更、影響範囲、検証、文書更新、未完/未検証を後から追える状態にする。
+必要に応じて次を後から追える状態にする。
+- Purpose
+- Changed
+- Affected
+- Verified
+- Docs
+- Remaining / Unverified
 
-Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態であり、1つのPASSから他を推測しない。
+詳細は `docs/AUTO_COMMIT.md`。
 
-ファイル変更後の標準手順は `docs/AUTO_COMMIT.md` を正とする。
+## Shared Workspace Capabilities
 
-## LibralCore
+共有Capabilityの発見入口は `docs/WORKSPACE_REGISTRY.md`。
 
-開発時の共通方法論は `CORE.md` を正とする。
+server-coreが管理するのは:
+- discovery;
+- connection contract;
+- owner;
+- permission / safety boundary;
+- availability / verification state;
+- Workspace共通利用Rule。
 
-正式な論理構造:
+Capability本体は所有Project/runtimeへ残す。
 
-```text
-Part
-  ↓
-Feature
-  ↓
-Component
-  ↓
-System
-  ↓
-Application System
-```
+対象:
+- MCP;
+- DebugAI;
+- GitHub tools;
+- reusable KB;
+- Cloudflare / Hugging Face;
+- Vault経由Secret / Token;
+- shared development tools / skills。
 
-新規Code生成前に既存資産を確認し、原則として次の順に再利用を判断する。
+## Knowledge Base
 
-```text
-そのまま利用
-  -> 設定・引数・型の調整
-  -> 薄いAdapter
-  -> 共通部分抽出
-  -> 目的を満たさない場合だけ新規実装
-```
+再利用開発KBの実データTargetはMaster PC `F:` 1TB。
 
-## Workspace
+server-coreにはデータ本体を置かず、Access / Registration / Lifecycle / Safety Contractのみを置く。
 
-標準Workspace:
-
-```text
-/home/admin1/workspace/G-ACE.code-workspace
-```
-
-通常Folder:
-- `/home/admin1/server-core`
-- `/home/admin1/projects`
-
-通常Contextから除外:
-- `/home/admin1/logs`
-- `/home/admin1/backups`
-- `/home/admin1/kb`
-- `/home/admin1/workspace`
-- `archive`
-- build / dist / node_modules / cache等
-
-Workspace仕様は `docs/G_ACE_WORKSPACE.md` を正とする。
-
-## Shared Platform
-
-server-coreは共有Capabilityの**入口・契約・所有関係**を管理し、Capability本体を吸収しない。
-
-共有Capabilityの発見入口は [`docs/WORKSPACE_REGISTRY.md`](docs/WORKSPACE_REGISTRY.md)。
-
-対象例:
-- MCP
-- GitHub
-- DebugAI
-- KB
-- shared tools / skills
-- Cloudflare / Hugging Face
-- Vault経由のToken / Secret利用
-
-Secret / Token実値はChat・Git・文書・Logへ保存しない。
-
-DebugAIは独立Project/runtimeとして扱う。CLI / HTTPに加え、MCP AdapterはDebugAI PR #22でSource / CI / stdio Protocolまで検証済み。Contabo上のLive DebugAI Runtime接続とWorkspace MCP登録は未実施なので `AVAILABLE_VERIFIED` とは扱わない。詳細状態は `docs/WORKSPACE_REGISTRY.md` を正とする。
-
-再利用開発KBはMaster PCの `F:` 1TB領域を実データ置場候補とし、server-coreにはデータ本体ではなくアクセス・登録・安全契約だけを持たせる。設計は `docs/KB_REUSE_DESIGN.md`。VPSからPC driveへ直接アクセスできるものとして扱わない。
+Authority: `docs/KB_REUSE_DESIGN.md`。
 
 ## Server / Runtime
 
-VPSは処理・Runtime環境であり、Project SourceやDocumentの正本保存場所として扱わない。
+VPSはRuntime / Processing環境であり、GitHub Source履歴・Design・Documentの代替正本にしない。
 
 本番常駐は原則Docker / Docker Compose。
 
-標準の反映経路は、検証済みRepository変更をGitHubへ履歴化し、対象revisionを確認したうえで、必要なMaster承認後にServerへ反映する。
+Deploy Authority: `docs/DEPLOY_RUNBOOK.md`  
+Storage Authority: `docs/STORAGE_LIFECYCLE.md`
 
-Log / Cache / Cleanup / Backup / Recoveryの共通設計は `docs/STORAGE_LIFECYCLE.md` を正とする。
+Runtime値はRegistryや古い報告から推測せず、必要時に実readbackする。
 
-read-only Storage Audit:
-- policy: `operations/storage-lifecycle.json`
-- source: `scripts/storage_lifecycle_audit.py`
-- Source self-test: CIで検証
-- Server Runtime audit: NOT_VERIFIED
-- delete / prune / volume delete: NOT_IMPLEMENTED / DISALLOWED BY CURRENT POLICY
+## Current Source-Verified / Runtime-Pending Boundary
 
-共通境界:
-- Telegram: 対象Project契約で定義された永続raw-log正本
-- Meilisearch: 再構築可能な検索Index
-- Redis: dedup / hot-cache
-- `/home/admin1/logs`: 一時disk state
-- VPS: 処理場であり長期Log保管庫ではない
+Source/CIで確認されているものとLive Runtimeを分離する。
 
-Cleanupは安全性を優先し、未送信、再送待ち、Recovery中、所有者不明、Active volume等を自動削除対象にしない。
+- server-core command-center routing / documentation contracts: SOURCE / CI verified
+- read-only Storage Audit source: SOURCE / CI verified
+- DebugAI MCP source: DebugAI mainへmerge済み、source-side CI verified; Workspace registration / live runtimeは別状態
+- F: reusable KB bridge/runtime: NOT_IMPLEMENTED
+- generic storage cleanup mutation: NOT_IMPLEMENTED
+- current server storage audit: NOT_VERIFIED
 
-## 主要正本
-
-| File | Responsibility |
-|---|---|
-| `README.md` | Workspace共通入口 / Current概要 |
-| `docs/SERVER_CORE_DESIGN.md` | server-core設計基準線 |
-| `docs/LOAD_SCOPE.md` | Task routing / Context loading |
-| `CORE.md` | LibralCore開発方法論 |
-| `SERVER_CORE_PROTOCOL.md` | 共通運用規則 |
-| `docs/G_ACE_WORKSPACE.md` | Workspace正規仕様 |
-| `docs/WORKSPACE_REGISTRY.md` | Project / MCP / Tool / Secret Contract / Runtime発見入口 |
-| `docs/KB_REUSE_DESIGN.md` | F:再利用開発KBの設計基準線 |
-| `docs/STORAGE_LIFECYCLE.md` | Log / Cache / Cleanup / Backup / Recovery設計基準線 |
-| `docs/AUTO_COMMIT.md` | GitHub作業履歴化 |
-| `docs/DEPLOY_RUNBOOK.md` | Deploy境界と手順 |
-| `docs/PROJECT_TEMPLATE.md` | Project構成とDocument作成条件 |
-| `docs/WORKSPACE_SHARED_SECRETS.md` | Shared Secret / Token契約 |
-| `docs/STRUCTURE.md` | server-core構造 |
+これらのRuntime pendingを理由にMD設計を未完成扱いにはしない。逆にMDが完成していてもRuntime PASSとはしない。
 
 ## Approval Boundary
 
-Masterの明示指示なしに、main/PR merge、Production deploy/公開/切替、Force push、Branch削除、破壊的reset/rebase、既存Service停止/再作成、Secret変更、外部Resource作成・変更・削除を行わない。
+Masterの明示指示なしに次を越えない。
+- main / PR merge
+- Production deploy / 公開 / 切替
+- Force push / Branch削除
+- destructive reset / rebase
+- 既存Service停止 / recreate
+- Secret変更
+- Provider resource作成・変更・削除
 
-未確認・未実行・未検証は推測で埋めず、`UNKNOWN / NOT_EXECUTED / NOT_VERIFIED`として扱う。
+未確認・未実行・未検証は `UNKNOWN / NOT_EXECUTED / NOT_VERIFIED` を維持する。

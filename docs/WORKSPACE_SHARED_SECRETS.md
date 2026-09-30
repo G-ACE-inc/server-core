@@ -1,138 +1,174 @@
 # WORKSPACE SHARED SECRETS
 
-この Workspace（server-core + projects）で Hugging Face と Cloudflare Account API を使うときの正本。Token は配らない。Libral Vault の既存 API だけを使う。
+Version: 2026-09-30
+Role: G-ACE Workspace司令室からShared Secret / Tokenを安全に利用するための共通契約。
 
-機械可読契約:
+この文書はSecret値の保管場所ではない。Secret / Token / password / credential / session値をGit / Chat / Log / Documentへ出さない。
+
+## 1. Command-Center Responsibility
+
+server-coreが管理するのは次だけ。
+- provider / purpose;
+- secret identifier;
+- allowed consumer;
+- broker / Vault access path;
+- allowed origin / request boundary;
+- identity/availability verification method;
+- failure behavior;
+- rotation / replacement boundary。
+
+Secret値そのものはserver-coreへ置かない。
+
+## 2. Current Shared Contracts
+
+機械可読Authority:
 - Hugging Face: `operations/huggingface.json`
 - Cloudflare Account API: `operations/cloudflare-account.json`
-- Tunnel は別: `operations/cloudflare.json` と `docs/CLOUDFLARE_OPERATIONS.md`
+- Cloudflare Tunnel: `operations/cloudflare.json` + `docs/CLOUDFLARE_OPERATIONS.md`（Account APIとは別契約）
 
-`PROTOCOL` / `CORE` / `KB` / `PROJECT_STATUS` はこの文書では変更しない。
-
-## 使うとき
-AI または作業者が Hugging Face Hub / Inference、または Cloudflare Account API（`https://api.cloudflare.com`）を呼ぶとき。各 Project に helper を足さない。Cursor MCP の OAuth とは別経路。
-
-## 共通契約
-- Vault: `http://127.0.0.1:8791`
-- 内部認証: `Authorization: Bearer`。値は `/home/admin1/.config/libral-vault/internal-token` から読む。文書と Chat に書かない
-- consumer: `g-ace-workspace`
-- 利用: `POST /internal/v1/actions/http`
-- 投入: `POST /internal/v1/secrets`
-- Header: `authorization` + 接頭辞 `Bearer `
-- 平文 Secret File は作らない。GPG-Core は使わない
-
-| 対象 | secret_id | allowlist origin | 識別URL |
+| Provider / purpose | secret_id | consumer | allowlist / provider identity |
 |---|---|---|---|
-| Hugging Face | `hf-token` | `https://huggingface.co` | `https://huggingface.co/api/whoami-v2` |
-| Cloudflare Account API | `cf-account-api` | `https://api.cloudflare.com` | `/client/v4/user` と `/client/v4/accounts` |
+| Hugging Face | `hf-token` | `g-ace-workspace` | `https://huggingface.co`; identity `https://huggingface.co/api/whoami-v2` |
+| Cloudflare Account API | `cf-account-api` | `g-ace-workspace` | `https://api.cloudflare.com`; identity `/client/v4/user` + `/client/v4/accounts` |
 
-Cloudflare `tokens/verify` は権限不足で 401 になり得る。どの token かの確認は `/user` と `/accounts` を正とする。
+## 3. Broker Contract
 
-## 利用（Token を読まない）
-`POST http://127.0.0.1:8791/internal/v1/actions/http`
+Current broker authority: Libral Vault.
+
+```text
+Vault endpoint: http://127.0.0.1:8791
+Action API: POST /internal/v1/actions/http
+Secret registration API: POST /internal/v1/secrets
+Consumer: g-ace-workspace
+Internal auth source: /home/admin1/.config/libral-vault/internal-token
+```
+
+Internal auth value is read only at runtime and is never copied into this document, Chat, Git or logs.
+
+Provider request pattern:
 
 ```json
 {
-  "secret_id": "hf-token または cf-account-api",
+  "secret_id": "<registered-id>",
   "consumer": "g-ace-workspace",
-  "url": "allowlist origin 配下の URL",
+  "url": "<allowlisted-provider-url>",
   "method": "GET",
   "secret_header": "authorization",
   "secret_prefix": "Bearer "
 }
 ```
 
-Vault が Provider へ Header を注入する。応答に Token は出ない。
+Vault injects the provider credential. The caller must not need the plaintext provider token.
 
-## 投入（既存 API のみ。スクリプト追加禁止）
-環境変数に Token を入れてから実行する。Chat に Token を貼らない。
+## 4. Use Rule
 
-Hugging Face: `HF_TOKEN`
-Cloudflare Account API: `CLOUDFLARE_API_TOKEN`
+When a Project needs a Workspace-shared Secret:
 
-```bash
-python3 - <<'PY'
-import base64, json, os, pathlib, urllib.request
-token = os.environ["CLOUDFLARE_API_TOKEN"].strip()  # HF なら HF_TOKEN
-auth = pathlib.Path("/home/admin1/.config/libral-vault/internal-token").read_text().strip()
-body = json.dumps({
-    "id": "cf-account-api",  # HF なら hf-token
-    "value_base64": base64.b64encode(token.encode("utf-8")).decode("ascii"),
-    "allowed_consumers": ["g-ace-workspace"],
-}).encode("utf-8")
-req = urllib.request.Request(
-    "http://127.0.0.1:8791/internal/v1/secrets",
-    data=body, method="POST",
-    headers={"Authorization": f"Bearer {auth}", "Content-Type": "application/json", "Accept": "application/json"},
-)
-with urllib.request.urlopen(req) as res:
-    print(res.status)
-    print(res.read().decode("utf-8"))
-PY
+```text
+Project needs provider access
+  -> server-core WORKSPACE_REGISTRY / this document
+  -> identify existing contract
+  -> use broker action
+  -> verify provider response / identity as required
+  -> do not add Project-local token copy/helper unless formally required
 ```
 
-成功は HTTP 201。入れ直しは先に `DELETE /internal/v1/secrets/<id>`（body `{"consumer":"g-ace-workspace"}`）。
+If no contract exists, do not invent an identifier or copy a token into the Project. Define the new contract first.
 
-## どの Token か確認する
-Vault は Token 文字列を返さない。入っている Token の身元は Provider の識別 API で見る。出す項目は `id` / `name` / `status` / `email` のみ。Token 文字列は出さない。
+## 5. Secret Registration / Replacement
 
-```bash
-python3 - <<'PY'
-import json, pathlib, urllib.request
-auth = pathlib.Path("/home/admin1/.config/libral-vault/internal-token").read_text().strip()
+Registration or replacement is a mutation boundary. It requires explicit authorization under `SERVER_CORE_PROTOCOL.md`.
 
-def vault_get(url):
-    body = json.dumps({
-        "secret_id": "cf-account-api",
-        "consumer": "g-ace-workspace",
-        "url": url,
-        "method": "GET",
-        "secret_header": "authorization",
-        "secret_prefix": "Bearer ",
-    }).encode("utf-8")
-    req = urllib.request.Request(
-        "http://127.0.0.1:8791/internal/v1/actions/http",
-        data=body, method="POST",
-        headers={"Authorization": f"Bearer {auth}", "Content-Type": "application/json", "Accept": "application/json"},
-    )
-    with urllib.request.urlopen(req) as res:
-        return json.loads(res.read().decode("utf-8")).get("provider") or {}
+Input credential should be supplied through a temporary process environment or another approved secure channel; never through Chat or committed files.
 
-def ident(provider):
-    raw = provider.get("body") or ""
-    payload = json.loads(raw)
-    data = payload.get("result")
-    if isinstance(data, list):
-        data = data[0] if data else {}
-    if not isinstance(data, dict):
-        data = {}
-    return {
-        "http": provider.get("status"),
-        "ok": payload.get("success"),
-        "id": data.get("id"),
-        "name": data.get("name"),
-        "status": data.get("status"),
-        "email": data.get("email"),
-    }
+Required registration fields:
+- id;
+- value (runtime only, never documented);
+- allowed consumers;
+- provider/purpose linkage.
 
-print("user", ident(vault_get("https://api.cloudflare.com/client/v4/user")))
-print("account", ident(vault_get("https://api.cloudflare.com/client/v4/accounts?per_page=1")))
-PY
+Replacement must preserve a clear failure/recovery path. Do not delete the old credential before the replacement procedure is understood when doing so could break an active service.
+
+## 6. Identity / Availability Verification
+
+Vault intentionally does not return plaintext tokens.
+
+Verify a registered credential through the provider identity endpoint or a harmless representative API call.
+
+### Hugging Face
+- secret id: `hf-token`
+- identity endpoint: `https://huggingface.co/api/whoami-v2`
+- HTTP 401 means invalid/unauthorized credential until proven otherwise.
+
+### Cloudflare Account API
+- secret id: `cf-account-api`
+- identity checks: `/client/v4/user` and `/client/v4/accounts`
+- `tokens/verify` is not the sole identity authority because endpoint permission behavior may differ.
+
+Only expose non-secret identity fields needed for verification, such as id/name/status/email where appropriate.
+
+## 7. Failure Contract
+
+Known broker/provider failure classes:
+- `SECRET_NOT_FOUND`: secret absent or identifier mismatch;
+- `ACCESS_DENIED`: consumer not allowed;
+- `HTTP_ORIGIN_NOT_ALLOWED`: provider origin not allowlisted;
+- provider 401/403: invalid credential or insufficient provider permission;
+- broker unavailable: shared-secret capability is not available until broker health is restored.
+
+A failure must not trigger fallback to printing, copying or embedding the plaintext Secret.
+
+## 8. Consumer Boundary
+
+Workspace-shared credentials may be used only by explicitly allowed consumers.
+
+Project-specific credentials that should not be shared across the Workspace remain Project-owned and must not be silently promoted into the shared contract.
+
+Shared does not mean unrestricted.
+
+## 9. Add-New-Contract Gate
+
+Before adding a shared Secret contract, determine:
+
+```text
+SHARED_USE_CASE_CONFIRMED=YES
+OWNER_KNOWN=YES
+PROVIDER_KNOWN=YES
+SECRET_ID_DEFINED=YES
+CONSUMERS_DEFINED=YES
+ALLOWLIST_DEFINED=YES
+BROKER_PATH_DEFINED=YES
+IDENTITY_OR_REPRESENTATIVE_VERIFY_DEFINED=YES
+FAILURE_BEHAVIOR_DEFINED=YES
+PLAINTEXT_PERSISTENCE=NO
 ```
 
-Hugging Face は `secret_id` を `hf-token`、URL を `https://huggingface.co/api/whoami-v2` にする。
+Unknown fields block the contract from being marked available.
 
-## 失敗
-- `SECRET_NOT_FOUND`: 未投入、または `secret_id` 違い
-- `ACCESS_DENIED`: `allowed_consumers` に `g-ace-workspace` が無い
-- `HTTP_ORIGIN_NOT_ALLOWED`: Vault の `LIBRAL_VAULT_HTTP_ALLOWLIST` に origin が無い
-- Cloudflare 401: Token 無効、またはその endpoint の権限不足。`/user` と `/accounts` で切り分ける
-- Hugging Face 401: Token 無効
+## 10. Registry Sync
 
-## 禁止
-- 各 Project への Token helper 追加
-- 投入用スクリプト追加
-- GPG-Core でこの共有 Secret を扱うこと
-- Token を Chat / Log / Git / 常駐 Container に出す・渡すこと
-- Tunnel Token（`operations/cloudflare.json`）と Account API を混ぜること
-- Vault から平文 Token を dump すること
+When a shared Secret contract is added/removed/renamed or its consumer/broker path changes:
+- update the relevant `operations/*.json` contract;
+- update `docs/WORKSPACE_REGISTRY.md`;
+- update this document when the common use/failure model changes;
+- run applicable validation;
+- record the work in GitHub commit / PR.
+
+Do not turn this document into a chronological work log.
+
+## 11. Prohibitions
+
+- Secret / Token values in Git / Chat / docs / logs;
+- plaintext Secret files for Workspace sharing;
+- per-Project duplicate token helpers when an approved shared contract already exists;
+- dumping plaintext values from Vault;
+- using one Provider credential as another contract without explicit design;
+- confusing Cloudflare Tunnel credentials with Cloudflare Account API credentials;
+- using GPG-Core as an implicit replacement for the current Workspace shared-secret contract;
+- claiming Secret availability without broker/provider verification when the task requires live access.
+
+## 12. Availability Boundary
+
+This document can be complete as a **contract** while current broker/provider Runtime is `NOT_VERIFIED` for a given task.
+
+Document completeness and Runtime availability are separate states.

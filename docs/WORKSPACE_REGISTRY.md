@@ -1,113 +1,200 @@
 # G-ACE WORKSPACE REGISTRY
 
 Version: 2026-09-30
-Role: Workspace内のAI / Developerが共有Project・Tool・MCP・Secret Contract・Runtime入口を探し回らず発見するための軽量Registry。
+Role: server-core司令室から、Workspace内のProject・Repository・MCP・Tool・Secret Contract・KB・Runtime確認先へ最短で到達するためのDiscovery Registry。
 
-この文書は実Runtimeの証明ではない。Container / Port / Domain / Deploy / Provider状態は必要時に実readbackする。
-Secret / Token実値は記録しない。
+この文書は**発見・所有・接続契約の正本**であり、Live Runtime健康状態の証明ではない。Container / Port / Domain / Deploy / Provider状態は必要時に実readbackする。
 
-## 1. Projects
+Secret / Token実値は絶対に記録しない。
 
-| Project | Repository / Authority | Workspace / Server entry | Status boundary |
-|---|---|---|---|
-| server-core | `G-ACE-inc/server-core` | `/home/admin1/server-core` | Workspace共通開発・運用Authority |
-| TGserver | Project README / repository authority | `/home/admin1/projects/TGserver` | Project固有状態はTGserver側README/Runtimeで確認 |
-| Astera v8 | Project README / repository authority | `/home/admin1/projects/astera_v8` | Project固有状態はAstera v8側README/Runtimeで確認 |
-| Astera App | Project README / repository authority | `/home/admin1/projects/astera-app` | Project固有状態はAstera App側README/Runtimeで確認 |
-| DebugAI | `seigo-gace/debug-ai` | independent Project/runtime | CLI / HTTP verified by DebugAI authority; MCP source+CI+stdio protocol verified on PR #22, live Workspace/runtime not registered |
+## 1. Registry State Model
 
-Project追加時は、実在するRepository / Path / Authorityを確認してから追加する。
-
-## 2. Shared MCP Registry
-
-実設定の正本はWorkspace側MCP設定。文書だけで利用可能と判断しない。
-
-| MCP | Config authority | Purpose | Current state |
-|---|---|---|---|
-| Cloudflare API MCP | `.cursor/mcp.json` | Cloudflare操作入口 | REGISTERED_IN_CONFIG |
-| DebugAI MCP | `seigo-gace/debug-ai` PR #22 / `docs/MCP_ADAPTER.md` | DebugAIをMCP経由で利用 | SOURCE_CI_STDIO_VERIFIED / LIVE_DEBUGAI_RUNTIME_NOT_VERIFIED / WORKSPACE_NOT_REGISTERED |
-| Reuse KB MCP | future KB bridge implementation | Master PC F: KB検索・登録 | NOT_IMPLEMENTED |
-
-DebugAI MCP verified implementation boundary before its later documentation-only commits:
+Capability / Project状態は次を区別する。
 
 ```text
-implementation_sha = 078203e61073be99a48444ba0c3467a7143102f4
-Verify             = SUCCESS
-Core Verify        = SUCCESS
-Public Readiness   = SUCCESS
-repository tests   = 286/286 PASS
-stdio handshake    = PASS
-tools/list         = 9 expected tools
-health tool call   = PASS
-approve/apply MCP  = ABSENT
+DISCOVERED
+SOURCE_VERIFIED
+CONFIG_REGISTERED
+RUNTIME_VERIFIED
+AVAILABLE_VERIFIED
+NOT_IMPLEMENTED
+NOT_REGISTERED
+NOT_VERIFIED
+UNKNOWN
 ```
 
-これはCI内の実MCP stdio protocol verificationであり、Contabo上のlive DebugAI runtime deploymentやWorkspace MCP登録を意味しない。
+`SOURCE_VERIFIED` や `CONFIG_REGISTERED` を `RUNTIME_VERIFIED` と同一視しない。
 
-新規MCPをこの表に書くだけでは利用可能にならない。実設定・認証・疎通・Tool discoveryを検証してから `AVAILABLE_VERIFIED` とする。
+## 2. Project Registry
 
-## 3. Shared Tool / Skill Registry
+GitHub Repositoryが確認できる主要G-ACE Projectを記録する。Server Path / Runtimeは確認済み情報のみ記載し、未確認は推測しない。
 
-| Capability | Authority | Use | Current state |
+| Project | Repository authority | Known Workspace / Server entry | Command-center role | Runtime boundary |
+|---|---|---|---|---|
+| server-core | `G-ACE-inc/server-core` | `/home/admin1/server-core` | Workspace Command Center | main/source authority; runtime copyは必要時readback |
+| TGserver | `seigo-gace/TGserver` | `/home/admin1/projects/TGserver` | log / delivery / storage integration Project | Current runtimeはProject README + Docker/readback |
+| Astera v8 | `seigo-gace/astera_v8` | `/home/admin1/projects/astera_v8` | judgment-material processing Project | Current runtimeはProject README + Docker/readback |
+| Astera App | `seigo-gace/astera-app` | `/home/admin1/projects/astera-app` | application/web Project | Provider/runtime readback required |
+| DebugAI | `seigo-gace/debug-ai` | independent Project/runtime | specialized debugging capability | source main verified; live MCP/runtimeは別確認 |
+| Webhook Gateway | `seigo-gace/webhook-gateway` | UNKNOWN until server readback | webhook/gateway Project | NOT_VERIFIED here |
+| Astera KB | `seigo-gace/astera-kb` | UNKNOWN until target readback | Astera evidence/search knowledge Project | NOT_VERIFIED here |
+| Astera HP | `seigo-gace/astera-hp` | Provider/runtime specific | public HP Project | Provider readback required |
+| Astera Admin | `seigo-gace/astera-admini` | UNKNOWN until target readback | admin/operations application Project | NOT_VERIFIED here |
+| Astera Customer AI | `seigo-gace/astera-customerAI` | Provider/runtime specific | customer guidance AI Project | NOT_VERIFIED here |
+| Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | runtime-specific | shared deterministic parser/MCP Project | availability must be checked from actual registration/runtime |
+| Libral Vault | `seigo-gace/Libral-Vault` | Vault runtime contract | shared Secret broker owner | use contract is `docs/WORKSPACE_SHARED_SECRETS.md` |
+| KB System | `seigo-gace/kb-system` | UNKNOWN until target readback | existing KB-related Project | do not confuse with future F: reusable-development KB without explicit integration |
+| G-ACE Dev KB | `seigo-gace/gace-dev-kb` | UNKNOWN until target readback | development-KB related Repository | current implementation state requires Project readback |
+
+Project追加時は、Repository / owner / path / responsibility / authorityを確認してから追加する。
+
+## 3. Dispatch Rule
+
+司令室はTaskを次のように振り分ける。
+
+```text
+Task arrives
+  -> identify responsibility
+  -> find owning Project in this Registry
+  -> open owning Project README
+  -> load required Project authority only
+  -> perform work in owning Project
+  -> return result through GitHub work history
+```
+
+責務が不明な場合、既存Projectを確認する前に新規Project/Moduleを作らない。
+
+## 4. Shared MCP Registry
+
+MCPの利用可能性は「文書にある」だけでは成立しない。
+
+最低限、実設定・認証・transport疎通・tool discovery・代表callを必要範囲で確認する。
+
+| MCP | Owner / authority | Config authority | Purpose | Current boundary |
+|---|---|---|---|---|
+| Cloudflare API MCP | Cloudflare / Workspace config | `.cursor/mcp.json` | Cloudflare操作入口 | CONFIG_REGISTERED; live useはTask時に疎通確認 |
+| DebugAI MCP | `seigo-gace/debug-ai` | DebugAI `docs/MCP_ADAPTER.md`; Workspace config when registered | DebugAIを親AIからMCP利用 | SOURCE_VERIFIED / main merged; WORKSPACE_NOT_REGISTERED / LIVE_RUNTIME_NOT_VERIFIED |
+| Reuse KB MCP | future F: KB bridge owner | future verified config | F: reusable-development KB検索/登録 | NOT_IMPLEMENTED |
+| Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | actual client config | deterministic Japanese parser | repository DISCOVERED; Workspace availability NOT_VERIFIED here |
+
+### DebugAI source boundary
+
+Current source authority:
+
+```text
+repository = seigo-gace/debug-ai
+main merge = 92b65347f621fbd69d597deb3b7d2ce689f8f8ba
+MCP source / stdio protocol = verified before/through merge
+Workspace registration = NOT_EXECUTED
+Contabo live MCP runtime = NOT_VERIFIED
+```
+
+このSource状態をLive availabilityと誤認しない。
+
+## 5. Shared Tool / Skill Registry
+
+| Capability | Authority / owner | Purpose | Current boundary |
 |---|---|---|---|
-| GitHub work report / auto commit | `docs/AUTO_COMMIT.md`, `scripts/ai-auto-commit.sh` | 作業後のDiff確認・Commit・Push | IMPLEMENTED |
-| GitHub skill resolver | `docs/GITHUB_SKILL.md`, resolver scripts | GitHub skill path解決 | IMPLEMENTED |
-| Deploy routine | `docs/DEPLOY_RUNBOOK.md` | GitHub confirmed revisionから承認後Deploy | DOCUMENTED / RUNTIME_BY_TARGET |
-| Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare運用契約 | IMPLEMENTED_CONTRACT |
-| Shared secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 | IMPLEMENTED_CONTRACT |
-| DebugAI | DebugAI repo / CLI / HTTP / MCP branch authority | specialized debugging sub-agent | CLI_HTTP_VERIFIED; MCP_SOURCE_CI_STDIO_VERIFIED; LIVE_MCP_NOT_VERIFIED |
-| Storage lifecycle audit | `scripts/storage_lifecycle_audit.py`, `operations/storage-lifecycle.json` | Disk/log/backup/Docker状態のread-only監査 | IMPLEMENTED_SOURCE / SERVER_RUNTIME_NOT_VERIFIED |
-| Storage cleanup mutation | future implementation | safe deletion/rotation | NOT_IMPLEMENTED |
+| GitHub work report / auto commit | `docs/AUTO_COMMIT.md`, `scripts/ai-auto-commit.sh` | Diff確認・Commit・Push | IMPLEMENTED_SOURCE |
+| GitHub skill resolver | `docs/GITHUB_SKILL.md`, resolver scripts | GitHub skill path resolution | IMPLEMENTED_SOURCE |
+| Deploy routine | `docs/DEPLOY_RUNBOOK.md` | confirmed revision -> approved deploy -> runtime verify | DOCUMENTED; target runtime specific |
+| Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare common contract | IMPLEMENTED_CONTRACT |
+| Shared Secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 | IMPLEMENTED_CONTRACT; runtime availability must be checked |
+| DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent | source/CLI/HTTP/MCP contract present; live Workspace MCP not verified |
+| Storage lifecycle audit | `scripts/storage_lifecycle_audit.py`, `operations/storage-lifecycle.json` | disk/log/backup/Docker read-only audit | SOURCE_VERIFIED / SERVER_RUNTIME_NOT_VERIFIED |
+| Storage cleanup mutation | future approved implementation | safe deletion/rotation | NOT_IMPLEMENTED |
 
-Tool追加条件: Workspace内で反復利用する実益があり、所有者・Interface・権限・失敗時動作が明確であること。
+Tool追加条件:
+- Workspace内で反復利用する実益がある;
+- ownerが明確;
+- Interfaceが明確;
+- permission / mutation boundaryが明確;
+- failure behaviorが明確;
+- availabilityを検証可能。
 
-## 4. Shared Secret Contract Registry
+## 6. Shared Secret Contract Registry
 
 値は保存しない。
 
-| Provider / purpose | Contract identifier | Consumer / boundary |
-|---|---|---|
-| Hugging Face | `hf-token` | `g-ace-workspace`; Vault action経由 |
-| Cloudflare Account API | `cf-account-api` | Workspace共有契約; Vault action経由 |
+| Provider / purpose | Contract identifier | Consumer | Broker / authority | Runtime boundary |
+|---|---|---|---|---|
+| Hugging Face | `hf-token` | `g-ace-workspace` | Libral Vault / `operations/huggingface.json` | use via Vault action; live availability Task時確認 |
+| Cloudflare Account API | `cf-account-api` | `g-ace-workspace` | Libral Vault / `operations/cloudflare-account.json` | use via Vault action; live availability Task時確認 |
 
-利用方法・allowlist・request contractは `docs/WORKSPACE_SHARED_SECRETS.md` を正とする。
+利用・allowlist・failure contractは `docs/WORKSPACE_SHARED_SECRETS.md` を正とする。
 
-## 5. Knowledge / Reuse Registry
+Secret値、Token値、Vault internal token値はRegistryへ入れない。
 
-Target reusable-development KB:
+## 7. Reusable Development KB Registry
+
+Target architecture:
 
 ```text
-Storage target: Master PC F: 1 TB drive
-Data authority: KB implementation side
-server-core role: access / registration / lifecycle / safety contract only
-VPS direct filesystem access: forbidden assumption
+Storage target: Master PC F: 1 TB
+Data authority: external KB implementation/runtime
+server-core role: access / registration / lifecycle / safety contract
+Direct VPS -> PC filesystem assumption: FORBIDDEN
 Bridge: verified API / MCP or equivalent explicit interface required
+Current bridge/runtime: NOT_IMPLEMENTED
 ```
 
 Design authority: `docs/KB_REUSE_DESIGN.md`。
 
-## 6. Runtime Registry Rule
+既存 `astera-kb` / `kb-system` / `gace-dev-kb` をF: reusable-development KBと自動的に同一視しない。統合する場合は、owner・data model・bridge・migration・authorityを正式に決める。
 
-Runtime情報を登録する場合は最低限次を分離する。
+## 8. Runtime Discovery Contract
+
+Runtime情報を記録または確認する場合は最低限次を分離する。
 
 - Project
-- repository revision source
-- server path
-- compose project / service
+- repository / revision source
+- server / provider entry
+- compose project / service / container where applicable
 - port / domain ownership
 - health/readback method
-- last verified timestamp / revision when recorded
+- last verified timestamp
+- verified revision
+- deploy state
+- known failure / recovery boundary
 
-古いRuntime値をCurrentとして扱わない。Current判定はDocker / Provider / Endpoint等の実readbackを優先する。
+古いRuntime値をCurrentとして扱わない。
 
-## 7. Registry Update Gate
+Current判定の優先順:
 
-次の場合に更新要否を判定する。
+```text
+actual Provider / Docker / Endpoint / repository readback
+  -> target Project runtime authority
+  -> Registry discovery metadata
+  -> historical reports only as history
+```
 
-- Project追加 / 削除 / rename
+## 9. Availability Gate
+
+共有Capabilityを `AVAILABLE_VERIFIED` とするには、そのCapabilityに必要な範囲で次を満たす。
+
+```text
+OWNER_KNOWN=YES
+AUTHORITY_KNOWN=YES
+CONFIG_PRESENT=YES when required
+AUTHENTICATION_VERIFIED=YES when required
+TRANSPORT_VERIFIED=YES
+INTERFACE_DISCOVERY_VERIFIED=YES
+REPRESENTATIVE_CALL=PASS
+MUTATION_BOUNDARY_KNOWN=YES
+FAILURE_BEHAVIOR_KNOWN=YES
+```
+
+未確認項目を推測でYESにしない。
+
+## 10. Registry Update Gate
+
+次の場合は更新要否を判定する。
+- Project追加 / 削除 / rename / ownership変更
+- Repository authority変更
 - shared MCP / Tool追加・削除・Interface変更
-- Secret Contract identifier / consumer / access path変更
+- Secret Contract identifier / consumer / broker変更
 - Workspace共通Runtime入口変更
 - KB bridge実装・Interface変更
+- capability availability stateが変わった
 
-実装されていないCapabilityを `AVAILABLE` と記録しない。UNKNOWN / NOT_IMPLEMENTED / NOT_VERIFIEDを保持する。
+Registryは作業日誌ではない。時系列履歴はGitHub commit / PRへ残す。
