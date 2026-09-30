@@ -30,7 +30,7 @@ README以外のserver-core正本を新CHAT/新Taskで一括読込しない。
 | Git / Commit / Push | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
 | 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
-| Project / MCP / Tool / shared capability discovery | `docs/WORKSPACE_REGISTRY.md` |
+| Project / MCP / Tool / shared capability / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` + 必要な実Runtime readback |
 | Reusable KB / F: storage / KB bridge | `docs/KB_REUSE_DESIGN.md` |
 | Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
 | Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
@@ -38,7 +38,6 @@ README以外のserver-core正本を新CHAT/新Taskで一括読込しない。
 | 用語 | `docs/GLOSSARY.md` |
 | server-core構造 | `docs/STRUCTURE.md` |
 | server-core設計判断 | `docs/SERVER_CORE_DESIGN.md` |
-| Current Project / Runtime入口 | `PROJECT_STATUS.md` + 必要な実Runtime readback |
 
 複合作業では必要なAuthorityだけ組み合わせる。
 
@@ -132,7 +131,7 @@ DesignとCurrent実装が違う場合、DesignをCurrentへ合わせて履歴を
 
 ## Runtime / Registry Rule
 
-`PROJECT_STATUS.md`、`docs/WORKSPACE_REGISTRY.md`、READMEに書かれたContainer / Port / Domain / Runtime状態は探索入口であり、実Runtimeの代用ではない。
+`docs/WORKSPACE_REGISTRY.md` やREADMEに書かれたContainer / Port / Domain / Runtime状態は探索入口であり、実Runtimeの代用ではない。
 
 Current状態が必要なら対象Provider / Docker / GitHub / Endpoint等をreadbackする。
 
