@@ -21,6 +21,28 @@ server-core/README.md
 
 設計基準線: [`docs/SERVER_CORE_DESIGN.md`](docs/SERVER_CORE_DESIGN.md)
 
+## Current Completed / Verified Scope
+
+Source/CIで確認済み:
+- server-core起点のWorkspace Routing
+- progressive context loading
+- README / Design / Tree / Delta / System Document運用
+- Commit = work report
+- confirmed GitHub revisionを起点にするDeploy contract
+- shared Project / MCP / Tool / Secret-contract Discovery Registry
+- F: 1 TB reusable-development KB Design Baseline
+- Storage / Log / Cache / Backup / Recovery Design Baseline
+- read-only Storage Lifecycle Audit source + deterministic self-test
+
+未実装 / 未Runtime検証:
+- DebugAI MCP Adapter
+- Reuse KB API/MCP bridge
+- F: KB runtime/data store
+- Storage cleanup mutation / automatic deletion
+- latest Server storage audit実行
+
+Source/CI PASSをServer Runtime PASSとして扱わない。
+
 ## 作業ルーティング
 
 | 今回の作業 | 追加で読む正本 |
@@ -166,6 +188,13 @@ VPSは処理・Runtime環境であり、Project SourceやDocumentの正本保存
 標準の反映経路は、検証済みRepository変更をGitHubへ履歴化し、対象revisionを確認したうえで、必要なMaster承認後にServerへ反映する。
 
 Log / Cache / Cleanup / Backup / Recoveryの共通設計は `docs/STORAGE_LIFECYCLE.md` を正とする。
+
+read-only Storage Audit:
+- policy: `operations/storage-lifecycle.json`
+- source: `scripts/storage_lifecycle_audit.py`
+- Source self-test: CIで検証
+- Server Runtime audit: NOT_VERIFIED
+- delete / prune / volume delete: NOT_IMPLEMENTED / DISALLOWED BY CURRENT POLICY
 
 共通境界:
 - Telegram: 対象Project契約で定義された永続raw-log正本
