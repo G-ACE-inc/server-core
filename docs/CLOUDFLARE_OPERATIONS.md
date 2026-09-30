@@ -1,220 +1,233 @@
-# Cloudflare Tunnel 統合設計 v1.1 — Astera v8
+# CLOUDFLARE OPERATIONS — WORKSPACE COMMAND CONTRACT
 
-実運用正本。管理者の明示指示がない限りAI・作業者は変更しない。
+Version: 2026-09-30
+Role: server-core司令室からCloudflare関連Taskを安全にRouting・統制するためのWorkspace共通契約。
 
-## 1. 目的
+## 1. Purpose
 
-Astera v8（`http://127.0.0.1:7373`）を `api.asterav8.jp` として安全に外部公開する。
-HTTPS終端、Cloudflare WAF、DDoS保護を Cloudflare Tunnel 経由で実現する。
-VPS側はポート公開・証明書管理・Nginx不要の最小構成とする。
+server-coreはCloudflareの各Project固有Tunnel / Worker / Pages / DNS / Access実装を所有しない。
 
-## 2. 責務境界
+server-coreが担当するのは:
+- Cloudflare Taskのowner/target Projectを特定する;
+- 共通Credential / MCP / Account API利用境界を示す;
+- change/read-only/production境界を明確にする;
+- Project固有AuthorityへDispatchする;
+- GitHub revisionとRuntime/Provider stateを分離する;
+-変更後のProvider readbackを要求する。
 
-| 責務 | 担当 |
-|---|---|
-| Tunnel の作成・設定・DNS管理 | 管理者（Cloudflare ダッシュボード） |
-| Token の GPG 暗号化と Runtime File 生成 | GPG-Core（`secure_up.sh`） |
-| cloudflared Container の定義 | astera_v8（`docker-compose.yml`） |
-| 運用手順・Plan・State 管理 | server-core（`scripts/cloudflare_ops.py`） |
-| HTTP サービス本体 | astera_v8（`astera-v8` container） |
+## 2. Authority Split
 
-## 3. 所有 Repository
+### server-core owns
+- Workspace共通Cloudflare operation rules
+- Shared Secret / Token contractへの導線
+- Cloudflare MCP / Account API discovery
+- common approval boundary
+- common provider verification rule
+- `operations/cloudflare*.json` のSecret値を含まない共通契約
+- `scripts/cloudflare_ops.py` が共通用途として使われる場合の入口
 
-| Repository | 役割 |
-|---|---|
-| `/home/admin1/server-core` | 運用定義・スクリプト・本正本 |
-| `/home/admin1/projects/astera_v8` | Compose 定義・アプリ実装 |
-| `/home/admin1/projects/GPG-Core` | GPG 暗号化・復号・Secret 生成 |
+### owning Project owns
+- hostname / route / zone / worker / pages / tunnelのProject固有Design
+- Docker / Compose / application runtime definition
+- Project固有origin / port
+- Project固有health endpoint
+- Project固有rollback
+- Project固有Secret file path / runtime injection
+- release/deploy decision
 
-## 4. server-core の役割
+Project固有値をserver-coreの共通正本へ固定しない。
 
-- `operations/cloudflare.json`：Project 設定の正本（認証情報を含まない）
-- `scripts/cloudflare_ops.py`：Subcommand 形式の運用スクリプト
-- `docs/CLOUDFLARE_OPERATIONS.md`：本正本
-- `.cursor/rules/cloudflare-operations.mdc`：AI 作業ルール
+## 3. Task Routing
 
-**server-core に Tunnel Container や Secret を置かない理由**:
-server-core は全 Project 共通の統治領域であり、特定 Application の Runtime 資材（Container・Token・GPG 暗号化ファイル）を持つべきでない。
-Application 固有の起動・Secret・Container 定義は astera_v8 に置き、server-core は運用観点の定義・手順・状態管理だけを担う。
-これにより server-core を Application の実行時依存にせず、統治領域としての責務を維持できる。
+Cloudflare Taskを受けたら次を判定する。
 
-## 5. Astera v8 の役割
-
-- `docker-compose.yml`：`astera-v8-cloudflared` Service の定義（profile: cloudflare）
-- `.env.example`：`CLOUDFLARE_TUNNEL_TOKEN_FILE` のパス契約の説明
-- `astera-v8` Container：HTTP サービス本体（既存・変更なし）
-
-astera_v8 は HTTP サービスとして `127.0.0.1:7373` でのみ待機する。
-Tunnel の有無に関わらず、既存の astera-v8 起動は profile なし Compose で完結する。
-
-## 6. GPG-Core の役割
-
-- `.env.gpg` の復号
-- Tunnel Token の Runtime Secret File 生成（`/run/user/<uid>/` 配下）
-- Docker Compose Secret Source の環境変数設定
-- Compose 起動後の一時 File 削除
-
-GPG 秘密鍵・GPG-Core ライブラリは cloudflared Container にマウントしない。
-
-## 7. Cloudflare 側 Resource
-
-| Resource | 値 |
-|---|---|
-| Account | Info@g-acebot.com's Account |
-| Zone | asterav8.jp |
-| Tunnel 名 | astera-v8-prod |
-| Preview hostname | preview.asterav8.jp |
-| Production hostname | api.asterav8.jp |
-| Origin | http://127.0.0.1:7373 |
-| Metrics | http://127.0.0.1:20241/metrics |
-
-すべての Cloudflare Resource 作成・変更は管理者が承認後に手動で実行する。
-`cloudflare_ops.py` は Cloudflare API を直接変更しない。
-
-## 8. Credential 境界
-
-| 種別 | 保管場所 | Git 管理 |
-|---|---|---|
-| Tunnel Token | astera_v8/.env.gpg（GPG 暗号化）| 暗号化済みのみ可 |
-| Runtime Secret File | `/run/user/<uid>/astera_v8_cloudflare_tunnel_token` | 禁止 |
-| Token File Path | 環境変数 `CLOUDFLARE_TUNNEL_TOKEN_FILE` | 禁止（値として） |
-| Account ID / Zone ID | 記録しない | 禁止 |
-| Personal API Token | cloudflare_ops.py に渡さない | 禁止 |
-
-- Token 値を Chat・Terminal・Log・Git Diff に出力しない。
-- Personal API Token を常駐処理に渡さない。
-- Tunnel 専用 Token だけを cloudflared に渡す。
-
-## 9. Preview 運用
-
-承認 Gate: Gate7〜Gate11 を順番に通過すること。
-
-1. 管理者が Cloudflare ダッシュボードで Tunnel `astera-v8-prod` を作成する（`Gate7:Tunnelだけ作成` 承認後）
-2. Tunnel Token を取得し、`astera_v8/.env` に `CLOUDFLARE_TUNNEL_TOKEN=<token>` を追記する（平文 `.env` は一時的な入力専用。作業後は必ず削除する）
-3. `gpg --encrypt --recipient <key-id> --output astera_v8/.env.gpg astera_v8/.env` で暗号化し、平文 `.env` を削除する（`Gate8:Token暗号化・Runtime-Secret生成` 承認後）
-4. Preview 用 Route と Access を作成する（`Gate9:Preview-Route・Access作成` 承認後）
-5. `secure_up.sh --profile cloudflare --secret CLOUDFLARE_TUNNEL_TOKEN:CLOUDFLARE_TUNNEL_TOKEN_FILE:astera_v8_cloudflare_tunnel_token <project-path>` を実行して cloudflare Profile を起動する（`Gate10:Docker起動` 承認後）
-6. `cloudflare_ops.py verify` で疎通を確認する
-7. `preview.asterav8.jp` で実利用・障害復旧を検証する（`Gate11:Preview実利用・障害復旧検証` 承認後）
-
-## 10. 本番昇格
-
-承認 Gate: Gate12〜Gate13 を順番に通過すること。
-
-1. Gate11 の Preview 実利用・障害復旧検証が完了していることを確認する
-2. 管理者が `Gate12:api.asterav8.jp本番公開` を承認する
-3. DNS に `api.asterav8.jp` CNAME を追加する
-4. `/signup` の公開可否を管理者が個別判断する（`Gate13:/signup公開可否の個別判断`）
-5. `cloudflare_ops.py verify` で本番疎通を確認する
-
-## 11. 通常運用
-
-```bash
-# 状態確認
-python3 /home/admin1/server-core/scripts/cloudflare_ops.py status
-
-# 事前確認
-python3 /home/admin1/server-core/scripts/cloudflare_ops.py preflight
-
-# 起動（Token File が必要、--confirm 必須）
-python3 /home/admin1/server-core/scripts/cloudflare_ops.py local-up --confirm
-
-# 疎通確認
-python3 /home/admin1/server-core/scripts/cloudflare_ops.py verify
-
-# 停止（--confirm 必須）
-python3 /home/admin1/server-core/scripts/cloudflare_ops.py stop --confirm
+```text
+TARGET_PROJECT
+RESOURCE_TYPE
+READ_ONLY_OR_MUTATION
+PROVIDER_ACCOUNT_OR_ZONE
+PROJECT_AUTHORITY
+AUTH_METHOD
+EXPECTED_CHANGE
+VERIFY_METHOD
+ROLLBACK_PATH
+APPROVAL_REQUIRED
 ```
 
-ホスト再起動後は Runtime File が消えるため、`secure_up.sh` を再実行して Token File を再生成してから `local-up` を行う。
+対象Project / resource ownerが不明なら `docs/WORKSPACE_REGISTRY.md` と対象Project READMEを確認する。
 
-## 12. Token Rotation
+推測でhostname / account / zone / origin / tunnel nameを作らない。
 
-1. Cloudflare ダッシュボードで Token を再発行する
-2. astera_v8/.env.gpg を新 Token で再暗号化する（既存 .env.gpg を上書き）
-3. `stop --confirm` で Container を停止する
-4. `secure_up.sh --profile cloudflare --secret ...` で新 Token File を生成する
-5. `local-up --confirm` で再起動する
-6. `verify` で疎通を確認する
+## 4. Shared Access Paths
 
-## 13. 障害・復旧
+### Cloudflare API MCP
+Clientに実登録されている場合のみ利用候補。
 
-**Container が起動しない場合**:
-- `cloudflare_ops.py status` で状態を確認する
-- `docker logs astera-v8-cloudflared` でログを確認する
-- Token File が存在するか確認する（`CLOUDFLARE_TUNNEL_TOKEN_FILE` 環境変数）
-- `preflight` を実行して事前条件を確認する
+Actual config authority例: `.cursor/mcp.json`。
 
-**Tunnel 接続が切れた場合**:
-- cloudflared は `restart: unless-stopped` で自動再起動する
-- 復旧しない場合は `stop --confirm` → `local-up --confirm` を行う
+Registry記載だけで利用可能と断定せず、Task時に必要な疎通/権限を確認する。
 
-**astera-v8 が不健全な場合**:
-- cloudflared は `depends_on.astera-v8.condition: service_healthy` で起動しない
-- astera-v8 の healthcheck が回復するまで待つ
+### Cloudflare Account API via Shared Secret Broker
+Shared contract:
+- secret id: `cf-account-api`
+- consumer: `g-ace-workspace`
+- authority: `docs/WORKSPACE_SHARED_SECRETS.md`
+- machine contract: `operations/cloudflare-account.json`
 
-## 14. Rollback
+Secret値を読み出してProjectへ配らない。
 
-1. `cloudflare_ops.py rollback --confirm` を実行する（Container 停止 + State 記録）
-2. Cloudflare ダッシュボードで Ingress 設定を手動で戻す
-3. DNS CNAME を削除または変更する（管理者が判断）
-4. 必要に応じて前の Token File に戻す
+### Cloudflare Tunnel credential
+Account API credentialとTunnel credentialを同一視しない。
 
-## 15. 検証
+Tunnel credentialのowner/injection方法は対象ProjectのCurrent Authorityを正とする。
 
-`verify` サブコマンドが確認する項目:
-- origin `http://127.0.0.1:7373/healthz` の応答（HTTP 200）
-- metrics `http://127.0.0.1:20241/metrics` の応答（HTTP 200）
+## 5. Read-only vs Mutation
 
-次だけでは合格にしない:
-- Container が起動した
-- エラーが出なかった
-- `docker compose up` が終了した
+Read-only例:
+- resource discovery
+- DNS/route/config readback
+- status / health確認
+- deployment/runtime state確認
+- permissions確認
 
-## 16. 承認 Gate
+Mutation例:
+- DNS record create/update/delete
+- Tunnel/route変更
+- Access policy変更
+- Pages/Worker setting変更
+- Secret/credential rotation
+- Production publish/cutover
 
-管理者の明示承認なしに、以下の Gate を通過しない。Gate は番号順に扱い、各 Gate の承認対象を満たした場合のみ次の Gate に進む。
+Read-only確認をMutation承認として扱わない。
 
-| Gate | 承認対象 | 実施内容 |
-|---|---|---|
-| `Gate 1` | 差分レビュー | server-core と astera_v8 の変更差分を確認し、作業範囲を固定する |
-| `Gate 2` | modular-catalog正本確認 | modular-catalog の正本を確認し、依存関係と参照元を確定する |
-| `Gate 3` | GPG Dummy Secret正常系 | GPG Dummy Secret の正常系を確認し、暗号化・復号の前提を満たす |
-| `Gate 4` | cloudflared実起動互換検証 | cloudflared の実起動互換性を確認し、Compose 定義の整合を検証する |
-| `Gate 5` | Commit | 変更を commit する |
-| `Gate 6` | Push | commit とは別に push する |
-| `Gate 7` | Tunnelだけ作成 | Cloudflare Tunnel のみを作成する |
-| `Gate 8` | Token暗号化・Runtime Secret生成 | Tunnel Token を暗号化し、Runtime Secret を生成する |
-| `Gate 9` | Preview Route・Access作成 | Preview 用 Route と Access を作成する |
-| `Gate 10` | Docker起動 | cloudflared Container を起動する |
-| `Gate 11` | Preview実利用・障害復旧検証 | preview.asterav8.jp での実利用と障害復旧を検証する |
-| `Gate 12` | api.asterav8.jp本番公開 | api.asterav8.jp を本番公開する |
-| `Gate 13` | /signup公開可否の個別判断 | `/signup` の公開可否を個別に判断する（正式仕様確定まで遮断継続） |
+## 6. Approval Boundary
 
-- Gate 1〜6 は事前確認・変更統制用の Gate とする。
-- Gate 7〜13 は Cloudflare / Docker / 公開運用の実行 Gate とする。
+Masterの明示指示なしに次を実行しない。
+- Provider resource create/update/delete
+- Production publish / cutover
+- Secret/credential add/delete/rotation
+- DNS/route/tunnel/access変更
+- 稼働Service停止/recreateを伴う変更
 
-## 17. 禁止事項
+現在の明示指示が対象Mutationを含む場合だけその範囲で進める。
 
-- Cloudflare API を直接変更すること（`cloudflare_ops.py` は変更しない）
-- Token 値を Chat・Terminal・Log・Git Diff に出力すること
-- Personal API Token を常駐処理に渡すこと
-- Tunnel Token 以外の Token を cloudflared に渡すこと
-- server-core に Container・Token・GPG 暗号化ファイルを置くこと
-- Read-only 確認だけで書き込み権限を断定すること
-- 実利用テストを行わず完成扱いにすること
-- 既存 astera-v8・TGserver・SQLite・Outbox を変更すること
-- Rollback 手順を作成前に確認しないこと
+## 7. Pre-change Gate
 
-## 18. 完了条件
+Mutation前に必要範囲で確認する。
 
-すべて通過した場合だけ「完了」とする。
+```text
+OWNER_KNOWN=YES
+TARGET_PROJECT_KNOWN=YES
+RESOURCE_IDENTITY_VERIFIED=YES
+CURRENT_STATE_READBACK=YES
+EXPECTED_CHANGE_DEFINED=YES
+AUTH_PATH_VERIFIED=YES
+ROLLBACK_DEFINED=YES when change is reversible/critical
+MASTER_APPROVAL=YES when required
+```
 
-- [ ] `cloudflare_ops.py preflight` が全チェック通過
-- [ ] cloudflare Profile で Container が起動する
-- [ ] `cloudflare_ops.py verify` が PASS
-- [ ] `preview.asterav8.jp` でアクセスが確認できる（preview_apply 承認後）
-- [ ] Profile なしの既存 astera-v8 起動に影響がない
-- [ ] Token が Container 環境変数・Log・Git Diff に出ていない
-- [ ] State File が mode 0600 で作成されている
-- [ ] 本番昇格は別承認（production_apply）後
+Unknownを推測でYESにしない。
+
+## 8. Change Execution Rule
+
+Provider変更は対象Project / Providerの正式Interfaceを使う。
+
+- UI操作
+- official API
+- registered MCP
+- approved project-specific script
+
+どの経路でも、変更対象とscopeを限定する。
+
+別Project / 別Zone / 別Accountをついでに変更しない。
+
+## 9. Verification
+
+Provider APIの200/Successだけで完了としない。
+
+必要範囲で確認する。
+- intended resource changed
+- unintended resource unchanged
+- DNS/route resolution
+- external/internal endpoint behavior
+- Access/auth behavior
+- target Project health
+- deployed revisionとの対応
+- rollback path still valid
+
+Mutation後はProvider readbackを行う。
+
+## 10. Failure / Recovery
+
+失敗時:
+- Success扱いしない
+- 次の公開/切替へ自動で進まない
+- actual Provider stateをreadbackする
+- partial mutationの有無を確認する
+- rollbackまたはforward fixをProject Authorityに従って判断する
+- Source変更が必要なら対象Repositoryのdevelopment loopへ戻す
+
+## 11. Secret Boundary
+
+禁止:
+- Token / Secret値をChat / Git / docs / logsへ出す
+- Account API TokenとTunnel Tokenを混同する
+- Secret値をserver-core `operations/*.json`へ保存する
+- provider credentialをProjectへ無断複製する
+- verificationのためにplaintext tokenをdumpする
+
+Shared Secret契約は `docs/WORKSPACE_SHARED_SECRETS.md` を正とする。
+
+## 12. Project-specific Cloudflare Documentation
+
+Project固有Cloudflare design/runbookはowning Project側へ置く。
+
+例としてAstera v8固有の以下はserver-core共通Authorityではない:
+- `api.asterav8.jp` / preview hostname
+- Astera v8 origin port
+- astera-v8 cloudflared container
+- Astera-specific gate sequence
+- Astera-specific runtime secret path
+
+必要な場合はAstera v8 README / Design / Runtime docs / Git historyからCurrent Authorityを確認する。
+
+Git historyに残る旧server-core Cloudflare文書はhistorical implementation recordであり、Current Project-specific Authorityとして再利用しない。
+
+## 13. Common Tooling
+
+`operations/cloudflare.json`, `operations/cloudflare-account.json`, `scripts/cloudflare_ops.py` が存在しても、それだけで全Projectへ適用可能とは扱わない。
+
+Tool利用前に:
+- target Project compatibility
+- current configuration
+- mutation behavior
+- credential path
+- output / verification behavior
+を確認する。
+
+## 14. Completion Boundary
+
+Cloudflare Taskの完了はTask種別に応じて判定する。
+
+Read-only Task:
+```text
+TARGET_IDENTIFIED
+CURRENT_STATE_READBACK
+REQUESTED_FACTS_VERIFIED
+NO_MUTATION
+```
+
+Mutation Task:
+```text
+TARGET_IDENTIFIED
+PRE_CHANGE_STATE_CAPTURED
+AUTHORIZED_CHANGE_APPLIED
+PROVIDER_READBACK_PASS
+PROJECT_BEHAVIOR_VERIFIED
+UNINTENDED_CHANGE_NONE
+ROLLBACK/RECOVERY_STATE_KNOWN
+```
+
+## 15. Command-center Rule
+
+server-coreはCloudflareを**操作する司令室の共通境界**を持つが、各ProjectのCloudflare実装そのものは所有しない。
