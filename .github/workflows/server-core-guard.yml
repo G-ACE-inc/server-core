@@ -55,7 +55,7 @@ jobs:
           test ! -e PROJECT_STATUS.md
           test ! -e add-status.sh
           test ! -e docs/OPERATION_CHECKLIST.md
-          ! git grep -nE '(^|[^A-Za-z0-9_])(KB\.md|PROJECT_STATUS\.md|OPERATION_CHECKLIST\.md)([^A-Za-z0-9_]|$)' -- ':!archive/**'
+          ! git grep -nE '(^|[^A-Za-z0-9_])(KB\.md|PROJECT_STATUS\.md|OPERATION_CHECKLIST\.md)([^A-Za-z0-9_]|$)' -- ':!archive/**' ':!.github/workflows/server-core-guard.yml'
 
       - name: LibralCore execution contract
         run: |
