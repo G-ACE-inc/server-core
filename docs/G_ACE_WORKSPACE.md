@@ -1,131 +1,160 @@
 # G-ACE WORKSPACE
 
 ## 目的
-`/home/admin1/workspace/G-ACE.code-workspace` を、全作業でServer Coreルールが先に効くWorkspaceとして定義する。
 
-## 正本ファイル
-Workspace実体:
+`/home/admin1/workspace/G-ACE.code-workspace` を、Workspace内の全Projectで **server-coreを必ず共通入口として使う** 開発・運用Workspaceとして定義する。
 
-```text
-/home/admin1/workspace/G-ACE.code-workspace
-```
+Projectごとの実装・Designは各Project側に置き、server-coreは共通開発標準、GitHub運用、共有Tool/MCP/Secret契約、Server運用境界を提供する。
 
-Server Core上の正規仕様:
+## Authority Entry
+
+Workspace作業は必ず次から開始する。
 
 ```text
-/home/admin1/server-core/docs/G_ACE_WORKSPACE.md
+/home/admin1/server-core/README.md
+  -> /home/admin1/server-core/docs/LOAD_SCOPE.md
+  -> 今回必要なserver-core正本だけ
+  -> 対象Project README
+  -> 対象Projectの必要範囲だけ
 ```
 
-## Workspace folders
-通常作業で開くfolderは次に限定する。
+全server-core正本の一括読込を禁止する。
 
+## Workspace Folders
+
+通常Folder:
 - `/home/admin1/server-core`
 - `/home/admin1/projects`
 
-## 通常folderに含めないもの
-次は通常作業のWorkspace folderに含めない。
-
+通常Folderに含めない:
 - `/home/admin1/workspace`
 - `/home/admin1/kb`
 - `/home/admin1/logs`
 - `/home/admin1/backups`
 
-## 理由
-- `server-core` を先頭に置き、AIが共通ルールを最初に確認できるようにする。
-- `projects` を作業対象の集合として扱う。
-- `logs`, `backups`, `kb`, `workspace` は、通常作業で誤読、誤検索、誤編集する危険があるため外す。
+理由:
+- server-coreを共通Authority入口にする
+- projectsを実作業対象集合として扱う
+- logs / backups / kb / workspaceを通常検索・誤編集・Context肥大から隔離する
 
-## Workspace settings
-Workspaceには、次のServer Core情報を設定として持たせる。
+## Project Entry
 
-- `codex.serverCore.loadScope`
-- `codex.serverCore.workspaceRule`
-- `codex.serverCore.requiredStartFiles`
-- `codex.serverCore.requiredStartRule`
-- `codex.serverCore.finishRule`
-- `codex.serverCore.projectEntrypoints`
-- `codex.serverCore.activeRuntimeContainers`
-- `codex.serverCore.neverUseAsNormalContext`
-- `codex.serverCore.sharedSecrets`
+対象ProjectではREADMEを入口にする。
 
-これらはVS Code標準機能ではなく、AI・作業者向けの明示的な運用ヒントである。
+READMEから、存在する場合は次へ直接到達できる状態を標準とする。
+- Design
+- Project Tree
+- Design Delta
+- completed System / Feature-bundle / Module documents
+- run / test / verify entry points
 
-## Workspace shared secrets
-この Workspace の Hugging Face 利用は各Project実装ではなく、Vault 既存 `POST /internal/v1/actions/http` 経由とする。正本は `operations/huggingface.json`。Secret id は `hf-token`、consumer は `g-ace-workspace`。Token を読み出さない。Vault が Header 注入する。投入は既存 `POST /internal/v1/secrets`。投入スクリプト追加禁止。GPG-Core は使わない。
+対象Code、直接依存、関連Testから開始し、必要な時だけ `docs/LOAD_SCOPE.md` のLevelに従って範囲を拡張する。
 
-Cloudflare Account API も同様。正本は `operations/cloudflare-account.json`。Secret id は `cf-account-api`。利用は Vault `POST /internal/v1/actions/http`、投入は既存 `POST /internal/v1/secrets`。Tunnel 契約 `operations/cloudflare.json` とは別。スクリプト追加禁止。GPG-Core は使わない。
+## Development Routine
 
-使用時の手順は `docs/WORKSPACE_SHARED_SECRETS.md` を正とする。
+```text
+server-core entry
+  -> target Project README
+  -> required Design / Tree / Delta / System Document
+  -> repository / branch / HEAD / status
+  -> Source / direct dependencies / tests
+  -> reuse check
+  -> implementation / debug
+  -> diff
+  -> verification
+  -> documentation gate
+  -> GitHub commit as work report
+  -> push / remote readback
+  -> PR / CI if required
+```
 
-## Workspace rule
-`codex.serverCore.workspaceRule` は次を示す。
+Master承認が必要なMerge / Production / Provider変更等は自動で越えない。
 
-このG-ACE Workspace内の全作業は、必ずserver-coreの正本を先に読み、変更後はREADMEと該当正本文書を現在有効な正規仕様として同期し、GitHubへcommit / pushして終える。
+## Documentation Gate
 
-## Required start rule
-`codex.serverCore.requiredStartRule` は次を示す。
+作業完了時に最低限次を判定する。
 
-1. `README.md` を読む。
-2. `docs/LOAD_SCOPE.md` を読む。
-3. `SERVER_CORE_PROTOCOL.md` を読む。
-4. `CORE.md`, `KB.md`, `PROJECT_STATUS.md` を読む。
-5. `archive`, `.github`, `scripts` は通常読込しない。必要な場合だけ対象ファイルを限定して読む。
+```text
+README_UPDATE_REQUIRED=YES/NO
+PROJECT_TREE_UPDATE_REQUIRED=YES/NO
+DESIGN_DELTA_REQUIRED=YES/NO
+SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
+```
 
-## Finish rule
-`codex.serverCore.finishRule` は次を示す。
+Requiredなのに未更新ならDocumentation Completeとしない。
 
-- 作業報告や改善メモではなく、変更後に有効な正規仕様としてREADMEと該当正本文書を更新する。
-- 実ファイルと正本文書が一致していることを確認する。
-- `scripts/ai-auto-commit.sh --push` でGitHubへcommit / pushする。
-- 本番起動、公開、切替は管理者の明示承認なしに行わない。
+DesignはCurrent実装へ合わせて履歴が消える形で上書きしない。
 
-## Project entrypoints
-`codex.serverCore.projectEntrypoints` は主要Projectの正本入口を示す。
+## GitHub Work History
 
-通常作業ではWorkspace folderを増やさず、`/home/admin1/projects` 配下の各Project正本を入口として参照する。
+GitHub commit / PRは作業履歴の正本とする。
 
-現在の主要Project入口:
+Commitは可能な範囲で、目的・主要変更・影響範囲・検証・Document更新・残作業を後から追える作業報告にする。
 
-- TGserver: `/home/admin1/projects/TGserver`
-- Astera v8: `/home/admin1/projects/astera_v8`
-- Astera App: `/home/admin1/projects/astera-app`
+標準commit/pushは `docs/AUTO_COMMIT.md` を正とする。
 
-Astera v8の詳細正本:
+Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
 
-- `/home/admin1/projects/astera_v8/STRUCTURE.md`
-- `/home/admin1/projects/astera_v8/README.md`
-- `/home/admin1/projects/astera_v8/docs/API_REFERENCE.md`
-- `/home/admin1/projects/astera_v8/docs/DOMAIN_TEMPLATE_CATALOG.md`
-- `/home/admin1/projects/astera_v8/docs/PRODUCTION_CHECKLIST.md`
+## Shared Tools / MCP
 
-## Active runtime containers
-`codex.serverCore.activeRuntimeContainers` は、現在の主要稼働コンテナ確認ヒントである。
+Workspace共通Tool/MCPはserver-coreを発見入口とする。
 
-- `astera-app`
-- `astera-v8`
-- `tgserver-tgs-1`
-- `tgserver-conversation-collector-1`
-- `tgserver-meilisearch-1`
-- `tgserver-redis-1`
+server-coreが管理するのは **接続契約・用途・所有先・権限境界** であり、各Tool本体をserver-coreへ移植しない。
 
-実状態は必ず `docker ps` と対象Project側の正本文書で確認する。
+現在 `.cursor/mcp.json` に存在するMCPは実設定を正とし、未登録MCPを利用可能として扱わない。
 
-## Normal context exclusions
-`codex.serverCore.neverUseAsNormalContext` は次を示す。
+DebugAIは独立Project/runtime。現在確認済みの共通利用経路はCLI / HTTP。MCP AdapterはDebugAI側で実装・検証された後にWorkspace共通Registryへ登録する。
 
-- `archive/`
-- `.github/`
-- `scripts/`
-- `/home/admin1/logs`
-- `/home/admin1/backups`
-- `/home/admin1/kb`
-- `/home/admin1/workspace`
+## Workspace Shared Secrets
 
-## Search / watcher除外
-通常検索と監視から次を外す。
+Secret / Token値を各Projectへ複製しない。
 
+既存共有契約:
+- Hugging Face: Vault `POST /internal/v1/actions/http`、`secret_id=hf-token`、`consumer=g-ace-workspace`
+- Cloudflare Account API: Vault `POST /internal/v1/actions/http`、`secret_id=cf-account-api`
+
+Token値を読み出し、Chat / Git / Log / Documentへ保存しない。
+
+詳細は `docs/WORKSPACE_SHARED_SECRETS.md` を正とする。
+
+## Knowledge Base
+
+再利用開発KBの実データはserver-coreへ置かない。
+
+Target:
+- Master PC `F:` 1TB storage
+- 用途: validated reusable code/module/pattern/schema/interface/test/template/procedure/development knowledge
+
+server-coreはKB access / registration / lifecycle / safety contractのみを管理する。
+
+VPS / Workspace AIから利用するには、実装・検証済みAPI/MCP等のbridgeを使用する。PC driveへの直接アクセスを前提にしない。
+
+## Server / Runtime
+
+本番常駐は原則Docker / Docker Compose。
+
+ServerはRuntime/処理環境であり、Project Source履歴・Design・Documentの正本をServerだけに置かない。
+
+Deployは、GitHub上で対象revisionを確認し、必要なMaster承認後に対象Project Runbookに従う。
+
+## Logs / Cache / Cleanup
+
+Common boundary:
+- Telegram: owning Project contractで定義されたdurable raw log authority
+- Meilisearch: rebuildable search index
+- Redis: dedup / hot cache
+- `/home/admin1/logs`: temporary disk state
+- VPS: processing environment
+
+自動Cleanupでは、未送信、再送待ち、Recovery中、所有者不明、Active volume等を削除しない。
+
+Retention / cleanup / backup / recoveryはServer運用標準で管理し、Project固有条件がある場合はProject側契約を優先する。
+
+## Normal Context Exclusions
+
+通常検索・Context・watcherから原則除外:
 - `.git`
-- `.github`
+- `.github`（GitHub Task時を除く）
 - `.tgs-state`
 - `archive`
 - `backups`
@@ -134,14 +163,18 @@ Astera v8の詳細正本:
 - `dist`
 - `logs`
 - `node_modules`
+- cache / dumps
 
-## Workspace tasks
-Workspaceには次のtaskを置く。
+## Workspace Tasks
 
-- `server-core: show load scope`
-- `server-core: auto commit and push`
+Workspaceには少なくとも次の入口を維持する。
+- server-core routing / load scope確認
+- server-core auto commit and push
 
-## 変更時
-`G-ACE.code-workspace` を変更した場合は、この文書と `README.md` を確認し、変更後の正規仕様として同期する。
+Tool追加はTask数を増やすこと自体を目的にせず、全Projectで反復利用する実益がある場合だけ行う。
 
-旧Workspace設定を退避する場合は `/home/admin1/workspace/archive/YYYY-MM-DD/` へ置く。
+## Current-state Warning
+
+Workspace文書、`PROJECT_STATUS.md`、registryの記載は探索入口であり、Current Runtimeの証明ではない。
+
+Container / Port / Domain / Provider / Deploy状態を判断する場合は必ず実状態をreadbackする。
