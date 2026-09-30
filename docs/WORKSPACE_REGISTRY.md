@@ -32,14 +32,16 @@ Project追加時は、実在するRepository / Path / Authorityを確認して�
 
 ## 3. Shared Tool / Skill Registry
 
-| Capability | Authority | Use |
-|---|---|---|
-| GitHub work report / auto commit | `docs/AUTO_COMMIT.md`, `scripts/ai-auto-commit.sh` | 作業後のDiff確認・Commit・Push |
-| GitHub skill resolver | `docs/GITHUB_SKILL.md`, resolver scripts | GitHub skill path解決 |
-| Deploy routine | `docs/DEPLOY_RUNBOOK.md` | GitHub confirmed revisionから承認後Deploy |
-| Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare運用契約 |
-| Shared secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 |
-| DebugAI | DebugAI repo / CLI / HTTP | specialized debugging sub-agent |
+| Capability | Authority | Use | Current state |
+|---|---|---|---|
+| GitHub work report / auto commit | `docs/AUTO_COMMIT.md`, `scripts/ai-auto-commit.sh` | 作業後のDiff確認・Commit・Push | IMPLEMENTED |
+| GitHub skill resolver | `docs/GITHUB_SKILL.md`, resolver scripts | GitHub skill path解決 | IMPLEMENTED |
+| Deploy routine | `docs/DEPLOY_RUNBOOK.md` | GitHub confirmed revisionから承認後Deploy | DOCUMENTED / RUNTIME_BY_TARGET |
+| Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare運用契約 | IMPLEMENTED_CONTRACT |
+| Shared secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 | IMPLEMENTED_CONTRACT |
+| DebugAI | DebugAI repo / CLI / HTTP | specialized debugging sub-agent | CLI_HTTP_VERIFIED_BY_DEBUGAI_AUTHORITY |
+| Storage lifecycle audit | `scripts/storage_lifecycle_audit.py`, `operations/storage-lifecycle.json` | Disk/log/backup/Docker状態のread-only監査 | IMPLEMENTED_SOURCE / SERVER_RUNTIME_NOT_VERIFIED |
+| Storage cleanup mutation | future implementation | safe deletion/rotation | NOT_IMPLEMENTED |
 
 Tool追加条件: Workspace内で反復利用する実益があり、所有者・Interface・権限・失敗時動作が明確であること。
 
