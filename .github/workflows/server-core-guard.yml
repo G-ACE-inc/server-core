@@ -33,6 +33,9 @@ jobs:
           test -f docs/SERVER_CORE_DESIGN.md
           test -f docs/LOAD_SCOPE.md
           test -f docs/STRUCTURE.md
+          test -f docs/WORKSPACE_REGISTRY.md
+          test -f docs/KB_REUSE_DESIGN.md
+          test -f docs/STORAGE_LIFECYCLE.md
           test -f docs/GLOSSARY.md
           test -f docs/PROJECT_TEMPLATE.md
           test -f docs/DEPLOY_RUNBOOK.md
@@ -77,6 +80,12 @@ jobs:
           grep -q 'GitHub Work Report Contract' docs/SERVER_CORE_DESIGN.md
           grep -q 'server-coreを共通入口' docs/G_ACE_WORKSPACE.md
           grep -q 'server-core/README.md' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'WORKSPACE REGISTRY' docs/WORKSPACE_REGISTRY.md
+          grep -q 'REUSABLE DEVELOPMENT KB DESIGN' docs/KB_REUSE_DESIGN.md
+          grep -q 'STORAGE / LOG / CACHE LIFECYCLE' docs/STORAGE_LIFECYCLE.md
+          grep -q 'WORKSPACE_REGISTRY.md' README.md
+          grep -q 'KB_REUSE_DESIGN.md' docs/LOAD_SCOPE.md
+          grep -q 'STORAGE_LIFECYCLE.md' SERVER_CORE_PROTOCOL.md
 
       - name: Progressive load scope
         run: |
