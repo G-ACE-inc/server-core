@@ -28,14 +28,6 @@ README.md
 - `SERVER_CORE_PROTOCOL.md`
   - 共通運用規則とServer運用境界
   - 詳細はTask routingで必要な時だけ読む
-- `KB.md`
-  - server-coreで確認済みの既存判断Register
-  - F:再利用開発KB本体とは別物
-- `PROJECT_STATUS.md`
-  - Project / Runtime入口の補助Current Register
-  - 実Runtime readbackの代替ではない
-- `add-status.sh`
-  - PROJECT_STATUSを作業日誌化しないための互換script
 - `.aiignore` / `.cursorignore`
   - 通常Context除外ヒント
 - `.cursor/`
@@ -50,6 +42,8 @@ README.md
   - 共通自動化・read-only audit
 - `archive/`
   - 旧版・退避。通常Context対象外
+
+`KB.md`、`PROJECT_STATUS.md`、`add-status.sh` は責務重複のためCurrent構成から削除済み。再利用KBは `docs/KB_REUSE_DESIGN.md`、Project/Runtime discoveryは `docs/WORKSPACE_REGISTRY.md`、作業履歴はGitHub commit / PRを正とする。
 
 ## docs/
 
@@ -78,9 +72,9 @@ README.md
 - `DEPLOY_RUNBOOK.md`
   - Confirmed GitHub revision -> Server Deploy -> Runtime Verify
 - `GITHUB_FREE_MAX.md`
-  - GitHub無料枠運用。通常Routing対象外
+  - GitHub無料枠運用。GitHub設定Task時だけ読む
 - `GITHUB_SKILL.md`
-  - Codex GitHub skill resolver。該当Tool利用時だけ読む
+  - Codex GitHub skill resolver。該当環境で必要時だけ読む
 - `CLOUDFLARE_OPERATIONS.md`
   - Cloudflare固有運用
 - `WORKSPACE_SHARED_SECRETS.md`
@@ -145,7 +139,7 @@ Discovery入口は `docs/WORKSPACE_REGISTRY.md`。
 
 実装本体は各所有Project / Runtimeに置く。
 
-DebugAI MCPはDebugAI PR #22でSource / CI / stdio Protocolまで検証済みだが、Live Contabo Runtime接続とWorkspace MCP登録は未実施。利用可能済みと断定せず、詳細状態は `docs/WORKSPACE_REGISTRY.md` を正とする。
+DebugAI MCPはDebugAI PR #22でSource / CI / stdio Protocolまで検証済み。Live DebugAI Runtime接続とWorkspace登録が閉じるまで `AVAILABLE_VERIFIED` としない。
 
 Master PC `F:` 1TBを利用する再利用開発KBは、server-core外部の実データ領域とし、server-coreにはaccess / lifecycle contractだけを置く。
 
