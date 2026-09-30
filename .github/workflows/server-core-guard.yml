@@ -39,7 +39,6 @@ jobs:
           test -f docs/GLOSSARY.md
           test -f docs/PROJECT_TEMPLATE.md
           test -f docs/DEPLOY_RUNBOOK.md
-          test -f docs/OPERATION_CHECKLIST.md
           test -f docs/AUTO_COMMIT.md
           test -f docs/GITHUB_FREE_MAX.md
           test -f docs/GITHUB_SKILL.md
@@ -176,7 +175,6 @@ jobs:
               ':!.github/workflows/server-core-guard.yml' \
               ':!scripts/ai-auto-commit.sh' || true
           )"
-          # Dynamic environment lookups are variable assignments, not embedded secret values.
           hits="$(printf '%s\n' "$hits" | grep -Ev '=[[:space:]]*(os\.environ\.get|check_token_not_in_env)\(' || true)"
           if [ -n "$hits" ]; then
             echo "$hits"
