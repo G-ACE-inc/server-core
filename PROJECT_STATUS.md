@@ -1,102 +1,88 @@
-# CURRENT SERVER STATUS
+# SERVER / PROJECT STATUS ENTRY
 
-状態確認日: 2026-08-20
+Role: Current状態を断定する一覧ではなく、Workspace内ProjectとRuntime確認先への入口。
 
-確認範囲: server-core / TGserver正本パス / Workspace入口 / Docker稼働状況
+最終実Runtime一括確認: NOT_VERIFIED_IN_THIS_CHANGE
 
-## 文書の役割
-本ファイルは、現在有効なサーバー全体の状態と、主要ユニットの正本への入口だけを記載する。
+この文書のPathやRepository記載はDiscovery用。Container / Port / Domain / Deploy / Provider状態は必要時に実readbackする。
 
-作業履歴、詳細仕様、設計判断全文は記載しない。
-
-管理者の明示的な変更指示がない限り、AI・作業者による書き換え・追記・削除・置換を禁止する。
+作業履歴は記載しない。作業履歴の正本はGitHub commit / PR。
 
 ## Server Core
-- 配置先: `/home/admin1/server-core`
-- 用途: 全Project共通の統治領域
-- 更新権限: 管理者の明示指示がある場合のみ
-- 作業履歴正本: GitHub commit / PR（作業完了時は `SERVER_CORE_PROTOCOL.md` Git 節に従い commit / push 必須）
-- 構造正本: `/home/admin1/server-core/docs/STRUCTURE.md`
+- Repository: `G-ACE-inc/server-core`
+- Server path: `/home/admin1/server-core`
+- Role: G-ACE Workspace共通開発・運用Authority
+- Entry: `README.md` -> `docs/LOAD_SCOPE.md`
+- Design: `docs/SERVER_CORE_DESIGN.md`
+- Structure: `docs/STRUCTURE.md`
+- Shared capability discovery: `docs/WORKSPACE_REGISTRY.md`
 
 ## Workspace
-- 標準Workspace: `/home/admin1/workspace/G-ACE.code-workspace`
-- Workspace folders: `/home/admin1/server-core`, `/home/admin1/projects`
-- 既存の統合Workspace内で各ProjectをModuleとして扱う
-- TGserver専用Workspaceは作成しない
-- `/home/admin1/logs`, `/home/admin1/backups`, `/home/admin1/kb`, `/home/admin1/workspace` は通常Workspace folderに含めない
+- Standard Workspace: `/home/admin1/workspace/G-ACE.code-workspace`
+- Normal folders: `/home/admin1/server-core`, `/home/admin1/projects`
+- Excluded from normal Workspace context: `/home/admin1/logs`, `/home/admin1/backups`, `/home/admin1/kb`, `/home/admin1/workspace`
+- Authority: `docs/G_ACE_WORKSPACE.md`
 
-## TGserver
-- 正式名称: TGserver
-- 正本パス: `/home/admin1/projects/TGserver`
-- 管理方法: 既存統合Workspace内のProject / Module
-- Docker方針: Docker / Docker Composeで確定済み
-- 現在フェーズ: Docker起動済み / 実装差分あり / 正本照合中
-- 稼働確認済みコンテナ: `tgserver-tgs-1`, `tgserver-conversation-collector-1`, `tgserver-meilisearch-1`, `tgserver-redis-1`
-- 注意: TGserverリポジトリには未コミット差分があるため、詳細状態はTGserver側の `git status` と正本文書を確認する。
+## Project Entries
 
-## TGserver 要確認
-- 正本文書と実ファイルの照合
-- 環境変数と `.env.example` の照合
-- Docker構成と実稼働コンテナの照合
-- cache実装の現状確認
-- 疎通試験結果の確認
-- Astera v8ログ連携状態の継続確認
-- 本番運用
+### TGserver
+- Entry path: `/home/admin1/projects/TGserver`
+- Current Source / Runtime: verify from TGserver README, Git state, Docker/runtime readback
+- Do not reuse old container/runtime claims from this file as Current evidence
 
-## TGserver 詳細正本
-- `/home/admin1/projects/TGserver/PROJECT_INDEX.md`
-- `/home/admin1/projects/TGserver/docs/STRUCTURE.md`
-- `/home/admin1/projects/TGserver/docs/SPEC_v1.5.md`
+### Astera v8
+- Entry path: `/home/admin1/projects/astera_v8`
+- Current Source / Runtime: verify from Astera v8 README, Git state, Docker/runtime readback
+- Project-specific Design / API / runtime details remain in Astera v8 repository
 
-## ログとキャッシュ
-- 永続ログ正本: Telegram
-- 検索インデックス: Meilisearch
-- dedup / hot-cache: Redis
-- サーバー共通分離ディスクキャッシュ: `/home/admin1/logs`
-- VPS: 処理場。永続ログ保管庫ではない
+### Astera App
+- Entry path: `/home/admin1/projects/astera-app`
+- Current Source / Runtime: verify from App README, Git state, Provider/runtime readback
 
-`/home/admin1/logs` は、送信待ち、再送、処理途中、障害時一時退避などに限定する。
+### DebugAI
+- Repository authority: `seigo-gace/debug-ai`
+- Runtime: independent from server-core
+- Verified shared interface recorded by server-core: CLI / HTTP
+- MCP: `NOT_IMPLEMENTED` until DebugAI implementation + runtime verification + Workspace registration complete
 
-永続ログ、Telegram原本の長期複製、KB、仕様書、コードを置かない。
+## Shared Platform
 
-## V8
-- 正式名称: Astera v8
-- 正本パス: `/home/admin1/projects/astera_v8`
-- 状態: 実装済み / Docker起動済み / API疎通確認済み
-- 稼働確認済みコンテナ: `astera-v8-evidence-main`, `astera-v8-evidence-search`, `astera-v8-evaluator`
-- Docker方針: Docker / Docker Composeで確定済み
-- 起動ファイル: `docker-compose.evidence.yml`
-- ログ連携: TGserver `P002` へ送信
-- ログ一時状態: `/home/admin1/logs/astera-v8/outbox`
-- 現在仕様: 自動Domain Router / Template Lens、5本柱処理、8段Markdown出力、事実確認・危機察知エビデンス出力
-- 検証済み: `npm run verify` 相当のテスト、smoke、`GET /healthz`、`POST /process`
-- 注意: Server Core上ではAstera v8実装詳細を正本管理しない。詳細はAstera v8側の正本文書を確認する。
+Discovery authority: `docs/WORKSPACE_REGISTRY.md`
 
-## Astera App (Frontend)
-- 正式名称: Astera App
-- 正本パス: `/home/admin1/projects/astera-app`
-- リポジトリ: `https://github.com/seigo-gace/astera-app`
-- 状態: 実装済み / Docker起動済み / HTTP疎通確認済み（8080）
-- 稼働確認済みコンテナ: `astera-app`
-- Docker方針: Docker / Docker Composeで確定済み
-- 構成: React + TypeScript + Vite → nginx:alpine 静的配信
-- API接続先: `https://api.asterav8.jp`
-- 正本ファイル: `Dockerfile`, `docker-compose.yml`, `nginx.conf`
+Current documented categories:
+- Project entries
+- MCP
+- Tool / Skill
+- Shared Secret contracts
+- KB bridge target
+- Runtime registry rules
 
-## Astera v8 詳細正本
-- `/home/admin1/projects/astera_v8/STRUCTURE.md`
-- `/home/admin1/projects/astera_v8/README.md`
-- `/home/admin1/projects/astera_v8/docs/API_REFERENCE.md`
-- `/home/admin1/projects/astera_v8/docs/DOMAIN_TEMPLATE_CATALOG.md`
-- `/home/admin1/projects/astera_v8/docs/PRODUCTION_CHECKLIST.md`
+Registry is not Runtime Evidence.
 
-## KB
-- 状態: 未実装
-- TGserverからの直接送信: 禁止
-- 生ログの直接投入: 禁止
-- V8推論結果の自動投入: 禁止
+## Reusable Development KB
+- Target storage: Master PC `F:` 1 TB drive
+- Runtime / Bridge: `NOT_IMPLEMENTED`
+- Design authority: `docs/KB_REUSE_DESIGN.md`
+- server-core stores only access / registration / lifecycle / safety contract, not KB data
 
-## 次回作業
-TGserverの正本文書、実ファイル、環境変数、Docker構成、cache実装の現状を照合する。
+## Log / Cache / Cleanup
+- Common design authority: `docs/STORAGE_LIFECYCLE.md`
+- Telegram / Meilisearch / Redis / `/home/admin1/logs` roles are ownership contracts, not proof of Current health
+- Current capacity, retention, Docker log rotation and cleanup state require actual Server readback before reporting
 
-管理者の承認前に、本番起動、デプロイ、公開を行わない。
+## Deploy
+- Authority: `docs/DEPLOY_RUNBOOK.md`
+- Required route: confirmed GitHub revision -> required Master approval -> Server deploy -> Runtime verification
+- Current Server deployment state for any Project: verify from that Project/runtime; do not infer from GitHub
+
+## Current-state Readback Rule
+
+When a task needs Current runtime facts, inspect only the relevant target and record evidence such as:
+- repository / branch / HEAD
+- Docker compose/service/container
+- port / domain ownership
+- endpoint / health result
+- Provider resource state
+- timestamp / revision
+
+If not checked, report `UNKNOWN / NOT_VERIFIED / NOT_EXECUTED` rather than carrying forward old values.
