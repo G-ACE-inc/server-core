@@ -44,6 +44,8 @@ jobs:
           test -f docs/GITHUB_FREE_MAX.md
           test -f docs/GITHUB_SKILL.md
           test -f docs/G_ACE_WORKSPACE.md
+          test -f operations/storage-lifecycle.json
+          test -f scripts/storage_lifecycle_audit.py
           test -x scripts/ai-auto-commit.sh
           test -x scripts/resolve-codex-skill.sh
           test -x scripts/github-skill-path.sh
@@ -114,6 +116,22 @@ jobs:
           grep -q 'System / Feature-bundle Document' docs/PROJECT_TEMPLATE.md
           grep -q '実行順序' docs/PROJECT_TEMPLATE.md
           grep -q '期待出力、状態変化、既存機能回帰' docs/PROJECT_TEMPLATE.md
+
+      - name: Storage lifecycle audit contract
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/storage_lifecycle_audit.py
+          python3 scripts/storage_lifecycle_audit.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path('operations/storage-lifecycle.json').read_text())
+          assert p['mode'] == 'audit_only'
+          assert p['allow_delete'] is False
+          assert p['docker']['allow_prune'] is False
+          assert p['docker']['allow_volume_delete'] is False
+          print('STORAGE_LIFECYCLE_POLICY=PASS')
+          PY
 
       - name: No tracked env files
         run: |
