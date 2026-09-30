@@ -14,7 +14,7 @@ Secret / Token実値は記録しない。
 | TGserver | Project README / repository authority | `/home/admin1/projects/TGserver` | Project固有状態はTGserver側README/Runtimeで確認 |
 | Astera v8 | Project README / repository authority | `/home/admin1/projects/astera_v8` | Project固有状態はAstera v8側README/Runtimeで確認 |
 | Astera App | Project README / repository authority | `/home/admin1/projects/astera-app` | Project固有状態はAstera App側README/Runtimeで確認 |
-| DebugAI | `seigo-gace/debug-ai` | independent Project/runtime | Current verified shared interface: CLI / HTTP. MCPは未実装扱い |
+| DebugAI | `seigo-gace/debug-ai` | independent Project/runtime | CLI / HTTP verified by DebugAI authority; MCP source+CI+stdio protocol verified on PR #22, live Workspace/runtime not registered |
 
 Project追加時は、実在するRepository / Path / Authorityを確認してから追加する。
 
@@ -25,8 +25,24 @@ Project追加時は、実在するRepository / Path / Authorityを確認して�
 | MCP | Config authority | Purpose | Current state |
 |---|---|---|---|
 | Cloudflare API MCP | `.cursor/mcp.json` | Cloudflare操作入口 | REGISTERED_IN_CONFIG |
-| DebugAI MCP | DebugAI repository/runtime | DebugAIをMCP経由で利用 | NOT_IMPLEMENTED / DO_NOT_CLAIM_AVAILABLE |
+| DebugAI MCP | `seigo-gace/debug-ai` PR #22 / `docs/MCP_ADAPTER.md` | DebugAIをMCP経由で利用 | SOURCE_CI_STDIO_VERIFIED / LIVE_DEBUGAI_RUNTIME_NOT_VERIFIED / WORKSPACE_NOT_REGISTERED |
 | Reuse KB MCP | future KB bridge implementation | Master PC F: KB検索・登録 | NOT_IMPLEMENTED |
+
+DebugAI MCP verified implementation boundary before its later documentation-only commits:
+
+```text
+implementation_sha = 078203e61073be99a48444ba0c3467a7143102f4
+Verify             = SUCCESS
+Core Verify        = SUCCESS
+Public Readiness   = SUCCESS
+repository tests   = 286/286 PASS
+stdio handshake    = PASS
+tools/list         = 9 expected tools
+health tool call   = PASS
+approve/apply MCP  = ABSENT
+```
+
+これはCI内の実MCP stdio protocol verificationであり、Contabo上のlive DebugAI runtime deploymentやWorkspace MCP登録を意味しない。
 
 新規MCPをこの表に書くだけでは利用可能にならない。実設定・認証・疎通・Tool discoveryを検証してから `AVAILABLE_VERIFIED` とする。
 
@@ -39,7 +55,7 @@ Project追加時は、実在するRepository / Path / Authorityを確認して�
 | Deploy routine | `docs/DEPLOY_RUNBOOK.md` | GitHub confirmed revisionから承認後Deploy | DOCUMENTED / RUNTIME_BY_TARGET |
 | Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare運用契約 | IMPLEMENTED_CONTRACT |
 | Shared secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 | IMPLEMENTED_CONTRACT |
-| DebugAI | DebugAI repo / CLI / HTTP | specialized debugging sub-agent | CLI_HTTP_VERIFIED_BY_DEBUGAI_AUTHORITY |
+| DebugAI | DebugAI repo / CLI / HTTP / MCP branch authority | specialized debugging sub-agent | CLI_HTTP_VERIFIED; MCP_SOURCE_CI_STDIO_VERIFIED; LIVE_MCP_NOT_VERIFIED |
 | Storage lifecycle audit | `scripts/storage_lifecycle_audit.py`, `operations/storage-lifecycle.json` | Disk/log/backup/Docker状態のread-only監査 | IMPLEMENTED_SOURCE / SERVER_RUNTIME_NOT_VERIFIED |
 | Storage cleanup mutation | future implementation | safe deletion/rotation | NOT_IMPLEMENTED |
 
