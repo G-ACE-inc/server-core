@@ -30,6 +30,9 @@ README以外のserver-core正本を新CHAT/新Taskで一括読込しない。
 | Git / Commit / Push | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
 | 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
+| Project / MCP / Tool / shared capability discovery | `docs/WORKSPACE_REGISTRY.md` |
+| Reusable KB / F: storage / KB bridge | `docs/KB_REUSE_DESIGN.md` |
+| Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
 | Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
 | Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
 | 用語 | `docs/GLOSSARY.md` |
@@ -86,10 +89,13 @@ README以外のserver-core正本を新CHAT/新Taskで一括読込しない。
 
 ```text
 対象Project内
+  -> Workspace Registryで既存共有Capability確認
   -> Workspace内の既存共有資産
-  -> 登録済みKB / Tool / MCP（利用可能な場合）
+  -> 登録済みKB / Tool / MCP（利用可能・検証済みの場合）
   -> 必要な場合だけ公式外部資料
 ```
+
+Registryは探索入口であり、CapabilityのCurrent Runtimeを証明しない。
 
 再利用判断:
 
@@ -126,7 +132,7 @@ DesignとCurrent実装が違う場合、DesignをCurrentへ合わせて履歴を
 
 ## Runtime / Registry Rule
 
-`PROJECT_STATUS.md`、registry、READMEに書かれたContainer / Port / Domain / Runtime状態は探索入口であり、実Runtimeの代用ではない。
+`PROJECT_STATUS.md`、`docs/WORKSPACE_REGISTRY.md`、READMEに書かれたContainer / Port / Domain / Runtime状態は探索入口であり、実Runtimeの代用ではない。
 
 Current状態が必要なら対象Provider / Docker / GitHub / Endpoint等をreadbackする。
 
