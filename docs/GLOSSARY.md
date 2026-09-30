@@ -14,9 +14,10 @@
 - 再利用候補: 現在の目的と同じ、または調整によって利用可能な既存の設計、Code、Module、型、Schema、テスト、Template。
 - Adapter: 既存資産を変更せず、入出力、型、設定、呼出方式の差だけを吸収する薄い変換境界。
 - Single Source of Truth: 同じ情報を複数箇所へ重複管理せず、1つの正本へ集約する原則。
+- Workspace Registry: Project / MCP / Tool / Secret Contract / Runtime入口を発見する軽量Registry。Current Runtimeの証明ではない。
+- Reusable Development KB: 検証済みの再利用Code / Module / Pattern / Schema / Interface / Test / Template / Procedure / Development Knowledgeを蓄積する外部KB。
 - TGserver: Telegramログの受付、仕分け、配送、保存制御、検索を担当するProject。
 - V8: TGserver検証完了後にログ連携する対象Projectまたは実行系。
-- KB: 確認済み知識を将来蓄積する領域。現時点では未実装。
 
 ## 5段階層型モジュラーアーキテクチャ
 正式順序は次とする。
@@ -51,7 +52,8 @@ Application System
 - Telegram: 生ログの永続正本。
 - Meilisearch: 再構築可能な検索インデックス。
 - Redis: dedup / hot-cache。
-- `/home/admin1/logs`: サーバー共通の分離ディスクキャッシュ。
+- `/home/admin1/logs`: サーバー共通の分離ディスク一時領域。
 - VPS: 処理場。永続ログ保管庫ではない。
 - GitHub commit / PR: 作業履歴の正本。
-- `PROJECT_STATUS.md`: 現在状態と正本入口。
+- `docs/WORKSPACE_REGISTRY.md`: Workspace共有Project / MCP / Tool / Secret Contract / Runtime入口のDiscovery Authority。
+- `docs/KB_REUSE_DESIGN.md`: Reusable Development KBのDesign Baseline。
