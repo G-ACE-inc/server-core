@@ -1,306 +1,225 @@
 # SERVER CORE OPERATION PROTOCOL
 
 ## 目的
-本規則は、複数Projectを長期運用するServer Coreの共通運用、変更、検証、GitHub、秘密情報、保存境界を定める。
+
+本規則はG-ACE Workspace全体で共通に適用する運用・変更権限・GitHub・Runtime・Secret・Storage境界だけを定める。
+
+詳細な開発方法論、Project構成、Context routing、Deploy、Storage lifecycle等をここへ重複記載しない。Taskに応じて `README.md` -> `docs/LOAD_SCOPE.md` から該当Authorityを読む。
 
 人間、AI、自動処理のすべてに適用する。
 
-LibralCoreは、開発時の設計、Code生成、再利用、局所修正を効率化するために適用する。
+## Authority / Approval
 
-## 管理者と変更権限
-本環境の最終決定者は管理者である。
+最終決定者はMaster。
 
-AI・作業者は、管理者の明示的な変更指示がある対象と範囲だけを変更する。
+質問、検討、提案、操作説明を変更承認として扱わない。未確認状態を推測で補完しない。
 
-質問、疑問、検討、提案、操作説明は変更承認として扱わない。確認していない状態を推測で補完しない。
+Masterの明示指示なしに次を実行しない。
+- main / PR merge
+- Production deploy / 公開 / 切替
+- Force push / Branch削除 / destructive reset / rebase
+- 稼働中Serviceの停止 / recreate
+- Secret追加・削除・rotation
+- Provider resourceの作成・変更・削除
+- 新規Model download
 
-## 作業開始
-対象に応じて、必要なものだけを確認する。
+## Workspace Entry
 
-- `pwd`
-- 対象リポジトリ内の `git status`
-- 必要な場合だけ `docker ps`
-- `README.md`
-- `docs/LOAD_SCOPE.md`
-- 対象Projectの入口と指定対象
-- 現在作業に必要な正本、実ファイル、実行結果
+Workspace作業は必ず次から開始する。
 
-ホームディレクトリで実行した `git status` を個別Projectの状態として扱わない。
+```text
+server-core/README.md
+  -> server-core/docs/LOAD_SCOPE.md
+  -> 今回必要なserver-core Authorityだけ
+  -> 対象Project README
+  -> 必要なProject Authority / Source / Testだけ
+```
 
-全作業で正本文書を一律全文読込しない。読込範囲と拡張条件は `docs/LOAD_SCOPE.md` を正とする。
+全正本の一括読込を行わない。
 
-## G-ACE Workspace
-標準Workspaceは `/home/admin1/workspace/G-ACE.code-workspace` とする。
+標準Workspaceは `/home/admin1/workspace/G-ACE.code-workspace`。
 
-通常作業で開くFolderは次に限定する。
-
+通常Folder:
 - `/home/admin1/server-core`
 - `/home/admin1/projects`
 
-`/home/admin1/logs`、`/home/admin1/backups`、`/home/admin1/kb`、`/home/admin1/workspace` は通常Folderに含めない。
+通常Contextに含めない:
+- `/home/admin1/logs`
+- `/home/admin1/backups`
+- `/home/admin1/kb`
+- `/home/admin1/workspace`
+- archive / build / dist / node_modules / cache / dumps
 
-Workspaceの正規仕様は `docs/G_ACE_WORKSPACE.md` を正とする。
+Workspace正規仕様は `docs/G_ACE_WORKSPACE.md`。
 
-## Project構造
-Projectは、目的、責務、公開契約、依存、設定・状態所有者、障害時動作を確認してから実装する。
+## Development Boundary
 
-新規Code生成前に、同じ責務を持つ既存の設計、Code、Module、型、Schema、テスト、Templateを確認する。
+開発方法論・再利用・5段Architecture・Module判断は `CORE.md` を正とする。
 
-ファイル、ディレクトリ、パッケージ、Module、文書は、目的と実益が明確なものだけを作成する。
+Project構成、README / Design / Project Tree / Design Delta / System Document作成条件、Documentation Gateは `docs/PROJECT_TEMPLATE.md` を正とする。
 
-新規Projectの最小構成と追加文書条件は `docs/PROJECT_TEMPLATE.md` を正とする。
+DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
 
-既存Projectに `STRUCTURE.md` またはManifestがある場合は、現在実装と一致する正本を使用する。構造変更は、再利用、変更、検証、運用の効果が明確な場合に行う。
+公開契約は可能な限りCode上のInterface / Type / Schemaを正本とし、Project固有の詳細は各Projectに置く。
 
-Project内で一時ログや作業用ログを使う場合は、用途、保存期間、削除条件をProject側の既存正本へ記録する。記録先は既存正本を優先する。
+## Validation
 
-## 5段階層型モジュラーアーキテクチャ
-Architectureの正本は `CORE.md`、正式表記は `docs/GLOSSARY.md` とする。
+変更の合否は、必要範囲で以下を確認する。
+- Input
+- execution condition
+- expected output
+- changed state
+- state that must not change
+- regression
+- major failure cases
+- Runtime / Provider readback when relevant
 
-正式順序は次で固定する。
+Process起動、Error無し、`True`、空配列、HTTP 200、Build成功、CI greenだけではPASSとしない。
 
-```text
-Part
-  ↓
-Feature
-  ↓
-Component
-  ↓
-System
-  ↓
-Application System
-```
+未実行・未確認・未検証は `NOT_EXECUTED / UNKNOWN / NOT_VERIFIED` を維持する。
 
-5段は、完成物を理解、分解、再利用、再構成するための論理構造として使用する。
+## Documentation / Work History
 
-物理構造は、対象Projectの規模、再利用範囲、変更範囲、依存、検証、運用上の実益に基づいて決定する。
+Current仕様を示す正本文書へ作業日誌を混在させない。
 
-分類は、責務混在、交換、再利用、Module境界、依存・状態所有者、障害範囲、AI読込範囲の判断に必要な対象へ行う。
+作業履歴の正本はGitHub commit / PR。
 
-## Module化判定
-Moduleは、同一Project内または別Projectで再利用、交換、独立修正しやすいように、1つの目的と責務へまとめた開発上の再利用単位である。
+完成・検証状態、Project構造、Designとの差、完成System等が変わった場合はDocumentation Gateに従い該当文書を更新する。
 
-新規Moduleは、次を満たす場合に作成する。
+Commit作業報告、Push、Remote Readbackは `docs/AUTO_COMMIT.md` を正とする。
 
-1. 目的と責務を一文で説明できる。
-2. 公開する入出力契約を定義できる。
-3. 依存、設定、状態の所有範囲を定義できる。
-4. 特定Application System固有の値や環境を設定またはAdapterへ分離できる。
-5. 単独または境界単位でテストできる。
-6. 再利用時に必要なコンテキストを対象範囲へ限定できる。
-7. Module化の効果が追加ファイル、Interface、変換、保守コストを上回る。
+## GitHub / Deploy
 
-条件を満たさない責務は、既存Module内のPart、FeatureまたはComponentとして実装する。
+GitHubへ保存されたrevisionとServer Runtimeを別状態として扱う。
 
-## 物理分離
-物理分離は、次の効果が明確に得られる場合に行う。
-
-- 権限または機密情報を隔離できる
-- 障害範囲を限定できる
-- 実行環境を分けられる
-- 起動・停止またはデプロイを独立できる
-- 状態またはデータ所有を明確にできる
-- 依存環境を隔離できる
-- 再利用、変更、テストの対象範囲を小さくできる
-
-分離後は、入出力、依存、所有者、テスト範囲、保守コストを確認する。
-
-## 再利用境界と依存
-既存資産は、次の順序で再利用を判断する。
-
-1. そのまま利用
-2. 設定・引数・型の調整
-3. 薄いAdapterの追加
-4. 共通部分の抽出
-5. 目的を満たさない場合だけ新規実装
-
-Module間または再利用境界では、公開Interfaceまたは型、Event、明示された共有契約、Dependency Injectionを使用する。
-
-依存は公開境界へ限定し、方向と所有者を明示する。循環が発生する場合は責務または境界を再設計する。
-
-既存資産を利用しない場合は、複雑化、性能、品質、依存、互換性などの具体的理由を確認する。
-
-## 公開契約と正本
-公開契約は、可能な限りCode上のInterface、型、Schemaを正本とする。
-
-同じ内容は1つの正本へ集約する。
-
-原則として後方互換とする変更:
-- 任意項目の追加
-- 新しい処理の追加
-- 既存挙動を壊さない拡張
-
-非互換変更:
-- 項目削除
-- 名称変更
-- 型変更
-- 必須項目追加
-- 既存の意味または動作変更
-
-非互換変更は、Major Version更新、互換Adapter、または依存側の同時更新で扱う。
-
-## AIコンテキスト
-通常変更は次の6項目を起点とする。
-
-1. 目的と期待結果
-2. 対象責務
-3. 再利用候補
-4. 入力・出力
-5. 直接依存と制約
-6. 関連テスト
-
-対象Code、直接依存、関連テストから読み始める。
-
-責務、再利用可否、影響範囲を特定できない場合だけ、`docs/LOAD_SCOPE.md` に従って1段階ずつ拡張する。
-
-## 検証
-変更前に最低限、次を定義する。
-
-- 入力
-- 実行条件
-- 期待出力
-- 変更される状態
-- 変更されてはならない状態
-- 既存機能で維持すべき結果
-- 異常入力または主要失敗条件の結果
-
-次だけでは合格にしない。
-
-- プロセスが起動した
-- エラーが出なかった
-- `True` が返った
-- 空配列が返った
-- HTTP 200が返った
-- テスト処理が終了した
-
-期待出力、状態変化、既存機能回帰、主要失敗条件の結果まで一致した場合に合格とする。
-
-Module境界変更時は、公開契約、依存方向、再利用先での期待結果、既存利用側の回帰を確認する。
-
-## 正本文書同期
-構造、公開契約、所有者、障害時動作、運用手順を変更した場合だけ、該当正本を現在仕様へ同期する。
-
-内部実装だけを変更し、公開契約、所有境界、運用へ影響しない場合はArchitecture文書を更新しない。
-
-作業報告、改善内容、修繕内容、変更履歴を正本文書の本文として残さない。作業履歴の正本はGitHub commit / PRとする。
-
-## TGserver
-TGserverの正本パス:
+標準経路:
 
 ```text
-/home/admin1/projects/TGserver
+implementation / fix
+ -> verify
+ -> documentation gate
+ -> commit as work report
+ -> push
+ -> remote readback
+ -> PR / CI when required
+ -> confirmed GitHub revision
+ -> required Master approval
+ -> Server deploy
+ -> Runtime verification
 ```
 
-TGserverはログの受付、仕分け、配送、保存制御、検索を担当し、意味判定を行わない。
+Deploy詳細は `docs/DEPLOY_RUNBOOK.md`。
 
-`classifier` はルールベースのseverity分類だけを行う。詳細仕様はTGserver側の正本を使用する。
+Server上の直接Source修正を正式開発履歴の代替にしない。Runtimeで修正が必要になった場合も、原則としてRepository開発Loopへ戻す。
 
-## 保存とキャッシュ
-- Telegram: 生ログの永続保存正本
-- Meilisearch: 再構築可能な検索インデックス
-- Redis: dedup / hot-cache
-- VPS: 処理場。永続ログ保管庫ではない
-- `/home/admin1/logs`: サーバー共通の分離ディスクキャッシュ
-- Drive: 管理者が必要と判断した場合だけ使う補助領域
+## Shared Capability Discovery
 
-`/home/admin1/logs` の用途は、送信待ち、再送待ち、処理途中データ、障害時一時退避、再起動後復旧に必要な一時状態に限定する。
+Workspace共通Project / MCP / Tool / Secret Contract / Runtime入口は `docs/WORKSPACE_REGISTRY.md` をDiscovery Authorityとする。
 
-永続ログ、Telegram原本の長期複製、長期監査ログ、Redis、KB、仕様書、ソースコードを置かない。
+Registry記載だけでCurrent Runtimeを証明しない。必要時は実設定・実Provider・Endpoint・Docker・GitHub等をreadbackする。
 
-正常処理後または保持期限到達後に削除できるデータだけを置く。保持期限、再送条件、削除条件は対象Projectの既存正本へ記録する。
+Capability本体をserver-coreへ移植しない。server-coreは入口・契約・所有者・権限境界を管理する。
 
-## KB
-KB Systemは未実装である。
+## DebugAI
+
+DebugAIは独立Project/runtime。
+
+Current verified shared accessはCLI / HTTP。DebugAI MCPはDebugAI側で実装・検証され、Workspace設定へ登録されるまで `NOT_IMPLEMENTED` とする。
+
+## Knowledge Base
+
+再利用開発KBのDesign Baselineは `docs/KB_REUSE_DESIGN.md`。
+
+Target storageはMaster PC `F:` 1 TB drive。
+
+server-coreはKB data本体を保持せず、Access / Registration / Lifecycle / Safety Contractを管理する。
+
+Server/VPSからPC filesystemを直接読める前提を置かない。実装・検証済みAPI/MCP等のBridgeを使用する。
 
 次を禁止する。
-- TGserverからKBへの直接送信
-- 生ログのKBへの直接投入
-- V8推論結果の自動格納
-- 判定基準なしの知識化
-- 未実装KBを存在するものとして扱うこと
-- AIによるKB構造の推測作成
+- 生ログの直接KB化
+- 判定基準なしの自動知識化
+- 未検証AI出力をvalidated assetとして登録
+- Secret / Token / credentialのKB保存
+- 未実装Bridgeを利用可能として扱う
 
-将来のKB登録は正式な判定基準を通過した情報だけを候補とする。判定主体、基準、承認方法、保存形式、格納先はKB設計時に管理者が確定する。
+## Log / Cache / Cleanup / Backup
 
-## Astera v8
-Astera v8は `/home/admin1/projects/astera_v8` に配置する。
+詳細Design Baselineは `docs/STORAGE_LIFECYCLE.md`。
 
-問いの意味判定、認知前処理、用途テンプレート自動判定、5本柱処理、8段判断材料出力を担当する。
+共通境界:
+- Telegram: owning Project contractで定義されたdurable raw-log authority
+- Meilisearch: rebuildable search index
+- Redis: dedup / hot-cache
+- `/home/admin1/logs`: temporary operational disk state
+- VPS: processing/runtime environment
+- `/home/admin1/backups`: backup area。単なるcleanup対象ではない
 
-ログの永続保存、検索、KB登録は担当しない。TGserverへ `P002` として構造化ログを送信する。
+Generic automatic cleanupはfail-closedにする。
 
-未送信ログ一時状態は `/home/admin1/logs/astera-v8/outbox` だけに置き、TGserverの2xx受領後に削除する。
+自動削除禁止:
+- owner不明
+- active use
+- 未送信 / retry pending
+- recovery required
+- active transaction / lock
+- restore/rebuild path不明
+- Docker volumeを含むpersistent state
 
-## Docker
-本番運用の正規起動経路は Docker / Docker Compose のみとする。Docker は必須である。
+`docker system prune -a --volumes` の汎用定期実行は禁止する。
 
-本番常駐で次を禁止する。
+## Docker / Runtime
+
+本番常駐の標準経路はDocker / Docker Compose。
+
+本番常駐で次を原則禁止する。
 - node直接常駐
 - python直接常駐
-- pm2
-- nohup
-- screen常駐
-- tmux常駐
+- pm2 / nohup / screen / tmux常駐
 
-ホスト常駐は例外ではなく禁止する。
+短時間の診断・検証Commandと本番常駐を区別する。
 
-README、package.json scripts、start.sh、運用手順、CI など、どこから起動しても本番常駐は Docker Compose に寄せる。
+Container起動だけでRuntime PASSとせず、必要なEndpoint / Output / State / side effectまで確認する。
 
-短時間の確認、修正、検証用スクリプトは本番常駐と区別する。
+## Secret / Token
 
-## GitHubとデプロイ
-作業履歴の正本はGitHub commit / PRとする。
+Secret / Token / password / session / credentialをGit / Chat / Log / Documentへ保存しない。
 
-ファイル変更を伴う作業は、対象外変更、秘密情報、未検証途中状態、不要ファイルを除外し、差分と検証結果を確認して意味のある単位でcommitする。
+`.env` はcommit禁止。共有が必要なkey名は値なし `.env.example` に記載できる。
 
-管理者が明示的に禁止した場合を除き、作業完了時は `scripts/ai-auto-commit.sh --push` または同等の安全確認を伴うcommit / pushを行う。commit / pushなしで終了した作業は未完了として扱う。
+Workspace共有Secretは `docs/WORKSPACE_SHARED_SECRETS.md` を正とし、各Projectへ実値を複製しない。
 
-mainへの直接pushは、管理者が許可した正本更新または小規模な運用文書更新に限る。実装変更、複数Project変更、高Risk変更はPRを優先する。
+## Archive
 
-本番デプロイの自動実行は禁止する。本番起動、公開、切替は管理者の明示承認後に行う。
+旧版・退避は `archive/YYYY-MM-DD/` を基本とする。
 
-## 秘密情報と.env
-秘密情報、token、password、session、credentialをGit管理へ含めない。
+- Secretをarchiveへ保存しない
+- archiveをCurrent state / Design / Ruleとして扱わない
+- 通常Contextへ入れない
 
-`.env` はcommit禁止とする。共有が必要な場合は、値を含まない `.env.example` にキー名と説明だけを記載する。
+## Absolute Prohibitions
 
-AI・作業者は、管理者の明示指示なしに `.env` を作成、変更、表示、転記しない。
+- 推測を事実として扱う
+- 未実行を実行済み、未検証をPASSにする
+- Testをskip/deleteして完成扱いにする
+- Design履歴を消す上書き
+- 作業履歴をCurrent仕様文書へ混在
+- 目的のないFile / Document / Module追加
+- Secret / Token実値の保存・commit
+- 未実装Capabilityを利用可能として扱う
+- `/home/admin1/logs` を永続保管庫として使う
+- KBへの無判定直接投入
+- Server cleanupでowner不明・active・recovery dataを削除
 
-漏洩が疑われる場合は該当credentialを失効または再発行し、漏洩commitの扱いを管理者が決定する。
+## Related Authorities
 
-## archive
-不要、重複、旧版のファイルは即削除せず、原則として `archive/YYYY-MM-DD/` へ退避する。
-
-退避前に秘密情報を含まないこと、現行正本から参照されないことを確認する。
-
-archive配下は通常読込禁止とし、現在状態、現在仕様、現在ルールとして扱わない。
-
-## 保護対象
-次は保護対象とする。
-
-- `README.md`
-- `SERVER_CORE_PROTOCOL.md`
-- `CORE.md`
-- `KB.md`
-- `PROJECT_STATUS.md`
-
-管理者の明示指示がない限り変更しない。
-
-## 絶対禁止
-- AI独自判断によるルール、正本、現在状態の変更
-- 実装変更だけを行い、必要な正本同期を省略すること
-- 作業報告や変更履歴を現在仕様へ混在させること
-- 目的、責務、境界の確認なしで実装すること
-- 目的のないファイル、文書、Moduleの追加
-- ルート直下への雑ファイル作成
-- 重複ファイルまたは重複正本の放置
-- 秘密情報を含むファイルのarchive移動
-- `.env` の無断変更
-- 秘密情報のcommit / push
-- 本番デプロイの自動実行
-- 実行していない作業の完了記録
-- 確認していない状態の断定
-- 未実装機能を実装済みとして扱うこと
-- 起動成功、`True`、空結果、HTTP 200だけで検証完了とすること
-- KBへの直接投入
-- `/home/admin1/logs` を永続ログ保管庫として使うこと
+- Development methodology: `CORE.md`
+- Workspace routing: `docs/LOAD_SCOPE.md`
+- Workspace contract: `docs/G_ACE_WORKSPACE.md`
+- Project/document standard: `docs/PROJECT_TEMPLATE.md`
+- Shared registry: `docs/WORKSPACE_REGISTRY.md`
+- Reuse KB design: `docs/KB_REUSE_DESIGN.md`
+- Storage lifecycle: `docs/STORAGE_LIFECYCLE.md`
+- GitHub work report: `docs/AUTO_COMMIT.md`
+- Deploy: `docs/DEPLOY_RUNBOOK.md`
+- Shared secrets: `docs/WORKSPACE_SHARED_SECRETS.md`
