@@ -32,6 +32,9 @@ server-core/README.md
 | GitHub commit / push | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
 | 新規Project / Repository構成 | `docs/PROJECT_TEMPLATE.md` |
+| Shared Project / MCP / Tool / Secret入口 | `docs/WORKSPACE_REGISTRY.md` |
+| 再利用KB設計 | `docs/KB_REUSE_DESIGN.md` |
+| Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
 | Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
 | Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
 | 用語 | `docs/GLOSSARY.md` |
@@ -137,6 +140,8 @@ Workspace仕様は `docs/G_ACE_WORKSPACE.md` を正とする。
 
 server-coreは共有Capabilityの**入口・契約・所有関係**を管理し、Capability本体を吸収しない。
 
+共有Capabilityの発見入口は [`docs/WORKSPACE_REGISTRY.md`](docs/WORKSPACE_REGISTRY.md)。
+
 対象例:
 - MCP
 - GitHub
@@ -150,7 +155,7 @@ Secret / Token実値はChat・Git・文書・Logへ保存しない。
 
 DebugAIは独立Project/runtimeとして扱う。現在確認済みの共通接続はCLI / HTTPであり、DebugAI MCPは実装・検証後に共通Registryへ登録する。
 
-再利用開発KBはMaster PCの `F:` 1TB領域を実データ置場候補とし、server-coreにはデータ本体ではなくアクセス・登録・安全契約だけを持たせる。VPSからPC driveへ直接アクセスできるものとして扱わない。
+再利用開発KBはMaster PCの `F:` 1TB領域を実データ置場候補とし、server-coreにはデータ本体ではなくアクセス・登録・安全契約だけを持たせる。設計は `docs/KB_REUSE_DESIGN.md`。VPSからPC driveへ直接アクセスできるものとして扱わない。
 
 ## Server / Runtime
 
@@ -160,7 +165,9 @@ VPSは処理・Runtime環境であり、Project SourceやDocumentの正本保存
 
 標準の反映経路は、検証済みRepository変更をGitHubへ履歴化し、対象revisionを確認したうえで、必要なMaster承認後にServerへ反映する。
 
-Log / Cacheの共通境界:
+Log / Cache / Cleanup / Backup / Recoveryの共通設計は `docs/STORAGE_LIFECYCLE.md` を正とする。
+
+共通境界:
 - Telegram: 対象Project契約で定義された永続raw-log正本
 - Meilisearch: 再構築可能な検索Index
 - Redis: dedup / hot-cache
@@ -179,6 +186,9 @@ Cleanupは安全性を優先し、未送信、再送待ち、Recovery中、所�
 | `CORE.md` | LibralCore開発方法論 |
 | `SERVER_CORE_PROTOCOL.md` | 共通運用規則 |
 | `docs/G_ACE_WORKSPACE.md` | Workspace正規仕様 |
+| `docs/WORKSPACE_REGISTRY.md` | Project / MCP / Tool / Secret Contract発見入口 |
+| `docs/KB_REUSE_DESIGN.md` | F:再利用開発KBの設計基準線 |
+| `docs/STORAGE_LIFECYCLE.md` | Log / Cache / Cleanup / Backup / Recovery設計基準線 |
 | `docs/AUTO_COMMIT.md` | GitHub作業履歴化 |
 | `docs/DEPLOY_RUNBOOK.md` | Deploy境界と手順 |
 | `docs/PROJECT_TEMPLATE.md` | Project構成とDocument作成条件 |
