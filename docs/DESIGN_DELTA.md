@@ -45,29 +45,41 @@ The earlier wording was technically compatible but too weak: it could be interpr
 
 ### Evidence
 - Master explicitly clarified that server-core's role is equivalent to a command room / command center for the Workspace.
-- Existing README / LOAD_SCOPE / Workspace routing already implemented server-core-first routing, so the formal design wording is being aligned with that intended responsibility rather than creating a separate orchestration layer.
+- Existing README / LOAD_SCOPE / Workspace routing already implemented server-core-first routing, so the formal design wording strengthens and formalizes the intended responsibility rather than creating a second orchestration layer.
 
 ### Affected scope
 - `README.md`
+- `SERVER_CORE_PROTOCOL.md`
 - `docs/SERVER_CORE_DESIGN.md`
+- `docs/DESIGN_DELTA.md`
 - `docs/LOAD_SCOPE.md`
 - `docs/G_ACE_WORKSPACE.md`
 - `docs/WORKSPACE_REGISTRY.md`
+- `docs/WORKSPACE_SHARED_SECRETS.md`
+- `docs/KB_REUSE_DESIGN.md`
+- `docs/STORAGE_LIFECYCLE.md`
+- `docs/GLOSSARY.md`
 - `docs/STRUCTURE.md`
-- Workspace guard contract
+- `.github/workflows/server-core-guard.yml`
 
 ### Applied commit
-Filled by the commit/PR that completes this documentation change.
+Formal Design baseline change commit:
+
+```text
+d88e99273319dad1b27092e14085c7060710fc92
+```
+
+Supporting consistency updates are tracked by the same branch/PR and GitHub history.
 
 ### Compatibility / migration / rollback
 - No Project implementation is moved into server-core.
 - Existing Project README-first entry remains valid after routing.
 - Existing LibralCore, GitHub, Secret, KB and Storage authorities remain valid.
 - The change strengthens responsibility wording and command flow; it does not require a runtime migration.
-- Rollback would restore weaker control-layer wording but is not recommended because it reintroduces ambiguity about Workspace ownership/routing.
+- Rollback would restore weaker control-layer wording but would reintroduce ambiguity about Workspace ownership/routing.
 
 ### Verification state
-Pending exact branch CI at creation time. Do not mark PASS until the updated server-core guard succeeds on the final branch HEAD.
+The acceptance gate is `server-core-guard` on the final branch/PR HEAD. The CI result is the verification evidence; this Design Delta does not copy a mutable CI status into the architecture baseline.
 
 ## Update rule
 
