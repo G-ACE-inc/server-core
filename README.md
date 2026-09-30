@@ -1,53 +1,93 @@
-# Server Core — 全Project共通統治基盤
+# Server Core — G-ACE Workspace共通開発・運用基盤
 
-## 目的
-`Server Core`（`/home/admin1/server-core`）は、G-ACE環境内の全Projectへ適用する共通思想、運用規則、読込範囲、GitHub運用、Workspace方針を管理する統治領域である。
+`server-core` は、G-ACE Workspace内の全ProjectでAI・開発者が同じ入口、同じ開発ルール、同じGitHub履歴、同じ共有Tool/Secret契約、同じServer運用境界を使うための共通基盤である。
 
-本リポジトリは、各Projectへ共通適用する規則と正本入口を保持する。
+各Project固有の実装・Design・System仕様をserver-coreへ集約しない。server-coreは共通標準と共通入口を管理する。
 
-LibralCoreは、開発AIが再利用可能な設計とCodeを効率よく生成・修正するための開発方法論である。
+## 作業開始 — 必ずここから
 
-## 管理者と変更権限
-- 最終決定者は管理者である。
-- AI・作業者は、管理者が明示した対象と範囲を変更する。
-- 変更承認は、管理者の明示的な変更指示で確認する。
-- 実装済み、検証済み、稼働中などの状態は、実ファイル、実行結果、対象Project正本で確認する。
+Workspace内で作業を開始するAI / Developerは、最初にこのREADMEを入口とする。
 
-## 最小読込
-作業開始時は次を読む。
+次に `docs/LOAD_SCOPE.md` を読み、**今回の作業に必要なserver-core正本だけ**を選ぶ。全正本を一括で読まない。
 
-1. `README.md`
-2. `docs/LOAD_SCOPE.md`
-3. 指定された対象ファイルまたは対象Project入口
+```text
+server-core/README.md
+  -> docs/LOAD_SCOPE.md
+  -> 今回必要なserver-core正本だけ
+  -> 対象Project README
+  -> 必要なDesign / Project Tree / Design Delta / System Document
+  -> 対象Source / 直接依存 / 関連Test
+```
 
-Architecture判断時は `CORE.md`、共通運用判断時は `SERVER_CORE_PROTOCOL.md`、確認済み判断は `KB.md`、現在状態は `PROJECT_STATUS.md` を読む。
+設計基準線: [`docs/SERVER_CORE_DESIGN.md`](docs/SERVER_CORE_DESIGN.md)
 
-読込範囲は `docs/LOAD_SCOPE.md` に従って段階的に拡張する。
+## 作業ルーティング
 
-## 正本
-| ファイル | 役割 |
+| 今回の作業 | 追加で読む正本 |
 |---|---|
-| `README.md` | Server Coreの入口と現行要約 |
-| `docs/LOAD_SCOPE.md` | 最小読込と段階拡張条件 |
-| `CORE.md` | LibralCore開発方法論、5段、Module、再利用、物理分離の正本 |
-| `SERVER_CORE_PROTOCOL.md` | 全Project共通の運用規則 |
-| `KB.md` | Server Coreで確認済みの判断Register |
-| `PROJECT_STATUS.md` | 現在状態と各Project正本への入口 |
-| `docs/GLOSSARY.md` | 正式名称と表記 |
-| `docs/PROJECT_TEMPLATE.md` | 新規Projectの最小構成 |
-| `docs/G_ACE_WORKSPACE.md` | G-ACE Workspaceの正規仕様 |
-| `docs/CLOUDFLARE_OPERATIONS.md` | Astera v8 Cloudflare Tunnel統合設計・実運用正本 |
-| `operations/cloudflare.json` | Astera v8 Cloudflare運用定義（認証情報なし） |
-| `operations/huggingface.json` | Hugging Face Access Token 契約（認証情報なし、workspace共有Secret契約） |
-| `operations/cloudflare-account.json` | Cloudflare Account API 契約（認証情報なし、workspace共有。Tunnel の cloudflare.json とは別） |
-| `docs/WORKSPACE_SHARED_SECRETS.md` | Workspace共有Secretの使用手順 |
+| 開発方法論 / 責務 / Module / 再利用 | `CORE.md` |
+| 共通運用・禁止事項・Server運用境界 | `SERVER_CORE_PROTOCOL.md` |
+| Context / 読込範囲 | `docs/LOAD_SCOPE.md` |
+| Workspace運用 | `docs/G_ACE_WORKSPACE.md` |
+| GitHub commit / push | `docs/AUTO_COMMIT.md` |
+| Deploy | `docs/DEPLOY_RUNBOOK.md` |
+| 新規Project / Repository構成 | `docs/PROJECT_TEMPLATE.md` |
+| Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
+| Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
+| 用語 | `docs/GLOSSARY.md` |
+| server-core構造 | `docs/STRUCTURE.md` |
+| Current runtime / Project入口 | `PROJECT_STATUS.md`（内容の日付を確認し、実状態の代用にしない） |
 
-同じ情報は1つの正本へ集約する。Architecture定義は `CORE.md`、正式表記は `docs/GLOSSARY.md` を正とする。
+## 共通開発ループ
 
-`KB.md` は判断Registerとして使用する。
+```text
+README
+  -> 必要なDesign / Tree / Delta / System Document
+  -> Repository / Branch / HEAD / Status
+  -> Target Source / Dependency / Test
+  -> 既存資産の再利用確認
+  -> 実装 / Debug
+  -> Diff
+  -> Test / Verify
+  -> Documentation Gate
+  -> Commit = 作業報告
+  -> Push
+  -> Remote Readback
+  -> 必要ならPR / CI
+  -> Master承認が必要な境界を越えた後だけDeploy / Production
+```
 
-## 5段階層型モジュラーアーキテクチャ
-正式順序は次とする。
+### Documentation Gate
+
+作業完了前に必要性を判定する。
+
+```text
+README_UPDATE_REQUIRED=YES/NO
+PROJECT_TREE_UPDATE_REQUIRED=YES/NO
+DESIGN_DELTA_REQUIRED=YES/NO
+SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
+```
+
+- Currentの完成・検証状態が変わった: README更新
+- File/Directory/主要責務/Entry Pointが変わった: Project Tree更新
+- Designとの差を正式採用した: Design Deltaへ差分・理由・Evidence・Commitを記録
+- 完成したFeature束/System/再利用Moduleを説明なしで引き継ぐ必要がある: System/Module Documentを作成または更新
+
+DesignはCurrent実装に合わせて履歴を消す形で上書きしない。
+
+## GitHub = 作業履歴正本
+
+Commitは単なる保存ではなく実作業報告として扱う。可能な範囲で、目的、主要変更、影響範囲、検証、文書更新、未完/未検証を後から追える状態にする。
+
+Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態であり、1つのPASSから他を推測しない。
+
+ファイル変更後の標準手順は `docs/AUTO_COMMIT.md` を正とする。
+
+## LibralCore
+
+開発時の共通方法論は `CORE.md` を正とする。
+
+正式な論理構造:
 
 ```text
 Part
@@ -61,30 +101,18 @@ System
 Application System
 ```
 
-5段は、完成物を理解、分解、再利用、再構成するための論理構造として使用する。
+新規Code生成前に既存資産を確認し、原則として次の順に再利用を判断する。
 
-Moduleは、同一Project内または別Projectで再利用、交換、独立修正しやすいように責務をまとめた開発上の再利用単位とする。
-
-物理構造は、対象Projectの規模、再利用範囲、変更範囲、依存、検証、運用上の実益に基づいて決定する。詳細は `CORE.md` を正とする。
-
-## AIコンテキスト
-通常変更は次を起点とする。
-
-1. 目的と期待結果
-2. 対象責務
-3. 再利用候補
-4. 入力・出力
-5. 直接依存と制約
-6. 関連テスト
-
-対象Code、直接依存、関連テストから開始し、責務または影響範囲を特定できない場合だけ段階的に読込範囲を拡張する。
-
-## Project作成
-新規Projectの基本構成は、`README.md`、`.gitignore`、実装入口、および必要な場合の値なし `.env.example` とする。
-
-追加文書は必要理由がある場合に作る。詳細は `docs/PROJECT_TEMPLATE.md` を正とする。
+```text
+そのまま利用
+  -> 設定・引数・型の調整
+  -> 薄いAdapter
+  -> 共通部分抽出
+  -> 目的を満たさない場合だけ新規実装
+```
 
 ## Workspace
+
 標準Workspace:
 
 ```text
@@ -95,30 +123,71 @@ Moduleは、同一Project内または別Projectで再利用、交換、独立修
 - `/home/admin1/server-core`
 - `/home/admin1/projects`
 
-分離領域は、`/home/admin1/logs`、`/home/admin1/backups`、`/home/admin1/kb`、`/home/admin1/workspace` とする。
+通常Contextから除外:
+- `/home/admin1/logs`
+- `/home/admin1/backups`
+- `/home/admin1/kb`
+- `/home/admin1/workspace`
+- `archive`
+- build / dist / node_modules / cache等
 
-## Project正本入口
-- TGserver: `/home/admin1/projects/TGserver`
-- Astera v8: `/home/admin1/projects/astera_v8`
+Workspace仕様は `docs/G_ACE_WORKSPACE.md` を正とする。
 
-Project固有の構造、仕様、API、環境変数、テスト、デプロイ、運用状態は各Project側の正本を使用する。実在Path、Git状態、Docker状態は作業開始時に実環境で確認する。
+## Shared Platform
 
-## GitHubと検証
-- 作業履歴の正本はGitHub commit / PRとする。
-- ファイル変更を伴う作業完了時は、管理者が明示禁止した場合を除き、`SERVER_CORE_PROTOCOL.md` Git 節に従い commit / push まで行う。commit / push なしで終了した作業は未完了として扱う。
-- ファイル変更は差分と検証結果を確認し、意味のある単位でcommit / pushする。
-- mainへの直接pushは、管理者が許可した正本更新または小規模運用文書更新に使用する。
-- 実装変更、複数Project変更、高Risk変更はPRを使用する。
-- 本番起動、公開、切替、デプロイは管理者の明示承認後に行う。
+server-coreは共有Capabilityの**入口・契約・所有関係**を管理し、Capability本体を吸収しない。
 
-検証は、具体例または実データを使用し、期待結果、状態変化、主要失敗条件、回帰結果を確認する。
+対象例:
+- MCP
+- GitHub
+- DebugAI
+- KB
+- shared tools / skills
+- Cloudflare / Hugging Face
+- Vault経由のToken / Secret利用
 
-## 最重要
-- LibralCoreは、再利用、Code生成、局所修正の判断に使用する。
-- 新規Code生成前に再利用候補を確認する。
-- 状態は実ファイル、実行結果、正本で確認する。
-- 完了は実行結果と検証結果で判定する。
-- 5段は論理構造として使用する。
-- Moduleは目的と効果が明確な責務単位にする。
-- 同じ情報は1つの正本へ集約する。
-- 期待結果が確認された時点で完了とする。
+Secret / Token実値はChat・Git・文書・Logへ保存しない。
+
+DebugAIは独立Project/runtimeとして扱う。現在確認済みの共通接続はCLI / HTTPであり、DebugAI MCPは実装・検証後に共通Registryへ登録する。
+
+再利用開発KBはMaster PCの `F:` 1TB領域を実データ置場候補とし、server-coreにはデータ本体ではなくアクセス・登録・安全契約だけを持たせる。VPSからPC driveへ直接アクセスできるものとして扱わない。
+
+## Server / Runtime
+
+VPSは処理・Runtime環境であり、Project SourceやDocumentの正本保存場所として扱わない。
+
+本番常駐は原則Docker / Docker Compose。
+
+標準の反映経路は、検証済みRepository変更をGitHubへ履歴化し、対象revisionを確認したうえで、必要なMaster承認後にServerへ反映する。
+
+Log / Cacheの共通境界:
+- Telegram: 対象Project契約で定義された永続raw-log正本
+- Meilisearch: 再構築可能な検索Index
+- Redis: dedup / hot-cache
+- `/home/admin1/logs`: 一時disk state
+- VPS: 処理場であり長期Log保管庫ではない
+
+Cleanupは安全性を優先し、未送信、再送待ち、Recovery中、所有者不明、Active volume等を自動削除対象にしない。
+
+## 主要正本
+
+| File | Responsibility |
+|---|---|
+| `README.md` | Workspace共通入口 / Current概要 |
+| `docs/SERVER_CORE_DESIGN.md` | server-core設計基準線 |
+| `docs/LOAD_SCOPE.md` | Task routing / Context loading |
+| `CORE.md` | LibralCore開発方法論 |
+| `SERVER_CORE_PROTOCOL.md` | 共通運用規則 |
+| `docs/G_ACE_WORKSPACE.md` | Workspace正規仕様 |
+| `docs/AUTO_COMMIT.md` | GitHub作業履歴化 |
+| `docs/DEPLOY_RUNBOOK.md` | Deploy境界と手順 |
+| `docs/PROJECT_TEMPLATE.md` | Project構成とDocument作成条件 |
+| `docs/WORKSPACE_SHARED_SECRETS.md` | Shared Secret / Token契約 |
+| `docs/STRUCTURE.md` | server-core構造 |
+| `PROJECT_STATUS.md` | Current状態の補助Registry。実Runtime readbackを代替しない |
+
+## Approval Boundary
+
+Masterの明示指示なしに、main/PR merge、Production deploy/公開/切替、Force push、Branch削除、破壊的reset/rebase、既存Service停止/再作成、Secret変更、外部Resource作成・変更・削除を行わない。
+
+未確認・未実行・未検証は推測で埋めず、`UNKNOWN / NOT_EXECUTED / NOT_VERIFIED`として扱う。
