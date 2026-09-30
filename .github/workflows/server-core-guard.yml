@@ -43,6 +43,7 @@ jobs:
           test -f docs/GITHUB_SKILL.md
           test -f docs/G_ACE_WORKSPACE.md
           test -f docs/WORKSPACE_SHARED_SECRETS.md
+          test -f docs/CLOUDFLARE_OPERATIONS.md
           test -f operations/storage-lifecycle.json
           test -f scripts/storage_lifecycle_audit.py
           test -x scripts/ai-auto-commit.sh
@@ -76,6 +77,15 @@ jobs:
           grep -q 'WORKSPACE SHARED SECRETS' docs/WORKSPACE_SHARED_SECRETS.md
           grep -q 'Add-New-Contract Gate' docs/WORKSPACE_SHARED_SECRETS.md
           grep -q 'Command Center' docs/STRUCTURE.md
+
+      - name: Provider ownership boundary
+        run: |
+          set -euo pipefail
+          grep -q 'WORKSPACE COMMAND CONTRACT' docs/CLOUDFLARE_OPERATIONS.md
+          grep -q 'Project-specific Cloudflare Documentation' docs/CLOUDFLARE_OPERATIONS.md
+          grep -q 'server-coreはCloudflareを.*司令室' docs/CLOUDFLARE_OPERATIONS.md
+          ! grep -q 'api\.asterav8\.jp' docs/CLOUDFLARE_OPERATIONS.md
+          ! grep -q 'astera-v8-prod' docs/CLOUDFLARE_OPERATIONS.md
 
       - name: LibralCore execution contract
         run: |
@@ -130,6 +140,14 @@ jobs:
           grep -q 'System / Feature-bundle Document' docs/PROJECT_TEMPLATE.md
           grep -q '実行順序' docs/PROJECT_TEMPLATE.md
           grep -q '期待出力、状態変化、既存機能回帰' docs/PROJECT_TEMPLATE.md
+
+      - name: GitHub work-report and deploy contracts
+        run: |
+          set -euo pipefail
+          grep -q 'Commit = Work Report' docs/AUTO_COMMIT.md
+          grep -q 'REMOTE_READBACK' docs/AUTO_COMMIT.md
+          grep -q 'confirmed GitHub revision' docs/DEPLOY_RUNBOOK.md
+          grep -q 'Runtime Verification' docs/DEPLOY_RUNBOOK.md
 
       - name: KB design contract
         run: |
