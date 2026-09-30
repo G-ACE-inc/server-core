@@ -30,7 +30,7 @@ README.md
   - 詳細はTask routingで必要な時だけ読む
 - `KB.md`
   - server-coreで確認済みの既存判断Register
-  - 将来のF:再利用開発KB本体とは別物
+  - F:再利用開発KB本体とは別物
 - `PROJECT_STATUS.md`
   - Project / Runtime入口の補助Current Register
   - 実Runtime readbackの代替ではない
@@ -43,7 +43,7 @@ README.md
 - `.github/`
   - GitHub Issue / PR / Actions / Dependabot
 - `docs/`
-  - Design、Routing、運用標準、Template、用語
+  - Design、Routing、Registry、運用標準、Template、用語
 - `operations/`
   - Secret値を持たないProvider / shared contract manifest
 - `scripts/`
@@ -60,6 +60,13 @@ README.md
   - Workspace Task Router / progressive context loading
 - `STRUCTURE.md`
   - 本ファイル。server-core Project Tree
+- `WORKSPACE_REGISTRY.md`
+  - Project / MCP / Tool / Secret Contract / Runtime入口の軽量Discovery Registry
+- `KB_REUSE_DESIGN.md`
+  - Master PC `F:` 1TBを使う再利用開発KBのDesign Baseline
+  - Asset registration / search / lifecycle / bridge / safety boundary
+- `STORAGE_LIFECYCLE.md`
+  - Log / Cache / Docker storage / Cleanup / Backup / Recovery / Disk pressureのDesign Baseline
 - `GLOSSARY.md`
   - 正式名称 / 用語
 - `PROJECT_TEMPLATE.md`
@@ -117,6 +124,8 @@ server-coreが持つのは:
 - owner
 - permission / safety boundary
 - Workspace共通利用Rule
+
+Discovery入口は `docs/WORKSPACE_REGISTRY.md`。
 
 実装本体は各所有Project / Runtimeに置く。
 
