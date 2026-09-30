@@ -182,14 +182,14 @@ Shared Secret契約は `docs/WORKSPACE_SHARED_SECRETS.md` を正とする。
 
 Project固有Cloudflare design/runbookはowning Project側へ置く。
 
-例としてAstera v8固有の以下はserver-core共通Authorityではない:
-- `api.asterav8.jp` / preview hostname
-- Astera v8 origin port
-- astera-v8 cloudflared container
-- Astera-specific gate sequence
-- Astera-specific runtime secret path
+Project固有Authorityへ置く対象例:
+- production / preview hostname
+- origin port
+- cloudflared container / service
+- Project-specific release gate sequence
+- Runtime Secret path
 
-必要な場合はAstera v8 README / Design / Runtime docs / Git historyからCurrent Authorityを確認する。
+必要な場合は対象Project README / Design / Runtime docs / Git historyからCurrent Authorityを確認する。
 
 Git historyに残る旧server-core Cloudflare文書はhistorical implementation recordであり、Current Project-specific Authorityとして再利用しない。
 
