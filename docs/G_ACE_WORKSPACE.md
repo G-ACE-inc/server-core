@@ -4,6 +4,8 @@
 
 `/home/admin1/workspace/G-ACE.code-workspace` を、Workspace内の全Projectで **server-coreを必ず共通入口として使う** 開発・運用Workspaceとして定義する。
 
+server-coreを共通入口として、全AI / Developerが同じRoutingと共通運用境界から対象Projectへ入る。
+
 Projectごとの実装・Designは各Project側に置き、server-coreは共通開発標準、GitHub運用、共有Tool/MCP/Secret契約、Server運用境界を提供する。
 
 ## Authority Entry
