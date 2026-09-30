@@ -43,7 +43,7 @@ README.md
 - `archive/`
   - 旧版・退避。通常Context対象外
 
-`KB.md`、`PROJECT_STATUS.md`、`add-status.sh` は責務重複のためCurrent構成から削除済み。再利用KBは `docs/KB_REUSE_DESIGN.md`、Project/Runtime discoveryは `docs/WORKSPACE_REGISTRY.md`、作業履歴はGitHub commit / PRを正とする。
+重複していた旧Current-state / Knowledge register / status helperはCurrent構成から除去済み。Project/Runtime discoveryは `docs/WORKSPACE_REGISTRY.md`、再利用KBは `docs/KB_REUSE_DESIGN.md`、作業履歴はGitHub commit / PRを正とする。
 
 ## docs/
 
