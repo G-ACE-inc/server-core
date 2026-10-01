@@ -58,5 +58,5 @@ else
 fi
 
 SERVER_CORE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-"${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh"
+bash "${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh"
 echo "Done."
