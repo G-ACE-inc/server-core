@@ -25,6 +25,26 @@ server-coreはTaskをRouting / Dispatchするが、Project固有実装のowner�
 
 承認者の名称や個別セッション上の呼称をserver-core仕様へ固定しない。必要な承認主体はProject / Provider / Repository contractで定義する。
 
+## Repository Mutation Ownership
+
+Taskで参照するRepositoryと、Taskで変更してよいRepositoryを分離する。
+
+```text
+TARGET_REPOSITORY
+MUTATION_REPOSITORIES
+READ_ONLY_REPOSITORIES
+```
+
+- `TARGET_REPOSITORY`: 主対象ProjectのRepository。
+- `MUTATION_REPOSITORIES`: 今回Source / Config / Document / Commitを変更してよいRepository。
+- `READ_ONLY_REPOSITORIES`: Authority確認、再利用調査、Integration確認、Runtime調査のために読むだけのRepository。
+
+Project Taskではserver-coreは原則read-only。server-core自身またはWorkspace共通Contractを変更するTaskの場合だけmutation対象にする。
+
+Shared Capability / service / Provider owner Repositoryを確認したことは、そのRepository実装の変更理由にならない。利用・接続・検証Taskではowner側をread-onlyとし、owner-side changeが必要と確認された場合だけ別mutation対象へ昇格する。
+
+Git操作前にはcurrent repository identityとmutation targetを照合する。別RepositoryのScriptを実行するために `cd` したことを、Task owner変更の根拠にしない。
+
 ## Workspace Entry / Dispatch
 
 ```text
@@ -49,6 +69,7 @@ Design Delta: `docs/DESIGN_DELTA.md`
 - Project固有の実装・Design・System仕様はowning Project側に置く。
 - 公開契約は可能な限りCode上のInterface / Type / Schema / Testと整合させる。
 - Design BaselineをCurrent実装へ合わせるためだけに書き換えない。
+- Project Document更新Taskをserver-core Document更新へ読み替えない。
 
 ## Verification
 
@@ -72,6 +93,8 @@ Current仕様Documentへ一時的なセッション指示、個別作業メモ�
 
 時系列の作業履歴はGitHub commit / PRへ残す。完成状態、Project構造、Designとの差、運用Contractが変わった場合はDocumentation Gateに従う。
 
+対象ProjectのREADME / README-linked Documentは対象Project Repository側で更新する。server-coreはProject Documentの既定保存先ではない。
+
 Commit / Push / Remote Readbackは `docs/AUTO_COMMIT.md` を正とする。
 
 ## GitHub / Deploy
@@ -87,6 +110,7 @@ implementation / fix
  -> remote readback
  -> PR / CI when required
  -> confirmed GitHub revision
+ -> target runtime identity lock
  -> required change approval
  -> Server deploy
  -> Runtime verification
@@ -94,11 +118,15 @@ implementation / fix
 
 Deploy詳細は `docs/DEPLOY_RUNBOOK.md`。
 
-Server上の直接Source修正を正式開発履歴の代替にしない。Runtimeで修正必要性を発見した場合は、原則Repository開発Loopへ戻す。
+Server上の直接Source修正を正式開発履歴の代替にしない。Runtimeで修正必要性を発見した場合は、原則対象Repository開発Loopへ戻す。
+
+server-core Runbookを参照したことを、server-core自身がDeploy targetである証拠にしない。
 
 ## Shared Capability Boundary
 
 server-coreは共有Capabilityの実装本体を抱え込まず、Discovery・接続契約・owner・permission/change boundary・verification methodを管理する。
+
+Capabilityを利用・登録・接続・検証することと、Capability implementationを変更することを分離する。
 
 Registry記載や過去利用実績だけでCurrent Runtimeを証明しない。必要時は実設定・Provider・Endpoint・Docker・GitHub等をreadbackする。
 
@@ -110,11 +138,15 @@ TGserver / webhook gateway等のProject-owned service、Libral Vault、MCP、Too
 
 Shared CapabilityとProject-owned serviceを混同しない。
 
+Integration Taskではconsumer Projectとservice/capability ownerを別mutation domainとして扱う。通常の利用・接続でowner実装を変更しない。
+
 ## Storage / Backup / Recovery
 
 共通Storage分類・cleanup safety・backup/recovery契約は `docs/STORAGE_LIFECYCLE.md` を正とする。
 
 server-coreはProject固有Dataのownerにならない。owner不明、active use、retry/recovery中、restore path不明、persistent volumeの可能性があるDataをgeneric cleanup対象にしない。
+
+Storage auditでProject固有Dataを発見したことを、そのDataへのmutation permissionと扱わない。
 
 ## Docker / Runtime
 
@@ -122,11 +154,15 @@ server-coreはProject固有Dataのownerにならない。owner不明、active us
 
 Container起動だけでRuntime PASSとせず、Taskに必要なEndpoint / Output / State / side effectまで確認する。
 
+Runtime上に複数Projectが存在しても、対象Project外のservice/container/volumeへ同一Taskで推測変更しない。
+
 ## Secret / Credential
 
 Secret / Token / password / session / credentialの実値をGit / Source / Document / Logへ保存しない。
 
 Workspace共有Secretは `docs/WORKSPACE_SHARED_SECRETS.md` を正とし、各Projectへ実値を複製しない。
+
+Secret Contractを読むこと、credential availabilityを確認すること、credentialを登録/rotationすることを別Operationとして扱う。
 
 ## Archive
 
@@ -144,5 +180,7 @@ Workspace共有Secretは `docs/WORKSPACE_SHARED_SECRETS.md` を正とし、各Pr
 - Design履歴を消してCurrent実装へ合わせない。
 - Current仕様Documentを時系列作業日誌にしない。
 - owner不明のFile / Module / Runtime / DataへMutationしない。
+- `MUTATION_REPOSITORIES` 外のRepositoryへwrite/commitしない。
+- Authorityを読んだだけのRepositoryへmutationしない。
 - credential実値をSource / Git / Document / Logへ保存しない。
 - Project固有実装をserver-coreへ移して責務境界を崩さない。
