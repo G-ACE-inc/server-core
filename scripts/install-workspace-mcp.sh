@@ -17,6 +17,14 @@ servers = manifest.get('servers')
 if not isinstance(servers, dict) or not servers:
     raise SystemExit('[error] workspace MCP manifest has no servers')
 
+# "servers" is the Workspace contract source. Cursor only receives
+# runtime-supported MCP fields; contract metadata such as "authentication"
+# is intentionally not compared against the live client definition.
+runtime_servers = {
+    name: {key: value for key, value in definition.items() if key != 'authentication'}
+    for name, definition in servers.items()
+}
+
 target.parent.mkdir(parents=True, exist_ok=True)
 if target.exists():
     try:
@@ -32,12 +40,12 @@ current_servers = current.setdefault('mcpServers', {})
 if not isinstance(current_servers, dict):
     raise SystemExit('[error] existing mcpServers is not an object')
 
-for name, definition in servers.items():
+for name, definition in runtime_servers.items():
     if name in current_servers and current_servers[name] != definition:
-        raise SystemExit(f'[error] MCP name collision: {name}; existing definition differs')
+        raise SystemExit(f'[error] MCP name collision: {name}; existing runtime definition differs')
 
 changed = False
-for name, definition in servers.items():
+for name, definition in runtime_servers.items():
     if name not in current_servers:
         current_servers[name] = definition
         changed = True
