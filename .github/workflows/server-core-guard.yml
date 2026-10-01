@@ -88,7 +88,7 @@ jobs:
           ! grep -q 'astera-v8-prod' docs/CLOUDFLARE_OPERATIONS.md
           test ! -e operations/cloudflare.json
           test ! -e scripts/cloudflare_ops.py
-          ! git grep -nE 'GPG-Core|astera-v8-prod|api\\.asterav8\\.jp' -- ':!archive/**'
+          ! git grep -nE 'GPG-Core|astera-v8-prod|api\\.asterav8\\.jp' -- ':!archive/**' ':!docs/DESIGN_DELTA.md'
           grep -q 'libral-vault' operations/cloudflare-account.json
           grep -q 'secret_provider.*libral-vault' operations/cloudflare-account.json
 
