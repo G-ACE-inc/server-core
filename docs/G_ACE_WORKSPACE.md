@@ -33,6 +33,7 @@ TARGET_RESPONSIBILITY
 TARGET_REPOSITORY
 MUTATION_REPOSITORIES
 READ_ONLY_REPOSITORIES
+SERVER_CORE_MUTATION_AUTHORIZED
 REQUIRED_SERVER_CORE_AUTHORITY
 REQUIRED_PROJECT_AUTHORITY
 REUSE_CANDIDATES
@@ -50,14 +51,16 @@ Project Taskの既定mutation先は対象Project Repository。
 
 ```text
 Target Project source/docs/config = target Project ownership
-server-core = routing/reference; read-only by default for Project Task
+server-core = routing/reference; explicit authorizationが無い限りread-only
 Shared Capability owner = implementation authority; read-only for ordinary use/integration Task
 Provider/service owner = read-only unless owner-side change is actually required
 ```
 
-「server-coreを読め」「README/Documentを更新」「MCP/Tool/DebugAI/Vault/TGserver/webhook gateway/Cloudflareを使う・接続する・検証する」という指示だけで、server-coreやowner Repositoryをwrite対象へ昇格しない。
+`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立しない限り、server-coreは `MUTATION_REPOSITORIES` に入れない。
 
-複数Repository変更が必要な場合は、各Repositoryについて変更理由・範囲・verification・Git historyを分離する。
+「server-coreを読め」「README/Documentを更新」「MCP/Tool/DebugAI/Vault/TGserver/webhook gateway/Cloudflareを使う・接続する・検証する」「Workspace共通Contractに影響がありそう」という指示や判断だけで、server-coreやowner Repositoryをwrite対象へ昇格しない。
+
+複数Repository変更が必要な場合は、各Repositoryについて変更理由・範囲・verification・Git historyを分離する。server-coreを含む場合は、server-core自体の変更についてexplicit owner authorizationを別途確認する。
 
 Local Git作業ではwrite/commit前にcurrent repository rootとmutation targetを照合する。
 
@@ -88,7 +91,7 @@ READMEから、存在する場合は次へ到達できることを標準とす�
 
 これらは**対象Project側のAuthority**である。対象ProjectのREADMEやREADME-linked Documentを更新するTaskを、server-core Document更新へ読み替えない。
 
-server-core側のDocument変更は、Workspace共通のRouting / Authority / Shared Capability / 共通運用Contract自体が変更される場合に限定する。
+server-core側のDocumentは、server-core自体の変更についてexplicit owner authorizationがある場合だけ変更する。
 
 対象Source、直接依存、関連Testから開始し、必要時だけ `docs/LOAD_SCOPE.md` のLevelに従ってContextを広げる。
 
@@ -124,6 +127,8 @@ Documentationは実変更に必要なものだけ更新する。
 
 Project固有のDocumentation Gateをserver-core Documentation Gateで代用しない。
 
+server-core Documentation Gateは `SERVER_CORE_MUTATION_AUTHORIZED=YES` の場合だけ適用する。
+
 Documentation GateはDocument乱立のためのCheck listではない。
 
 ## 9. GitHub Work History
@@ -134,7 +139,7 @@ Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productio
 
 Authority: `docs/AUTO_COMMIT.md`。
 
-Commit対象Repositoryはmutation ownershipに従う。参照専用RepositoryへTaskの副作用を残さない。
+Commit対象Repositoryはmutation ownershipに従う。参照専用RepositoryへTaskの副作用を残さない。server-coreへのCommitはexplicit owner authorizationが必要。
 
 ## 10. Shared Capability
 
