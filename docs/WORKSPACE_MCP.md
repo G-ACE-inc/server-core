@@ -33,12 +33,27 @@ Project C                         Project D
                 Shared MCPs
 ```
 
-## Current shared servers
+## Current server-side configuration state
+
+Server readback on 2026-10-01 confirmed that `/home/admin1/.cursor/mcp.json` contains the following global entries:
+
+| Server | Ownership in server-core manifest | Configuration state | Live availability state |
+|---|---|---|---|
+| Cloudflare API | managed by `operations/workspace-mcp.json` | `CONFIG_REGISTERED`; installer/verify PASS | authentication / transport / tool discovery / representative call still `NOT_VERIFIED` |
+| Hugging Face | managed by `operations/workspace-mcp.json` | `CONFIG_REGISTERED`; installer/verify PASS | authentication / transport / tool discovery / representative call still `NOT_VERIFIED` |
+| GitHub | pre-existing global entry; preserved, not rewritten by current manifest | `CONFIG_PRESENT` | live Cursor-client verification remains separate |
+| Deterministic Japanese Parser | pre-existing global entry; preserved, not rewritten by current manifest | `CONFIG_PRESENT` | live transport / tool discovery / representative call remain `NOT_VERIFIED` |
+
+The installer preserves unrelated existing MCP servers. Therefore `CONFIG_PRESENT` for GitHub / Parser does not mean server-core has taken ownership of their runtime definition.
+
+Current Server shell does not have Cursor Agent CLI installed. `agent mcp list` is therefore not used as the verification route on this host.
+
+## Manifest-managed shared servers
 
 | Server | Endpoint | Authentication | State |
 |---|---|---|---|
-| Cloudflare API | `https://mcp.cloudflare.com/mcp` | Cursor OAuth | CONFIG_SOURCE_VERIFIED; live connection pending |
-| Hugging Face | `https://huggingface.co/mcp` | Provider/Client OAuth or generated client config | CONFIG_SOURCE_VERIFIED; live connection pending |
+| Cloudflare API | `https://mcp.cloudflare.com/mcp` | Cursor OAuth | `CONFIG_REGISTERED`; live connection pending |
+| Hugging Face | `https://huggingface.co/mcp` | Provider/Client OAuth or generated client config | `CONFIG_REGISTERED`; live connection pending |
 
 Cloudflare documents Cursor integration through its API MCP and OAuth authorization. Hugging Face provides an official MCP server for Cursor and other MCP-compatible clients.
 
@@ -69,8 +84,8 @@ All Projects
 Cursor User Global MCP
    |
    +--> Cloudflare API MCP
-   |
    +--> Hugging Face MCP
+   +--> preserved pre-existing global MCP entries
 ```
 
 Project-specific MCPs remain project-scoped.
@@ -85,9 +100,10 @@ If a Provider requires a bearer token instead of OAuth, the token must come from
 
 ## Installation
 
-Run from the server-core checkout:
+Run only from the canonical server-core checkout:
 
 ```bash
+cd /home/admin1/server-core
 scripts/install-workspace-mcp.sh
 ```
 
@@ -96,9 +112,21 @@ The installer:
 2. creates `~/.cursor/mcp.json` if absent;
 3. preserves unrelated existing MCP servers;
 4. adds the Workspace shared entries;
-5. refuses a name collision with a different definition;
+5. refuses a name collision with a different runtime definition;
 6. creates a timestamped backup before mutation;
-7. never writes a Provider token.
+7. preserves existing credential containers covered by the merge policy;
+8. never writes a Provider token from the repository.
+
+## Workspace initialization
+
+The Workspace initializer is the canonical entry for rules + managed global MCP configuration:
+
+```bash
+cd /home/admin1/server-core
+scripts/init-dev-workspace.sh
+```
+
+It must run from `/home/admin1/server-core`. A duplicate checkout such as `/home/admin1/projects/server-core` is rejected before mutation. After installing the managed MCP entries, the initializer also runs `scripts/verify-workspace-mcp.sh`; configuration verification failure therefore prevents a successful initialization result.
 
 ## Verification
 
@@ -109,14 +137,15 @@ scripts/verify-workspace-mcp.sh
 The verification command checks:
 - global MCP file exists;
 - JSON is valid;
-- required Workspace servers exist;
-- no plaintext token is embedded;
-- when Cursor CLI is installed, `agent mcp list` can be used as the live client-side check.
+- required manifest-managed Workspace servers exist;
+- runtime transport definition matches the manifest contract;
+- no obvious plaintext token pattern is embedded;
+- when Cursor CLI is installed, `agent mcp list` can be used as an additional live client-side check.
 
 A valid config is not equivalent to a live connection.
 
 ```text
-CONFIG_PRESENT
+CONFIG_PRESENT / CONFIG_REGISTERED
   -> AUTHENTICATION_VERIFIED
   -> TRANSPORT_VERIFIED
   -> INTERFACE_DISCOVERY_VERIFIED
@@ -130,7 +159,7 @@ Project repositories do not need to contain these shared MCP entries.
 
 A Project may contain a `.cursor/mcp.json` only for Project-owned or explicitly Project-scoped MCPs.
 
-If a Project has the same server name as a global shared MCP, the Project definition takes precedence in Cursor. Therefore shared server names are reserved by the Workspace manifest unless an explicit Project override is approved.
+If a Project has the same server name as a global shared MCP, the Project definition takes precedence in Cursor. Therefore manifest-managed shared server names are reserved unless an explicit Project override is approved.
 
 ## DebugAI / private MCP boundary
 
@@ -142,7 +171,9 @@ Once the live runtime endpoint is verified, add it to the same global manifest/i
 
 ## Deterministic Japanese Parser MCP
 
-The Parser MCP supports stdio and Streamable HTTP, but the Workspace runtime registration has not yet been verified. Its Project/runtime endpoint must be read back before global registration.
+The Server global Cursor config now has a Deterministic Japanese Parser entry. This closes only the configuration-presence boundary.
+
+The current server-core manifest does not own or rewrite that pre-existing entry. Before promoting it to `AVAILABLE_VERIFIED`, verify the actual client execution route, authentication when required, transport, tool discovery, and at least one representative parser call. Do not infer live availability from the JSON entry alone.
 
 ## Non-goals
 
