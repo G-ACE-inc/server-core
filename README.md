@@ -90,7 +90,7 @@ REQUEST
 | Workspace運用 | `docs/G_ACE_WORKSPACE.md` |
 | Project / Capability / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
 | Workspace MCP | `docs/WORKSPACE_MCP.md` |
-| Project integration | `docs/PROJECT_INTEGRATION_RULES.md` |
+| Project Integration | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Git / Commit / Push | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
 | Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
@@ -109,7 +109,7 @@ REQUEST
 - **Commit / PR**: 時系列の作業履歴。
 - **Registry**: Project / Capability / owner / connection / verification boundaryの発見情報。
 
-Current Authorityへチャット会話、個人向け指示、一時的な作業報告を混在させない。
+Current Authorityへ個人向け指示、一時的な作業報告、Task固有の進捗状態を混在させない。
 
 ## Shared Capability Boundary
 
@@ -118,6 +118,12 @@ server-coreが保持するのはShared Capabilityの**発見・owner・connectio
 Capability本体はowning Project/runtimeへ残す。Project固有の実装値、runtime値、hostname、port、container、secret injection等をWorkspace共通文書へ固定しない。
 
 AvailabilityはTask時に必要な範囲で実設定 / transport / interface / representative callを確認する。過去利用実績とCurrent Runtime状態を分離する。
+
+## Project Integration Boundary
+
+TGserver / webhook gateway等のProject-owned serviceや、Libral Vault / MCP / ToolをProjectへ接続する場合は `docs/PROJECT_INTEGRATION_RULES.md` を共通契約として使う。
+
+Integration contractはowner、consumer、interface、credential、failure、verification等の必要事項だけを定義する。Project固有実装やRuntime内部をserver-coreへ移さない。
 
 ## Server / Runtime Boundary
 
