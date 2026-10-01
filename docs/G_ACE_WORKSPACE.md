@@ -143,7 +143,7 @@ DebugAIは独立Project/runtime。Source mainへのMCP実装反映とWorkspace L
 
 ProjectへTGserver / webhook gateway / Libral Vault / MCP / Toolを導入するときは `docs/PROJECT_INTEGRATION_RULES.md` を確認する。TGserver / webhook gatewayはProject Integration、Libral VaultはShared Capability + Project利用契約として扱う。
 
-## 10.1 Shared Secrets## 10. Shared Secrets
+## 10.1 Shared Secrets
 
 Secret / Token実値を各Projectへ複製しない。
 
