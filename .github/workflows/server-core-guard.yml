@@ -86,6 +86,11 @@ jobs:
           grep -q 'server-coreはCloudflareを.*司令室' docs/CLOUDFLARE_OPERATIONS.md
           ! grep -q 'api\.asterav8\.jp' docs/CLOUDFLARE_OPERATIONS.md
           ! grep -q 'astera-v8-prod' docs/CLOUDFLARE_OPERATIONS.md
+          test ! -e operations/cloudflare.json
+          test ! -e scripts/cloudflare_ops.py
+          ! git grep -nE 'GPG-Core|astera-v8-prod|api\\.asterav8\\.jp' -- ':!archive/**'
+          grep -q 'libral-vault' operations/cloudflare-account.json
+          grep -q 'secret_provider.*libral-vault' operations/cloudflare-account.json
 
       - name: LibralCore execution contract
         run: |
