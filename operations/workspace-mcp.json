@@ -19,6 +19,11 @@
   "installation": {
     "target": "~/.cursor/mcp.json",
     "merge": "preserve-existing-servers",
-    "collision": "fail-closed"
+    "collision": "fail-closed-on-runtime-transport-mismatch",
+    "preserve_existing_auth_fields": [
+      "auth",
+      "headers",
+      "env"
+    ]
   }
 }
