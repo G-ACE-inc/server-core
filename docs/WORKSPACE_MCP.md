@@ -30,6 +30,28 @@ server-core
 
 server-coreが管理するのはWorkspace共通MCPのmanifest / install / verify contractであり、各MCP implementation bodyではない。
 
+## Operation / Mutation Routing
+
+MCP関連Taskを次に分離する。
+
+```text
+USE / CALL MCP
+VERIFY CURRENT AVAILABILITY
+REGISTER PROJECT-SCOPED MCP
+CHANGE WORKSPACE-GLOBAL REGISTRATION
+CHANGE MCP IMPLEMENTATION
+```
+
+これらは別Operationである。
+
+- `USE / CALL MCP`: 原則mutationなし。MCP owner Repositoryもserver-coreもread-only。
+- `VERIFY CURRENT AVAILABILITY`: client/runtime readbackのみ。検証だけでSource/Documentを変更しない。
+- `REGISTER PROJECT-SCOPED MCP`: consumer Project側Config/Documentがmutation候補。server-coreやMCP owner実装は原則read-only。
+- `CHANGE WORKSPACE-GLOBAL REGISTRATION`: server-core Workspace MCP contract/configがmutation対象になり得る。
+- `CHANGE MCP IMPLEMENTATION`: owning MCP Projectだけをmutation対象とし、server-coreは共通Contractが変わらない限りread-only。
+
+「MCPを使う」「MCPを検証する」「MCPをProjectへ接続する」だけでserver-coreのmanifest/documentやMCP owner Sourceを書き換えない。
+
 ## Managed Shared MCPs
 
 Current machine-readable manifest authority: `operations/workspace-mcp.json`。
@@ -48,14 +70,18 @@ Installerはserver-core管理外の既存MCP entryを保持する。
 
 Project-owned MCPのowner / runtime / client registrationは対象Project authorityを正とする。
 
+Non-managed entryを確認しただけでserver-core manifestへ取り込まない。
+
 ## Installation
 
-Canonical server-core checkoutから実行する。
+Workspace-global registration自体を整合するTaskの場合だけ、canonical server-core checkoutから実行する。
 
 ```bash
 cd /home/admin1/server-core
 scripts/install-workspace-mcp.sh
 ```
+
+Project固有MCP利用TaskやMCP実装TaskのたびにこのInstallerを実行しない。
 
 Installer contract:
 1. manifestを検証する;
@@ -69,6 +95,8 @@ Installer contract:
 
 ## Workspace Initialization
 
+Workspace初期化/修復を対象としたTaskの場合だけ使用する。
+
 ```bash
 cd /home/admin1/server-core
 scripts/init-dev-workspace.sh
@@ -76,7 +104,11 @@ scripts/init-dev-workspace.sh
 
 Initializerはcanonical checkoutからのみ実行する。Workspace rules、workspace file、managed MCP configを整合し、検証に失敗した場合は成功扱いにしない。
 
+Project Source/Document更新Taskの通常手順としてInitializerを実行しない。
+
 ## Configuration Verification
+
+Workspace-global MCP config verificationがTask対象の場合:
 
 ```bash
 scripts/verify-workspace-mcp.sh
@@ -89,6 +121,8 @@ scripts/verify-workspace-mcp.sh
 - managed runtime transport definition matches manifest
 - obvious plaintext credential pattern is absent
 - available client CLIがある場合はclient-side registrationを追加確認可能
+
+Project-owned MCPのCurrent availability確認は、そのProject/client/runtime Authorityに従う。server-core verifierで代用しない。
 
 ## State Semantics
 
@@ -121,6 +155,8 @@ HISTORICAL_LIVE_USE = recorded
 CURRENT_SERVER / CLIENT AVAILABILITY = readback when required
 ```
 
+DebugAI MCPのSource/README/付属Document更新TaskはDebugAI Repository側で行う。server-coreを先に読んだことを理由にserver-core Documentへ書かない。
+
 個別Branch/HEAD、作業中の検証手順、セッション内の一時報告をWorkspace共通Contractへ固定しない。
 
 ## Deterministic Japanese Parser MCP Boundary
@@ -129,17 +165,23 @@ Deterministic Japanese Parser MCPはProject-owned implementation。
 
 Global/client configでentry presenceが確認される場合でも、server-core manifest ownershipとは別状態として扱う。Current availabilityが必要なTaskでは、client registration、transport、tool discovery、representative parser callを必要範囲で確認する。
 
+Parser implementation/Document変更はParser Project側で行う。config presence確認だけでserver-core ownershipへ移さない。
+
 ## Credential Rule
 
 OAuth-capable remote MCPはclient/global layerの正式認証経路を使う。
 
 Bearer token等が必要な場合は `docs/WORKSPACE_SHARED_SECRETS.md` のapproved broker contractを利用し、Project configやRepositoryへ実値を複製しない。
 
+Credential Contract参照をcredential registration/rotation permissionと扱わない。
+
 ## Project Boundary
 
 Project repositoryはWorkspace shared MCP entryを複製しない。
 
 同名Project-level MCP overrideが必要な場合は、owner、理由、scope、verificationを対象Project側で明確化する。
+
+Project-level usage/documentationをWorkspace-global contract更新へ自動昇格しない。
 
 ## Runtime Verification
 
@@ -153,6 +195,8 @@ Current live availabilityがTask判断に必要な場合は、必要な範囲で
 
 Config検証とLive availability検証を混同しない。
 
+検証でfailureを発見した場合も、原因ownerを確定する前にserver-core / MCP owner / consumer Projectのいずれかへ推測修正しない。
+
 ## Non-goals
 
 - Project codeをserver-coreへ移さない。
@@ -160,3 +204,4 @@ Config検証とLive availability検証を混同しない。
 - Project固有endpoint/pathを推測して登録しない。
 - ConfigだけでCurrent runtime healthyと断定しない。
 - 個別Taskの進捗ログを本Documentへ蓄積しない。
+- MCP利用TaskをMCP実装変更Taskへ自動変換しない。
