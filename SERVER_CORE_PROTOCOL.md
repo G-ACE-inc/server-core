@@ -23,7 +23,7 @@ server-coreはTaskをRouting / Dispatchするが、Project固有実装のowner�
 - Secret / credential add / delete / rotation
 - Provider resource create / update / delete
 
-承認者の名称や会話上の呼称をserver-core仕様へ固定しない。必要な承認主体はProject / Provider / Repository contractで定義する。
+承認者の名称や個別セッション上の呼称をserver-core仕様へ固定しない。必要な承認主体はProject / Provider / Repository contractで定義する。
 
 ## Workspace Entry / Dispatch
 
@@ -68,7 +68,7 @@ Process起動、Error無し、HTTP 200、Build成功、CI green等は、それ�
 
 ## Documentation / Work History
 
-Current仕様Documentへチャット内容、個人向け指示、一時的な作業日誌を混在させない。
+Current仕様Documentへ一時的なセッション指示、個別作業メモ、時系列作業日誌を混在させない。
 
 時系列の作業履歴はGitHub commit / PRへ残す。完成状態、Project構造、Designとの差、運用Contractが変わった場合はDocumentation Gateに従う。
 
