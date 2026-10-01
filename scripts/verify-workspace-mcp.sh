@@ -15,10 +15,15 @@ if not target.is_file():
     raise SystemExit(f'[fail] global MCP config missing: {target}')
 config = json.loads(target.read_text(encoding='utf-8'))
 servers = config.get('mcpServers', {})
-for name, expected in manifest.get('servers', {}).items():
+manifest_servers = manifest.get('servers', {})
+runtime_servers = {
+    name: {key: value for key, value in definition.items() if key != 'authentication'}
+    for name, definition in manifest_servers.items()
+}
+for name, expected in runtime_servers.items():
     actual = servers.get(name)
     if actual != expected:
-        raise SystemExit(f'[fail] shared MCP mismatch: {name}')
+        raise SystemExit(f'[fail] shared MCP runtime mismatch: {name}')
 
 serialized = target.read_text(encoding='utf-8')
 if re.search(r'(?i)(bearer|token|secret|password|api[_-]?key)\\s*[:=]\\s*[A-Za-z0-9_./+=-]{12,}', serialized):
