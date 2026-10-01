@@ -188,7 +188,7 @@ Moduleは再利用、交換、独立修正、権限/障害分離等の実益が�
 
 条件を満たさない場合は既存Module内のPart/Feature/Componentとして実装する。
 
-## Workerへ渡す最小情報
+## AIへ渡す最小情報
 
 通常Taskの起点:
 - 目的と期待結果
