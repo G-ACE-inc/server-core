@@ -2,7 +2,8 @@
 set -euo pipefail
 
 PROJECTS_DIR="/home/admin1/projects"
-SERVER_CORE_RULES="/home/admin1/server-core/.cursor/rules"
+SERVER_CORE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SERVER_CORE_RULES="${SERVER_CORE_ROOT}/.cursor/rules"
 PROJECTS_RULES="${PROJECTS_DIR}/.cursor/rules"
 
 PROJECT_NAME=""
@@ -57,6 +58,5 @@ else
   echo "[created] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
 fi
 
-SERVER_CORE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 bash "${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh"
 echo "Done."
