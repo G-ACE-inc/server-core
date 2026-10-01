@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PROJECTS_DIR="/home/admin1/projects"
-SERVER_CORE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SERVER_CORE_ROOT="/home/admin1/server-core"
 SERVER_CORE_RULES="${SERVER_CORE_ROOT}/.cursor/rules"
 PROJECTS_RULES="${PROJECTS_DIR}/.cursor/rules"
 
