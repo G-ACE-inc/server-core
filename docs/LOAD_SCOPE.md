@@ -1,39 +1,35 @@
 # SERVER CORE LOAD SCOPE / COMMAND ROUTER
 
-Version: 2026-09-30
-Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分け、必要情報だけを段階的に読ませるためのRouter。
+Version: 2026-10-01
+Role: G-ACE WorkspaceがTaskを正しいProject / Authorityへ振り分け、必要情報だけを段階的に読むためのRouter。
 
 ## 1. Mandatory Start
-
-Workspace内の作業開始順は固定する。
 
 ```text
 1. server-core/README.md
 2. server-core/docs/LOAD_SCOPE.md
-3. 今回のTaskに必要なserver-core Authorityだけ
+3. Taskに必要なserver-core Authorityだけ
 4. 対象Project README
-5. 対象Project内の必要なDesign / Tree / Delta / System Document / Source / Testだけ
+5. 対象Project内の必要なDesign / Tree / Delta / System Document / Source / Test
 ```
 
-README以外のserver-core Authorityを新Task開始時に一括読込しない。
-
-同一Taskで一度確認済みのAuthorityは、変更・矛盾・情報不足が無い限り毎ターン再読込しない。
+README以外のserver-core Authorityを新Task開始時に一括読込しない。同一Taskで確認済みのAuthorityは、変更・矛盾・情報不足が無い限り繰り返し読まない。
 
 ## 2. Command Routing
 
 | Task | 追加で読むserver-core Authority |
 |---|---|
-| server-core自身の設計/司令室責務 | `docs/SERVER_CORE_DESIGN.md` + 必要なら `docs/DESIGN_DELTA.md` |
-| 開発方法論 / 責務 / 5段 / Module / 再利用 | `CORE.md` |
-| 共通運用 / 禁止 / Approval Boundary | `SERVER_CORE_PROTOCOL.md` |
+| server-core自身の設計 / 責務 | `docs/SERVER_CORE_DESIGN.md` + 必要なら `docs/DESIGN_DELTA.md` |
+| 開発方法論 / Module / 再利用 | `CORE.md` |
+| 共通運用 / 変更 / 安全境界 | `SERVER_CORE_PROTOCOL.md` |
 | Workspace運用 / dispatch | `docs/G_ACE_WORKSPACE.md` |
-| Project / Repository / shared Capability / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
-| Project Integration（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
-| Git / Commit / Push / work report | `docs/AUTO_COMMIT.md` |
+| Project / Repository / shared Capability / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
+| Project Integration | `docs/PROJECT_INTEGRATION_RULES.md` |
+| Git / Commit / Push / work history | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
 | 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
-| Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
-| Reusable KB / F: storage / KB bridge | `docs/KB_REUSE_DESIGN.md` |
+| Shared Secret / credential | `docs/WORKSPACE_SHARED_SECRETS.md` |
+| Reusable KB / bridge | `docs/KB_REUSE_DESIGN.md` |
 | Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
 | Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
 | GitHub無料枠 | `docs/GITHUB_FREE_MAX.md` |
@@ -45,7 +41,7 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 
 ## 3. Dispatch Decision
 
-対象Projectへ入る前に、Taskに必要な範囲で次を確定する。
+対象Projectへ入る前に、Taskに必要な範囲で次を解決する。
 
 ```text
 PURPOSE
@@ -56,7 +52,7 @@ TARGET_REPOSITORY
 AUTHORITY_REQUIRED
 REUSE_CANDIDATES
 VERIFY_PATH
-APPROVAL_BOUNDARY
+CHANGE_BOUNDARY
 ```
 
 対象Project / ownerが不明なら `docs/WORKSPACE_REGISTRY.md` を読む。
@@ -68,17 +64,12 @@ APPROVAL_BOUNDARY
 対象Projectへ入った後はREADMEを入口とする。
 
 ### Level 0: Repository Entry
-- README Current State
-- Designへのリンク
-- Project Treeへのリンク
-- Design Deltaへのリンク
-- completed System / Feature-bundle / Module Documentへのリンク
+- Current purpose / responsibility
+- Current verified state when present
+- Design / Tree / Deltaへの導線
 - run / test / verify entry
 
-存在しないDocumentを推測で作成済み扱いしない。
-
 ### Level 1: Target Boundary
-最初に読む。
 - 対象Source
 - Input / Output
 - 直接依存
@@ -104,11 +95,11 @@ APPROVAL_BOUNDARY
 次の場合だけSystem / Repository全体へ拡張する。
 - 複数Component / Moduleへ影響
 - 局所情報で影響範囲を閉じられない
-- Masterが全体監査 / 全コード確認 / 横断調査を明示
+- Task自体が全体監査 / 全コード確認 / 横断調査を要求している
 
-### 4.1 Project Integration Routing
+## 5. Project Integration Routing
 
-TGserver / webhook gateway / Libral Vault / Project-level MCP・Tool integrationを変更または追加するときは、`docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で確認する。
+Project-owned service、Libral Vault、MCP、Tool integrationを変更または追加するときは `docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で確認する。
 
 ```text
 server-core README
@@ -118,15 +109,13 @@ server-core README
   -> target Project authority / Source / Test
 ```
 
-## 5. Reuse Search Order
-
-新規Code / Module / Tool / Document作成前に必要範囲で確認する。
+## 6. Reuse Search Order
 
 ```text
 対象Project内
   -> docs/WORKSPACE_REGISTRY.md の共有Capability
   -> Workspace内の既存共有資産
-  -> AVAILABLE_VERIFIEDなKB / Tool / MCP
+  -> verified KB / Tool / MCP
   -> 必要な場合だけ公式外部Authority
 ```
 
@@ -142,57 +131,55 @@ Reuse priority:
 
 Registry entryはCurrent Runtime健康状態の証明ではない。
 
-## 6. Normal Context Exclusions
+## 7. Normal Context Exclusions
 
 通常Contextへ入れない。
-- `archive/`
-- `.github/`（GitHub Task時を除く）
-- `scripts/`（Script Task時を除く）
 - `.git/`
-- `node_modules/`
-- `dist/` / `build/` / `.next/`
+- dependency directories (`node_modules/` 等)
+- generated output (`dist/`, `build/`, `.next/` 等)
+- archive
 - logs / dumps / cache
 - backups
-- Secret / credential実値
+- credential実値
+- Taskと無関係なRepository
 
-Task対象の場合だけ必要Fileへ限定して読む。
+`.github/` や `scripts/` もTask対象でない限り一括読込しない。
 
-## 7. Documentation Read Rule
+## 8. Documentation Read Rule
 
-- README = Current completed / verified entry
+- README = Current entry
 - Design = architecture baseline
-- Design Delta = intentional difference / rationale
+- Design Delta = intentional architecture/responsibility difference
 - Project Tree = navigation index
-- System/Module Document = completed unit handoff
+- System/Module Document = stable technical handoff
 - Commit / PR = chronological work history
+- Registry = discovery / owner / connection / verification boundary
 
-DesignとCurrent実装が違う場合、DesignをCurrentへ合わせて履歴を消さない。
+チャット会話や個人向け指示をCurrent Authorityとして扱わない。
 
-## 8. Runtime / Registry Rule
+## 9. Runtime / Registry Rule
 
-READMEや `docs/WORKSPACE_REGISTRY.md` のRuntime記載はDiscovery metadata。
+READMEやRegistryのRuntime記載はDiscovery metadataまたはlast-known record。
 
-Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / GitHub revision等をreadbackする。
+Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / GitHub revision等をreadbackする。未確認値をcarry-forwardしてCurrent扱いしない。
 
-未確認値をcarry-forwardしてCurrent扱いしない。
-
-## 9. Stop Reading Condition
+## 10. Stop Reading Condition
 
 作業開始に必要な読込は、次を説明・確認できた時点で止める。
-- purpose / expected result;
-- target Project / responsibility;
-- Design baseline when relevant;
-- input / output;
-- direct dependencies / constraints;
-- reuse candidates;
-- related tests / verification path;
-- affected scope;
-- approval boundary。
+- purpose / expected result
+- target Project / responsibility
+- relevant baseline / contract
+- input / output
+- direct dependencies / constraints
+- reuse candidates
+- related tests / verification path
+- affected scope
+- change boundary
 
 不足した場合だけ次Levelへ進む。
 
-## 10. Router Failure Rule
+## 11. Router Failure Rule
 
-Task owner、Authority、Runtime state、Secret contract等が不明な場合は推測で補完しない。
+Task owner、Authority、Runtime state、credential contract等が不明な場合は推測で補完しない。
 
-`UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` を維持し、必要なAuthority/readbackだけ追加取得する。
+`UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` 等の状態を維持し、必要なAuthority/readbackだけ追加取得する。
