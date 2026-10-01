@@ -176,6 +176,20 @@ jobs:
           print('STORAGE_LIFECYCLE_POLICY=PASS')
           PY
 
+      - name: Project integration contract
+        run: |
+          set -euo pipefail
+          test -f docs/PROJECT_INTEGRATION_RULES.md
+          grep -q '## TGserver Integration' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q '## webhook gateway Integration' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q '## Libral Vault Usage' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q '## MCP / Tool Usage' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q 'Secret実値は保存しない' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q 'Project Integration' README.md
+          grep -q 'TGserver / webhook gatewayはShared Capabilityではなく' docs/WORKSPACE_REGISTRY.md
+          grep -q 'TGserver / webhook gatewayはShared CapabilityではなくProject Integration' docs/SERVER_CORE_DESIGN.md
+          grep -q 'PROJECT_INTEGRATION_RULES.md' docs/LOAD_SCOPE.md
+
       - name: Workspace initializer safety
         run: |
           set -euo pipefail
