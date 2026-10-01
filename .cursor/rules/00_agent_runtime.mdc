@@ -1,33 +1,48 @@
 ---
-description: G-ACE Workspace共通のAI実行入口・Context Routing・完了境界。
+description: G-ACE Workspace共通の実行入口・Context Routing・変更/検証境界。
 alwaysApply: true
 ---
 
 # G-ACE Workspace Runtime
 
-## Authority Entry
+## 1. Authority Entry
 
-Workspace内で作業するAI / Agent / Composerは、Project固有作業へ入る前にserver-coreを共通入口として扱う。
-
-開始順:
+Workspace内で作業するAI / Agent / Developerは、Project固有作業へ入る前にserver-coreを共通入口として扱う。
 
 ```text
 1. /home/admin1/server-core/README.md
 2. /home/admin1/server-core/docs/LOAD_SCOPE.md
-3. 今回のTaskに必要なserver-core正本だけ
+3. Taskに必要なserver-core Authorityだけ
 4. 対象Project README
-5. 対象Project内の必要なDesign / Project Tree / Design Delta / System Document / Source / Testだけ
+5. 対象Project内の必要なDesign / Tree / Delta / System Document / Source / Test
 ```
 
-server-coreの全正本を一括読込しない。
+server-core全体を毎回読み込まず、Taskの責務・対象・依存関係に必要な範囲だけを段階的に開く。
 
-同一Task範囲で一度確認済みの内容は、変更または情報不足が無ければ毎ターン再読込しない。
+## 2. Pre-execution Handoff
 
-## Context Loading
+Project Sourceを変更する前に、最低限次を解決する。
 
-対象ProjectではREADMEを入口とし、通常は対象Source・Input/Output・直接依存・関連Testから開始する。
+```text
+PURPOSE
+EXPECTED_RESULT
+TARGET_PROJECT
+TARGET_RESPONSIBILITY
+TARGET_REPOSITORY
+REQUIRED_AUTHORITY
+REUSE_CANDIDATES
+VERIFY_PATH
+CHANGE_BOUNDARY
+CONTEXT_SCOPE
+```
 
-必要な場合だけ次の順で拡張する。
+不明な値は推測で埋めず、調査対象として明示する。
+
+## 3. Context Loading
+
+対象ProjectではREADMEを入口にし、対象Source・Input/Output・直接依存・関連Testから開始する。
+
+必要な場合だけ次へ広げる。
 
 ```text
 Target Boundary
@@ -36,130 +51,66 @@ Target Boundary
   -> System / Repository
 ```
 
-`.env` / secrets / node_modules / dist / build / `.next` / archive / logs / dumps / cache / backupsは通常Contextへ入れない。Task対象になった場合だけ必要範囲を読む。
+`.env`、credential、dependency cache、build output、archive、logs、backups等はTask対象でない限り通常Contextへ含めない。
 
-## Development Rules
+## 4. Development Rules
 
-- 目的と期待結果を最初に固定する。
-- 新規Code生成前に既存Design / Code / Module / Type / Schema / Test / Template / 登録済み共有資産の再利用可否を確認する。
+- 目的と期待結果を先に定義する。
+- 新規実装前に既存Design / Code / Module / Type / Schema / Test / Template / shared capabilityを確認する。
 - 再利用は `そのまま利用 -> 設定・型調整 -> 薄いAdapter -> 共通部分抽出 -> 新規実装` の順で判断する。
-- 公開契約、Input、Output、依存方向、設定所有者、状態所有者を必要範囲で明確にする。
-- DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
-- 実装がDesignと意図的に異なる場合はDesign Deltaへ差分、理由、Evidence、適用Commitを残す。
-- 実装済み / 完成 / 稼働はREADMEだけで判断せず、Source / Test / Runtime Evidenceで確認する。
+- Public contract、Input/Output、依存方向、Config owner、State ownerを必要範囲で明確化する。
+- Project固有実装はowning Projectへ置き、server-coreへ吸収しない。
+- Design BaselineをCurrent実装に合わせるためだけに書き換えない。正式変更はDesign Deltaで追跡する。
 
-## Pre-execution Handoff
+## 5. Verification
 
-server-core routing is not complete merely because the documents were read. Before changing Project Source, the AI must have a resolved handoff boundary:
+PASS判定はTaskの受入条件に合わせる。
 
-```text
-PURPOSE
-EXPECTED_RESULT
-TARGET_PROJECT
-TARGET_RESPONSIBILITY
-TARGET_REPOSITORY
-AUTHORITY_REQUIRED
-REUSE_CANDIDATES
-VERIFY_PATH
-APPROVAL_BOUNDARY
-CONTEXT_SCOPE
-```
+Process起動、Error無し、HTTP 200、Build成功、Test runner終了、CI greenだけを、Task全体の完成証拠として扱わない。
 
-The AI may proceed to Project execution when these are known or explicitly marked `UNKNOWN / NOT_VERIFIED` where the uncertainty is itself part of the investigation. Unknowns must never be silently filled by assumption.
+必要な範囲で確認する。
+- Input / execution condition
+- expected output
+- changed state
+- state that must not change
+- regression
+- important failure cases
+- Runtime / Provider readback when relevant
 
-The handoff must identify:
-- the owning Project and Repository;
-- the minimum server-core Authority already consumed;
-- the Project README / required Project Authority to load next;
-- reusable existing assets that must be checked before new implementation;
-- the verification path and required evidence;
-- the exact Approval Boundary that stops further execution.
+未実行・未確認・未検証の状態はそのまま保持する。
 
-This is the boundary between **Command-Center routing** and **Project execution**. server-core does not perform the Project's implementation itself.
+## 6. Documentation / GitHub History
 
-## LibralCore
+仕様・構造・運用契約が変わった場合は、対象ProjectのDocumentation Gateに従う。
 
-共通開発方法論は `/home/admin1/server-core/CORE.md` を必要時に読む。
-
-論理構造:
-
-```text
-Part -> Feature -> Component -> System -> Application System
-```
-
-物理分割は分類のためではなく、再利用、交換、権限、障害範囲、状態所有、独立検証、運用上の実益がある場合に行う。
-
-## Verification
-
-次だけでPASSにしない。
-- Process起動
-- Error無し
-- HTTP 200
-- `true`
-- 空配列
-- Build成功
-- Test runner終了
-- CI green
-
-必要な範囲でInput、実行条件、期待出力、状態変化、変化してはならない状態、回帰、主要失敗条件、Runtime/Provider readbackを確認する。
-
-未確認 / 未実行 / 未検証を推測でPASSへ変えない。
-
-## Documentation Gate
-
-作業終了前に判定する。
-
-```text
-README_UPDATE_REQUIRED=YES/NO
-PROJECT_TREE_UPDATE_REQUIRED=YES/NO
-DESIGN_DELTA_REQUIRED=YES/NO
-SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
-```
-
-Requiredなのに未更新ならDocumentation Completeとしない。
-
-System / Feature bundle / reusable ModuleがREADMEだけでは説明なしに引継げない場合は、既存Documentを更新するか技術Documentを作成しREADMEから到達可能にする。
-
-## GitHub Work History
-
-ファイル変更を伴う完成作業では、管理者が明示禁止した場合を除き、対象Repositoryの運用に従ってcommit / pushし、可能ならremote readbackまで確認する。
-
-Commitは実作業報告として、必要に応じて目的、主要変更、影響範囲、検証、Document更新、残作業を追える内容にする。
+GitHub commit / PRは時系列の作業履歴。Design / README / Registry等のCurrent Authorityへチャット内容や作業日誌を混在させない。
 
 Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
 
-## Approval Boundary
+## 7. Change Boundary
 
-Masterの明示指示なしに次を行わない。
+変更操作は、対象Repository・Runbook・Provider contractで定義された権限と承認条件に従う。
+
+特に次はread-only確認と分離する。
 - main / PR merge
-- Production deploy / 公開 / 切替
-- Force push / Branch削除 / reset --hard / rebase
-- 既存Service stop / restart / recreate
-- Cloudflare / Hugging Face等のResource作成・変更・削除
-- Secret追加・削除・rotation
-- 新規Model download
-- 新規Repository / Project / Space作成
+- Production deploy / publish / cutover
+- force push / destructive history rewrite
+- active service stop / restart / recreate
+- Secret / credential mutation
+- Provider resource create/update/delete
 
-## Runtime
+Taskの依頼文だけから未定義の権限を推測しない。必要な承認条件は対象Authorityで確認する。
 
-本番常駐の標準経路はDocker / Docker Composeとする。
+## 8. Runtime
 
-Hostの `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` を本番常駐経路として追加しない。
+本番常駐の標準経路はDocker / Docker Compose。Project固有の正式例外がある場合はそのAuthorityを優先する。
 
-ServerはRuntime / Processing環境であり、GitHub Source履歴やProject Designの代替正本にしない。
+ServerはRuntime / Processing環境であり、GitHub Source履歴・Design・Documentの代替正本にしない。
 
-## Project Integration
+## 9. Shared Capability / Integration
 
-TGserver / webhook gateway / Libral Vault / Project-level MCP・ToolをProjectへ導入・変更するときは、`/home/admin1/server-core/docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で読む。TGserver / webhook gatewayはProject-owned Integration、Libral VaultはShared Capability + Project usage contractとして扱う。
+Shared CapabilityのDiscovery / owner / connection / permission / availability contractはserver-coreで管理し、実装本体はowning Project/runtimeに置く。
 
-## Shared Workspace Capabilities
+TGserver / webhook gateway等のProject-owned serviceはShared Capabilityと混同せず、`docs/PROJECT_INTEGRATION_RULES.md` に従って接続する。
 
-共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。TGserver / webhook gatewayはShared CapabilityではなくProject Integration Ruleで扱う。
-
-Secret値をChat / Git / Log / Documentへ出さない。
-
-未登録・未実装・未検証のCapabilityを利用可能と扱わない。
-
-## Final Rule
-
-Masterの現在の明示指示を最優先とする。手抜き、中抜き、必要工程を落とす簡略化、捏造、推測補完、未実行の実行済み扱い、未検証のPASS扱いは禁止する。
+Credential値をSource / Document / Logへ保存しない。Capabilityの利用可否は、必要なTaskで実設定・transport・interface・representative callを確認する。
