@@ -60,7 +60,15 @@ CHANGE_BOUNDARY
 
 ## 4. Target Repository Loading
 
-対象Projectへ入った後はREADMEを入口とする。
+対象Projectへ入った後はREADMEを入口にする。
+
+### Documentation ownership rule
+
+対象ProjectのREADME、READMEからリンクされたDesign / Tree / Delta / System / Operations / Contract等は、その対象Project RepositoryのAuthorityとして扱う。
+
+対象Project内で「READMEに付属するDocument」「各種Document」「READMEからリンクするDocument」を更新する指示は、対象Project Repository内のDocument更新を意味する。server-coreのDocument更新へ読み替えない。
+
+server-core側Documentを更新してよいのは、Taskがserver-core自身、またはWorkspace共通Routing / Authority / Shared Capability / 共通運用Contractの変更を明示的に対象としている場合だけである。
 
 ### Level 0: Repository Entry
 - Current purpose / responsibility
@@ -156,6 +164,8 @@ Registry entryはCurrent Runtime健康状態の証明ではない。
 
 一時的なセッション指示や個別作業メモをCurrent Authorityとして扱わない。
 
+Project固有Documentは対象Project Authority。server-core共通DocumentはWorkspace Authority。この2つを相互代用しない。
+
 ## 9. Runtime / Registry Rule
 
 READMEやRegistryのRuntime記載はDiscovery metadataまたはlast-known record。
@@ -180,5 +190,7 @@ Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / Gi
 ## 11. Router Failure Rule
 
 Task owner、Authority、Runtime state、credential contract等が不明な場合は推測で補完しない。
+
+Document更新先が不明な場合も、server-coreを既定の変更先にしない。対象Project READMEとRepository ownershipを確認してから更新する。
 
 `UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` 等の状態を維持し、必要なAuthority/readbackだけ追加取得する。
