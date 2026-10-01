@@ -170,6 +170,39 @@ This delta is applied by the synchronization commit that updates the command-cen
 ### Verification state
 The branch/PR must pass `server-core-guard` and documentation synchronization checks. Runtime availability remains separate from documentation completion.
 
+## 2026-10-01 — Remove stale Project-specific Cloudflare/GPG operation assets from server-core
+
+### Baseline
+The 2026-09-30 Cloudflare ownership correction states that Project-specific Cloudflare implementation belongs to the owning Project, while server-core keeps only the Workspace command contract and shared access boundaries.
+
+### Actual change
+The remaining stale Astera-specific Cloudflare operation manifest and helper were removed from server-core:
+
+- `operations/cloudflare.json`
+- `scripts/cloudflare_ops.py`
+
+The Cursor Cloudflare rule was rewritten as a Workspace-wide contract and no longer assumes Astera v8, GPG-Core, or a server-core Cloudflare runtime script.
+
+### Reason / root cause
+The previous ownership correction updated the documentation but left implementation assets that still encoded the former Astera-specific runtime and GPG-based credential path. Keeping those files would allow an AI to follow stale instructions despite the current Vault-based shared-secret architecture.
+
+### Evidence
+The removed manifest referenced `astera-v8-prod`, `api.asterav8.jp`, a Project-specific origin, and `GPG-Core`. The removed helper consumed that manifest and contained GPG-based secret handling. Current Workspace shared-secret authority is Libral Vault via `docs/WORKSPACE_SHARED_SECRETS.md` and `operations/cloudflare-account.json`.
+
+### Affected scope
+- `.cursor/rules/cloudflare-operations.mdc`
+- `docs/CLOUDFLARE_OPERATIONS.md`
+- `docs/STRUCTURE.md`
+- `operations/cloudflare.json` (removed)
+- `scripts/cloudflare_ops.py` (removed)
+- `.github/workflows/server-core-guard.yml`
+
+### Compatibility / rollback
+No live Cloudflare resource or Secret was changed. Project-specific Cloudflare operations remain with the owning Project. Reintroducing the removed files as Current server-core assets would restore the stale ownership/credential boundary and is not compatible with the current Workspace contract.
+
+### Verification state
+The final branch/PR HEAD must pass `server-core-guard`. This change itself does not claim live Cloudflare, Vault, or Project runtime verification.
+
 ## Update rule
 
 When a later architecture decision changes the server-core baseline, append a new section. Do not rewrite or delete prior accepted deltas merely because the current implementation changed.
