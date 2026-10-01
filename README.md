@@ -31,11 +31,28 @@ server-core全Documentを毎回読み込まない。Task対象に必要なAuthor
 6. **GitHub Work History** — Commit / PRを変更履歴として残す。
 7. **Server / Runtime Governance** — confirmed sourceからDeploy、Runtime verification、Storage/Backup/Recoveryまでの共通境界を定義する。
 
+## Mutation Ownership
+
+server-coreを読むことと、server-coreを変更することは別である。
+
+Project Task開始時は次を分離する。
+
+```text
+TARGET_REPOSITORY = 主対象Repository
+MUTATION_REPOSITORIES = 今回write/commitしてよいRepository
+READ_ONLY_REPOSITORIES = Authority/Reuse/Integration確認だけのRepository
+```
+
+通常のProject Taskではserver-coreは `READ_ONLY_REPOSITORIES` 側。server-core自身またはWorkspace共通Routing / Authority / Shared Capability / 共通運用Contractの変更がTask目的に含まれる場合だけmutation対象にする。
+
+Shared CapabilityやProject-owned serviceを「使う・接続する・検証する」ことは、そのowner Repository実装を変更する意味ではない。consumer Project側で閉じられるTaskはconsumer側だけを変更する。
+
 ## Standard Flow
 
 ```text
 REQUEST
   -> ROUTE
+  -> LOCK TARGET / MUTATION OWNERSHIP
   -> LOAD REQUIRED AUTHORITY
   -> DISPATCH TO PROJECT
   -> REUSE CHECK
@@ -128,11 +145,15 @@ Capability本体はowning Project/runtimeへ残す。Project固有の実装値�
 
 AvailabilityはTask時に必要な範囲で実設定 / transport / interface / representative callを確認する。過去利用実績とCurrent Runtime状態を分離する。
 
+Capabilityを利用・検証しただけでowner実装を変更しない。実装改修が必要と確認された場合だけ、そのowner Repositoryを別mutation対象として扱う。
+
 ## Project Integration Boundary
 
 TGserver / webhook gateway等のProject-owned serviceや、Libral Vault / MCP / ToolをProjectへ接続する場合は `docs/PROJECT_INTEGRATION_RULES.md` を共通契約として使う。
 
 Integration contractはowner、consumer、interface、credential、failure、verification等の必要事項だけを定義する。Project固有実装やRuntime内部をserver-coreへ移さない。
+
+Integration Contractを読むことを、server-coreやservice owner Repositoryへのwrite permissionと扱わない。
 
 ## Server / Runtime Boundary
 
@@ -144,6 +165,8 @@ Deploy Authority: `docs/DEPLOY_RUNBOOK.md`
 Storage Authority: `docs/STORAGE_LIFECYCLE.md`
 
 Runtime値は古い報告やRegistry記載から推測せず、Task判断に必要な時点でreadbackする。
+
+server-coreのDeploy/Storage Runbookを読んだことを、server-core自身や別Projectを操作対象にする根拠にしない。
 
 ## Change / Safety Boundary
 
