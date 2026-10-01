@@ -135,6 +135,14 @@ Typical triggers:
 - runtime/recovery/security/operations understanding is required;
 - another AI/developer should be able to continue without verbal explanation.
 
+### 4.1 Shared Capability vs Project Integration Boundary
+
+server-coreがWorkspace共通Capabilityとして管理する対象は、DebugAI / MCP / KB / GitHub / Cloudflare / Hugging Face / Runtime確認 / Libral Vault / Workspace Registry / Monitoring / Backup / Recovery / Search / Index とする。
+
+TGserver / webhook gatewayはShared CapabilityではなくProject Integration。共通導入契約は `docs/PROJECT_INTEGRATION_RULES.md`、実装本体は各Projectが所有する。
+
+Libral VaultはShared Capabilityとしてserver-coreがSecret契約・安全境界を管理し、Project側ではconsumer / injection / runtime usageをIntegration Ruleで定義する。Secret実値はProjectへ複製しない。
+
 ## 5. Development and Reuse
 
 LibralCore methodology is defined by `CORE.md`.

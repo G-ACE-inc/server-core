@@ -64,6 +64,31 @@ Task arrives
 
 責務が不明な場合、既存Projectを確認する前に新規Project/Moduleを作らない。
 
+### 3.1 Shared Capability Classification
+
+server-coreがWorkspace共通Capabilityとして管理する対象:
+
+```text
+DebugAI
+MCP
+KB
+GitHub
+Cloudflare
+Hugging Face
+Runtime確認
+Libral Vault
+Workspace Registry
+Monitoring
+Backup / Recovery
+Search / Index
+```
+
+TGserver / webhook gatewayはShared Capabilityではなく、Project導入時のIntegration Ruleとして扱う。Libral VaultはShared Capabilityとして管理し、Project利用契約は `docs/PROJECT_INTEGRATION_RULES.md` を正とする。
+
+### 3.2 Project Integration Contract
+
+ProjectへTGserver / webhook gateway / Libral Vault / MCP / Toolを導入・変更するときは `docs/PROJECT_INTEGRATION_RULES.md` を確認する。
+
 ## 4. Shared MCP Registry
 
 MCPの利用可能性は「文書にある」だけでは成立しない。

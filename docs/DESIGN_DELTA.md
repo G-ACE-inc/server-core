@@ -126,6 +126,50 @@ af9abd3e9d402f73430d7c97f270463a62f75f18
 ### Verification state
 The final branch/PR must pass `server-core-guard`. Live Cloudflare runtime is not modified or claimed verified by this documentation change.
 
+## 2026-09-30 — Separate Project Integration Contracts from Shared Capability Registry
+
+### Baseline design
+The command-center baseline defined shared capability control but did not explicitly distinguish Project-owned integration services from Workspace-shared capabilities.
+
+### Actual change
+The architecture now explicitly separates:
+
+- Shared Capability: DebugAI, MCP, KB, GitHub, Cloudflare, Hugging Face, Runtime確認, Libral Vault, Workspace Registry, Monitoring, Backup / Recovery, Search / Index.
+- Project Integration: TGserver and webhook gateway.
+- Dual boundary: Libral Vault remains a Shared Capability while Project-specific consumer / injection / runtime usage is governed by the Project Integration contract.
+
+`docs/PROJECT_INTEGRATION_RULES.md` is the common integration authority for TGserver / webhook gateway / Vault / MCP / Tool adoption by a Project.
+
+### Reason / root cause
+TGserver and webhook gateway are existing Project-owned systems. Treating them as generic shared capabilities would blur service ownership. Vault must remain centrally governed because Secret safety is Workspace-wide while usage is Project-specific.
+
+### Evidence
+- server-core Design requires Project-specific implementation to remain with the owning Project.
+- The Workspace Registry identifies TGserver and webhook gateway as Projects.
+- A separate integration contract is therefore required for common adoption rules.
+
+### Affected scope
+- `README.md`
+- `docs/SERVER_CORE_DESIGN.md`
+- `docs/LOAD_SCOPE.md`
+- `docs/G_ACE_WORKSPACE.md`
+- `docs/STRUCTURE.md`
+- `docs/WORKSPACE_REGISTRY.md`
+- `docs/PROJECT_TEMPLATE.md`
+- `docs/PROJECT_INTEGRATION_RULES.md`
+
+### Applied commit
+This delta is applied by the synchronization commit that updates the command-center documentation set.
+
+### Compatibility / migration / rollback
+- No TGserver or webhook gateway implementation is moved.
+- No Vault Secret value or live Secret registration is changed.
+- Existing Project integrations remain Project-owned.
+- The change clarifies discovery/routing/contract ownership only.
+
+### Verification state
+The branch/PR must pass `server-core-guard` and documentation synchronization checks. Runtime availability remains separate from documentation completion.
+
 ## Update rule
 
 When a later architecture decision changes the server-core baseline, append a new section. Do not rewrite or delete prior accepted deltas merely because the current implementation changed.

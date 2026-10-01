@@ -139,7 +139,11 @@ server-coreが管理するのは接続契約・owner・permission boundary・ava
 
 DebugAIは独立Project/runtime。Source mainへのMCP実装反映とWorkspace Live登録/Runtime verificationは別状態として扱う。
 
-## 10. Shared Secrets
+## 10. Project Integration
+
+ProjectへTGserver / webhook gateway / Libral Vault / MCP / Toolを導入するときは `docs/PROJECT_INTEGRATION_RULES.md` を確認する。TGserver / webhook gatewayはProject Integration、Libral VaultはShared Capability + Project利用契約として扱う。
+
+## 10.1 Shared Secrets## 10. Shared Secrets
 
 Secret / Token実値を各Projectへ複製しない。
 

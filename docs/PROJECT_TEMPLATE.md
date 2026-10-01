@@ -19,6 +19,15 @@ server-core README / LOAD_SCOPE
 
 Project固有情報をserver-coreへコピーしない。
 
+### Project Integration
+
+TGserver / webhook gateway / Libral Vault / MCP / ToolをProjectへ導入する場合は、`server-core/docs/PROJECT_INTEGRATION_RULES.md` を共通導入契約として確認する。
+
+- TGserver / webhook gatewayはProject Integrationとして定義する。
+- Libral VaultはShared Capabilityとして既存Contractを利用し、Project側にSecret実値を複製しない。
+- MCP / ToolはOwner / Interface / Permission / Mutation / Verification boundaryを定義する。
+- 導入後はProject READMEと必要なRegistry / Design Deltaを更新する。
+
 ## 開発開始前の確認
 
 新規Code生成前に確認する。

@@ -66,7 +66,9 @@ README.md
 
 ### Shared platform / operations
 - `WORKSPACE_REGISTRY.md`
-  - Project / Repository / MCP / Tool / Secret Contract / Runtime discovery
+  - Project / shared Capability / MCP / Tool / Secret Contract / Runtime discovery
+- `PROJECT_INTEGRATION_RULES.md`
+  - TGserver / webhook gateway / Vault / MCP / Tool Project導入契約
 - `WORKSPACE_SHARED_SECRETS.md`
   - Vault経由Workspace shared Secret / Token契約
 - `KB_REUSE_DESIGN.md`
@@ -145,6 +147,10 @@ server-coreが持つのは:
 - Workspace common use rule。
 
 Discovery authority: `docs/WORKSPACE_REGISTRY.md`。
+
+## Project Integration Boundary
+
+`docs/PROJECT_INTEGRATION_RULES.md` is the common contract for adopting TGserver / webhook gateway / Libral Vault / MCP / Tool in a Project. TGserver and webhook gateway remain Project-owned services; Libral Vault remains a Workspace-shared Secret capability with Project-specific usage contracts.
 
 ## Removed Redundant Authorities
 
