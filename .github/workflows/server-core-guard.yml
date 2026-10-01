@@ -233,6 +233,35 @@ jobs:
           print('WORKSPACE_MCP_MANIFEST=PASS')
           PY
 
+      - name: Workspace MCP merge compatibility
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir -p "$tmp/.cursor"
+          cat > "$tmp/.cursor/mcp.json" <<'JSON'
+          {
+            "mcpServers": {
+              "cloudflare-api": {
+                "url": "https://mcp.cloudflare.com/mcp",
+                "auth": {
+                  "CLIENT_ID": "8ilRHxRMw6Ntq3dP"
+                }
+              },
+              "huggingface": {
+                "url": "https://huggingface.co/mcp",
+                "headers": {
+                  "Authorization": "Bearer REDACTED_TEST_CREDENTIAL"
+                }
+              }
+            }
+          }
+          JSON
+          HOME="$tmp" bash scripts/install-workspace-mcp.sh
+          HOME="$tmp" bash scripts/verify-workspace-mcp.sh
+          grep -q 'REDACTED_TEST_CREDENTIAL' "$tmp/.cursor/mcp.json"
+          echo 'WORKSPACE_MCP_AUTH_PRESERVATION=PASS'
+
       - name: No tracked env files
         run: |
           set -euo pipefail
