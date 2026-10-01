@@ -29,7 +29,7 @@ Commit / Pushは対象RepositoryのCurrent policyとTaskのchange boundaryに従
 - File変更がある場合、GitHub履歴へ残すことを標準とする。
 - Pushが許可されているRepository/Branchではremote readbackまで行う。
 - Branch保護、review/PR、merge approval等はRepository policyを優先する。
-- 会話上の個人ルールをRepository共通仕様として固定しない。
+- 一時的なセッション指示や個別作業ルールをRepository共通仕様として固定しない。
 
 ## 3. Commit = Work History
 
