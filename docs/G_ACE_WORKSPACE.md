@@ -51,7 +51,7 @@ Project Taskの既定mutation先は対象Project Repository。
 
 ```text
 Target Project source/docs/config = target Project ownership
-server-core = routing/reference; explicit authorizationが無い限りread-only
+server-core = routing/reference; explicit owner authorizationが無い限りread-only
 Shared Capability owner = implementation authority; read-only for ordinary use/integration Task
 Provider/service owner = read-only unless owner-side change is actually required
 ```
