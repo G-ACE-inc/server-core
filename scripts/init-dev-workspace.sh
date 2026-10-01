@@ -5,6 +5,14 @@ PROJECTS_DIR="/home/admin1/projects"
 SERVER_CORE_ROOT="/home/admin1/server-core"
 SERVER_CORE_RULES="${SERVER_CORE_ROOT}/.cursor/rules"
 PROJECTS_RULES="${PROJECTS_DIR}/.cursor/rules"
+SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ "$SCRIPT_ROOT" != "$SERVER_CORE_ROOT" ]]; then
+  echo "[error] server-core workspace initializer must run from canonical checkout: ${SERVER_CORE_ROOT}" >&2
+  echo "[error] current checkout: ${SCRIPT_ROOT}" >&2
+  echo "NO_CHANGES_PERFORMED" >&2
+  exit 1
+fi
 
 PROJECT_NAME=""
 while [[ $# -gt 0 ]]; do
@@ -59,4 +67,5 @@ else
 fi
 
 bash "${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh"
+bash "${SERVER_CORE_ROOT}/scripts/verify-workspace-mcp.sh"
 echo "Done."
