@@ -89,7 +89,7 @@ Workspace共通MCPのserver-core管理設定は `operations/workspace-mcp.json`�
 | Hugging Face MCP | Hugging Face + Workspace contract | `operations/workspace-mcp.json` -> user global MCP | Hugging Face access | `CONFIG_REGISTERED`; live availability readback when needed |
 | DebugAI MCP | `seigo-gace/debug-ai` | DebugAI runtime/client registration | parent AIからDebugAI利用 | implementation/protocol verified; prior live use recorded; current availability must be read back |
 | Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | existing client/global config when present | deterministic parser | config presence has been observed; ownership remains Project/client-specific; current availability readback required |
-| Reusable KB bridge | owning KB Project/runtime | future verified config | reusable asset search/fetch | implementation/registration state belongs to KB authority; do not infer from this Registry |
+| Reusable KB bridge | owning KB Project/runtime | owning KB authority | reusable asset search/fetch | implementation/registration/availability stateはowning KB authorityで確認 |
 
 MCP availabilityは、文書やJSON entryだけでは成立しない。TaskでCurrent availabilityが必要なら、必要範囲でauthentication、transport、tool discovery、representative callを確認する。
 
@@ -104,7 +104,7 @@ HISTORICAL_LIVE_USE = RECORDED
 CURRENT_RUNTIME / CLIENT_REGISTRATION = READBACK_REQUIRED when needed
 ```
 
-個別Branch/HEAD、作業中の検証手順、会話上の報告はRegistryへ固定しない。
+個別Branch/HEAD、作業中の検証手順、一時的なセッション報告はRegistryへ固定しない。
 
 ## 6. Shared Tool / Operation Registry
 
@@ -143,7 +143,7 @@ Bridge: explicit verified API / MCP or equivalent interface
 Current availability: owning KB authority + live bridge readback
 ```
 
-既存 `astera-kb` / `kb-system` / `gace-dev-kb` を自動的に同一Authority扱いしない。統合する場合はowner・data model・bridge・migration・authorityを正式に決める。
+複数のKB Project/runtimeを自動的に同一Authority扱いしない。統合する場合はowner・data model・bridge・migration・authorityを正式に決める。
 
 Design authority: `docs/KB_REUSE_DESIGN.md`。
 
