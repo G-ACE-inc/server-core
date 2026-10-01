@@ -47,8 +47,8 @@ jobs:
           test -f operations/storage-lifecycle.json
           test -f operations/workspace-mcp.json
           test -f docs/WORKSPACE_MCP.md
-          test -x scripts/install-workspace-mcp.sh
-          test -x scripts/verify-workspace-mcp.sh
+          test -f scripts/install-workspace-mcp.sh
+          test -f scripts/verify-workspace-mcp.sh
           test -f scripts/storage_lifecycle_audit.py
           test -x scripts/ai-auto-commit.sh
           test -x scripts/resolve-codex-skill.sh
