@@ -1,61 +1,58 @@
 # SERVER CORE OPERATION PROTOCOL
 
-Version: 2026-09-30
-Role: G-ACE Workspace Command Centerの共通運用・承認・安全境界。
+Version: 2026-10-01
+Role: G-ACE Workspace Command Centerの共通運用・変更・安全境界。
 
 ## Purpose
 
-G-ACE Workspace全体で共通に適用するAuthority、変更権限、GitHub、Runtime、Secret、Storageの**共通境界だけ**を定める。
+G-ACE Workspace全体で共通に必要なAuthority、変更境界、GitHub、Runtime、Secret、Storageの運用契約を定める。
 
-server-coreは司令室としてTaskをRouting/Dispatchするが、Project固有実装のownerにはならない。
+server-coreはTaskをRouting / Dispatchするが、Project固有実装のownerにはならない。開発方法論、Project構成、Deploy詳細、KB、Storage lifecycle等は各専用Authorityへ分離し、本Protocolへ重複させない。
 
-開発方法論、Project構成、Context routing、Deploy、KB、Storage lifecycle等の詳細をここへ重複記載しない。作業は `README.md` -> `docs/LOAD_SCOPE.md` から必要Authorityだけ読む。
+## Authority / Change Control
 
-人間、AI、自動処理のすべてに適用する。
+変更操作は、対象Repository / Project / Provider / RuntimeのCurrent Authorityで定義された権限と承認条件に従う。
 
-## Authority / Approval
+質問、検討、read-only確認、提案、操作説明をMutation承認として扱わない。
 
-最終決定者はMaster。
-
-質問、検討、提案、操作説明を変更承認として扱わない。未確認状態を推測で補完しない。
-
-Masterの明示指示なしに次を実行しない。
+次の操作はread-only確認と分離し、対象Authorityの承認条件を満たした場合だけ実行する。
 - main / PR merge
-- Production deploy / 公開 / 切替
-- Force push / Branch削除 / destructive reset / rebase
-- 稼働中Serviceの停止 / recreate
-- Secret追加・削除・rotation
-- Provider resourceの作成・変更・削除
-- 新規Model download
+- Production deploy / publish / cutover
+- force push / destructive history rewrite
+- active service stop / restart / recreate
+- Secret / credential add / delete / rotation
+- Provider resource create / update / delete
 
-## Workspace Entry / Command Dispatch
+承認者の名称や会話上の呼称をserver-core仕様へ固定しない。必要な承認主体はProject / Provider / Repository contractで定義する。
+
+## Workspace Entry / Dispatch
 
 ```text
 server-core/README.md
   -> server-core/docs/LOAD_SCOPE.md
-  -> 今回必要なserver-core Authorityだけ
+  -> Taskに必要なserver-core Authorityだけ
   -> 対象Project README
-  -> 必要なProject Authority / Source / Testだけ
+  -> 必要なProject Authority / Source / Test
 ```
 
 全正本を一括読込しない。
 
-Workspace正規仕様: `docs/G_ACE_WORKSPACE.md`  
+Workspace仕様: `docs/G_ACE_WORKSPACE.md`  
 Discovery: `docs/WORKSPACE_REGISTRY.md`  
-server-core Design: `docs/SERVER_CORE_DESIGN.md`  
-Design差分: `docs/DESIGN_DELTA.md`
+Design: `docs/SERVER_CORE_DESIGN.md`  
+Design Delta: `docs/DESIGN_DELTA.md`
 
 ## Development Boundary
 
 - 開発方法論・再利用・5段Architecture・Module判断: `CORE.md`
-- Project構成、README / Design / Project Tree / Design Delta / System Document、Documentation Gate: `docs/PROJECT_TEMPLATE.md`
-- DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
-- Project固有の実装・Design・System仕様は各Project側に置く。
-- 公開契約は可能な限りCode上のInterface / Type / Schemaを正本とする。
+- Project構成・Documentation Gate: `docs/PROJECT_TEMPLATE.md`
+- Project固有の実装・Design・System仕様はowning Project側に置く。
+- 公開契約は可能な限りCode上のInterface / Type / Schema / Testと整合させる。
+- Design BaselineをCurrent実装へ合わせるためだけに書き換えない。
 
-## Validation
+## Verification
 
-必要範囲で確認する。
+Taskの受入条件に必要な範囲で確認する。
 - Input
 - execution condition
 - expected output
@@ -65,17 +62,15 @@ Design差分: `docs/DESIGN_DELTA.md`
 - major failure cases
 - Runtime / Provider readback when relevant
 
-Process起動、Error無し、`True`、空配列、HTTP 200、Build成功、CI greenだけではPASSとしない。
+Process起動、Error無し、HTTP 200、Build成功、CI green等は、それ自体がTaskの受入条件でない限り、Task全体のPASS証拠にはしない。
 
 未実行・未確認・未検証は `NOT_EXECUTED / UNKNOWN / NOT_VERIFIED` を維持する。
 
 ## Documentation / Work History
 
-Current仕様Documentへ作業日誌を混在させない。
+Current仕様Documentへチャット内容、個人向け指示、一時的な作業日誌を混在させない。
 
-作業履歴の正本はGitHub commit / PR。Commitは実作業報告として扱う。
-
-完成・検証状態、Project構造、Designとの差、完成System等が変わった場合はDocumentation Gateに従う。
+時系列の作業履歴はGitHub commit / PRへ残す。完成状態、Project構造、Designとの差、運用Contractが変わった場合はDocumentation Gateに従う。
 
 Commit / Push / Remote Readbackは `docs/AUTO_COMMIT.md` を正とする。
 
@@ -87,89 +82,49 @@ GitHub revisionとServer Runtimeを別状態として扱う。
 implementation / fix
  -> verify
  -> documentation gate
- -> commit as work report
+ -> commit
  -> push
  -> remote readback
  -> PR / CI when required
  -> confirmed GitHub revision
- -> required Master approval
+ -> required change approval
  -> Server deploy
  -> Runtime verification
 ```
 
 Deploy詳細は `docs/DEPLOY_RUNBOOK.md`。
 
-Server上の直接Source修正を正式開発履歴の代替にしない。Runtime修正が必要でも原則Repository開発Loopへ戻す。
+Server上の直接Source修正を正式開発履歴の代替にしない。Runtimeで修正必要性を発見した場合は、原則Repository開発Loopへ戻す。
 
 ## Shared Capability Boundary
 
-server-coreは共有Capabilityの実装本体を抱え込まず、Discovery・接続契約・所有者・権限境界・Availability stateを管理する。
+server-coreは共有Capabilityの実装本体を抱え込まず、Discovery・接続契約・owner・permission/change boundary・verification methodを管理する。
 
-Discovery Authority: `docs/WORKSPACE_REGISTRY.md`
+Registry記載や過去利用実績だけでCurrent Runtimeを証明しない。必要時は実設定・Provider・Endpoint・Docker・GitHub等をreadbackする。
 
-Registry記載だけでCurrent Runtimeを証明しない。必要時は実設定・Provider・Endpoint・Docker・GitHub等をreadbackする。
+Capability固有のCurrent状態は `docs/WORKSPACE_REGISTRY.md` を正とし、本Protocolへ個別Projectの一時状態を複製しない。
 
-### DebugAI
+## Project Integration
 
-DebugAIは独立Project/runtime。
+TGserver / webhook gateway等のProject-owned service、Libral Vault、MCP、ToolのProject導入契約は `docs/PROJECT_INTEGRATION_RULES.md` を正とする。
 
-Current source authorityは `seigo-gace/debug-ai` main。MCP Adapterを含むSourceはmainへmerge済みでsource-side verification済み。
+Shared CapabilityとProject-owned serviceを混同しない。
 
-ただし、Contabo Live DebugAI MCP Runtime接続とWorkspace MCP登録は別状態であり、確認完了までWorkspace上の `AVAILABLE_VERIFIED` とは扱わない。
+## Storage / Backup / Recovery
 
-### Reusable KB
+共通Storage分類・cleanup safety・backup/recovery契約は `docs/STORAGE_LIFECYCLE.md` を正とする。
 
-再利用開発KBのDesign Baselineは `docs/KB_REUSE_DESIGN.md`。
-
-Target storageはMaster PC `F:` 1 TB drive。server-coreはKB data本体を保持せずAccess / Registration / Lifecycle / Safety Contractだけを管理する。
-
-VPSからPC filesystemを直接読める前提を置かず、実装・検証済みAPI/MCP等のBridgeを使う。
-
-禁止:
-- 生ログの直接KB化
-- 判定基準なしの自動知識化
-- 未検証AI出力をvalidated assetとして登録
-- Secret / Token / credentialのKB保存
-- 未実装Bridgeを利用可能として扱う
-
-## Log / Cache / Cleanup / Backup
-
-詳細Design Baselineは `docs/STORAGE_LIFECYCLE.md`。
-
-共通境界:
-- Telegram: owning Project contractで定義されたdurable raw-log authority
-- Meilisearch: rebuildable search index
-- Redis: dedup / hot-cache
-- `/home/admin1/logs`: temporary operational disk state
-- VPS: processing/runtime environment
-- `/home/admin1/backups`: backup area。generic cleanup対象ではない
-
-Generic automatic cleanupはfail-closed。
-
-次を自動削除しない。
-- owner不明
-- active use
-- 未送信 / retry pending
-- recovery required
-- active transaction / lock
-- restore/rebuild path不明
-- Docker volumeを含むpersistent state
-
-`docker system prune -a --volumes` の汎用定期実行は禁止する。
+server-coreはProject固有Dataのownerにならない。owner不明、active use、retry/recovery中、restore path不明、persistent volumeの可能性があるDataをgeneric cleanup対象にしない。
 
 ## Docker / Runtime
 
-本番常駐の標準経路はDocker / Docker Compose。
+本番常駐の標準経路はDocker / Docker Compose。Project固有の正式例外がある場合はそのAuthorityを優先する。
 
-Hostのnode / python / pm2 / nohup / screen / tmux等を新しい本番常駐経路として追加しない。短時間の診断・検証Commandとは区別する。
+Container起動だけでRuntime PASSとせず、Taskに必要なEndpoint / Output / State / side effectまで確認する。
 
-Container起動だけでRuntime PASSとせず、必要なEndpoint / Output / State / side effectまで確認する。
+## Secret / Credential
 
-## Secret / Token
-
-Secret / Token / password / session / credentialをGit / Chat / Log / Documentへ保存しない。
-
-`.env` はcommit禁止。共有が必要なkey名は値なし `.env.example` に記載できる。
+Secret / Token / password / session / credentialの実値をGit / Source / Document / Logへ保存しない。
 
 Workspace共有Secretは `docs/WORKSPACE_SHARED_SECRETS.md` を正とし、各Projectへ実値を複製しない。
 
@@ -177,21 +132,17 @@ Workspace共有Secretは `docs/WORKSPACE_SHARED_SECRETS.md` を正とし、各Pr
 
 旧版・退避は `archive/YYYY-MM-DD/` を基本とする。
 
-- Secretをarchiveへ保存しない
-- archiveをCurrent state / Design / Ruleとして扱わない
+- credential実値をarchiveへ保存しない
+- archiveをCurrent Authorityとして扱わない
 - 通常Contextへ入れない
 
-## Absolute Prohibitions
+## Operational Invariants
 
-- 推測を事実として扱う
-- 未実行を実行済み、未検証をPASSにする
-- Testをskip/deleteして完成扱いにする
-- Design履歴を消す上書き
-- 作業履歴をCurrent仕様文書へ混在
-- 目的のないFile / Document / Module追加
-- Secret / Token実値の保存・commit
-- 未実装Capabilityを利用可能として扱う
-- `/home/admin1/logs` を永続保管庫として使う
-- KBへの無判定直接投入
-- Server cleanupでowner不明・active・recovery dataを削除
-- server-coreへProject固有実装を司令室都合だけで移す
+- 推測をCurrent事実として扱わない。
+- 未実行を実行済み、未検証をPASSとして記録しない。
+- Testを削除・無効化して完成条件を満たしたことにしない。
+- Design履歴を消してCurrent実装へ合わせない。
+- Current仕様Documentを時系列作業日誌にしない。
+- owner不明のFile / Module / Runtime / DataへMutationしない。
+- credential実値をSource / Git / Document / Logへ保存しない。
+- Project固有実装をserver-coreへ移して責務境界を崩さない。
