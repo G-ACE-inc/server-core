@@ -121,7 +121,7 @@ HISTORICAL_LIVE_USE = recorded
 CURRENT_SERVER / CLIENT AVAILABILITY = readback when required
 ```
 
-個別Branch/HEAD、作業中の検証手順、会話上の報告をWorkspace共通Contractへ固定しない。
+個別Branch/HEAD、作業中の検証手順、セッション内の一時報告をWorkspace共通Contractへ固定しない。
 
 ## Deterministic Japanese Parser MCP Boundary
 
