@@ -30,6 +30,9 @@ PURPOSE
 EXPECTED_RESULT
 TARGET_PROJECT
 TARGET_RESPONSIBILITY
+TARGET_REPOSITORY
+MUTATION_REPOSITORIES
+READ_ONLY_REPOSITORIES
 REQUIRED_SERVER_CORE_AUTHORITY
 REQUIRED_PROJECT_AUTHORITY
 REUSE_CANDIDATES
@@ -39,7 +42,26 @@ CHANGE_BOUNDARY
 
 対象Projectや責務が不明な場合は `docs/WORKSPACE_REGISTRY.md` でownerを確認する。
 
-## 4. Workspace Folders
+server-coreや別ProjectをAuthority確認のために読んだだけでは、そのRepositoryをmutation対象にしない。
+
+## 4. Mutation Ownership
+
+Project Taskの既定mutation先は対象Project Repository。
+
+```text
+Target Project source/docs/config = target Project ownership
+server-core = routing/reference; read-only by default for Project Task
+Shared Capability owner = implementation authority; read-only for ordinary use/integration Task
+Provider/service owner = read-only unless owner-side change is actually required
+```
+
+「server-coreを読め」「README/Documentを更新」「MCP/Tool/DebugAI/Vault/TGserver/webhook gateway/Cloudflareを使う・接続する・検証する」という指示だけで、server-coreやowner Repositoryをwrite対象へ昇格しない。
+
+複数Repository変更が必要な場合は、各Repositoryについて変更理由・範囲・verification・Git historyを分離する。
+
+Local Git作業ではwrite/commit前にcurrent repository rootとmutation targetを照合する。
+
+## 5. Workspace Folders
 
 通常Folder:
 - `/home/admin1/server-core`
@@ -53,7 +75,7 @@ CHANGE_BOUNDARY
 
 Task対象になった場合だけ必要範囲を開く。
 
-## 5. Project Entry
+## 6. Project Entry
 
 対象ProjectではREADMEを入口にする。
 
@@ -70,11 +92,12 @@ server-core側のDocument変更は、Workspace共通のRouting / Authority / Sha
 
 対象Source、直接依存、関連Testから開始し、必要時だけ `docs/LOAD_SCOPE.md` のLevelに従ってContextを広げる。
 
-## 6. Development Routine
+## 7. Development Routine
 
 ```text
 server-core command center
   -> target Project README
+  -> mutation/read-only repository lock
   -> target Project required Design / Tree / Delta / System Document
   -> repository / branch / HEAD / status
   -> Source / direct dependency / tests
@@ -90,7 +113,7 @@ server-core command center
   -> deploy/runtime when applicable
 ```
 
-## 7. Documentation Gate
+## 8. Documentation Gate
 
 Documentationは実変更に必要なものだけ更新する。
 
@@ -103,7 +126,7 @@ Project固有のDocumentation Gateをserver-core Documentation Gateで代用し�
 
 Documentation GateはDocument乱立のためのCheck listではない。
 
-## 8. GitHub Work History
+## 9. GitHub Work History
 
 GitHub commit / PRは時系列の実作業履歴。
 
@@ -111,21 +134,27 @@ Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productio
 
 Authority: `docs/AUTO_COMMIT.md`。
 
-## 9. Shared Capability
+Commit対象Repositoryはmutation ownershipに従う。参照専用RepositoryへTaskの副作用を残さない。
+
+## 10. Shared Capability
 
 Shared Capabilityの発見入口は `docs/WORKSPACE_REGISTRY.md`。
 
 server-coreが管理するのはdiscovery、owner、connection/config authority、permission/change boundary、verification method。Capability本体はowning Project/runtimeへ残す。
 
+Shared Capabilityを利用・登録・接続・検証することと、そのCapability実装を改修することを分離する。
+
 文書記載、過去利用実績、Current Runtime availabilityを分離する。
 
-## 10. Project Integration
+## 11. Project Integration
 
 Project-owned service、Libral Vault、MCP、ToolをProjectへ導入するときは `docs/PROJECT_INTEGRATION_RULES.md` を確認する。
 
 Project-owned serviceをWorkspace Shared Capabilityと誤分類しない。Shared CapabilityでもProject固有consumer/injection/runtime usageはProject側契約で管理する。
 
-## 11. Shared Credential
+通常はconsumer Project側で接続を完結し、service/capability owner側Source変更は必要性が確認された場合だけ別Task/別mutationとして扱う。
+
+## 12. Shared Credential
 
 Credential実値をProjectへ複製しない。
 
@@ -133,7 +162,9 @@ Credential実値をProjectへ複製しない。
 
 既存Contractが無い場合は、識別子・consumer・broker・allowlist・verification methodを先に定義する。
 
-## 12. Reusable Development KB
+Credential Contractを参照することと、Secret registration/rotation/provider mutationを分離する。
+
+## 13. Reusable Development KB
 
 Reusable KBはserver-core外のowning runtime/data storeに置く。
 
@@ -141,7 +172,9 @@ server-coreはAccess / Registration / Lifecycle / Safety / Bridge Contractを管
 
 Authority: `docs/KB_REUSE_DESIGN.md`。
 
-## 13. Server / Runtime
+KBを検索/取得/利用するTaskと、KB実装・bridge・dataを変更するTaskを分離する。
+
+## 14. Server / Runtime
 
 本番常駐は原則Docker / Docker Compose。Project固有の正式例外は対象Project Authorityを優先する。
 
@@ -151,7 +184,9 @@ Deployはconfirmed GitHub revisionを起点にし、対象Runbookのchange/appro
 
 Authority: `docs/DEPLOY_RUNBOOK.md`。
 
-## 14. Logs / Cache / Cleanup / Backup
+server-coreのRunbookを読んだことを、server-core自身をdeploy targetとする根拠にしない。
+
+## 15. Logs / Cache / Cleanup / Backup
 
 Authority: `docs/STORAGE_LIFECYCLE.md`。
 
@@ -159,7 +194,7 @@ server-coreは共通分類・監査・安全境界を定義する。Project固�
 
 owner不明、active、retry/recovery中、persistent volumeの可能性があるDataをgeneric auto-deleteしない。
 
-## 15. Runtime Readback Rule
+## 16. Runtime Readback Rule
 
 README / Registry / historical reportをCurrent Runtimeの代用にしない。
 
@@ -167,10 +202,13 @@ Container / Port / Domain / Provider / Deploy状態がTask判断に必要なら�
 
 未確認は `UNKNOWN / NOT_VERIFIED / NOT_EXECUTED` を維持する。
 
-## 16. Completion Rule
+Runtime readbackのために別Repository/Providerを参照しても、mutation permissionは自動付与されない。
+
+## 17. Completion Rule
 
 Workspace Taskの完了は、Taskに必要な範囲で次が閉じた場合に判定する。
 - correct Project / authority routing
+- correct mutation/read-only repository routing
 - requested implementation or operation
 - required verification
 - required target-Project documentation update
