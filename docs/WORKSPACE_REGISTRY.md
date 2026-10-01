@@ -3,11 +3,23 @@
 Version: 2026-10-01
 Role: server-coreからWorkspace内のProject・Repository・MCP・Tool・Credential Contract・Runtime確認先へ到達するためのDiscovery Registry。
 
-この文書は**発見・所有・接続契約の正本**であり、Live Runtime健康状態の証明ではない。Current RuntimeがTask判断に必要な場合は実readbackする。
+この文書は**発見・所有・接続契約の正本**であり、Live Runtime健康状態の証明でもMutation permissionでもない。Current RuntimeがTask判断に必要な場合は実readbackする。
 
 Credential実値は記録しない。
 
-## 1. State Model
+## 1. Registry Semantics
+
+Registry entryは次を示す。
+- owner / repository authority
+- known discovery path
+- role / responsibility
+- config or runtime readback authority
+
+Registry entryを見つけたことは、そのRepository / Runtime / Providerを変更してよいという意味ではない。
+
+Project Taskでは、Registryからownerを特定した後に `TARGET_REPOSITORY`、`MUTATION_REPOSITORIES`、`READ_ONLY_REPOSITORIES` を分離する。owner Repositoryは、利用・接続・検証だけなら原則read-onlyとする。
+
+## 2. State Model
 
 ```text
 DISCOVERED
@@ -30,7 +42,9 @@ UNKNOWN
 
 過去のRuntime実績とCurrent Runtime状態は分離する。Current再検証待ちだけを理由に実装済みCapabilityを `NOT_IMPLEMENTED` へ降格しない。
 
-## 2. Project Registry
+Stateはavailability evidenceであり、write permissionではない。
+
+## 3. Project Registry
 
 | Project | Repository authority | Known Workspace / Server entry | Role | Runtime readback authority |
 |---|---|---|---|---|
@@ -51,21 +65,26 @@ UNKNOWN
 
 Project追加時はRepository / owner / path / responsibility / authorityを確認してから追加する。
 
-## 3. Dispatch Rule
+Known pathを見つけたことだけで、そのpathへ `cd` / write / deploy / restartを行わない。Task ownerとmutation boundaryを先に確定する。
+
+## 4. Dispatch Rule
 
 ```text
 Task arrives
   -> identify responsibility
   -> find owning Project in this Registry
+  -> classify owning/adjacent repositories as mutation or read-only
   -> open owning Project README
   -> load required Project authority
-  -> perform work in owning Project
-  -> record source/config changes in GitHub history
+  -> perform work only in approved mutation repository
+  -> record source/config changes in that Repository's GitHub history
 ```
 
 責務が不明な場合、既存Projectを確認する前に新規Project / Moduleを作らない。
 
-## 4. Shared Capability Classification
+Registryに複数関連Projectが出ても、Task scopeが複数Repository mutationを要求しているとは限らない。
+
+## 5. Shared Capability Classification
 
 server-coreがWorkspace共通のDiscovery / Contractを管理する対象例:
 - DebugAI
@@ -79,7 +98,9 @@ server-coreがWorkspace共通のDiscovery / Contractを管理する対象例:
 
 TGserver / webhook gateway等のProject-owned serviceはProject Integrationとして扱う。Project導入契約は `docs/PROJECT_INTEGRATION_RULES.md`。
 
-## 5. Shared MCP Registry
+Shared Capability ownerをRegistryで発見したことと、そのimplementation owner Repositoryを変更することを分離する。
+
+## 6. Shared MCP Registry
 
 Workspace共通MCPのserver-core管理設定は `operations/workspace-mcp.json`、導入は `scripts/install-workspace-mcp.sh`、設定検証は `scripts/verify-workspace-mcp.sh`。
 
@@ -92,6 +113,8 @@ Workspace共通MCPのserver-core管理設定は `operations/workspace-mcp.json`�
 | Reusable KB bridge | owning KB Project/runtime | owning KB authority | reusable asset search/fetch | implementation/registration/availability stateはowning KB authorityで確認 |
 
 MCP availabilityは、文書やJSON entryだけでは成立しない。TaskでCurrent availabilityが必要なら、必要範囲でauthentication、transport、tool discovery、representative callを確認する。
+
+MCPを利用・検証するTaskを、MCP owner implementation変更やWorkspace-global registration変更へ自動昇格しない。
 
 ### DebugAI state semantics
 
@@ -106,7 +129,9 @@ CURRENT_RUNTIME / CLIENT_REGISTRATION = READBACK_REQUIRED when needed
 
 個別Branch/HEAD、作業中の検証手順、一時的なセッション報告はRegistryへ固定しない。
 
-## 6. Shared Tool / Operation Registry
+DebugAI Project TaskでREADME/Document/Sourceを変更する場合、DebugAI Repository側をmutation対象とする。Registry参照だけでserver-coreを変更しない。
+
+## 7. Shared Tool / Operation Registry
 
 | Capability | Authority | Purpose | Boundary |
 |---|---|---|---|
@@ -123,7 +148,9 @@ Tool追加条件:
 - failure behaviorが明確;
 - verification methodが定義可能。
 
-## 7. Shared Credential Contract Registry
+Tool/Runbook entryを発見したことは、そのToolがmutating actionを実行してよいという意味ではない。
+
+## 8. Shared Credential Contract Registry
 
 | Provider / purpose | Contract identifier | Consumer | Broker / machine contract | Runtime verification |
 |---|---|---|---|---|
@@ -132,7 +159,9 @@ Tool追加条件:
 
 Secret値、Token値、Vault internal credential値はRegistryへ入れない。
 
-## 8. Reusable Development KB Registry
+Contract discoveryとcredential registration/rotationを別Operationとして扱う。
+
+## 9. Reusable Development KB Registry
 
 server-coreはKB data/device/pathをCurrent Authorityとして固定しない。
 
@@ -147,7 +176,9 @@ Current availability: owning KB authority + live bridge readback
 
 Design authority: `docs/KB_REUSE_DESIGN.md`。
 
-## 9. Runtime Discovery Contract
+KBを検索/取得するTaskとKB implementation/data/bridgeを変更するTaskを分離する。
+
+## 10. Runtime Discovery Contract
 
 Runtime情報を確認する場合は最低限次を分離する。
 - Project
@@ -170,7 +201,9 @@ actual Provider / Docker / Endpoint / repository readback
   -> historical record
 ```
 
-## 10. Availability Gate
+Runtime discovery/readbackを行ったことをdeploy/restart/provider mutation permissionと扱わない。
+
+## 11. Availability Gate
 
 Capabilityを `AVAILABLE_VERIFIED` とする条件はCapabilityごとに定義するが、通常は次を必要範囲で確認する。
 
@@ -186,7 +219,9 @@ MUTATION_BOUNDARY_KNOWN=YES
 FAILURE_BEHAVIOR_KNOWN=YES
 ```
 
-## 11. Registry Update Gate
+`AVAILABLE_VERIFIED` は利用可能性の状態であり、Source/Config/Provider mutation権限ではない。
+
+## 12. Registry Update Gate
 
 次の場合は更新要否を判定する。
 - Project追加 / 削除 / rename / ownership変更
@@ -198,3 +233,5 @@ FAILURE_BEHAVIOR_KNOWN=YES
 - capabilityのdurableなavailability/ownership boundaryが変わった
 
 Registryは作業日誌ではない。Branch/HEAD単位の作業経過はGitHub commit / PRへ残す。
+
+Project固有のSource/Document変更だけではRegistry更新を必須にしない。
