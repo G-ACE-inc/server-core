@@ -31,6 +31,7 @@ TARGET_RESPONSIBILITY
 TARGET_REPOSITORY
 MUTATION_REPOSITORIES
 READ_ONLY_REPOSITORIES
+SERVER_CORE_MUTATION_AUTHORIZED
 REQUIRED_AUTHORITY
 REUSE_CANDIDATES
 VERIFY_PATH
@@ -47,12 +48,13 @@ Repositoryを読むことと、そのRepositoryへ書き込むことを分離す
 - `TARGET_REPOSITORY` はTaskの主対象。
 - `MUTATION_REPOSITORIES` は今回File/Config/Document/Commitを変更してよいRepositoryの明示集合。
 - `READ_ONLY_REPOSITORIES` は参照・Authority確認・再利用調査だけを行うRepository。
-- server-coreはProject Taskでは原則 `READ_ONLY_REPOSITORIES` 側。server-core自身またはWorkspace共通Contractを変更するTaskだけ `MUTATION_REPOSITORIES` に入れる。
+- `server-core` は **explicit owner authorizationが無い限り常にread-only**。`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立しない限り `MUTATION_REPOSITORIES` に入れない。
+- Workspace共通Contractに影響があるように見えること、server-coreを先に読むこと、server-coreのScript/Runbookを使うこと、別Projectの障害調査を行うことは、server-core変更許可ではない。
 - Shared Capabilityのowner Repositoryを読むことは、その実装を変更する許可ではない。利用・接続TaskではCapability ownerは原則read-onlyとし、consumer Project側だけを変更する。
 - Integration Taskでproducer / consumer / shared serviceの複数Repositoryが登場しても、必要なInterface変更が確認されるまで他Repositoryへ書き込まない。
 - 複数Repository変更が本当に必要なら、各Repositoryの変更理由・対象・verificationを分離してから変更する。
 
-File変更、Document更新、Git操作、Commit/Pushの直前に、現在のRepositoryが `MUTATION_REPOSITORIES` に含まれることを確認する。Local Git作業では必要に応じて `git rev-parse --show-toplevel` とtarget pathを照合する。
+File変更、Document更新、Git操作、Commit/Pushの直前に、現在のRepositoryが `MUTATION_REPOSITORIES` に含まれることを確認する。server-coreの場合は追加で `SERVER_CORE_MUTATION_AUTHORIZED=YES` を確認する。Local Git作業では必要に応じて `git rev-parse --show-toplevel` とtarget pathを照合する。
 
 server-coreのScript/Documentを参照または実行するためにserver-coreへ移動したことを、Task対象Repositoryがserver-coreへ変わった証拠にしない。
 
@@ -88,7 +90,7 @@ Document変更先はTARGET_PROJECT / TARGET_REPOSITORYに従う。
 
 server-coreは共通入口であって、Project Documentの既定変更先ではない。Project固有Document整備をserver-core Document更新へ読み替えない。
 
-server-core Documentを変更するのは、Taskがserver-core自身またはWorkspace共通Routing / Authority / Shared Capability / 共通運用Contractの変更を対象としている場合だけとする。
+server-core Documentは、server-core自体の変更についてexplicit owner authorizationがある場合だけ変更する。Workspace共通Contract変更の必要性をAIが判断しただけでは書き換えない。
 
 ## 7. Verification
 
@@ -127,7 +129,7 @@ Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productio
 - Secret / credential mutation
 - Provider resource create/update/delete
 
-Taskの依頼文だけから未定義の権限を推測しない。必要な承認条件は対象Authorityで確認する。
+server-coreへのwrite / commit / branch mutationは別途explicit owner authorizationが必要。Taskの依頼文、別Projectの作業、共通Authority参照から暗黙に推論しない。
 
 ## 10. Runtime
 
