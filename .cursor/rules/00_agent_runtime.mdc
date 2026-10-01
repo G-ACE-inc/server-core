@@ -48,6 +48,35 @@ Target Boundary
 - 実装がDesignと意図的に異なる場合はDesign Deltaへ差分、理由、Evidence、適用Commitを残す。
 - 実装済み / 完成 / 稼働はREADMEだけで判断せず、Source / Test / Runtime Evidenceで確認する。
 
+## Pre-execution Handoff
+
+server-core routing is not complete merely because the documents were read. Before changing Project Source, the AI must have a resolved handoff boundary:
+
+```text
+PURPOSE
+EXPECTED_RESULT
+TARGET_PROJECT
+TARGET_RESPONSIBILITY
+TARGET_REPOSITORY
+AUTHORITY_REQUIRED
+REUSE_CANDIDATES
+VERIFY_PATH
+APPROVAL_BOUNDARY
+CONTEXT_SCOPE
+```
+
+The AI may proceed to Project execution when these are known or explicitly marked `UNKNOWN / NOT_VERIFIED` where the uncertainty is itself part of the investigation. Unknowns must never be silently filled by assumption.
+
+The handoff must identify:
+- the owning Project and Repository;
+- the minimum server-core Authority already consumed;
+- the Project README / required Project Authority to load next;
+- reusable existing assets that must be checked before new implementation;
+- the verification path and required evidence;
+- the exact Approval Boundary that stops further execution.
+
+This is the boundary between **Command-Center routing** and **Project execution**. server-core does not perform the Project's implementation itself.
+
 ## LibralCore
 
 共通開発方法論は `/home/admin1/server-core/CORE.md` を必要時に読む。
@@ -119,9 +148,13 @@ Hostの `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` �
 
 ServerはRuntime / Processing環境であり、GitHub Source履歴やProject Designの代替正本にしない。
 
+## Project Integration
+
+TGserver / webhook gateway / Libral Vault / Project-level MCP・ToolをProjectへ導入・変更するときは、`/home/admin1/server-core/docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で読む。TGserver / webhook gatewayはProject-owned Integration、Libral VaultはShared Capability + Project usage contractとして扱う。
+
 ## Shared Workspace Capabilities
 
-共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。
+共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。TGserver / webhook gatewayはShared CapabilityではなくProject Integration Ruleで扱う。
 
 Secret値をChat / Git / Log / Documentへ出さない。
 

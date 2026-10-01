@@ -1,6 +1,6 @@
 # G-ACE WORKSPACE REGISTRY
 
-Version: 2026-09-30
+Version: 2026-10-01
 Role: server-core司令室から、Workspace内のProject・Repository・MCP・Tool・Secret Contract・KB・Runtime確認先へ最短で到達するためのDiscovery Registry。
 
 この文書は**発見・所有・接続契約の正本**であり、Live Runtime健康状態の証明ではない。Container / Port / Domain / Deploy / Provider状態は必要時に実readbackする。
@@ -23,7 +23,7 @@ NOT_VERIFIED
 UNKNOWN
 ```
 
-`SOURCE_VERIFIED` や `CONFIG_REGISTERED` を `RUNTIME_VERIFIED` と同一視しない。
+`SOURCE_VERIFIED` や `CONFIG_REGISTERED` を `RUNTIME_VERIFIED` と同一視しない。また、Current exact-headの再検証待ちを理由に、既に実装済み・過去利用実績ありのCapabilityを `NOT_IMPLEMENTED` / `NOT_REGISTERED` へ降格しない。
 
 ## 2. Project Registry
 
@@ -35,7 +35,7 @@ GitHub Repositoryが確認できる主要G-ACE Projectを記録する。Server P
 | TGserver | `seigo-gace/TGserver` | `/home/admin1/projects/TGserver` | log / delivery / storage integration Project | Current runtimeはProject README + Docker/readback |
 | Astera v8 | `seigo-gace/astera_v8` | `/home/admin1/projects/astera_v8` | judgment-material processing Project | Current runtimeはProject README + Docker/readback |
 | Astera App | `seigo-gace/astera-app` | `/home/admin1/projects/astera-app` | application/web Project | Provider/runtime readback required |
-| DebugAI | `seigo-gace/debug-ai` | independent Project/runtime | specialized debugging capability | source main verified; live MCP/runtimeは別確認 |
+| DebugAI | `seigo-gace/debug-ai` | independent Project/runtime | specialized debugging capability | MCP implementation/protocol verified; prior Codex use exists; current exact-head live re-verification separate |
 | Webhook Gateway | `seigo-gace/webhook-gateway` | UNKNOWN until server readback | webhook/gateway Project | NOT_VERIFIED here |
 | Astera KB | `seigo-gace/astera-kb` | UNKNOWN until target readback | Astera evidence/search knowledge Project | NOT_VERIFIED here |
 | Astera HP | `seigo-gace/astera-hp` | Provider/runtime specific | public HP Project | Provider readback required |
@@ -64,7 +64,34 @@ Task arrives
 
 責務が不明な場合、既存Projectを確認する前に新規Project/Moduleを作らない。
 
+### 3.1 Shared Capability Classification
+
+server-coreがWorkspace共通Capabilityとして管理する対象:
+
+```text
+DebugAI
+MCP
+KB
+GitHub
+Cloudflare
+Hugging Face
+Runtime確認
+Libral Vault
+Workspace Registry
+Monitoring
+Backup / Recovery
+Search / Index
+```
+
+TGserver / webhook gatewayはShared Capabilityではなく、Project導入時のIntegration Ruleとして扱う。Libral VaultはShared Capabilityとして管理し、Project利用契約は `docs/PROJECT_INTEGRATION_RULES.md` を正とする。
+
+### 3.2 Project Integration Contract
+
+ProjectへTGserver / webhook gateway / Libral Vault / MCP / Toolを導入・変更するときは `docs/PROJECT_INTEGRATION_RULES.md` を確認する。
+
 ## 4. Shared MCP Registry
+
+Workspace共通MCPはProjectごとの `.cursor/mcp.json` へ複製せず、Cursor User Global `~/.cursor/mcp.json` を共通実行入口とする。配布元は `operations/workspace-mcp.json`、導入は `scripts/install-workspace-mcp.sh`、確認は `scripts/verify-workspace-mcp.sh`。
 
 MCPの利用可能性は「文書にある」だけでは成立しない。
 
@@ -72,24 +99,33 @@ MCPの利用可能性は「文書にある」だけでは成立しない。
 
 | MCP | Owner / authority | Config authority | Purpose | Current boundary |
 |---|---|---|---|---|
-| Cloudflare API MCP | Cloudflare / Workspace config | `.cursor/mcp.json` | Cloudflare操作入口 | CONFIG_REGISTERED; live useはTask時に疎通確認 |
-| DebugAI MCP | `seigo-gace/debug-ai` | DebugAI `docs/MCP_ADAPTER.md`; Workspace config when registered | DebugAIを親AIからMCP利用 | SOURCE_VERIFIED / main merged; WORKSPACE_NOT_REGISTERED / LIVE_RUNTIME_NOT_VERIFIED |
-| Reuse KB MCP | future F: KB bridge owner | future verified config | F: reusable-development KB検索/登録 | NOT_IMPLEMENTED |
-| Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | actual client config | deterministic Japanese parser | repository DISCOVERED; Workspace availability NOT_VERIFIED here |
+| Cloudflare API MCP | Cloudflare / Workspace config | `~/.cursor/mcp.json` via `operations/workspace-mcp.json` | Cloudflare操作入口 | GLOBAL_CONFIG_SOURCE_VERIFIED; live use pending |
+| DebugAI MCP | `seigo-gace/debug-ai` | DebugAI-owned MCP runtime; server-core owns discovery/registration/verification contract | DebugAIを親AIからMCP利用 | IMPLEMENTED_SOURCE / MCP_PROTOCOL_VERIFIED / PRIOR_CODEX_USAGE_CONFIRMED; CURRENT_EXACT_HEAD_LIVE_REVERIFY_PENDING |
+| Reuse KB MCP | future F: KB bridge owner | future verified global config | F: reusable-development KB検索/登録 | NOT_IMPLEMENTED |
+| Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | global MCP after runtime readback | deterministic Japanese parser | repository DISCOVERED; GLOBAL_REGISTRATION_PENDING / LIVE availability NOT_VERIFIED |
 
-### DebugAI source boundary
+### Workspace-global provider MCPs
 
-Current source authority:
+Cloudflare API and Hugging Face official MCP are registered in the Workspace-global manifest. Project repositories should not copy these entries. OAuth/token state remains outside Git. Live availability is only promoted after discovery + representative call.
+
+### DebugAI source / usage boundary
+
+Current DebugAI authority records MCP stdio source/unit/real-protocol, 9 tools, health, and durable continuation surface as PASS. Master also reports prior successful Codex use of DebugAI MCP. Therefore the Capability is already implemented and has usage history.
+
+Current distinction:
 
 ```text
 repository = seigo-gace/debug-ai
-main merge = 92b65347f621fbd69d597deb3b7d2ce689f8f8ba
-MCP source / stdio protocol = verified before/through merge
-Workspace registration = NOT_EXECUTED
-Contabo live MCP runtime = NOT_VERIFIED
+MCP implementation = VERIFIED
+MCP stdio / protocol = VERIFIED
+MCP tool surface = 9 tools VERIFIED
+prior Codex usage = CONFIRMED_BY_MASTER
+current in-progress exact-head Server readback = PENDING
+current in-progress exact-head Codex registration readback = PENDING
+current in-progress exact-head representative live calls = PENDING
 ```
 
-このSource状態をLive availabilityと誤認しない。
+Current-head re-verification pending is **not** equivalent to `NOT_IMPLEMENTED` or `NOT_REGISTERED`. Historical successful use is also **not** sufficient to claim the current changing HEAD as freshly live-verified. Preserve both facts.
 
 ## 5. Shared Tool / Skill Registry
 
@@ -100,7 +136,7 @@ Contabo live MCP runtime = NOT_VERIFIED
 | Deploy routine | `docs/DEPLOY_RUNBOOK.md` | confirmed revision -> approved deploy -> runtime verify | DOCUMENTED; target runtime specific |
 | Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare common contract | IMPLEMENTED_CONTRACT |
 | Shared Secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 | IMPLEMENTED_CONTRACT; runtime availability must be checked |
-| DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent | source/CLI/HTTP/MCP contract present; live Workspace MCP not verified |
+| DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent | source/CLI/HTTP/MCP implemented; prior Codex use confirmed; current exact-head live reverify pending |
 | Storage lifecycle audit | `scripts/storage_lifecycle_audit.py`, `operations/storage-lifecycle.json` | disk/log/backup/Docker read-only audit | SOURCE_VERIFIED / SERVER_RUNTIME_NOT_VERIFIED |
 | Storage cleanup mutation | future approved implementation | safe deletion/rotation | NOT_IMPLEMENTED |
 

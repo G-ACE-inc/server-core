@@ -1,47 +1,47 @@
 ---
-description: Cloudflare Tunnel 運用ルール — Astera v8
+description: Cloudflare Workspace共通運用ルール
 globs:
-  - "**/operations/cloudflare.json"
-  - "**/scripts/cloudflare_ops.py"
-  - "**/docker-compose.yml"
-  - "**/.env*"
+  - "**/cloudflare*"
+  - "**/*cloudflare*"
 alwaysApply: false
 ---
 
-# Cloudflare 運用ルール
+# Cloudflare Workspace 運用ルール
 
-## 作業開始前（必須）
+## 作業開始前
 
-- `/home/admin1/server-core/docs/CLOUDFLARE_OPERATIONS.md` を読む
-- `python3 /home/admin1/server-core/scripts/cloudflare_ops.py inspect` を実行する
-- `python3 /home/admin1/server-core/scripts/cloudflare_ops.py plan` を実行する
+- `/home/admin1/server-core/docs/CLOUDFLARE_OPERATIONS.md` を読む。
+- `docs/WORKSPACE_REGISTRY.md` で対象Project / ownerを確認する。
+- 対象ProjectのREADMEとCloudflare固有Authorityを確認する。
+- Cloudflare Account APIを使う場合はLibral VaultのShared Secret Contractを使う。
+- Project固有のTunnel / DNS / Pages / Worker / Access / origin / runtime Secretは、対象ProjectのAuthorityを正とする。
 
 ## Mutation 前の承認
 
-- Cloudflare Resource（Tunnel・DNS・Ingress）の作成・変更・削除は管理者承認後に行う
-- Docker Compose の起動・停止・再構築は管理者承認後に行う
-- Git commit は管理者承認後に行う
-- Git push は commit とは別に管理者承認を得る
-- Preview 公開（Gate7:Tunnelだけ作成 / Gate8:Token暗号化・Runtime-Secret生成 / Gate9:Preview-Route・Access作成 / Gate10:Docker起動）と本番公開（Gate12:api.asterav8.jp本番公開）は別承認とする
+- Cloudflare Resourceの作成・変更・削除はMasterの明示承認が必要。
+- Production publish / cutoverは別のApproval Boundaryとして扱う。
+- Secret / credentialの登録・削除・rotationは別のMutation Boundaryとして扱う。
+- read-only確認をMutation承認とみなさない。
 
 ## Secret 取り扱い
 
-- Token・Secret・Credential の値を Chat・Terminal・Log・Git Diff に表示しない
-- Personal API Token を常駐処理（Container・スクリプト）に渡さない
-- Tunnel 専用 Token だけを cloudflared に渡す
-- `.env` を無断で作成・変更・表示・転記しない
-- Token が Container 環境変数・`docker inspect` 結果に出ていないことを確認する
+- Token・Secret・Credentialの値をChat・Terminal・Log・Git Diff・Documentへ出力しない。
+- Workspace共有SecretはLibral Vault経由で利用し、Projectへ実値を複製しない。
+- Cloudflare Account API credentialとProject固有Tunnel credentialを混同しない。
+- GPG-CoreをWorkspace Secretの経路として使用しない。
+- Secret値のdump、表示、転記を検証手段にしない。
 
 ## 確認と検証
 
-- Read-only 確認だけで書き込み権限を断定しない
-- `cloudflare_ops.py verify` を実行せずに完成扱いにしない
-- `preflight` の全チェック通過を確認してから `local-up` を実行する
-- Rollback 手順（CLOUDFLARE_OPERATIONS.md §14）を確認してから作業を開始する
+- Provider readbackで対象Resourceの実状態を確認する。
+- API 200 / Successだけで完了扱いしない。
+- 意図したResourceだけが変化したことを確認する。
+- Endpoint / DNS / Access / Project healthなど、Taskに必要なProject側挙動を確認する。
+- Runtime未確認を文書記載だけでPASSにしない。
 
 ## 設計遵守
 
-- 既存設計（CLOUDFLARE_OPERATIONS.md）を勝手に再解釈しない
-- 既存の astera-v8・TGserver・SQLite・Outbox 設定を変更しない
-- server-core に Container・Token・GPG 暗号化ファイルを置かない
-- cloudflare_ops.py から Cloudflare API を直接変更しない
+- server-coreはCloudflareの共通Routing / Secret boundary / Approval / Verification contractを担当する。
+- Project固有Cloudflare実装はserver-coreへ移さない。
+- Project固有のhostname、origin、Tunnel名、Docker service、runtime Secret path、release手順をserver-coreへ固定しない。
+- 変更が必要な場合は対象ProjectのGitHub development loopで実装し、server-coreは共通契約だけを更新する。

@@ -27,7 +27,8 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | 開発方法論 / 責務 / 5段 / Module / 再利用 | `CORE.md` |
 | 共通運用 / 禁止 / Approval Boundary | `SERVER_CORE_PROTOCOL.md` |
 | Workspace運用 / dispatch | `docs/G_ACE_WORKSPACE.md` |
-| Project / Repository / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
+| Project / Repository / shared Capability / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
+| Project Integration（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Git / Commit / Push / work report | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
 | 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
@@ -104,6 +105,18 @@ APPROVAL_BOUNDARY
 - 複数Component / Moduleへ影響
 - 局所情報で影響範囲を閉じられない
 - Masterが全体監査 / 全コード確認 / 横断調査を明示
+
+### 4.1 Project Integration Routing
+
+TGserver / webhook gateway / Libral Vault / Project-level MCP・Tool integrationを変更または追加するときは、`docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で確認する。
+
+```text
+server-core README
+  -> LOAD_SCOPE
+  -> PROJECT_INTEGRATION_RULES
+  -> target Project README
+  -> target Project authority / Source / Test
+```
 
 ## 5. Reuse Search Order
 

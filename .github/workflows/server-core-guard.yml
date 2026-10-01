@@ -45,6 +45,10 @@ jobs:
           test -f docs/WORKSPACE_SHARED_SECRETS.md
           test -f docs/CLOUDFLARE_OPERATIONS.md
           test -f operations/storage-lifecycle.json
+          test -f operations/workspace-mcp.json
+          test -f docs/WORKSPACE_MCP.md
+          test -f scripts/install-workspace-mcp.sh
+          test -f scripts/verify-workspace-mcp.sh
           test -f scripts/storage_lifecycle_audit.py
           test -x scripts/ai-auto-commit.sh
           test -x scripts/resolve-codex-skill.sh
@@ -75,6 +79,10 @@ jobs:
           grep -q 'Dispatch Rule' docs/WORKSPACE_REGISTRY.md
           grep -q 'Availability Gate' docs/WORKSPACE_REGISTRY.md
           grep -q 'WORKSPACE SHARED SECRETS' docs/WORKSPACE_SHARED_SECRETS.md
+          grep -q 'WORKSPACE SHARED MCP' docs/WORKSPACE_MCP.md
+          grep -q 'workspace-global' operations/workspace-mcp.json
+          grep -q 'cloudflare-api' operations/workspace-mcp.json
+          grep -q 'huggingface' operations/workspace-mcp.json
           grep -q 'Add-New-Contract Gate' docs/WORKSPACE_SHARED_SECRETS.md
           grep -q 'Command Center' docs/STRUCTURE.md
 
@@ -86,6 +94,11 @@ jobs:
           grep -q 'server-coreはCloudflareを.*司令室' docs/CLOUDFLARE_OPERATIONS.md
           ! grep -q 'api\.asterav8\.jp' docs/CLOUDFLARE_OPERATIONS.md
           ! grep -q 'astera-v8-prod' docs/CLOUDFLARE_OPERATIONS.md
+          test ! -e operations/cloudflare.json
+          test ! -e scripts/cloudflare_ops.py
+          ! git grep -nE '/home/admin1/projects/GPG-Core|astera-v8-prod|api\\.asterav8\\.jp|scripts/cloudflare_ops\\.py|operations/cloudflare\\.json' -- ':!archive/**' ':!docs/DESIGN_DELTA.md'
+          grep -q 'libral-vault' operations/cloudflare-account.json
+          grep -q 'secret_provider.*libral-vault' operations/cloudflare-account.json
 
       - name: LibralCore execution contract
         run: |
@@ -111,6 +124,10 @@ jobs:
           grep -q 'GitHub Work Report Contract' docs/SERVER_CORE_DESIGN.md
           grep -q 'server-core司令室' docs/G_ACE_WORKSPACE.md
           grep -q 'server-core/README.md' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'Pre-execution Handoff' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'TARGET_PROJECT' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'VERIFY_PATH' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'CONTEXT_SCOPE' .cursor/rules/00_agent_runtime.mdc
           grep -q 'WORKSPACE_REGISTRY.md' README.md
           grep -q 'KB_REUSE_DESIGN.md' docs/LOAD_SCOPE.md
           grep -q 'STORAGE_LIFECYCLE.md' SERVER_CORE_PROTOCOL.md
@@ -175,6 +192,75 @@ jobs:
           assert p['docker']['allow_volume_delete'] is False
           print('STORAGE_LIFECYCLE_POLICY=PASS')
           PY
+
+      - name: Project integration contract
+        run: |
+          set -euo pipefail
+          test -f docs/PROJECT_INTEGRATION_RULES.md
+          grep -q '## TGserver Integration' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q '## webhook gateway Integration' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q '## Libral Vault Usage' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q '## MCP / Tool Usage' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q 'Secret実値は保存しない' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q 'Project Integration' README.md
+          grep -q 'TGserver / webhook gatewayはShared Capabilityではなく' docs/WORKSPACE_REGISTRY.md
+          grep -q 'TGserver / webhook gatewayはShared CapabilityではなくProject Integration' docs/SERVER_CORE_DESIGN.md
+          grep -q 'PROJECT_INTEGRATION_RULES.md' docs/LOAD_SCOPE.md
+
+      - name: Workspace initializer safety
+        run: |
+          set -euo pipefail
+          bash -n scripts/init-dev-workspace.sh
+          bash -n scripts/install-workspace-mcp.sh
+          bash -n scripts/verify-workspace-mcp.sh
+          ! grep -nE 'rm[[:space:]]+-rf.*PROJECTS_RULES|rm[[:space:]]+-rf.*projects/\.cursor/rules' scripts/init-dev-workspace.sh
+          grep -q 'already exists and is not the required symlink; no deletion performed' scripts/init-dev-workspace.sh
+          grep -q 'unexpected target' scripts/init-dev-workspace.sh
+
+      - name: Workspace MCP manifest schema
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path('operations/workspace-mcp.json').read_text())
+          assert p['scope'] == 'workspace-global'
+          assert set(p['servers']) >= {'cloudflare-api', 'huggingface'}
+          for name, cfg in p['servers'].items():
+              assert cfg.get('url', '').startswith('https://')
+              assert 'token' not in json.dumps(cfg).lower()
+              assert 'secret' not in json.dumps(cfg).lower()
+          print('WORKSPACE_MCP_MANIFEST=PASS')
+          PY
+
+      - name: Workspace MCP merge compatibility
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir -p "$tmp/.cursor"
+          cat > "$tmp/.cursor/mcp.json" <<'JSON'
+          {
+            "mcpServers": {
+              "cloudflare-api": {
+                "url": "https://mcp.cloudflare.com/mcp",
+                "auth": {
+                  "CLIENT_ID": "8ilRHxRMw6Ntq3dP"
+                }
+              },
+              "huggingface": {
+                "url": "https://huggingface.co/mcp",
+                "headers": {
+                  "Authorization": "Bearer REDACTED_TEST_CREDENTIAL"
+                }
+              }
+            }
+          }
+          JSON
+          HOME="$tmp" bash scripts/install-workspace-mcp.sh
+          HOME="$tmp" bash scripts/verify-workspace-mcp.sh
+          grep -q 'REDACTED_TEST_CREDENTIAL' "$tmp/.cursor/mcp.json"
+          echo 'WORKSPACE_MCP_AUTH_PRESERVATION=PASS'
 
       - name: No tracked env files
         run: |

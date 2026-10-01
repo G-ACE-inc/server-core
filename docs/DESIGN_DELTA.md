@@ -126,6 +126,119 @@ af9abd3e9d402f73430d7c97f270463a62f75f18
 ### Verification state
 The final branch/PR must pass `server-core-guard`. Live Cloudflare runtime is not modified or claimed verified by this documentation change.
 
+## 2026-09-30 — Separate Project Integration Contracts from Shared Capability Registry
+
+### Baseline design
+The command-center baseline defined shared capability control but did not explicitly distinguish Project-owned integration services from Workspace-shared capabilities.
+
+### Actual change
+The architecture now explicitly separates:
+
+- Shared Capability: DebugAI, MCP, KB, GitHub, Cloudflare, Hugging Face, Runtime確認, Libral Vault, Workspace Registry, Monitoring, Backup / Recovery, Search / Index.
+- Project Integration: TGserver and webhook gateway.
+- Dual boundary: Libral Vault remains a Shared Capability while Project-specific consumer / injection / runtime usage is governed by the Project Integration contract.
+
+`docs/PROJECT_INTEGRATION_RULES.md` is the common integration authority for TGserver / webhook gateway / Vault / MCP / Tool adoption by a Project.
+
+### Reason / root cause
+TGserver and webhook gateway are existing Project-owned systems. Treating them as generic shared capabilities would blur service ownership. Vault must remain centrally governed because Secret safety is Workspace-wide while usage is Project-specific.
+
+### Evidence
+- server-core Design requires Project-specific implementation to remain with the owning Project.
+- The Workspace Registry identifies TGserver and webhook gateway as Projects.
+- A separate integration contract is therefore required for common adoption rules.
+
+### Affected scope
+- `README.md`
+- `docs/SERVER_CORE_DESIGN.md`
+- `docs/LOAD_SCOPE.md`
+- `docs/G_ACE_WORKSPACE.md`
+- `docs/STRUCTURE.md`
+- `docs/WORKSPACE_REGISTRY.md`
+- `docs/PROJECT_TEMPLATE.md`
+- `docs/PROJECT_INTEGRATION_RULES.md`
+
+### Applied commit
+This delta is applied by the synchronization commit that updates the command-center documentation set.
+
+### Compatibility / migration / rollback
+- No TGserver or webhook gateway implementation is moved.
+- No Vault Secret value or live Secret registration is changed.
+- Existing Project integrations remain Project-owned.
+- The change clarifies discovery/routing/contract ownership only.
+
+### Verification state
+The branch/PR must pass `server-core-guard` and documentation synchronization checks. Runtime availability remains separate from documentation completion.
+
+## 2026-10-01 — Remove stale Project-specific Cloudflare/GPG operation assets from server-core
+
+### Baseline
+The 2026-09-30 Cloudflare ownership correction states that Project-specific Cloudflare implementation belongs to the owning Project, while server-core keeps only the Workspace command contract and shared access boundaries.
+
+### Actual change
+The remaining stale Astera-specific Cloudflare operation manifest and helper were removed from server-core:
+
+- `operations/cloudflare.json`
+- `scripts/cloudflare_ops.py`
+
+The Cursor Cloudflare rule was rewritten as a Workspace-wide contract and no longer assumes Astera v8, GPG-Core, or a server-core Cloudflare runtime script.
+
+### Reason / root cause
+The previous ownership correction updated the documentation but left implementation assets that still encoded the former Astera-specific runtime and GPG-based credential path. Keeping those files would allow an AI to follow stale instructions despite the current Vault-based shared-secret architecture.
+
+### Evidence
+The removed manifest referenced `astera-v8-prod`, `api.asterav8.jp`, a Project-specific origin, and `GPG-Core`. The removed helper consumed that manifest and contained GPG-based secret handling. Current Workspace shared-secret authority is Libral Vault via `docs/WORKSPACE_SHARED_SECRETS.md` and `operations/cloudflare-account.json`.
+
+### Affected scope
+- `.cursor/rules/cloudflare-operations.mdc`
+- `docs/CLOUDFLARE_OPERATIONS.md`
+- `docs/STRUCTURE.md`
+- `operations/cloudflare.json` (removed)
+- `scripts/cloudflare_ops.py` (removed)
+- `.github/workflows/server-core-guard.yml`
+
+### Compatibility / rollback
+No live Cloudflare resource or Secret was changed. Project-specific Cloudflare operations remain with the owning Project. Reintroducing the removed files as Current server-core assets would restore the stale ownership/credential boundary and is not compatible with the current Workspace contract.
+
+### Verification state
+The final branch/PR HEAD must pass `server-core-guard`. This change itself does not claim live Cloudflare, Vault, or Project runtime verification.
+
 ## Update rule
 
 When a later architecture decision changes the server-core baseline, append a new section. Do not rewrite or delete prior accepted deltas merely because the current implementation changed.
+## 2026-10-01 — Workspace-global MCP execution route
+
+### Baseline
+server-core already classified MCP / Cloudflare / Hugging Face as Workspace shared capabilities, but the executable Cursor route was still Project-dependent or only documented. This caused the known failure mode where one Project had an MCP registration/token path while another Project did not.
+
+### Adopted design
+Use Cursor User Global MCP (`~/.cursor/mcp.json`) as the Workspace-wide execution entry for shared remote MCPs. Project `.cursor/mcp.json` remains reserved for Project-owned or explicitly Project-scoped MCPs.
+
+Source of truth:
+- `operations/workspace-mcp.json` — shared MCP manifest without provider tokens;
+- `scripts/install-workspace-mcp.sh` — safe merge into the user-global Cursor MCP config;
+- `scripts/verify-workspace-mcp.sh` — config verification and optional Cursor CLI inspection;
+- `docs/WORKSPACE_MCP.md` — contract and availability gate.
+
+Current shared registrations:
+- Cloudflare API MCP;
+- Hugging Face official MCP.
+
+### Security / ownership
+- Provider credentials are not copied into Project repositories.
+- OAuth-capable providers authenticate at the global MCP layer.
+- Bearer-token providers must use the approved Workspace Secret / Libral Vault path; plaintext tokens remain outside Git and Project config.
+- Existing unrelated user MCP servers are preserved.
+- A name collision with a different definition fails closed rather than silently overriding an existing server.
+
+### Initialization
+`scripts/init-dev-workspace.sh` now invokes the shared MCP installer after establishing the common Workspace rules path. Therefore new Workspace initialization does not depend on each Project remembering to register the shared MCPs.
+
+### Verification boundary
+Source/CI verification confirms the manifest schema, installer shell syntax, documentation and registration contract. Actual server-side `~/.cursor/mcp.json`, OAuth authentication, transport, tool discovery and representative calls remain Runtime verification steps and are not claimed as complete until executed on the intended Cursor/Agent host.
+
+### Deferred shared MCPs
+DebugAI MCP and Deterministic Japanese Parser MCP are not globally registered yet because their intended live runtime/endpoint has not been verified. No path or endpoint is invented.
+
+### Compatibility
+Project-specific MCPs remain supported. Cursor project-level configuration may override a global server name; such overrides are prohibited by Workspace policy unless explicitly approved.

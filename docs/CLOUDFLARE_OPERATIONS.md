@@ -23,8 +23,8 @@ server-coreが担当するのは:
 - Cloudflare MCP / Account API discovery
 - common approval boundary
 - common provider verification rule
-- `operations/cloudflare*.json` のSecret値を含まない共通契約
-- `scripts/cloudflare_ops.py` が共通用途として使われる場合の入口
+- `operations/cloudflare-account.json` のSecret値を含まないAccount API契約
+- `operations/huggingface.json` 等の他Provider契約とは混同しない
 
 ### owning Project owns
 - hostname / route / zone / worker / pages / tunnelのProject固有Design
@@ -195,7 +195,9 @@ Git historyに残る旧server-core Cloudflare文書はhistorical implementation 
 
 ## 13. Common Tooling
 
-`operations/cloudflare.json`, `operations/cloudflare-account.json`, `scripts/cloudflare_ops.py` が存在しても、それだけで全Projectへ適用可能とは扱わない。
+server-coreにProject固有Cloudflare操作Scriptを常設しない。CloudflareのProject固有操作は対象ProjectのCurrent Authorityにある公式API / MCP / approved project-specific scriptを使う。
+
+Workspace共通でserver-coreが保持する機械可読契約は、Shared Secret / Account API等の共通境界に限定する。
 
 Tool利用前に:
 - target Project compatibility
