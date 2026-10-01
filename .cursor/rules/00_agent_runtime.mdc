@@ -83,7 +83,7 @@ Process起動、Error無し、HTTP 200、Build成功、Test runner終了、CI gr
 
 仕様・構造・運用契約が変わった場合は、対象ProjectのDocumentation Gateに従う。
 
-GitHub commit / PRは時系列の作業履歴。Design / README / Registry等のCurrent Authorityへチャット内容や作業日誌を混在させない。
+GitHub commit / PRは時系列の作業履歴。Design / README / Registry等のCurrent Authorityへ一時的なセッション指示や作業日誌を混在させない。
 
 Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
 
