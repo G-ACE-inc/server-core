@@ -1,21 +1,21 @@
 # WORKSPACE SHARED SECRETS
 
-Version: 2026-09-30
-Role: G-ACE Workspace司令室からShared Secret / Tokenを安全に利用するための共通契約。
+Version: 2026-10-01
+Role: Workspace Shared Secret / credentialを安全に利用するための共通契約。
 
-この文書はSecret値の保管場所ではない。Secret / Token / password / credential / session値をGit / Chat / Log / Documentへ出さない。
+この文書はSecret値の保管場所ではない。Secret / Token / password / credential / session値をGit / Source / Document / Logへ保存しない。
 
-## 1. Command-Center Responsibility
+## 1. server-core Responsibility
 
-server-coreが管理するのは次だけ。
-- provider / purpose;
-- secret identifier;
-- allowed consumer;
-- broker / Vault access path;
-- allowed origin / request boundary;
-- identity/availability verification method;
-- failure behavior;
-- rotation / replacement boundary。
+server-coreが管理するのは次のContract情報だけ。
+- provider / purpose
+- secret identifier
+- allowed consumer
+- broker / Vault access route
+- allowed origin / request boundary
+- identity / availability verification method
+- failure behavior
+- rotation / replacement boundary
 
 Secret値そのものはserver-coreへ置かない。
 
@@ -24,16 +24,19 @@ Secret値そのものはserver-coreへ置かない。
 機械可読Authority:
 - Hugging Face: `operations/huggingface.json`
 - Cloudflare Account API: `operations/cloudflare-account.json`
-- Cloudflare Tunnel: `operations/cloudflare.json` + `docs/CLOUDFLARE_OPERATIONS.md`（Account APIとは別契約）
 
-| Provider / purpose | secret_id | consumer | allowlist / provider identity |
+`operations/cloudflare.json` はCurrent server-core assetではない。Project固有Tunnel credentialはowning Project authorityで管理する。
+
+| Provider / purpose | secret_id | consumer | provider verification |
 |---|---|---|---|
-| Hugging Face | `hf-token` | `g-ace-workspace` | `https://huggingface.co`; identity `https://huggingface.co/api/whoami-v2` |
-| Cloudflare Account API | `cf-account-api` | `g-ace-workspace` | `https://api.cloudflare.com`; identity `/client/v4/user` + `/client/v4/accounts` |
+| Hugging Face | `hf-token` | `g-ace-workspace` | `https://huggingface.co/api/whoami-v2` またはTaskに必要なrepresentative call |
+| Cloudflare Account API | `cf-account-api` | `g-ace-workspace` | `/client/v4/user` + `/client/v4/accounts` またはTaskに必要なrepresentative call |
 
 ## 3. Broker Contract
 
-Current broker authority: Libral Vault.
+Current broker authority: Libral Vault。
+
+Runtime entry:
 
 ```text
 Vault endpoint: http://127.0.0.1:8791
@@ -43,7 +46,7 @@ Consumer: g-ace-workspace
 Internal auth source: /home/admin1/.config/libral-vault/internal-token
 ```
 
-Internal auth value is read only at runtime and is never copied into this document, Chat, Git or logs.
+Internal auth valueはruntimeでのみ読み、Source / Git / Document / Logへ複製しない。
 
 Provider request pattern:
 
@@ -58,77 +61,63 @@ Provider request pattern:
 }
 ```
 
-Vault injects the provider credential. The caller must not need the plaintext provider token.
+Vaultがprovider credentialをinjectし、callerはplaintext provider tokenを必要としない。
 
 ## 4. Use Rule
 
-When a Project needs a Workspace-shared Secret:
-
 ```text
 Project needs provider access
-  -> server-core WORKSPACE_REGISTRY / this document
-  -> identify existing contract
+  -> WORKSPACE_REGISTRY / this contract
+  -> identify existing secret contract
   -> use broker action
-  -> verify provider response / identity as required
-  -> do not add Project-local token copy/helper unless formally required
+  -> verify provider identity / representative behavior as required
 ```
 
-If no contract exists, do not invent an identifier or copy a token into the Project. Define the new contract first.
+既存Contractが無い場合は、secret id、consumer、allowlist、broker route、verification method、failure behaviorを先に定義する。Project-local token copyを即席で作らない。
 
-## 5. Secret Registration / Replacement
+## 5. Registration / Replacement
 
-Registration or replacement is a mutation boundary. It requires explicit authorization under `SERVER_CORE_PROTOCOL.md`.
+Credential registration / replacementはMutation。
 
-Input credential should be supplied through a temporary process environment or another approved secure channel; never through Chat or committed files.
+対象Runtime / Provider Authorityで定義された承認条件を満たしてから実行する。
+
+Credential入力は一時process environment等のapproved secure channelを使用し、committed fileや長期保存される出力へ残さない。
 
 Required registration fields:
-- id;
-- value (runtime only, never documented);
-- allowed consumers;
-- provider/purpose linkage.
+- id
+- value (runtime input only)
+- allowed consumers
+- provider / purpose linkage
 
-Replacement must preserve a clear failure/recovery path. Do not delete the old credential before the replacement procedure is understood when doing so could break an active service.
+Replacement時はactive consumerへの影響、rollback/recovery、old credential removal timingを確認する。
 
 ## 6. Identity / Availability Verification
 
-Vault intentionally does not return plaintext tokens.
+Vaultはplaintext tokenを返さない設計を前提とする。
 
-Verify a registered credential through the provider identity endpoint or a harmless representative API call.
+Credential availabilityはprovider identity endpointまたはharmless representative API callで確認する。
 
-### Hugging Face
-- secret id: `hf-token`
-- identity endpoint: `https://huggingface.co/api/whoami-v2`
-- HTTP 401 means invalid/unauthorized credential until proven otherwise.
-
-### Cloudflare Account API
-- secret id: `cf-account-api`
-- identity checks: `/client/v4/user` and `/client/v4/accounts`
-- `tokens/verify` is not the sole identity authority because endpoint permission behavior may differ.
-
-Only expose non-secret identity fields needed for verification, such as id/name/status/email where appropriate.
+HTTP statusだけでpermission scopeまで証明されたとみなさず、Taskで必要なoperationが可能かを確認する。
 
 ## 7. Failure Contract
 
-Known broker/provider failure classes:
-- `SECRET_NOT_FOUND`: secret absent or identifier mismatch;
-- `ACCESS_DENIED`: consumer not allowed;
-- `HTTP_ORIGIN_NOT_ALLOWED`: provider origin not allowlisted;
-- provider 401/403: invalid credential or insufficient provider permission;
-- broker unavailable: shared-secret capability is not available until broker health is restored.
+代表的failure class:
+- `SECRET_NOT_FOUND`
+- `ACCESS_DENIED`
+- `HTTP_ORIGIN_NOT_ALLOWED`
+- provider 401/403
+- broker unavailable
+- provider/API transport failure
 
-A failure must not trigger fallback to printing, copying or embedding the plaintext Secret.
+Failure時にplaintext credentialを表示・コピー・embedするfallbackへ切り替えない。
 
 ## 8. Consumer Boundary
 
-Workspace-shared credentials may be used only by explicitly allowed consumers.
+Workspace-shared credentialは明示されたconsumerだけが利用する。
 
-Project-specific credentials that should not be shared across the Workspace remain Project-owned and must not be silently promoted into the shared contract.
-
-Shared does not mean unrestricted.
+Project-specific credentialを自動的にWorkspace shared contractへ昇格しない。Sharedはunrestrictedを意味しない。
 
 ## 9. Add-New-Contract Gate
-
-Before adding a shared Secret contract, determine:
 
 ```text
 SHARED_USE_CASE_CONFIRMED=YES
@@ -143,32 +132,31 @@ FAILURE_BEHAVIOR_DEFINED=YES
 PLAINTEXT_PERSISTENCE=NO
 ```
 
-Unknown fields block the contract from being marked available.
+Unknown項目がある状態で `AVAILABLE_VERIFIED` としない。
 
 ## 10. Registry Sync
 
-When a shared Secret contract is added/removed/renamed or its consumer/broker path changes:
-- update the relevant `operations/*.json` contract;
-- update `docs/WORKSPACE_REGISTRY.md`;
-- update this document when the common use/failure model changes;
-- run applicable validation;
-- record the work in GitHub commit / PR.
+shared credential contractが追加/削除/rename、consumer/broker path変更された場合:
+- relevant `operations/*.json` contractを更新
+- `docs/WORKSPACE_REGISTRY.md` を更新
+- common use/failure modelが変わる場合は本Documentを更新
+- applicable validationを実行
+- source/config変更をGitHub historyへ残す
 
-Do not turn this document into a chronological work log.
+本Documentをchronological work logにしない。
 
-## 11. Prohibitions
+## 11. Safety Invariants
 
-- Secret / Token values in Git / Chat / docs / logs;
-- plaintext Secret files for Workspace sharing;
-- per-Project duplicate token helpers when an approved shared contract already exists;
-- dumping plaintext values from Vault;
-- using one Provider credential as another contract without explicit design;
-- confusing Cloudflare Tunnel credentials with Cloudflare Account API credentials;
-- using GPG-Core as an implicit replacement for the current Workspace shared-secret contract;
-- claiming Secret availability without broker/provider verification when the task requires live access.
+- Secret / Token valuesをGit / Source / docs / logsへ保存しない。
+- Workspace sharingのためにplaintext Secret fileを増やさない。
+- approved shared contractがある場合、Projectごとのduplicate token helperを作らない。
+- Vaultからplaintext値をdumpしない。
+- Provider credentialの目的/consumerを別Contractへ流用しない。
+- Cloudflare Account API credentialとProject固有Tunnel credentialを混同しない。
+- credential availabilityをTaskで必要なbroker/provider verificationなしに断定しない。
 
 ## 12. Availability Boundary
 
-This document can be complete as a **contract** while current broker/provider Runtime is `NOT_VERIFIED` for a given task.
+Document contract completenessとbroker/provider Current Runtime availabilityは別状態。
 
-Document completeness and Runtime availability are separate states.
+Current availabilityがTask判断に必要な場合はbroker health、contract presence、consumer permission、provider representative callを必要範囲でreadbackする。
