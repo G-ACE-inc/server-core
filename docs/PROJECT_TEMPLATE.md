@@ -19,6 +19,20 @@ Project固有情報をserver-coreへコピーしない。
 
 Project-owned service / Libral Vault / MCP / Toolを導入する場合は `server-core/docs/PROJECT_INTEGRATION_RULES.md` を共通契約として確認する。
 
+## Documentation Ownership
+
+READMEと、そのREADMEからリンクするDesign / Tree / Delta / System / Operations / Contract等のDocumentは、**そのREADMEを所有するProject Repository側のDocument**である。
+
+対象Projectで次のような指示を受けた場合:
+- READMEを更新する
+- READMEに付属するDocumentを更新する
+- 各種Documentを更新する
+- READMEから必要なDocumentを作成してリンクする
+
+更新対象は対象Project Repository内とする。server-coreのREADMEやDocumentへ自動的に読み替えない。
+
+server-core Documentを変更するのは、Workspace共通のRouting / Authority / Shared Capability / Project Template / 共通運用Contract自体が変更される場合だけである。Project固有Document整備だけではserver-core変更理由にならない。
+
 ## 開発開始前の確認
 
 新規Code生成前に確認する。
@@ -66,6 +80,8 @@ READMEはProjectのCurrent Entry Point。
 - Runtime状態を記載する場合はlast-knownとCurrent readbackを区別
 
 READMEをDesign正本や作業日誌として使わない。
+
+READMEからリンクするProject Documentは、そのProjectの継続開発・運用・保守に必要な情報を持つ。server-core側の共通Documentを、Project固有Documentの代用品として使わない。
 
 ## Design Contract
 
@@ -155,6 +171,8 @@ SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
 - Architecture/Responsibility baseline正式変更 -> Delta
 - stable System/ModuleをREADMEだけでは安全に引継げない -> System Document
 
+判定対象は原則として**現在作業している対象Project**である。server-core自身が変更対象でない限り、server-coreのDocumentation GateをProject側のDocumentation Gateとして代用しない。
+
 RequiredでないDocumentを追加しない。
 
 ## 5段階層型モジュラーアーキテクチャ
@@ -232,11 +250,11 @@ Credential実値をGitへ保存しない。Workspace shared credential contract�
 目的と期待結果
   -> server-core routing
   -> Project README
-  -> 必要なBaseline / Source / Test
+  -> Project内のREADME-linked Authority / Source / Test
   -> reuse check
   -> implementation / debug
   -> verification
-  -> documentation gate
+  -> Project documentation gate
   -> GitHub work history
   -> remote/runtime verification when required
 ```
