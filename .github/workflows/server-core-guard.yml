@@ -44,12 +44,14 @@ jobs:
           test -f docs/G_ACE_WORKSPACE.md
           test -f docs/WORKSPACE_SHARED_SECRETS.md
           test -f docs/CLOUDFLARE_OPERATIONS.md
+          test -f docs/PROJECT_INTEGRATION_RULES.md
+          test -f docs/WORKSPACE_MCP.md
           test -f operations/storage-lifecycle.json
           test -f operations/workspace-mcp.json
-          test -f docs/WORKSPACE_MCP.md
           test -f scripts/install-workspace-mcp.sh
           test -f scripts/verify-workspace-mcp.sh
           test -f scripts/storage_lifecycle_audit.py
+          test -f scripts/workspace_command_center_check.py
           test -x scripts/ai-auto-commit.sh
           test -x scripts/resolve-codex-skill.sh
           test -x scripts/github-skill-path.sh
@@ -61,7 +63,17 @@ jobs:
           test ! -e PROJECT_STATUS.md
           test ! -e add-status.sh
           test ! -e docs/OPERATION_CHECKLIST.md
+          test ! -e .cursor/rules/01_japanese_thinking.mdc
           ! git grep -nE '(^|[^A-Za-z0-9_])(KB\.md|PROJECT_STATUS\.md|OPERATION_CHECKLIST\.md)([^A-Za-z0-9_]|$)' -- ':!archive/**' ':!.github/workflows/server-core-guard.yml'
+
+      - name: No conversational policy in current authority
+        run: |
+          set -euo pipefail
+          hits="$(git grep -nEI '(CONFIRMED_BY_MASTER|Masterの明示|Masterが|全チャット|thinkingブロック|hidden[- ]?reasoning|private reasoning.*rule)' -- '*.md' '*.mdc' ':!archive/**' ':!docs/DESIGN_DELTA.md' || true)"
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            exit 1
+          fi
 
       - name: Command center authority contract
         run: |
@@ -84,19 +96,19 @@ jobs:
           grep -q 'cloudflare-api' operations/workspace-mcp.json
           grep -q 'huggingface' operations/workspace-mcp.json
           grep -q 'Add-New-Contract Gate' docs/WORKSPACE_SHARED_SECRETS.md
-          grep -q 'Command Center' docs/STRUCTURE.md
+          grep -q 'Command Center Authorities' docs/STRUCTURE.md
 
       - name: Provider ownership boundary
         run: |
           set -euo pipefail
           grep -q 'WORKSPACE COMMAND CONTRACT' docs/CLOUDFLARE_OPERATIONS.md
-          grep -q 'Project-specific Cloudflare Documentation' docs/CLOUDFLARE_OPERATIONS.md
-          grep -q 'server-coreはCloudflareを.*司令室' docs/CLOUDFLARE_OPERATIONS.md
+          grep -q 'Authority Split' docs/CLOUDFLARE_OPERATIONS.md
+          grep -q 'Project固有値をserver-core共通Authorityへ固定しない' docs/CLOUDFLARE_OPERATIONS.md
           ! grep -q 'api\.asterav8\.jp' docs/CLOUDFLARE_OPERATIONS.md
           ! grep -q 'astera-v8-prod' docs/CLOUDFLARE_OPERATIONS.md
           test ! -e operations/cloudflare.json
           test ! -e scripts/cloudflare_ops.py
-          ! git grep -nE '/home/admin1/projects/GPG-Core|astera-v8-prod|api\\.asterav8\\.jp|scripts/cloudflare_ops\\.py|operations/cloudflare\\.json' -- ':!archive/**' ':!docs/DESIGN_DELTA.md'
+          ! git grep -nE '/home/admin1/projects/GPG-Core|astera-v8-prod|api\\.asterav8\\.jp|scripts/cloudflare_ops\\.py|operations/cloudflare\\.json' -- ':!archive/**' ':!docs/DESIGN_DELTA.md' ':!docs/WORKSPACE_SHARED_SECRETS.md'
           grep -q 'libral-vault' operations/cloudflare-account.json
           grep -q 'secret_provider.*libral-vault' operations/cloudflare-account.json
 
@@ -121,8 +133,8 @@ jobs:
           grep -q 'server-core/README.md' docs/LOAD_SCOPE.md
           grep -q 'docs/LOAD_SCOPE.md' README.md
           grep -q 'Documentation Gate' docs/SERVER_CORE_DESIGN.md
-          grep -q 'GitHub Work Report Contract' docs/SERVER_CORE_DESIGN.md
-          grep -q 'server-core司令室' docs/G_ACE_WORKSPACE.md
+          grep -q 'GitHub Work History' docs/SERVER_CORE_DESIGN.md
+          grep -q 'server-coreがTask routing' docs/G_ACE_WORKSPACE.md
           grep -q 'server-core/README.md' .cursor/rules/00_agent_runtime.mdc
           grep -q 'Pre-execution Handoff' .cursor/rules/00_agent_runtime.mdc
           grep -q 'TARGET_PROJECT' .cursor/rules/00_agent_runtime.mdc
@@ -141,7 +153,7 @@ jobs:
           grep -q 'Level 4: System / Repository' docs/LOAD_SCOPE.md
           grep -q 'Reuse Search Order' docs/LOAD_SCOPE.md
           grep -q 'Stop Reading Condition' docs/LOAD_SCOPE.md
-          grep -q 'archive/' docs/LOAD_SCOPE.md
+          grep -q 'archive' docs/LOAD_SCOPE.md
           grep -q '.github/' docs/LOAD_SCOPE.md
           grep -q 'scripts/' docs/LOAD_SCOPE.md
 
@@ -156,30 +168,32 @@ jobs:
           grep -q 'Documentation Gate' docs/PROJECT_TEMPLATE.md
           grep -q 'System / Feature-bundle Document' docs/PROJECT_TEMPLATE.md
           grep -q '実行順序' docs/PROJECT_TEMPLATE.md
-          grep -q '期待出力、状態変化、既存機能回帰' docs/PROJECT_TEMPLATE.md
 
-      - name: GitHub work-report and deploy contracts
+      - name: GitHub work-history and deploy contracts
         run: |
           set -euo pipefail
-          grep -q 'Commit = Work Report' docs/AUTO_COMMIT.md
+          grep -q 'Commit = Work History' docs/AUTO_COMMIT.md
           grep -q 'REMOTE_READBACK' docs/AUTO_COMMIT.md
           grep -q 'confirmed GitHub revision' docs/DEPLOY_RUNBOOK.md
           grep -q 'Runtime Verification' docs/DEPLOY_RUNBOOK.md
+          grep -q 'Mutation / Approval Boundary' docs/DEPLOY_RUNBOOK.md
 
       - name: KB design contract
         run: |
           set -euo pipefail
-          grep -q 'Command-Center Boundary' docs/KB_REUSE_DESIGN.md
+          grep -q 'server-core Boundary' docs/KB_REUSE_DESIGN.md
           grep -q 'Registration Contract' docs/KB_REUSE_DESIGN.md
-          grep -q 'MCP / API Bridge' docs/KB_REUSE_DESIGN.md
-          grep -q 'Document / Runtime Completion Boundary' docs/KB_REUSE_DESIGN.md
+          grep -q 'Bridge Contract' docs/KB_REUSE_DESIGN.md
+          grep -q 'Completion Boundary' docs/KB_REUSE_DESIGN.md
+          ! grep -q 'Master PC' docs/KB_REUSE_DESIGN.md
 
       - name: Storage lifecycle audit contract
         run: |
           set -euo pipefail
           grep -q 'Safe Deletion Gate' docs/STORAGE_LIFECYCLE.md
           grep -q 'SAFE_TO_DELETE' docs/STORAGE_LIFECYCLE.md
-          grep -q 'Document / Runtime Completion Boundary' docs/STORAGE_LIFECYCLE.md
+          grep -q 'Completion Boundary' docs/STORAGE_LIFECYCLE.md
+          grep -q 'ProductをWorkspace共通の唯一Authorityとして固定しない' docs/STORAGE_LIFECYCLE.md
           python3 -m py_compile scripts/storage_lifecycle_audit.py
           python3 scripts/storage_lifecycle_audit.py --self-test
           python3 - <<'PY'
@@ -196,15 +210,14 @@ jobs:
       - name: Project integration contract
         run: |
           set -euo pipefail
-          test -f docs/PROJECT_INTEGRATION_RULES.md
-          grep -q '## TGserver Integration' docs/PROJECT_INTEGRATION_RULES.md
-          grep -q '## webhook gateway Integration' docs/PROJECT_INTEGRATION_RULES.md
-          grep -q '## Libral Vault Usage' docs/PROJECT_INTEGRATION_RULES.md
-          grep -q '## MCP / Tool Usage' docs/PROJECT_INTEGRATION_RULES.md
-          grep -q 'Secret実値は保存しない' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q 'TGserver Integration' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q 'Webhook Gateway Integration' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q 'Libral Vault Usage' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q 'MCP / Tool Usage' docs/PROJECT_INTEGRATION_RULES.md
+          grep -q 'Credential実値はProjectへ保存しない' docs/PROJECT_INTEGRATION_RULES.md
           grep -q 'Project Integration' README.md
-          grep -q 'TGserver / webhook gatewayはShared Capabilityではなく' docs/WORKSPACE_REGISTRY.md
-          grep -q 'TGserver / webhook gatewayはShared CapabilityではなくProject Integration' docs/SERVER_CORE_DESIGN.md
+          grep -q 'Project-owned service' docs/WORKSPACE_REGISTRY.md
+          grep -q 'Project Integration' docs/SERVER_CORE_DESIGN.md
           grep -q 'PROJECT_INTEGRATION_RULES.md' docs/LOAD_SCOPE.md
 
       - name: Workspace initializer safety
@@ -244,15 +257,11 @@ jobs:
             "mcpServers": {
               "cloudflare-api": {
                 "url": "https://mcp.cloudflare.com/mcp",
-                "auth": {
-                  "CLIENT_ID": "8ilRHxRMw6Ntq3dP"
-                }
+                "auth": {"CLIENT_ID": "TEST_CLIENT_ID"}
               },
               "huggingface": {
                 "url": "https://huggingface.co/mcp",
-                "headers": {
-                  "Authorization": "Bearer REDACTED_TEST_CREDENTIAL"
-                }
+                "headers": {"Authorization": "Bearer REDACTED_TEST_CREDENTIAL"}
               }
             }
           }
@@ -265,11 +274,7 @@ jobs:
       - name: No tracked env files
         run: |
           set -euo pipefail
-          blocked="$(
-            git ls-files |
-              grep -E '(^|/)\.env($|\.)' |
-              grep -Ev '(^|/)\.env\.example$' || true
-          )"
+          blocked="$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -Ev '(^|/)\.env\.example$' || true)"
           if [ -n "$blocked" ]; then
             echo "$blocked"
             exit 1
@@ -278,9 +283,7 @@ jobs:
       - name: No legacy TGserver spelling
         run: |
           set -euo pipefail
-          hits="$(
-            git grep -n 'TGServer' -- '*.md' ':!docs/GLOSSARY.md' ':!archive/**' || true
-          )"
+          hits="$(git grep -n 'TGServer' -- '*.md' ':!docs/GLOSSARY.md' ':!archive/**' || true)"
           if [ -n "$hits" ]; then
             echo "$hits"
             exit 1
@@ -289,15 +292,7 @@ jobs:
       - name: Secret pattern guard
         run: |
           set -euo pipefail
-          hits="$(
-            git grep -nEI \
-              '(api[_-]?key|secret|token|password|credential|session)[[:alnum:]_ -]*[:=][[:space:]]*[\"]?[A-Za-z0-9_./+=-]{12,}' \
-              -- \
-              ':!docs/**' \
-              ':!archive/**' \
-              ':!.github/workflows/server-core-guard.yml' \
-              ':!scripts/ai-auto-commit.sh' || true
-          )"
+          hits="$(git grep -nEI '(api[_-]?key|secret|token|password|credential|session)[[:alnum:]_ -]*[:=][[:space:]]*[\"]?[A-Za-z0-9_./+=-]{12,}' -- ':!docs/**' ':!archive/**' ':!.github/workflows/server-core-guard.yml' ':!scripts/ai-auto-commit.sh' || true)"
           hits="$(printf '%s\n' "$hits" | grep -Ev '=[[:space:]]*(os\.environ\.get|check_token_not_in_env)\(' || true)"
           if [ -n "$hits" ]; then
             echo "$hits"
