@@ -32,7 +32,6 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | Reusable KB / bridge | `docs/KB_REUSE_DESIGN.md` |
 | Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
 | Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
-| GitHub無料枠 | `docs/GITHUB_FREE_MAX.md` |
 | GitHub skill resolver | `docs/GITHUB_SKILL.md` |
 | 用語 | `docs/GLOSSARY.md` |
 | server-core構造 | `docs/STRUCTURE.md` |
