@@ -21,7 +21,7 @@ server-core全体を毎回読み込まず、Taskの責務・対象・依存関�
 
 ## 2. Pre-execution Handoff
 
-Project Sourceを変更する前に、最低限次を解決する。
+Project SourceまたはDocumentを変更する前に、最低限次を解決する。
 
 ```text
 PURPOSE
@@ -62,7 +62,17 @@ Target Boundary
 - Project固有実装はowning Projectへ置き、server-coreへ吸収しない。
 - Design BaselineをCurrent実装に合わせるためだけに書き換えない。正式変更はDesign Deltaで追跡する。
 
-## 5. Verification
+## 5. Documentation Ownership
+
+Document変更先はTARGET_PROJECT / TARGET_REPOSITORYに従う。
+
+対象Projectで「README」「READMEに付属するDocument」「各種Document」「READMEからリンクするDocument」の更新を求められた場合、対象はそのProject Repository内のREADME / Design / Tree / Delta / System / Operations / Contract等である。
+
+server-coreは共通入口であって、Project Documentの既定変更先ではない。Project固有Document整備をserver-core Document更新へ読み替えない。
+
+server-core Documentを変更するのは、Taskがserver-core自身またはWorkspace共通Routing / Authority / Shared Capability / 共通運用Contractの変更を対象としている場合だけとする。
+
+## 6. Verification
 
 PASS判定はTaskの受入条件に合わせる。
 
@@ -79,7 +89,7 @@ Process起動、Error無し、HTTP 200、Build成功、Test runner終了、CI gr
 
 未実行・未確認・未検証の状態はそのまま保持する。
 
-## 6. Documentation / GitHub History
+## 7. Documentation / GitHub History
 
 仕様・構造・運用契約が変わった場合は、対象ProjectのDocumentation Gateに従う。
 
@@ -87,7 +97,7 @@ GitHub commit / PRは時系列の作業履歴。Design / README / Registry等の
 
 Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
 
-## 7. Change Boundary
+## 8. Change Boundary
 
 変更操作は、対象Repository・Runbook・Provider contractで定義された権限と承認条件に従う。
 
@@ -101,13 +111,13 @@ Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productio
 
 Taskの依頼文だけから未定義の権限を推測しない。必要な承認条件は対象Authorityで確認する。
 
-## 8. Runtime
+## 9. Runtime
 
 本番常駐の標準経路はDocker / Docker Compose。Project固有の正式例外がある場合はそのAuthorityを優先する。
 
 ServerはRuntime / Processing環境であり、GitHub Source履歴・Design・Documentの代替正本にしない。
 
-## 9. Shared Capability / Integration
+## 10. Shared Capability / Integration
 
 Shared CapabilityのDiscovery / owner / connection / permission / availability contractはserver-coreで管理し、実装本体はowning Project/runtimeに置く。
 
