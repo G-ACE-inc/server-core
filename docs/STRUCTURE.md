@@ -84,7 +84,7 @@ Current machine-readable contracts/policies:
 - `.cursor/mcp.json` — Project/client-specific MCP config when present
 - `.cursor/agents/` — agent-related repository assets when present
 
-Conversation-language or hidden-reasoning rules are not server-core operational Authority and are not kept as always-applied Workspace rules.
+Workspace-wide always-applied rules are limited to behavior required for repository, Server, Provider, routing, verification or safety operation.
 
 ## Shared Capability Boundary
 
