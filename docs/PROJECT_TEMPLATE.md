@@ -31,7 +31,7 @@ READMEと、そのREADMEからリンクするDesign / Tree / Delta / System / Op
 
 更新対象は対象Project Repository内とする。server-coreのREADMEやDocumentへ自動的に読み替えない。
 
-server-core Documentを変更するのは、Workspace共通のRouting / Authority / Shared Capability / Project Template / 共通運用Contract自体が変更される場合だけである。Project固有Document整備だけではserver-core変更理由にならない。
+server-core Documentは、**server-core自体の変更についてexplicit owner authorizationがある場合だけ**変更する。Workspace共通Routing / Authority / Shared Capability / Project Template / 共通運用Contractに影響がありそうという理由だけでは、server-core変更理由にならない。
 
 ## Mutation Ownership
 
@@ -42,13 +42,14 @@ TARGET_PROJECT = 主対象Project
 TARGET_REPOSITORY = 主対象Repository
 MUTATION_REPOSITORIES = 今回write/commit可能なRepository
 READ_ONLY_REPOSITORIES = Authority/Reuse/Integration確認だけのRepository
+SERVER_CORE_MUTATION_AUTHORIZED = server-core変更の明示許可状態
 ```
 
-server-core、Shared Capability owner、Provider integration owner等を参照しただけでは、そのRepositoryを `MUTATION_REPOSITORIES` に追加しない。
+server-coreは `SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立しない限りread-only。Shared Capability owner、Provider integration owner等も参照しただけでは、そのRepositoryを `MUTATION_REPOSITORIES` に追加しない。
 
 「MCPを使う」「TGserverへ接続する」「Vaultを使う」「Cloudflareを使う」等の利用Taskは、原則としてconsumer Project側の変更で閉じる。owner側Source変更が必要と確認された場合だけ、別mutation対象として明示する。
 
-Commit前にはcurrent Git top-levelと対象Repositoryを照合し、別Projectの差分を混在させない。
+Commit前にはcurrent Git top-levelと対象Repositoryを照合し、別Projectの差分を混在させない。server-coreへのCommitは追加でexplicit owner authorizationを確認する。
 
 ## 開発開始前の確認
 
@@ -188,7 +189,7 @@ SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
 - Architecture/Responsibility baseline正式変更 -> Delta
 - stable System/ModuleをREADMEだけでは安全に引継げない -> System Document
 
-判定対象は原則として**現在作業している対象Project**である。server-core自身が変更対象でない限り、server-coreのDocumentation GateをProject側のDocumentation Gateとして代用しない。
+判定対象は原則として**現在作業している対象Project**である。server-coreのDocumentation Gateは、server-core自体の変更についてexplicit owner authorizationがある場合だけ適用する。
 
 RequiredでないDocumentを追加しない。
 
