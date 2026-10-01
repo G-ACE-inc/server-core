@@ -120,7 +120,7 @@ When architecture or responsibility intentionally differs from the baseline Desi
 Project Tree is a navigation index, not a raw file dump. It records meaningful files/directories, responsibility, entry points and related authority.
 
 ### System / Feature-bundle Documents
-Create or update technical documentation when README alone cannot reliably hand the completed unit to another worker. Documentation should describe operationally relevant architecture, interfaces, dependencies, state ownership, failure/recovery, security, runtime and verification as needed—without empty template sections or chat history.
+Create or update technical documentation when README alone cannot reliably hand the completed unit to another worker. Documentation should describe operationally relevant architecture, interfaces, dependencies, state ownership, failure/recovery, security, runtime and verification as needed—without empty template sections or transient work history.
 
 ## 5. Shared Capability vs Project Integration
 
@@ -231,7 +231,7 @@ Automated cleanup is fail-closed. Active state, unshipped/retry data, recovery d
 ## 14. Command-Center Invariants
 
 The following must remain true:
-- Workspace work can start from server-core without relying on private conversation history;
+- Workspace work can start from server-core using repository/runtime authorities;
 - server-core determines routing but does not take ownership of Project internals;
 - the same operational fact has one intended authority;
 - context loading is progressive;
@@ -252,10 +252,10 @@ server-core does not own:
 - reusable-KB data body or device-specific storage layout;
 - runtime log/cache data bodies;
 - Secret/Token values;
-- individual conversation continuity, personal prompts or hidden reasoning conventions.
+- worker-specific interface/session preferences that do not affect Server or Workspace operation.
 
 ## 16. Design Change Rule
 
 This file is the server-core architecture baseline.
 
-Formal changes require rationale, evidence, a traceable commit and an entry in `docs/DESIGN_DELTA.md`. Editorial cleanup that removes conversation-specific wording without changing architecture should be recorded as documentation hygiene, not as a new architecture decision.
+Formal changes require rationale, evidence, a traceable commit and an entry in `docs/DESIGN_DELTA.md`. Editorial cleanup that does not change architecture belongs in normal Git history rather than a new architecture decision.
