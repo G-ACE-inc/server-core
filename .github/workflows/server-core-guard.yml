@@ -45,6 +45,10 @@ jobs:
           test -f docs/WORKSPACE_SHARED_SECRETS.md
           test -f docs/CLOUDFLARE_OPERATIONS.md
           test -f operations/storage-lifecycle.json
+          test -f operations/workspace-mcp.json
+          test -f docs/WORKSPACE_MCP.md
+          test -x scripts/install-workspace-mcp.sh
+          test -x scripts/verify-workspace-mcp.sh
           test -f scripts/storage_lifecycle_audit.py
           test -x scripts/ai-auto-commit.sh
           test -x scripts/resolve-codex-skill.sh
@@ -75,6 +79,10 @@ jobs:
           grep -q 'Dispatch Rule' docs/WORKSPACE_REGISTRY.md
           grep -q 'Availability Gate' docs/WORKSPACE_REGISTRY.md
           grep -q 'WORKSPACE SHARED SECRETS' docs/WORKSPACE_SHARED_SECRETS.md
+          grep -q 'WORKSPACE SHARED MCP' docs/WORKSPACE_MCP.md
+          grep -q 'workspace-global' operations/workspace-mcp.json
+          grep -q 'cloudflare-api' operations/workspace-mcp.json
+          grep -q 'huggingface' operations/workspace-mcp.json
           grep -q 'Add-New-Contract Gate' docs/WORKSPACE_SHARED_SECRETS.md
           grep -q 'Command Center' docs/STRUCTURE.md
 
@@ -203,9 +211,27 @@ jobs:
         run: |
           set -euo pipefail
           bash -n scripts/init-dev-workspace.sh
+          bash -n scripts/install-workspace-mcp.sh
+          bash -n scripts/verify-workspace-mcp.sh
           ! grep -nE 'rm[[:space:]]+-rf.*PROJECTS_RULES|rm[[:space:]]+-rf.*projects/\.cursor/rules' scripts/init-dev-workspace.sh
           grep -q 'already exists and is not the required symlink; no deletion performed' scripts/init-dev-workspace.sh
           grep -q 'unexpected target' scripts/init-dev-workspace.sh
+
+      - name: Workspace MCP manifest schema
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path('operations/workspace-mcp.json').read_text())
+          assert p['scope'] == 'workspace-global'
+          assert set(p['servers']) >= {'cloudflare-api', 'huggingface'}
+          for name, cfg in p['servers'].items():
+              assert cfg.get('url', '').startswith('https://')
+              assert 'token' not in json.dumps(cfg).lower()
+              assert 'secret' not in json.dumps(cfg).lower()
+          print('WORKSPACE_MCP_MANIFEST=PASS')
+          PY
 
       - name: No tracked env files
         run: |
