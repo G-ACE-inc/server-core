@@ -116,6 +116,10 @@ jobs:
           grep -q 'GitHub Work Report Contract' docs/SERVER_CORE_DESIGN.md
           grep -q 'server-core司令室' docs/G_ACE_WORKSPACE.md
           grep -q 'server-core/README.md' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'Pre-execution Handoff' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'TARGET_PROJECT' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'VERIFY_PATH' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'CONTEXT_SCOPE' .cursor/rules/00_agent_runtime.mdc
           grep -q 'WORKSPACE_REGISTRY.md' README.md
           grep -q 'KB_REUSE_DESIGN.md' docs/LOAD_SCOPE.md
           grep -q 'STORAGE_LIFECYCLE.md' SERVER_CORE_PROTOCOL.md
