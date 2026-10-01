@@ -143,6 +143,12 @@ jobs:
           grep -q 'WORKSPACE_REGISTRY.md' README.md
           grep -q 'KB_REUSE_DESIGN.md' docs/LOAD_SCOPE.md
           grep -q 'STORAGE_LIFECYCLE.md' SERVER_CORE_PROTOCOL.md
+          grep -q 'SERVER_CORE_MUTATION_AUTHORIZED' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'SERVER_CORE_MUTATION_AUTHORIZED' docs/LOAD_SCOPE.md
+          grep -q 'explicit owner authorization' README.md
+          grep -q 'explicit owner authorization' SERVER_CORE_PROTOCOL.md
+          grep -q 'explicit owner authorization' docs/PROJECT_TEMPLATE.md
+          grep -q 'explicit owner authorization' docs/G_ACE_WORKSPACE.md
 
       - name: Progressive load scope
         run: |
