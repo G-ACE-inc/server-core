@@ -76,7 +76,6 @@ REQUEST
 - `docs/CLOUDFLARE_OPERATIONS.md` — Cloudflare共通運用契約
 
 ### Task-specific Support
-- `docs/GITHUB_FREE_MAX.md` — GitHub無料枠Task時のみ
 - `docs/GITHUB_SKILL.md` — GitHub Skill resolver利用時のみ
 - `docs/GLOSSARY.md` — 用語
 
