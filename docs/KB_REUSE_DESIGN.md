@@ -32,28 +32,9 @@ KB implementation/runtime/data/storage pathはowning Project/runtimeへ分離す
 - Workspaceからの利用は、実装・検証済みAPI/MCP等の明示Bridgeを通す。
 - Bridge availabilityはTask時のCurrent readbackで確認する。
 
-## 4. Existing KB-related Repositories
+複数のKB関連RepositoryまたはRuntimeが存在する場合でも、自動的に同一Authority扱いしない。統合/再利用はowner、purpose、data model、source authority、bridge、validation、backup/recovery responsibilityを確認してから行う。
 
-Workspaceに複数のKB関連Repositoryが存在しても、自動的に同一Authority扱いしない。
-
-Current known examples:
-- `seigo-gace/astera-kb`
-- `seigo-gace/kb-system`
-- `seigo-gace/gace-dev-kb`
-
-統合/再利用する場合は次を決める。
-- owner
-- purpose
-- data model
-- source authority
-- migration path
-- API/MCP bridge
-- validation state
-- backup/recovery responsibility
-
-既存資産を確認せず新規KB実装を増やさない。
-
-## 5. Eligible Assets
+## 4. Eligible Assets
 
 登録対象候補:
 - validated reusable code / module
@@ -71,11 +52,10 @@ Current known examples:
 - unsupported speculation
 - unverified generated output
 - Secret / Token / credential
-- private reasoning trace
 - owner不明Data
 - Project固有の一時状態だけで再利用価値がないもの
 
-## 6. Registration Contract
+## 5. Registration Contract
 
 ```text
 SOURCE_IDENTIFIED=YES
@@ -87,7 +67,7 @@ VERSION_OR_REVISION_BOUND=YES when applicable
 LICENSE_OR_USAGE_BOUNDARY_KNOWN=YES when external asset
 ```
 
-## 7. Asset Metadata
+## 6. Asset Metadata
 
 Assetごとに必要範囲で保持する。
 - stable asset id
@@ -105,7 +85,7 @@ Assetごとに必要範囲で保持する。
 - supersedes / superseded-by relation
 - visibility / usage boundary when applicable
 
-## 8. Search / Retrieval
+## 7. Search / Retrieval
 
 KB全体をContextへ流さない。
 
@@ -120,7 +100,7 @@ query
 
 検索結果の存在とCurrent Projectへの適用可能性を分離する。
 
-## 9. Reuse Priority
+## 8. Reuse Priority
 
 ```text
 そのまま利用
@@ -132,20 +112,14 @@ query
 
 KB candidateは再利用候補であり、対象ProjectのCurrent Design / Interface / Versionより強いAuthorityではない。
 
-## 10. Bridge Contract
+## 9. Bridge Contract
 
-Preferred interface:
-- read/search/fetchはread-oriented interfaceで利用可能
-- register/update/deleteはstronger permissionへ分離
-- internal transportはAPI/MCP等、owning implementationに合わせる
-
-Minimum capability candidate:
-- search assets
-- get asset metadata
-- fetch asset content/reference
-- register validated asset
-- mark superseded
-- health / storage status
+Bridge implementationはowning KB Project/runtimeが定義する。server-coreはWorkspaceから利用するために、少なくとも次を確認可能なContractを要求する。
+- read/search/fetch interface
+- writeがある場合のpermission分離
+- registration/update時のvalidation gate
+- health / availability確認方法
+- failure behavior
 
 Availability gate:
 
@@ -163,7 +137,7 @@ WORKSPACE_BRIDGE_REGISTERED=YES
 REPRESENTATIVE_REUSE_E2E=PASS
 ```
 
-## 11. Safety
+## 10. Safety
 
 - Secret / Token / password / credentialをasset化しない
 - private repository assetはvisibility/usage boundaryを継承する
@@ -173,7 +147,7 @@ REPRESENTATIVE_REUSE_E2E=PASS
 - corruption検知なしに修復済み扱いしない
 - external assetはlicense/usage boundaryを保持する
 
-## 12. Storage Lifecycle
+## 11. Storage Lifecycle
 
 KBはCacheではない。容量圧迫だけを理由にvalidated canonical assetを無条件削除しない。
 
@@ -185,7 +159,7 @@ KBはCacheではない。容量圧迫だけを理由にvalidated canonical asset
 
 削除前にmetadata/indexとの整合性を確認する。
 
-## 13. Backup / Recovery
+## 12. Backup / Recovery
 
 owning KB implementationは必要範囲で次を定義する。
 - metadata/index backup
@@ -198,7 +172,7 @@ owning KB implementationは必要範囲で次を定義する。
 
 server-coreはこのContractの存在/発見/availabilityを管理するが、backup data本体は保持しない。
 
-## 14. Non-goals
+## 13. Non-goals
 
 Reusable KBは次の代替ではない。
 - raw log保管庫
@@ -208,12 +182,12 @@ Reusable KBは次の代替ではない。
 - Runtime cache
 - unverified auto-generated knowledge dump
 
-## 15. Completion Boundary
+## 14. Completion Boundary
 
 Design contract、KB storage/runtime、bridge、Workspace registration、backup runtimeは別状態として扱う。
 
 Current implementation/runtimeの詳細はowning KB Project Authorityへ置き、server-core Designへdevice/path固有値や作業中状態を固定しない。
 
-## 16. Design Change Rule
+## 15. Design Change Rule
 
 この文書はserver-core側の接続・再利用・安全Baseline。KB implementation architecture自体の変更はowning Project側Designを正とし、server-core側の責務/contractが変わる場合だけ本Documentを更新する。
