@@ -39,7 +39,6 @@ jobs:
           test -f docs/PROJECT_TEMPLATE.md
           test -f docs/DEPLOY_RUNBOOK.md
           test -f docs/AUTO_COMMIT.md
-          test -f docs/GITHUB_FREE_MAX.md
           test -f docs/GITHUB_SKILL.md
           test -f docs/G_ACE_WORKSPACE.md
           test -f docs/WORKSPACE_SHARED_SECRETS.md
@@ -64,7 +63,8 @@ jobs:
           test ! -e add-status.sh
           test ! -e docs/OPERATION_CHECKLIST.md
           test ! -e .cursor/rules/01_japanese_thinking.mdc
-          ! git grep -nE '(^|[^A-Za-z0-9_])(KB\.md|PROJECT_STATUS\.md|OPERATION_CHECKLIST\.md)([^A-Za-z0-9_]|$)' -- ':!archive/**' ':!.github/workflows/server-core-guard.yml'
+          test ! -e docs/GITHUB_FREE_MAX.md
+          ! git grep -nE '(^|[^A-Za-z0-9_])(KB\.md|PROJECT_STATUS\.md|OPERATION_CHECKLIST\.md|GITHUB_FREE_MAX\.md)([^A-Za-z0-9_]|$)' -- ':!archive/**' ':!.github/workflows/server-core-guard.yml'
 
       - name: No conversational policy in current authority
         run: |
