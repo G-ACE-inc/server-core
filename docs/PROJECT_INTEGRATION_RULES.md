@@ -1,77 +1,102 @@
 # PROJECT INTEGRATION RULES
 
-Version: 2026-09-30
-Role: Projectへ共通基盤を導入するときの接続・利用ルール。
+Version: 2026-10-01
+Role: ProjectへProject-owned service / Shared Capabilityを接続するときの共通Integration Contract。
 
 ## Purpose
 
-server-coreは共通Capabilityの司令室であり、Project固有実装は所有しない。
+server-coreは共通CapabilityのDiscovery / Contractを管理するが、Project固有実装は所有しない。
 
-本Documentは、各Projectが共通基盤を利用するときの導入契約を定義する。
+本Documentは、各Projectが既存service / Vault / MCP / Toolを利用するときに最低限そろえる接続情報を定義する。
 
-## TGserver Integration
+## 1. Integration Record
 
-TGserverはProject導入時の通信・記録基盤として利用する。
+Integrationごとに必要範囲で定義する。
+- owner
+- consumer Project
+- purpose
+- interface / endpoint / transport
+- authentication / credential contract
+- permission boundary
+- mutation boundary
+- retry / failure behavior
+- health / verification method
+- rollback / disable path when applicable
 
-導入時に定義する:
+不要な項目を埋めるためだけにDocumentや設定を増やさない。
 
+## 2. TGserver Integration
+
+TGserverはProject-owned service。Project導入時に必要範囲で定義する。
 - Project identifier
-- Topic naming
-- Topic creation reason
-- Log / notification category
-- Severity level
-- Retention policy
-- Failure handling
+- topic/channel mapping
+- log / notification category
+- severity/priority when used
+- retention / delivery acknowledgement
+- retry / failure handling
 
-必要なTopicのみ追加する。用途不明のTopicを作成しない。
+用途不明のTopicを作成しない。TGserver内部実装はTGserver Project Authorityを正とする。
 
-## webhook gateway Integration
+## 3. Webhook Gateway Integration
 
-webhook gatewayはEvent連携入口として利用する。
+Webhook gatewayはProject-owned event gateway。導入時に必要範囲で定義する。
+- event name
+- producer
+- consumer
+- endpoint / route contract
+- payload schema
+- authentication method
+- retry / idempotency behavior
+- failure handling
 
-導入時に定義する:
+Gateway内部実装はowning Project Authorityを正とする。
 
-- Event name
-- Producer
-- Consumer
-- Endpoint contract
-- Payload schema
-- Authentication method
-- Retry behavior
-- Failure handling
+## 4. Libral Vault Usage
 
-## Libral Vault Usage
+Libral VaultはShared Credential Capability。
 
-Libral Vaultはserver-core共通Capabilityであり、Project利用契約は本Documentで定義する。
+Project側で定義する。
+- required secret contract identifier
+- consumer service
+- injection/use point
+- provider purpose
+- runtime verification method
 
-Project側で管理する:
+Credential実値はProjectへ保存しない。
 
-- Required secret contract identifier
-- Consumer service
-- Injection point
-- Runtime usage
+## 5. MCP / Tool Usage
 
-Secret実値は保存しない。
+ProjectがMCP / Toolを利用する場合、必要範囲で次を明確化する。
+- owner
+- interface / command / tool surface
+- registration/config authority
+- permission boundary
+- mutation behavior
+- availability verification
+- failure behavior
 
-## MCP / Tool Usage
+Project固有MCP/ToolをWorkspace globalとして扱う場合はserver-core Registry / Workspace MCP contract側にもownershipとregistration authorityを反映する。
 
-ProjectがMCPまたはToolを利用する場合:
+## 6. Documentation / Registry Update
 
-- Owner
-- Interface
-- Permission boundary
-- Mutation boundary
-- Verification method
+Integration変更後に**影響したAuthorityだけ**更新する。
 
-を明確化する。
+- Project README: Current integration entry / usageが変わる場合
+- Workspace Registry: owner / shared discovery / connection authorityが変わる場合
+- Design Delta: architecture/responsibility baselineから正式に変わる場合だけ
+- System/Operations document: stable interface / runtime / recovery理解に必要な場合
 
-## Registration
+IntegrationしただけでDesign Deltaや新規Documentを必須にしない。
 
-導入後:
+## 7. Verification
 
-- Workspace Registry更新
-- Project README更新
-- Design Delta記録
-- Verification結果記録
+Integration完了判定はTaskに応じて必要範囲で確認する。
+- config/registration presence
+- authentication when required
+- transport/connectivity
+- interface/tool discovery
+- representative call/event
+- expected downstream state
+- retry/failure behavior where material
 
-を行う。
+設定ファイルが存在するだけでLive integration完成とは扱わない。
