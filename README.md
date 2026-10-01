@@ -43,7 +43,7 @@ MUTATION_REPOSITORIES = 今回write/commitしてよいRepository
 READ_ONLY_REPOSITORIES = Authority/Reuse/Integration確認だけのRepository
 ```
 
-通常のProject Taskではserver-coreは `READ_ONLY_REPOSITORIES` 側。server-core自身またはWorkspace共通Routing / Authority / Shared Capability / 共通運用Contractの変更がTask目的に含まれる場合だけmutation対象にする。
+**server-coreは明示的なowner authorizationが無い限り常にread-onlyとする。** Workspace共通Routing / Authority / Shared Capability / 共通運用Contractの変更が必要に見える場合でも、それだけでserver-coreをmutation対象へ昇格しない。server-core変更は、server-core自体の変更を明示的に許可した場合だけ実行する。
 
 Shared CapabilityやProject-owned serviceを「使う・接続する・検証する」ことは、そのowner Repository実装を変更する意味ではない。consumer Project側で閉じられるTaskはconsumer側だけを変更する。
 
@@ -133,7 +133,7 @@ Document更新先は**Taskの対象Project**で決める。
 
 server-coreは共通の**参照・Routing元**であって、他ProjectのREADME関連Documentの保存先ではない。
 
-`server-core`側Documentを変更するのは、Workspace共通のRouting、Authority、Shared Capability、共通運用Contractそのものが変わる場合だけとする。Project固有のREADME/Document更新を理由にserver-coreを変更しない。
+`server-core`側Documentは、**server-core自体の変更が明示的に許可された場合だけ**更新する。Workspace共通Contractへ影響しそうという判断だけで、server-core Documentを変更してはならない。
 
 Current Authorityへ個人向け指示、一時的な作業報告、Task固有の進捗状態を混在させない。
 
@@ -171,5 +171,7 @@ server-coreのDeploy/Storage Runbookを読んだことを、server-core自身や
 ## Change / Safety Boundary
 
 Read-only確認とMutationを分離する。Merge、Deploy、Production cutover、active service restart/recreate、Secret mutation、Provider resource mutation等は、対象Repository / Project / Provider Authorityで定義された権限・承認条件に従う。
+
+**server-coreへのwrite / commit / branch mutationは、server-core自体の変更について明示的なowner authorizationが必要。** 他Project Task、共通Authority参照、障害調査、Shared Capability利用から暗黙に承認を推論しない。
 
 未確認・未実行・未検証の状態を、文書記載や過去実績だけでCurrent PASSへ昇格しない。
