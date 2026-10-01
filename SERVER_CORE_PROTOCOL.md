@@ -23,7 +23,7 @@ server-coreはTaskをRouting / Dispatchするが、Project固有実装のowner�
 - Secret / credential add / delete / rotation
 - Provider resource create / update / delete
 
-承認者の名称や個別セッション上の呼称をserver-core仕様へ固定しない。必要な承認主体はProject / Provider / Repository contractで定義する。
+**server-coreへのwrite / commit / branch mutationは、server-core自体の変更についてexplicit owner authorizationが必要。** 他ProjectのTask、共通Authority参照、障害調査、Shared Capability利用、Workspace共通Contractへの影響可能性から暗黙に承認を推論しない。
 
 ## Repository Mutation Ownership
 
@@ -33,17 +33,19 @@ Taskで参照するRepositoryと、Taskで変更してよいRepositoryを分離�
 TARGET_REPOSITORY
 MUTATION_REPOSITORIES
 READ_ONLY_REPOSITORIES
+SERVER_CORE_MUTATION_AUTHORIZED
 ```
 
 - `TARGET_REPOSITORY`: 主対象ProjectのRepository。
 - `MUTATION_REPOSITORIES`: 今回Source / Config / Document / Commitを変更してよいRepository。
 - `READ_ONLY_REPOSITORIES`: Authority確認、再利用調査、Integration確認、Runtime調査のために読むだけのRepository。
+- `SERVER_CORE_MUTATION_AUTHORIZED`: server-core自体の変更についてexplicit owner authorizationがある場合だけ `YES`。
 
-Project Taskではserver-coreは原則read-only。server-core自身またはWorkspace共通Contractを変更するTaskの場合だけmutation対象にする。
+server-coreは `SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立しない限りread-only。Workspace共通Contract変更が必要に見えても、自動的にmutation対象へ昇格しない。
 
 Shared Capability / service / Provider owner Repositoryを確認したことは、そのRepository実装の変更理由にならない。利用・接続・検証Taskではowner側をread-onlyとし、owner-side changeが必要と確認された場合だけ別mutation対象へ昇格する。
 
-Git操作前にはcurrent repository identityとmutation targetを照合する。別RepositoryのScriptを実行するために `cd` したことを、Task owner変更の根拠にしない。
+Git操作前にはcurrent repository identityとmutation targetを照合する。別RepositoryのScriptを実行するために `cd` したことを、Task owner変更の根拠にしない。server-coreの場合はさらに `SERVER_CORE_MUTATION_AUTHORIZED=YES` を確認する。
 
 ## Workspace Entry / Dispatch
 
@@ -70,6 +72,7 @@ Design Delta: `docs/DESIGN_DELTA.md`
 - 公開契約は可能な限りCode上のInterface / Type / Schema / Testと整合させる。
 - Design BaselineをCurrent実装へ合わせるためだけに書き換えない。
 - Project Document更新Taskをserver-core Document更新へ読み替えない。
+- server-core側に改善余地を発見しても、明示許可なしに併せて修正しない。
 
 ## Verification
 
@@ -94,6 +97,8 @@ Current仕様Documentへ一時的なセッション指示、個別作業メモ�
 時系列の作業履歴はGitHub commit / PRへ残す。完成状態、Project構造、Designとの差、運用Contractが変わった場合はDocumentation Gateに従う。
 
 対象ProjectのREADME / README-linked Documentは対象Project Repository側で更新する。server-coreはProject Documentの既定保存先ではない。
+
+server-core Documentは `SERVER_CORE_MUTATION_AUTHORIZED=YES` のときだけ更新する。
 
 Commit / Push / Remote Readbackは `docs/AUTO_COMMIT.md` を正とする。
 
@@ -182,5 +187,6 @@ Secret Contractを読むこと、credential availabilityを確認すること、
 - owner不明のFile / Module / Runtime / DataへMutationしない。
 - `MUTATION_REPOSITORIES` 外のRepositoryへwrite/commitしない。
 - Authorityを読んだだけのRepositoryへmutationしない。
+- server-coreはexplicit owner authorizationなしにwrite/commit/branch mutationしない。
 - credential実値をSource / Git / Document / Logへ保存しない。
 - Project固有実装をserver-coreへ移して責務境界を崩さない。
