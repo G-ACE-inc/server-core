@@ -3,6 +3,7 @@ set -euo pipefail
 
 PROJECTS_DIR="/home/admin1/projects"
 SERVER_CORE_ROOT="/home/admin1/server-core"
+DUPLICATE_SERVER_CORE="${PROJECTS_DIR}/server-core"
 SERVER_CORE_RULES="${SERVER_CORE_ROOT}/.cursor/rules"
 PROJECTS_RULES="${PROJECTS_DIR}/.cursor/rules"
 SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -10,6 +11,13 @@ SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 if [[ "$SCRIPT_ROOT" != "$SERVER_CORE_ROOT" ]]; then
   echo "[error] server-core workspace initializer must run from canonical checkout: ${SERVER_CORE_ROOT}" >&2
   echo "[error] current checkout: ${SCRIPT_ROOT}" >&2
+  echo "NO_CHANGES_PERFORMED" >&2
+  exit 1
+fi
+
+if [[ -e "$DUPLICATE_SERVER_CORE" ]]; then
+  echo "[error] duplicate server-core checkout detected: ${DUPLICATE_SERVER_CORE}" >&2
+  echo "[error] reconcile/remove the duplicate before workspace initialization" >&2
   echo "NO_CHANGES_PERFORMED" >&2
   exit 1
 fi
@@ -51,10 +59,10 @@ if [[ -n "$PROJECT_NAME" ]]; then
 fi
 
 if [[ -L "$PROJECTS_RULES" ]]; then
-  if [[ "$(readlink "$PROJECTS_RULES")" == "$SERVER_CORE_RULES" ]]; then
+  if [[ "$(readlink -f "$PROJECTS_RULES")" == "$(readlink -f "$SERVER_CORE_RULES")" ]]; then
     echo "[ok] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
   else
-    echo "[error] ${PROJECTS_RULES} is a symlink to an unexpected target: $(readlink "$PROJECTS_RULES")" >&2
+    echo "[error] ${PROJECTS_RULES} is a symlink to an unexpected target: $(readlink -f "$PROJECTS_RULES")" >&2
     exit 1
   fi
 elif [[ -e "$PROJECTS_RULES" ]]; then
