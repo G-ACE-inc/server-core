@@ -67,6 +67,8 @@ README.md
 ### Shared platform / operations
 - `WORKSPACE_REGISTRY.md`
   - Project / shared Capability / MCP / Tool / Secret Contract / Runtime discovery
+- `WORKSPACE_MCP.md`
+  - Cursor Global MCP / Workspace共通実行経路 / verification
 - `PROJECT_INTEGRATION_RULES.md`
   - TGserver / webhook gateway / Vault / MCP / Tool Project導入契約
 - `WORKSPACE_SHARED_SECRETS.md`
@@ -93,6 +95,7 @@ Provider / shared-secret / audit-policy等の**値を持たない契約**を置�
 Current known manifests:
 - `cloudflare-account.json`
 - `huggingface.json`
+- `workspace-mcp.json`
 - `storage-lifecycle.json`
 
 `storage-lifecycle.json` current safety boundary:
@@ -110,7 +113,11 @@ Secret / Token値をoperationsへ保存しない。
 - `resolve-codex-skill.sh`, `github-skill-path.sh`
   - GitHub skill resolver
 - `init-dev-workspace.sh`
-  - Workspace initialization helper
+  - Workspace initialization helper + shared MCP installation
+- `install-workspace-mcp.sh`
+  - Cursor Global MCP merge installer
+- `verify-workspace-mcp.sh`
+  - Global MCP config / optional Cursor CLI verification
 - `storage_lifecycle_audit.py`
   - Storage / disk / Docker read-only audit
   - mutation機能なし
@@ -126,7 +133,8 @@ Secret / Token値をoperationsへ保存しない。
 - `.cursor/rules/cloudflare-operations.mdc`
   - Cloudflare Task-specific rule
 - `.cursor/mcp.json`
-  - Cursorに実登録されたMCP client config
+  - server-core Project固有/現在のCursor MCP client config
+  - Workspace共通MCPの配布元は `operations/workspace-mcp.json` と `~/.cursor/mcp.json`
   - 文書Registryと実設定を混同しない
 - `.cursor/agents`
   - Agent-related references
