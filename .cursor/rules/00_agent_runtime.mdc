@@ -29,6 +29,8 @@ EXPECTED_RESULT
 TARGET_PROJECT
 TARGET_RESPONSIBILITY
 TARGET_REPOSITORY
+MUTATION_REPOSITORIES
+READ_ONLY_REPOSITORIES
 REQUIRED_AUTHORITY
 REUSE_CANDIDATES
 VERIFY_PATH
@@ -38,7 +40,23 @@ CONTEXT_SCOPE
 
 不明な値は推測で埋めず、調査対象として明示する。
 
-## 3. Context Loading
+## 3. Mutation Target Lock
+
+Repositoryを読むことと、そのRepositoryへ書き込むことを分離する。
+
+- `TARGET_REPOSITORY` はTaskの主対象。
+- `MUTATION_REPOSITORIES` は今回File/Config/Document/Commitを変更してよいRepositoryの明示集合。
+- `READ_ONLY_REPOSITORIES` は参照・Authority確認・再利用調査だけを行うRepository。
+- server-coreはProject Taskでは原則 `READ_ONLY_REPOSITORIES` 側。server-core自身またはWorkspace共通Contractを変更するTaskだけ `MUTATION_REPOSITORIES` に入れる。
+- Shared Capabilityのowner Repositoryを読むことは、その実装を変更する許可ではない。利用・接続TaskではCapability ownerは原則read-onlyとし、consumer Project側だけを変更する。
+- Integration Taskでproducer / consumer / shared serviceの複数Repositoryが登場しても、必要なInterface変更が確認されるまで他Repositoryへ書き込まない。
+- 複数Repository変更が本当に必要なら、各Repositoryの変更理由・対象・verificationを分離してから変更する。
+
+File変更、Document更新、Git操作、Commit/Pushの直前に、現在のRepositoryが `MUTATION_REPOSITORIES` に含まれることを確認する。Local Git作業では必要に応じて `git rev-parse --show-toplevel` とtarget pathを照合する。
+
+server-coreのScript/Documentを参照または実行するためにserver-coreへ移動したことを、Task対象Repositoryがserver-coreへ変わった証拠にしない。
+
+## 4. Context Loading
 
 対象ProjectではREADMEを入口にし、対象Source・Input/Output・直接依存・関連Testから開始する。
 
@@ -53,7 +71,7 @@ Target Boundary
 
 `.env`、credential、dependency cache、build output、archive、logs、backups等はTask対象でない限り通常Contextへ含めない。
 
-## 4. Development Rules
+## 5. Development Rules
 
 - 目的と期待結果を先に定義する。
 - 新規実装前に既存Design / Code / Module / Type / Schema / Test / Template / shared capabilityを確認する。
@@ -62,7 +80,7 @@ Target Boundary
 - Project固有実装はowning Projectへ置き、server-coreへ吸収しない。
 - Design BaselineをCurrent実装に合わせるためだけに書き換えない。正式変更はDesign Deltaで追跡する。
 
-## 5. Documentation Ownership
+## 6. Documentation Ownership
 
 Document変更先はTARGET_PROJECT / TARGET_REPOSITORYに従う。
 
@@ -72,7 +90,7 @@ server-coreは共通入口であって、Project Documentの既定変更先で�
 
 server-core Documentを変更するのは、Taskがserver-core自身またはWorkspace共通Routing / Authority / Shared Capability / 共通運用Contractの変更を対象としている場合だけとする。
 
-## 6. Verification
+## 7. Verification
 
 PASS判定はTaskの受入条件に合わせる。
 
@@ -89,7 +107,7 @@ Process起動、Error無し、HTTP 200、Build成功、Test runner終了、CI gr
 
 未実行・未確認・未検証の状態はそのまま保持する。
 
-## 7. Documentation / GitHub History
+## 8. Documentation / GitHub History
 
 仕様・構造・運用契約が変わった場合は、対象ProjectのDocumentation Gateに従う。
 
@@ -97,7 +115,7 @@ GitHub commit / PRは時系列の作業履歴。Design / README / Registry等の
 
 Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
 
-## 8. Change Boundary
+## 9. Change Boundary
 
 変更操作は、対象Repository・Runbook・Provider contractで定義された権限と承認条件に従う。
 
@@ -111,15 +129,17 @@ Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productio
 
 Taskの依頼文だけから未定義の権限を推測しない。必要な承認条件は対象Authorityで確認する。
 
-## 9. Runtime
+## 10. Runtime
 
 本番常駐の標準経路はDocker / Docker Compose。Project固有の正式例外がある場合はそのAuthorityを優先する。
 
 ServerはRuntime / Processing環境であり、GitHub Source履歴・Design・Documentの代替正本にしない。
 
-## 10. Shared Capability / Integration
+## 11. Shared Capability / Integration
 
 Shared CapabilityのDiscovery / owner / connection / permission / availability contractはserver-coreで管理し、実装本体はowning Project/runtimeに置く。
+
+Shared Capabilityを「使う」「接続する」「検証する」Taskは、そのCapability実装を変更するTaskとは別である。owner Repositoryは必要なSource/Contractを参照してよいが、明示された実装変更理由が無い限りread-onlyとする。
 
 TGserver / webhook gateway等のProject-owned serviceはShared Capabilityと混同せず、`docs/PROJECT_INTEGRATION_RULES.md` に従って接続する。
 
