@@ -33,6 +33,23 @@ READMEと、そのREADMEからリンクするDesign / Tree / Delta / System / Op
 
 server-core Documentを変更するのは、Workspace共通のRouting / Authority / Shared Capability / Project Template / 共通運用Contract自体が変更される場合だけである。Project固有Document整備だけではserver-core変更理由にならない。
 
+## Mutation Ownership
+
+Project Taskでは、参照したRepositoryと変更してよいRepositoryを分離する。
+
+```text
+TARGET_PROJECT = 主対象Project
+TARGET_REPOSITORY = 主対象Repository
+MUTATION_REPOSITORIES = 今回write/commit可能なRepository
+READ_ONLY_REPOSITORIES = Authority/Reuse/Integration確認だけのRepository
+```
+
+server-core、Shared Capability owner、Provider integration owner等を参照しただけでは、そのRepositoryを `MUTATION_REPOSITORIES` に追加しない。
+
+「MCPを使う」「TGserverへ接続する」「Vaultを使う」「Cloudflareを使う」等の利用Taskは、原則としてconsumer Project側の変更で閉じる。owner側Source変更が必要と確認された場合だけ、別mutation対象として明示する。
+
+Commit前にはcurrent Git top-levelと対象Repositoryを照合し、別Projectの差分を混在させない。
+
 ## 開発開始前の確認
 
 新規Code生成前に確認する。
@@ -250,6 +267,7 @@ Credential実値をGitへ保存しない。Workspace shared credential contract�
 目的と期待結果
   -> server-core routing
   -> Project README
+  -> mutation/read-only repository lock
   -> Project内のREADME-linked Authority / Source / Test
   -> reuse check
   -> implementation / debug
