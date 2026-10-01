@@ -20,7 +20,7 @@ Each accepted delta records, as applicable:
 - Compatibility / migration / rollback considerations
 - Verification state
 
-Conversation transcripts, personal instructions, temporary Branch/HEAD status and current-task progress are not Design Delta authority.
+Transient session notes, personal instructions, temporary Branch/HEAD status and current-task progress are not Design Delta authority.
 
 ## 2026-09-30 — Formalize server-core as the G-ACE Workspace command center
 
@@ -196,10 +196,10 @@ Implementation existence, past successful usage, current registration and curren
 ### Compatibility
 No DebugAI implementation body, server service, provider setting or credential is changed by this documentation correction.
 
-## 2026-10-01 — Remove conversational/personal policy from server-core operational authority
+## 2026-10-01 — Remove transient and personal policy from server-core operational authority
 
 ### Baseline
-Some server-core documents and Cursor rules accumulated conversation-specific wording, personal approval labels, temporary project status, device-specific assumptions, and hidden-reasoning/language instructions.
+Some server-core documents and Cursor rules had accumulated session-specific wording, personal approval labels, temporary project status, device-specific assumptions, and reasoning/language instructions unrelated to durable Workspace operation.
 
 ### Actual change
 server-core Current Authority is limited to durable Workspace/Server operation contracts:
@@ -215,14 +215,14 @@ server-core Current Authority is limited to durable Workspace/Server operation c
 
 Removed or generalized:
 - personal names/titles as approval-policy identifiers;
-- chat-specific prohibitions and completion instructions;
-- hidden-thinking/language rules;
-- per-turn/branch progress copied into durable docs;
+- session-specific completion or prohibition wording;
+- reasoning/language instructions unrelated to server operation;
+- per-task/branch progress copied into durable docs;
 - device-specific KB storage path as a server-core invariant;
 - Project-specific storage products presented as Workspace-wide storage authorities.
 
 ### Reason / root cause
-Conversation instructions and transient work state are not stable server-core operating contracts. Keeping them in always-applied rules or Current Authority causes scope creep, stale facts and over-interpretation.
+Transient instructions and short-lived work state are not stable server-core operating contracts. Keeping them in always-applied rules or Current Authority causes scope creep, stale facts and over-interpretation.
 
 ### Evidence
 Repository-wide audit of README, Protocol, Design, Load Scope, Workspace, Registry, MCP, Secret, Deploy, Storage, KB, Structure and Cursor rules identified these categories and corrected them on the post-merge documentation cleanup branch.
