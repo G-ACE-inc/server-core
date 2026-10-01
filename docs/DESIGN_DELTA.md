@@ -206,3 +206,39 @@ The final branch/PR HEAD must pass `server-core-guard`. This change itself does 
 ## Update rule
 
 When a later architecture decision changes the server-core baseline, append a new section. Do not rewrite or delete prior accepted deltas merely because the current implementation changed.
+## 2026-10-01 — Workspace-global MCP execution route
+
+### Baseline
+server-core already classified MCP / Cloudflare / Hugging Face as Workspace shared capabilities, but the executable Cursor route was still Project-dependent or only documented. This caused the known failure mode where one Project had an MCP registration/token path while another Project did not.
+
+### Adopted design
+Use Cursor User Global MCP (`~/.cursor/mcp.json`) as the Workspace-wide execution entry for shared remote MCPs. Project `.cursor/mcp.json` remains reserved for Project-owned or explicitly Project-scoped MCPs.
+
+Source of truth:
+- `operations/workspace-mcp.json` — shared MCP manifest without provider tokens;
+- `scripts/install-workspace-mcp.sh` — safe merge into the user-global Cursor MCP config;
+- `scripts/verify-workspace-mcp.sh` — config verification and optional Cursor CLI inspection;
+- `docs/WORKSPACE_MCP.md` — contract and availability gate.
+
+Current shared registrations:
+- Cloudflare API MCP;
+- Hugging Face official MCP.
+
+### Security / ownership
+- Provider credentials are not copied into Project repositories.
+- OAuth-capable providers authenticate at the global MCP layer.
+- Bearer-token providers must use the approved Workspace Secret / Libral Vault path; plaintext tokens remain outside Git and Project config.
+- Existing unrelated user MCP servers are preserved.
+- A name collision with a different definition fails closed rather than silently overriding an existing server.
+
+### Initialization
+`scripts/init-dev-workspace.sh` now invokes the shared MCP installer after establishing the common Workspace rules path. Therefore new Workspace initialization does not depend on each Project remembering to register the shared MCPs.
+
+### Verification boundary
+Source/CI verification confirms the manifest schema, installer shell syntax, documentation and registration contract. Actual server-side `~/.cursor/mcp.json`, OAuth authentication, transport, tool discovery and representative calls remain Runtime verification steps and are not claimed as complete until executed on the intended Cursor/Agent host.
+
+### Deferred shared MCPs
+DebugAI MCP and Deterministic Japanese Parser MCP are not globally registered yet because their intended live runtime/endpoint has not been verified. No path or endpoint is invented.
+
+### Compatibility
+Project-specific MCPs remain supported. Cursor project-level configuration may override a global server name; such overrides are prohibited by Workspace policy unless explicitly approved.
