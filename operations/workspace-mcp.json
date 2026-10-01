@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "scope": "workspace-global",
+  "consumer": "g-ace-workspace",
+  "client": "cursor",
+  "servers": {
+    "cloudflare-api": {
+      "url": "https://mcp.cloudflare.com/mcp",
+      "auth": {
+        "CLIENT_ID": "8ilRHxRMw6Ntq3dP"
+      },
+      "authentication": "oauth"
+    },
+    "huggingface": {
+      "url": "https://huggingface.co/mcp",
+      "authentication": "oauth_or_client_generated_config"
+    }
+  },
+  "installation": {
+    "target": "~/.cursor/mcp.json",
+    "merge": "preserve-existing-servers",
+    "collision": "fail-closed"
+  }
+}
