@@ -50,6 +50,7 @@ TARGET_RESPONSIBILITY
 TARGET_REPOSITORY
 MUTATION_REPOSITORIES
 READ_ONLY_REPOSITORIES
+SERVER_CORE_MUTATION_AUTHORIZED
 AUTHORITY_REQUIRED
 REUSE_CANDIDATES
 VERIFY_PATH
@@ -60,7 +61,7 @@ CHANGE_BOUNDARY
 
 `MUTATION_REPOSITORIES` は今回Source / Config / Document / Git historyを変更してよいRepositoryだけを列挙する。Authority確認・再利用調査・shared capability確認のために開いたRepositoryは、明示的な変更理由が無ければ `READ_ONLY_REPOSITORIES` とする。
 
-Project Taskではserver-coreを原則read-onlyとする。server-core自身またはWorkspace共通Contractの変更がTask目的に含まれる場合だけserver-coreをmutation対象にする。
+**server-coreはexplicit owner authorizationが無い限り常にread-only。** server-core自身やWorkspace共通Contractに変更が必要に見えても、`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立しない限りmutation対象へ入れない。
 
 対象Project / ownerが不明なら `docs/WORKSPACE_REGISTRY.md` を読む。
 
@@ -75,8 +76,11 @@ Project Taskではserver-coreを原則read-onlyとする。server-core自身ま�
 - MCPを使う / 接続する / 検証する
 - Vault / TGserver / webhook gateway / Cloudflareを使う
 - server-coreを先に読む
+- Workspace共通Contractへ影響する可能性がある
 
 これらはTARGET_PROJECT / TARGET_REPOSITORYを維持したまま、対象Project側のDocument / Config / Integrationを変更する指示として解釈する。Shared CapabilityやProvider owner側の実装変更が必要と判明した場合だけ、そのRepositoryを追加mutation対象として明示する。
+
+server-coreは例外で、追加mutation対象にするには**server-core自体の変更についてexplicit owner authorization**が必要。AI判断・依存関係・影響範囲だけでは昇格しない。
 
 複数Repositoryを変更する場合は、Repositoryごとに変更理由、diff、verification、Git historyを分離する。
 
@@ -90,7 +94,7 @@ Project Taskではserver-coreを原則read-onlyとする。server-core自身ま�
 
 対象Project内で「READMEに付属するDocument」「各種Document」「READMEからリンクするDocument」を更新する指示は、対象Project Repository内のDocument更新を意味する。server-coreのDocument更新へ読み替えない。
 
-server-core側Documentを更新してよいのは、Taskがserver-core自身、またはWorkspace共通Routing / Authority / Shared Capability / 共通運用Contractの変更を明示的に対象としている場合だけである。
+server-core側Documentは、server-core自体の変更が明示的に許可された場合だけ更新する。Workspace共通Routing / Authority / Shared Capability / 共通運用Contractに関係するという理由だけでは変更しない。
 
 ### Level 0: Repository Entry
 - Current purpose / responsibility
@@ -205,6 +209,7 @@ RuntimeやRegistryを確認するためにserver-coreを参照したことを、
 - target Project / responsibility
 - target repository
 - mutation vs read-only repositories
+- server-core mutation authorization state
 - relevant baseline / contract
 - input / output
 - direct dependencies / constraints
@@ -220,5 +225,7 @@ RuntimeやRegistryを確認するためにserver-coreを参照したことを、
 Task owner、Authority、Runtime state、credential contract、mutation target等が不明な場合は推測で補完しない。
 
 Document更新先が不明な場合も、server-coreを既定の変更先にしない。対象Project READMEとRepository ownershipを確認してから更新する。
+
+server-core mutation authorizationが不明または未付与ならread-onlyを維持する。
 
 `UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` 等の状態を維持し、必要なAuthority/readbackだけ追加取得する。mutation targetが不明な状態ではwrite/commitへ進まない。
