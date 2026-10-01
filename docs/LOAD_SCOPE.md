@@ -48,17 +48,39 @@ EXPECTED_RESULT
 TARGET_PROJECT
 TARGET_RESPONSIBILITY
 TARGET_REPOSITORY
+MUTATION_REPOSITORIES
+READ_ONLY_REPOSITORIES
 AUTHORITY_REQUIRED
 REUSE_CANDIDATES
 VERIFY_PATH
 CHANGE_BOUNDARY
 ```
 
+`TARGET_REPOSITORY` はTaskの主対象であり、参照したRepository一覧ではない。
+
+`MUTATION_REPOSITORIES` は今回Source / Config / Document / Git historyを変更してよいRepositoryだけを列挙する。Authority確認・再利用調査・shared capability確認のために開いたRepositoryは、明示的な変更理由が無ければ `READ_ONLY_REPOSITORIES` とする。
+
+Project Taskではserver-coreを原則read-onlyとする。server-core自身またはWorkspace共通Contractの変更がTask目的に含まれる場合だけserver-coreをmutation対象にする。
+
 対象Project / ownerが不明なら `docs/WORKSPACE_REGISTRY.md` を読む。
 
 既存owner / reusable assetを確認する前に新規Project / Module / Tool / Documentを作らない。
 
-## 4. Target Repository Loading
+## 4. Mutation Routing
+
+次の語だけではmutation先をserver-coreへ変更しない。
+- READMEを更新
+- README付属Documentを更新
+- 各種Documentを更新
+- MCPを使う / 接続する / 検証する
+- Vault / TGserver / webhook gateway / Cloudflareを使う
+- server-coreを先に読む
+
+これらはTARGET_PROJECT / TARGET_REPOSITORYを維持したまま、対象Project側のDocument / Config / Integrationを変更する指示として解釈する。Shared CapabilityやProvider owner側の実装変更が必要と判明した場合だけ、そのRepositoryを追加mutation対象として明示する。
+
+複数Repositoryを変更する場合は、Repositoryごとに変更理由、diff、verification、Git historyを分離する。
+
+## 5. Target Repository Loading
 
 対象Projectへ入った後はREADMEを入口にする。
 
@@ -104,7 +126,7 @@ server-core側Documentを更新してよいのは、Taskがserver-core自身、�
 - 局所情報で影響範囲を閉じられない
 - Task自体が全体監査 / 全コード確認 / 横断調査を要求している
 
-## 5. Project Integration Routing
+## 6. Project Integration Routing
 
 Project-owned service、Libral Vault、MCP、Tool integrationを変更または追加するときは `docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で確認する。
 
@@ -116,7 +138,9 @@ server-core README
   -> target Project authority / Source / Test
 ```
 
-## 6. Reuse Search Order
+Integration Contractを読むこと自体はserver-coreやservice/provider owner Projectへの変更理由ではない。
+
+## 7. Reuse Search Order
 
 ```text
 対象Project内
@@ -136,9 +160,9 @@ Reuse priority:
   -> 新規実装
 ```
 
-Registry entryはCurrent Runtime健康状態の証明ではない。
+Registry entryはCurrent Runtime健康状態の証明でもmutation permissionでもない。
 
-## 7. Normal Context Exclusions
+## 8. Normal Context Exclusions
 
 通常Contextへ入れない。
 - `.git/`
@@ -152,7 +176,7 @@ Registry entryはCurrent Runtime健康状態の証明ではない。
 
 `.github/` や `scripts/` もTask対象でない限り一括読込しない。
 
-## 8. Documentation Read Rule
+## 9. Documentation Read Rule
 
 - README = Current entry
 - Design = architecture baseline
@@ -166,17 +190,21 @@ Registry entryはCurrent Runtime健康状態の証明ではない。
 
 Project固有Documentは対象Project Authority。server-core共通DocumentはWorkspace Authority。この2つを相互代用しない。
 
-## 9. Runtime / Registry Rule
+## 10. Runtime / Registry Rule
 
 READMEやRegistryのRuntime記載はDiscovery metadataまたはlast-known record。
 
 Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / GitHub revision等をreadbackする。未確認値をcarry-forwardしてCurrent扱いしない。
 
-## 10. Stop Reading Condition
+RuntimeやRegistryを確認するためにserver-coreを参照したことを、server-core mutationの理由にしない。
+
+## 11. Stop Reading Condition
 
 作業開始に必要な読込は、次を説明・確認できた時点で止める。
 - purpose / expected result
 - target Project / responsibility
+- target repository
+- mutation vs read-only repositories
 - relevant baseline / contract
 - input / output
 - direct dependencies / constraints
@@ -187,10 +215,10 @@ Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / Gi
 
 不足した場合だけ次Levelへ進む。
 
-## 11. Router Failure Rule
+## 12. Router Failure Rule
 
-Task owner、Authority、Runtime state、credential contract等が不明な場合は推測で補完しない。
+Task owner、Authority、Runtime state、credential contract、mutation target等が不明な場合は推測で補完しない。
 
 Document更新先が不明な場合も、server-coreを既定の変更先にしない。対象Project READMEとRepository ownershipを確認してから更新する。
 
-`UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` 等の状態を維持し、必要なAuthority/readbackだけ追加取得する。
+`UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` 等の状態を維持し、必要なAuthority/readbackだけ追加取得する。mutation targetが不明な状態ではwrite/commitへ進まない。
