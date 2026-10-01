@@ -81,6 +81,7 @@ Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Production�
 
 ### Shared Platform
 - `docs/WORKSPACE_REGISTRY.md` — Project / shared Capability / MCP / Tool / Secret Contract / Runtime discovery
+- `docs/WORKSPACE_MCP.md` — Workspace-global MCP registration / authentication / verification
 - `docs/PROJECT_INTEGRATION_RULES.md` — TGserver / webhook gateway / Vault / MCP / Tool Project導入契約
 - `docs/WORKSPACE_SHARED_SECRETS.md` — Vault経由Shared Secret / Token契約
 - `docs/KB_REUSE_DESIGN.md` — F: 1TB reusable-development KB設計
@@ -104,6 +105,7 @@ Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Production�
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
 | 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
 | Project / shared Capability / MCP / Tool / DebugAI / Secret / Runtime発見 | `docs/WORKSPACE_REGISTRY.md` |
+| Workspace共通MCPの登録 / Cursor Global MCP / 検証 | `docs/WORKSPACE_MCP.md` |
 | Project導入（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
 | 再利用KB | `docs/KB_REUSE_DESIGN.md` |
@@ -174,6 +176,7 @@ server-coreが管理するのは:
 Capability本体は所有Project/runtimeへ残す。
 
 対象:
+- Workspace-global MCP;
 - MCP;
 - DebugAI;
 - GitHub tools;
