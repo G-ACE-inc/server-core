@@ -1,14 +1,14 @@
 # SERVER CORE STRUCTURE
 
-Version: 2026-09-30
-Role: `/home/admin1/server-core` のProject Tree / Navigation Index。G-ACE Workspace司令室のAuthorityと実装入口を最短で辿るために使う。
+Version: 2026-10-01
+Role: `/home/admin1/server-core` のProject Tree / Navigation Index。
 
 ## Entry Flow
 
 ```text
 README.md
   -> docs/LOAD_SCOPE.md
-  -> 今回必要なAuthorityだけ
+  -> Taskに必要なAuthority
   -> target Project README
 ```
 
@@ -16,156 +16,104 @@ README.md
 
 ## Root
 
-- `README.md`
-  - Workspace Command Centerの唯一の共通入口
-  - Task routing / Current scope / Authority map
-- `CORE.md`
-  - LibralCore開発方法論
-  - Part -> Feature -> Component -> System -> Application System
-  - reuse / Module / ownership / public contract基準
-- `SERVER_CORE_PROTOCOL.md`
-  - 共通運用・禁止・Approval Boundary
-- `.aiignore` / `.cursorignore`
-  - normal context exclusion hints
-- `.cursor/`
-  - Workspace Agent runtime rules / MCP client config
-- `.github/`
-  - GitHub Actions / Dependabot / Issue/PR support
-- `docs/`
-  - Design / Delta / Router / Registry / Project standard / Operations contract
-- `operations/`
-  - Secret値を持たないProvider / shared contract / audit-policy manifests
-- `scripts/`
-  - 共通自動化・resolver・read-only audit
-- `archive/`
-  - 旧版・退避。Current Authorityではなく通常Context対象外
+- `README.md` — Workspace Command Center入口 / Authority map
+- `CORE.md` — LibralCore開発方法論
+- `SERVER_CORE_PROTOCOL.md` — 共通運用・変更・安全境界
+- `.aiignore` / `.cursorignore` — context exclusion hints
+- `.cursor/` — Workspace runtime rules / client integration
+- `.github/` — CI / repository automation
+- `docs/` — Design / Router / Registry / Operations contracts
+- `operations/` — credential値を持たないmachine-readable contracts / policies
+- `scripts/` — Workspace automation / verify / audit helpers
+- `archive/` — historical/retired material; Current Authorityではない
 
 ## docs/ — Command Center Authorities
 
 ### Core command / architecture
-- `SERVER_CORE_DESIGN.md`
-  - server-core＝G-ACE Workspace Command CenterのDesign Baseline
-- `DESIGN_DELTA.md`
-  - Baselineとの差分・理由・Evidence・適用Commit
-- `LOAD_SCOPE.md`
-  - Task routing / progressive context loading / dispatch
-- `G_ACE_WORKSPACE.md`
-  - Workspace正規運用契約
-- `STRUCTURE.md`
-  - 本ファイル。server-core Project Tree
+- `SERVER_CORE_DESIGN.md` — server-core Design Baseline
+- `DESIGN_DELTA.md` — accepted architecture/responsibility changes
+- `LOAD_SCOPE.md` — Task routing / progressive context loading
+- `G_ACE_WORKSPACE.md` — Workspace operation contract
+- `STRUCTURE.md` — 本Navigation Index
 
 ### Development / repository governance
-- `PROJECT_TEMPLATE.md`
-  - Project構成、README/Design/Tree/Delta/System Document作成条件、Documentation Gate
-- `AUTO_COMMIT.md`
-  - Commit = Work Report、Push、Remote Readback
-- `DEPLOY_RUNBOOK.md`
-  - confirmed GitHub revision -> approved deploy -> Runtime Verify
-- `GLOSSARY.md`
-  - 正式名称 / 用語
+- `PROJECT_TEMPLATE.md` — Project/document standard
+- `AUTO_COMMIT.md` — GitHub work history / commit / push / readback
+- `DEPLOY_RUNBOOK.md` — confirmed GitHub revision -> Server deploy -> Runtime verify
+- `GLOSSARY.md` — terminology
 
 ### Shared platform / operations
-- `WORKSPACE_REGISTRY.md`
-  - Project / shared Capability / MCP / Tool / Secret Contract / Runtime discovery
-- `WORKSPACE_MCP.md`
-  - Cursor Global MCP / Workspace共通実行経路 / verification
-- `PROJECT_INTEGRATION_RULES.md`
-  - TGserver / webhook gateway / Vault / MCP / Tool Project導入契約
-- `WORKSPACE_SHARED_SECRETS.md`
-  - Vault経由Workspace shared Secret / Token契約
-- `KB_REUSE_DESIGN.md`
-  - Master PC `F:` 1TB reusable-development KB Design Baseline
-- `STORAGE_LIFECYCLE.md`
-  - Log / Cache / Cleanup / Backup / Recovery / Disk pressure Design Baseline
-- `CLOUDFLARE_OPERATIONS.md`
-  - Cloudflare固有運用契約
+- `WORKSPACE_REGISTRY.md` — Project / Capability / MCP / Tool / credential contract / Runtime discovery
+- `WORKSPACE_MCP.md` — Workspace-global MCP manifest/install/verify contract
+- `PROJECT_INTEGRATION_RULES.md` — Project-owned service / Vault / MCP / Tool integration contract
+- `WORKSPACE_SHARED_SECRETS.md` — shared credential Broker contract
+- `KB_REUSE_DESIGN.md` — reusable-development KB access / bridge / lifecycle contract
+- `STORAGE_LIFECYCLE.md` — Server log / cache / cleanup / backup / recovery contract
+- `CLOUDFLARE_OPERATIONS.md` — Cloudflare common operation contract
 
 ### Task-specific support
-- `GITHUB_FREE_MAX.md`
-  - GitHub無料枠最適化Task時のみ
-- `GITHUB_SKILL.md`
-  - GitHub/Codex skill resolver利用時のみ
+- `GITHUB_FREE_MAX.md` — GitHub quota-related tasks only
+- `GITHUB_SKILL.md` — GitHub skill resolver tasks only
 
 Task-specific support documents are not loaded at normal Workspace start.
 
 ## operations/
 
-Provider / shared-secret / audit-policy等の**値を持たない契約**を置く。
-
-Current known manifests:
+Current machine-readable contracts/policies:
 - `cloudflare-account.json`
 - `huggingface.json`
 - `workspace-mcp.json`
 - `storage-lifecycle.json`
 
-`storage-lifecycle.json` current safety boundary:
-- `mode=audit_only`
-- generic delete disabled
-- generic Docker prune disabled
-- volume delete disabled
-
-Secret / Token値をoperationsへ保存しない。
+`operations/` はcredential実値を保持しない。
 
 ## scripts/
 
-- `ai-auto-commit.sh`
-  - GitHub work-report commit / push補助
-- `resolve-codex-skill.sh`, `github-skill-path.sh`
-  - GitHub skill resolver
-- `init-dev-workspace.sh`
-  - Workspace initialization helper + shared MCP installation
-- `install-workspace-mcp.sh`
-  - Cursor Global MCP merge installer
-- `verify-workspace-mcp.sh`
-  - Global MCP config / optional Cursor CLI verification
-- `storage_lifecycle_audit.py`
-  - Storage / disk / Docker read-only audit
-  - mutation機能なし
-  - `--self-test`でSafety contract検証
+- `ai-auto-commit.sh` — GitHub commit/push helper
+- `resolve-codex-skill.sh`, `github-skill-path.sh` — GitHub skill resolver
+- `init-dev-workspace.sh` — Workspace initialization + managed MCP configuration
+- `install-workspace-mcp.sh` — Cursor Global MCP merge installer
+- `verify-workspace-mcp.sh` — Global MCP config verification
+- `storage_lifecycle_audit.py` — read-only storage/disk/Docker audit
+- `workspace_command_center_check.py` — canonical Workspace structure/settings verification and bounded repair
 
 ## .cursor/
 
-- `.cursor/rules/00_agent_runtime.mdc`
-  - Workspace Agent向けlightweight execution kernel
-  - server-core README -> LOAD_SCOPE -> target Projectを強制
-- `.cursor/rules/01_japanese_thinking.mdc`
-  - language-related rule
-- `.cursor/rules/cloudflare-operations.mdc`
-  - Cloudflare Task-specific rule
-- `.cursor/mcp.json`
-  - server-core Project固有/現在のCursor MCP client config
-  - Workspace共通MCPの配布元は `operations/workspace-mcp.json` と `~/.cursor/mcp.json`
-  - 文書Registryと実設定を混同しない
-- `.cursor/agents`
-  - Agent-related references
+- `.cursor/rules/00_agent_runtime.mdc` — Workspace routing / execution / verification kernel
+- `.cursor/rules/cloudflare-operations.mdc` — Cloudflare Task-specific operational rule
+- `.cursor/mcp.json` — Project/client-specific MCP config when present
+- `.cursor/agents/` — agent-related repository assets when present
+
+Conversation-language or hidden-reasoning rules are not server-core operational Authority and are not kept as always-applied Workspace rules.
 
 ## Shared Capability Boundary
 
-server-coreはMCP / Tool / DebugAI / KB / Providerの実装本体を抱え込まない。
+server-coreはMCP / Tool / DebugAI / KB / Providerのimplementation bodyを抱え込まない。
 
 server-coreが持つのは:
-- discovery;
-- owner;
-- connection contract;
-- permission / safety boundary;
-- availability state;
-- Workspace common use rule。
+- discovery
+- owner
+- connection/config contract
+- permission / change boundary
+- verification method
+- Workspace common use rule
 
 Discovery authority: `docs/WORKSPACE_REGISTRY.md`。
 
 ## Project Integration Boundary
 
-`docs/PROJECT_INTEGRATION_RULES.md` is the common contract for adopting TGserver / webhook gateway / Libral Vault / MCP / Tool in a Project. TGserver and webhook gateway remain Project-owned services; Libral Vault remains a Workspace-shared Secret capability with Project-specific usage contracts.
+`docs/PROJECT_INTEGRATION_RULES.md` はProject-owned service / Shared CapabilityをProjectへ接続する共通契約。
 
-## Removed Redundant Authorities
+IntegrationしただけでProject固有実装をserver-coreへ移さない。
 
-重複していた旧Current-state / Knowledge register / status helper / agent-specific checklistはCurrent構成から除去済み。
+## Single Source of Truth
 
-現在のSingle Source of Truth:
 - Project/Runtime discovery -> `docs/WORKSPACE_REGISTRY.md`
-- reusable KB design -> `docs/KB_REUSE_DESIGN.md`
+- reusable KB access design -> `docs/KB_REUSE_DESIGN.md`
 - chronological work history -> GitHub commit / PR
 - Workspace routing -> `README.md` + `docs/LOAD_SCOPE.md`
+- credential broker/use -> `docs/WORKSPACE_SHARED_SECRETS.md`
+- managed Workspace MCP -> `docs/WORKSPACE_MCP.md`
 
 ## Project Tree Update Conditions
 
@@ -180,17 +128,14 @@ Discovery authority: `docs/WORKSPACE_REGISTRY.md`。
 
 ## archive/
 
-`archive/YYYY-MM-DD/` を基本とする。
-
-- Secretをarchiveへ保存しない
+- credential実値をarchiveへ保存しない
 - archiveをCurrent state / Design / Ruleとして扱わない
 - normal contextへ入れない
 
-## Prohibitions
+## Invariants
 
-- ルート直下への用途不明な一時File
-- 既存Authorityと重複する別名Document乱立
-- Directory分類だけを目的としたDocument追加
-- Secret / Token実値保存
-- 実構造変更後に本Treeを未更新のままDocumentation Completeとすること
-- Project固有実装を司令室都合だけでserver-coreへ移すこと
+- rootへ用途不明な一時Fileを増やさない
+- 既存Authorityと重複する別名Documentを乱立させない
+- Directory分類だけを目的にDocumentを増やさない
+- credential実値を保存しない
+- Project固有implementationをserver-coreへ移してownershipを曖昧にしない
