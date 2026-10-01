@@ -52,7 +52,6 @@ README.md
 - `CLOUDFLARE_OPERATIONS.md` — Cloudflare common operation contract
 
 ### Task-specific support
-- `GITHUB_FREE_MAX.md` — GitHub quota-related tasks only
 - `GITHUB_SKILL.md` — GitHub skill resolver tasks only
 
 Task-specific support documents are not loaded at normal Workspace start.
