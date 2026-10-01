@@ -9,32 +9,52 @@ PROJECT_NAME=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project)
+      if [[ $# -lt 2 ]]; then
+        echo "Missing value for --project" >&2
+        exit 2
+      fi
       PROJECT_NAME="$2"
       shift 2
       ;;
     *)
       echo "Unknown argument: $1" >&2
-      exit 1
+      exit 2
       ;;
   esac
 done
+
+if [[ ! -d "$SERVER_CORE_RULES" ]]; then
+  echo "[error] server-core rules directory is missing: $SERVER_CORE_RULES" >&2
+  exit 1
+fi
 
 if [[ -n "$PROJECT_NAME" ]]; then
   TARGET="${PROJECTS_DIR}/${PROJECT_NAME}"
   if [[ -d "$TARGET" ]]; then
     echo "[skip] ${TARGET} already exists"
+  elif [[ -e "$TARGET" ]]; then
+    echo "[error] project target exists but is not a directory: ${TARGET}" >&2
+    exit 1
   else
     mkdir -p "$TARGET"
     echo "[created] ${TARGET}"
   fi
 fi
 
-if [[ -L "$PROJECTS_RULES" ]] && [[ "$(readlink "$PROJECTS_RULES")" == "$SERVER_CORE_RULES" ]]; then
-  echo "[ok] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
+if [[ -L "$PROJECTS_RULES" ]]; then
+  if [[ "$(readlink "$PROJECTS_RULES")" == "$SERVER_CORE_RULES" ]]; then
+    echo "[ok] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
+  else
+    echo "[error] ${PROJECTS_RULES} is a symlink to an unexpected target: $(readlink "$PROJECTS_RULES")" >&2
+    exit 1
+  fi
+elif [[ -e "$PROJECTS_RULES" ]]; then
+  echo "[error] ${PROJECTS_RULES} already exists and is not the required symlink; no deletion performed" >&2
+  exit 1
 else
-  rm -rf "$PROJECTS_RULES"
-  ln -sfn "$SERVER_CORE_RULES" "$PROJECTS_RULES"
-  echo "[fixed] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
+  mkdir -p "$(dirname "$PROJECTS_RULES")"
+  ln -s "$SERVER_CORE_RULES" "$PROJECTS_RULES"
+  echo "[created] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
 fi
 
 echo "Done."

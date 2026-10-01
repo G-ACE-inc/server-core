@@ -176,6 +176,14 @@ jobs:
           print('STORAGE_LIFECYCLE_POLICY=PASS')
           PY
 
+      - name: Workspace initializer safety
+        run: |
+          set -euo pipefail
+          bash -n scripts/init-dev-workspace.sh
+          ! grep -nE 'rm[[:space:]]+-rf.*PROJECTS_RULES|rm[[:space:]]+-rf.*projects/\.cursor/rules' scripts/init-dev-workspace.sh
+          grep -q 'already exists and is not the required symlink; no deletion performed' scripts/init-dev-workspace.sh
+          grep -q 'unexpected target' scripts/init-dev-workspace.sh
+
       - name: No tracked env files
         run: |
           set -euo pipefail

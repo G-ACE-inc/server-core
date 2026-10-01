@@ -119,9 +119,13 @@ Hostの `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` �
 
 ServerはRuntime / Processing環境であり、GitHub Source履歴やProject Designの代替正本にしない。
 
+## Project Integration
+
+TGserver / webhook gateway / Libral Vault / Project-level MCP・ToolをProjectへ導入・変更するときは、`/home/admin1/server-core/docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で読む。TGserver / webhook gatewayはProject-owned Integration、Libral VaultはShared Capability + Project usage contractとして扱う。
+
 ## Shared Workspace Capabilities
 
-共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。
+共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。TGserver / webhook gatewayはShared CapabilityではなくProject Integration Ruleで扱う。
 
 Secret値をChat / Git / Log / Documentへ出さない。
 
