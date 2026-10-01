@@ -7,7 +7,7 @@ Role: G-ACE Workspaceでserver-coreを共通Command Centerとして利用する�
 
 標準Workspace `/home/admin1/workspace/G-ACE.code-workspace` では、server-coreがTask routing、共通Authority、shared capability discovery、GitHub work history、Server/Provider operation boundaryを管理する。
 
-Project固有Design / Source / Test / Runtime logicは各Projectが所有する。
+Project固有Design / Source / Test / Runtime logic / Project Documentは各Projectが所有する。
 
 ## 2. Mandatory Entry
 
@@ -64,6 +64,10 @@ READMEから、存在する場合は次へ到達できることを標準とす�
 - stable System / Feature-bundle / Module documents
 - run / test / verify entry points
 
+これらは**対象Project側のAuthority**である。対象ProjectのREADMEやREADME-linked Documentを更新するTaskを、server-core Document更新へ読み替えない。
+
+server-core側のDocument変更は、Workspace共通のRouting / Authority / Shared Capability / 共通運用Contract自体が変更される場合に限定する。
+
 対象Source、直接依存、関連Testから開始し、必要時だけ `docs/LOAD_SCOPE.md` のLevelに従ってContextを広げる。
 
 ## 6. Development Routine
@@ -71,14 +75,14 @@ READMEから、存在する場合は次へ到達できることを標準とす�
 ```text
 server-core command center
   -> target Project README
-  -> required Design / Tree / Delta / System Document
+  -> target Project required Design / Tree / Delta / System Document
   -> repository / branch / HEAD / status
   -> Source / direct dependency / tests
   -> reuse check
   -> implementation / debug
   -> diff
   -> verification
-  -> documentation gate
+  -> target Project documentation gate
   -> GitHub commit
   -> push / remote readback
   -> PR / CI when required
@@ -90,10 +94,12 @@ server-core command center
 
 Documentationは実変更に必要なものだけ更新する。
 
-- Current entryが変わる -> README
-- File/Directory/主要責務/Entry Pointが変わる -> Tree
-- Design Baselineから正式に変える -> Design Delta
-- READMEだけでは運用/保守継続が困難な安定System/Module -> System Document
+- Current entryが変わる -> 対象Project README
+- File/Directory/主要責務/Entry Pointが変わる -> 対象Project Tree
+- Design Baselineから正式に変える -> 対象Project Design Delta
+- READMEだけでは運用/保守継続が困難な安定System/Module -> 対象Project System Document
+
+Project固有のDocumentation Gateをserver-core Documentation Gateで代用しない。
 
 Documentation GateはDocument乱立のためのCheck listではない。
 
@@ -167,7 +173,7 @@ Workspace Taskの完了は、Taskに必要な範囲で次が閉じた場合に�
 - correct Project / authority routing
 - requested implementation or operation
 - required verification
-- required documentation update
+- required target-Project documentation update
 - GitHub work history when source/config changed
 - required remote / CI / runtime evidence
 - change boundary compliance
