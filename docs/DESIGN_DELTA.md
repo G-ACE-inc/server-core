@@ -242,3 +242,39 @@ DebugAI MCP and Deterministic Japanese Parser MCP are not globally registered ye
 
 ### Compatibility
 Project-specific MCPs remain supported. Cursor project-level configuration may override a global server name; such overrides are prohibited by Workspace policy unless explicitly approved.
+
+## 2026-10-01 — Correct DebugAI MCP capability state after live-history review
+
+### Baseline
+The previous Workspace-global MCP delta deferred DebugAI MCP global registration because current live verification had not been completed at that point.
+
+### Actual change
+DebugAI MCP is now explicitly classified as **implemented and protocol-verified with prior Codex usage history**, while the currently changing exact HEAD remains subject to fresh live re-verification.
+
+```text
+MCP_IMPLEMENTATION=VERIFIED
+MCP_PROTOCOL=VERIFIED
+PRIOR_CODEX_USAGE=CONFIRMED_BY_MASTER
+CURRENT_EXACT_HEAD_SERVER_READBACK=PENDING
+CURRENT_EXACT_HEAD_CODEX_REGISTRATION_READBACK=PENDING
+CURRENT_EXACT_HEAD_REPRESENTATIVE_CALL=PENDING
+```
+
+### Reason / root cause
+Current-head live verification and implementation/usage history had been collapsed into a single state, causing an already implemented and previously used DebugAI MCP to be incorrectly described as if it did not exist or had never been registered/used.
+
+### Evidence
+- DebugAI Current Authority records stdio Source/Unit/real protocol, 9 tools, health and durable-continuation surfaces as PASS.
+- Master confirmed prior successful Codex use.
+- `docs/WORKSPACE_MCP.md` and `docs/WORKSPACE_REGISTRY.md` were corrected before PR #7 merge.
+
+### Affected scope
+- `docs/WORKSPACE_MCP.md`
+- `docs/WORKSPACE_REGISTRY.md`
+- `docs/DESIGN_DELTA.md`
+
+### Compatibility / rollback
+No DebugAI implementation body, Server service, provider setting or Secret is changed by this correction. The correction preserves both facts: prior implementation/use remains true, and current exact-head live availability still requires fresh verification.
+
+### Verification state
+The server-core documentation correction is source-level only. Current exact-head DebugAI live verification remains owned by the DebugAI Project verification phase.
