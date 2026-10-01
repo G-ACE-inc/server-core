@@ -257,7 +257,7 @@ jobs:
             "mcpServers": {
               "cloudflare-api": {
                 "url": "https://mcp.cloudflare.com/mcp",
-                "auth": {"CLIENT_ID": "TEST_CLIENT_ID"}
+                "auth": {"CLIENT_ID": "8ilRHxRMw6Ntq3dP"}
               },
               "huggingface": {
                 "url": "https://huggingface.co/mcp",
