@@ -108,6 +108,14 @@ REQUEST
 - **Commit / PR**: 時系列の作業履歴。
 - **Registry**: Project / Capability / owner / connection / verification boundaryの発見情報。
 
+### Documentation Ownership
+
+Document更新先は**Taskの対象Project**で決める。
+
+対象Projectで「READMEと付属Documentを更新」「各種Documentを更新」「READMEからリンクするDocumentを整備」と指示された場合、対象はそのProject Repository内のREADME / Design / Tree / Delta / System / Operations等である。`server-core` Documentへ置き換えて解釈しない。
+
+`server-core`側Documentを変更するのは、Workspace共通のRouting、Authority、Shared Capability、共通運用Contractそのものが変わる場合だけとする。Project固有のREADME/Document更新を理由にserver-coreを変更しない。
+
 Current Authorityへ個人向け指示、一時的な作業報告、Task固有の進捗状態を混在させない。
 
 ## Shared Capability Boundary
