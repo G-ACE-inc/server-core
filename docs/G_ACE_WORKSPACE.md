@@ -14,8 +14,8 @@ server-coreはTask routing、共通Authority、shared capability discovery、Git
 Workspace作業は必ず次から開始する。
 
 ```text
-/home/admin1/projects/server-core/README.md
-  -> /home/admin1/projects/server-core/docs/LOAD_SCOPE.md
+/home/admin1/server-core/README.md
+  -> /home/admin1/server-core/docs/LOAD_SCOPE.md
   -> 今回必要なserver-core Authorityだけ
   -> 対象Project README
   -> 対象Projectの必要Authority / Source / Testだけ
@@ -45,7 +45,7 @@ APPROVAL_BOUNDARY
 ## 4. Workspace Folders
 
 通常Folder:
-- `/home/admin1/projects/server-core`
+- `/home/admin1/server-core`
 - `/home/admin1/projects`
 
 通常Workspace Contextへ含めない:
