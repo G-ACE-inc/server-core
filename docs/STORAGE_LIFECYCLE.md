@@ -47,7 +47,7 @@ owner/classificationが不明。自動削除しない。
 | Docker volume | persistent stateの可能性があるためgeneric delete禁止 |
 | `/home/admin1/backups` | retention + integrity + restore policy required |
 
-Telegram、Meilisearch、Redis等の特定ProductをWorkspace共通の唯一Authorityとして固定しない。実際のData owner/roleはowning Project/runtime Contractを確認する。
+特定Productや特定ProjectのStorage実装をWorkspace共通の唯一Authorityとして固定しない。実際のData owner/roleはowning Project/runtime Contractを確認する。
 
 ## 5. Safe Deletion Gate
 
