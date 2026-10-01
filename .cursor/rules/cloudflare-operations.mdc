@@ -8,40 +8,29 @@ alwaysApply: false
 
 # Cloudflare Workspace 運用ルール
 
-## 作業開始前
-
+## Start
 - `/home/admin1/server-core/docs/CLOUDFLARE_OPERATIONS.md` を読む。
 - `docs/WORKSPACE_REGISTRY.md` で対象Project / ownerを確認する。
 - 対象ProjectのREADMEとCloudflare固有Authorityを確認する。
-- Cloudflare Account APIを使う場合はLibral VaultのShared Secret Contractを使う。
-- Project固有のTunnel / DNS / Pages / Worker / Access / origin / runtime Secretは、対象ProjectのAuthorityを正とする。
+- Account API利用時はWorkspace Shared Secret Contractを使う。
 
-## Mutation 前の承認
+## Read-only / Mutation Separation
+read-only discovery、status/readback、permission確認と、resource create/update/delete、DNS/route/tunnel/access変更、publish/cutover、credential mutationを別操作として扱う。
 
-- Cloudflare Resourceの作成・変更・削除はMasterの明示承認が必要。
-- Production publish / cutoverは別のApproval Boundaryとして扱う。
-- Secret / credentialの登録・削除・rotationは別のMutation Boundaryとして扱う。
-- read-only確認をMutation承認とみなさない。
+Mutationは対象Project / Provider Authorityで定義された承認条件と変更範囲を確認してから実行する。read-only結果をmutation承認として扱わない。
 
-## Secret 取り扱い
+## Credential Boundary
+- Token / Secret / Credential値をSource / Git Diff / Document / Logへ出力しない。
+- Workspace共有credentialはBroker経由で利用し、Projectへ実値を複製しない。
+- Account API credentialとProject固有Tunnel credentialを混同しない。
+- credential値の表示やdumpを検証方法にしない。
 
-- Token・Secret・Credentialの値をChat・Terminal・Log・Git Diff・Documentへ出力しない。
-- Workspace共有SecretはLibral Vault経由で利用し、Projectへ実値を複製しない。
-- Cloudflare Account API credentialとProject固有Tunnel credentialを混同しない。
-- GPG-CoreをWorkspace Secretの経路として使用しない。
-- Secret値のdump、表示、転記を検証手段にしない。
-
-## 確認と検証
-
+## Verification
 - Provider readbackで対象Resourceの実状態を確認する。
-- API 200 / Successだけで完了扱いしない。
+- API 200 / SuccessだけでTask完了としない。
 - 意図したResourceだけが変化したことを確認する。
-- Endpoint / DNS / Access / Project healthなど、Taskに必要なProject側挙動を確認する。
+- Endpoint / DNS / Access / Project health等、Taskに必要なProject側挙動を確認する。
 - Runtime未確認を文書記載だけでPASSにしない。
 
-## 設計遵守
-
-- server-coreはCloudflareの共通Routing / Secret boundary / Approval / Verification contractを担当する。
-- Project固有Cloudflare実装はserver-coreへ移さない。
-- Project固有のhostname、origin、Tunnel名、Docker service、runtime Secret path、release手順をserver-coreへ固定しない。
-- 変更が必要な場合は対象ProjectのGitHub development loopで実装し、server-coreは共通契約だけを更新する。
+## Ownership
+server-coreはCloudflareの共通Routing / Credential boundary / change boundary / verification contractを担当する。Project固有hostname、origin、Tunnel名、Docker service、runtime Secret path、release手順はowning Project側に置く。
