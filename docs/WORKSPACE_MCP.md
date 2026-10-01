@@ -6,7 +6,7 @@ Version: 2026-10-01
 
 Workspace共通MCPをProjectごとに複製せず、CursorのUser Global MCPを共通入口として利用するためのContract。
 
-Cursor公式仕様では、Project `.cursor/mcp.json` とUser Global `~/.cursor/mcp.json` が別の設定源として存在し、Global設定は全Projectで利用できる。Project設定は必要なProject固有MCPだけを追加し、Workspace共通MCPを各Repositoryへコピーしない。 citeturn1search0turn1search1
+Cursor公式仕様では、Project `.cursor/mcp.json` とUser Global `~/.cursor/mcp.json` が別の設定源として存在し、Global設定は全Projectで利用できる。Project設定は必要なProject固有MCPだけを追加し、Workspace共通MCPを各Repositoryへコピーしない。
 
 ## Architecture
 
@@ -40,7 +40,7 @@ Project C                         Project D
 | Cloudflare API | `https://mcp.cloudflare.com/mcp` | Cursor OAuth | CONFIG_SOURCE_VERIFIED; live connection pending |
 | Hugging Face | `https://huggingface.co/mcp` | Provider/Client OAuth or generated client config | CONFIG_SOURCE_VERIFIED; live connection pending |
 
-Cloudflare documents Cursor integration through its API MCP and OAuth authorization. Hugging Face provides an official MCP server for Cursor and other MCP-compatible clients. citeturn4search0turn2search0
+Cloudflare documents Cursor integration through its API MCP and OAuth authorization. Hugging Face provides an official MCP server for Cursor and other MCP-compatible clients.
 
 ## Why Global MCP
 
@@ -130,7 +130,7 @@ Project repositories do not need to contain these shared MCP entries.
 
 A Project may contain a `.cursor/mcp.json` only for Project-owned or explicitly Project-scoped MCPs.
 
-If a Project has the same server name as a global shared MCP, the Project definition takes precedence in Cursor. Therefore shared server names are reserved by the Workspace manifest unless an explicit Project override is approved. citeturn1search0
+If a Project has the same server name as a global shared MCP, the Project definition takes precedence in Cursor. Therefore shared server names are reserved by the Workspace manifest unless an explicit Project override is approved.
 
 ## DebugAI / private MCP boundary
 
