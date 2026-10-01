@@ -66,6 +66,8 @@ else
   echo "[created] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
 fi
 
+python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py" --repair
 bash "${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh"
 bash "${SERVER_CORE_ROOT}/scripts/verify-workspace-mcp.sh"
+python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py"
 echo "Done."
