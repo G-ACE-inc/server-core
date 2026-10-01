@@ -155,7 +155,7 @@ Registry entryはCurrent Runtime健康状態の証明ではない。
 - Commit / PR = chronological work history
 - Registry = discovery / owner / connection / verification boundary
 
-チャット会話や個人向け指示をCurrent Authorityとして扱わない。
+一時的なセッション指示や個別作業メモをCurrent Authorityとして扱わない。
 
 ## 9. Runtime / Registry Rule
 
