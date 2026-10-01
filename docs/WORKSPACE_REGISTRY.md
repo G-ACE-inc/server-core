@@ -91,16 +91,22 @@ ProjectへTGserver / webhook gateway / Libral Vault / MCP / Toolを導入・変�
 
 ## 4. Shared MCP Registry
 
+Workspace共通MCPはProjectごとの `.cursor/mcp.json` へ複製せず、Cursor User Global `~/.cursor/mcp.json` を共通実行入口とする。配布元は `operations/workspace-mcp.json`、導入は `scripts/install-workspace-mcp.sh`、確認は `scripts/verify-workspace-mcp.sh`。
+
 MCPの利用可能性は「文書にある」だけでは成立しない。
 
 最低限、実設定・認証・transport疎通・tool discovery・代表callを必要範囲で確認する。
 
 | MCP | Owner / authority | Config authority | Purpose | Current boundary |
 |---|---|---|---|---|
-| Cloudflare API MCP | Cloudflare / Workspace config | `.cursor/mcp.json` | Cloudflare操作入口 | CONFIG_REGISTERED; live useはTask時に疎通確認 |
-| DebugAI MCP | `seigo-gace/debug-ai` | DebugAI `docs/MCP_ADAPTER.md`; Workspace config when registered | DebugAIを親AIからMCP利用 | SOURCE_VERIFIED / main merged; WORKSPACE_NOT_REGISTERED / LIVE_RUNTIME_NOT_VERIFIED |
-| Reuse KB MCP | future F: KB bridge owner | future verified config | F: reusable-development KB検索/登録 | NOT_IMPLEMENTED |
-| Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | actual client config | deterministic Japanese parser | repository DISCOVERED; Workspace availability NOT_VERIFIED here |
+| Cloudflare API MCP | Cloudflare / Workspace config | `~/.cursor/mcp.json` via `operations/workspace-mcp.json` | Cloudflare操作入口 | GLOBAL_CONFIG_SOURCE_VERIFIED; live use pending |
+| DebugAI MCP | `seigo-gace/debug-ai` | Global MCP when live runtime is verified | DebugAIを親AIからMCP利用 | SOURCE_VERIFIED / main merged; GLOBAL_REGISTRATION_PENDING / LIVE_RUNTIME_NOT_VERIFIED |
+| Reuse KB MCP | future F: KB bridge owner | future verified global config | F: reusable-development KB検索/登録 | NOT_IMPLEMENTED |
+| Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | global MCP after runtime readback | deterministic Japanese parser | repository DISCOVERED; GLOBAL_REGISTRATION_PENDING / LIVE availability NOT_VERIFIED |
+
+### Workspace-global provider MCPs
+
+Cloudflare API and Hugging Face official MCP are registered in the Workspace-global manifest. Project repositories should not copy these entries. OAuth/token state remains outside Git. Live availability is only promoted after discovery + representative call.
 
 ### DebugAI source boundary
 
