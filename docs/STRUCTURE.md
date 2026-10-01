@@ -91,7 +91,6 @@ Task-specific support documents are not loaded at normal Workspace start.
 Provider / shared-secret / audit-policy等の**値を持たない契約**を置く。
 
 Current known manifests:
-- `cloudflare.json`
 - `cloudflare-account.json`
 - `huggingface.json`
 - `storage-lifecycle.json`
@@ -112,8 +111,6 @@ Secret / Token値をoperationsへ保存しない。
   - GitHub skill resolver
 - `init-dev-workspace.sh`
   - Workspace initialization helper
-- `cloudflare_ops.py`
-  - Cloudflare operations helper
 - `storage_lifecycle_audit.py`
   - Storage / disk / Docker read-only audit
   - mutation機能なし
