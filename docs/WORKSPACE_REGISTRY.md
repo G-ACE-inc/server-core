@@ -31,7 +31,7 @@ GitHub Repositoryが確認できる主要G-ACE Projectを記録する。Server P
 
 | Project | Repository authority | Known Workspace / Server entry | Command-center role | Runtime boundary |
 |---|---|---|---|---|
-| server-core | `G-ACE-inc/server-core` | `/home/admin1/server-core` | Workspace Command Center | main/source authority; runtime copyは必要時readback |
+| server-core | `G-ACE-inc/server-core` | `/home/admin1/projects/server-core` | Workspace Command Center | main/source authority; runtime copyは必要時readback |
 | TGserver | `seigo-gace/TGserver` | `/home/admin1/projects/TGserver` | log / delivery / storage integration Project | Current runtimeはProject README + Docker/readback |
 | Astera v8 | `seigo-gace/astera_v8` | `/home/admin1/projects/astera_v8` | judgment-material processing Project | Current runtimeはProject README + Docker/readback |
 | Astera App | `seigo-gace/astera-app` | `/home/admin1/projects/astera-app` | application/web Project | Provider/runtime readback required |
