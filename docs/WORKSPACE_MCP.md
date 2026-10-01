@@ -163,11 +163,24 @@ If a Project has the same server name as a global shared MCP, the Project defini
 
 ## DebugAI / private MCP boundary
 
-DebugAI MCP is not added to the global manifest yet because its repository proves source/stdio protocol but does not yet prove the intended live DebugAI runtime or Workspace registration.
+DebugAI MCP **is implemented**. Current DebugAI authority records stdio source/unit/real-protocol verification, 9 MCP tools, health, and durable continuation surfaces as PASS. Master also reports prior successful Codex use of DebugAI, so server-core must not classify DebugAI MCP as `NOT_IMPLEMENTED`, `NOT_REGISTERED`, or as having no usage history.
 
-Do not invent a local path or endpoint.
+The remaining boundary is narrower: **current exact-head Server/Codex live re-verification is pending**. The active DebugAI work is still in progress, and its current authority explicitly delegates real Server readback, current Codex registration readback, and representative current-head live calls to the Codex-side verification phase.
 
-Once the live runtime endpoint is verified, add it to the same global manifest/installer path and verify discovery + representative call.
+Use the following distinction:
+
+```text
+MCP_IMPLEMENTATION=VERIFIED
+MCP_PROTOCOL=VERIFIED
+PRIOR_CODEX_USAGE=CONFIRMED_BY_MASTER
+CURRENT_EXACT_HEAD_SERVER_READBACK=PENDING
+CURRENT_EXACT_HEAD_CODEX_REGISTRATION_READBACK=PENDING
+CURRENT_EXACT_HEAD_REPRESENTATIVE_CALL=PENDING
+```
+
+Do not downgrade an already implemented/previously used MCP to `NOT_IMPLEMENTED` merely because the latest exact HEAD has not yet been re-verified live. Conversely, prior use is not proof that the current in-progress HEAD is live and identical; current-head availability remains a separate verification state.
+
+Do not invent a new local path or endpoint while DebugAI is being changed. server-core owns the discovery/registration/verification contract; DebugAI owns its implementation body.
 
 ## Deterministic Japanese Parser MCP
 
