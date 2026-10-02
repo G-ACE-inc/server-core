@@ -9,6 +9,8 @@ server-coreは共通CapabilityのDiscovery / Contractを管理するが、Projec
 
 本Documentは、各Projectが既存service / Vault / MCP / Toolを利用するときに最低限そろえる接続情報を定義する。
 
+Generic mutation / state semanticsは `SERVER_CORE_PROTOCOL.md` を正とし、本DocumentはIntegration固有条件だけを追加する。
+
 ## 1. Integration Record
 
 Integrationごとに必要範囲で定義する。
@@ -144,7 +146,7 @@ Integration完了判定はTaskに応じて必要範囲で確認する。
 
 設定ファイルが存在するだけでLive integration完成とは扱わない。
 
-状態は次へ自動昇格させない。
+Integration固有の状態は次へ自動昇格させない。
 
 ```text
 CONFIG_PRESENT != REGISTRATION_VERIFIED
@@ -154,6 +156,8 @@ TRANSPORT_VERIFIED != INTERFACE_DISCOVERY_VERIFIED
 INTERFACE_DISCOVERY_VERIFIED != REPRESENTATIVE_CALL_PASS
 REPRESENTATIVE_CALL_PASS != INTEGRATION_COMPLETE unless Task acceptance is satisfied
 ```
+
+上記は `SERVER_CORE_PROTOCOL.md` のgeneric State SemanticsをIntegration Domainへ適用した追加条件であり、別のgeneric state modelではない。
 
 `HTTP 200`、process/container起動、client listing、config entry、過去の成功だけをIntegration完成の証拠にしない。逆にCurrent live再検証待ちだけを理由に、Source/implementation/interfaceの既検証状態を未実装へ降格しない。
 
