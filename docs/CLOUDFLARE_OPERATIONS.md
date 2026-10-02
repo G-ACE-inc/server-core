@@ -1,7 +1,7 @@
 # CLOUDFLARE OPERATIONS — WORKSPACE COMMAND CONTRACT
 
-Version: 2026-10-01
-Role: server-coreからCloudflare関連Taskを安全にRouting・統制するためのWorkspace共通契約。
+Version: 2026-10-03
+Role: server-core司令室からCloudflare関連Taskを安全にRouting・統制するためのWorkspace共通契約。
 
 ## 1. Purpose
 
@@ -19,19 +19,19 @@ server-coreが担当するのは:
 
 ### server-core owns
 - Workspace共通Cloudflare operation rules
-- Shared credential contractへの導線
+- Shared Secret / Token contractへの導線
 - Cloudflare MCP / Account API discovery
-- common mutation / verification boundary
-- `operations/cloudflare-account.json` のAccount API contract
+- common approval / verification boundary
+- `operations/cloudflare-account.json` のSecret値を含まないAccount API契約
 
-ここでの `owns` はCurrent Authorityの責務を示すだけで、server-core Repositoryのwrite permissionではない。これら共通Contractの変更が必要と判明しても、server-core自体についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立するまではserver-coreを変更しない。
+ここでの `owns` はCurrent Authorityの責務を示すだけで、server-core Repositoryのwrite permissionではない。server-core共通Contractの変更にはMasterの明示許可と `SERVER_CORE_MUTATION_AUTHORIZED=YES` を必要とする。
 
 ### owning Project owns
 - hostname / route / zone / worker / pages / tunnelのProject固有Design
 - Docker / Compose / application runtime definition
 - Project固有origin / port / health endpoint
 - Project固有rollback / release procedure
-- Project固有credential injection
+- Project固有Secret / credential injection
 
 Project固有値をserver-core共通Authorityへ固定しない。
 
@@ -47,7 +47,7 @@ AUTH_METHOD
 EXPECTED_CHANGE
 VERIFY_METHOD
 ROLLBACK_PATH
-CHANGE_APPROVAL
+APPROVAL_REQUIRED
 ```
 
 対象Project / resource ownerが不明なら `docs/WORKSPACE_REGISTRY.md` と対象Project READMEを確認する。
@@ -61,14 +61,14 @@ Actual client registrationがある場合のみ利用候補。
 
 Registry記載だけでCurrent availabilityを断定しない。Taskで必要な場合はauthentication / transport / tool discovery / representative callを確認する。
 
-### Cloudflare Account API via Shared Credential Broker
+### Cloudflare Account API via Shared Secret Broker
 Shared contract:
 - secret id: `cf-account-api`
 - consumer: `g-ace-workspace`
 - authority: `docs/WORKSPACE_SHARED_SECRETS.md`
 - machine contract: `operations/cloudflare-account.json`
 
-Credential値をProjectへ配らない。
+Secret / Token値をProjectへ配らない。
 
 ### Cloudflare Tunnel credential
 Account API credentialとTunnel credentialを同一視しない。
@@ -96,9 +96,16 @@ Read-only確認をMutation承認として扱わない。
 
 Provider mutation permissionとserver-core Repository mutation permissionも別である。Cloudflare resource変更が承認されていても、それだけでserver-coreのDocument/operations/script変更は許可されない。
 
-## 6. Mutation / Approval Boundary
+## 6. Approval Boundary
 
-Provider mutationは対象Project / Provider Authorityで定義された承認条件を満たしてから実行する。
+Masterの明示指示なしに次を実行しない。
+- Provider resource create/update/delete
+- Production publish / cutover
+- Secret/credential add/delete/rotation
+- DNS/route/tunnel/access変更
+- 稼働Service停止/restart/recreateを伴う変更
+
+現在の明示指示が対象Mutationを含む場合だけ、そのTask/change unitの範囲で進める。過去Taskの許可を別Resourceへcarry-forwardしない。
 
 Pre-change gate:
 
@@ -110,10 +117,10 @@ CURRENT_STATE_READBACK=YES
 EXPECTED_CHANGE_DEFINED=YES
 AUTH_PATH_VERIFIED=YES
 ROLLBACK_DEFINED=YES when required
-REQUIRED_APPROVAL_SATISFIED=YES
+MASTER_APPROVAL=YES when required
 ```
 
-承認者の個人名や会話上の呼称をWorkspace共通Contractへ固定しない。
+Unknownを推測でYESにしない。
 
 server-core Repository側の変更が必要な場合は、このProvider gateとは別に `SERVER_CORE_MUTATION_AUTHORIZED=YES` を必要とする。
 
@@ -153,16 +160,17 @@ Mutation後はProvider readbackを行う。
 - rollbackまたはforward fixをProject Authorityに従って判断する
 - Source変更が必要なら対象Repository development loopへ戻す
 
-Provider failureからserver-core共通Contractの欠陥が疑われても、explicit owner authorization無しにserver-coreを自己修正しない。
+Provider failureからserver-core共通Contractの欠陥が疑われても、Masterの明示許可無しにserver-coreを自己修正しない。
 
-## 10. Credential Boundary
+## 10. Secret Boundary
 
-- Token / Secret値をGit / Source / docs / logsへ保存しない。
-- Account API credentialとTunnel credentialを混同しない。
-- server-core `operations/*.json` へcredential実値を保存しない。
-- verificationのためにplaintext tokenをdumpしない。
+禁止:
+- Token / Secret値をGit / Source / docs / logsへ保存する
+- Account API credentialとTunnel credentialを混同する
+- server-core `operations/*.json` へcredential実値を保存する
+- verificationのためにplaintext tokenをdumpする
 
-Shared credential contractは `docs/WORKSPACE_SHARED_SECRETS.md` を正とする。
+Shared Secret contractは `docs/WORKSPACE_SHARED_SECRETS.md` を正とする。
 
 ## 11. Project-specific Documentation
 
@@ -173,7 +181,7 @@ Project固有Cloudflare Design/Runbookはowning Project側へ置く。
 - origin port
 - cloudflared container / service
 - Project-specific release gate
-- Runtime credential path/injection
+- Runtime Secret path/injection
 
 Git historyに残る旧server-core Project-specific Cloudflare実装はhistorical recordであり、Current Authorityとして再利用しない。
 
@@ -200,4 +208,4 @@ UNINTENDED_CHANGE_NONE
 ROLLBACK_OR_RECOVERY_STATE_KNOWN
 ```
 
-server-coreはCloudflareの共通Routing / credential / change / verification contractを持つが、各ProjectのCloudflare実装そのものは所有しない。server-core共通Contract自体の変更には、Cloudflare操作権限とは別にexplicit server-core mutation authorizationが必要である。
+server-coreはCloudflareを操作する司令室の共通境界を持つが、各ProjectのCloudflare実装そのものは所有しない。
