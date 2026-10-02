@@ -17,11 +17,12 @@ README.md
 ## Root
 
 - `README.md` — Workspace Command Center入口 / Authority map
+- `AGENTS.md` — 新規chat/taskでserver-coreを起点にするcross-agent共通入口
 - `CORE.md` — LibralCore開発方法論
 - `SERVER_CORE_PROTOCOL.md` — 共通運用・変更・安全境界
 - `.aiignore` / `.cursorignore` — historical archive exclusion。Current operational filesを隠さない
-- `.cursor/` — Workspace runtime rules / client integration contract。host-local client wiringは追跡しない
-- `.github/` — CI / repository automation / task templates
+- `.cursor/` — Cursor Workspace runtime rules / client integration contract。host-local client wiringは追跡しない
+- `.github/` — VS Code/GitHub Copilot instruction、CI、repository automation、task templates
 - `docs/` — Design / Router / Registry / Operations contracts
 - `operations/` — credential値を持たないmachine-readable contracts / policies
 - `scripts/` — Workspace automation / verify / audit helpers
@@ -46,14 +47,14 @@ README.md
 ### Shared platform / operations
 - `WORKSPACE_REGISTRY.md` — Project / Capability / MCP / Tool / credential contract / Runtime discovery
 - `WORKSPACE_MCP.md` — Workspace-global MCP manifest/install/verify contract
-- `PROJECT_INTEGRATION_RULES.md` — Project-owned service / Vault / MCP / Tool integration contract
+- `PROJECT_INTEGRATION_RULES.md` — TGserver / webhook gateway / Libral Vault / Project-level MCP・Tool integration contract
 - `WORKSPACE_SHARED_SECRETS.md` — shared credential Broker contract
 - `KB_REUSE_DESIGN.md` — reusable-development KB access / bridge / lifecycle contract
 - `STORAGE_LIFECYCLE.md` — Server log / cache / cleanup / backup / recovery contract
 - `CLOUDFLARE_OPERATIONS.md` — Cloudflare common operation contract
 
 ### Task-specific support
-- `GITHUB_SKILL.md` — GitHub skill resolver tasks only
+- `GITHUB_SKILL.md` — GitHub connector / Skill resolver resource selection tasks
 
 Task-specific support documents are not loaded at normal Workspace start.
 
@@ -76,23 +77,36 @@ Scriptの存在は実行許可を意味しない。read-only helperとmutation-c
 - `storage_lifecycle_audit.py` — bounded read-only storage/disk/Docker audit。default出力は`GACE_RESULT_BEGIN...END`の要約。delete/pruneしない。
 - `verify-workspace-mcp.sh` — defaultはglobal MCP config contract readbackのみ。`--client-readback` 時だけ外部clientへ問い合わせる。
 - `resolve-codex-skill.sh`, `github-skill-path.sh` — installed skill path/full-read resolver。
-- `workspace_command_center_check.py` — defaultはWorkspace wiringのread-only verification。`--repair` は別途 `--authorize-workspace-mutation` が必要。
+- `workspace_command_center_check.py` — defaultはWorkspace wiringのread-only verification。Cursor rules / VS Code Copilot instructions / AGENTS entryも確認し、`--repair` は別途 `--authorize-workspace-mutation` が必要。
 
 ### Mutation-capable with explicit gate
-- `init-dev-workspace.sh` — defaultはread-only check。Workspace wiring / MCP configを変更する場合は `--apply-workspace-mutation` が必要。Project directory作成はさらに `--project NAME --create-project` が必要。Project名はsingle-directory安全文字列へ制限する。
-- `install-workspace-mcp.sh` — `~/.cursor/mcp.json` mutation。`--apply-workspace-mcp-mutation` 必須。client credential containerを保持しつつfile modeを0600相当へ締め、bounded backup retentionを適用する。
+- `init-dev-workspace.sh` — defaultはread-only check。Workspace wiring / MCP configを変更する場合は `--apply-workspace-mutation` が必要。Cursor rules、Copilot instructions、AGENTS entryをcanonical server-coreから`/home/admin1/projects`へ配線する。Project directory作成はさらに `--project NAME --create-project` が必要。
+- `install-workspace-mcp.sh` — `~/.cursor/mcp.json` mutation。`--apply-workspace-mcp-mutation` 必須。client credential containerを保持しつつowner-only/non-executable modeへ整合し、bounded backup retentionを適用する。
 - `ai-auto-commit.sh` — server-core専用commit helper。`--authorize-server-core-mutation` と1件以上の`--file PATH`が必須。repository-wide `git add -A` は行わず、main/masterへのdirect auto-commitを拒否する。
 
 Mutation option/flagがDocumentに記載されていることを、Task上の実行許可として扱わない。
 
-## .cursor/
+## AI Instruction Entry
 
-- `.cursor/rules/00_agent_runtime.mdc` — Workspace routing / development routine / verification kernel
+- `.cursor/rules/00_agent_runtime.mdc` — Cursorで`alwaysApply: true`のWorkspace routing / development routine / verification kernel
+- `.github/copilot-instructions.md` — VS Code / GitHub Copilot向けRepository/Workspace-wide server-core入口
+- `AGENTS.md` — cross-agent共通server-core入口
 - `.cursor/rules/cloudflare-operations.mdc` — Cloudflare Task-specific operational rule
+
+Workspace初期化後のprojects root配線:
+
+```text
+/home/admin1/projects/.cursor/rules
+  -> /home/admin1/server-core/.cursor/rules
+/home/admin1/projects/.github/copilot-instructions.md
+  -> /home/admin1/server-core/.github/copilot-instructions.md
+/home/admin1/projects/AGENTS.md
+  -> /home/admin1/server-core/AGENTS.md
+```
 
 Repository-local `.cursor/mcp.json` と `.cursor/agents` はCurrent Authorityとして追跡しない。Workspace-global MCP contractは `operations/workspace-mcp.json`、runtime/client configは `~/.cursor/mcp.json`。Cursor agent installation / inventoryはclient環境が所有し、必要時にCurrent client stateをreadbackする。Repositoryにhost固有absolute symlinkやclient-local agent inventoryを置かない。
 
-Workspace-wide always-applied rules are limited to behavior required for repository, Server, Provider, routing, verification or safety operation。
+Instruction FileやSymlinkの存在だけをClientが実際にInstructionを消費した証拠にはしない。Current live Client consumptionは別readbackで確認する。
 
 ## Shared Capability Boundary
 
@@ -110,7 +124,7 @@ Discovery authority: `docs/WORKSPACE_REGISTRY.md`。
 
 ## Project Integration Boundary
 
-`docs/PROJECT_INTEGRATION_RULES.md` はProject-owned service / Shared CapabilityをProjectへ接続する共通契約。
+`docs/PROJECT_INTEGRATION_RULES.md` はTGserver / webhook gateway等のProject-owned service、Libral Vault、Project-level MCP・ToolをProjectへ接続する共通契約。
 
 IntegrationしただけでProject固有実装をserver-coreへ移さない。
 
@@ -125,6 +139,7 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - Server command technical safety -> `docs/SERVER_COMMAND_CONTRACT.md`
 - credential broker/use -> `docs/WORKSPACE_SHARED_SECRETS.md`
 - managed Workspace MCP -> `docs/WORKSPACE_MCP.md`
+- AI automatic entry -> `.cursor/rules/00_agent_runtime.mdc` + `.github/copilot-instructions.md` + `AGENTS.md`
 
 ## Project Tree Update Conditions
 
