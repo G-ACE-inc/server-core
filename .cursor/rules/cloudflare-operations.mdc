@@ -19,6 +19,8 @@ read-only discovery、status/readback、permission確認と、resource create/up
 
 Mutationは対象Project / Provider Authorityで定義された承認条件と変更範囲を確認してから実行する。read-only結果をmutation承認として扱わない。
 
+Cloudflare Provider mutation、対象Project Repository mutation、server-core Repository mutationは別permission domainである。Cloudflare変更が必要、またはCloudflare共通Contractに影響すると判断しただけでserver-coreを変更しない。server-core Source/Document/Config変更はserver-core自体についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立した場合だけ行う。
+
 ## Credential Boundary
 - Token / Secret / Credential値をSource / Git Diff / Document / Logへ出力しない。
 - Workspace共有credentialはBroker経由で利用し、Projectへ実値を複製しない。
@@ -33,4 +35,4 @@ Mutationは対象Project / Provider Authorityで定義された承認条件と�
 - Runtime未確認を文書記載だけでPASSにしない。
 
 ## Ownership
-server-coreはCloudflareの共通Routing / Credential boundary / change boundary / verification contractを担当する。Project固有hostname、origin、Tunnel名、Docker service、runtime Secret path、release手順はowning Project側に置く。
+server-coreはCloudflareの共通Routing / Credential boundary / change boundary / verification contractを担当する。これはunconditional write permissionを意味しない。Project固有hostname、origin、Tunnel名、Docker service、runtime Secret path、release手順はowning Project側に置く。
