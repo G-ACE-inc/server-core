@@ -37,6 +37,8 @@ Commit / Pushの対象は、今回の `MUTATION_REPOSITORIES` に含まれるRep
 
 server-coreやShared Capability owner RepositoryをAuthority確認のために読んだだけなら、そのRepositoryをCommit対象にしない。
 
+**server-coreは例外的に追加Gateを持つ。** `MUTATION_REPOSITORIES` に含まれているという自己申告だけでは不十分で、server-core自体の変更についてexplicit owner authorizationがあり、`SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立している場合だけserver-coreへwrite / commit / pushできる。AI/Agent自身がこの値を推測でYESへ変更してはならない。
+
 Commit前に最低限次を一致させる。
 
 ```text
@@ -100,6 +102,7 @@ Repositoryに正式Conventionがある場合はそちらを優先する。
 - target repository / branch / HEAD
 - current Git top-level
 - repositoryが `MUTATION_REPOSITORIES` に含まれる
+- **server-coreの場合は `SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立している**
 - `git status --short --branch`
 - intended diff
 - credential / `.env`実値 / debug residue / unintended deletionが無い
@@ -133,6 +136,8 @@ server-core scriptの責務:
 - stage / commit
 - `--push` 指定時のcurrent branch push
 
+server-core helperを実行できること自体はserver-core mutation authorizationを意味しない。authorization未成立ならhelperによるcommit/pushも実行しない。
+
 ## 8. Remote Readback
 
 Push成功だけでGitHub反映済みとしない。
@@ -157,6 +162,7 @@ Remote readbackも対象Repositoryごとに行う。
 - Branch / Repository identityが不明
 - current Git top-levelが意図したRepositoryと一致しない
 - Repositoryが `MUTATION_REPOSITORIES` に含まれない
+- **server-coreで `SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示成立していない**
 - 他作業の未commit差分と分離できない
 - repository policyがPush/PR routeを要求している
 - failing/incomplete stateをremoteへ残す理由とscopeが不明
@@ -171,3 +177,4 @@ Production publish/deployはCommit/Pushとは別のchange boundary。
 - credential実値をCommit message / Diff / Documentへ書かない。
 - Design BaselineをCurrent実装へ追従させるだけの履歴消しをしない。
 - Authorityを読んだだけのRepositoryへwrite/commitしない。
+- server-coreはexplicit owner authorization無しにwrite/commit/pushしない。
