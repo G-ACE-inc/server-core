@@ -33,7 +33,7 @@ README.md
 - `SERVER_CORE_DESIGN.md` — server-core Design Baseline
 - `DESIGN_DELTA.md` — accepted architecture/responsibility changes
 - `LOAD_SCOPE.md` — Task routing / progressive context loading
-- `G_ACE_WORKSPACE.md` — Workspace operation / canonical Pre-execution ownership
+- `G_ACE_WORKSPACE.md` — Workspace operation / fixed development routine
 - `SERVER_COMMAND_CONTRACT.md` — Server command technical safety / mutation classification / partial state / evidence boundary
 - `STRUCTURE.md` — 本Navigation Index
 
@@ -64,7 +64,7 @@ Current machine-readable contracts/policies:
 - `huggingface.json`
 - `workspace-mcp.json`
 - `storage-lifecycle.json`
-- `pre-execution-schema.json` — canonical Pre-execution field names / execution routes / mutation classes
+- `pre-execution-schema.json` — command-center dispatch fields / routing invariants
 
 `operations/` はcredential実値を保持しない。
 
@@ -87,12 +87,12 @@ Mutation option/flagがDocumentに記載されていることを、Task上の実
 
 ## .cursor/
 
-- `.cursor/rules/00_agent_runtime.mdc` — Workspace routing / execution / verification kernel
+- `.cursor/rules/00_agent_runtime.mdc` — Workspace routing / development routine / verification kernel
 - `.cursor/rules/cloudflare-operations.mdc` — Cloudflare Task-specific operational rule
 
 Repository-local `.cursor/mcp.json` と `.cursor/agents` はCurrent Authorityとして追跡しない。Workspace-global MCP contractは `operations/workspace-mcp.json`、runtime/client configは `~/.cursor/mcp.json`。Cursor agent installation / inventoryはclient環境が所有し、必要時にCurrent client stateをreadbackする。Repositoryにhost固有absolute symlinkやclient-local agent inventoryを置かない。
 
-Workspace-wide always-applied rules are limited to behavior required for repository, Server, Provider, routing, verification or safety operation.
+Workspace-wide always-applied rules are limited to behavior required for repository, Server, Provider, routing, verification or safety operation。
 
 ## Shared Capability Boundary
 
@@ -120,7 +120,8 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - reusable KB access design -> `docs/KB_REUSE_DESIGN.md`
 - chronological work history -> GitHub commit / PR
 - Workspace routing -> `README.md` + `docs/LOAD_SCOPE.md`
-- canonical Pre-execution semantics -> `docs/G_ACE_WORKSPACE.md` + `operations/pre-execution-schema.json`
+- fixed Workspace routine -> `docs/G_ACE_WORKSPACE.md`
+- command-center dispatch fields -> `operations/pre-execution-schema.json`
 - Server command technical safety -> `docs/SERVER_COMMAND_CONTRACT.md`
 - credential broker/use -> `docs/WORKSPACE_SHARED_SECRETS.md`
 - managed Workspace MCP -> `docs/WORKSPACE_MCP.md`
@@ -155,4 +156,4 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - explicit owner authorization無しにserver-coreのStructure/Documentを変更しない
 - helperの存在/参照/実行可能性をmutation authorizationと扱わない
 - Repository-local client configをWorkspace-global Authorityと二重管理しない
-- Pre-execution field namesを複数Documentで独自派生させず`operations/pre-execution-schema.json`へ揃える
+- command-center dispatch field namesを複数Documentで独自派生させず`operations/pre-execution-schema.json`へ揃える
