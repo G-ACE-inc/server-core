@@ -32,9 +32,8 @@ if [[ "$APPLY" != "1" ]]; then
 fi
 
 command -v flock >/dev/null 2>&1 || { echo "[error] flock is required for serialized Workspace MCP mutation" >&2; echo "NO_CHANGES_PERFORMED" >&2; exit 1; }
-mkdir -p -- "$GLOBAL_DIR"
-chmod 700 "$GLOBAL_DIR" 2>/dev/null || true
-exec 9<"$GLOBAL_DIR"
+[[ -d "$HOME" ]] || { echo "[error] HOME directory is unavailable for Workspace MCP mutation lock" >&2; echo "NO_CHANGES_PERFORMED" >&2; exit 1; }
+exec 9<"$HOME"
 flock -n 9 || { echo "[error] another Workspace MCP mutation is active; refusing concurrent config write" >&2; echo "NO_CHANGES_PERFORMED" >&2; exit 1; }
 
 python3 - "$MANIFEST" "$GLOBAL_MCP" <<'PY'
@@ -43,16 +42,45 @@ from pathlib import Path
 
 manifest_path = Path(sys.argv[1])
 target = Path(sys.argv[2])
-manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+state = {
+    'client_dir_updated': False,
+    'backup_created': False,
+    'config_updated': False,
+    'backup_retention': 'NOT_APPLICABLE',
+}
+
+def emit(result: str, exit_code: int) -> None:
+    print('GACE_MCP_INSTALL_RESULT_BEGIN')
+    print(f'RESULT={result}')
+    print(f'EXIT_CODE={exit_code}')
+    print(f'CLIENT_DIR_UPDATED={"YES" if state["client_dir_updated"] else "NO"}')
+    print(f'BACKUP_CREATED={"YES" if state["backup_created"] else "NO"}')
+    print(f'CONFIG_UPDATED={"YES" if state["config_updated"] else "NO"}')
+    print(f'BACKUP_RETENTION={state["backup_retention"]}')
+    print('GACE_MCP_INSTALL_RESULT_END')
+
+def fail(message: str, code: int = 1) -> None:
+    print(f'[error] {message}', file=sys.stderr)
+    result = 'PARTIAL' if any((state['client_dir_updated'], state['backup_created'], state['config_updated'])) else 'FAIL'
+    emit(result, code)
+    raise SystemExit(code)
+
+try:
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+except Exception as exc:
+    fail(f'invalid workspace MCP manifest: {exc}')
 servers = manifest.get('servers')
 if not isinstance(servers, dict) or not servers:
-    raise SystemExit('[error] workspace MCP manifest has no servers')
+    fail('workspace MCP manifest has no servers')
 
 runtime_servers = {name: {key: value for key, value in definition.items() if key != 'authentication'} for name, definition in servers.items()}
 preserve_auth_fields = set(manifest.get('installation', {}).get('preserve_existing_auth_fields', ['auth', 'headers', 'env']))
-backup_keep = int(manifest.get('installation', {}).get('backup_keep', 3))
+try:
+    backup_keep = int(manifest.get('installation', {}).get('backup_keep', 3))
+except (TypeError, ValueError):
+    fail('installation.backup_keep must be an integer')
 if backup_keep < 1 or backup_keep > 20:
-    raise SystemExit('[error] installation.backup_keep must be between 1 and 20')
+    fail('installation.backup_keep must be between 1 and 20')
 
 def runtime_compatible(existing, expected):
     if not isinstance(existing, dict) or not isinstance(expected, dict):
@@ -75,19 +103,22 @@ def runtime_compatible(existing, expected):
     return True
 
 def normalized_secure_mode(original_mode: int) -> int:
-    # Client credential config must be owner-only and non-executable.
-    # Preserve an existing owner-read-only posture; otherwise use owner rw.
     owner_read = bool(original_mode & stat.S_IRUSR)
     owner_write = bool(original_mode & stat.S_IWUSR)
     if owner_read and not owner_write:
         return 0o400
     return 0o600
 
-target.parent.mkdir(parents=True, exist_ok=True)
 try:
-    os.chmod(target.parent, 0o700)
-except OSError:
-    pass
+    if not target.parent.exists():
+        target.parent.mkdir(parents=True, mode=0o700)
+        state['client_dir_updated'] = True
+    current_dir_mode = stat.S_IMODE(target.parent.stat().st_mode)
+    if current_dir_mode != 0o700:
+        os.chmod(target.parent, 0o700)
+        state['client_dir_updated'] = True
+except Exception as exc:
+    fail(f'failed to secure client config directory: {exc}')
 
 existing_mode = 0o600
 if target.exists():
@@ -95,19 +126,19 @@ if target.exists():
         current = json.loads(target.read_text(encoding='utf-8'))
         existing_mode = normalized_secure_mode(stat.S_IMODE(target.stat().st_mode))
     except Exception as exc:
-        raise SystemExit(f'[error] invalid existing MCP JSON: {exc}')
+        fail(f'invalid existing MCP JSON: {exc}')
 else:
     current = {}
 
 if not isinstance(current, dict):
-    raise SystemExit('[error] existing MCP config is not a JSON object')
+    fail('existing MCP config is not a JSON object')
 current_servers = current.setdefault('mcpServers', {})
 if not isinstance(current_servers, dict):
-    raise SystemExit('[error] existing mcpServers is not an object')
+    fail('existing mcpServers is not an object')
 
 for name, definition in runtime_servers.items():
     if name in current_servers and not runtime_compatible(current_servers[name], definition):
-        raise SystemExit(f'[error] MCP name collision: {name}; existing runtime transport definition differs')
+        fail(f'MCP name collision: {name}; existing runtime transport definition differs')
 
 changed = False
 for name, definition in runtime_servers.items():
@@ -118,30 +149,46 @@ for name, definition in runtime_servers.items():
 mode_needs_tightening = target.exists() and stat.S_IMODE(target.stat().st_mode) != existing_mode
 if changed or mode_needs_tightening:
     if target.exists():
-        backup = target.with_name(target.name + '.backup-' + time.strftime('%Y%m%d-%H%M%S') + f'-{time.time_ns()}')
-        shutil.copy2(target, backup)
-        os.chmod(backup, existing_mode)
-        print(f'[backup] {backup}')
+        try:
+            backup = target.with_name(target.name + '.backup-' + time.strftime('%Y%m%d-%H%M%S') + f'-{time.time_ns()}')
+            shutil.copy2(target, backup)
+            os.chmod(backup, existing_mode)
+            state['backup_created'] = True
+            print(f'[backup] {backup}')
+        except Exception as exc:
+            fail(f'failed to create secure MCP config backup: {exc}')
     tmp = target.with_name(target.name + f'.tmp-{os.getpid()}-{time.time_ns()}')
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, existing_mode)
     try:
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, existing_mode)
         with os.fdopen(fd, 'w', encoding='utf-8') as handle:
             handle.write(json.dumps(current, ensure_ascii=False, indent=2) + '\n')
             handle.flush()
             os.fsync(handle.fileno())
         os.chmod(tmp, existing_mode)
         os.replace(tmp, target)
+        state['config_updated'] = True
         os.chmod(target, existing_mode)
+    except Exception as exc:
+        fail(f'failed to update MCP config: {exc}')
     finally:
         if tmp.exists():
-            tmp.unlink()
-    backups = sorted(target.parent.glob(target.name + '.backup-*'), key=lambda p: p.name, reverse=True)
-    for stale in backups[backup_keep:]:
-        stale.unlink()
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+    try:
+        backups = sorted(target.parent.glob(target.name + '.backup-*'), key=lambda p: p.name, reverse=True)
+        for stale in backups[backup_keep:]:
+            stale.unlink()
+        state['backup_retention'] = 'PASS'
+    except Exception as exc:
+        state['backup_retention'] = 'FAIL'
+        fail(f'MCP config updated but backup retention failed: {exc}')
     print(f'[updated] {target}')
 else:
     print(f'[ok] already configured: {target}')
 
 print(f'[ok] MCP config mode={oct(stat.S_IMODE(target.stat().st_mode)) if target.exists() else "n/a"} backup_keep={backup_keep}')
 print('[ok] shared MCP manifest installed without provider token material')
+emit('PASS', 0)
 PY
