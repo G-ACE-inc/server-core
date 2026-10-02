@@ -9,8 +9,6 @@ Role: G-ACE Workspaceでserver-core司令室を必ず起点にして作業する
 
 server-coreはTask routing、共通Authority、shared capability discovery、GitHub work history、operations boundaryを管理する。Project固有Design / Source / Test / Runtime logic / Project Documentは各Projectが所有する。
 
-このDocumentはServer / Workspace上で作業するAI / Developerの固定ルーティーンを定義する。Chat UI、会話形式、Notion運用、外部アプリ固有のinteraction ruleは本Documentの対象にしない。
-
 ## 2. Mandatory Entry
 
 Workspace作業は必ず次から開始する。
