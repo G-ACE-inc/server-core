@@ -1,7 +1,7 @@
 # SERVER CORE LOAD SCOPE / COMMAND ROUTER
 
 Version: 2026-10-02
-Role: G-ACE WorkspaceがTaskを正しいProject / Authorityへ振り分け、必要情報だけを段階的に読むためのRouter。
+Role: G-ACE WorkspaceがTaskを正しいProject / Authority / Executorへ振り分け、必要情報だけを段階的に読むためのRouter。
 
 ## 1. Mandatory Start
 
@@ -22,7 +22,8 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | server-core自身の設計 / 責務 | `docs/SERVER_CORE_DESIGN.md` + 必要なら `docs/DESIGN_DELTA.md` |
 | 開発方法論 / Module / 再利用 | `CORE.md` |
 | 共通運用 / 変更 / 安全境界 | `SERVER_CORE_PROTOCOL.md` |
-| Workspace運用 / dispatch | `docs/G_ACE_WORKSPACE.md` |
+| Workspace運用 / dispatch / Pre-execution | `docs/G_ACE_WORKSPACE.md` |
+| Server command / operator handoff / shell safety / result envelope | `docs/SERVER_COMMAND_CONTRACT.md` |
 | Project / Repository / shared Capability / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
 | Project Integration | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Git / Commit / Push / work history | `docs/AUTO_COMMIT.md` |
@@ -40,7 +41,7 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 
 ## 3. Dispatch Decision
 
-対象Projectへ入る前に、Taskに必要な範囲で次を解決する。
+Pre-execution field名は `operations/pre-execution-schema.json` を正とする。対象Projectへ入る前にTaskに必要な範囲で次を解決する。
 
 ```text
 PURPOSE
@@ -51,14 +52,19 @@ TARGET_REPOSITORY
 MUTATION_REPOSITORIES
 READ_ONLY_REPOSITORIES
 SERVER_CORE_MUTATION_AUTHORIZED
-AUTHORITY_REQUIRED
+REQUIRED_SERVER_CORE_AUTHORITY
+REQUIRED_PROJECT_AUTHORITY
 REUSE_CANDIDATES
 VERIFY_PATH
 CHANGE_BOUNDARY
+CONTEXT_SCOPE
 NEXT_ACTION
 EXECUTION_ROUTE
 EXECUTION_CAPABILITY
 EXECUTION_AUTHORIZATION
+AUTHORIZATION_DOMAIN
+AUTHORIZATION_SCOPE
+MUTATION_CLASS
 PRE_EXECUTION_COMPLETE
 BLOCKER
 ```
@@ -67,15 +73,31 @@ BLOCKER
 
 `MUTATION_REPOSITORIES` は今回Source / Config / Document / Git historyを変更してよいRepositoryだけを列挙する。Authority確認・再利用調査・shared capability確認のために開いたRepositoryは、明示的な変更理由が無ければ `READ_ONLY_REPOSITORIES` とする。
 
-**server-coreはexplicit owner authorizationが無い限り常にread-only。** server-core自身やWorkspace共通Contractに変更が必要に見えても、`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立しない限りmutation対象へ入れない。
+**server-coreはexplicit owner authorizationが無い限り常にread-only。** `SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立しない限りmutation対象へ入れない。
 
-対象Project / ownerが不明なら `docs/WORKSPACE_REGISTRY.md` を読む。
+AuthorizationはCurrent Task/change unit/target operationへscopeする。過去Taskのpermissionを別Taskへcarry-forwardしない。
 
-既存owner / reusable assetを確認する前に新規Project / Module / Tool / Documentを作らない。
+対象Project / ownerが不明なら `docs/WORKSPACE_REGISTRY.md` を読む。既存owner / reusable assetを確認する前に新規Project / Module / Tool / Documentを作らない。
 
-実行Toolが現在のAI/Clientに無い場合でも、exact target / Authority / next action / required inputs / authorization / verify pathまで確定できるなら、`PRE_EXECUTION_COMPLETE=YES` として実行直前のhandoffを成立させる。Tool不在と承認不足は別状態として扱う。
+## 4. Executor Routing
 
-## 4. Mutation Routing
+実行主体は次の順で検討する。
+
+```text
+existing deterministic check / CI
+  -> directly available assistant tool / connector
+  -> existing read-only helper
+  -> exact operator Server command
+  -> Server-side AI only when deterministic/direct routes are insufficient
+```
+
+現在のassistant/clientでできる処理をoperatorへ戻さない。Server-side AIはcostを伴う実行主体として扱い、deterministic checkで閉じられるTaskでは使わない。
+
+現在のAI/Clientに実行Toolが無い場合でも、exact target / Authority / next action / required inputs / authorization / verify pathまで確定できるなら、`PRE_EXECUTION_COMPLETE=YES` として実行直前のhandoffを成立させる。Tool不在と承認不足は別状態として扱う。
+
+Server commandが必要なら `docs/SERVER_COMMAND_CONTRACT.md` を読み、interaction budget、child-shell safety、paste boundary、result envelopeに従う。
+
+## 5. Mutation Routing
 
 次の語だけではmutation先をserver-coreへ変更しない。
 - READMEを更新
@@ -90,9 +112,9 @@ BLOCKER
 
 server-coreは例外で、追加mutation対象にするには**server-core自体の変更についてexplicit owner authorization**が必要。AI判断・依存関係・影響範囲だけでは昇格しない。
 
-複数Repositoryを変更する場合は、Repositoryごとに変更理由、diff、verification、Git historyを分離する。
+複数Repositoryを変更する場合は、Repositoryごとに変更理由、diff、verification、Git historyを分離する。複数Task/Agentが並行する場合は他Taskのuncommitted diffをstage/overwriteしない。
 
-## 5. Target Repository Loading
+## 6. Target Repository Loading
 
 対象Projectへ入った後はREADMEを入口にする。
 
@@ -102,7 +124,7 @@ server-coreは例外で、追加mutation対象にするには**server-core自体
 
 対象Project内で「READMEに付属するDocument」「各種Document」「READMEからリンクするDocument」を更新する指示は、対象Project Repository内のDocument更新を意味する。server-coreのDocument更新へ読み替えない。
 
-server-core側Documentは、server-core自体の変更が明示的に許可された場合だけ更新する。Workspace共通Routing / Authority / Shared Capability / 共通運用Contractに関係するという理由だけでは変更しない。
+server-core側Documentは、server-core自体の変更が明示的に許可された場合だけ更新する。
 
 ### Level 0: Repository Entry
 - Current purpose / responsibility
@@ -138,21 +160,13 @@ server-core側Documentは、server-core自体の変更が明示的に許可さ�
 - 局所情報で影響範囲を閉じられない
 - Task自体が全体監査 / 全コード確認 / 横断調査を要求している
 
-## 6. Project Integration Routing
+## 7. Project Integration Routing
 
 Project-owned service、Libral Vault、MCP、Tool integrationを変更または追加するときは `docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で確認する。
 
-```text
-server-core README
-  -> LOAD_SCOPE
-  -> PROJECT_INTEGRATION_RULES
-  -> target Project README
-  -> target Project authority / Source / Test
-```
-
 Integration Contractを読むこと自体はserver-coreやservice/provider owner Projectへの変更理由ではない。
 
-## 7. Reuse Search Order
+## 8. Reuse Search Order
 
 ```text
 対象Project内
@@ -174,7 +188,7 @@ Reuse priority:
 
 Registry entryはCurrent Runtime健康状態の証明でもmutation permissionでもない。
 
-## 8. Normal Context Exclusions
+## 9. Normal Context Exclusions
 
 通常Contextへ入れない。
 - `.git/`
@@ -188,7 +202,7 @@ Registry entryはCurrent Runtime健康状態の証明でもmutation permission�
 
 `.github/` や `scripts/` もTask対象でない限り一括読込しない。
 
-## 9. Documentation Read Rule
+## 10. Documentation Read Rule
 
 - README = Current entry
 - Design = architecture baseline
@@ -198,40 +212,21 @@ Registry entryはCurrent Runtime健康状態の証明でもmutation permission�
 - Commit / PR = chronological work history
 - Registry = discovery / owner / connection / verification boundary
 
-一時的なセッション指示や個別作業メモをCurrent Authorityとして扱わない。
+一時的なセッション指示や個別作業メモをCurrent Authorityとして扱わない。Project固有Documentとserver-core共通Documentを相互代用しない。
 
-Project固有Documentは対象Project Authority。server-core共通DocumentはWorkspace Authority。この2つを相互代用しない。
-
-## 10. Runtime / Registry Rule
+## 11. Runtime / Registry Rule
 
 READMEやRegistryのRuntime記載はDiscovery metadataまたはlast-known record。
 
 Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / GitHub revision等をreadbackする。未確認値をcarry-forwardしてCurrent扱いしない。
 
-RuntimeやRegistryを確認するためにserver-coreを参照したことを、server-core mutationの理由にしない。
+`git fetch`、temporary checkout/detach、branch switch等は最終状態を戻してもpure read-onlyではない。必要なら `MUTATION_CLASS=REVERSIBLE_LOCAL_MUTATION` とする。
 
-## 11. Stop Reading Condition
+## 12. Stop Reading Condition
 
-作業開始または実行直前handoffに必要な読込は、次を説明・確認できた時点で止める。
-- purpose / expected result
-- target Project / responsibility
-- target repository
-- mutation vs read-only repositories
-- server-core mutation authorization state
-- relevant baseline / contract
-- input / output
-- direct dependencies / constraints
-- reuse candidates
-- related tests / verification path
-- affected scope
-- change boundary
-- exact next action / execution route
-- execution capability / authorization state
-- pre-execution completeness / unresolved blocker
+作業開始または実行直前handoffに必要な読込は、canonical Pre-execution ContractをTaskに必要な範囲で説明・確認できた時点で止める。不足した場合だけ次Levelへ進む。
 
-不足した場合だけ次Levelへ進む。
-
-## 12. Router Failure Rule
+## 13. Router Failure Rule
 
 Task owner、Authority、Runtime state、credential contract、mutation target、exact execution action等が不明な場合は推測で補完しない。
 
