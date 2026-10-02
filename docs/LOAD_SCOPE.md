@@ -149,8 +149,6 @@ Integration Contractを読むこと自体はserver-coreやservice/provider owner
 
 DebugAIを使うTaskでは、既に取得済みのEvidence / Tool結果 / prior verified stateを先に再利用し、同じ調査・診断をServer AIへ重複実行させない。
 
-これはDebugAI利用時の重複調査防止であり、Workspace全体のgeneric executor policyではない。
-
 ## 9. Reuse Search Order
 
 新規Code / Module / Tool / Document作成前に必要範囲で確認する。
