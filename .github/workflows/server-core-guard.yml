@@ -25,7 +25,7 @@ jobs:
       - name: Required authority and machine contracts
         run: |
           set -euo pipefail
-          required=(README.md AGENTS.md CORE.md SERVER_CORE_PROTOCOL.md .github/copilot-instructions.md docs/SERVER_CORE_DESIGN.md docs/DESIGN_DELTA.md docs/LOAD_SCOPE.md docs/G_ACE_WORKSPACE.md docs/SERVER_COMMAND_CONTRACT.md docs/STRUCTURE.md docs/WORKSPACE_REGISTRY.md docs/PROJECT_TEMPLATE.md docs/PROJECT_INTEGRATION_RULES.md docs/AUTO_COMMIT.md docs/DEPLOY_RUNBOOK.md docs/WORKSPACE_MCP.md docs/WORKSPACE_SHARED_SECRETS.md docs/KB_REUSE_DESIGN.md docs/STORAGE_LIFECYCLE.md docs/CLOUDFLARE_OPERATIONS.md docs/GITHUB_SKILL.md docs/GLOSSARY.md operations/pre-execution-schema.json operations/workspace-mcp.json operations/storage-lifecycle.json operations/cloudflare-account.json operations/huggingface.json scripts/init-dev-workspace.sh scripts/install-workspace-mcp.sh scripts/verify-workspace-mcp.sh scripts/ai-auto-commit.sh scripts/resolve-codex-skill.sh scripts/github-skill-path.sh scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py)
+          required=(README.md AGENTS.md CORE.md SERVER_CORE_PROTOCOL.md .github/copilot-instructions.md docs/SERVER_CORE_DESIGN.md docs/DESIGN_DELTA.md docs/LOAD_SCOPE.md docs/G_ACE_WORKSPACE.md docs/SERVER_COMMAND_CONTRACT.md docs/STRUCTURE.md docs/WORKSPACE_REGISTRY.md docs/PROJECT_TEMPLATE.md docs/PROJECT_INTEGRATION_RULES.md docs/AUTO_COMMIT.md docs/DEPLOY_RUNBOOK.md docs/WORKSPACE_MCP.md docs/WORKSPACE_SHARED_SECRETS.md docs/KB_REUSE_DESIGN.md docs/STORAGE_LIFECYCLE.md docs/CLOUDFLARE_OPERATIONS.md docs/GITHUB_SKILL.md docs/GLOSSARY.md operations/pre-execution-schema.json operations/workspace-mcp.json operations/storage-lifecycle.json operations/cloudflare-account.json operations/huggingface.json scripts/init-dev-workspace.sh scripts/install-workspace-mcp.sh scripts/verify-workspace-mcp.sh scripts/ai-auto-commit.sh scripts/resolve-codex-skill.sh scripts/github-skill-path.sh scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py archive/isolated/2026-06-26/PROJECT_STATUS.before-tgserver-canonical.archived.md)
           for path in "${required[@]}"; do test -e "$path" || { echo "MISSING_REQUIRED=$path"; exit 1; }; done
           echo 'REQUIRED_AUTHORITY=PASS'
 
@@ -69,6 +69,12 @@ jobs:
           require_text 'SERVER_CORE_MUTATION_AUTHORIZED' README.md server_core_mutation_gate_readme
           require_text 'SERVER_CORE_MUTATION_AUTHORIZED' SERVER_CORE_PROTOCOL.md server_core_mutation_gate_protocol
           require_text 'REVERSIBLE_LOCAL_MUTATION' docs/SERVER_COMMAND_CONTRACT.md reversible_local_mutation
+          require_text 'Current completed / verified state' docs/GLOSSARY.md project_readme_current_state
+          require_text 'Work Report Commit' docs/GLOSSARY.md commit_as_work_report
+          require_text 'd88e99273319dad1b27092e14085c7060710fc92' docs/DESIGN_DELTA.md command_center_delta_commit_preserved
+          require_text 'af9abd3e9d402f73430d7c97f270463a62f75f18' docs/DESIGN_DELTA.md cloudflare_delta_commit_preserved
+          require_text 'Do not rewrite or delete prior accepted deltas' docs/DESIGN_DELTA.md append_only_design_delta_history
+          require_text 'ARCHIVED OLD WORK HISTORY - DO NOT LOAD AS CURRENT CONTEXT' archive/isolated/2026-06-26/PROJECT_STATUS.before-tgserver-canonical.archived.md archived_history_preserved
           require_text 'Docker Composeを正' README.md docker_compose_readme
           require_text 'Docker Compose.*正' CORE.md docker_compose_core
           require_text 'Docker Composeを正' SERVER_CORE_PROTOCOL.md docker_compose_protocol
@@ -140,6 +146,7 @@ jobs:
           grep -q -- '--authorize-server-core-mutation' scripts/ai-auto-commit.sh
           grep -q -- '--file' scripts/ai-auto-commit.sh
           grep -q 'flock -n 9' scripts/ai-auto-commit.sh
+          grep -q 'refusing unreadable or non-UTF-8 intended file' scripts/ai-auto-commit.sh
           ! grep -q 'git add -A' scripts/ai-auto-commit.sh
           echo 'SCRIPT_GATES=PASS'
 
