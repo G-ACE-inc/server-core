@@ -62,7 +62,9 @@ jobs:
           grep -q 'explicit owner authorization' README.md
           grep -q 'SERVER_CORE_MUTATION_AUTHORIZED' SERVER_CORE_PROTOCOL.md
           grep -q 'REVERSIBLE_LOCAL_MUTATION' docs/SERVER_COMMAND_CONTRACT.md
-          grep -q 'GACE_RESULT_BEGIN' docs/SERVER_COMMAND_CONTRACT.md
+          grep -q '## 2. Operator Interface Boundary' docs/SERVER_COMMAND_CONTRACT.md
+          grep -q 'operator_interface_defined_outside_server_core' operations/pre-execution-schema.json
+          ! grep -q '6072' docs/SERVER_COMMAND_CONTRACT.md
           echo 'AUTHORITY_ROUTING=PASS'
 
       - name: Machine contract validation
@@ -78,11 +80,13 @@ jobs:
           assert {'ASSISTANT_TOOL','DETERMINISTIC_LOCAL_OR_CI','SERVER_COMMAND','SERVER_AI'} <= set(pre['execution_routes'])
           assert {'READ_ONLY_INSPECTION','REVERSIBLE_LOCAL_MUTATION','REPOSITORY_MUTATION','RUNTIME_MUTATION','PROVIDER_MUTATION','PRODUCTION_MUTATION'} <= set(pre['mutation_classes'])
           assert pre['rules']['authorization_is_task_scoped'] is True
+          assert pre['rules']['operator_interface_defined_outside_server_core'] is True
           mcp=json.loads(Path('operations/workspace-mcp.json').read_text())
           assert mcp['scope']=='workspace-global'
           assert set(mcp['servers']) >= {'cloudflare-api','huggingface'}
           assert mcp['installation']['backup_keep'] >= 1
           assert mcp['installation']['required_mode'].startswith('0600')
+          assert mcp['installation']['concurrency']=='single-writer-fail-closed'
           for name,cfg in mcp['servers'].items():
               assert cfg.get('url','').startswith('https://')
               assert 'headers' not in cfg and 'env' not in cfg
@@ -106,11 +110,13 @@ jobs:
           grep -q -- '--create-project' scripts/init-dev-workspace.sh
           grep -q 'validate_project_name' scripts/init-dev-workspace.sh
           grep -q -- '--apply-workspace-mcp-mutation' scripts/install-workspace-mcp.sh
+          grep -q 'flock -n 9' scripts/install-workspace-mcp.sh
           grep -q -- '--client-readback' scripts/verify-workspace-mcp.sh
           grep -q -- '--authorize-workspace-mutation' scripts/workspace_command_center_check.py
           grep -q 'WORKSPACE_WIRING=PASS' scripts/workspace_command_center_check.py
           grep -q -- '--authorize-server-core-mutation' scripts/ai-auto-commit.sh
           grep -q -- '--file' scripts/ai-auto-commit.sh
+          grep -q 'flock -n 9' scripts/ai-auto-commit.sh
           ! grep -q 'git add -A' scripts/ai-auto-commit.sh
           echo 'SCRIPT_GATES=PASS'
 
