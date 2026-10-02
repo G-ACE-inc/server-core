@@ -100,6 +100,29 @@ if [[ "$APPLY" != "1" ]]; then
   exit 0
 fi
 
+mutations=()
+finish_apply() {
+  local rc=$?
+  trap - EXIT
+  echo "GACE_WORKSPACE_INIT_RESULT_BEGIN"
+  if [[ "$rc" -eq 0 ]]; then
+    echo "RESULT=PASS"
+  elif [[ ${#mutations[@]} -gt 0 ]]; then
+    echo "RESULT=PARTIAL"
+  else
+    echo "RESULT=FAIL"
+  fi
+  echo "EXIT_CODE=$rc"
+  if [[ ${#mutations[@]} -gt 0 ]]; then
+    printf 'MUTATION_APPLIED=%s\n' "$(IFS=,; echo "${mutations[*]}")"
+  else
+    echo "MUTATION_APPLIED=NONE"
+  fi
+  echo "GACE_WORKSPACE_INIT_RESULT_END"
+  exit "$rc"
+}
+trap finish_apply EXIT
+
 echo "WORKSPACE_INIT_MODE=AUTHORIZED_MUTATION"
 
 if [[ "$CREATE_PROJECT" == "1" ]]; then
@@ -119,6 +142,7 @@ if [[ "$CREATE_PROJECT" == "1" ]]; then
     exit 1
   else
     mkdir -p -- "$TARGET"
+    mutations+=("PROJECT_DIR_CREATED")
     echo "[created] ${TARGET}"
   fi
 fi
@@ -136,11 +160,22 @@ elif [[ -e "$PROJECTS_RULES" ]]; then
 else
   mkdir -p "$(dirname "$PROJECTS_RULES")"
   ln -s "$SERVER_CORE_RULES" "$PROJECTS_RULES"
+  mutations+=("RULES_LINK_CREATED")
   echo "[created] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
 fi
 
-python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py" --repair --authorize-workspace-mutation
-bash "${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh" --apply-workspace-mcp-mutation
+repair_out="$(python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py" --repair --authorize-workspace-mutation)"
+printf '%s\n' "$repair_out"
+if grep -q '^WORKSPACE_REPAIR=UPDATED ' <<<"$repair_out"; then
+  mutations+=("WORKSPACE_FILE_UPDATED")
+fi
+
+install_out="$(bash "${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh" --apply-workspace-mcp-mutation)"
+printf '%s\n' "$install_out"
+if grep -q '^\[updated\] ' <<<"$install_out"; then
+  mutations+=("GLOBAL_MCP_UPDATED")
+fi
+
 bash "${SERVER_CORE_ROOT}/scripts/verify-workspace-mcp.sh"
 python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py"
 echo "Done."
