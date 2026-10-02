@@ -24,12 +24,12 @@ PRODUCTION
 
 ## 2. Commit / Push Policy
 
-Commit / Pushは対象RepositoryのCurrent policyとTask/change unitのboundaryに従う。
+File変更を伴う完成作業は、Masterが明示的に禁止した場合を除き、対象RepositoryのCurrent policyに従ってGitHub履歴へ残すことを標準とする。
 
-- File変更がある場合、GitHub履歴へ残すことを標準とする。
 - Pushが許可されているRepository/Branchではremote readbackまで行う。
 - Branch保護、review/PR、merge approval等はRepository policyを優先する。
-- 一時的なセッション指示や個別作業ルールをRepository共通仕様として固定しない。
+- main / PR mergeはMasterの別の明示指示が必要。
+- 一時的なセッション指示や個別作業メモをRepository共通仕様として固定しない。
 
 ## 3. Repository / Change-unit Lock
 
@@ -37,7 +37,7 @@ Commit / Pushの対象は今回の `MUTATION_REPOSITORIES` に含まれるReposi
 
 server-coreやShared Capability owner RepositoryをAuthority確認のために読んだだけなら、そのRepositoryをCommit対象にしない。
 
-server-coreは追加Gateを持つ。server-core自体の変更についてexplicit owner authorizationがあり、`SERVER_CORE_MUTATION_AUTHORIZED=YES` がCurrent Task/change unitで成立している場合だけwrite / commit / pushできる。
+server-coreは追加Gateを持つ。server-core自体の変更についてMasterの明示許可があり、`SERVER_CORE_MUTATION_AUTHORIZED=YES` がCurrent Task/change unitで成立している場合だけwrite / commit / pushできる。
 
 Commit前に一致させる。
 
@@ -57,7 +57,9 @@ INTENDED_FILES
 
 別RepositoryのScriptをabsolute pathで呼んだこと、別Repositoryへ一時的に`cd`したこと、共通Authorityを読んだことをCommit対象変更の根拠にしない。
 
-## 4. Commit = Work History
+## 4. Commit = Work Report
+
+Commitは単なる保存点ではなく実作業報告として扱う。
 
 Commit件名は変更の目的・内容が分かる形にする。複雑な変更では必要な範囲でPurpose / Changed / Affected / Verified / Docs / Remainingを残す。
 
@@ -77,13 +79,13 @@ Commit件名は変更の目的・内容が分かる形にする。複雑な変�
 - unrelated working-tree/staged changesの有無
 - credential / `.env`実値 / debug residue / unintended deletionが無い
 - applicable test / verify
-- documentation impact
+- Documentation Gate
 
 他作業の差分と今回の差分を安全に分離できない場合は自動Commitを行わない。
 
 ## 6. server-core Commit Helper
 
-`/home/admin1/server-core/scripts/ai-auto-commit.sh` はserver-core専用。server-core自体へのexplicit owner authorizationがあり、feature branch上である場合だけ使用する。
+`/home/admin1/server-core/scripts/ai-auto-commit.sh` はserver-core専用。server-core自体へのMasterの明示許可があり、feature branch上である場合だけ使用する。
 
 **1件以上の`--file PATH`が必須**であり、指定Fileだけをchange unitとしてstageする。
 
@@ -120,7 +122,7 @@ Helperが自分でstageした後、Commit成立前に検証/hook/commit等が失
 
 Commit成功後にPushだけ失敗した場合はCommitを巻き戻さず、`RESULT=PARTIAL COMMIT=PASS PUSH=FAIL SHA=<sha>` として部分成功を明示する。Push未要求時は `PUSH=NOT_REQUESTED` とし、Commit成功とPush状態を混同しない。
 
-`--authorize-server-core-mutation` はpermissionを新規作成するflagではなく、すでにCurrent Taskで成立しているauthorizationを実行時に再確認するGateである。
+`--authorize-server-core-mutation` はpermissionを新規作成するflagではなく、すでにCurrent Taskで成立しているMasterの明示許可を実行時に再確認するGateである。
 
 対象Projectに独自helperが無い場合は、そのProjectのCurrent policyに従う。server-core helperを他Project commitへ代用しない。
 
@@ -156,8 +158,9 @@ Push成功だけでGitHub反映済みとしない。必要な作業ではremote 
 - staged setがintended filesと一致しない
 - repository policyが別Routeを要求
 - failing/incomplete stateをremoteへ残す理由とscopeが不明
+- Masterがcommit / push禁止を明示
 
-Production publish/deployはCommit/Pushとは別のchange boundary。
+Production publish/deployはCommit/Pushとは別のApproval Boundary。
 
 ## 11. Invariants
 
