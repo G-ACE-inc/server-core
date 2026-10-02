@@ -117,7 +117,7 @@ server-coreへのwrite / commit / branch mutationはserver-core自体の明示�
 
 ## 9. Runtime
 
-本番常駐の標準経路はDocker / Docker Composeとする。Project Authorityで正式例外が定義される場合だけ例外を適用する。
+本番常駐は **Docker Composeを正** とする。Host上の `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` 等を本番常駐経路として採用しない。
 
 ServerはRuntime / Processing環境であり、GitHub Source履歴やProject Designの代替正本にしない。
 
