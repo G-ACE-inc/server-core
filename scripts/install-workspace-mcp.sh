@@ -42,10 +42,7 @@ servers = manifest.get('servers')
 if not isinstance(servers, dict) or not servers:
     raise SystemExit('[error] workspace MCP manifest has no servers')
 
-runtime_servers = {
-    name: {key: value for key, value in definition.items() if key != 'authentication'}
-    for name, definition in servers.items()
-}
+runtime_servers = {name: {key: value for key, value in definition.items() if key != 'authentication'} for name, definition in servers.items()}
 preserve_auth_fields = set(manifest.get('installation', {}).get('preserve_existing_auth_fields', ['auth', 'headers', 'env']))
 backup_keep = int(manifest.get('installation', {}).get('backup_keep', 3))
 if backup_keep < 1 or backup_keep > 20:
@@ -81,11 +78,13 @@ existing_mode = 0o600
 if target.exists():
     try:
         current = json.loads(target.read_text(encoding='utf-8'))
-        existing_mode = stat.S_IMODE(target.stat().st_mode)
+        original_mode = stat.S_IMODE(target.stat().st_mode)
+        existing_mode = original_mode & 0o700
+        if existing_mode == 0:
+            existing_mode = 0o600
+        existing_mode = min(existing_mode, 0o600)
     except Exception as exc:
         raise SystemExit(f'[error] invalid existing MCP JSON: {exc}')
-    if existing_mode & 0o077:
-        raise SystemExit(f'[error] existing MCP config permissions are too broad: {oct(existing_mode)}; expected no group/other access')
 else:
     current = {}
 
@@ -105,7 +104,8 @@ for name, definition in runtime_servers.items():
         current_servers[name] = definition
         changed = True
 
-if changed:
+mode_needs_tightening = target.exists() and stat.S_IMODE(target.stat().st_mode) != existing_mode
+if changed or mode_needs_tightening:
     if target.exists():
         backup = target.with_name(target.name + '.backup-' + time.strftime('%Y%m%d-%H%M%S'))
         shutil.copy2(target, backup)
