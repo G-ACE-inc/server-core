@@ -12,9 +12,9 @@
 - MUTATION_REPOSITORIES:
 - READ_ONLY_REPOSITORIES:
 - server-core mutation authorization: YES / NO / N/A
-- Runtime / Provider / Secret / Production mutation: NONE / authorized scopeを記載
+- Runtime / Provider / Secret / Production mutation: NONE / Master承認済みscopeを記載
 
-このTemplateへの記入やPR作成自体をmutation authorizationとして扱わない。server-core変更はserver-core自体へのexplicit owner authorizationが成立している場合だけ行う。
+このTemplateへの記入やPR作成自体をmutation authorizationとして扱わない。server-core変更はserver-core自体へのMasterの明示許可が成立している場合だけ行う。
 
 ## 変更内容
 - TBD
@@ -40,7 +40,7 @@
 - [ ] 設計情報を1つの正本へ集約した
 - [ ] 期待出力、状態変化、主要失敗条件、回帰結果を確認した
 - [ ] Commit / Push / Merge / Deploy / Runtime / Production状態を分離して記録した
-- [ ] Production deploy、起動、公開、切替がある場合は対象Authorityの承認条件を満たした
+- [ ] main/PR merge、Production deploy/起動/公開/切替、Provider/Secret mutation、稼働Serviceのstop/restart/recreateを伴う場合はMasterの明示指示を確認した
 
 ## 補足
 - TBD
