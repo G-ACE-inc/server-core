@@ -1,6 +1,6 @@
 # PROJECT INTEGRATION RULES
 
-Version: 2026-10-01
+Version: 2026-10-02
 Role: ProjectへProject-owned service / Shared Capabilityを接続するときの共通Integration Contract。
 
 ## Purpose
@@ -143,5 +143,20 @@ Integration完了判定はTaskに応じて必要範囲で確認する。
 - retry/failure behavior where material
 
 設定ファイルが存在するだけでLive integration完成とは扱わない。
+
+状態は次へ自動昇格させない。
+
+```text
+CONFIG_PRESENT != REGISTRATION_VERIFIED
+REGISTRATION_VERIFIED != AUTHENTICATION_VERIFIED
+AUTHENTICATION_VERIFIED != TRANSPORT_VERIFIED
+TRANSPORT_VERIFIED != INTERFACE_DISCOVERY_VERIFIED
+INTERFACE_DISCOVERY_VERIFIED != REPRESENTATIVE_CALL_PASS
+REPRESENTATIVE_CALL_PASS != INTEGRATION_COMPLETE unless Task acceptance is satisfied
+```
+
+`HTTP 200`、process/container起動、client listing、config entry、過去の成功だけをIntegration完成の証拠にしない。逆にCurrent live再検証待ちだけを理由に、Source/implementation/interfaceの既検証状態を未実装へ降格しない。
+
+Current live evidenceを記録する場合は、少なくとも対象Capability、確認経路、観測時点、証明範囲を区別する。Transientなlive statusをWorkspace Registryの恒久状態へ固定しない。
 
 Verificationのためにowner Repositoryを参照したことを、そのRepositoryのmutation permissionと扱わない。
