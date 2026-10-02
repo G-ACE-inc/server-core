@@ -19,6 +19,8 @@ Registry entryを見つけたことは、そのRepository / Runtime / Provider�
 
 Project Taskでは、Registryからownerを特定した後に `TARGET_REPOSITORY`、`MUTATION_REPOSITORIES`、`READ_ONLY_REPOSITORIES` を分離する。owner Repositoryは、利用・接続・検証だけなら原則read-onlyとする。
 
+**server-core entryはさらに厳格に扱う。** server-coreをRegistryで発見したこと、Workspace Command Centerであること、共通Contractのownerであることはmutation permissionではない。server-core自体の変更についてexplicit owner authorizationがあり、`SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立した場合だけserver-coreをmutation対象にできる。
+
 ## 2. State Model
 
 ```text
@@ -74,6 +76,7 @@ Task arrives
   -> identify responsibility
   -> find owning Project in this Registry
   -> classify owning/adjacent repositories as mutation or read-only
+  -> if server-core would be a mutation target, verify explicit server-core authorization
   -> open owning Project README
   -> load required Project authority
   -> perform work only in approved mutation repository
@@ -83,6 +86,8 @@ Task arrives
 責務が不明な場合、既存Projectを確認する前に新規Project / Moduleを作らない。
 
 Registryに複数関連Projectが出ても、Task scopeが複数Repository mutationを要求しているとは限らない。
+
+server-coreが関連Projectとして出ても、`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示成立していない限りserver-coreはread-onlyのままにする。
 
 ## 5. Shared Capability Classification
 
