@@ -190,4 +190,6 @@ Current implementation/runtimeの詳細はowning KB Project Authorityへ置き�
 
 ## 15. Design Change Rule
 
-この文書はserver-core側の接続・再利用・安全Baseline。KB implementation architecture自体の変更はowning Project側Designを正とし、server-core側の責務/contractが変わる場合だけ本Documentを更新する。
+この文書はserver-core側の接続・再利用・安全Baseline。KB implementation architecture自体の変更はowning Project側Designを正とする。
+
+server-core側の責務/contractが変わった場合は本Documentの更新要否を判定するが、それ自体はwrite permissionではない。実際に本Documentを変更するのは、server-core自体の変更についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立した場合だけ。未成立なら必要変更を報告・提案する。
