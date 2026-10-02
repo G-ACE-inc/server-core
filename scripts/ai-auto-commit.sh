@@ -78,9 +78,8 @@ for path in "${intended_files[@]}"; do
 done
 mapfile -t intended_files < <(printf '%s\n' "${normalized[@]}" | sort -u)
 
-status_paths="$(git status --porcelain=v1 | sed -E 's/^...//' | sed -E 's/^.* -> //' | sort -u)"
 for path in "${intended_files[@]}"; do
-  if ! printf '%s\n' "$status_paths" | grep -Fqx -- "$path"; then
+  if [[ -z "$(git status --porcelain=v1 --untracked-files=all -- "$path")" ]]; then
     echo "ERROR: intended file is not currently changed: $path" >&2
     exit 1
   fi
