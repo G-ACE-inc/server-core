@@ -178,6 +178,9 @@ jobs:
           core=subprocess.check_output(['git','status','--porcelain=v1','--','CORE.md'],text=True).strip()
           assert core, 'CORE.md unrelated change disappeared'
           PY
+          printf 'space-path\n' > 'docs/space fixture.md'
+          bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file 'docs/space fixture.md' -m 'test: whitespace path change unit'
+          git show --format= --name-only HEAD | grep -Fxq 'docs/space fixture.md'
           printf '{"token":"SUPER_SECRET_VALUE_123456789"}\n' > ci-secret.json
           set +e
           bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file ci-secret.json -m 'test: secret guard' >"$tmp/secret.out" 2>&1
