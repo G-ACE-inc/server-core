@@ -39,11 +39,39 @@ REQUIRED_PROJECT_AUTHORITY
 REUSE_CANDIDATES
 VERIFY_PATH
 CHANGE_BOUNDARY
+NEXT_ACTION
+EXECUTION_ROUTE
+EXECUTION_CAPABILITY
+EXECUTION_AUTHORIZATION
+PRE_EXECUTION_COMPLETE
+BLOCKER
 ```
 
 対象Projectや責務が不明な場合は `docs/WORKSPACE_REGISTRY.md` でownerを確認する。
 
 server-coreや別ProjectをAuthority確認のために読んだだけでは、そのRepositoryをmutation対象にしない。
+
+### Pre-execution Readiness
+
+server-core routingは、現在のAI / Client / Toolで実行できないOperationでも、安全に**実行直前まで準備された状態**へ持っていけることを要件とする。
+
+`PRE_EXECUTION_COMPLETE=YES` とできるのは、Taskに必要な範囲で次が確定している場合だけ。
+- exact target Project / Repository / Runtime / Provider;
+- required Authority;
+- mutation/read-only boundary;
+- exact next action / command / tool operation;
+- required input / revision / endpoint / service identity;
+- verification path;
+- execution authorization state;
+- unresolved blockerの有無。
+
+`EXECUTION_ROUTE` は `ASSISTANT_TOOL / SERVER_COMMAND / USER_UI / EXTERNAL_CLIENT / PROJECT_RUNTIME` 等、実際に次Operationを行う経路を示す。
+
+`EXECUTION_CAPABILITY` は「現在のAI/ClientがそのOperationを直接実行できるか」を表し、`EXECUTION_AUTHORIZATION` とは分離する。Toolが無いことと実行許可が無いことを混同しない。
+
+現在のAI/Clientで実行できない場合でも、target・exact action・必要入力・authorization・verificationまで確定していれば、`PRE_EXECUTION_COMPLETE=YES`、`EXECUTION_CAPABILITY=UNAVAILABLE_IN_CURRENT_CLIENT` として外部実行へhandoffできる。
+
+承認待ち、Runtime identity未確認、exact command未確定、credential contract不明等が残る場合は `PRE_EXECUTION_COMPLETE=NO` とし、`BLOCKER` に未解決条件を明示する。推測Commandで穴埋めしない。
 
 ## 4. Mutation Ownership
 
