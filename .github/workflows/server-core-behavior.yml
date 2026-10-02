@@ -129,6 +129,23 @@ jobs:
           grep -q 'owner-only non-executable 0400 or 0600' "$tmp/verify-0700.out"
           chmod 0600 "$tmp/.cursor/mcp.json"
           test "$(find "$tmp/.cursor" -maxdepth 1 -name 'mcp.json.backup-*' | wc -l)" -le 3
+          partial="$tmp/partial-home"
+          mkdir -p "$partial/.cursor"
+          cat > "$partial/.cursor/mcp.json" <<'JSON'
+          {"mcpServers":{"cloudflare-api":{"url":"https://mcp.cloudflare.com/mcp","auth":{"CLIENT_ID":"8ilRHxRMw6Ntq3dP"}}}}
+          JSON
+          chmod 0600 "$partial/.cursor/mcp.json"
+          for n in 1 2 3 4; do mkdir "$partial/.cursor/mcp.json.backup-20000101-00000${n}-${n}"; done
+          set +e
+          HOME="$partial" bash scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation >"$tmp/partial.out" 2>&1
+          partial_rc=$?
+          set -e
+          test "$partial_rc" -ne 0
+          grep -q '^RESULT=PARTIAL$' "$tmp/partial.out"
+          grep -q '^CONFIG_UPDATED=YES$' "$tmp/partial.out"
+          grep -q '^BACKUP_RETENTION=FAIL$' "$tmp/partial.out"
+          grep -q '"huggingface"' "$partial/.cursor/mcp.json"
+          grep -q "BACKUP_RETENTION=FAIL" scripts/init-dev-workspace.sh
           echo 'MCP_PERMISSION_BEHAVIOR=PASS'
 
       - name: Auto-commit explicit change unit, rollback, and partial push
