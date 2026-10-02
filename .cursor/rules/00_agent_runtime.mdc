@@ -9,6 +9,8 @@ alwaysApply: true
 
 Workspace内で作業するAI / Agent / Composerは、Project固有作業へ入る前にserver-coreを共通入口として扱う。
 
+この入口の目的は、**非技術者のMasterへRoutineなServer情報・資源探索・開発手順・検証手順の技術判断を毎回返さず、AI自身がserver-coreから必要Authorityを取得して固定ルーティーンを適用すること**である。既存Ruleを一般的な開発方法へ勝手に置換せず、必要工程・既存要件を省略しない。会話履歴や一時作業状態が無い場合もserver-coreから再開地点を復元できる構成を維持する。
+
 ```text
 1. /home/admin1/server-core/README.md
 2. /home/admin1/server-core/docs/LOAD_SCOPE.md

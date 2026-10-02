@@ -4,6 +4,10 @@
 
 各Projectの実装本体を抱え込む場所ではない。Workspaceで作業するAI / Developerが、**どのProjectで、何を読み、どの共通Tool/MCP/Secret/KBを使い、どう検証し、どうGitHubへ残し、どのApproval Boundaryまで進めるか**を決める共通Command Centerである。
 
+この司令室の中心目的は、**非技術者のMasterが毎回Server構成・運用Rule・利用可能資源・開発手順を技術判断して個別指示しなくても、Workspace AIがserver-coreから必要情報を取得し、Masterの開発Ruleと固定Routineを自動適用して、安全かつ効率的に作業を継続できる状態を維持すること**である。一般的な開発方法へ勝手に置き換えたり、必要工程・既存要件を勝手に省略したりしない。
+
+Workspace作業は、会話履歴や一時作業状態がなくてもserver-coreから開始・復旧できることを要求する。
+
 ## 必ずここから開始
 
 Workspace内の作業開始順は固定する。

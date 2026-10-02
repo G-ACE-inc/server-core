@@ -11,6 +11,10 @@ Its role is not to implement every Project. Its role is to receive a task, deter
 
 Every AI / developer working inside the G-ACE Workspace must be able to start from server-core and determine **where to work, what to read, what may be reused, what must be verified, what must be recorded, and which approval boundary must not be crossed**.
 
+The command center is specifically designed so that **a non-technical Master does not have to repeatedly make routine Server, resource, development-procedure, or verification judgments for the AI**. Workspace AI must obtain the durable Server/Workspace information, available-resource discovery routes, operating rules, development method and fixed work routine from server-core, then apply them without silently replacing them with conventional generic development practice or dropping required steps.
+
+Workspace work must also be recoverable from server-core without depending on temporary conversation history or session-only state.
+
 The design assumes a fixed, repeatable workflow so work does not drift merely because the worker changes.
 
 ## 2. Command Center Responsibilities
@@ -249,6 +253,8 @@ Read-only inspection may still have I/O cost and is bounded where appropriate. R
 
 The following must always remain true:
 - Workspace work starts from server-core and follows the fixed development routine;
+- Workspace work can start and recover from server-core without temporary conversation history or session-only state;
+- routine technical decisions are derived from server-core so the non-technical Master is not required to restate Server information, resource locations, development method or verification steps for every task;
 - server-core determines routing but does not take ownership of Project internals;
 - the fixed development routine is not replaced by ad-hoc worker preference;
 - the same fact has one intended authority;

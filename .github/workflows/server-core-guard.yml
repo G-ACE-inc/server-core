@@ -59,6 +59,10 @@ jobs:
           require_text 'operations/pre-execution-schema\.json' README.md dispatch_schema_reference
           require_text 'server-core.*Command Center' docs/G_ACE_WORKSPACE.md workspace_command_center
           require_text 'Development Routine' docs/G_ACE_WORKSPACE.md fixed_development_routine
+          require_text '非技術者のMaster' README.md master_nontechnical_command_center_purpose
+          require_text 'non-technical Master' docs/SERVER_CORE_DESIGN.md master_nontechnical_design_purpose
+          require_text '非技術者のMaster' .cursor/rules/00_agent_runtime.mdc master_nontechnical_agent_runtime
+          require_text '会話履歴や一時作業状態' README.md self_contained_workspace_recovery
           require_text 'SERVER_CORE_MUTATION_AUTHORIZED' README.md server_core_mutation_gate_readme
           require_text 'SERVER_CORE_MUTATION_AUTHORIZED' SERVER_CORE_PROTOCOL.md server_core_mutation_gate_protocol
           require_text 'REVERSIBLE_LOCAL_MUTATION' docs/SERVER_COMMAND_CONTRACT.md reversible_local_mutation
