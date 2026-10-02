@@ -43,7 +43,7 @@ MUTATION_REPOSITORIES = 今回write/commitしてよいRepository
 READ_ONLY_REPOSITORIES = Authority/Reuse/Integration確認だけのRepository
 ```
 
-**server-coreは明示的なowner authorizationが無い限り常にread-onlyとする。** Workspace共通Routing / Authority / Shared Capability / 共通運用Contractの変更が必要に見える場合でも、それだけでserver-coreをmutation対象へ昇格しない。server-core変更は、server-core自体の変更を明示的に許可した場合だけ実行する。
+**server-coreは明示的なowner authorization（explicit owner authorization）が無い限り常にread-onlyとする。** Workspace共通Routing / Authority / Shared Capability / 共通運用Contractの変更が必要に見える場合でも、それだけでserver-coreをmutation対象へ昇格しない。server-core変更は、server-core自体の変更を明示的に許可した場合だけ実行する。
 
 明示許可は、別Projectの作業依頼、`server-coreを読め`、`必要ならDocumentを更新`、`共通Ruleも確認`、`改善できるところは進めろ` 等から推論してはならない。**server-core自体を変更してよいことが明確でない限り、server-coreはread-onlyを維持する。**
 
