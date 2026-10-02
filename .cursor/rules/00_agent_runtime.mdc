@@ -19,6 +19,8 @@ Workspace内で作業するAI / Agent / Developerは、Project固有作業へ入
 
 server-core全体を毎回読み込まず、Taskに必要な範囲だけ段階的に開く。
 
+このRuleはserver-core内部のWorkspace Routerであり、Task PacketまたはWorkspace最上位Authorityで要求される事前Bootstrapを置き換えない。
+
 ## 2. Canonical Pre-execution Handoff
 
 Pre-execution field名は `/home/admin1/server-core/operations/pre-execution-schema.json` を正とし、独自aliasを作らない。
@@ -55,21 +57,13 @@ BLOCKER
 
 `PRE_EXECUTION_COMPLETE=YES` はexact target、required Authority、mutation boundary、next exact action、必要Input/Revision/Endpoint/Service identity、verification path、authorization scope/stateがTaskに必要な範囲で確定した場合だけ使用する。外部実行が必要な場合、これは「実行直前まで準備済み」を意味し、実行済み/PASSを意味しない。
 
-## 3. Executor Selection
+## 3. Executor Route Boundary
 
-Taskを安全に閉じられる最小costの実行経路を選ぶ。
+実行主体の優先順位・Cost Policy・operator interaction interfaceはWorkspace最上位AuthorityまたはTask PacketをOwnerとする。本Ruleで独自の順序や数値制約を再定義しない。
 
-```text
-existing deterministic check / CI
-  -> directly available assistant tool / connector
-  -> existing read-only helper
-  -> exact operator Server command
-  -> Server-side AI only when deterministic/direct routes are insufficient
-```
+server-core側では、選定された `EXECUTION_ROUTE` / `EXECUTION_CAPABILITY` がmachine schemaとtechnical boundaryに適合することだけを確認する。
 
-現在のAI/Clientで直接実行できる処理をoperatorへ戻さない。Server-side AIはdeterministic checkや既存Toolで閉じられない場合に限定する。
-
-Server command/operator handoffが必要なら `docs/SERVER_COMMAND_CONTRACT.md` を読み、interaction budget、paste safety、child-shell safety、bounded output、`GACE_RESULT_BEGIN...GACE_RESULT_END` result envelopeへ従う。
+`EXECUTION_ROUTE=SERVER_COMMAND` の場合は `docs/SERVER_COMMAND_CONTRACT.md` を読み、technical shell/process safety、mutation classification、same-target concurrency、exit-status、bounded diagnostics、evidence promotionを確認する。operator-facing command presentationは最上位Authorityを正とする。
 
 ## 4. Mutation Target / Authorization Lock
 
@@ -94,7 +88,8 @@ write/commit前にcurrent repository rootとmutation targetを照合する。
 - shared checkoutのswitch/reset/rebaseは他Taskへの影響を閉じられない限り行わない。
 - readbackは可能ならGit object/API inspectionを優先する。
 - `git fetch`、temporary checkout/detach、branch switchは最終状態を戻してもpure read-onlyではなく `REVERSIBLE_LOCAL_MUTATION`。
-- server-core auto-commit helperは明示された `--file PATH` だけをstageする。
+- server-core auto-commit helperは明示された `--file PATH` だけをstageし、同一checkoutのhelper commitをsingle-writer lockで直列化する。
+- Workspace MCP installerはglobal Cursor config mutationをsingle-writerで扱い、競合時はfail closedする。
 
 ## 6. Context Loading / Development
 
@@ -134,9 +129,9 @@ helperの存在/Path解決/実行可能性はmutation permissionではない。
 - Skill resolver: full read、glob/path traversal拒否。
 - `verify-workspace-mcp.sh`: config-only default。client readbackはexplicit option。
 - `init-dev-workspace.sh`: default read-only check。Workspace mutationはexplicit option。
-- `install-workspace-mcp.sh`: Workspace client config mutationはexplicit option。
+- `install-workspace-mcp.sh`: Workspace client config mutationはexplicit option + single-writer fail-closed。
 - `workspace_command_center_check.py`: default wiring check。repairはexplicit mutation authorization。
-- `ai-auto-commit.sh`: server-core専用、server-core authorization + explicit `--file PATH` change unit必須。
+- `ai-auto-commit.sh`: server-core専用、server-core authorization + explicit `--file PATH` change unit必須 + single-writer fail-closed。
 
 helper failureから隣接Repository/Provider/credential/runtimeの推測修正へ進まない。
 
