@@ -25,14 +25,14 @@ jobs:
       - name: Required authority and machine contracts
         run: |
           set -euo pipefail
-          required=(README.md AGENTS.md CORE.md SERVER_CORE_PROTOCOL.md .github/copilot-instructions.md docs/SERVER_CORE_DESIGN.md docs/DESIGN_DELTA.md docs/LOAD_SCOPE.md docs/G_ACE_WORKSPACE.md docs/SERVER_COMMAND_CONTRACT.md docs/STRUCTURE.md docs/WORKSPACE_REGISTRY.md docs/PROJECT_TEMPLATE.md docs/PROJECT_INTEGRATION_RULES.md docs/AUTO_COMMIT.md docs/DEPLOY_RUNBOOK.md docs/WORKSPACE_MCP.md docs/WORKSPACE_SHARED_SECRETS.md docs/KB_REUSE_DESIGN.md docs/STORAGE_LIFECYCLE.md docs/CLOUDFLARE_OPERATIONS.md docs/GITHUB_SKILL.md docs/GLOSSARY.md operations/pre-execution-schema.json operations/workspace-mcp.json operations/storage-lifecycle.json operations/cloudflare-account.json operations/huggingface.json scripts/init-dev-workspace.sh scripts/install-workspace-mcp.sh scripts/verify-workspace-mcp.sh scripts/ai-auto-commit.sh scripts/resolve-codex-skill.sh scripts/github-skill-path.sh scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py archive/isolated/2026-06-26/PROJECT_STATUS.before-tgserver-canonical.archived.md)
+          required=(README.md AGENTS.md CORE.md SERVER_CORE_PROTOCOL.md .github/copilot-instructions.md .github/dependabot.yml docs/SERVER_CORE_DESIGN.md docs/DESIGN_DELTA.md docs/LOAD_SCOPE.md docs/G_ACE_WORKSPACE.md docs/SERVER_COMMAND_CONTRACT.md docs/STRUCTURE.md docs/WORKSPACE_REGISTRY.md docs/PROJECT_TEMPLATE.md docs/PROJECT_INTEGRATION_RULES.md docs/AUTO_COMMIT.md docs/DEPLOY_RUNBOOK.md docs/WORKSPACE_MCP.md docs/WORKSPACE_SHARED_SECRETS.md docs/KB_REUSE_DESIGN.md docs/STORAGE_LIFECYCLE.md docs/CLOUDFLARE_OPERATIONS.md docs/GITHUB_SKILL.md docs/GITHUB_FREE_MAX.md docs/GLOSSARY.md operations/pre-execution-schema.json operations/workspace-mcp.json operations/storage-lifecycle.json operations/cloudflare-account.json operations/huggingface.json scripts/init-dev-workspace.sh scripts/install-workspace-mcp.sh scripts/verify-workspace-mcp.sh scripts/ai-auto-commit.sh scripts/resolve-codex-skill.sh scripts/github-skill-path.sh scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py archive/isolated/2026-06-26/PROJECT_STATUS.before-tgserver-canonical.archived.md)
           for path in "${required[@]}"; do test -e "$path" || { echo "MISSING_REQUIRED=$path"; exit 1; }; done
           echo 'REQUIRED_AUTHORITY=PASS'
 
       - name: Retired and client-local authority exclusion
         run: |
           set -euo pipefail
-          blocked=(KB.md PROJECT_STATUS.md add-status.sh docs/OPERATION_CHECKLIST.md docs/GITHUB_FREE_MAX.md .cursor/mcp.json .cursor/agents .cursor/rules/01_japanese_thinking.mdc .github/dependabot.yml)
+          blocked=(KB.md PROJECT_STATUS.md add-status.sh docs/OPERATION_CHECKLIST.md .cursor/mcp.json .cursor/agents .cursor/rules/01_japanese_thinking.mdc)
           for path in "${blocked[@]}"; do test ! -e "$path" || { echo "BLOCKED_CURRENT_AUTHORITY=$path"; exit 1; }; done
           grep -qx '.cursor/mcp.json' .gitignore
           grep -qx '.cursor/agents' .gitignore
@@ -75,6 +75,11 @@ jobs:
           require_text 'af9abd3e9d402f73430d7c97f270463a62f75f18' docs/DESIGN_DELTA.md cloudflare_delta_commit_preserved
           require_text 'Do not rewrite or delete prior accepted deltas' docs/DESIGN_DELTA.md append_only_design_delta_history
           require_text 'ARCHIVED OLD WORK HISTORY - DO NOT LOAD AS CURRENT CONTEXT' archive/isolated/2026-06-26/PROJECT_STATUS.before-tgserver-canonical.archived.md archived_history_preserved
+          require_text 'GitHubの利用Costを無駄に増やさず' docs/GITHUB_FREE_MAX.md github_cost_policy
+          require_text 'INTERVAL=weekly' docs/GITHUB_FREE_MAX.md bounded_dependabot_policy
+          require_text 'package-ecosystem: github-actions' .github/dependabot.yml dependabot_github_actions
+          require_text 'interval: weekly' .github/dependabot.yml dependabot_weekly
+          require_text 'open-pull-requests-limit: 3' .github/dependabot.yml dependabot_bounded_prs
           require_text 'Docker Composeを正' README.md docker_compose_readme
           require_text 'Docker Compose.*正' CORE.md docker_compose_core
           require_text 'Docker Composeを正' SERVER_CORE_PROTOCOL.md docker_compose_protocol
