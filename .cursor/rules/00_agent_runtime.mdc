@@ -21,7 +21,7 @@ server-core全体を毎回読み込まず、Taskの責務・対象・依存関�
 
 ## 2. Pre-execution Handoff
 
-Project SourceまたはDocumentを変更する前に、最低限次を解決する。
+Project SourceまたはDocumentを変更する前、またはServer / Provider / Client / Runtime Operationを実行する前に、最低限次を解決する。
 
 ```text
 PURPOSE
@@ -37,9 +37,21 @@ REUSE_CANDIDATES
 VERIFY_PATH
 CHANGE_BOUNDARY
 CONTEXT_SCOPE
+NEXT_ACTION
+EXECUTION_ROUTE
+EXECUTION_CAPABILITY
+EXECUTION_AUTHORIZATION
+PRE_EXECUTION_COMPLETE
+BLOCKER
 ```
 
 不明な値は推測で埋めず、調査対象として明示する。
+
+`PRE_EXECUTION_COMPLETE=YES` は、exact target、required Authority、mutation boundary、次のexact action、必要Input/Revision/Endpoint/Service identity、verification path、authorization stateがTaskに必要な範囲で確定した場合だけ使用する。
+
+現在のAI/Clientに実行Toolが無い場合でも、上記が確定していれば `EXECUTION_CAPABILITY=UNAVAILABLE_IN_CURRENT_CLIENT` として実行直前までhandoffできる。実行Tool不在と実行許可不足は分離する。
+
+承認待ち、Runtime identity未確認、exact command/action未確定、credential contract不明等が残る場合は `PRE_EXECUTION_COMPLETE=NO` とし、`BLOCKER` を明示する。推測Commandで埋めない。
 
 ## 3. Mutation Target Lock
 
