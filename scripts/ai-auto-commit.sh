@@ -7,8 +7,8 @@ Usage: scripts/ai-auto-commit.sh --authorize-server-core-mutation --file PATH [-
 
 Commits only the explicitly listed server-core paths. Unrelated working-tree
 changes are left untouched. The helper refuses main/master, unsafe paths,
-credential-like content, concurrent helper commits, and execution without
-explicit server-core mutation authorization.
+credential-like content, concurrent helper commits, pre-staged intended files,
+and execution without explicit server-core mutation authorization.
 USAGE
 }
 
@@ -86,6 +86,13 @@ for path in "${intended_files[@]}"; do
   fi
 done
 
+pre_staged="$(git diff --cached --name-only -- "${intended_files[@]}")"
+if [[ -n "$pre_staged" ]]; then
+  echo "ERROR: intended file already has staged content; refusing to mix an existing staged change unit." >&2
+  printf '%s\n' "$pre_staged" >&2
+  exit 1
+fi
+
 blocked_env="$(printf '%s\n' "${intended_files[@]}" | grep -E '(^|/)\.env($|\.)' | grep -Ev '(^|/)\.env\.example$' || true)"
 [[ -z "$blocked_env" ]] || { echo "ERROR: refusing environment/secret file paths." >&2; printf '%s\n' "$blocked_env" >&2; exit 1; }
 
@@ -124,17 +131,30 @@ PY
 fi
 
 git diff --check -- "${intended_files[@]}"
+for path in "${intended_files[@]}"; do [[ "$path" == *.sh && -f "$path" ]] && bash -n "$path"; done
+
+staged_by_helper=0
+committed=0
+cleanup_stage() {
+  rc=$?
+  trap - EXIT
+  if [[ "$staged_by_helper" == "1" && "$committed" == "0" ]]; then
+    git reset -q -- "${intended_files[@]}" >/dev/null 2>&1 || true
+  fi
+  exit "$rc"
+}
+trap cleanup_stage EXIT
+
 git add -- "${intended_files[@]}"
+staged_by_helper=1
 mapfile -t staged < <(git diff --cached --name-only | sort)
 [[ ${#staged[@]} -gt 0 ]] || { echo "ERROR: no staged changes after intended-file staging." >&2; exit 1; }
 if [[ "$(printf '%s\n' "${staged[@]}" | sort)" != "$(printf '%s\n' "${intended_files[@]}" | sort)" ]]; then
   echo "ERROR: staged set differs from intended file set; refusing commit." >&2
-  git reset -q -- "${intended_files[@]}" || true
   exit 1
 fi
 
 git diff --cached --check
-for path in "${staged[@]}"; do [[ "$path" == *.sh && -f "$path" ]] && bash -n "$path"; done
 
 if [[ -z "$message" ]]; then
   summary="$(printf '%s\n' "${staged[@]:0:3}" | paste -sd ', ' -)"
@@ -143,7 +163,15 @@ if [[ -z "$message" ]]; then
 fi
 
 git commit -m "$message"
+committed=1
+commit_sha="$(git rev-parse HEAD)"
 if [[ "$push_mode" == "1" ]]; then
-  git push origin "$branch"
+  if ! git push origin "$branch"; then
+    echo "RESULT=PARTIAL COMMIT=PASS PUSH=FAIL SHA=$commit_sha" >&2
+    exit 1
+  fi
+  echo "RESULT=PASS COMMIT=PASS PUSH=PASS SHA=$commit_sha"
+else
+  echo "RESULT=PASS COMMIT=PASS PUSH=NOT_REQUESTED SHA=$commit_sha"
 fi
 exit 0
