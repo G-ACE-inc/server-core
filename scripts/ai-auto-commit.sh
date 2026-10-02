@@ -89,6 +89,7 @@ if [[ -z "$branch" ]]; then
   exit 1
 fi
 
+# Refuse direct auto-commit on main/master.
 case "$branch" in
   main|master)
     echo "ERROR: refusing direct auto-commit on protected branch: $branch" >&2
