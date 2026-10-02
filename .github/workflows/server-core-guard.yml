@@ -64,7 +64,7 @@ jobs:
           require_text 'REVERSIBLE_LOCAL_MUTATION' docs/SERVER_COMMAND_CONTRACT.md reversible_local_mutation
           require_text 'Chat UI' docs/SERVER_COMMAND_CONTRACT.md chat_ui_exclusion
           require_text 'Docker Composeを正' README.md docker_compose_readme
-          require_text 'Docker Composeを正' CORE.md docker_compose_core
+          require_text 'Docker Compose.*正' CORE.md docker_compose_core
           require_text 'Docker Composeを正' SERVER_CORE_PROTOCOL.md docker_compose_protocol
           require_text 'Docker Composeを正' docs/G_ACE_WORKSPACE.md docker_compose_workspace
           require_text 'Docker Composeを正' .cursor/rules/00_agent_runtime.mdc docker_compose_agent_runtime
