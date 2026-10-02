@@ -85,7 +85,7 @@ jobs:
           assert mcp['scope']=='workspace-global'
           assert set(mcp['servers']) >= {'cloudflare-api','huggingface'}
           assert mcp['installation']['backup_keep'] >= 1
-          assert mcp['installation']['required_mode'].startswith('0600')
+          assert mcp['installation']['required_mode']=='owner_read_only_0400_or_owner_read_write_0600_non_executable'
           assert mcp['installation']['concurrency']=='single-writer-fail-closed'
           for name,cfg in mcp['servers'].items():
               assert cfg.get('url','').startswith('https://')
