@@ -2,25 +2,23 @@
 
 ## Purpose
 
-This document records intentional changes from `docs/SERVER_CORE_DESIGN.md` without turning the Design baseline into a chronological work log.
+This document records intentional changes from the `docs/SERVER_CORE_DESIGN.md` baseline without erasing the previous design history.
 
 A Design Delta is required when server-core architecture, responsibility, authority routing, shared-capability boundary, or command-center behavior is formally changed.
 
-GitHub commit / PR remains the chronological work-history authority.
+It is not a daily work log. Chronological work history remains in GitHub commit / PR.
 
 ## Required fields
 
-Each accepted delta records, as applicable:
+Each accepted delta records:
 - Baseline design
 - Actual change
 - Reason / root cause
 - Evidence
 - Affected scope
-- Applied commit / PR
+- Applied commit
 - Compatibility / migration / rollback considerations
 - Verification state
-
-Transient session notes, personal instructions, temporary Branch/HEAD status and current-task progress are not Design Delta authority.
 
 ## 2026-09-30 — Formalize server-core as the G-ACE Workspace command center
 
@@ -30,23 +28,24 @@ server-core was described primarily as the Workspace common development/operatio
 ### Actual change
 The role is formally clarified as the **G-ACE Workspace command center**.
 
-Command-center responsibilities:
+The command-center responsibility is explicitly defined as:
 - receive and route tasks;
 - determine target Project / authority;
 - control progressive context loading;
 - dispatch work to the owning Project;
-- expose shared MCP / Tool / credential / KB capabilities through explicit contracts;
-- enforce common development, verification and documentation boundaries;
+- expose shared MCP / Tool / Secret / KB capabilities through explicit contracts;
+- enforce common development, verification and documentation rules;
 - preserve GitHub work history;
-- govern Server/Provider technical mutation and runtime-operation boundaries.
+- govern approval and runtime-operation boundaries.
 
-server-core does not absorb Project-specific implementation or runtime internals.
+server-core still does not absorb Project-specific implementation or runtime internals.
 
 ### Reason / root cause
-The earlier wording was compatible with the intended architecture but too weak and could be interpreted as a passive rule/document repository. The Workspace requires one stable routing and governance entry point.
+The earlier wording was technically compatible but too weak: it could be interpreted as a passive rule/document repository. The intended architecture requires server-core to be the active common command point from which Workspace AI/developer work is routed and governed.
 
 ### Evidence
-README / LOAD_SCOPE / Workspace routing already followed server-core-first routing. The design change formalized that operational role rather than creating a second orchestration layer.
+- Master explicitly clarified that server-core's role is equivalent to a command room / command center for the Workspace.
+- Existing README / LOAD_SCOPE / Workspace routing already implemented server-core-first routing, so the formal design wording strengthens and formalizes the intended responsibility rather than creating a second orchestration layer.
 
 ### Affected scope
 - `README.md`
@@ -56,85 +55,198 @@ README / LOAD_SCOPE / Workspace routing already followed server-core-first routi
 - `docs/LOAD_SCOPE.md`
 - `docs/G_ACE_WORKSPACE.md`
 - `docs/WORKSPACE_REGISTRY.md`
-- related operation contracts and CI guards
+- `docs/WORKSPACE_SHARED_SECRETS.md`
+- `docs/KB_REUSE_DESIGN.md`
+- `docs/STORAGE_LIFECYCLE.md`
+- `docs/GLOSSARY.md`
+- `docs/STRUCTURE.md`
+- `.github/workflows/server-core-guard.yml`
 
 ### Applied commit
-`d88e99273319dad1b27092e14085c7060710fc92`
+Formal Design baseline change commit:
 
-### Compatibility / rollback
-- Project implementations remain Project-owned.
-- Project README-first dispatch remains valid.
-- No runtime migration is implied by the wording change.
+```text
+d88e99273319dad1b27092e14085c7060710fc92
+```
+
+Supporting consistency updates are tracked by the same branch/PR and GitHub history.
+
+### Compatibility / migration / rollback
+- No Project implementation is moved into server-core.
+- Existing Project README-first entry remains valid after routing.
+- Existing LibralCore, GitHub, Secret, KB and Storage authorities remain valid.
+- The change strengthens responsibility wording and command flow; it does not require a runtime migration.
+- Rollback would restore weaker control-layer wording but would reintroduce ambiguity about Workspace ownership/routing.
+
+### Verification state
+The acceptance gate is `server-core-guard` on the final branch/PR HEAD. The CI result is the verification evidence; this Design Delta does not copy a mutable CI status into the architecture baseline.
 
 ## 2026-09-30 — Return Project-specific Cloudflare implementation ownership to the owning Project
 
 ### Baseline design
-server-core excludes Project-specific implementation bodies and runtime internals.
+`docs/SERVER_CORE_DESIGN.md` defines server-core as the Workspace command center and explicitly excludes Project-specific implementation bodies and runtime internals.
 
 ### Actual change
-`docs/CLOUDFLARE_OPERATIONS.md` was changed from an application-specific Tunnel/Token/Container runbook into a Workspace-wide Cloudflare command contract.
+`docs/CLOUDFLARE_OPERATIONS.md` is changed from an Astera v8-specific Tunnel/Token/Container runbook into a Workspace-wide Cloudflare command contract.
 
-server-core keeps routing, shared access contracts, mutation/verification boundaries and credential contract linkage. Project-specific hostnames, origins, Docker/Compose services, runtime credential injection and release procedures belong to the owning Project.
+server-core keeps only:
+- routing;
+- shared access paths;
+- approval boundary;
+- provider verification contract;
+- Secret boundary;
+- common tooling entry.
+
+Project-specific hostnames, origins, Docker/Compose services, runtime secret paths and release procedures belong to the owning Project.
 
 ### Reason / root cause
-A Workspace command center must not make one application's Cloudflare runtime details the Workspace-wide truth.
+The old document made server-core the authority for a specific Application's Cloudflare runtime details. That contradicted the command-center responsibility boundary and could cause stale Project runtime facts to be treated as Workspace-wide truth.
 
-### Compatibility / rollback
-No live Cloudflare resource or credential was changed by the documentation ownership correction.
+### Evidence
+The previous file contained Astera-specific hostname, origin port, tunnel name, container, token path and release gates while the server-core baseline says Project-specific runtime implementation remains owned by the target Project.
 
-## 2026-09-30 — Separate Project Integration from Shared Capability control
+### Affected scope
+- `docs/CLOUDFLARE_OPERATIONS.md`
+- `docs/WORKSPACE_REGISTRY.md`
+- Cloudflare task routing through `docs/LOAD_SCOPE.md`
+
+### Applied commit
+Cloudflare authority correction commit:
+
+```text
+af9abd3e9d402f73430d7c97f270463a62f75f18
+```
+
+### Compatibility / migration / rollback
+- Git history retains the former Astera-specific runbook as historical evidence.
+- No live Cloudflare resource is changed by this documentation correction.
+- Astera-specific live values must be read from the owning Project/current provider state before use.
+- Restoring the old server-core file as Current Authority would reintroduce ownership ambiguity and stale-runtime risk.
+
+### Verification state
+The final branch/PR must pass `server-core-guard`. Live Cloudflare runtime is not modified or claimed verified by this documentation change.
+
+## 2026-09-30 — Separate Project Integration Contracts from Shared Capability Registry
 
 ### Baseline design
-Shared capability control existed, but Project-owned integration services were not clearly separated from Workspace-shared capability contracts.
+The command-center baseline defined shared capability control but did not explicitly distinguish Project-owned integration services from Workspace-shared capabilities.
 
 ### Actual change
-The architecture separates Shared Capability contracts, Project-owned services such as TGserver/webhook gateway, and dual-boundary Libral Vault usage. `docs/PROJECT_INTEGRATION_RULES.md` is the common integration authority.
+The architecture now explicitly separates:
+
+- Shared Capability: DebugAI, MCP, KB, GitHub, Cloudflare, Hugging Face, Runtime確認, Libral Vault, Workspace Registry, Monitoring, Backup / Recovery, Search / Index.
+- Project Integration: TGserver and webhook gateway.
+- Dual boundary: Libral Vault remains a Shared Capability while Project-specific consumer / injection / runtime usage is governed by the Project Integration contract.
+
+`docs/PROJECT_INTEGRATION_RULES.md` is the common integration authority for TGserver / webhook gateway / Vault / MCP / Tool adoption by a Project.
 
 ### Reason / root cause
-Treating Project-owned systems as generic shared capabilities blurs owner, runtime and failure responsibility.
+TGserver and webhook gateway are existing Project-owned systems. Treating them as generic shared capabilities would blur service ownership. Vault must remain centrally governed because Secret safety is Workspace-wide while usage is Project-specific.
 
-### Compatibility
-No Project implementation moves. The change clarifies discovery/routing/contract ownership only.
+### Evidence
+- server-core Design requires Project-specific implementation to remain with the owning Project.
+- The Workspace Registry identifies TGserver and webhook gateway as Projects.
+- A separate integration contract is therefore required for common adoption rules.
+
+### Affected scope
+- `README.md`
+- `docs/SERVER_CORE_DESIGN.md`
+- `docs/LOAD_SCOPE.md`
+- `docs/G_ACE_WORKSPACE.md`
+- `docs/STRUCTURE.md`
+- `docs/WORKSPACE_REGISTRY.md`
+- `docs/PROJECT_TEMPLATE.md`
+- `docs/PROJECT_INTEGRATION_RULES.md`
+
+### Applied commit
+This delta is applied by the synchronization commit that updates the command-center documentation set.
+
+### Compatibility / migration / rollback
+- No TGserver or webhook gateway implementation is moved.
+- No Vault Secret value or live Secret registration is changed.
+- Existing Project integrations remain Project-owned.
+- The change clarifies discovery/routing/contract ownership only.
+
+### Verification state
+The branch/PR must pass `server-core-guard` and documentation synchronization checks. Runtime availability remains separate from documentation completion.
 
 ## 2026-10-01 — Remove stale Project-specific Cloudflare/GPG operation assets from server-core
 
 ### Baseline
-Project-specific Cloudflare implementation belongs to the owning Project; server-core keeps the common Cloudflare contract and shared access boundaries.
+The 2026-09-30 Cloudflare ownership correction states that Project-specific Cloudflare implementation belongs to the owning Project, while server-core keeps only the Workspace command contract and shared access boundaries.
 
 ### Actual change
-Stale Project-specific assets `operations/cloudflare.json` and `scripts/cloudflare_ops.py` were removed. The Cloudflare Cursor rule was rewritten as a Workspace-wide operation rule.
+The remaining stale Astera-specific Cloudflare operation manifest and helper were removed from server-core:
+
+- `operations/cloudflare.json`
+- `scripts/cloudflare_ops.py`
+
+The Cursor Cloudflare rule was rewritten as a Workspace-wide contract and no longer assumes Astera v8, GPG-Core, or a server-core Cloudflare runtime script.
 
 ### Reason / root cause
-Those files encoded a former application-specific runtime and credential path, contradicting current ownership and shared-credential architecture.
+The previous ownership correction updated the documentation but left implementation assets that still encoded the former Astera-specific runtime and GPG-based credential path. Keeping those files would allow an AI to follow stale instructions despite the current Vault-based shared-secret architecture.
 
-### Compatibility
-No live Cloudflare resource or credential was changed. Git history retains the removed implementation.
+### Evidence
+The removed manifest referenced `astera-v8-prod`, `api.asterav8.jp`, a Project-specific origin, and `GPG-Core`. The removed helper consumed that manifest and contained GPG-based secret handling. Current Workspace shared-secret authority is Libral Vault via `docs/WORKSPACE_SHARED_SECRETS.md` and `operations/cloudflare-account.json`.
+
+### Affected scope
+- `.cursor/rules/cloudflare-operations.mdc`
+- `docs/CLOUDFLARE_OPERATIONS.md`
+- `docs/STRUCTURE.md`
+- `operations/cloudflare.json` (removed)
+- `scripts/cloudflare_ops.py` (removed)
+- `.github/workflows/server-core-guard.yml`
+
+### Compatibility / rollback
+No live Cloudflare resource or Secret was changed. Project-specific Cloudflare operations remain with the owning Project. Reintroducing the removed files as Current server-core assets would restore the stale ownership/credential boundary and is not compatible with the current Workspace contract.
+
+### Verification state
+The final branch/PR HEAD must pass `server-core-guard`. This change itself does not claim live Cloudflare, Vault, or Project runtime verification.
+
+## Update rule
+
+When a later architecture decision changes the server-core baseline, append a new section. Do not rewrite or delete prior accepted deltas merely because the current implementation changed.
 
 ## 2026-10-01 — Workspace-global MCP execution route
 
 ### Baseline
-MCP was a Workspace shared capability, but the executable client route could vary by Project.
+server-core already classified MCP / Cloudflare / Hugging Face as Workspace shared capabilities, but the executable Cursor route was still Project-dependent or only documented. This caused the known failure mode where one Project had an MCP registration/token path while another Project did not.
 
 ### Adopted design
-Use Cursor User Global MCP (`~/.cursor/mcp.json`) as the Workspace-wide execution entry for server-core-managed shared remote MCPs. Project `.cursor/mcp.json` remains for Project-owned / Project-scoped MCPs.
+Use Cursor User Global MCP (`~/.cursor/mcp.json`) as the Workspace-wide execution entry for shared remote MCPs. Project `.cursor/mcp.json` remains reserved for Project-owned or explicitly Project-scoped MCPs.
 
 Source of truth:
-- `operations/workspace-mcp.json` — managed manifest without provider credential values;
-- `scripts/install-workspace-mcp.sh` — gated merge into user-global config;
-- `scripts/verify-workspace-mcp.sh` — scoped configuration verification;
-- `docs/WORKSPACE_MCP.md` — state/permission/credential semantics.
+- `operations/workspace-mcp.json` — shared MCP manifest without provider tokens;
+- `scripts/install-workspace-mcp.sh` — safe merge into the user-global Cursor MCP config;
+- `scripts/verify-workspace-mcp.sh` — config verification and optional Cursor CLI inspection;
+- `docs/WORKSPACE_MCP.md` — contract and availability gate.
 
-Existing non-managed client entries and client-local credential containers may be preserved but are not adopted into server-core ownership or treated as live-auth evidence.
+Current shared registrations:
+- Cloudflare API MCP;
+- Hugging Face official MCP.
 
 ### Security / ownership
-Client config and backups are protected with owner-only permissions and bounded backup retention. Credential values are not printed or copied into repository authority.
+- Provider credentials are not copied into Project repositories.
+- OAuth-capable providers authenticate at the global MCP layer.
+- Bearer-token providers must use the approved Workspace Secret / Libral Vault path; plaintext tokens remain outside Git and Project config.
+- Existing unrelated user MCP servers are preserved.
+- A name collision with a different definition fails closed rather than silently overriding an existing server.
+
+### Initialization
+`scripts/init-dev-workspace.sh` now invokes the shared MCP installer after establishing the common Workspace rules path. Therefore new Workspace initialization does not depend on each Project remembering to register the shared MCPs.
 
 ### Verification boundary
-Configuration verification and Live availability are separate. `CONFIG_PRESENT` / `CONFIG_REGISTERED` is not equivalent to authentication, transport, interface discovery or representative-call PASS.
+Source/CI verification confirms the manifest schema, installer shell syntax, documentation and registration contract. Actual server-side `~/.cursor/mcp.json`, OAuth authentication, transport, tool discovery and representative calls remain Runtime verification steps and are not claimed as complete until executed on the intended Cursor/Agent host.
+
+### Deferred shared MCPs
+DebugAI MCP and Deterministic Japanese Parser MCP are not globally registered yet because their intended live runtime/endpoint has not been verified. No path or endpoint is invented.
+
+### Compatibility
+Project-specific MCPs remain supported. Cursor project-level configuration may override a global server name; such overrides are prohibited by Workspace policy unless explicitly approved.
 
 ## 2026-10-01 — Separate durable capability state from transient live-verification progress
 
-### Baseline
+### Baseline design
 Earlier wording mixed durable implementation facts, historical usage, current client configuration and current exact-revision live verification.
 
 ### Actual change
@@ -143,12 +255,15 @@ Capability documentation separates implementation/source verified, config presen
 ### Reason / root cause
 Implementation existence, past successful usage, current registration and current runtime health are different facts with different authorities and lifetimes.
 
-### Compatibility
+### Compatibility / migration / rollback
 No capability implementation body, server service, provider setting or credential is changed by this documentation correction.
+
+### Verification state
+Repository CI verifies the state-separation contract. Current live availability remains task-time evidence.
 
 ## 2026-10-01 — Remove transient and personal policy from server-core operational authority
 
-### Baseline
+### Baseline design
 Some server-core documents and Cursor rules had accumulated session-specific wording, personal approval labels, temporary project status, device-specific assumptions, and reasoning/language instructions unrelated to durable Workspace operation.
 
 ### Actual change
@@ -157,8 +272,11 @@ server-core Current Authority is limited to durable Workspace/Server operation c
 ### Reason / root cause
 Transient instructions and short-lived work state are not stable server-core operating contracts.
 
-### Compatibility / migration
+### Compatibility / migration / rollback
 Durable safety properties remain and Project-specific details remain with owning Project authority.
+
+### Verification state
+Retired/client-local/session-only material is excluded by repository guard checks.
 
 ## 2026-10-02 — Make server-core mutation explicitly opt-in
 
@@ -177,8 +295,11 @@ Operationally:
 ### Reason / root cause
 A command-center repository is consulted by many Project tasks. Reference scope and mutation scope must be independently locked.
 
-### Compatibility / migration
+### Compatibility / migration / rollback
 Project work continues to read server-core as common routing authority. Existing Project ownership does not change.
+
+### Verification state
+Repository guard/behavior CI checks the explicit mutation gates and helper fail-closed behavior.
 
 ## 2026-10-03 — Restore fixed server-workflow scope after execution-policy over-generalization
 
@@ -206,6 +327,9 @@ The command center is restored to the original scope:
 ### Reason / root cause
 server-core exists to make a non-expert-operated development environment repeatable and resistant to drift. Generalizing it into a conventional flexible executor-policy layer weakens that purpose and introduces rules that were not part of the original requirement.
 
+### Evidence
+Master required restoration of the original command-center purpose and rejected the generic executor/UI/operator interpretation. Reverse audit compared the current PR against the accepted baseline and restored removed routing/operation requirements while retaining safety hardening.
+
 ### Affected scope
 - `README.md`
 - `CORE.md`
@@ -221,7 +345,7 @@ server-core exists to make a non-expert-operated development environment repeata
 - `.github/workflows/server-core-behavior.yml`
 
 ### Applied commit / PR
-PR #8, corrective commits on `docs/post-merge-state-cleanup-20261001`.
+PR #8 corrective commits on `docs/post-merge-state-cleanup-20261001`.
 
 ### Compatibility / migration / rollback
 Project ownership, Shared Capability contracts, MCP hardening, helper safety, State Semantics and Runtime boundaries remain in place. The correction removes only the over-generalized authority layer and UI/client concepts that were not part of server-core's intended scope.
@@ -229,6 +353,47 @@ Project ownership, Shared Capability contracts, MCP hardening, helper safety, St
 ### Verification state
 Repository guard and behavior CI must pass at the exact corrected branch HEAD. Current live Server/provider state remains a separate evidence domain.
 
-## Update Rule
+## 2026-10-03 — Make automatic server-core entry a Workspace AI requirement
 
-Append a new section only for an actual architecture/responsibility/authority change. Editorial correction, wording cleanup and current-runtime refresh belong in normal Git history unless they change the Design contract.
+### Baseline design
+Cursor had an always-applied server-core runtime rule, but equivalent automatic entry for VS Code/Copilot and other compatible agents was not proven as a durable Workspace-wide contract.
+
+### Actual change
+A new chat/task in the G-ACE Workspace must enter through server-core without requiring Master to repeat the instruction each time.
+
+The durable entry surfaces are:
+- Cursor: `.cursor/rules/00_agent_runtime.mdc` with `alwaysApply: true`;
+- VS Code / GitHub Copilot: `.github/copilot-instructions.md`;
+- cross-agent compatible entry: `AGENTS.md`;
+- `/home/admin1/projects` receives the shared Cursor/Copilot/AGENTS entry points through the canonical Workspace wiring;
+- `scripts/workspace_command_center_check.py` verifies the links/settings and can repair them only under explicit Workspace-mutation authorization.
+
+### Reason / root cause
+The Workspace command-center purpose is not satisfied if Master must manually tell each new AI chat to read server-core. The command-center entry must be durable and automatic at the client/Workspace layer.
+
+### Evidence
+Master explicitly required Cursor/VS AI to check server-core at chat start even when no reminder is given. Source/config/CI can prove the intended wiring contract, while actual live client instruction consumption remains a separate Runtime/client evidence item.
+
+### Affected scope
+- `.cursor/rules/00_agent_runtime.mdc`
+- `.github/copilot-instructions.md`
+- `AGENTS.md`
+- `docs/G_ACE_WORKSPACE.md`
+- `docs/STRUCTURE.md`
+- `scripts/init-dev-workspace.sh`
+- `scripts/workspace_command_center_check.py`
+- `.github/workflows/server-core-guard.yml`
+- `.github/workflows/server-core-behavior.yml`
+
+### Applied commit / PR
+PR #8 corrective commits on `docs/post-merge-state-cleanup-20261001`.
+
+### Compatibility / migration / rollback
+Cursor's existing automatic rule remains. The change adds equivalent durable entry surfaces for VS/Copilot and cross-agent use without moving Project implementation into server-core.
+
+### Verification state
+Repository CI verifies the instruction files, Workspace wiring contract and regression guards. Current exact-head VPS wiring and actual Cursor/VS instruction consumption remain `NOT_VERIFIED` until live readback is performed.
+
+## Update rule
+
+When a later architecture decision changes the server-core baseline, append a new section. Do not rewrite or delete prior accepted deltas merely because the current implementation changed. Editorial correction, wording cleanup and current-runtime refresh belong in normal Git history unless they change the Design contract.
