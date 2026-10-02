@@ -1,6 +1,6 @@
 # SERVER CORE OPERATION PROTOCOL
 
-Version: 2026-10-01
+Version: 2026-10-02
 Role: G-ACE Workspace Command Centerの共通運用・変更・安全境界。
 
 ## Purpose
@@ -90,6 +90,32 @@ Process起動、Error無し、HTTP 200、Build成功、CI green等は、それ�
 
 未実行・未確認・未検証は `NOT_EXECUTED / UNKNOWN / NOT_VERIFIED` を維持する。
 
+## State Semantics
+
+状態名はDomainごとに証明範囲を固定し、隣接状態へ自動昇格させない。
+
+```text
+SOURCE_VERIFIED != CONFIG_PRESENT
+CONFIG_PRESENT != CONFIG_REGISTERED
+CONFIG_REGISTERED != CLIENT_REGISTRATION_VERIFIED
+CLIENT_REGISTRATION_VERIFIED != AUTHENTICATION_VERIFIED
+AUTHENTICATION_VERIFIED != TRANSPORT_VERIFIED
+TRANSPORT_VERIFIED != INTERFACE_DISCOVERY_VERIFIED
+INTERFACE_DISCOVERY_VERIFIED != REPRESENTATIVE_CALL_PASS
+REPRESENTATIVE_CALL_PASS != AVAILABLE_VERIFIED unless that Capability gate is satisfied
+AUDIT_PASS != MUTATION_AUTHORIZED
+MUTATION_AUTHORIZED != MUTATION_APPLIED
+BUILD_PASS != DEPLOY_PASS
+DEPLOY_PASS != RUNTIME_PASS
+RUNTIME_PASS != PRODUCTION_PASS
+```
+
+`HEALTHY`、`AVAILABLE`、`VERIFIED`、`REGISTERED`、`IMPLEMENTED`、`APPLIED` 等の語を使う場合は、何を実測・検証した状態かをAuthority / machine contract / readback evidenceで特定する。
+
+単一のHTTP 200、config entry、process/container起動、client listing、Source存在、過去利用実績を、それより強いCurrent stateへ読み替えない。
+
+逆に、Current live再検証待ちを理由に、Source/implementation/protocolの既検証状態を未実装へ降格しない。
+
 ## Documentation / Work History
 
 Current仕様Documentへ一時的なセッション指示、個別作業メモ、時系列作業日誌を混在させない。
@@ -135,7 +161,7 @@ Capabilityを利用・登録・接続・検証することと、Capability imple
 
 Registry記載や過去利用実績だけでCurrent Runtimeを証明しない。必要時は実設定・Provider・Endpoint・Docker・GitHub等をreadbackする。
 
-Capability固有のCurrent状態は `docs/WORKSPACE_REGISTRY.md` を正とし、本Protocolへ個別Projectの一時状態を複製しない。
+Capabilityの**durableなowner / authority / state semantics / verification boundary**は `docs/WORKSPACE_REGISTRY.md` を正とする。Capabilityの**Current live state**はRegistry記載を代用せず、Task時の実client/provider/runtime readbackを正とする。本Protocolへ個別Projectの一時状態を複製しない。
 
 ## Project Integration
 
