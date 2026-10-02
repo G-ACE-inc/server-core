@@ -47,10 +47,10 @@ CHANGE MCP IMPLEMENTATION
 - `USE / CALL MCP`: 原則mutationなし。MCP owner Repositoryもserver-coreもread-only。
 - `VERIFY CURRENT AVAILABILITY`: client/runtime readbackのみ。検証だけでSource/Documentを変更しない。
 - `REGISTER PROJECT-SCOPED MCP`: consumer Project側Config/Documentがmutation候補。server-coreやMCP owner実装は原則read-only。
-- `CHANGE WORKSPACE-GLOBAL REGISTRATION`: server-core Workspace MCP contract/configがmutation対象になり得る。
-- `CHANGE MCP IMPLEMENTATION`: owning MCP Projectだけをmutation対象とし、server-coreは共通Contractが変わらない限りread-only。
+- `CHANGE WORKSPACE-GLOBAL REGISTRATION`: user-global MCP configの変更Taskであり、server-core Repositoryのmanifest/Document/Script変更を自動的には許可しない。server-core側Contract変更が必要なら、server-core自体の変更についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立した場合だけmutation対象にする。
+- `CHANGE MCP IMPLEMENTATION`: owning MCP Projectだけをmutation対象とし、server-coreは共通Contract変更が必要でも explicit owner authorization が無い限りread-only。
 
-「MCPを使う」「MCPを検証する」「MCPをProjectへ接続する」だけでserver-coreのmanifest/documentやMCP owner Sourceを書き換えない。
+「MCPを使う」「MCPを検証する」「MCPをProjectへ接続する」「Workspace-global registrationを整合する」だけでserver-coreのmanifest/document/scriptやMCP owner Sourceを書き換えない。
 
 ## Managed Shared MCPs
 
@@ -81,6 +81,8 @@ cd /home/admin1/server-core
 scripts/install-workspace-mcp.sh
 ```
 
+これは `~/.cursor/mcp.json` のruntime/client configを整合するOperationであり、server-core Repositoryへのwrite permissionではない。
+
 Project固有MCP利用TaskやMCP実装TaskのたびにこのInstallerを実行しない。
 
 Installer contract:
@@ -104,7 +106,7 @@ scripts/init-dev-workspace.sh
 
 Initializerはcanonical checkoutからのみ実行する。Workspace rules、workspace file、managed MCP configを整合し、検証に失敗した場合は成功扱いにしない。
 
-Project Source/Document更新Taskの通常手順としてInitializerを実行しない。
+Initializer実行もserver-core Repositoryを書き換える許可にはならない。Project Source/Document更新Taskの通常手順としてInitializerを実行しない。
 
 ## Configuration Verification
 
@@ -183,6 +185,8 @@ Project repositoryはWorkspace shared MCP entryを複製しない。
 
 Project-level usage/documentationをWorkspace-global contract更新へ自動昇格しない。
 
+server-coreのWorkspace MCP contract自体を変更する必要が見つかった場合も、`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示成立するまではread-onlyで報告・提案に留める。
+
 ## Runtime Verification
 
 Current live availabilityがTask判断に必要な場合は、必要な範囲で次を確認する。
@@ -205,3 +209,4 @@ Config検証とLive availability検証を混同しない。
 - ConfigだけでCurrent runtime healthyと断定しない。
 - 個別Taskの進捗ログを本Documentへ蓄積しない。
 - MCP利用TaskをMCP実装変更Taskへ自動変換しない。
+- explicit owner authorization無しにserver-core Repositoryを変更しない。
