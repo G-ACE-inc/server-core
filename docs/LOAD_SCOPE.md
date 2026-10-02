@@ -1,6 +1,6 @@
 # SERVER CORE LOAD SCOPE / COMMAND ROUTER
 
-Version: 2026-10-01
+Version: 2026-10-02
 Role: G-ACE WorkspaceがTaskを正しいProject / Authorityへ振り分け、必要情報だけを段階的に読むためのRouter。
 
 ## 1. Mandatory Start
@@ -55,6 +55,12 @@ AUTHORITY_REQUIRED
 REUSE_CANDIDATES
 VERIFY_PATH
 CHANGE_BOUNDARY
+NEXT_ACTION
+EXECUTION_ROUTE
+EXECUTION_CAPABILITY
+EXECUTION_AUTHORIZATION
+PRE_EXECUTION_COMPLETE
+BLOCKER
 ```
 
 `TARGET_REPOSITORY` はTaskの主対象であり、参照したRepository一覧ではない。
@@ -66,6 +72,8 @@ CHANGE_BOUNDARY
 対象Project / ownerが不明なら `docs/WORKSPACE_REGISTRY.md` を読む。
 
 既存owner / reusable assetを確認する前に新規Project / Module / Tool / Documentを作らない。
+
+実行Toolが現在のAI/Clientに無い場合でも、exact target / Authority / next action / required inputs / authorization / verify pathまで確定できるなら、`PRE_EXECUTION_COMPLETE=YES` として実行直前のhandoffを成立させる。Tool不在と承認不足は別状態として扱う。
 
 ## 4. Mutation Routing
 
@@ -204,7 +212,7 @@ RuntimeやRegistryを確認するためにserver-coreを参照したことを、
 
 ## 11. Stop Reading Condition
 
-作業開始に必要な読込は、次を説明・確認できた時点で止める。
+作業開始または実行直前handoffに必要な読込は、次を説明・確認できた時点で止める。
 - purpose / expected result
 - target Project / responsibility
 - target repository
@@ -217,15 +225,18 @@ RuntimeやRegistryを確認するためにserver-coreを参照したことを、
 - related tests / verification path
 - affected scope
 - change boundary
+- exact next action / execution route
+- execution capability / authorization state
+- pre-execution completeness / unresolved blocker
 
 不足した場合だけ次Levelへ進む。
 
 ## 12. Router Failure Rule
 
-Task owner、Authority、Runtime state、credential contract、mutation target等が不明な場合は推測で補完しない。
+Task owner、Authority、Runtime state、credential contract、mutation target、exact execution action等が不明な場合は推測で補完しない。
 
 Document更新先が不明な場合も、server-coreを既定の変更先にしない。対象Project READMEとRepository ownershipを確認してから更新する。
 
 server-core mutation authorizationが不明または未付与ならread-onlyを維持する。
 
-`UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` 等の状態を維持し、必要なAuthority/readbackだけ追加取得する。mutation targetが不明な状態ではwrite/commitへ進まない。
+`UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` 等の状態を維持し、必要なAuthority/readbackだけ追加取得する。mutation targetが不明な状態ではwrite/commitへ進まない。実行Toolが無いだけなら、target/action/authorization/verificationが確定した時点で外部実行handoffへ切り替える。
