@@ -38,7 +38,7 @@ Command-center responsibilities:
 - expose shared MCP / Tool / credential / KB capabilities through explicit contracts;
 - enforce common development, verification and documentation boundaries;
 - preserve GitHub work history;
-- govern Server/Provider mutation and runtime-operation boundaries.
+- govern Server/Provider technical mutation and runtime-operation boundaries.
 
 server-core does not absorb Project-specific implementation or runtime internals.
 
@@ -206,52 +206,54 @@ Project work continues to read server-core as common routing authority. Existing
 ### Verification state
 Repository CI confirms mutation gates; runtime verification is not required for this repository-authority boundary.
 
-## 2026-10-02 — Add execution orchestration and canonical external-operation handoff
+## 2026-10-02 — Separate Workspace top-level execution policy from server-core technical execution authority
 
 ### Baseline design
-server-core could route work to the correct Project and record `EXECUTION_ROUTE`, but it did not own a complete rule for choosing the least-cost capable executor, minimizing operator round trips, producing paste-safe Server commands, scoping authorization to a Task/change unit, or preventing concurrent change units from being mixed.
+server-core had accumulated executor-selection priority, operator round-trip guidance, command presentation constraints and Server technical safety in the same authority layer. That duplicated concerns that belong to the Workspace top-level operating authority and created a risk that server-core could override or drift from higher-priority rules.
 
 ### Actual change
-Execution orchestration becomes a Command Center responsibility.
+The architecture now separates responsibilities:
+- Workspace top-level operating authority owns Bootstrap before server-core, executor-selection priority, Cost Policy, GPT↔operator interaction and operator-facing command/paste/result interface;
+- `server-core` owns Project/Authority routing, route validation, mutation/authorization boundaries, technical verification and external-operation readiness;
+- `operations/pre-execution-schema.json` owns canonical field names, execution-route values and mutation classes, and explicitly records that operator-interface authority is external to server-core;
+- `docs/SERVER_COMMAND_CONTRACT.md` owns Server technical shell/process safety, mutation classification, same-target concurrency, exit-status correctness, bounded diagnostics and evidence promotion, not operator-facing interface policy;
+- `README.md`, `docs/G_ACE_WORKSPACE.md`, `docs/LOAD_SCOPE.md`, `.cursor/rules/00_agent_runtime.mdc` and `docs/SERVER_CORE_DESIGN.md` treat README→LOAD_SCOPE as an internal router entered after the Workspace top-level Bootstrap rather than as a replacement for it.
 
-Canonical architecture:
-- `docs/G_ACE_WORKSPACE.md` owns Workspace task sequence and Pre-execution semantics;
-- `operations/pre-execution-schema.json` owns field names, execution-route values and mutation classes;
-- `docs/SERVER_COMMAND_CONTRACT.md` owns operator Server command batching, 6072-character response budget, paste boundary, child-shell fail-fast safety, bounded output and `GACE_RESULT_BEGIN...GACE_RESULT_END` evidence envelope;
-- deterministic checks/direct assistant tools are preferred before operator Server commands;
-- Server-side AI is used only when deterministic/direct routes cannot safely close the work;
-- authorization is scoped to the current Task/change unit/target operation;
-- reversible local Git changes are not mislabeled pure read-only;
-- multiple agents/change units must not be mixed into one stage/commit.
+The same change unit also formalizes same-target writer safety:
+- server-core auto-commit helper serializes same-checkout helper commits and fails closed on lock contention;
+- Workspace MCP installer serializes Cursor global-config mutation and fails closed on lock contention;
+- MCP backup/tmp names are collision-resistant across rapid repeated runs.
 
 ### Reason / root cause
-Real Workspace use showed that correct Project routing alone does not prevent excessive command round trips, accidental interactive-shell termination, unnecessary Server-AI cost, overlarge readback output, or one worker staging another worker's uncommitted changes.
+A durable Command Center must not duplicate a higher-level interface policy, because duplicated numeric or presentation rules can become stale and create conflicting authority. At the same time, parallel Project/Agent work requires technical single-writer protection at shared mutation points rather than relying on conversational coordination alone.
 
 ### Evidence
-Behavioral defects were reproduced in the pre-change helper/command design: repository-wide staging, unbounded storage output, silent Skill truncation, Project path traversal and ambiguous command/readback boundaries. The branch adds code fixes and behavior CI for these failure classes.
+The audit found duplicated operator-interface ownership in README/Design/Workspace/Server Command Contract and concrete same-target race windows in auto-commit and Workspace MCP config mutation. The branch corrected those boundaries and added behavior tests that hold the corresponding locks and verify fail-closed refusal.
 
 ### Affected scope
 - `README.md`
 - `.cursor/rules/00_agent_runtime.mdc`
-- `CORE.md`
 - `docs/SERVER_CORE_DESIGN.md`
 - `docs/G_ACE_WORKSPACE.md`
 - `docs/LOAD_SCOPE.md`
 - `docs/SERVER_COMMAND_CONTRACT.md`
 - `docs/AUTO_COMMIT.md`
-- `docs/STRUCTURE.md`
+- `docs/WORKSPACE_MCP.md`
 - `operations/pre-execution-schema.json`
-- Workspace helper scripts
-- behavior CI
+- `operations/workspace-mcp.json`
+- `scripts/ai-auto-commit.sh`
+- `scripts/install-workspace-mcp.sh`
+- `.github/workflows/server-core-guard.yml`
+- `.github/workflows/server-core-behavior.yml`
 
 ### Applied commit / PR
-PR #8. Traceable commits on its feature branch include `935de3b21ab80c984dc181cbf06a5a2df0b68907` (Server Command Contract), `01610d335784114c6f50f42c63b531dab722437b` (canonical Pre-execution schema), and subsequent helper/authority hardening commits in the same PR.
+PR #8. Relevant feature-branch commits include `b53512f747e1c352f29070758772f3db088ca896` (auto-commit serialization), `7b0f0461a26d73e1aa6d69dbeb609584ed91b894` (Workspace MCP serialization), `8196edc495a8d3305f0335d0b14ff600dde280ca` (Server Command technical-boundary correction), `e208394f48684f9e0a26a6cbb50ef17bff414b3f` (pre-execution authority ownership), `324eb0e0eeb1d98aca87ab8fe1b564d32d003ede` (Workspace contract alignment), and subsequent README/Design synchronization commits in the same PR.
 
 ### Compatibility / migration / rollback
-Project implementation ownership does not change. Existing commands remain valid only when they satisfy the new safety/authorization boundaries. Rolling back would restore executor-selection, command-safety and multi-worker ambiguity.
+Project implementation ownership does not change. Existing technical safety gates remain valid. Operator-facing requirements are not deleted from the Workspace; they remain governed by the higher-priority operating authority instead of being duplicated in server-core. Rolling back would reintroduce competing authority and same-target race windows.
 
 ### Verification state
-Behavior CI is required in addition to the existing authority/structure guard before this change is treated as merge-ready. Current live Server/provider operations remain separate evidence domains.
+Both repository guard and behavior CI must pass at the exact branch head before this delta is treated as verified. Current live Server/provider operations remain separate evidence domains.
 
 ## Update Rule
 
