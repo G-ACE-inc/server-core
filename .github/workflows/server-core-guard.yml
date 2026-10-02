@@ -50,7 +50,7 @@ jobs:
           test -z "$env_files" || { printf '%s\n' "$env_files"; exit 1; }
           echo 'CURRENT_AUTHORITY_HYGIENE=PASS'
 
-      - name: Canonical authority references and scope
+      - name: Canonical authority references and restored scope
         run: |
           set -euo pipefail
           grep -q 'docs/SERVER_COMMAND_CONTRACT.md' README.md
@@ -61,7 +61,15 @@ jobs:
           grep -q 'SERVER_CORE_MUTATION_AUTHORIZED' SERVER_CORE_PROTOCOL.md
           grep -q 'REVERSIBLE_LOCAL_MUTATION' docs/SERVER_COMMAND_CONTRACT.md
           grep -q 'Chat UI' docs/SERVER_COMMAND_CONTRACT.md
+          grep -q 'Docker Composeを正' README.md
+          grep -q 'Docker Composeを正' CORE.md
+          grep -q 'Docker Composeを正' SERVER_CORE_PROTOCOL.md
+          grep -q 'Docker Composeを正' docs/G_ACE_WORKSPACE.md
+          grep -q 'Docker Composeを正' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'Docker Composeを正' docs/DEPLOY_RUNBOOK.md
+          grep -q 'Docker Compose as the canonical production residency path' docs/SERVER_CORE_DESIGN.md
           ! git grep -nE 'Workspace top-level|GPT↔operator|operator-facing command presentation|ASSISTANT_TOOL|USER_UI|EXTERNAL_CLIENT|EXECUTION_ROUTE|EXECUTION_CAPABILITY|EXECUTION_AUTHORIZATION|PRE_EXECUTION_COMPLETE' -- README.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/LOAD_SCOPE.md docs/SERVER_COMMAND_CONTRACT.md .cursor/rules/00_agent_runtime.mdc operations/pre-execution-schema.json
+          ! git grep -nE 'Project固有の正式例外|formally defined Project exception|Project Authorityで正式例外|正式な例外経路' -- README.md CORE.md SERVER_CORE_PROTOCOL.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/DEPLOY_RUNBOOK.md .cursor/rules/00_agent_runtime.mdc
           echo 'AUTHORITY_ROUTING=PASS'
 
       - name: Machine contract validation
