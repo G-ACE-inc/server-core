@@ -5,6 +5,41 @@ SERVER_CORE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST="${SERVER_CORE_ROOT}/operations/workspace-mcp.json"
 GLOBAL_DIR="${HOME}/.cursor"
 GLOBAL_MCP="${GLOBAL_DIR}/mcp.json"
+APPLY=0
+
+usage() {
+  cat <<'USAGE'
+Usage: scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation
+
+Mutates the current user's global Cursor MCP config to reconcile the
+server-core managed Workspace MCP entries. This is a runtime/client config
+mutation, not a server-core repository mutation.
+USAGE
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --apply-workspace-mcp-mutation)
+      APPLY=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "[error] unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ "$APPLY" != "1" ]]; then
+  echo "[error] Workspace-global MCP config mutation requires --apply-workspace-mcp-mutation" >&2
+  echo "NO_CHANGES_PERFORMED" >&2
+  exit 2
+fi
 
 python3 - "$MANIFEST" "$GLOBAL_MCP" <<'PY'
 import json, os, shutil, sys, time
@@ -17,9 +52,6 @@ servers = manifest.get('servers')
 if not isinstance(servers, dict) or not servers:
     raise SystemExit('[error] workspace MCP manifest has no servers')
 
-# "servers" is the Workspace contract source. Cursor only receives
-# runtime-supported MCP fields; contract metadata such as "authentication"
-# is intentionally not compared against the live client definition.
 runtime_servers = {
     name: {key: value for key, value in definition.items() if key != 'authentication'}
     for name, definition in servers.items()
@@ -34,10 +66,6 @@ preserve_auth_fields = set(
 def runtime_compatible(existing, expected):
     if not isinstance(existing, dict) or not isinstance(expected, dict):
         return existing == expected
-
-    # Expected runtime fields must exist and match exactly, except that
-    # credential containers are compared only for the contract-owned
-    # expected keys. Existing provider credentials are never overwritten.
     for key, expected_value in expected.items():
         if key not in existing:
             return False
@@ -50,13 +78,9 @@ def runtime_compatible(existing, expected):
                     return False
         elif actual_value != expected_value:
             return False
-
-    # Existing extra fields are allowed only when they are credential/auth
-    # containers explicitly covered by the Workspace merge policy.
     for key in existing:
         if key not in expected and key not in preserve_auth_fields:
             return False
-
     return True
 
 target.parent.mkdir(parents=True, exist_ok=True)
