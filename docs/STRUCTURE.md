@@ -19,9 +19,9 @@ README.md
 - `README.md` — Workspace Command Center入口 / Authority map
 - `CORE.md` — LibralCore開発方法論
 - `SERVER_CORE_PROTOCOL.md` — 共通運用・変更・安全境界
-- `.aiignore` / `.cursorignore` — context exclusion hints
-- `.cursor/` — Workspace runtime rules / client integration boundary
-- `.github/` — CI / repository automation
+- `.aiignore` / `.cursorignore` — historical archive exclusion。Current operational filesを隠さない
+- `.cursor/` — Workspace runtime rules / client integration contract。host-local client wiringは追跡しない
+- `.github/` — CI / repository automation / task templates
 - `docs/` — Design / Router / Registry / Operations contracts
 - `operations/` — credential値を持たないmachine-readable contracts / policies
 - `scripts/` — Workspace automation / verify / audit helpers
@@ -87,9 +87,8 @@ Mutation option/flagがDocumentに記載されていることを、Task上の実
 
 - `.cursor/rules/00_agent_runtime.mdc` — Workspace routing / execution / verification kernel
 - `.cursor/rules/cloudflare-operations.mdc` — Cloudflare Task-specific operational rule
-- `.cursor/agents` — external Cursor agent directoryへのWorkspace link
 
-Repository-local `.cursor/mcp.json` はCurrent Authorityとして追跡しない。Workspace-global MCP contractは `operations/workspace-mcp.json`、runtime/client configは `~/.cursor/mcp.json` を対象とし、Repository内へclient-local ID/configを二重管理しない。
+Repository-local `.cursor/mcp.json` と `.cursor/agents` はCurrent Authorityとして追跡しない。Workspace-global MCP contractは `operations/workspace-mcp.json`、runtime/client configは `~/.cursor/mcp.json`。Cursor agent installation / inventoryはclient環境が所有し、必要時にCurrent client stateをreadbackする。Repositoryにhost固有absolute symlinkやclient-local agent inventoryを置かない。
 
 Workspace-wide always-applied rules are limited to behavior required for repository, Server, Provider, routing, verification or safety operation.
 
@@ -148,6 +147,7 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - Directory分類だけを目的にDocumentを増やさない
 - credential実値を保存しない
 - Project固有implementationをserver-coreへ移してownershipを曖昧にしない
+- host固有absolute symlinkやclient-local MCP/agent inventoryをCurrent Repository Authorityとして追跡しない
 - explicit owner authorization無しにserver-coreのStructure/Documentを変更しない
 - helperの存在/参照/実行可能性をmutation authorizationと扱わない
 - Repository-local client configをWorkspace-global Authorityと二重管理しない
