@@ -1,5 +1,5 @@
 # LibralCore Core Philosophy
-Version: 3.0
+Version: 3.1
 
 ## LibralCore
 LibralCoreは、開発AIが再利用可能な設計とCodeを効率よく生成・修正するための開発概念、設計方針、開発スタイルである。
@@ -86,7 +86,7 @@ Moduleは、Part、Feature、Component、System、または必要な組み合わ
 
 分離後は、入出力、依存、所有者、テスト範囲、保守コストを確認する。
 
-本番常駐の標準実行は Docker Compose を正とし、ホスト常駐は本番の運用手順に採用しない。
+本番常駐の標準実行はDocker / Docker Composeとする。対象ProjectのCurrent Authorityが正式な例外経路を定義している場合だけ、そのProjectに限って例外を適用する。短時間の診断・検証Commandは本番常駐経路とは別扱いとする。
 
 ## 再利用の優先順位
 新規Code生成前に、現在のProjectと利用可能な既存資産から同じ責務を確認する。
