@@ -13,6 +13,10 @@ Usage: scripts/verify-workspace-mcp.sh [--client-readback]
 Default behavior verifies the global MCP config file only and performs no
 external client command. --client-readback additionally asks an available
 Cursor CLI for its MCP registration state.
+
+This verifier never promotes config/client-registration evidence to live MCP
+availability. Authentication, transport, interface discovery and a
+representative call remain separate task-time verification responsibilities.
 USAGE
 }
 
@@ -88,17 +92,30 @@ if re.search(r'(?i)(bearer|token|secret|password|api[_-]?key)\s*[:=]\s*[A-Za-z0-
     raise SystemExit('[fail] possible plaintext credential in global MCP config')
 
 print('WORKSPACE_MCP_CONFIG=PASS')
-print('CLOUDFLARE_MCP=REGISTERED')
-print('HUGGINGFACE_MCP=REGISTERED')
+print('MCP_VERIFICATION_SCOPE=CONFIG_ONLY')
+print('CLOUDFLARE_MCP_CONFIG=REGISTERED')
+print('HUGGINGFACE_MCP_CONFIG=REGISTERED')
+print('MCP_AUTHENTICATION=NOT_VERIFIED')
+print('MCP_TRANSPORT=NOT_VERIFIED')
+print('MCP_INTERFACE_DISCOVERY=NOT_VERIFIED')
+print('MCP_REPRESENTATIVE_CALL=NOT_VERIFIED')
+print('MCP_AVAILABLE_VERIFIED=NO')
 PY
 
 if [[ "$CLIENT_READBACK" == "1" ]]; then
   if command -v agent >/dev/null 2>&1; then
-    echo '[info] Cursor CLI detected; listing MCP state'
+    echo '[info] Cursor CLI detected; listing MCP registration state'
     agent mcp list
+    echo 'MCP_CLIENT_READBACK=EXECUTED'
+    echo 'MCP_CLIENT_READBACK_SCOPE=REGISTRATION_ONLY'
+    echo 'MCP_AVAILABLE_VERIFIED=NO'
   else
     echo '[info] Cursor CLI not installed in this shell; client readback not executed'
+    echo 'MCP_CLIENT_READBACK=NOT_EXECUTED'
+    echo 'MCP_AVAILABLE_VERIFIED=NO'
   fi
 else
   echo '[info] client MCP readback not requested; config verification only'
+  echo 'MCP_CLIENT_READBACK=NOT_REQUESTED'
+  echo 'MCP_AVAILABLE_VERIFIED=NO'
 fi
