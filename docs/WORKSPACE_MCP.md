@@ -80,7 +80,7 @@ server-coreのInstaller/Verifierは:
 
 したがってVerification Contractは「global client configにcredential文字列が一切存在しない」ことを要求しない。要求するのは、**Repository-managed manifestがprovider secret値を持たず、client configが適切なfile permissionで保護され、値を漏洩させずにmanaged transport contractを検証できること**である。
 
-## Installation / Permission / Backup
+## Installation / Permission / Backup / Concurrency
 
 Workspace-global registration自体の変更が明示的に対象の場合だけ実行する。
 
@@ -101,7 +101,9 @@ Installer contract:
 7. mutation前backupも同等のsecure modeで作成;
 8. backup retentionはmachine contractの`backup_keep`へ制限（Current: 3）;
 9. backupにはclient-local credential containerが含まれ得るため、Current Authorityとして読込・表示・commitしない;
-10. Provider tokenをRepositoryから書き込まない。
+10. Provider tokenをRepositoryから書き込まない;
+11. Cursor global config directoryをsingle-writer lock scopeとし、別Installer mutationと競合した場合は待機・上書きせずfail closedする;
+12. backup名とtemporary config名は同一秒・同一Host上の再実行でも衝突しない識別子を持つ。
 
 これはWorkspace/client mutationであり、server-core Repositoryへのwrite permissionではない。
 
