@@ -12,31 +12,10 @@ from typing import Any
 
 def expected_workspace(server_core: Path, projects: Path) -> dict[str, Any]:
     return {
-        "folders": [
-            {"name": "server-core", "path": str(server_core)},
-            {"name": "projects", "path": str(projects)},
-        ],
+        "folders": [{"name": "server-core", "path": str(server_core)}, {"name": "projects", "path": str(projects)}],
         "settings": {
-            "files.exclude": {
-                "**/.git": True,
-                "**/node_modules": True,
-                "**/dist": True,
-                "**/build": True,
-                "**/.next": True,
-                "**/archive": True,
-                "**/logs": True,
-                "**/backups": True,
-            },
-            "search.exclude": {
-                "**/.git": True,
-                "**/node_modules": True,
-                "**/dist": True,
-                "**/build": True,
-                "**/.next": True,
-                "**/archive": True,
-                "**/logs": True,
-                "**/backups": True,
-            },
+            "files.exclude": {"**/.git": True, "**/node_modules": True, "**/dist": True, "**/build": True, "**/.next": True, "**/archive": True, "**/logs": True, "**/backups": True},
+            "search.exclude": {"**/.git": True, "**/node_modules": True, "**/dist": True, "**/build": True, "**/.next": True, "**/archive": True, "**/logs": True, "**/backups": True},
         },
     }
 
@@ -94,13 +73,9 @@ def repair(root: Path) -> None:
 def check(root: Path) -> list[str]:
     errors: list[str] = []
     server_core, projects, workspace_file, rules_link, expected_rules = paths(root)
-    for required in (
-        server_core / "README.md",
-        server_core / "docs" / "LOAD_SCOPE.md",
-        server_core / ".cursor" / "rules" / "00_agent_runtime.mdc",
-    ):
+    for required in (server_core / "README.md", server_core / "docs" / "LOAD_SCOPE.md", server_core / ".cursor" / "rules" / "00_agent_runtime.mdc"):
         if not required.is_file():
-            errors.append(f"missing required authority: {required}")
+            errors.append(f"missing required entry authority: {required}")
     if not workspace_file.is_file():
         errors.append(f"missing workspace file: {workspace_file}")
     else:
@@ -127,7 +102,7 @@ def check(root: Path) -> list[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Verify or repair G-ACE Workspace command-center wiring")
+    parser = argparse.ArgumentParser(description="Verify or repair G-ACE Workspace wiring")
     parser.add_argument("--root", default=os.environ.get("GACE_HOME", "/home/admin1"), help="Root containing server-core, projects and workspace directories")
     parser.add_argument("--repair", action="store_true", help="Repair canonical workspace folders/exclude settings before verification")
     parser.add_argument("--authorize-workspace-mutation", action="store_true", help="Explicitly authorize workspace-file mutation for --repair")
@@ -149,11 +124,14 @@ def main() -> int:
             return 1
     errors = check(root)
     if errors:
-        print("WORKSPACE_COMMAND_CENTER=FAIL")
+        print("WORKSPACE_WIRING=FAIL")
+        print("WORKSPACE_WIRING_SCOPE=ENTRY_FILES,WORKSPACE_FILE,RULES_LINK")
         for error in errors:
             print(f"- {error}")
         return 1
-    print("WORKSPACE_COMMAND_CENTER=PASS")
+    print("WORKSPACE_WIRING=PASS")
+    print("WORKSPACE_WIRING_SCOPE=ENTRY_FILES,WORKSPACE_FILE,RULES_LINK")
+    print("NOT_PROVEN=FULL_AUTHORITY_COMPLETENESS,SCRIPT_SAFETY,PROJECT_RUNTIME,PROVIDER_AVAILABILITY")
     print(f"ROOT={root}")
     return 0
 
