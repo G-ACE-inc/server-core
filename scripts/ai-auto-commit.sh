@@ -7,8 +7,8 @@ Usage: scripts/ai-auto-commit.sh --authorize-server-core-mutation --file PATH [-
 
 Commits only the explicitly listed server-core paths. Unrelated working-tree
 changes are left untouched. The helper refuses main/master, unsafe paths,
-credential-like content, and execution without explicit server-core mutation
-authorization.
+credential-like content, concurrent helper commits, and execution without
+explicit server-core mutation authorization.
 USAGE
 }
 
@@ -51,6 +51,12 @@ cd "$repo_root"
 branch="$(git branch --show-current)"
 [[ -n "$branch" ]] || { echo "ERROR: detached HEAD is not supported." >&2; exit 1; }
 case "$branch" in main|master) echo "ERROR: refusing direct auto-commit on protected branch: $branch" >&2; exit 1 ;; esac
+
+command -v flock >/dev/null 2>&1 || { echo "ERROR: flock is required for serialized server-core commit safety." >&2; exit 1; }
+git_dir="$(git rev-parse --git-dir)"
+lock_file="${git_dir}/gace-ai-auto-commit.lock"
+exec 9>"$lock_file"
+flock -n 9 || { echo "ERROR: another server-core auto-commit change unit is active; refusing concurrent commit." >&2; exit 1; }
 
 normalize_path() {
   python3 - "$1" <<'PY'
