@@ -11,6 +11,8 @@ server-coreは共通CapabilityのDiscovery / Contractを管理するが、Projec
 
 Generic mutation / state semanticsは `SERVER_CORE_PROTOCOL.md` を正とし、本DocumentはIntegration固有条件だけを追加する。
 
+**複数Projectから共通利用されること自体は、Project-owned serviceをWorkspace Shared Capabilityへ再分類する根拠ではない。** 実装本体・Repository authority・Runtime ownershipが独立Projectにある場合、そのserviceは複数consumerから利用されてもProject Integrationとして扱う。利用範囲の広さとownership classificationを混同しない。
+
 ## 1. Integration Record
 
 Integrationごとに必要範囲で定義する。
