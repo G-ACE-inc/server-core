@@ -77,7 +77,7 @@ Design / Tree / Delta / System Documentは必要条件を満たした場合だ�
 
 - Code Interface / Type / Schema / Test: executable contract
 - Design: architecture / responsibility / boundary baseline
-- README: current entry point
+- README: current completed / verified entry point
 - Project Tree: navigation index
 - Design Delta: intentional architecture/responsibility difference
 - System Document: stable operational/technical handoff
@@ -91,9 +91,9 @@ READMEはProjectのCurrent Entry Point。
 
 最低限:
 - Project名 / Purpose
+- Current completed / verified state
 - main entry point
 - run / test / verify方法
-- Current verified stateが運用上必要な場合の要約
 - Design / Tree / Delta / System Documentへのリンク（存在する場合）
 - Runtime状態を記載する場合はlast-knownとCurrent readbackを区別
 
@@ -105,6 +105,8 @@ READMEからリンクするProject Documentは、そのProjectの継続開発・
 
 DesignはArchitecture / Contract / Boundary / ResponsibilityのBaselineを保存する。
 
+Current実装に合わせて履歴を消す上書きをしない。
+
 Architecture自体を正式変更する場合は、旧Baseline、変更理由、新しいDecision、適用Commitを追跡可能にする。
 
 ## Project Tree
@@ -112,6 +114,7 @@ Architecture自体を正式変更する場合は、旧Baseline、変更理由、
 次の場合に作成/更新する。
 - READMEだけでは主要構造を辿りにくい
 - 複数entry point / module / systemがある
+- AIが対象Source探索で不要なRepository全読込を繰り返す可能性がある
 - File/Directory/主要責務/Entry Pointが変わった
 
 Treeは単なるPath一覧ではなく、主要File/Directoryの責務、Entry Point、関連Authority/Testを記録する。
@@ -156,8 +159,10 @@ Design BaselineとArchitecture/Responsibilityが意図的に変わる場合に�
 - Configuration
 - Runtime / Deployment
 - Tests / Verification
+- Current verified state
+- Design / Delta relationship
 - Source / Test map
-- compatibility constraints
+- Extension / compatibility constraints
 
 空SectionをTemplate充足のためだけに作らない。
 
@@ -184,14 +189,14 @@ SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
 ```
 
 判定基準:
-- Current entry / stable usage変更 -> README
+- Current completed / verified state変更 -> README
 - File/Directory/主要責務/Entry Point変更 -> Tree
 - Architecture/Responsibility baseline正式変更 -> Delta
 - stable System/ModuleをREADMEだけでは安全に引継げない -> System Document
 
 判定対象は原則として**現在作業している対象Project**である。server-coreのDocumentation Gateは、server-core自体の変更についてexplicit owner authorizationがある場合だけ適用する。
 
-RequiredでないDocumentを追加しない。
+Requiredなのに未更新ならDocumentation Completeではない。RequiredでないDocumentは追加しない。
 
 ## 5段階層型モジュラーアーキテクチャ
 
@@ -252,7 +257,9 @@ Process起動、Error無し、HTTP 200、Build成功、CI greenだけでは、Ta
 
 ## GitHub
 
-Commit / PRをchronological work historyとする。
+Commit / PRを実作業履歴の正本とする。
+
+Commitは必要に応じてPurpose、material changes、affected scope、verification、documentation、remaining/unverified workを追える作業報告にする。
 
 Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionを別状態として扱う。
 
