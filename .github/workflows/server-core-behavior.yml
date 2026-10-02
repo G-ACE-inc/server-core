@@ -112,7 +112,7 @@ jobs:
           test "$(find "$tmp/.cursor" -maxdepth 1 -name 'mcp.json.backup-*' | wc -l)" -le 3
           echo 'MCP_PERMISSION_BEHAVIOR=PASS'
 
-      - name: Auto-commit explicit change unit and secret redaction
+      - name: Auto-commit explicit change unit, rollback, and partial push
         run: |
           set -euo pipefail
           tmp="$(mktemp -d)"
@@ -150,6 +150,41 @@ jobs:
           test "$rc" -ne 0 || { echo 'secret-like JSON was committed' >&2; exit 1; }
           grep -q 'ci-secret.json:1' "$tmp/secret.out" || { cat "$tmp/secret.out" >&2; exit 1; }
           if grep -q 'SUPER_SECRET_VALUE_123456789' "$tmp/secret.out"; then echo 'secret value leaked in helper output' >&2; exit 1; fi
+          rm -f ci-secret.json
+          git add CORE.md
+          printf '\nci-core-extra\n' >> CORE.md
+          before_stage="$(git diff --cached -- CORE.md)"
+          set +e
+          bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file CORE.md -m 'test: pre-staged refusal' >"$tmp/prestaged.out" 2>&1
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          grep -q 'already has staged content' "$tmp/prestaged.out"
+          test "$(git diff --cached -- CORE.md)" = "$before_stage"
+          git reset -q -- CORE.md
+          mkdir -p .git/hooks
+          printf '#!/usr/bin/env bash\nexit 1\n' > .git/hooks/pre-commit
+          chmod +x .git/hooks/pre-commit
+          printf '\nci-hook-fail\n' >> README.md
+          set +e
+          bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file README.md -m 'test: hook failure rollback' >"$tmp/hook.out" 2>&1
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          git diff --cached --quiet -- README.md
+          test -n "$(git status --porcelain=v1 -- README.md)"
+          rm -f .git/hooks/pre-commit
+          bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file README.md -m 'test: recover after hook failure'
+          printf '\nci-push-partial\n' >> README.md
+          git remote set-url origin "$tmp/not-a-repository"
+          set +e
+          bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file README.md --push -m 'test: push partial state' >"$tmp/push.out" 2>&1
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          grep -q 'RESULT=PARTIAL COMMIT=PASS PUSH=FAIL SHA=' "$tmp/push.out"
+          git diff --cached --quiet -- README.md
+          git show --format= --name-only HEAD | grep -qx 'README.md'
           echo 'AUTO_COMMIT_BEHAVIOR=PASS'
 
       - name: Workspace wiring result scope
