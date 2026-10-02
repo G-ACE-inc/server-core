@@ -21,7 +21,7 @@ Project固有Design / Source / Test / Runtime logic / Project Documentは各Proj
 
 server-core全正本を一括読込しない。
 
-## 3. Canonical Pre-execution Contract
+## 3. Command-Center Dispatch / Canonical Pre-execution Contract
 
 Pre-execution field名のmachine-readable正本は `operations/pre-execution-schema.json`。本Document以外のDomain Documentは独自aliasを増やさず、このschemaを参照する。
 
