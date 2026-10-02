@@ -96,7 +96,7 @@ The former server-core document contained application-specific hostname, origin,
 `af9abd3e9d402f73430d7c97f270463a62f75f18`
 
 ### Compatibility / rollback
-No live Cloudflare resource was changed by the documentation ownership correction. Reintroducing Project-specific runtime values as server-core Current Authority would restore stale-runtime risk.
+No live Cloudflare resource or credential was changed by the documentation ownership correction. Reintroducing Project-specific runtime values as server-core Current Authority would restore stale-runtime risk.
 
 ## 2026-09-30 — Separate Project Integration from Shared Capability control
 
@@ -231,6 +231,47 @@ Repository-wide audit of README, Protocol, Design, Load Scope, Workspace, Regist
 - Server runtime implementation is unchanged by this documentation/rule hygiene change.
 - Durable safety properties remain: no credential persistence, no inferred PASS, explicit ownership, explicit mutation boundary, verified source/runtime separation.
 - Project-specific details remain available from the owning Project authority.
+
+## 2026-10-02 — Make server-core mutation explicitly opt-in
+
+### Baseline design
+server-core already separated read-only inspection from mutation and routed Project-specific changes to their owning repositories, but the baseline did not state strongly enough that server-core itself requires a separate explicit authorization before any write.
+
+### Actual change
+server-core is formally **read-only by default**. Source, Document, Config, branch and commit mutation in server-core requires explicit owner authorization for server-core itself.
+
+Operationally:
+- `SERVER_CORE_MUTATION_AUTHORIZED=YES` is required before server-core enters `MUTATION_REPOSITORIES`;
+- reading server-core or using its Runbooks does not authorize writes;
+- finding a common-contract inconsistency does not authorize a self-directed repair;
+- another Project's README/Document work, failure investigation, Shared Capability use, or Workspace-common impact does not authorize server-core mutation;
+- if authorization is absent or ambiguous, server-core remains read-only.
+
+### Reason / root cause
+A command-center repository is consulted by many Project tasks. Without a separate mutation gate, an agent can incorrectly treat reference authority, common impact, or repository proximity as write permission and modify server-core while working on another Project.
+
+### Evidence
+Cross-project documentation-routing review showed that reference scope and mutation scope must be independently locked. The same boundary is now represented in README, Protocol, Load Scope, Workspace guidance, Project Template, always-applied runtime rule and CI guard.
+
+### Affected scope
+- `README.md`
+- `SERVER_CORE_PROTOCOL.md`
+- `.cursor/rules/00_agent_runtime.mdc`
+- `docs/LOAD_SCOPE.md`
+- `docs/G_ACE_WORKSPACE.md`
+- `docs/PROJECT_TEMPLATE.md`
+- `docs/SERVER_CORE_DESIGN.md`
+- `docs/DESIGN_DELTA.md`
+- `.github/workflows/server-core-guard.yml`
+
+### Compatibility / migration
+- Project work continues to read server-core as the common routing authority.
+- Existing Project ownership does not change.
+- No Server runtime, Provider, Secret, Project implementation or deployment change is implied.
+- Work requiring a server-core change now stops at the mutation boundary until explicit server-core authorization exists.
+
+### Verification state
+Repository CI must confirm that the mutation gate remains represented in the always-applied rule and routing authorities. Runtime verification is not required because this is a repository/authority boundary, not a Server service change.
 
 ## Update Rule
 
