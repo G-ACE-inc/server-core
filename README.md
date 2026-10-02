@@ -157,6 +157,19 @@ Integration contractはowner、consumer、interface、credential、failure、ver
 
 Integration Contractを読むことを、server-coreやservice owner Repositoryへのwrite permissionと扱わない。
 
+## Helper Execution Boundary
+
+server-coreのScriptを**読むこと・存在を確認すること・Documentから参照すること**と、そのScriptを実行してWorkspace/Client/Runtimeを変更することは別Operationである。
+
+- `scripts/init-dev-workspace.sh` はdefaultでread-only check。Workspace wiringを変更する場合だけ `--apply-workspace-mutation` を明示する。
+- `scripts/install-workspace-mcp.sh` は `~/.cursor/mcp.json` を変更し得るため、`--apply-workspace-mcp-mutation` が無ければ変更しない。
+- `scripts/verify-workspace-mcp.sh` はdefaultでconfig-only readback。外部client readbackは `--client-readback` 指定時だけ行う。
+- `scripts/workspace_command_center_check.py --repair` は `--authorize-workspace-mutation` を追加指定しない限りrepairしない。
+- `scripts/ai-auto-commit.sh` はserver-core専用で、server-core自体への明示許可を表す `--authorize-server-core-mutation` が必須。
+- `scripts/storage_lifecycle_audit.py` はread-only auditであり、cleanup/delete/pruneを実行しない。
+
+Scriptにmutation optionが存在すること自体を実行許可として扱わない。Taskの対象とchange boundaryに必要なOperationだけ選ぶ。
+
 ## Server / Runtime Boundary
 
 ServerはRuntime / Processing環境であり、GitHub Source履歴・Design・Documentの代替正本ではない。
@@ -169,6 +182,8 @@ Storage Authority: `docs/STORAGE_LIFECYCLE.md`
 Runtime値は古い報告やRegistry記載から推測せず、Task判断に必要な時点でreadbackする。
 
 server-coreのDeploy/Storage Runbookを読んだことを、server-core自身や別Projectを操作対象にする根拠にしない。
+
+Generic Deploy Commandはserver-coreから生成しない。Deploy実行は対象Project側のCurrent Authorityでexact target/path/service/procedureが確定している場合だけ行う。
 
 ## Change / Safety Boundary
 
