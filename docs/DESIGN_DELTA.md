@@ -65,10 +65,6 @@ README / LOAD_SCOPE / Workspace routing already followed server-core-first routi
 - Project implementations remain Project-owned.
 - Project README-first dispatch remains valid.
 - No runtime migration is implied by the wording change.
-- Rolling back would reintroduce ambiguity about Workspace routing ownership.
-
-### Verification state
-Acceptance is verified by repository CI and applicable server readback; mutable CI result text is not copied into the Design baseline.
 
 ## 2026-09-30 — Return Project-specific Cloudflare implementation ownership to the owning Project
 
@@ -82,12 +78,6 @@ server-core keeps routing, shared access contracts, mutation/verification bounda
 
 ### Reason / root cause
 A Workspace command center must not make one application's Cloudflare runtime details the Workspace-wide truth.
-
-### Evidence
-The former server-core document contained application-specific hostname, origin, tunnel, container and credential-path details while the Design assigns such implementation to the target Project.
-
-### Applied commit
-`af9abd3e9d402f73430d7c97f270463a62f75f18`
 
 ### Compatibility / rollback
 No live Cloudflare resource or credential was changed by the documentation ownership correction.
@@ -187,48 +177,33 @@ Operationally:
 ### Reason / root cause
 A command-center repository is consulted by many Project tasks. Reference scope and mutation scope must be independently locked.
 
-### Evidence
-Cross-project documentation-routing review and helper hardening exposed the need for a separate server-core mutation gate.
-
-### Affected scope
-- `README.md`
-- `SERVER_CORE_PROTOCOL.md`
-- `.cursor/rules/00_agent_runtime.mdc`
-- `docs/LOAD_SCOPE.md`
-- `docs/G_ACE_WORKSPACE.md`
-- `docs/PROJECT_TEMPLATE.md`
-- `docs/SERVER_CORE_DESIGN.md`
-- `.github/workflows/server-core-guard.yml`
-
 ### Compatibility / migration
 Project work continues to read server-core as common routing authority. Existing Project ownership does not change.
 
-### Verification state
-Repository CI confirms mutation gates; runtime verification is not required for this repository-authority boundary.
-
-## 2026-10-02 — Separate Workspace top-level execution policy from server-core technical execution authority
+## 2026-10-03 — Restore fixed server-workflow scope after execution-policy over-generalization
 
 ### Baseline design
-server-core had accumulated executor-selection priority, operator round-trip guidance, command presentation constraints and Server technical safety in the same authority layer. That duplicated concerns that belong to the Workspace top-level operating authority and created a risk that server-core could override or drift from higher-priority rules.
+The original command-center design required Workspace work to start from server-core and follow a repeatable routine through Project routing, required Authority, reuse, implementation/debug, verification, Documentation Gate, GitHub work history, approval boundary and optional Deploy/Runtime verification.
 
-### Actual change
-The architecture now separates responsibilities:
-- Workspace top-level operating authority owns Bootstrap before server-core, executor-selection priority, Cost Policy, GPT↔operator interaction and operator-facing command/paste/result interface;
-- `server-core` owns Project/Authority routing, route validation, mutation/authorization boundaries, technical verification and external-operation readiness;
-- `operations/pre-execution-schema.json` owns canonical field names, execution-route values and mutation classes, and explicitly records that operator-interface authority is external to server-core;
-- `docs/SERVER_COMMAND_CONTRACT.md` owns Server technical shell/process safety, mutation classification, same-target concurrency, exit-status correctness, bounded diagnostics and evidence promotion, not operator-facing interface policy;
-- `README.md`, `docs/G_ACE_WORKSPACE.md`, `docs/LOAD_SCOPE.md`, `.cursor/rules/00_agent_runtime.mdc` and `docs/SERVER_CORE_DESIGN.md` treat README→LOAD_SCOPE as an internal router entered after the Workspace top-level Bootstrap rather than as a replacement for it.
+It explicitly did not depend on ChatGPT-only or Notion-only state.
 
-The same change unit also formalizes same-target writer safety:
-- server-core auto-commit helper serializes same-checkout helper commits and fails closed on lock contention;
-- Workspace MCP installer serializes Cursor global-config mutation and fails closed on lock contention;
-- MCP backup/tmp names are collision-resistant across rapid repeated runs.
+### Problem found
+PR #8 temporarily generalized this into a separate "Workspace top-level" execution-policy layer and introduced concepts such as GPT/operator interface ownership and generic UI/client execution routes.
+
+That interpretation was broader than the server-core requirement and risked replacing the fixed server-side development routine with an abstract executor-policy architecture.
+
+### Corrected design
+The command center is restored to the original scope:
+- server-core itself is the Workspace command entry for Server/Workspace workers;
+- the fixed development routine remains `route -> authority -> Project -> reuse -> implement/debug -> verify -> documentation -> GitHub -> approval -> deploy/runtime when applicable`;
+- technical execution routes are limited to Server/Workspace work: `DETERMINISTIC_LOCAL_OR_CI`, `SERVER_COMMAND`, `SERVER_AI`, `PROJECT_RUNTIME`;
+- Chat UI, conversation formatting, Notion operation and external application interaction rules are not server-core execution routes;
+- Server command safety remains in `docs/SERVER_COMMAND_CONTRACT.md`;
+- useful PR #8 safety work is retained: explicit mutation ownership, server-core read-only default, concurrent change-unit isolation, same-target writer locks, partial-apply reporting, bounded diagnostics, state separation, MCP config hardening, Skill full-read/glob rejection and bounded storage audit;
+- DebugAI-specific efficiency is narrow: reuse existing evidence/tool results before repeating the same investigation through Server AI. This is not a generic Workspace AI cost policy.
 
 ### Reason / root cause
-A durable Command Center must not duplicate a higher-level interface policy, because duplicated numeric or presentation rules can become stale and create conflicting authority. At the same time, parallel Project/Agent work requires technical single-writer protection at shared mutation points rather than relying on conversational coordination alone.
-
-### Evidence
-The audit found duplicated operator-interface ownership in README/Design/Workspace/Server Command Contract and concrete same-target race windows in auto-commit and Workspace MCP config mutation. The branch corrected those boundaries and added behavior tests that hold the corresponding locks and verify fail-closed refusal.
+server-core exists to make a non-expert-operated development environment repeatable and resistant to drift. Generalizing it into a conventional flexible executor-policy layer weakens that purpose and introduces rules that were not part of the original requirement.
 
 ### Affected scope
 - `README.md`
@@ -237,23 +212,18 @@ The audit found duplicated operator-interface ownership in README/Design/Workspa
 - `docs/G_ACE_WORKSPACE.md`
 - `docs/LOAD_SCOPE.md`
 - `docs/SERVER_COMMAND_CONTRACT.md`
-- `docs/AUTO_COMMIT.md`
-- `docs/WORKSPACE_MCP.md`
 - `operations/pre-execution-schema.json`
-- `operations/workspace-mcp.json`
-- `scripts/ai-auto-commit.sh`
-- `scripts/install-workspace-mcp.sh`
 - `.github/workflows/server-core-guard.yml`
 - `.github/workflows/server-core-behavior.yml`
 
 ### Applied commit / PR
-PR #8. Relevant feature-branch commits include `b53512f747e1c352f29070758772f3db088ca896` (auto-commit serialization), `7b0f0461a26d73e1aa6d69dbeb609584ed91b894` (Workspace MCP serialization), `8196edc495a8d3305f0335d0b14ff600dde280ca` (Server Command technical-boundary correction), `e208394f48684f9e0a26a6cbb50ef17bff414b3f` (pre-execution authority ownership), `324eb0e0eeb1d98aca87ab8fe1b564d32d003ede` (Workspace contract alignment), and subsequent README/Design synchronization commits in the same PR.
+PR #8, corrective commits on `docs/post-merge-state-cleanup-20261001`.
 
 ### Compatibility / migration / rollback
-Project implementation ownership does not change. Existing technical safety gates remain valid. Operator-facing requirements are not deleted from the Workspace; they remain governed by the higher-priority operating authority instead of being duplicated in server-core. Rolling back would reintroduce competing authority and same-target race windows.
+Project ownership, Shared Capability contracts, MCP hardening, helper safety, State Semantics and Runtime boundaries remain in place. The correction removes only the over-generalized authority layer and UI/client concepts that were not part of server-core's intended scope.
 
 ### Verification state
-Both repository guard and behavior CI must pass at the exact branch head before this delta is treated as verified. Current live Server/provider operations remain separate evidence domains.
+Repository guard and behavior CI must pass at the exact corrected branch HEAD. Current live Server/provider state remains a separate evidence domain.
 
 ## Update Rule
 
