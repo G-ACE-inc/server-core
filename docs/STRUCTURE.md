@@ -22,7 +22,7 @@ README.md
 - `SERVER_CORE_PROTOCOL.md` — 共通運用・変更・安全境界
 - `.aiignore` / `.cursorignore` — historical archive exclusion。Current operational filesを隠さない
 - `.cursor/` — Cursor Workspace runtime rules / client integration contract。host-local client wiringは追跡しない
-- `.github/` — VS Code/GitHub Copilot instruction、CI、repository automation、task templates
+- `.github/` — VS Code/GitHub Copilot instruction、CI、dependency update、repository automation、task templates
 - `docs/` — Design / Router / Registry / Operations contracts
 - `operations/` — credential値を持たないmachine-readable contracts / policies
 - `scripts/` — Workspace automation / verify / audit helpers
@@ -55,6 +55,7 @@ README.md
 
 ### Task-specific support
 - `GITHUB_SKILL.md` — GitHub connector / Skill resolver resource selection tasks
+- `GITHUB_FREE_MAX.md` — GitHub Cost / scheduled automation / bounded dependency-update policy
 
 Task-specific support documents are not loaded at normal Workspace start.
 
@@ -139,6 +140,7 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - Server command technical safety -> `docs/SERVER_COMMAND_CONTRACT.md`
 - credential broker/use -> `docs/WORKSPACE_SHARED_SECRETS.md`
 - managed Workspace MCP -> `docs/WORKSPACE_MCP.md`
+- GitHub Cost / scheduled dependency-update policy -> `docs/GITHUB_FREE_MAX.md` + `.github/dependabot.yml`
 - AI automatic entry -> `.cursor/rules/00_agent_runtime.mdc` + `.github/copilot-instructions.md` + `AGENTS.md`
 
 ## Project Tree Update Conditions
