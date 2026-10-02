@@ -130,8 +130,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Verify or repair G-ACE Workspace command-center wiring")
     parser.add_argument("--root", default=os.environ.get("GACE_HOME", "/home/admin1"), help="Root containing server-core, projects and workspace directories")
     parser.add_argument("--repair", action="store_true", help="Repair canonical workspace folders/exclude settings before verification")
+    parser.add_argument("--authorize-workspace-mutation", action="store_true", help="Explicitly authorize workspace-file mutation for --repair")
     args = parser.parse_args()
     root = Path(args.root).resolve()
+    if args.repair and not args.authorize_workspace_mutation:
+        print("WORKSPACE_REPAIR=BLOCKED: --repair requires --authorize-workspace-mutation")
+        print("NO_CHANGES_PERFORMED")
+        return 2
+    if args.authorize_workspace_mutation and not args.repair:
+        print("WORKSPACE_REPAIR=BLOCKED: --authorize-workspace-mutation is valid only with --repair")
+        print("NO_CHANGES_PERFORMED")
+        return 2
     if args.repair:
         try:
             repair(root)
