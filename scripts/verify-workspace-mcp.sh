@@ -36,8 +36,8 @@ manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
 if not target.is_file():
     raise SystemExit(f'[fail] global MCP config missing: {target}')
 mode = stat.S_IMODE(target.stat().st_mode)
-if mode & 0o077:
-    raise SystemExit(f'[fail] global MCP config permissions too broad: {oct(mode)}')
+if mode not in (0o400, 0o600):
+    raise SystemExit(f'[fail] global MCP config mode must be owner-only non-executable 0400 or 0600: {oct(mode)}')
 config = json.loads(target.read_text(encoding='utf-8'))
 servers = config.get('mcpServers', {})
 if not isinstance(servers, dict):
