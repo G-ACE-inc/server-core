@@ -92,7 +92,7 @@ jobs:
           cp "$tmp/.cursor/mcp.json" "$tmp/before.json"
           if HOME="$tmp" bash scripts/install-workspace-mcp.sh >"$tmp/noauth.out" 2>&1; then exit 1; fi
           cmp "$tmp/before.json" "$tmp/.cursor/mcp.json"
-          ( exec 8<"$tmp/.cursor"; flock -x 8; sleep 1 ) & lock_pid=$!
+          ( exec 8<"$tmp"; flock -x 8; sleep 1 ) & lock_pid=$!
           sleep 0.1
           set +e
           HOME="$tmp" bash scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation >"$tmp/locked.out" 2>&1
@@ -102,7 +102,11 @@ jobs:
           grep -q 'another Workspace MCP mutation is active' "$tmp/locked.out"
           cmp "$tmp/before.json" "$tmp/.cursor/mcp.json"
           wait "$lock_pid"
-          HOME="$tmp" bash scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation
+          HOME="$tmp" bash scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation >"$tmp/install-pass.out"
+          grep -q '^GACE_MCP_INSTALL_RESULT_BEGIN$' "$tmp/install-pass.out"
+          grep -q '^RESULT=PASS$' "$tmp/install-pass.out"
+          grep -q '^CONFIG_UPDATED=YES$' "$tmp/install-pass.out"
+          grep -q '^GACE_MCP_INSTALL_RESULT_END$' "$tmp/install-pass.out"
           test "$(stat -c '%a' "$tmp/.cursor/mcp.json")" = 600
           grep -q 'FIXTURE_LOCAL_CREDENTIAL_123456' "$tmp/.cursor/mcp.json"
           HOME="$tmp" bash scripts/verify-workspace-mcp.sh >"$tmp/verify.out"
@@ -111,6 +115,8 @@ jobs:
           ! grep -q 'FIXTURE_LOCAL_CREDENTIAL_123456' "$tmp/verify.out"
           chmod 0500 "$tmp/.cursor/mcp.json"
           HOME="$tmp" bash scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation >"$tmp/mode-normalize.out"
+          grep -q '^RESULT=PASS$' "$tmp/mode-normalize.out"
+          grep -q '^CONFIG_UPDATED=YES$' "$tmp/mode-normalize.out"
           test "$(stat -c '%a' "$tmp/.cursor/mcp.json")" = 400
           HOME="$tmp" bash scripts/verify-workspace-mcp.sh >"$tmp/verify-0400.out"
           grep -q 'WORKSPACE_MCP_CONFIG=PASS' "$tmp/verify-0400.out"
