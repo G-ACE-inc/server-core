@@ -109,34 +109,37 @@ Repositoryに正式Conventionがある場合はそちらを優先する。
 - applicable test / verify
 - documentation impact
 
-## 7. Standard Script
+## 7. server-core Commit Helper
 
-**対象Repository自身に** `scripts/ai-auto-commit.sh` がありCurrent運用で有効な場合のみ利用する。
+`/home/admin1/server-core/scripts/ai-auto-commit.sh` は**server-core専用**。他Projectをcommitする汎用helperではない。
+
+server-core自体の変更についてexplicit owner authorizationがあり、feature branch上である場合だけ使用する。
 
 ```bash
-scripts/ai-auto-commit.sh --push
+scripts/ai-auto-commit.sh --authorize-server-core-mutation --push
 ```
 
 Message指定例:
 
 ```bash
-scripts/ai-auto-commit.sh --push -m "fix: describe change"
+scripts/ai-auto-commit.sh --authorize-server-core-mutation --push -m "fix: describe change"
 ```
 
-server-coreに同名Scriptがあることを理由に、他Projectの変更をserver-coreからCommitしない。対象Projectが独自helperを持たない場合は、そのProjectの通常Git運用を使う。
-
-Scriptの存在だけで安全性やPush権限を推測しない。Current ScriptとRepository policyを確認する。
-
-server-core scriptの責務:
-- server-core自身を対象としたときのchanged file確認
-- `.env`系commit拒否
+Helperは次をfail-closedで確認する。
+- `--authorize-server-core-mutation` が明示されている
+- Script自身の所在から解決したRepositoryがserver-core canonical checkoutである
+- current branchがdetached HEADではない
+- `main` / `master` への直接auto-commitではない
+- `.env`系Fileが含まれない
 - secret-like patternの簡易検出
 - `git diff --check`
 - shell script syntax check
-- stage / commit
-- `--push` 指定時のcurrent branch push
 
-server-core helperを実行できること自体はserver-core mutation authorizationを意味しない。authorization未成立ならhelperによるcommit/pushも実行しない。
+他Projectからabsolute pathでserver-core helperを呼んでも、呼出元Projectをcommit対象にしてはならない。Helperはcurrent working directoryではなく**Script自身のRepository**へ固定される。
+
+`--authorize-server-core-mutation` は単なるCLI convenienceではなく、すでに成立しているexplicit owner authorizationを実行時に再確認するためのGateである。AI/Agentが自分の判断だけで付けてはならない。
+
+対象Projectに独自helperが無い場合は、そのProjectのCurrent policyに従った通常Git操作を使う。server-core helperを代用しない。
 
 ## 8. Remote Readback
 
@@ -178,3 +181,4 @@ Production publish/deployはCommit/Pushとは別のchange boundary。
 - Design BaselineをCurrent実装へ追従させるだけの履歴消しをしない。
 - Authorityを読んだだけのRepositoryへwrite/commitしない。
 - server-coreはexplicit owner authorization無しにwrite/commit/pushしない。
+- server-core helperを他Projectのcommit手段として使用しない。
