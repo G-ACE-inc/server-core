@@ -45,18 +45,12 @@ VERIFY_PATH
 APPROVAL_BOUNDARY
 CHANGE_BOUNDARY
 CONTEXT_SCOPE
-NEXT_ACTION
-EXECUTION_ROUTE
-EXECUTION_CAPABILITY
-EXECUTION_AUTHORIZATION
-MUTATION_CLASS
-PRE_EXECUTION_COMPLETE
 BLOCKER
 ```
 
 対象Projectや責務が不明な場合は `docs/WORKSPACE_REGISTRY.md` でownerを確認する。既存owner / reusable assetを確認せず新規Project / Module / Tool / Documentを作らない。
 
-`PRE_EXECUTION_COMPLETE=YES` は、exact target、必要Authority、変更境界、次Action、必要Input/Revision/Endpoint/Service identity、verification path、approval state、blockerがTaskに必要な範囲で確定した状態を表す。実行済み/PASSを意味しない。
+不明項目を推測で埋めない。作業開始に必要な項目が未確定なら、必要なAuthority/readbackだけ追加取得してから固定ルーティーンへ進む。
 
 ## 4. Repository Mutation Ownership
 
