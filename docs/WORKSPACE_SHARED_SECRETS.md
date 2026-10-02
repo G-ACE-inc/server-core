@@ -1,6 +1,6 @@
 # WORKSPACE SHARED SECRETS
 
-Version: 2026-10-01
+Version: 2026-10-02
 Role: Workspace Shared Secret / credentialを安全に利用するための共通契約。
 
 この文書はSecret値の保管場所ではない。Secret / Token / password / credential / session値をGit / Source / Document / Logへ保存しない。
@@ -126,6 +126,20 @@ Replacement時はactive consumerへの影響、rollback/recovery、old credentia
 Vaultはplaintext tokenを返さない設計を前提とする。
 
 Credential availabilityはprovider identity endpointまたはharmless representative API callで確認する。
+
+状態を分離する。
+
+```text
+CONTRACT_PRESENT
+BROKER_HEALTHY
+CREDENTIAL_RESOLVABLE
+CONSUMER_AUTHORIZED
+PROVIDER_IDENTITY_VERIFIED
+REPRESENTATIVE_CALL_PASS
+PROVIDER_AVAILABLE_VERIFIED
+```
+
+`BROKER_HEALTHY` はVault自体のhealth readbackであり、credential存在、consumer permission、provider authentication、provider availabilityを証明しない。`CREDENTIAL_RESOLVABLE` だけでもProvider側の権限・Scope・Task適合性は証明しない。
 
 HTTP statusだけでpermission scopeまで証明されたとみなさず、Taskで必要なoperationが可能かを確認する。
 
