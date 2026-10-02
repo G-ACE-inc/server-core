@@ -109,26 +109,7 @@ This is the default fixed routine. A required step is not skipped merely because
 
 A later state must never be inferred from an earlier PASS.
 
-## 4. Execution Route
-
-server-core recognizes technical execution routes needed for Server / Workspace work:
-
-```text
-DETERMINISTIC_LOCAL_OR_CI
-SERVER_COMMAND
-SERVER_AI
-PROJECT_RUNTIME
-```
-
-Deterministic scripts/tests/CI are preferred when they can close the required check without AI interpretation.
-
-DebugAI usage must reuse existing verified evidence and prior tool results before repeating the same investigation through Server AI.
-
-`SERVER_COMMAND` technical safety is defined by `docs/SERVER_COMMAND_CONTRACT.md`.
-
-Execution capability does not equal authorization, and selecting a route does not prove execution success.
-
-## 5. Authority Model
+## 4. Authority Model
 
 ### README
 README is the current-state command entry. It is not the design baseline.
@@ -163,7 +144,7 @@ Project Tree is a navigation index, not a raw file dump. It records meaningful f
 ### System / Feature-bundle Documents
 Create or update technical documentation only when README alone cannot hand the completed unit to another AI/developer reliably.
 
-## 6. Development and Reuse
+## 5. Development and Reuse
 
 LibralCore methodology is defined by `CORE.md`.
 
@@ -178,6 +159,14 @@ use existing asset as-is
 ```
 
 New code, module, tool or document must not be created before the relevant existing asset is checked.
+
+## 6. DebugAI Reuse Boundary
+
+DebugAI is a shared debugging capability with its implementation owned by the DebugAI Project.
+
+When a Task uses DebugAI, existing verified evidence, prior tool results and prior verified state are reused before repeating the same investigation through Server AI.
+
+This rule is specific to avoiding duplicate DebugAI investigation. It is not a generic Workspace executor-selection or AI-cost policy.
 
 ## 7. Verification Contract
 
@@ -266,7 +255,7 @@ The following must always remain true:
 - context loading is progressive;
 - shared capabilities have explicit owner and availability / verification state;
 - Project-owned services are not reclassified as Shared Capabilities merely because they have multiple consumers;
-- execution capability is not mutation authorization;
+- authority/responsibility ownership is not mutation permission;
 - server-core is read-only without explicit server-core mutation authorization;
 - concurrent change units are not mixed;
 - Secret values never enter Git/docs/logs;
