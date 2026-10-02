@@ -1,135 +1,167 @@
 # SERVER CORE DESIGN
 
-Version: 2026-10-02
+Version: 2026-10-03
 Status: Design Baseline
 
 ## 1. Purpose
 
 `server-core` is the **G-ACE Workspace command center**.
 
-Its role is not to implement every Project. Its role is to route work to the correct owner and authority, validate the selected execution route against technical boundaries, expose shared capabilities through explicit contracts, enforce common development and verification boundaries, preserve GitHub work history, and define the path from verified source to controlled runtime operation.
+Its role is not to implement every Project. Its role is to receive a task, determine the correct Project and authority, control what information must be loaded, expose shared capabilities safely, enforce common development and verification rules, preserve GitHub work history, and govern the path from verified source to approved runtime operation.
 
-A worker starting from server-core must be able to determine:
-- where the work belongs;
-- what authority must be read;
-- which repository may be mutated;
-- which execution route has been selected by the Workspace top-level authority or Task Packet and whether it is technically valid;
-- which shared capability may be reused;
-- how the result is verified;
-- what state is current vs historical;
-- which mutation/approval boundary applies;
-- how to hand an external Server operation off without inventing execution evidence.
+Every AI / developer working inside the G-ACE Workspace must be able to start from server-core and determine **where to work, what to read, what may be reused, what must be verified, what must be recorded, and which approval boundary must not be crossed**.
 
-Workspace-wide Bootstrap order outside server-core, executor selection priority, operator interaction policy and operator-facing command interface remain owned by the Workspace top-level operating authority. server-core does not duplicate or override those rules.
+The design assumes a fixed, repeatable workflow so work does not drift merely because the worker changes. Chat UI, conversation formatting, Notion operation, and other external application interaction rules are outside this design.
 
 ## 2. Command Center Responsibilities
 
 ### 2.1 Intake / Routing
-- classify the task by purpose;
+- classify the current task by purpose;
 - identify the target Project / repository / runtime domain;
-- identify the minimum server-core authority required;
-- dispatch to the owning Project README and Project-specific authority.
+- route to only the server-core authority required for that task;
+- then dispatch work to the target Project README and target-specific authority.
 
 ### 2.2 Authority / Context Control
-- `README.md` is the server-core command-center entry point after the Workspace top-level bootstrap;
-- `docs/LOAD_SCOPE.md` is the server-core task router and context-loading authority;
+- `README.md` is the command-center entry point;
+- `docs/LOAD_SCOPE.md` is the task router and context-loading authority;
 - server-core authorities are loaded only when needed;
 - Project work starts from the target Project README;
-- archive, build output, dependency caches, logs, backups and unrelated repositories are excluded from normal context unless the task explicitly targets them.
+- unnecessary archive, build, cache, logs, backups and unrelated repositories are excluded from normal context.
 
 ### 2.3 Project Dispatch
-server-core determines **where work belongs**. Project-specific source, design, tests and runtime logic remain in that Project.
+server-core tells an AI/developer **where the work belongs**. Project-specific source, design, tests and runtime logic remain in that Project.
 
-server-core must not absorb Project implementation merely because the Workspace routes work through server-core.
+server-core must not absorb Project implementation merely because the Project is controlled from the Workspace.
 
-### 2.4 Execution Route Validation
-server-core does not own the Workspace-wide executor priority or operator interaction policy.
+### 2.4 Shared Capability Control
+server-core provides the discovery and use contract for Workspace-shared capabilities:
+- MCP;
+- developer tools / skills;
+- DebugAI;
+- reusable KB;
+- GitHub operations;
+- shared Secret / Token broker contracts;
+- Provider contracts such as Cloudflare / Hugging Face.
 
-It validates the execution route already selected by the Workspace top-level authority or Task Packet against:
-- route capability;
-- target identity;
-- mutation classification;
-- authorization scope;
-- technical safety prerequisites;
-- verification path;
-- unresolved blockers.
+The implementation body stays with its owning Project/runtime. server-core owns discovery, connection contract, owner, permission boundary and availability / verification state.
 
-Execution capability and execution authorization are independent states. A worker may prepare an exact operation up to the pre-execution boundary without claiming that the operation ran.
+Project-owned services such as TGserver / webhook gateway remain Project integrations unless ownership is formally changed. Common integration rules are defined by `docs/PROJECT_INTEGRATION_RULES.md`.
 
-Canonical field names / execution routes / mutation classes are machine-readable in `operations/pre-execution-schema.json`. Workspace pre-execution semantics are owned by `docs/G_ACE_WORKSPACE.md`. Server technical execution safety and evidence boundaries are owned by `docs/SERVER_COMMAND_CONTRACT.md`. Operator-facing command presentation remains outside server-core under the Workspace top-level operating authority.
+### 2.5 Development / Verification Governance
+server-core defines Workspace-wide rules for:
+- reuse-first development;
+- README / Design / Project Tree / Design Delta / System Document responsibilities;
+- verification and failure-case requirements;
+- documentation gate;
+- GitHub work-report commits;
+- state separation between Source, Test, Commit, Push, PR, CI, Merge, Deploy, Runtime and Production.
 
-### 2.5 Shared Capability Control
-server-core provides the discovery and use contract for Workspace-shared capabilities such as MCP, developer tools/skills, DebugAI, reusable KB access, GitHub operations, shared credential broker contracts, Provider contracts, and shared monitoring/backup/recovery interfaces.
+### 2.6 Repository Mutation Ownership
+server-core distinguishes the task repository from repositories opened only for reference.
 
-The implementation body stays with its owning Project/runtime. server-core owns discovery, owner, connection contract, permission/change boundary and verification method.
+```text
+TARGET_REPOSITORY
+MUTATION_REPOSITORIES
+READ_ONLY_REPOSITORIES
+SERVER_CORE_MUTATION_AUTHORIZED
+```
 
-Here, `owns` means **authority/responsibility ownership**, not unconditional write permission.
+Reading a repository, using its Runbook, or discovering an integration dependency does not grant write permission.
 
-### 2.6 Development / Verification Governance
-server-core defines Workspace-wide rules for reuse-first development, documentation responsibilities, verification/failure-case requirements, GitHub work history, and state separation between Source, Test, Commit, Push, PR, CI, Merge, Deploy, Runtime and Production.
+server-core itself is read-only unless server-core mutation is explicitly authorized for the current task/change unit.
 
 ### 2.7 Runtime / Operations Governance
-server-core governs the common technical operational boundary for deployment from a confirmed GitHub revision, Docker / Docker Compose production residency as the default, runtime verification, storage lifecycle, backup/recovery, provider mutation and credential safety.
+server-core governs the common operational boundary for:
+- deployment from confirmed GitHub revision;
+- Docker / Docker Compose production residency;
+- runtime verification;
+- log / cache / temporary-state lifecycle;
+- cleanup safety;
+- backup / recovery;
+- resource-pressure policy;
+- Server command technical safety.
 
 Project-specific runtime implementation remains owned by the target Project.
 
-### 2.8 server-core Mutation Authority
-server-core is a reference/routing authority by default, not an implicitly writable repository.
-
-Reading server-core, using its Runbooks, investigating a Workspace-common issue, finding an inconsistency in a common contract, or modifying another Project does **not** authorize server-core mutation.
-
-Source, Document, Config, branch or commit mutation in server-core requires explicit owner authorization for **server-core itself**. The operational representation is `SERVER_CORE_MUTATION_AUTHORIZED=YES`; it may not be inferred from adjacent instructions, ownership labels, dependency impact or a worker's assessment.
-
-Authorization is scoped to the current Task/change unit/target operation. A permission established for an earlier or adjacent Task is not automatically current permission.
-
 ## 3. Command Flow
 
-After the Workspace top-level bootstrap and executor-policy evaluation:
+The standard command path is:
 
 ```text
-server-core/README.md
+REQUEST
+  -> server-core/README.md
   -> docs/LOAD_SCOPE.md
   -> classify task / target / required authority
-  -> lock mutation/read-only ownership
   -> load only required server-core authority
-  -> target Project README / required Project Authority
+  -> target Project README
+  -> required Project Design / Tree / Delta / System Doc / Source / Test
   -> reuse check
-  -> validate selected execution route
-  -> implementation / debug or exact pre-execution preparation
+  -> implementation / debug
   -> verification
   -> documentation gate
-  -> GitHub work history
+  -> GitHub work-report commit
   -> push / remote readback / PR / CI as required
-  -> required mutation / approval boundary
-  -> deploy / runtime verification when applicable
+  -> approval boundary
+  -> deploy / runtime verification only when authorized
 ```
+
+This is the default fixed routine. A required step is not skipped merely because a worker believes it is probably unnecessary; omission needs a task-specific reason consistent with the applicable authority.
 
 A later state must never be inferred from an earlier PASS.
 
-## 4. Authority Model
+## 4. Execution Route
+
+server-core recognizes technical execution routes needed for Server / Workspace work:
+
+```text
+DETERMINISTIC_LOCAL_OR_CI
+SERVER_COMMAND
+SERVER_AI
+PROJECT_RUNTIME
+```
+
+Deterministic scripts/tests/CI are preferred when they can close the required check without AI interpretation.
+
+DebugAI usage must reuse existing verified evidence and prior tool results before repeating the same investigation through Server AI.
+
+`SERVER_COMMAND` technical safety is defined by `docs/SERVER_COMMAND_CONTRACT.md`.
+
+Execution capability does not equal authorization, and selecting a route does not prove execution success.
+
+## 5. Authority Model
 
 ### README
-README is the current command entry. It is not the design baseline and not a chronological work log.
+README is the current-state command entry. It is not the design baseline.
+
+It must make the following reachable when they exist:
+- Design;
+- Project Tree;
+- Design Delta;
+- completed System / Feature-bundle / Module documents;
+- run / test / verification entry points.
+
+README reports only completed / verified current state and clearly separates pending / not-verified work.
 
 ### Design
-Design preserves architecture, contract, responsibility and boundary baseline. A formal architecture change requires rationale and a Design Delta.
+Design preserves architecture, contract, responsibility and boundary baseline.
+
+Do not rewrite Design merely to make it match later implementation. A formal architecture change requires traceable rationale and a Design Delta.
 
 ### Design Delta
-When architecture or responsibility intentionally differs from the baseline Design, record baseline design, actual change, reason/root cause, evidence, affected scope, applied commit/PR, compatibility/migration/rollback considerations and verification state.
+When implementation or architecture intentionally differs from the baseline Design, record at least:
+- baseline design;
+- actual change;
+- reason / root cause;
+- evidence;
+- affected scope;
+- applied commit;
+- compatibility / migration / rollback considerations.
 
 ### Project Tree
-Project Tree is a navigation index, not a raw file dump.
+Project Tree is a navigation index, not a raw file dump. It records meaningful files/directories, responsibility, entry points, related Design and related Tests.
 
 ### System / Feature-bundle Documents
-Create or update technical documentation when README alone cannot reliably hand the completed unit to another worker. Avoid empty template sections or transient work history.
-
-## 5. Shared Capability vs Project Integration
-
-Workspace-shared capability control includes reusable interfaces such as MCP, DebugAI, KB access, GitHub operations, Cloudflare/Hugging Face shared access, Vault/credential broker contracts, monitoring and recovery interfaces.
-
-Project-owned systems such as TGserver or webhook gateway remain Project integrations unless ownership is formally changed. Common adoption rules are in `docs/PROJECT_INTEGRATION_RULES.md`.
-
-Libral Vault is a Shared Capability; Project-specific consumers/injection/runtime usage are integration concerns.
+Create or update technical documentation only when README alone cannot hand the completed unit to another AI/developer reliably.
 
 ## 6. Development and Reuse
 
@@ -145,43 +177,70 @@ use existing asset as-is
   -> new implementation only when necessary
 ```
 
+New code, module, tool or document must not be created before the relevant existing asset is checked.
+
 ## 7. Verification Contract
 
-PASS is based on the evidence required by the task, including as applicable input, execution condition, expected output, state change, state that must not change, regression, important failure cases and runtime/provider readback.
+PASS must be based on the evidence required by the task, including as applicable:
+- input;
+- execution condition;
+- expected output;
+- state change;
+- state that must not change;
+- regression;
+- important failure cases;
+- runtime / provider readback.
 
 Process start, no error, HTTP 200, build success or CI green alone is not sufficient unless that is the actual acceptance contract.
 
 Unverified state remains `UNKNOWN / NOT_EXECUTED / NOT_VERIFIED`.
 
-A command being issued or a `PRE_EXECUTION_COMPLETE=YES` handoff is not execution evidence.
+Configuration presence, registration, authentication, transport, interface discovery, representative call and current availability remain separate evidence states where relevant.
 
 ## 8. Documentation Gate
 
-Update only documentation required by the actual change: README Current entry, Project Tree/navigation, Design/Design Delta, or existing/new stable System/Module documentation.
+Before work is documentation-complete, determine:
 
-## 9. GitHub Work History / Concurrency
+```text
+README_UPDATE_REQUIRED=YES/NO
+PROJECT_TREE_UPDATE_REQUIRED=YES/NO
+DESIGN_DELTA_REQUIRED=YES/NO
+SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
+```
 
-Commit / PR is chronological work-history authority.
+Required documentation that is not updated keeps the work incomplete.
 
-Multiple Projects/agents/change units may be active concurrently. A commit helper must not stage unrelated working-tree changes. Intended repository, branch, diff and explicit file/change unit must remain separable.
+Documentation belongs to the target Project unless the task explicitly authorizes server-core changes.
 
-Same-target writers must serialize or fail closed. The server-core auto-commit helper serializes same-checkout helper commits; the Workspace MCP installer serializes global Cursor config mutation.
+## 9. GitHub Work Report / Concurrency
+
+Commit / PR is the chronological work-history authority.
+
+Where applicable, a commit must allow later readers to identify purpose, material changes, affected scope, verification, documentation updated, and remaining / unverified work.
+
+Multiple Projects/agents/change units may be active concurrently. A helper must not stage or overwrite unrelated working-tree changes. Same-target writers must serialize or fail closed when the shared state cannot safely accept concurrent mutation.
 
 Commit text does not replace Design Delta when a design difference must be preserved.
 
 ## 10. Shared Capability Registry
 
-`docs/WORKSPACE_REGISTRY.md` is the discovery registry. Registry entries are navigation/contract data, not proof of current runtime health and not write permission.
+`docs/WORKSPACE_REGISTRY.md` is the command-center discovery registry.
 
-## 11. Reusable Knowledge Boundary
+Registry entries are navigation and contract data, not proof that the current runtime is healthy and not mutation permission.
 
-Reusable-development KB data lives outside server-core. server-core owns only discovery, access/bridge contract, registration contract, lifecycle/safety rules and availability semantics.
+## 11. Knowledge Base
+
+Reusable-development KB data lives outside server-core. server-core owns only access, registration, lifecycle and safety contracts. KB data itself is not stored in this repository.
+
+Server-side or Workspace access must use an explicit verified bridge such as API/MCP; never assume the VPS can directly read a PC drive.
 
 Authority: `docs/KB_REUSE_DESIGN.md`.
 
-## 12. Secret / Credential Boundary
+## 12. Secret / Token Boundary
 
-Secret / Token / credential values are never server-core document or Git authority. server-core may own identifiers, consumers, broker routes, allowlists, verification/failure behavior and rotation/change boundaries.
+Secret / Token values are never a server-core document or Git authority.
+
+server-core may own provider/purpose identifiers, consumer, broker route, allowlist/use contract, verification/failure behavior and change boundary.
 
 Authority: `docs/WORKSPACE_SHARED_SECRETS.md`.
 
@@ -191,36 +250,48 @@ The server is a runtime / processing environment, not a replacement for GitHub s
 
 Production-resident services use Docker / Docker Compose unless a formally defined Project exception exists.
 
-Common lifecycle boundaries are defined by `docs/STORAGE_LIFECYCLE.md`; deployment by `docs/DEPLOY_RUNBOOK.md`; Server technical execution safety/evidence by `docs/SERVER_COMMAND_CONTRACT.md`.
+Common lifecycle boundaries are defined by `docs/STORAGE_LIFECYCLE.md`; deployment by `docs/DEPLOY_RUNBOOK.md`; Server command technical safety by `docs/SERVER_COMMAND_CONTRACT.md`.
 
-Read-only inspection may still have I/O or client-side impact and must be bounded. Reversible local Git operations such as fetch/temporary checkout/switch are not labelled pure read-only merely because final state is restored.
+Automated cleanup is fail-closed. Active state, unshipped data, retry state, recovery data, unknown ownership and active/persistent volumes are not generic deletion targets.
+
+Read-only inspection may still have I/O cost and is bounded where appropriate. Reversible local Git operations such as fetch/temporary checkout/switch are not called pure read-only merely because final state is restored.
 
 ## 14. Command-Center Invariants
 
-The following must remain true:
-- Workspace work can enter server-core after the Workspace top-level bootstrap using repository/runtime authorities;
+The following must always remain true:
+- Workspace work can start from server-core without ChatGPT-only or Notion-only state;
 - server-core determines routing but does not take ownership of Project internals;
-- executor priority and operator-facing interface are not redefined inside server-core;
-- selected execution routes are technically validated before use;
-- execution capability is not authorization;
-- authority/responsibility ownership is not mutation permission;
-- server-core remains read-only without explicit server-core mutation authorization;
-- authorization is task/change-unit scoped;
-- same operational fact has one intended authority;
+- the fixed development routine is not replaced by ad-hoc worker preference;
+- the same fact has one intended authority;
 - context loading is progressive;
-- concurrent change units are not mixed in commits;
-- same-target writers serialize or fail closed;
-- credential values do not enter Git, Source, Document or Log;
+- shared capabilities have explicit owner and availability / verification state;
+- Project-owned services are not reclassified as Shared Capabilities merely because they have multiple consumers;
+- execution capability is not mutation authorization;
+- server-core is read-only without explicit server-core mutation authorization;
+- concurrent change units are not mixed;
+- Secret values never enter Git/docs/logs;
 - design history is not erased to match implementation;
+- work history is retained in GitHub;
 - unverified states are not promoted to PASS;
+- approval boundaries are not crossed implicitly;
 - external execution is not claimed without returned evidence.
 
 ## 15. Explicit Non-Goals
 
-server-core does not own Project-specific implementation/Design bodies, DebugAI internal orchestration, application-specific internals, reusable-KB data body/device layout, runtime log/cache data bodies, Secret/Token values, Workspace top-level bootstrap policy, executor-priority policy, operator-facing command interface, or worker-specific UI/session preferences that do not affect durable Server/Workspace operation.
+server-core does not own:
+- Project-specific implementation bodies;
+- Project-specific Design bodies;
+- DebugAI internal orchestration;
+- application-specific internals;
+- KB data;
+- runtime log/cache data;
+- Secret/Token values;
+- ChatGPT-only continuity or UI behavior;
+- Notion operation;
+- per-AI private prompts or reasoning.
 
 ## 16. Design Change Rule
 
 This file is the server-core architecture baseline.
 
-Formal changes require rationale, evidence, a traceable commit and an entry in `docs/DESIGN_DELTA.md`. Editorial cleanup belongs in normal Git history unless it changes the Design contract.
+Do not silently rewrite it to follow implementation drift. Formal changes require rationale, evidence and an entry in `docs/DESIGN_DELTA.md`, plus a traceable commit.
