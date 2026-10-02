@@ -1,9 +1,20 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "scope": "workspace-global",
   "consumer": "g-ace-workspace",
   "client": "cursor",
   "runtime_readback_required": true,
+  "state_semantics": {
+    "config_present": "client_config_entry_exists_only",
+    "config_registered": "managed_runtime_definition_matches_manifest_only",
+    "client_registration_verified": "client_reports_registration_only",
+    "authentication_verified": "requires_live_authentication_readback",
+    "transport_verified": "requires_live_transport_readback",
+    "interface_discovery_verified": "requires_live_tool_or_interface_discovery",
+    "representative_call_pass": "requires_task_relevant_live_call",
+    "available_verified": "requires_all_task-required_live gates",
+    "config_or_client_registration_implies_available_verified": false
+  },
   "servers": {
     "cloudflare-api": {
       "url": "https://mcp.cloudflare.com/mcp",
