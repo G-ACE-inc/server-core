@@ -109,6 +109,19 @@ jobs:
           grep -q 'WORKSPACE_MCP_CONFIG=PASS' "$tmp/verify.out"
           grep -q 'MCP_CLIENT_CREDENTIAL_CONTAINERS=PERMITTED_NOT_DISCLOSED' "$tmp/verify.out"
           ! grep -q 'FIXTURE_LOCAL_CREDENTIAL_123456' "$tmp/verify.out"
+          chmod 0500 "$tmp/.cursor/mcp.json"
+          HOME="$tmp" bash scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation >"$tmp/mode-normalize.out"
+          test "$(stat -c '%a' "$tmp/.cursor/mcp.json")" = 400
+          HOME="$tmp" bash scripts/verify-workspace-mcp.sh >"$tmp/verify-0400.out"
+          grep -q 'WORKSPACE_MCP_CONFIG=PASS' "$tmp/verify-0400.out"
+          chmod 0700 "$tmp/.cursor/mcp.json"
+          set +e
+          HOME="$tmp" bash scripts/verify-workspace-mcp.sh >"$tmp/verify-0700.out" 2>&1
+          bad_mode_rc=$?
+          set -e
+          test "$bad_mode_rc" -ne 0
+          grep -q 'owner-only non-executable 0400 or 0600' "$tmp/verify-0700.out"
+          chmod 0600 "$tmp/.cursor/mcp.json"
           test "$(find "$tmp/.cursor" -maxdepth 1 -name 'mcp.json.backup-*' | wc -l)" -le 3
           echo 'MCP_PERMISSION_BEHAVIOR=PASS'
 
