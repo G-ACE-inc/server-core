@@ -24,6 +24,8 @@ server-coreが担当するのは:
 - common mutation / verification boundary
 - `operations/cloudflare-account.json` のAccount API contract
 
+ここでの `owns` はCurrent Authorityの責務を示すだけで、server-core Repositoryのwrite permissionではない。これら共通Contractの変更が必要と判明しても、server-core自体についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立するまではserver-coreを変更しない。
+
 ### owning Project owns
 - hostname / route / zone / worker / pages / tunnelのProject固有Design
 - Docker / Compose / application runtime definition
@@ -92,6 +94,8 @@ Mutation例:
 
 Read-only確認をMutation承認として扱わない。
 
+Provider mutation permissionとserver-core Repository mutation permissionも別である。Cloudflare resource変更が承認されていても、それだけでserver-coreのDocument/operations/script変更は許可されない。
+
 ## 6. Mutation / Approval Boundary
 
 Provider mutationは対象Project / Provider Authorityで定義された承認条件を満たしてから実行する。
@@ -110,6 +114,8 @@ REQUIRED_APPROVAL_SATISFIED=YES
 ```
 
 承認者の個人名や会話上の呼称をWorkspace共通Contractへ固定しない。
+
+server-core Repository側の変更が必要な場合は、このProvider gateとは別に `SERVER_CORE_MUTATION_AUTHORIZED=YES` を必要とする。
 
 ## 7. Change Execution Rule
 
@@ -146,6 +152,8 @@ Mutation後はProvider readbackを行う。
 - partial mutationの有無を確認する
 - rollbackまたはforward fixをProject Authorityに従って判断する
 - Source変更が必要なら対象Repository development loopへ戻す
+
+Provider failureからserver-core共通Contractの欠陥が疑われても、explicit owner authorization無しにserver-coreを自己修正しない。
 
 ## 10. Credential Boundary
 
@@ -192,4 +200,4 @@ UNINTENDED_CHANGE_NONE
 ROLLBACK_OR_RECOVERY_STATE_KNOWN
 ```
 
-server-coreはCloudflareの共通Routing / credential / change / verification contractを持つが、各ProjectのCloudflare実装そのものは所有しない。
+server-coreはCloudflareの共通Routing / credential / change / verification contractを持つが、各ProjectのCloudflare実装そのものは所有しない。server-core共通Contract自体の変更には、Cloudflare操作権限とは別にexplicit server-core mutation authorizationが必要である。
