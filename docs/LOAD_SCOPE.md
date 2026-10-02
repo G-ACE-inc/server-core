@@ -62,12 +62,6 @@ VERIFY_PATH
 APPROVAL_BOUNDARY
 CHANGE_BOUNDARY
 CONTEXT_SCOPE
-NEXT_ACTION
-EXECUTION_ROUTE
-EXECUTION_CAPABILITY
-EXECUTION_AUTHORIZATION
-MUTATION_CLASS
-PRE_EXECUTION_COMPLETE
 BLOCKER
 ```
 
@@ -79,26 +73,7 @@ BLOCKER
 
 対象Project / ownerが不明なら `docs/WORKSPACE_REGISTRY.md` を読む。既存owner / reusable assetを確認する前に新規Project / Module / Tool / Documentを作らない。
 
-## 4. Execution Route
-
-Execution routeはServer / Workspace上で実際に作業を進めるためのtechnical routeだけを扱う。
-
-```text
-DETERMINISTIC_LOCAL_OR_CI
-SERVER_COMMAND
-SERVER_AI
-PROJECT_RUNTIME
-```
-
-- deterministic script / test / CIで閉じられる処理を、不要にAIへ置き換えない。
-- `SERVER_AI` はServer上のAI実行が実際に必要な場合だけ使う。
-- DebugAIを使うTaskでは、既に得られているEvidence / Tool結果 / prior verified stateを再利用し、同じ調査をServer AIへ重複させない。
-- `SERVER_COMMAND` は `docs/SERVER_COMMAND_CONTRACT.md` のtechnical safetyに従う。
-- Routeを選んだだけでmutation permissionやexecution successを意味しない。
-
-Chat UI、会話形式、Notion、外部アプリ固有interactionは本Routerのexecution routeに含めない。
-
-## 5. Mutation Routing
+## 4. Mutation Routing
 
 次の語だけではmutation先をserver-coreへ変更しない。
 - READMEを更新
@@ -113,7 +88,7 @@ Chat UI、会話形式、Notion、外部アプリ固有interactionは本Router�
 
 複数Repositoryを変更する場合は、Repositoryごとに変更理由、diff、verification、Git historyを分離する。複数Task/Agentが並行する場合は他Taskのuncommitted diffをstage/overwriteしない。
 
-## 6. Target Repository Loading
+## 5. Target Repository Loading
 
 対象Projectへ入った後はREADMEを入口とする。
 
@@ -156,7 +131,7 @@ Chat UI、会話形式、Notion、外部アプリ固有interactionは本Router�
 - 局所情報で影響範囲を閉じられない
 - Task自体が全体監査 / 全コード確認 / 横断調査を要求している
 
-## 7. Documentation Ownership
+## 6. Documentation Ownership
 
 対象ProjectのREADME、READMEからリンクされたDesign / Tree / Delta / System / Operations / Contract等は、その対象Project RepositoryのAuthorityとして扱う。
 
@@ -164,11 +139,17 @@ Chat UI、会話形式、Notion、外部アプリ固有interactionは本Router�
 
 server-core側Documentは、server-core自体の変更が明示的に許可された場合だけ更新する。
 
-## 8. Project Integration Routing
+## 7. Project Integration Routing
 
 Project-owned service、Libral Vault、MCP、Tool integrationを変更または追加するときは `docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で確認する。
 
 Integration Contractを読むこと自体はserver-coreやservice/provider owner Projectへの変更理由ではない。
+
+## 8. DebugAI Reuse Rule
+
+DebugAIを使うTaskでは、既に取得済みのEvidence / Tool結果 / prior verified stateを先に再利用し、同じ調査・診断をServer AIへ重複実行させない。
+
+これはDebugAI利用時の重複調査防止であり、Workspace全体のgeneric executor policyではない。
 
 ## 9. Reuse Search Order
 
@@ -241,13 +222,13 @@ Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / Gi
 - related tests / verification path;
 - affected scope;
 - approval boundary;
-- exact next action and blocker。
+- blocker。
 
 不足した場合だけ次Levelへ進む。
 
 ## 14. Router Failure Rule
 
-Task owner、Authority、Runtime state、credential contract、mutation target、exact execution action等が不明な場合は推測で補完しない。
+Task owner、Authority、Runtime state、credential contract、mutation target等が不明な場合は推測で補完しない。
 
 Document更新先が不明な場合もserver-coreを既定の変更先にしない。対象Project READMEとRepository ownershipを確認してから更新する。
 
