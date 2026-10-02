@@ -35,7 +35,7 @@ jobs:
           import json
           from pathlib import Path
           p=json.loads(Path('operations/pre-execution-schema.json').read_text())
-          assert p['schema_version'] == '1.4'
+          assert p['schema_version'] == '1.5'
           assert p['name'] == 'gace-command-center-dispatch'
           required=set(p['required_fields'])
           must={'PURPOSE','EXPECTED_RESULT','TARGET_PROJECT','TARGET_REPOSITORY','MUTATION_REPOSITORIES','READ_ONLY_REPOSITORIES','SERVER_CORE_MUTATION_AUTHORIZED','REQUIRED_SERVER_CORE_AUTHORITY','REQUIRED_PROJECT_AUTHORITY','REUSE_CANDIDATES','VERIFY_PATH','APPROVAL_BOUNDARY','CHANGE_BOUNDARY','CONTEXT_SCOPE','BLOCKER'}
@@ -50,7 +50,7 @@ jobs:
           assert 'mutation_classes' not in p
           assert p['rules']['fixed_development_routine_must_not_be_skipped_without_reason'] is True
           assert p['rules']['debugai_reuses_existing_evidence_before_server_ai_research'] is True
-          assert p['rules']['chat_ui_notion_and_external_app_interaction_are_outside_server_core'] is True
+          assert 'chat_ui_notion_and_external_app_interaction_are_outside_server_core' not in p['rules']
           print('COMMAND_CENTER_DISPATCH_SCHEMA=PASS')
           PY
           grep -q '## 7. Development Routine' docs/G_ACE_WORKSPACE.md
@@ -58,8 +58,7 @@ jobs:
           grep -q '## 3. Shell / Process Safety' docs/SERVER_COMMAND_CONTRACT.md
           grep -q 'parent interactive shell' docs/SERVER_COMMAND_CONTRACT.md
           grep -q '## 8. DebugAI Reuse Rule' docs/LOAD_SCOPE.md
-          grep -q 'generic executor policyではない' .cursor/rules/00_agent_runtime.mdc
-          ! git grep -nE 'Workspace top-level|GPT↔operator|operator-facing command presentation|ASSISTANT_TOOL|USER_UI|EXTERNAL_CLIENT|EXECUTION_ROUTE|EXECUTION_CAPABILITY|EXECUTION_AUTHORIZATION|PRE_EXECUTION_COMPLETE' -- README.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/LOAD_SCOPE.md docs/SERVER_COMMAND_CONTRACT.md .cursor/rules/00_agent_runtime.mdc operations/pre-execution-schema.json
+          ! git grep -nE 'Workspace top-level|GPT↔operator|operator-facing command presentation|ASSISTANT_TOOL|USER_UI|EXTERNAL_CLIENT|EXECUTION_ROUTE|EXECUTION_CAPABILITY|EXECUTION_AUTHORIZATION|PRE_EXECUTION_COMPLETE|Chat UI|ChatGPT|Notion|generic executor|generic AI cost policy' -- README.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/LOAD_SCOPE.md docs/SERVER_COMMAND_CONTRACT.md .cursor/rules/00_agent_runtime.mdc operations/pre-execution-schema.json
           echo 'WORKFLOW_SCOPE=PASS'
 
       - name: Project path traversal guard
