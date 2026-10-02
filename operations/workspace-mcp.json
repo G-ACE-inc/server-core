@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.3",
+  "schema_version": "1.4",
   "scope": "workspace-global",
   "consumer": "g-ace-workspace",
   "client": "cursor",
@@ -12,7 +12,7 @@
     "transport_verified": "requires_live_transport_readback",
     "interface_discovery_verified": "requires_live_tool_or_interface_discovery",
     "representative_call_pass": "requires_task_relevant_live_call",
-    "available_verified": "requires_all_task-required_live gates",
+    "available_verified": "requires_all_task-required_live_gates",
     "config_or_client_registration_implies_available_verified": false
   },
   "servers": {
@@ -33,6 +33,8 @@
     "target_role": "managed_client_config_target_not_live_availability_proof",
     "merge": "preserve-existing-servers",
     "collision": "fail-closed-on-runtime-transport-mismatch",
+    "concurrency": "single-writer-fail-closed",
+    "lock_scope": "cursor-global-config-directory",
     "required_mode": "0600_or_stricter_existing_mode",
     "backup_keep": 3,
     "backup_contains_client_local_credentials_possible": true,
