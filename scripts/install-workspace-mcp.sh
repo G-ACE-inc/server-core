@@ -74,6 +74,15 @@ def runtime_compatible(existing, expected):
             return False
     return True
 
+def normalized_secure_mode(original_mode: int) -> int:
+    # Client credential config must be owner-only and non-executable.
+    # Preserve an existing owner-read-only posture; otherwise use owner rw.
+    owner_read = bool(original_mode & stat.S_IRUSR)
+    owner_write = bool(original_mode & stat.S_IWUSR)
+    if owner_read and not owner_write:
+        return 0o400
+    return 0o600
+
 target.parent.mkdir(parents=True, exist_ok=True)
 try:
     os.chmod(target.parent, 0o700)
@@ -84,11 +93,7 @@ existing_mode = 0o600
 if target.exists():
     try:
         current = json.loads(target.read_text(encoding='utf-8'))
-        original_mode = stat.S_IMODE(target.stat().st_mode)
-        existing_mode = original_mode & 0o700
-        if existing_mode == 0:
-            existing_mode = 0o600
-        existing_mode = min(existing_mode, 0o600)
+        existing_mode = normalized_secure_mode(stat.S_IMODE(target.stat().st_mode))
     except Exception as exc:
         raise SystemExit(f'[error] invalid existing MCP JSON: {exc}')
 else:
