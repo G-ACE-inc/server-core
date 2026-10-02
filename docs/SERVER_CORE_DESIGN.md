@@ -71,6 +71,15 @@ server-core governs the common operational boundary for:
 
 Project-specific runtime implementation remains owned by the target Project.
 
+### 2.7 server-core Mutation Authority
+server-core is a reference/routing authority by default, not an implicitly writable repository.
+
+Reading server-core, using its Runbooks, investigating a Workspace-common issue, finding an inconsistency in a common contract, or modifying another Project does **not** authorize server-core mutation.
+
+Source, Document, Config, branch or commit mutation in server-core requires explicit owner authorization for **server-core itself**. Until that authorization is explicit, server-core remains read-only even when a server-core change appears desirable or technically necessary.
+
+The operational representation of this gate is `SERVER_CORE_MUTATION_AUTHORIZED=YES`; it may not be inferred from adjacent instructions or from a worker's own assessment.
+
 ## 3. Command Flow
 
 ```text
@@ -233,6 +242,7 @@ Automated cleanup is fail-closed. Active state, unshipped/retry data, recovery d
 The following must remain true:
 - Workspace work can start from server-core using repository/runtime authorities;
 - server-core determines routing but does not take ownership of Project internals;
+- server-core remains read-only unless explicit owner authorization specifically permits server-core mutation;
 - the same operational fact has one intended authority;
 - context loading is progressive;
 - shared capabilities have explicit owner, connection and verification boundaries;
