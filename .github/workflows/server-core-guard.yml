@@ -183,6 +183,7 @@ jobs:
           grep -q 'confirmed GitHub revision' docs/DEPLOY_RUNBOOK.md
           grep -q 'Runtime Verification' docs/DEPLOY_RUNBOOK.md
           grep -q 'Mutation / Approval Boundary' docs/DEPLOY_RUNBOOK.md
+          grep -q 'server-coreの共通Runbookはgeneric deploy commandを提供しない' docs/DEPLOY_RUNBOOK.md
 
       - name: KB design contract
         run: |
@@ -226,15 +227,37 @@ jobs:
           grep -q 'Project Integration' docs/SERVER_CORE_DESIGN.md
           grep -q 'PROJECT_INTEGRATION_RULES.md' docs/LOAD_SCOPE.md
 
-      - name: Workspace initializer safety
+      - name: Workspace helper mutation safety
         run: |
           set -euo pipefail
           bash -n scripts/init-dev-workspace.sh
           bash -n scripts/install-workspace-mcp.sh
           bash -n scripts/verify-workspace-mcp.sh
+          bash -n scripts/ai-auto-commit.sh
           ! grep -nE 'rm[[:space:]]+-rf.*PROJECTS_RULES|rm[[:space:]]+-rf.*projects/\.cursor/rules' scripts/init-dev-workspace.sh
           grep -q 'already exists and is not the required symlink; no deletion performed' scripts/init-dev-workspace.sh
           grep -q 'unexpected target' scripts/init-dev-workspace.sh
+          grep -q -- '--apply-workspace-mutation' scripts/init-dev-workspace.sh
+          grep -q -- '--create-project' scripts/init-dev-workspace.sh
+          grep -q -- '--apply-workspace-mcp-mutation' scripts/install-workspace-mcp.sh
+          grep -q -- '--client-readback' scripts/verify-workspace-mcp.sh
+          grep -q -- '--authorize-workspace-mutation' scripts/workspace_command_center_check.py
+          grep -q -- '--authorize-server-core-mutation' scripts/ai-auto-commit.sh
+          grep -q 'main/master' scripts/ai-auto-commit.sh
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          if HOME="$tmp" bash scripts/install-workspace-mcp.sh >"$tmp/install.out" 2>&1; then
+            echo 'installer mutated without explicit authorization flag' >&2
+            exit 1
+          fi
+          test ! -e "$tmp/.cursor/mcp.json"
+          grep -q 'NO_CHANGES_PERFORMED' "$tmp/install.out"
+          if python3 scripts/workspace_command_center_check.py --root "$tmp" --repair >"$tmp/repair.out" 2>&1; then
+            echo 'workspace repair ran without explicit authorization flag' >&2
+            exit 1
+          fi
+          test ! -e "$tmp/workspace/G-ACE.code-workspace"
+          grep -q 'NO_CHANGES_PERFORMED' "$tmp/repair.out"
 
       - name: Workspace MCP manifest schema
         run: |
@@ -272,7 +295,13 @@ jobs:
             }
           }
           JSON
-          HOME="$tmp" bash scripts/install-workspace-mcp.sh
+          cp "$tmp/.cursor/mcp.json" "$tmp/before.json"
+          if HOME="$tmp" bash scripts/install-workspace-mcp.sh >"$tmp/noauth.out" 2>&1; then
+            echo 'installer accepted mutation without explicit flag' >&2
+            exit 1
+          fi
+          cmp "$tmp/before.json" "$tmp/.cursor/mcp.json"
+          HOME="$tmp" bash scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation
           HOME="$tmp" bash scripts/verify-workspace-mcp.sh
           grep -q 'REDACTED_TEST_CREDENTIAL' "$tmp/.cursor/mcp.json"
           echo 'WORKSPACE_MCP_AUTH_PRESERVATION=PASS'
