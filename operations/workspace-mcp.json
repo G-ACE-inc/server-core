@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.5",
+  "schema_version": "1.6",
   "scope": "workspace-global",
   "consumer": "g-ace-workspace",
   "client": "cursor",
@@ -34,7 +34,7 @@
     "merge": "preserve-existing-servers",
     "collision": "fail-closed-on-runtime-transport-mismatch",
     "concurrency": "single-writer-fail-closed",
-    "lock_scope": "cursor-global-config-directory",
+    "lock_scope": "current-user-home-before-client-dir-mutation",
     "required_mode": "owner_read_only_0400_or_owner_read_write_0600_non_executable",
     "backup_keep": 3,
     "backup_contains_client_local_credentials_possible": true,
