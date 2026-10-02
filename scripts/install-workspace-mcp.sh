@@ -19,19 +19,9 @@ USAGE
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --apply-workspace-mcp-mutation)
-      APPLY=1
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "[error] unknown argument: $1" >&2
-      usage >&2
-      exit 2
-      ;;
+    --apply-workspace-mcp-mutation) APPLY=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "[error] unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
 
@@ -42,7 +32,7 @@ if [[ "$APPLY" != "1" ]]; then
 fi
 
 python3 - "$MANIFEST" "$GLOBAL_MCP" <<'PY'
-import json, os, shutil, sys, time
+import json, os, shutil, stat, sys, time
 from pathlib import Path
 
 manifest_path = Path(sys.argv[1])
@@ -56,12 +46,10 @@ runtime_servers = {
     name: {key: value for key, value in definition.items() if key != 'authentication'}
     for name, definition in servers.items()
 }
-preserve_auth_fields = set(
-    manifest.get('installation', {}).get(
-        'preserve_existing_auth_fields',
-        ['auth', 'headers', 'env'],
-    )
-)
+preserve_auth_fields = set(manifest.get('installation', {}).get('preserve_existing_auth_fields', ['auth', 'headers', 'env']))
+backup_keep = int(manifest.get('installation', {}).get('backup_keep', 3))
+if backup_keep < 1 or backup_keep > 20:
+    raise SystemExit('[error] installation.backup_keep must be between 1 and 20')
 
 def runtime_compatible(existing, expected):
     if not isinstance(existing, dict) or not isinstance(expected, dict):
@@ -84,11 +72,20 @@ def runtime_compatible(existing, expected):
     return True
 
 target.parent.mkdir(parents=True, exist_ok=True)
+try:
+    os.chmod(target.parent, 0o700)
+except OSError:
+    pass
+
+existing_mode = 0o600
 if target.exists():
     try:
         current = json.loads(target.read_text(encoding='utf-8'))
+        existing_mode = stat.S_IMODE(target.stat().st_mode)
     except Exception as exc:
         raise SystemExit(f'[error] invalid existing MCP JSON: {exc}')
+    if existing_mode & 0o077:
+        raise SystemExit(f'[error] existing MCP config permissions are too broad: {oct(existing_mode)}; expected no group/other access')
 else:
     current = {}
 
@@ -112,13 +109,28 @@ if changed:
     if target.exists():
         backup = target.with_name(target.name + '.backup-' + time.strftime('%Y%m%d-%H%M%S'))
         shutil.copy2(target, backup)
+        os.chmod(backup, existing_mode)
         print(f'[backup] {backup}')
     tmp = target.with_suffix('.tmp')
-    tmp.write_text(json.dumps(current, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    os.replace(tmp, target)
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, existing_mode)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as handle:
+            handle.write(json.dumps(current, ensure_ascii=False, indent=2) + '\n')
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(tmp, existing_mode)
+        os.replace(tmp, target)
+        os.chmod(target, existing_mode)
+    finally:
+        if tmp.exists():
+            tmp.unlink()
+    backups = sorted(target.parent.glob(target.name + '.backup-*'), key=lambda p: p.name, reverse=True)
+    for stale in backups[backup_keep:]:
+        stale.unlink()
     print(f'[updated] {target}')
 else:
     print(f'[ok] already configured: {target}')
 
+print(f'[ok] MCP config mode={oct(stat.S_IMODE(target.stat().st_mode)) if target.exists() else "n/a"} backup_keep={backup_keep}')
 print('[ok] shared MCP manifest installed without provider token material')
 PY
