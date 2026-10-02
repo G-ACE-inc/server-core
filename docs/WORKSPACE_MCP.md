@@ -38,6 +38,7 @@ MCP関連Taskを次に分離する。
 USE / CALL MCP
 VERIFY CONFIG ONLY
 VERIFY CLIENT REGISTRATION
+VERIFY LIVE AVAILABILITY
 REGISTER PROJECT-SCOPED MCP
 CHANGE WORKSPACE-GLOBAL REGISTRATION
 CHANGE MCP IMPLEMENTATION
@@ -48,6 +49,7 @@ CHANGE MCP IMPLEMENTATION
 - `USE / CALL MCP`: 原則mutationなし。MCP owner Repositoryもserver-coreもread-only。
 - `VERIFY CONFIG ONLY`: `~/.cursor/mcp.json` のread-only validation。外部client commandを実行しない。
 - `VERIFY CLIENT REGISTRATION`: 明示的にclient readbackが必要な場合だけCursor CLI等へ問い合わせる。
+- `VERIFY LIVE AVAILABILITY`: TaskでCurrent利用可能性が必要な場合に、そのTaskを実行するclient/provider経路でauthentication / transport / interface discovery / representative callを確認する。server-core verifierのconfig/client-registration結果だけでは代用しない。
 - `REGISTER PROJECT-SCOPED MCP`: consumer Project側Config/Documentがmutation候補。server-coreやMCP owner実装は原則read-only。
 - `CHANGE WORKSPACE-GLOBAL REGISTRATION`: user-global MCP configのmutation。server-core Repositoryのmanifest/Document/Script変更を自動的には許可しない。server-core側Contract変更が必要なら、server-core自体の変更についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立した場合だけmutation対象にする。
 - `CHANGE MCP IMPLEMENTATION`: owning MCP Projectだけをmutation対象とし、server-coreは共通Contract変更が必要でも explicit owner authorization が無い限りread-only。
@@ -144,13 +146,15 @@ scripts/verify-workspace-mcp.sh
 - managed runtime transport definition matches manifest
 - obvious plaintext credential pattern is absent
 
+このVerifierは成功時でも `CONFIG_REGISTERED` 相当までしか証明しない。authentication / transport / interface discovery / representative call / `AVAILABLE_VERIFIED` をPASSへ昇格させない。
+
 Client-side registration readbackがTask上必要な場合だけ:
 
 ```bash
 scripts/verify-workspace-mcp.sh --client-readback
 ```
 
-このoptionは利用可能なCursor CLIへread-only問い合わせを行う。Default verificationは外部client commandを起動しない。
+このoptionは利用可能なCursor CLIへread-only問い合わせを行う。Default verificationは外部client commandを起動しない。Client readbackが成功しても証明範囲はregistration stateまでであり、live availabilityではない。
 
 Project-owned MCPのCurrent availability確認は、そのProject/client/runtime Authorityに従う。server-core verifierで代用しない。
 
@@ -172,6 +176,27 @@ AVAILABLE_VERIFIED
 `CONFIG_PRESENT` や過去利用実績だけでCurrent `AVAILABLE_VERIFIED` としない。
 
 逆に、Current live再検証待ちを理由に、実装済みMCPを `NOT_IMPLEMENTED` へ降格しない。
+
+## Live Verification Responsibility
+
+server-coreが所有するのは、Workspace共通MCPについて「どの状態を分離し、何を確認すれば利用可能と判定できるか」というverification contractである。
+
+Current live status自体をserver-core DocumentやRegistryへ恒久的な健康状態として固定しない。Task実行時に必要なCurrent状態は、そのTaskで実際にMCPを利用するclient/provider経路からreadbackする。
+
+Managed remote MCP（Cloudflare API / Hugging Face）のCurrent `AVAILABLE_VERIFIED` は、必要なTaskで次を満たした場合だけ成立する。
+
+```text
+CONFIG_REGISTERED=YES
+CLIENT_REGISTRATION_VERIFIED=YES when client registration is relevant
+AUTHENTICATION_VERIFIED=YES
+TRANSPORT_VERIFIED=YES
+INTERFACE_DISCOVERY_VERIFIED=YES
+REPRESENTATIVE_CALL=PASS
+```
+
+代表callはTask目的に対して無害なread-only callを優先する。live verificationのためだけにProvider resource、credential、server-core Repository、consumer Projectを変更しない。
+
+live verification failureはfailure evidenceであり、server-core修正・credential rotation・MCP implementation変更の自動許可ではない。原因ownerを特定してから対象境界へ戻す。
 
 ## DebugAI MCP Boundary
 
