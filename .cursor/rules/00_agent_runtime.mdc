@@ -129,7 +129,7 @@ Secret値をGit / Log / Documentへ出さない。未登録・未実装・未検
 
 TGserver / webhook gateway等のProject-owned serviceは、複数Projectで利用されても自動的にShared Capabilityへ変更しない。
 
-DebugAIを利用するTaskでは、既に取得済みのEvidence / Tool result / prior verified stateを再利用し、同じ調査をServer AIへ重複実行させない。これはDebugAI利用時の重複調査防止であり、generic executor policyではない。
+DebugAIを利用するTaskでは、既に取得済みのEvidence / Tool result / prior verified stateを再利用し、同じ調査をServer AIへ重複実行させない。
 
 ## 11. Server Command / Recovery
 
