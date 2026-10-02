@@ -1,6 +1,6 @@
 # G-ACE WORKSPACE
 
-Version: 2026-10-01
+Version: 2026-10-02
 Role: G-ACE Workspaceでserver-coreを共通Command Centerとして利用するための正規運用契約。
 
 ## 1. Purpose
@@ -151,7 +151,27 @@ Shared Capabilityを利用・登録・接続・検証することと、そのCap
 
 文書記載、過去利用実績、Current Runtime availabilityを分離する。
 
-## 11. Project Integration
+## 11. Helper Execution Boundary
+
+server-coreのScriptを読む・参照する・Documentから到達できることと、そのScriptを実行してWorkspace / Client / Runtimeを変更することを分離する。
+
+Default:
+- read-only helperは必要範囲で実行可能。
+- mutation-capable helperは明示的なmutation option / authorizationが必要。
+- mutation optionが存在すること自体は実行許可ではない。
+- Project Source/Document Taskの通常フローでWorkspace initializer/installerを自動実行しない。
+
+Current helper boundary:
+- `scripts/init-dev-workspace.sh`: default read-only check。Workspace mutationは `--apply-workspace-mutation`。
+- `scripts/install-workspace-mcp.sh`: global MCP config mutationは `--apply-workspace-mcp-mutation` 必須。
+- `scripts/verify-workspace-mcp.sh`: default config-only。外部client readbackは `--client-readback` 指定時だけ。
+- `scripts/workspace_command_center_check.py`: default read-only。repairは `--repair --authorize-workspace-mutation`。
+- `scripts/ai-auto-commit.sh`: server-core専用。`--authorize-server-core-mutation` 必須。
+- `scripts/storage_lifecycle_audit.py`: audit-only。delete/pruneしない。
+
+Workspace/Client mutation permissionとserver-core Repository mutation permissionは別状態である。
+
+## 12. Project Integration
 
 Project-owned service、Libral Vault、MCP、ToolをProjectへ導入するときは `docs/PROJECT_INTEGRATION_RULES.md` を確認する。
 
@@ -159,7 +179,7 @@ Project-owned serviceをWorkspace Shared Capabilityと誤分類しない。Share
 
 通常はconsumer Project側で接続を完結し、service/capability owner側Source変更は必要性が確認された場合だけ別Task/別mutationとして扱う。
 
-## 12. Shared Credential
+## 13. Shared Credential
 
 Credential実値をProjectへ複製しない。
 
@@ -169,7 +189,7 @@ Credential実値をProjectへ複製しない。
 
 Credential Contractを参照することと、Secret registration/rotation/provider mutationを分離する。
 
-## 13. Reusable Development KB
+## 14. Reusable Development KB
 
 Reusable KBはserver-core外のowning runtime/data storeに置く。
 
@@ -179,7 +199,7 @@ Authority: `docs/KB_REUSE_DESIGN.md`。
 
 KBを検索/取得/利用するTaskと、KB実装・bridge・dataを変更するTaskを分離する。
 
-## 14. Server / Runtime
+## 15. Server / Runtime
 
 本番常駐は原則Docker / Docker Compose。Project固有の正式例外は対象Project Authorityを優先する。
 
@@ -191,7 +211,9 @@ Authority: `docs/DEPLOY_RUNBOOK.md`。
 
 server-coreのRunbookを読んだことを、server-core自身をdeploy targetとする根拠にしない。
 
-## 15. Logs / Cache / Cleanup / Backup
+server-core共通Runbookからgeneric deploy commandを生成・実行しない。対象ProjectのCurrent Authorityでexact target / path / service / deploy procedureが確定している場合だけDeployへ進む。
+
+## 16. Logs / Cache / Cleanup / Backup
 
 Authority: `docs/STORAGE_LIFECYCLE.md`。
 
@@ -199,7 +221,7 @@ server-coreは共通分類・監査・安全境界を定義する。Project固�
 
 owner不明、active、retry/recovery中、persistent volumeの可能性があるDataをgeneric auto-deleteしない。
 
-## 16. Runtime Readback Rule
+## 17. Runtime Readback Rule
 
 README / Registry / historical reportをCurrent Runtimeの代用にしない。
 
@@ -209,7 +231,7 @@ Container / Port / Domain / Provider / Deploy状態がTask判断に必要なら�
 
 Runtime readbackのために別Repository/Providerを参照しても、mutation permissionは自動付与されない。
 
-## 17. Completion Rule
+## 18. Completion Rule
 
 Workspace Taskの完了は、Taskに必要な範囲で次が閉じた場合に判定する。
 - correct Project / authority routing
