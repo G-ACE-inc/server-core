@@ -101,6 +101,14 @@ if [[ "$APPLY" != "1" ]]; then
 fi
 
 mutations=()
+record_mutation() {
+  local value="$1"
+  local item
+  for item in "${mutations[@]}"; do
+    [[ "$item" == "$value" ]] && return 0
+  done
+  mutations+=("$value")
+}
 finish_apply() {
   local rc=$?
   trap - EXIT
@@ -142,7 +150,7 @@ if [[ "$CREATE_PROJECT" == "1" ]]; then
     exit 1
   else
     mkdir -p -- "$TARGET"
-    mutations+=("PROJECT_DIR_CREATED")
+    record_mutation "PROJECT_DIR_CREATED"
     echo "[created] ${TARGET}"
   fi
 fi
@@ -160,21 +168,27 @@ elif [[ -e "$PROJECTS_RULES" ]]; then
 else
   mkdir -p "$(dirname "$PROJECTS_RULES")"
   ln -s "$SERVER_CORE_RULES" "$PROJECTS_RULES"
-  mutations+=("RULES_LINK_CREATED")
+  record_mutation "RULES_LINK_CREATED"
   echo "[created] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
 fi
 
-repair_out="$(python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py" --repair --authorize-workspace-mutation)"
+set +e
+repair_out="$(python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py" --repair --authorize-workspace-mutation 2>&1)"
+repair_rc=$?
+set -e
 printf '%s\n' "$repair_out"
-if grep -q '^WORKSPACE_REPAIR=UPDATED ' <<<"$repair_out"; then
-  mutations+=("WORKSPACE_FILE_UPDATED")
-fi
+grep -q '^WORKSPACE_BACKUP=' <<<"$repair_out" && record_mutation "WORKSPACE_BACKUP_CREATED"
+grep -q '^WORKSPACE_REPAIR=UPDATED ' <<<"$repair_out" && record_mutation "WORKSPACE_FILE_UPDATED"
+[[ "$repair_rc" -eq 0 ]] || exit "$repair_rc"
 
-install_out="$(bash "${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh" --apply-workspace-mcp-mutation)"
+set +e
+install_out="$(bash "${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh" --apply-workspace-mcp-mutation 2>&1)"
+install_rc=$?
+set -e
 printf '%s\n' "$install_out"
-if grep -q '^\[updated\] ' <<<"$install_out"; then
-  mutations+=("GLOBAL_MCP_UPDATED")
-fi
+grep -q '^\[backup\] ' <<<"$install_out" && record_mutation "GLOBAL_MCP_BACKUP_CREATED"
+grep -q '^\[updated\] ' <<<"$install_out" && record_mutation "GLOBAL_MCP_UPDATED"
+[[ "$install_rc" -eq 0 ]] || exit "$install_rc"
 
 bash "${SERVER_CORE_ROOT}/scripts/verify-workspace-mcp.sh"
 python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py"
