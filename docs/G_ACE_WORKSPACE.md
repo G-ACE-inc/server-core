@@ -5,11 +5,15 @@ Role: G-ACE Workspaceでserver-coreを共通Command Centerとして利用する�
 
 ## 1. Purpose
 
-標準Workspace `/home/admin1/workspace/G-ACE.code-workspace` では、server-coreがTask routing、共通Authority、execution orchestration、shared capability discovery、GitHub work history、Server/Provider operation boundaryを管理する。
+標準Workspace `/home/admin1/workspace/G-ACE.code-workspace` では、server-coreがTask routing、共通Authority、shared capability discovery、GitHub work history、Server/Provider technical operation boundaryを管理する。
 
 Project固有Design / Source / Test / Runtime logic / Project Documentは各Projectが所有する。
 
+Workspace全体の最上位Bootstrap、Executor選定Policy、GPT↔operator interfaceは上位運用Authorityを正とし、本Documentはそれらを再定義しない。
+
 ## 2. Mandatory Entry
+
+上位運用Authorityで要求されるBootstrapを完了した後、server-core内部では次の順序でRoutingする。
 
 ```text
 /home/admin1/server-core/README.md
@@ -19,7 +23,7 @@ Project固有Design / Source / Test / Runtime logic / Project Documentは各Proj
   -> 対象Projectの必要Authority / Source / Test
 ```
 
-server-core全正本を一括読込しない。
+server-core全正本を一括読込しない。この順序はserver-core内部Routerであり、上位Authorityが要求する事前読取を省略・置換しない。
 
 ## 3. Command-Center Dispatch / Canonical Pre-execution Contract
 
@@ -61,21 +65,15 @@ BLOCKER
 
 承認待ち、Runtime identity未確認、exact command/action未確定、credential contract不明等が残る場合は `PRE_EXECUTION_COMPLETE=NO` とし、`BLOCKER` を明示する。推測Commandで穴埋めしない。
 
-## 4. Executor Selection
+## 4. Executor Route Boundary
 
-Taskを最も低costかつ安全に閉じられる実行主体を選ぶ。
+Executorの選定順、Cost Policy、operatorへ返す操作形式はWorkspace最上位運用AuthorityまたはTask PacketをOwnerとする。本Documentで独自の優先順位・数値制約・interaction ruleを再定義しない。
 
-```text
-existing deterministic check / CI
-  -> directly available assistant tool / connector
-  -> existing read-only helper
-  -> exact operator Server command
-  -> Server-side AI only when deterministic/direct routes are insufficient
-```
+server-core側では、選定済みの `EXECUTION_ROUTE` / `EXECUTION_CAPABILITY` が `operations/pre-execution-schema.json` の値と整合し、Taskのtechnical precondition、mutation classification、authorization boundary、verification pathを満たすことを確認する。
 
-現在のassistant/clientで実行できる処理をoperatorへ戻さない。Server-side AIはdeterministic command、Source/Test、既存helper、CI、Provider readbackで閉じられない場合だけ使用する。
+現在Clientに実行Capabilityが無い場合でも、exact target / required Authority / next action / input / authorization / verify pathまで確定できれば `PRE_EXECUTION_COMPLETE=YES` として外部実行直前handoffへ進める。Capability不足とauthorization不足は別状態として扱う。
 
-`EXECUTION_ROUTE` は `operations/pre-execution-schema.json` の値を使用する。Server command/operator handoffへ進む場合は `docs/SERVER_COMMAND_CONTRACT.md` を追加Authorityとして読む。
+`EXECUTION_ROUTE=SERVER_COMMAND` の場合は `docs/SERVER_COMMAND_CONTRACT.md` を追加Authorityとして読み、technical shell/process safety、mutation classification、same-target concurrency、exit-status、bounded diagnostics、evidence promotionを確認する。operator-facing command presentation、文字数制約、copy/paste interface、外側Result形式はWorkspace最上位運用Authorityを正とする。
 
 ## 5. Mutation Ownership / Authorization Scope
 
@@ -104,7 +102,8 @@ Authorizationは**Current Task / change unit / target identity / operation**へs
 - intended change unitと無関係なuncommitted diffをstage/overwriteしない。
 - shared checkoutのbranch switch/reset/rebaseは他Taskへの影響を確認できない限り行わない。
 - readbackだけならworking treeを切り替えるよりGit object/API inspectionを優先する。
-- server-core `scripts/ai-auto-commit.sh` は明示された `--file PATH` だけをstageする。repository-wide stagingを行わない。
+- server-core `scripts/ai-auto-commit.sh` は明示された `--file PATH` だけをstageし、同一checkoutのhelper commitをsingle-writer lockで直列化する。lock競合時はfail closedする。
+- Workspace MCP installerはCursor global config mutationをsingle-writerとして扱い、競合時はconfig writeを行わずfail closedする。
 
 ## 7. Workspace Folders / Context
 
@@ -142,7 +141,7 @@ server-core command center
   -> repository / branch / HEAD / status
   -> Source / direct dependency / tests
   -> reuse check
-  -> executor selection
+  -> selected executor route validation
   -> implementation / debug / exact pre-execution preparation
   -> verification
   -> target Project documentation gate
@@ -179,11 +178,11 @@ Commit対象Repositoryはmutation ownershipに従う。参照専用Repositoryへ
 server-coreのScriptを読む・参照する・Documentから到達できることと、そのScriptを実行してWorkspace / Client / Runtimeを変更することを分離する。
 
 - `scripts/init-dev-workspace.sh`: default read-only check。Workspace mutationは `--apply-workspace-mutation`。Project作成名はsingle-directory safe nameへ限定。
-- `scripts/install-workspace-mcp.sh`: global MCP config mutationは `--apply-workspace-mcp-mutation` 必須。authorized installではconfig modeを0600相当へ締め、backup retentionを適用。
+- `scripts/install-workspace-mcp.sh`: global MCP config mutationは `--apply-workspace-mcp-mutation` 必須。authorized installではconfig modeを0600相当へ締め、backup retentionを適用し、single-writer lock競合時はfail closedする。
 - `scripts/verify-workspace-mcp.sh`: default config-only。外部client readbackは `--client-readback` 指定時だけ。client-local credential containerは値を表示せず、live auth proofにも使わない。
 - `scripts/workspace_command_center_check.py`: default read-only Workspace wiring check。repairは `--repair --authorize-workspace-mutation`。
-- `scripts/ai-auto-commit.sh`: server-core専用。`--authorize-server-core-mutation` と1件以上の `--file PATH` 必須。unrelated diffをstageしない。
-- `scripts/storage_lifecycle_audit.py`: bounded audit-only。delete/pruneせず、default出力はcompact result envelope。
+- `scripts/ai-auto-commit.sh`: server-core専用。`--authorize-server-core-mutation` と1件以上の `--file PATH` 必須。unrelated diffをstageせず、同一checkoutのhelper commitをsingle-writer lockで直列化する。
+- `scripts/storage_lifecycle_audit.py`: bounded audit-only。delete/pruneせず、default出力はcompact machine-readable result。
 - Skill resolver: `--read` は全文を返し、glob/path traversalを許可しない。
 
 Workspace/Client mutation permissionとserver-core Repository mutation permissionは別状態である。
@@ -220,7 +219,7 @@ Deployはconfirmed GitHub revisionを起点にし、対象Runbookのchange/appro
 
 server-core共通Runbookからgeneric deploy commandを生成・実行しない。対象ProjectのCurrent Authorityでexact target / path / service / deploy procedureが確定している場合だけDeployへ進む。
 
-OperatorへServer commandを渡す場合は `docs/SERVER_COMMAND_CONTRACT.md` に従う。
+Server command technical safetyは `docs/SERVER_COMMAND_CONTRACT.md` を使用する。operator-facing command interfaceはWorkspace最上位運用Authorityを正とする。
 
 ## 17. Logs / Cache / Cleanup / Backup
 
@@ -272,10 +271,11 @@ Workspace Taskの完了は、Taskに必要な範囲でcorrect routing、correct 
 同じ共通Ruleを複数Documentで独立定義しない。詳細Ruleのownerを固定し、他Documentは必要な範囲だけ参照する。
 
 ```text
+Workspace top-level bootstrap / executor policy / operator interface -> Workspace最上位運用Authority（server-core外）
 Cross-domain mutation / state semantics -> SERVER_CORE_PROTOCOL.md
 Workspace task sequence / evidence handoff -> docs/G_ACE_WORKSPACE.md
 Canonical pre-execution field schema -> operations/pre-execution-schema.json
-Server operator command contract -> docs/SERVER_COMMAND_CONTRACT.md
+Server technical execution safety / evidence -> docs/SERVER_COMMAND_CONTRACT.md
 Discovery / owner / durable capability semantics -> docs/WORKSPACE_REGISTRY.md
 Project-to-service/capability integration -> docs/PROJECT_INTEGRATION_RULES.md
 Shared credential lifecycle / broker use -> docs/WORKSPACE_SHARED_SECRETS.md
