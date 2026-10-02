@@ -11,20 +11,16 @@ Chat UI、会話形式、Notion運用、外部アプリ固有のinteraction rule
 
 ## 2. Pre-command Requirement
 
-Server operationを実行する前に、`docs/G_ACE_WORKSPACE.md` / `operations/pre-execution-schema.json` に従い、Taskに必要な範囲で少なくとも次を解決する。
+Server operationを実行する前に、Taskに必要な範囲で少なくとも次を確認する。
 
 ```text
 TARGET_PROJECT
 TARGET_REPOSITORY
+TARGET_PATH_OR_RUNTIME
 MUTATION_REPOSITORIES
 READ_ONLY_REPOSITORIES
-NEXT_ACTION
-EXECUTION_ROUTE
-EXECUTION_CAPABILITY
-EXECUTION_AUTHORIZATION
-MUTATION_CLASS
 VERIFY_PATH
-PRE_EXECUTION_COMPLETE
+APPROVAL_BOUNDARY
 BLOCKER
 ```
 
@@ -112,8 +108,6 @@ Command process interruption、tool response interruption、network failure、as
 - stable run/job/request IDがある場合はduplicate operationより既存IDの追跡を優先する。
 
 ## 10. Completion Boundary
-
-`PRE_EXECUTION_COMPLETE=YES` は、外部Operationを安全に実行できるところまでtarget/action/authorization/verify pathが確定したことを意味する。実行済みではない。
 
 実行後はreturned evidenceからのみstateを昇格する。Command発行だけでServer/Provider/Runtime/Production PASSへ進めない。
 
