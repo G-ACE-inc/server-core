@@ -60,25 +60,7 @@ Target Boundary
 - 実装済み / 完成 / 稼働はREADMEだけで判断せず、Source / Test / Runtime Evidenceで確認する。
 - 必要工程を理由なく省略せず、固定ルーティーンから勝手に脱線しない。
 
-## 5. Execution Route
-
-Server / Workspace上のtechnical execution routeとして次だけを扱う。
-
-```text
-DETERMINISTIC_LOCAL_OR_CI
-SERVER_COMMAND
-SERVER_AI
-PROJECT_RUNTIME
-```
-
-- deterministic script / test / CIで閉じられる処理を不要にAIへ置き換えない。
-- DebugAIを利用するTaskでは、既に取得済みのEvidence / Tool result / prior verified stateを再利用し、同じ調査をServer AIへ重複実行させない。
-- `SERVER_COMMAND` は `/home/admin1/server-core/docs/SERVER_COMMAND_CONTRACT.md` に従う。
-- execution capabilityとmutation authorizationを混同しない。
-
-Chat UI、会話形式、Notion、外部アプリ固有interactionはserver-coreの実行ルールに持ち込まない。
-
-## 6. Verification
+## 5. Verification
 
 次だけでPASSにしない。
 - Process起動
@@ -94,7 +76,7 @@ Chat UI、会話形式、Notion、外部アプリ固有interactionはserver-core
 
 未確認 / 未実行 / 未検証を推測でPASSへ変えない。
 
-## 7. Documentation Gate
+## 6. Documentation Gate
 
 作業終了前に判定する。
 
@@ -111,7 +93,7 @@ System / Feature bundle / reusable ModuleがREADMEだけでは説明なしに引
 
 Document変更先はTARGET_PROJECT / TARGET_REPOSITORYに従う。対象ProjectのDocument更新をserver-core Document更新へ読み替えない。
 
-## 8. GitHub Work History
+## 7. GitHub Work History
 
 ファイル変更を伴う完成作業では、対象Repositoryの運用に従ってcommit / pushし、可能ならremote readbackまで確認する。
 
@@ -119,7 +101,7 @@ Commitは実作業報告として、必要に応じて目的、主要変更、�
 
 Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
 
-## 9. Approval Boundary
+## 8. Approval Boundary
 
 Masterの明示指示なしに次を行わない。
 - main / PR merge
@@ -133,13 +115,13 @@ Masterの明示指示なしに次を行わない。
 
 server-coreへのwrite / commit / branch mutationはserver-core自体の明示許可が必要。
 
-## 10. Runtime
+## 9. Runtime
 
 本番常駐の標準経路はDocker / Docker Composeとする。Project Authorityで正式例外が定義される場合だけ例外を適用する。
 
 ServerはRuntime / Processing環境であり、GitHub Source履歴やProject Designの代替正本にしない。
 
-## 11. Shared Workspace Capabilities
+## 10. Shared Workspace Capabilities
 
 共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。
 
@@ -147,7 +129,9 @@ Secret値をGit / Log / Documentへ出さない。未登録・未実装・未検
 
 TGserver / webhook gateway等のProject-owned serviceは、複数Projectで利用されても自動的にShared Capabilityへ変更しない。
 
-## 12. Server Command / Recovery
+DebugAIを利用するTaskでは、既に取得済みのEvidence / Tool result / prior verified stateを再利用し、同じ調査をServer AIへ重複実行させない。これはDebugAI利用時の重複調査防止であり、generic executor policyではない。
+
+## 11. Server Command / Recovery
 
 Server commandはparent interactive shellを意図せず終了させず、exact target、real return code、partial apply、bounded diagnostics、credential非表示を守る。
 
