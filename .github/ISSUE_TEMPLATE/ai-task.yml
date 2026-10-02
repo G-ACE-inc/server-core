@@ -39,7 +39,7 @@ body:
     id: scope
     attributes:
       label: 変更範囲
-      description: TARGET_REPOSITORY、MUTATION_REPOSITORIES、READ_ONLY_REPOSITORIES、変更対象と対象外を記載する。Issue作成・Repository参照・owner表示はmutation permissionではない。server-coreを変更する場合はserver-core自体へのexplicit owner authorizationを別途確認する。
+      description: TARGET_REPOSITORY、MUTATION_REPOSITORIES、READ_ONLY_REPOSITORIES、変更対象と対象外を記載する。Issue作成・Repository参照・owner表示はmutation permissionではない。server-coreを変更する場合はserver-core自体へのMasterの明示許可を別途確認する。
       placeholder: |
         TARGET_REPOSITORY:
         MUTATION_REPOSITORIES:
@@ -78,7 +78,7 @@ body:
           required: true
         - label: 秘密情報はGit管理外の環境で扱う。
           required: true
-        - label: Deploy、Runtime、Provider、Secret、Production mutationは対象Authorityの承認条件と範囲を確認してから行う。
+        - label: main/PR merge、Production deploy/公開/切替、Provider/Secret mutation、稼働Serviceのstop/restart/recreateはMasterの明示指示なしに行わない。
           required: true
         - label: 期待出力、状態変化、主要失敗条件、回帰結果で検証する。
           required: true
