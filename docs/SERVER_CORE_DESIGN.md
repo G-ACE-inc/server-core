@@ -73,7 +73,7 @@ server-core itself is read-only unless server-core mutation is explicitly author
 ### 2.7 Runtime / Operations Governance
 server-core governs the common operational boundary for:
 - deployment from confirmed GitHub revision;
-- Docker / Docker Compose production residency;
+- Docker Compose production residency;
 - runtime verification;
 - log / cache / temporary-state lifecycle;
 - cleanup safety;
@@ -237,7 +237,7 @@ Authority: `docs/WORKSPACE_SHARED_SECRETS.md`.
 
 The server is a runtime / processing environment, not a replacement for GitHub source history.
 
-Production-resident services use Docker / Docker Compose unless a formally defined Project exception exists.
+Production-resident services use **Docker Compose as the canonical production residency path**. Host-resident `node`, `python`, `npm start`, `pm2`, `nohup`, `screen`, `tmux`, or equivalent processes are not adopted as production residency paths.
 
 Common lifecycle boundaries are defined by `docs/STORAGE_LIFECYCLE.md`; deployment by `docs/DEPLOY_RUNBOOK.md`; Server command technical safety by `docs/SERVER_COMMAND_CONTRACT.md`.
 
