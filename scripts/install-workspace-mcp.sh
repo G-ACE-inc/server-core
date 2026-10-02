@@ -31,6 +31,12 @@ if [[ "$APPLY" != "1" ]]; then
   exit 2
 fi
 
+command -v flock >/dev/null 2>&1 || { echo "[error] flock is required for serialized Workspace MCP mutation" >&2; echo "NO_CHANGES_PERFORMED" >&2; exit 1; }
+mkdir -p -- "$GLOBAL_DIR"
+chmod 700 "$GLOBAL_DIR" 2>/dev/null || true
+exec 9<"$GLOBAL_DIR"
+flock -n 9 || { echo "[error] another Workspace MCP mutation is active; refusing concurrent config write" >&2; echo "NO_CHANGES_PERFORMED" >&2; exit 1; }
+
 python3 - "$MANIFEST" "$GLOBAL_MCP" <<'PY'
 import json, os, shutil, stat, sys, time
 from pathlib import Path
@@ -107,12 +113,12 @@ for name, definition in runtime_servers.items():
 mode_needs_tightening = target.exists() and stat.S_IMODE(target.stat().st_mode) != existing_mode
 if changed or mode_needs_tightening:
     if target.exists():
-        backup = target.with_name(target.name + '.backup-' + time.strftime('%Y%m%d-%H%M%S'))
+        backup = target.with_name(target.name + '.backup-' + time.strftime('%Y%m%d-%H%M%S') + f'-{time.time_ns()}')
         shutil.copy2(target, backup)
         os.chmod(backup, existing_mode)
         print(f'[backup] {backup}')
-    tmp = target.with_suffix('.tmp')
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, existing_mode)
+    tmp = target.with_name(target.name + f'.tmp-{os.getpid()}-{time.time_ns()}')
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, existing_mode)
     try:
         with os.fdopen(fd, 'w', encoding='utf-8') as handle:
             handle.write(json.dumps(current, ensure_ascii=False, indent=2) + '\n')
