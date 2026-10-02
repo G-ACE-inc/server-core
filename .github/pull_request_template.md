@@ -7,6 +7,15 @@
 - 入力・出力への影響:
 - 直接依存と制約への影響:
 
+## Mutation Boundary
+- TARGET_REPOSITORY:
+- MUTATION_REPOSITORIES:
+- READ_ONLY_REPOSITORIES:
+- server-core mutation authorization: YES / NO / N/A
+- Runtime / Provider / Secret / Production mutation: NONE / authorized scopeを記載
+
+このTemplateへの記入やPR作成自体をmutation authorizationとして扱わない。server-core変更はserver-core自体へのexplicit owner authorizationが成立している場合だけ行う。
+
 ## 変更内容
 - TBD
 
@@ -21,6 +30,7 @@
 ## 実行確認
 - [ ] `git diff` で変更範囲を確認した
 - [ ] 変更対象と対象外が一致している
+- [ ] current Repositoryとmutation targetを照合した
 - [ ] 秘密情報をGit管理外で扱っている
 - [ ] 新規Code生成前に同じ責務を持つ既存資産を確認した
 - [ ] 既存資産を利用しない場合の具体的理由を確認した
@@ -29,8 +39,8 @@
 - [ ] Moduleの公開契約、依存方向、所有者を確認した
 - [ ] 設計情報を1つの正本へ集約した
 - [ ] 期待出力、状態変化、主要失敗条件、回帰結果を確認した
-- [ ] `scripts/ai-auto-commit.sh --no-push` または同等の確認を実施した
-- [ ] 本番デプロイ、起動、公開、切替は明示承認後に行う
+- [ ] Commit / Push / Merge / Deploy / Runtime / Production状態を分離して記録した
+- [ ] Production deploy、起動、公開、切替がある場合は対象Authorityの承認条件を満たした
 
 ## 補足
 - TBD
