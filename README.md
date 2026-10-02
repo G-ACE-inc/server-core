@@ -205,7 +205,7 @@ Capability本体は所有Project/runtimeへ残す。
 
 Capabilityを利用・接続・検証することと、そのowner実装を変更することは分離する。TGserver / webhook gateway等のProject-owned serviceは、複数Projectで使っていても自動的にShared Capability扱いへ変更しない。
 
-DebugAIを使うTaskでは、既に取得済みのEvidence / Tool結果 / prior verified stateを再利用し、同じ調査をServer AIへ重複実行させない。これはDebugAI利用時の重複調査防止であり、Workspace全体のgeneric AI cost policyではない。
+DebugAIを使うTaskでは、既に取得済みのEvidence / Tool結果 / prior verified stateを再利用し、同じ調査をServer AIへ重複実行させない。
 
 ## Helper Execution Boundary
 
