@@ -82,6 +82,16 @@ jobs:
           cp "$tmp/.cursor/mcp.json" "$tmp/before.json"
           if HOME="$tmp" bash scripts/install-workspace-mcp.sh >"$tmp/noauth.out" 2>&1; then exit 1; fi
           cmp "$tmp/before.json" "$tmp/.cursor/mcp.json"
+          ( exec 8<"$tmp/.cursor"; flock -x 8; sleep 1 ) & lock_pid=$!
+          sleep 0.1
+          set +e
+          HOME="$tmp" bash scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation >"$tmp/locked.out" 2>&1
+          lock_rc=$?
+          set -e
+          test "$lock_rc" -ne 0
+          grep -q 'another Workspace MCP mutation is active' "$tmp/locked.out"
+          cmp "$tmp/before.json" "$tmp/.cursor/mcp.json"
+          wait "$lock_pid"
           HOME="$tmp" bash scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation
           test "$(stat -c '%a' "$tmp/.cursor/mcp.json")" = 600
           grep -q 'FIXTURE_LOCAL_CREDENTIAL_123456' "$tmp/.cursor/mcp.json"
