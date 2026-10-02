@@ -5,7 +5,7 @@ Role: Technical safety and evidence contract for Server-side operations that are
 
 ## 1. Purpose
 
-This contract defines the **Server-operation technical boundary**: exact target resolution, shell/process safety, mutation classification, authorization scope, concurrency, exit-status handling, bounded diagnostics and evidence promotion.
+This contract defines the **Server-operation technical boundary**: exact target resolution, shell/process safety, mutation classification, authorization scope, concurrency, exit-status handling, bounded diagnostics, interruption recovery and evidence promotion.
 
 It does not grant mutation permission. Repository, Workspace, Provider, credential, runtime and production authorization are owned by their respective authorities.
 
@@ -130,7 +130,26 @@ A successful audit should not dump every healthy container/file/record when a co
 
 The exact operator-facing return envelope is owned by the Workspace top-level operating authority. Server helpers may expose machine-readable status fields, but must not redefine the external interface contract independently.
 
-## 10. Completion Boundary
+## 10. Interruption / Pending-State Recovery
+
+UI transport failure, chat response truncation, network disconnect, client retry UI, tool-response delivery failure and an async operation still being `queued` / `in_progress` are **not** proof that the underlying operation failed, succeeded or never started.
+
+Within an available execution turn:
+- when a dependent CI / async check is expected to settle and its status is queryable, continue bounded polling to a terminal state instead of stopping after the first `queued` / `in_progress` readback;
+- do not wait indefinitely; use a bounded wait/retry budget appropriate to the operation and preserve the pending identifier when the budget is exhausted;
+- a transient read failure should be retried or independently read back when safe before declaring the Task blocked.
+
+After an assistant/client/network interruption:
+- recover from durable external state first: exact repository/PR HEAD, commit presence, CI/workflow state, runtime/provider readback or other authoritative target state as applicable;
+- do not blindly repeat the last mutation merely because the previous response was not delivered;
+- determine whether the previous mutation was `NOT_APPLIED`, `APPLIED`, `PARTIAL`, or `UNKNOWN` before retrying;
+- if the operation has a stable run/job/request identifier, continue from that identifier when possible rather than starting a duplicate operation;
+- if the prior action is idempotent, idempotency does not remove the need to read back target state when duplicate side effects or concurrent work are possible;
+- the next available execution turn should resume from the last verified durable state without requiring the operator to reconstruct already-recorded context.
+
+A UI message such as “waiting for the full response”, “network error”, “retry”, or equivalent transport status is evidence about response delivery only. It must not be promoted into Server/Repository/Provider operation state.
+
+## 11. Completion Boundary
 
 `PRE_EXECUTION_COMPLETE=YES` means the exact external operation can be handed off safely. It does not mean that operation has executed.
 
@@ -138,7 +157,7 @@ After external execution, promote state only from returned evidence. Never infer
 
 If evidence is incomplete or contradicts detailed diagnostics, keep the stronger state `UNKNOWN / NOT_VERIFIED / PARTIAL` until resolved.
 
-## 11. Invariants
+## 12. Invariants
 
 - preserve the caller's interactive shell when a child operation fails;
 - never present reversible local Git mutation as pure read-only inspection;
@@ -147,4 +166,6 @@ If evidence is incomplete or contradicts detailed diagnostics, keep the stronger
 - never expose credential values in command output;
 - never hide partial mutation behind a successful final print command;
 - never claim execution, verification or PASS without returned evidence;
+- response-delivery failure is not operation failure;
+- after interruption, read back durable target state before retrying a mutation;
 - server-core mutation permission and Server-operation execution permission remain separate boundaries.
