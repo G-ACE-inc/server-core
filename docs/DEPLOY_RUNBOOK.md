@@ -21,7 +21,7 @@ Development / Debug
   -> confirmed GitHub revision
   -> target runtime identity lock
   -> required deploy / production approval
-  -> Server deploy
+  -> target Project-owned deploy procedure
   -> Runtime verification
 ```
 
@@ -38,11 +38,12 @@ Deploy前にTaskに必要な範囲で確認する。
 - required PR / CI state
 - current Server checkout / deployed revision
 - Project-specific deploy contract / runbook
+- exact deploy command source
 - credential値を表示・転記・commitしない経路
 - required deploy / production approval state
 - rollback/recovery method when applicable
 
-`TARGET_PROJECT` / `TARGET_REPOSITORY` / `TARGET_RUNTIME` のいずれかが不明な場合、推測でDeployしない。
+`TARGET_PROJECT` / `TARGET_REPOSITORY` / `TARGET_RUNTIME` / exact deploy procedureのいずれかが不明な場合、推測でDeployしない。
 
 ## 3. Target Identity Lock
 
@@ -54,6 +55,8 @@ SOURCE_REPOSITORY
 SOURCE_REVISION
 SERVER_TARGET_PATH
 RUNTIME_OWNER
+PROJECT_DEPLOY_AUTHORITY
+EXACT_DEPLOY_PROCEDURE
 COMPOSE_PROJECT / SERVICE when applicable
 EXPECTED_ENDPOINT / HEALTH when applicable
 ```
@@ -72,6 +75,7 @@ server-core、shared capability owner、別Projectを事前確認のために読
 5. current health / endpoint state
 6. local-only / uncommitted changes
 7. Project-specific runtime configuration owner
+8. exact Project-owned deploy command / procedure
 
 Server側に未管理変更がある場合、それを破棄・上書きして進めない。
 
@@ -89,16 +93,9 @@ Project固有方式がある場合はそのRunbookを優先するが、最終的
 
 本番常駐の標準RuntimeはDocker / Docker Compose。Project固有の正式例外がある場合は対象Project Authorityを優先する。
 
-典型例:
+**server-coreの共通Runbookはgeneric deploy commandを提供しない。** `docker compose build` / `up` / restart / recreate等の実行Commandは、対象ProjectのCurrent Authorityでexact path、Compose file、profile、service、revision、approval boundaryが確定している場合だけ使用する。
 
-```bash
-docker compose config
-docker compose build
-docker compose up -d
-docker compose ps
-```
-
-実行Path / Compose file / profile / service nameをCurrent Project Authorityで確認してから使う。推測で作らない。
+共通Runbookにありがちな例示Commandをcopyして実行する運用は禁止する。対象Project側にexact procedureが無ければ、先にそのProject AuthorityでDeploy手順を確定し、server-coreの存在だけを根拠にCommandを生成しない。
 
 別ProjectのCompose directoryで同名commandを実行しない。Compose Project / service identityを対象Runtimeと照合する。
 
@@ -159,6 +156,8 @@ Rollback targetもTARGET_PROJECT / TARGET_RUNTIME内に限定する。
 
 Read-only Server checkやSource syncを、service restart / recreate / provider mutationの承認として扱わない。
 
+Deploy Commandを提示・実行できること自体を、実行承認済みと扱わない。
+
 ## 11. Credential Boundary
 
 - credential実値をGit / Source / Document / Logへ保存しない。
@@ -175,6 +174,7 @@ TARGET_REPOSITORY
 SOURCE_REVISION
 SERVER_TARGET
 SERVER_REVISION
+PROJECT_DEPLOY_AUTHORITY
 DEPLOY_ACTION
 RUNTIME_VERIFY_RESULT
 DEPENDENCY_VERIFY_RESULT when required
