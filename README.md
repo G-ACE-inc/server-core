@@ -30,6 +30,7 @@ server-core全Documentを毎回読み込まない。Task対象に必要なAuthor
 5. **Verification Governance** — Source / Test / CI / Runtime / Provider readbackを混同せず、Taskごとの受入条件を確認する。
 6. **GitHub Work History** — Commit / PRを変更履歴として残す。
 7. **Server / Runtime Governance** — confirmed sourceからDeploy、Runtime verification、Storage/Backup/Recoveryまでの共通境界を定義する。
+8. **Pre-execution Handoff** — 現在のAI/Clientで実行できないOperationでも、exact target / action / authorization / verify pathを確定し、推測せず実行直前までhandoffする。
 
 ## Mutation Ownership
 
@@ -69,13 +70,15 @@ REQUEST
 
 `Source`, `Test`, `Commit`, `Push`, `PR`, `CI`, `Merge`, `Deploy`, `Runtime`, `Production` は別状態として扱う。
 
+実行前の状態表現と外部実行handoffは `docs/G_ACE_WORKSPACE.md` の Pre-execution Readiness を正とする。
+
 ## Authority Map
 
 ### Command / Architecture
 - `docs/SERVER_CORE_DESIGN.md` — server-core設計基準線
 - `docs/DESIGN_DELTA.md` — 正式な設計差分
 - `docs/LOAD_SCOPE.md` — Task routing / progressive context loading
-- `docs/G_ACE_WORKSPACE.md` — Workspace運用・Evidence handoff
+- `docs/G_ACE_WORKSPACE.md` — Workspace運用・Pre-execution readiness・Evidence handoff
 - `docs/STRUCTURE.md` — server-core Navigation / Project Tree
 
 ### Development / Repository
@@ -105,7 +108,7 @@ REQUEST
 | server-core設計 / 責務 | `docs/SERVER_CORE_DESIGN.md` + 必要なら `docs/DESIGN_DELTA.md` |
 | 開発方法論 / 再利用 / Module | `CORE.md` |
 | 共通運用 / 変更境界 | `SERVER_CORE_PROTOCOL.md` |
-| Workspace運用 / Evidence handoff | `docs/G_ACE_WORKSPACE.md` |
+| Workspace運用 / Pre-execution / Evidence handoff | `docs/G_ACE_WORKSPACE.md` |
 | Project / Capability / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
 | Workspace MCP | `docs/WORKSPACE_MCP.md` |
 | Project Integration | `docs/PROJECT_INTEGRATION_RULES.md` |
