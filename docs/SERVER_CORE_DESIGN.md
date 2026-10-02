@@ -11,7 +11,7 @@ Its role is not to implement every Project. Its role is to receive a task, deter
 
 Every AI / developer working inside the G-ACE Workspace must be able to start from server-core and determine **where to work, what to read, what may be reused, what must be verified, what must be recorded, and which approval boundary must not be crossed**.
 
-The design assumes a fixed, repeatable workflow so work does not drift merely because the worker changes. Chat UI, conversation formatting, Notion operation, and other external application interaction rules are outside this design.
+The design assumes a fixed, repeatable workflow so work does not drift merely because the worker changes.
 
 ## 2. Command Center Responsibilities
 
@@ -248,7 +248,7 @@ Read-only inspection may still have I/O cost and is bounded where appropriate. R
 ## 14. Command-Center Invariants
 
 The following must always remain true:
-- Workspace work can start from server-core without ChatGPT-only or Notion-only state;
+- Workspace work starts from server-core and follows the fixed development routine;
 - server-core determines routing but does not take ownership of Project internals;
 - the fixed development routine is not replaced by ad-hoc worker preference;
 - the same fact has one intended authority;
@@ -274,10 +274,7 @@ server-core does not own:
 - application-specific internals;
 - KB data;
 - runtime log/cache data;
-- Secret/Token values;
-- ChatGPT-only continuity or UI behavior;
-- Notion operation;
-- per-AI private prompts or reasoning.
+- Secret/Token values.
 
 ## 16. Design Change Rule
 
