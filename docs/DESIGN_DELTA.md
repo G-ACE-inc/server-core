@@ -196,9 +196,10 @@ That interpretation was broader than the server-core requirement and risked repl
 The command center is restored to the original scope:
 - server-core itself is the Workspace command entry for Server/Workspace workers;
 - the fixed development routine remains `route -> authority -> Project -> reuse -> implement/debug -> verify -> documentation -> GitHub -> approval -> deploy/runtime when applicable`;
-- technical execution routes are limited to Server/Workspace work: `DETERMINISTIC_LOCAL_OR_CI`, `SERVER_COMMAND`, `SERVER_AI`, `PROJECT_RUNTIME`;
-- Chat UI, conversation formatting, Notion operation and external application interaction rules are not server-core execution routes;
-- Server command safety remains in `docs/SERVER_COMMAND_CONTRACT.md`;
+- generic executor-selection schema and UI/client execution routes are not part of server-core;
+- Chat UI, conversation formatting, Notion operation and external application interaction rules are outside server-core;
+- Server command safety remains in `docs/SERVER_COMMAND_CONTRACT.md` and does not become a general executor-policy layer;
+- production residency remains Docker Compose; host-resident production paths are not introduced as Project-specific exceptions;
 - useful PR #8 safety work is retained: explicit mutation ownership, server-core read-only default, concurrent change-unit isolation, same-target writer locks, partial-apply reporting, bounded diagnostics, state separation, MCP config hardening, Skill full-read/glob rejection and bounded storage audit;
 - DebugAI-specific efficiency is narrow: reuse existing evidence/tool results before repeating the same investigation through Server AI. This is not a generic Workspace AI cost policy.
 
@@ -207,11 +208,14 @@ server-core exists to make a non-expert-operated development environment repeata
 
 ### Affected scope
 - `README.md`
+- `CORE.md`
+- `SERVER_CORE_PROTOCOL.md`
 - `.cursor/rules/00_agent_runtime.mdc`
 - `docs/SERVER_CORE_DESIGN.md`
 - `docs/G_ACE_WORKSPACE.md`
 - `docs/LOAD_SCOPE.md`
 - `docs/SERVER_COMMAND_CONTRACT.md`
+- `docs/DEPLOY_RUNBOOK.md`
 - `operations/pre-execution-schema.json`
 - `.github/workflows/server-core-guard.yml`
 - `.github/workflows/server-core-behavior.yml`
