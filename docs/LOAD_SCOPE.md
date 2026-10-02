@@ -15,6 +15,8 @@ Role: G-ACE WorkspaceがTaskを正しいProject / Authority / Executorへ振り�
 
 README以外のserver-core Authorityを新Task開始時に一括読込しない。同一Taskで確認済みのAuthorityは、変更・矛盾・情報不足が無い限り繰り返し読まない。
 
+この順序はserver-coreへ入った後の内部Routerであり、Workspace全体の最上位Bootstrap Authorityを置き換えない。上位Authorityが別の事前読取を要求する場合は、その確認後に本Routerへ入る。
+
 ## 2. Command Routing
 
 | Task | 追加で読むserver-core Authority |
@@ -23,7 +25,7 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | 開発方法論 / Module / 再利用 | `CORE.md` |
 | 共通運用 / 変更 / 安全境界 | `SERVER_CORE_PROTOCOL.md` |
 | Workspace運用 / dispatch / Pre-execution | `docs/G_ACE_WORKSPACE.md` |
-| Server command / operator handoff / shell safety / result envelope | `docs/SERVER_COMMAND_CONTRACT.md` |
+| Server command technical safety / mutation classification / evidence handling | `docs/SERVER_COMMAND_CONTRACT.md` |
 | Project / Repository / shared Capability / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
 | Project Integration | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Git / Commit / Push / work history | `docs/AUTO_COMMIT.md` |
@@ -79,23 +81,15 @@ AuthorizationはCurrent Task/change unit/target operationへscopeする。過去
 
 対象Project / ownerが不明なら `docs/WORKSPACE_REGISTRY.md` を読む。既存owner / reusable assetを確認する前に新規Project / Module / Tool / Documentを作らない。
 
-## 4. Executor Routing
+## 4. Executor Route Boundary
 
-実行主体は次の順で検討する。
+**実行主体の選定PolicyはWorkspace最上位運用AuthorityをOwnerとし、本Routerで独自の優先順位・Cost Rule・operator interaction ruleを再定義しない。**
 
-```text
-existing deterministic check / CI
-  -> directly available assistant tool / connector
-  -> existing read-only helper
-  -> exact operator Server command
-  -> Server-side AI only when deterministic/direct routes are insufficient
-```
+server-core側では、選定済みまたはTask Packetで指定された `EXECUTION_ROUTE` / `EXECUTION_CAPABILITY` が `operations/pre-execution-schema.json` の定義と矛盾しないこと、対象Taskのtechnical preconditionとauthorization boundaryを満たすことだけを確認する。
 
-現在のassistant/clientでできる処理をoperatorへ戻さない。Server-side AIはcostを伴う実行主体として扱い、deterministic checkで閉じられるTaskでは使わない。
+現在Clientに実行Capabilityが無い場合でも、exact target / Authority / next action / required inputs / authorization / verify pathまで確定できるなら、`PRE_EXECUTION_COMPLETE=YES` として実行直前handoffを成立させられる。Tool不在と承認不足は別状態として扱う。
 
-現在のAI/Clientに実行Toolが無い場合でも、exact target / Authority / next action / required inputs / authorization / verify pathまで確定できるなら、`PRE_EXECUTION_COMPLETE=YES` として実行直前のhandoffを成立させる。Tool不在と承認不足は別状態として扱う。
-
-Server commandが必要なら `docs/SERVER_COMMAND_CONTRACT.md` を読み、interaction budget、child-shell safety、paste boundary、result envelopeに従う。
+`EXECUTION_ROUTE=SERVER_COMMAND` の場合は `docs/SERVER_COMMAND_CONTRACT.md` を追加で読み、technical shell/process safety、mutation classification、concurrency、exit-status、bounded diagnostic、evidence boundaryを確認する。operator-facing command形式・文字数上限・copy/paste interfaceはWorkspace最上位運用Authorityを正とし、server-core側で別値を持たない。
 
 ## 5. Mutation Routing
 
