@@ -1,6 +1,6 @@
 # SERVER CORE STRUCTURE
 
-Version: 2026-10-02
+Version: 2026-10-03
 Role: `/home/admin1/server-core` のProject Tree / Navigation Index。
 
 ## Entry Flow
@@ -34,7 +34,7 @@ README.md
 - `DESIGN_DELTA.md` — accepted architecture/responsibility changes
 - `LOAD_SCOPE.md` — Task routing / progressive context loading
 - `G_ACE_WORKSPACE.md` — Workspace operation / canonical Pre-execution ownership
-- `SERVER_COMMAND_CONTRACT.md` — Server command handoff / executor selection / paste safety / result envelope
+- `SERVER_COMMAND_CONTRACT.md` — Server command technical safety / mutation classification / partial state / evidence boundary
 - `STRUCTURE.md` — 本Navigation Index
 
 ### Development / repository governance
@@ -121,7 +121,7 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - chronological work history -> GitHub commit / PR
 - Workspace routing -> `README.md` + `docs/LOAD_SCOPE.md`
 - canonical Pre-execution semantics -> `docs/G_ACE_WORKSPACE.md` + `operations/pre-execution-schema.json`
-- operator Server command contract -> `docs/SERVER_COMMAND_CONTRACT.md`
+- Server command technical safety -> `docs/SERVER_COMMAND_CONTRACT.md`
 - credential broker/use -> `docs/WORKSPACE_SHARED_SECRETS.md`
 - managed Workspace MCP -> `docs/WORKSPACE_MCP.md`
 
