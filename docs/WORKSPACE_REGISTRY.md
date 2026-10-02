@@ -1,6 +1,6 @@
 # G-ACE WORKSPACE REGISTRY
 
-Version: 2026-10-01
+Version: 2026-10-02
 Role: server-coreからWorkspace内のProject・Repository・MCP・Tool・Credential Contract・Runtime確認先へ到達するためのDiscovery Registry。
 
 この文書は**発見・所有・接続契約の正本**であり、Live Runtime健康状態の証明でもMutation permissionでもない。Current RuntimeがTask判断に必要な場合は実readbackする。
@@ -28,6 +28,11 @@ DISCOVERED
 SOURCE_VERIFIED
 CONFIG_PRESENT
 CONFIG_REGISTERED
+CLIENT_REGISTRATION_VERIFIED
+AUTHENTICATION_VERIFIED
+TRANSPORT_VERIFIED
+INTERFACE_DISCOVERY_VERIFIED
+REPRESENTATIVE_CALL_PASS
 RUNTIME_VERIFIED
 AVAILABLE_VERIFIED
 NOT_IMPLEMENTED
@@ -39,8 +44,13 @@ UNKNOWN
 - `SOURCE_VERIFIED`: Source / contractが検証済み。
 - `CONFIG_PRESENT`: 設定が存在することを確認済み。server-core ownershipは意味しない。
 - `CONFIG_REGISTERED`: server-core管理Contractとして登録済み。
-- `RUNTIME_VERIFIED`: 対象Runtimeで実動作を確認済み。
-- `AVAILABLE_VERIFIED`: Taskに必要なowner/config/transport/interface/representative callまで確認済み。
+- `CLIENT_REGISTRATION_VERIFIED`: Current clientがentryを認識していることをreadback済み。
+- `AUTHENTICATION_VERIFIED`: Current task経路で認証成功を確認済み。
+- `TRANSPORT_VERIFIED`: Current task経路でMCP transport接続を確認済み。
+- `INTERFACE_DISCOVERY_VERIFIED`: Current clientから必要なtool/interfaceを確認済み。
+- `REPRESENTATIVE_CALL_PASS`: Task目的に対応する無害な代表callが成功。
+- `RUNTIME_VERIFIED`: 対象Runtimeで必要な実動作を確認済み。
+- `AVAILABLE_VERIFIED`: Taskに必要なowner/config/authentication/transport/interface/representative callまで確認済み。
 
 過去のRuntime実績とCurrent Runtime状態は分離する。Current再検証待ちだけを理由に実装済みCapabilityを `NOT_IMPLEMENTED` へ降格しない。
 
@@ -111,13 +121,17 @@ Workspace共通MCPのserver-core管理設定は `operations/workspace-mcp.json`�
 
 | MCP | Owner / authority | Config authority | Purpose | Current registry boundary |
 |---|---|---|---|---|
-| Cloudflare API MCP | Cloudflare + Workspace contract | `operations/workspace-mcp.json` -> user global MCP | Cloudflare API access | `CONFIG_REGISTERED`; live availability readback when needed |
-| Hugging Face MCP | Hugging Face + Workspace contract | `operations/workspace-mcp.json` -> user global MCP | Hugging Face access | `CONFIG_REGISTERED`; live availability readback when needed |
+| Cloudflare API MCP | Cloudflare + Workspace contract | `operations/workspace-mcp.json` -> user global MCP | Cloudflare API access | `CONFIG_REGISTERED`; current live availability is task-time client/provider readback |
+| Hugging Face MCP | Hugging Face + Workspace contract | `operations/workspace-mcp.json` -> user global MCP | Hugging Face access | `CONFIG_REGISTERED`; current live availability is task-time client/provider readback |
 | DebugAI MCP | `seigo-gace/debug-ai` | DebugAI runtime/client registration | parent AIからDebugAI利用 | implementation/protocol verified; prior live use recorded; current availability must be read back |
 | Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | existing client/global config when present | deterministic parser | config presence has been observed; ownership remains Project/client-specific; current availability readback required |
 | Reusable KB bridge | owning KB Project/runtime | owning KB authority | reusable asset search/fetch | implementation/registration/availability stateはowning KB authorityで確認 |
 
 MCP availabilityは、文書やJSON entryだけでは成立しない。TaskでCurrent availabilityが必要なら、必要範囲でauthentication、transport、tool discovery、representative callを確認する。
+
+`server-core` はこのavailability判定Contractを管理するが、Current live healthy stateを恒久的に保証するRuntime monitorではない。Current `AVAILABLE_VERIFIED` は、実際に利用するTask/client/provider経路から得た時点付きevidenceで成立する。
+
+`scripts/verify-workspace-mcp.sh` のdefault結果はconfig-level evidence、`--client-readback` はregistration-level evidenceであり、どちらも単独では `AVAILABLE_VERIFIED` にしない。
 
 MCPを利用・検証するTaskを、MCP owner implementation変更やWorkspace-global registration変更へ自動昇格しない。
 
@@ -216,6 +230,7 @@ Capabilityを `AVAILABLE_VERIFIED` とする条件はCapabilityごとに定義�
 OWNER_KNOWN=YES
 AUTHORITY_KNOWN=YES
 CONFIG_PRESENT=YES when required
+CLIENT_REGISTRATION_VERIFIED=YES when required
 AUTHENTICATION_VERIFIED=YES when required
 TRANSPORT_VERIFIED=YES when required
 INTERFACE_DISCOVERY_VERIFIED=YES
@@ -225,6 +240,8 @@ FAILURE_BEHAVIOR_KNOWN=YES
 ```
 
 `AVAILABLE_VERIFIED` は利用可能性の状態であり、Source/Config/Provider mutation権限ではない。
+
+Current live evidenceには確認時点と確認経路が必要であり、過去の成功を無期限のCurrent状態として再利用しない。ただしCurrent再検証待ちを理由に、Source/implementation/protocolの既検証状態まで否定しない。
 
 ## 12. Registry Update Gate
 
