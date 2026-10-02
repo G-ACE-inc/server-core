@@ -1,6 +1,6 @@
 # WORKSPACE SHARED MCP
 
-Version: 2026-10-01
+Version: 2026-10-02
 
 ## Purpose
 
@@ -36,7 +36,8 @@ MCP関連Taskを次に分離する。
 
 ```text
 USE / CALL MCP
-VERIFY CURRENT AVAILABILITY
+VERIFY CONFIG ONLY
+VERIFY CLIENT REGISTRATION
 REGISTER PROJECT-SCOPED MCP
 CHANGE WORKSPACE-GLOBAL REGISTRATION
 CHANGE MCP IMPLEMENTATION
@@ -45,9 +46,10 @@ CHANGE MCP IMPLEMENTATION
 これらは別Operationである。
 
 - `USE / CALL MCP`: 原則mutationなし。MCP owner Repositoryもserver-coreもread-only。
-- `VERIFY CURRENT AVAILABILITY`: client/runtime readbackのみ。検証だけでSource/Documentを変更しない。
+- `VERIFY CONFIG ONLY`: `~/.cursor/mcp.json` のread-only validation。外部client commandを実行しない。
+- `VERIFY CLIENT REGISTRATION`: 明示的にclient readbackが必要な場合だけCursor CLI等へ問い合わせる。
 - `REGISTER PROJECT-SCOPED MCP`: consumer Project側Config/Documentがmutation候補。server-coreやMCP owner実装は原則read-only。
-- `CHANGE WORKSPACE-GLOBAL REGISTRATION`: user-global MCP configの変更Taskであり、server-core Repositoryのmanifest/Document/Script変更を自動的には許可しない。server-core側Contract変更が必要なら、server-core自体の変更についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立した場合だけmutation対象にする。
+- `CHANGE WORKSPACE-GLOBAL REGISTRATION`: user-global MCP configのmutation。server-core Repositoryのmanifest/Document/Script変更を自動的には許可しない。server-core側Contract変更が必要なら、server-core自体の変更についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立した場合だけmutation対象にする。
 - `CHANGE MCP IMPLEMENTATION`: owning MCP Projectだけをmutation対象とし、server-coreは共通Contract変更が必要でも explicit owner authorization が無い限りread-only。
 
 「MCPを使う」「MCPを検証する」「MCPをProjectへ接続する」「Workspace-global registrationを整合する」だけでserver-coreのmanifest/document/scriptやMCP owner Sourceを書き換えない。
@@ -74,43 +76,62 @@ Non-managed entryを確認しただけでserver-core manifestへ取り込まな�
 
 ## Installation
 
-Workspace-global registration自体を整合するTaskの場合だけ、canonical server-core checkoutから実行する。
+Workspace-global registration自体の変更が明示的に対象の場合だけ、canonical server-core checkoutから実行する。
 
 ```bash
 cd /home/admin1/server-core
-scripts/install-workspace-mcp.sh
+scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation
 ```
 
-これは `~/.cursor/mcp.json` のruntime/client configを整合するOperationであり、server-core Repositoryへのwrite permissionではない。
+`--apply-workspace-mcp-mutation` が無い場合、Installerは変更せずfail closedする。
+
+これは `~/.cursor/mcp.json` のruntime/client config mutation authorizationであり、server-core Repositoryへのwrite permissionではない。
 
 Project固有MCP利用TaskやMCP実装TaskのたびにこのInstallerを実行しない。
 
 Installer contract:
-1. manifestを検証する;
-2. `~/.cursor/mcp.json` が無ければ作成する;
-3. server-core管理外の既存entryを保持する;
-4. managed shared entryを追加/整合する;
-5. 同名で異なるruntime definitionとの衝突はfail closedする;
-6. mutation前にbackupを作る;
-7. credential containerをmerge policyに従って保持する;
-8. Provider tokenをRepositoryから書き込まない。
+1. explicit mutation flagを要求する;
+2. manifestを検証する;
+3. `~/.cursor/mcp.json` が無ければ作成する;
+4. server-core管理外の既存entryを保持する;
+5. managed shared entryを追加/整合する;
+6. 同名で異なるruntime definitionとの衝突はfail closedする;
+7. mutation前にbackupを作る;
+8. credential containerをmerge policyに従って保持する;
+9. Provider tokenをRepositoryから書き込まない。
 
 ## Workspace Initialization
 
-Workspace初期化/修復を対象としたTaskの場合だけ使用する。
+通常確認ではInitializerをread-onlyで使う。
 
 ```bash
 cd /home/admin1/server-core
-scripts/init-dev-workspace.sh
+scripts/init-dev-workspace.sh --check
 ```
 
-Initializerはcanonical checkoutからのみ実行する。Workspace rules、workspace file、managed MCP configを整合し、検証に失敗した場合は成功扱いにしない。
+引数なしもread-only checkとして扱う。Workspace file、rules wiring、global MCP configを検証するが変更しない。
 
-Initializer実行もserver-core Repositoryを書き換える許可にはならない。Project Source/Document更新Taskの通常手順としてInitializerを実行しない。
+Workspace wiring / global MCP configを実際に修復・整合するTaskだけ、明示的にmutation modeを使う。
+
+```bash
+scripts/init-dev-workspace.sh --apply-workspace-mutation
+```
+
+Project directory作成まで含む場合は、さらにProject作成を明示する。
+
+```bash
+scripts/init-dev-workspace.sh --apply-workspace-mutation --project PROJECT_NAME --create-project
+```
+
+Project名はTaskで確定した実名を使用し、推測値を入れない。
+
+Initializer mutation modeはWorkspace rules symlink、Workspace file、managed global MCP configを変更し得る。実行許可とserver-core Repository書換え許可は別である。
+
+Project Source/Document更新Taskの通常手順としてInitializer mutation modeを実行しない。
 
 ## Configuration Verification
 
-Workspace-global MCP config verificationがTask対象の場合:
+Configのみのread-only verification:
 
 ```bash
 scripts/verify-workspace-mcp.sh
@@ -122,7 +143,14 @@ scripts/verify-workspace-mcp.sh
 - required managed servers exist
 - managed runtime transport definition matches manifest
 - obvious plaintext credential pattern is absent
-- available client CLIがある場合はclient-side registrationを追加確認可能
+
+Client-side registration readbackがTask上必要な場合だけ:
+
+```bash
+scripts/verify-workspace-mcp.sh --client-readback
+```
+
+このoptionは利用可能なCursor CLIへread-only問い合わせを行う。Default verificationは外部client commandを起動しない。
 
 Project-owned MCPのCurrent availability確認は、そのProject/client/runtime Authorityに従う。server-core verifierで代用しない。
 
@@ -133,6 +161,7 @@ MCP状態は分離する。
 ```text
 IMPLEMENTATION_VERIFIED
 CONFIG_PRESENT / CONFIG_REGISTERED
+CLIENT_REGISTRATION_VERIFIED
 AUTHENTICATION_VERIFIED
 TRANSPORT_VERIFIED
 INTERFACE_DISCOVERY_VERIFIED
