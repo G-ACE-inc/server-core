@@ -50,6 +50,8 @@ server-core provides the discovery and use contract for Workspace-shared capabil
 
 The implementation body stays with its owning Project/runtime. server-core owns discovery, owner, connection contract, permission/change boundary and verification method.
 
+Here, `owns` means **authority/responsibility ownership**, not unconditional write permission. A server-core-owned contract may still be read-only in the current task; changing that contract requires the separate server-core mutation authorization gate defined below.
+
 ### 2.5 Development / Verification Governance
 server-core defines Workspace-wide rules for:
 - reuse-first development;
@@ -78,7 +80,7 @@ Reading server-core, using its Runbooks, investigating a Workspace-common issue,
 
 Source, Document, Config, branch or commit mutation in server-core requires explicit owner authorization for **server-core itself**. Until that authorization is explicit, server-core remains read-only even when a server-core change appears desirable or technically necessary.
 
-The operational representation of this gate is `SERVER_CORE_MUTATION_AUTHORIZED=YES`; it may not be inferred from adjacent instructions or from a worker's own assessment.
+The operational representation of this gate is `SERVER_CORE_MUTATION_AUTHORIZED=YES`; it may not be inferred from adjacent instructions, ownership labels, update conditions, dependency impact, or from a worker's own assessment.
 
 ## 3. Command Flow
 
@@ -202,7 +204,7 @@ It records:
 - verification/readback method;
 - runtime-discovery boundary.
 
-Registry entries are navigation and contract data, not proof that the current runtime is healthy.
+Registry entries are navigation and contract data, not proof that the current runtime is healthy and not write permission.
 
 ## 11. Reusable Knowledge Boundary
 
@@ -242,7 +244,8 @@ Automated cleanup is fail-closed. Active state, unshipped/retry data, recovery d
 The following must remain true:
 - Workspace work can start from server-core using repository/runtime authorities;
 - server-core determines routing but does not take ownership of Project internals;
-- server-core remains read-only unless explicit owner authorization specifically permits server-core mutation;
+- authority/responsibility ownership is not mutation permission;
+- server-core remains read-only without explicit server-core mutation authorization;
 - the same operational fact has one intended authority;
 - context loading is progressive;
 - shared capabilities have explicit owner, connection and verification boundaries;
