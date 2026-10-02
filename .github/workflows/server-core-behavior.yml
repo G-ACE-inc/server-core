@@ -66,10 +66,7 @@ jobs:
           out="$(CODEX_HOME="$tmp" scripts/resolve-codex-skill.sh github:demo --read)"
           test "$(printf '%s\n' "$out" | wc -l)" -eq 300
           test "$(printf '%s\n' "$out" | tail -n 1)" = 'line-300'
-          if CODEX_HOME="$tmp" scripts/resolve-codex-skill.sh 'github:*' --read >"$tmp/glob.out" 2>&1; then
-            echo 'resolver accepted glob skill name' >&2
-            exit 1
-          fi
+          if CODEX_HOME="$tmp" scripts/resolve-codex-skill.sh 'github:*' --read >"$tmp/glob.out" 2>&1; then exit 1; fi
           echo 'SKILL_RESOLVER_BEHAVIOR=PASS'
 
       - name: MCP permission and credential-container behavior
@@ -79,19 +76,11 @@ jobs:
           trap 'rm -rf "$tmp"' EXIT
           mkdir -p "$tmp/.cursor"
           cat > "$tmp/.cursor/mcp.json" <<'JSON'
-          {
-            "mcpServers": {
-              "cloudflare-api": {"url":"https://mcp.cloudflare.com/mcp","auth":{"CLIENT_ID":"8ilRHxRMw6Ntq3dP"}},
-              "huggingface": {"url":"https://huggingface.co/mcp","headers":{"Authorization":"Bearer FIXTURE_LOCAL_CREDENTIAL_123456"}}
-            }
-          }
+          {"mcpServers":{"cloudflare-api":{"url":"https://mcp.cloudflare.com/mcp","auth":{"CLIENT_ID":"8ilRHxRMw6Ntq3dP"}},"huggingface":{"url":"https://huggingface.co/mcp","headers":{"Authorization":"Bearer FIXTURE_LOCAL_CREDENTIAL_123456"}}}}
           JSON
           chmod 0644 "$tmp/.cursor/mcp.json"
           cp "$tmp/.cursor/mcp.json" "$tmp/before.json"
-          if HOME="$tmp" bash scripts/install-workspace-mcp.sh >"$tmp/noauth.out" 2>&1; then
-            echo 'installer mutated without explicit flag' >&2
-            exit 1
-          fi
+          if HOME="$tmp" bash scripts/install-workspace-mcp.sh >"$tmp/noauth.out" 2>&1; then exit 1; fi
           cmp "$tmp/before.json" "$tmp/.cursor/mcp.json"
           HOME="$tmp" bash scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation
           test "$(stat -c '%a' "$tmp/.cursor/mcp.json")" = 600
@@ -116,14 +105,12 @@ jobs:
           printf '\nci-a\n' >> README.md
           printf '\nci-b\n' >> CORE.md
           bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file README.md -m 'test: explicit change unit'
-          changed="$(git show --name-only --format= HEAD | sed '/^$/d')"
-          test "$changed" = 'README.md'
-          test -n "$(git status --porcelain=v1 -- CORE.md)"
+          mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
+          test "${#committed[@]}" -eq 1
+          test "${committed[0]}" = 'README.md'
+          if git diff --quiet -- CORE.md; then echo 'unrelated CORE.md change was staged/committed' >&2; exit 1; fi
           printf '{"token":"SUPER_SECRET_VALUE_123456789"}\n' > ci-secret.json
-          if bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file ci-secret.json -m 'test: secret guard' >"$tmp/secret.out" 2>&1; then
-            echo 'secret-like JSON was committed' >&2
-            exit 1
-          fi
+          if bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file ci-secret.json -m 'test: secret guard' >"$tmp/secret.out" 2>&1; then echo 'secret-like JSON was committed' >&2; exit 1; fi
           grep -q 'ci-secret.json:1' "$tmp/secret.out"
           ! grep -q 'SUPER_SECRET_VALUE_123456789' "$tmp/secret.out"
           echo 'AUTO_COMMIT_BEHAVIOR=PASS'
