@@ -104,12 +104,16 @@ patterns=[
 findings=[]
 for raw in sys.argv[1:]:
     p=pathlib.Path(raw)
-    if not p.is_file():
+    if not p.exists():
         continue
+    if not p.is_file():
+        print(f'ERROR: refusing non-regular intended path: {raw}', file=sys.stderr)
+        raise SystemExit(1)
     try:
         text=p.read_text(encoding='utf-8')
     except (UnicodeDecodeError,OSError):
-        continue
+        print(f'ERROR: refusing unreadable or non-UTF-8 intended file: {raw}', file=sys.stderr)
+        raise SystemExit(1)
     for lineno,line in enumerate(text.splitlines(),1):
         if any(rx.search(line) for rx in patterns):
             findings.append(f'{raw}:{lineno}')
