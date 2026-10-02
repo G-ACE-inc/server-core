@@ -1,6 +1,6 @@
 # SERVER STORAGE / LOG / CACHE LIFECYCLE
 
-Version: 2026-10-01
+Version: 2026-10-03
 Status: Design Baseline
 
 ## 1. Purpose
@@ -38,18 +38,19 @@ owner/classificationが不明。自動削除しない。
 
 ## 4. Common Server Storage Categories
 
-| Storage class | Generic policy |
-|---|---|
-| application/service logs | owner + shipping/retention contract required |
-| search/index data | rebuild path verifiedならconditional cleanup |
-| hot cache / dedup state | owner contract / TTL / recovery semantics required |
-| `/home/admin1/logs` | temporary operational area; item owner/classification required |
-| Docker build cache | rebuildableならconditional cleanup |
-| Docker image/container/network | runtime ownership + active/rollback readback required |
-| Docker volume | persistent stateの可能性があるためgeneric delete禁止 |
-| `/home/admin1/backups` | retention + integrity + restore policy required |
+| Storage class | Known Workspace example / role | Generic policy |
+|---|---|---|
+| durable raw-log authority | Telegram / TGserver owning Project contract | generic automatic cleanup禁止。実際のowner・retention・acknowledgementはTGserver Authorityを確認 |
+| search/index data | Meilisearch search index | rebuild pathとSource authorityを確認できる場合だけconditional cleanup |
+| hot cache / dedup state | Redis dedup / hot-cache | owner contract / TTL / recovery semanticsを確認してからcleanup |
+| application/service logs | Project/service runtime logs | owner + shipping/retention contract required |
+| `/home/admin1/logs` | temporary operational area | item owner/classification required |
+| Docker build cache | rebuildable build artifacts | rebuildableならconditional cleanup |
+| Docker image/container/network | runtime artifacts | runtime ownership + active/rollback readback required |
+| Docker volume | persistent stateの可能性あり | generic delete禁止 |
+| `/home/admin1/backups` | backup area | retention + integrity + restore policy required |
 
-特定ProductをWorkspace共通の唯一Authorityとして固定しない。Project固有のStorage実装とData owner/roleはowning Project/runtime Contractを確認する。
+Telegram / Meilisearch / RedisはWorkspaceで既知の役割をAIが発見するための例であり、server-coreがそれらの実装/Data ownerになることを意味しない。Current実装、owner、path、runtime状態はowning Project/runtime Authorityから確認する。特定ProductをWorkspace共通の唯一Authorityとして固定しない。
 
 ## 5. Safe Deletion Gate
 
