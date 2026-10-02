@@ -63,7 +63,7 @@ BLOCKER
 
 server-core側では、選定された `EXECUTION_ROUTE` / `EXECUTION_CAPABILITY` がmachine schemaとtechnical boundaryに適合することだけを確認する。
 
-`EXECUTION_ROUTE=SERVER_COMMAND` の場合は `docs/SERVER_COMMAND_CONTRACT.md` を読み、technical shell/process safety、mutation classification、same-target concurrency、exit-status、bounded diagnostics、evidence promotionを確認する。operator-facing command presentationは最上位Authorityを正とする。
+`EXECUTION_ROUTE=SERVER_COMMAND` の場合は `docs/SERVER_COMMAND_CONTRACT.md` を読み、technical shell/process safety、mutation classification、same-target concurrency、exit-status、bounded diagnostics、interruption recovery、evidence promotionを確認する。operator-facing command presentationは最上位Authorityを正とする。
 
 ## 4. Mutation Target / Authorization Lock
 
@@ -144,3 +144,16 @@ ServerはRuntime/Processing環境でありGitHub Source/Design/Documentの代替
 Shared Capabilityを使う/接続する/検証するTaskとowner implementation変更を分離する。TGserver/webhook gateway等のProject-owned serviceはShared Capabilityと混同せず `docs/PROJECT_INTEGRATION_RULES.md` に従う。
 
 Credential実値をSource / Document / Logへ保存しない。Current availabilityは必要なTaskで実設定・transport・interface・representative callを確認する。
+
+## 12. Execution Continuity / Recovery
+
+AI/client/UIのconnection error、response truncation、retry表示、tool response delivery failureは、対象Operationの成功/失敗/未実行を意味しない。
+
+- 同一turn内で依存するCI/async checkが `queued` / `in_progress` かつquery可能なら、初回readbackだけで停止せずbounded pollingでterminal stateまで確認する。
+- transient read failureは、安全に再試行または別readbackできるなら確認してからBLOCKED判定する。
+- connection/response interruption後の次の実行可能turnでは、PR/branch exact HEAD、commit、CI/run ID、Runtime/Provider state等のdurable stateを最初にreadbackして再開点を復元する。
+- 前turnのresponseが届かなかったことだけを理由に同じmutationを再実行しない。`NOT_APPLIED / APPLIED / PARTIAL / UNKNOWN` を判定してからretryする。
+- stable run/job/request IDがある場合は新規重複実行より既存IDの追跡を優先する。
+- 復旧に必要な情報がGitHub/Authority/Task evidenceに残っている場合、operatorへ既知contextの再入力を要求しない。
+
+UI transport statusとOperation stateを分離し、未確認状態を推測で埋めない。
