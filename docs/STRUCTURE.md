@@ -116,12 +116,14 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 
 ## Project Tree Update Conditions
 
-本ファイルを更新する条件:
+次は本ファイルの**更新要否を判定する条件**であり、write permissionではない。
 - File / Directory追加・削除・移動
 - 主要責務変更
 - Entry Point変更
 - Authority routing変更
 - Directory structure変更
+
+実際に本ファイルを更新するには、server-core自体の変更についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立していることを確認する。未成立なら必要な更新を報告・提案するだけに留める。
 
 内部文章修正だけでは必ずしも更新しない。
 
@@ -138,3 +140,4 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - Directory分類だけを目的にDocumentを増やさない
 - credential実値を保存しない
 - Project固有implementationをserver-coreへ移してownershipを曖昧にしない
+- explicit owner authorization無しにserver-coreのStructure/Documentを変更しない
