@@ -25,7 +25,7 @@ jobs:
       - name: Required authority and machine contracts
         run: |
           set -euo pipefail
-          required=(README.md CORE.md SERVER_CORE_PROTOCOL.md docs/SERVER_CORE_DESIGN.md docs/DESIGN_DELTA.md docs/LOAD_SCOPE.md docs/G_ACE_WORKSPACE.md docs/SERVER_COMMAND_CONTRACT.md docs/STRUCTURE.md docs/WORKSPACE_REGISTRY.md docs/PROJECT_TEMPLATE.md docs/PROJECT_INTEGRATION_RULES.md docs/AUTO_COMMIT.md docs/DEPLOY_RUNBOOK.md docs/WORKSPACE_MCP.md docs/WORKSPACE_SHARED_SECRETS.md docs/KB_REUSE_DESIGN.md docs/STORAGE_LIFECYCLE.md docs/CLOUDFLARE_OPERATIONS.md docs/GITHUB_SKILL.md docs/GLOSSARY.md operations/pre-execution-schema.json operations/workspace-mcp.json operations/storage-lifecycle.json operations/cloudflare-account.json operations/huggingface.json scripts/init-dev-workspace.sh scripts/install-workspace-mcp.sh scripts/verify-workspace-mcp.sh scripts/ai-auto-commit.sh scripts/resolve-codex-skill.sh scripts/github-skill-path.sh scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py)
+          required=(README.md AGENTS.md CORE.md SERVER_CORE_PROTOCOL.md .github/copilot-instructions.md docs/SERVER_CORE_DESIGN.md docs/DESIGN_DELTA.md docs/LOAD_SCOPE.md docs/G_ACE_WORKSPACE.md docs/SERVER_COMMAND_CONTRACT.md docs/STRUCTURE.md docs/WORKSPACE_REGISTRY.md docs/PROJECT_TEMPLATE.md docs/PROJECT_INTEGRATION_RULES.md docs/AUTO_COMMIT.md docs/DEPLOY_RUNBOOK.md docs/WORKSPACE_MCP.md docs/WORKSPACE_SHARED_SECRETS.md docs/KB_REUSE_DESIGN.md docs/STORAGE_LIFECYCLE.md docs/CLOUDFLARE_OPERATIONS.md docs/GITHUB_SKILL.md docs/GLOSSARY.md operations/pre-execution-schema.json operations/workspace-mcp.json operations/storage-lifecycle.json operations/cloudflare-account.json operations/huggingface.json scripts/init-dev-workspace.sh scripts/install-workspace-mcp.sh scripts/verify-workspace-mcp.sh scripts/ai-auto-commit.sh scripts/resolve-codex-skill.sh scripts/github-skill-path.sh scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py)
           for path in "${required[@]}"; do test -e "$path" || { echo "MISSING_REQUIRED=$path"; exit 1; }; done
           echo 'REQUIRED_AUTHORITY=PASS'
 
@@ -62,6 +62,9 @@ jobs:
           require_text '非技術者のMaster' README.md master_nontechnical_command_center_purpose
           require_text 'non-technical Master' docs/SERVER_CORE_DESIGN.md master_nontechnical_design_purpose
           require_text '非技術者のMaster' .cursor/rules/00_agent_runtime.mdc master_nontechnical_agent_runtime
+          require_text 'Master does not repeat' .github/copilot-instructions.md copilot_automatic_server_core_entry
+          require_text 'start of every new chat/task' AGENTS.md shared_agent_automatic_server_core_entry
+          require_text 'Masterが新規チャット冒頭' docs/G_ACE_WORKSPACE.md workspace_automatic_ai_entry_requirement
           require_text '会話履歴や一時作業状態' README.md self_contained_workspace_recovery
           require_text 'SERVER_CORE_MUTATION_AUTHORIZED' README.md server_core_mutation_gate_readme
           require_text 'SERVER_CORE_MUTATION_AUTHORIZED' SERVER_CORE_PROTOCOL.md server_core_mutation_gate_protocol
@@ -123,6 +126,12 @@ jobs:
           grep -q -- '--apply-workspace-mutation' scripts/init-dev-workspace.sh
           grep -q -- '--create-project' scripts/init-dev-workspace.sh
           grep -q 'validate_project_name' scripts/init-dev-workspace.sh
+          grep -q 'COPILOT_INSTRUCTIONS_LINK_CREATED' scripts/init-dev-workspace.sh
+          grep -q 'AGENTS_ENTRY_LINK_CREATED' scripts/init-dev-workspace.sh
+          grep -q 'COPILOT_INSTRUCTIONS_LINK' scripts/workspace_command_center_check.py
+          grep -q 'AGENTS_ENTRY_LINK' scripts/workspace_command_center_check.py
+          grep -q 'github.copilot.chat.codeGeneration.useInstructionFiles' scripts/workspace_command_center_check.py
+          grep -q 'chat.useAgentsMdFile' scripts/workspace_command_center_check.py
           grep -q -- '--apply-workspace-mcp-mutation' scripts/install-workspace-mcp.sh
           grep -q 'flock -n 9' scripts/install-workspace-mcp.sh
           grep -q -- '--client-readback' scripts/verify-workspace-mcp.sh
