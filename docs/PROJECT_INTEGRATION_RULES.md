@@ -9,7 +9,7 @@ server-coreは共通CapabilityのDiscovery / Contractを管理するが、Projec
 
 本Documentは、各Projectが既存service / Vault / MCP / Toolを利用するときに最低限そろえる接続情報を定義する。
 
-Generic mutation / state semanticsは `SERVER_CORE_PROTOCOL.md` を正とし、本DocumentはIntegration固有条件だけを追加する。
+Generic mutation / state semanticsは `SERVER_CORE_PROTOCOL.md`、Pre-execution field名は `operations/pre-execution-schema.json` を正とし、本DocumentはIntegration固有条件だけを追加する。
 
 **複数Projectから共通利用されること自体は、Project-owned serviceをWorkspace Shared Capabilityへ再分類する根拠ではない。** 実装本体・Repository authority・Runtime ownershipが独立Projectにある場合、そのserviceは複数consumerから利用されてもProject Integrationとして扱う。利用範囲の広さとownership classificationを混同しない。
 
@@ -43,11 +43,13 @@ server-core = read-only unless explicit owner authorization specifically permits
 
 Workspace common contract自体に変更が必要と判明しても、それだけではserver-coreをmutation対象へ昇格しない。server-core変更は `SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立した場合だけ実行する。
 
+AuthorizationはTask/change unitへscopeする。別consumer、別owner Repository、別Provider resource、別Runtime operationへ過去Taskのpermissionをcarry-forwardしない。
+
 「TGserverを使う」「DebugAI MCPを使う」「Vaultを使う」「Cloudflareへ接続する」のような利用指示だけで、service/capability ownerの実装やserver-coreを変更しない。
 
 owner側変更が必要なのは、既存Interfaceでは要求を満たせないことがSource/Contract/verificationから確認され、owner Repository側の変更理由が明確になった場合だけ。ただしserver-coreは理由が明確でもexplicit owner authorizationが無ければread-onlyを維持する。
 
-複数Repository変更が必要な場合は、Repositoryごとに目的、diff、test/verification、Git historyを分離する。server-coreを含める場合はserver-core自体の変更許可を別途確認する。
+複数Repository変更が必要な場合は、Repositoryごとに目的、diff、test/verification、Git historyを分離する。server-coreを含む場合はserver-core自体の変更許可を別途確認する。
 
 ## 3. TGserver Integration
 
@@ -138,7 +140,8 @@ IntegrationしただけでDesign Delta、新規Document、Workspace Registry更�
 ## 9. Verification
 
 Integration完了判定はTaskに応じて必要範囲で確認する。
-- config/registration presence
+- config presence / managed config registration
+- client registration when applicable
 - authentication when required
 - transport/connectivity
 - interface/tool discovery
@@ -148,16 +151,19 @@ Integration完了判定はTaskに応じて必要範囲で確認する。
 
 設定ファイルが存在するだけでLive integration完成とは扱わない。
 
-Integration固有の状態は次へ自動昇格させない。
+Integration固有の状態名は `SERVER_CORE_PROTOCOL.md` と同じgeneric vocabularyを使用し、独自aliasを作らない。
 
 ```text
-CONFIG_PRESENT != REGISTRATION_VERIFIED
-REGISTRATION_VERIFIED != AUTHENTICATION_VERIFIED
+CONFIG_PRESENT != CONFIG_REGISTERED
+CONFIG_REGISTERED != CLIENT_REGISTRATION_VERIFIED
+CLIENT_REGISTRATION_VERIFIED != AUTHENTICATION_VERIFIED
 AUTHENTICATION_VERIFIED != TRANSPORT_VERIFIED
 TRANSPORT_VERIFIED != INTERFACE_DISCOVERY_VERIFIED
 INTERFACE_DISCOVERY_VERIFIED != REPRESENTATIVE_CALL_PASS
 REPRESENTATIVE_CALL_PASS != INTEGRATION_COMPLETE unless Task acceptance is satisfied
 ```
+
+Project Integrationでclient-registration概念が無い場合は、そのstateを `NOT_APPLICABLE` と明示し、`CONFIG_REGISTERED` と同義扱いしない。
 
 上記は `SERVER_CORE_PROTOCOL.md` のgeneric State SemanticsをIntegration Domainへ適用した追加条件であり、別のgeneric state modelではない。
 
