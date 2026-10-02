@@ -1,8 +1,7 @@
 {
-  "schema_version": "1.3",
-  "name": "gace-pre-execution-handoff",
+  "schema_version": "1.4",
+  "name": "gace-command-center-dispatch",
   "authority": "docs/G_ACE_WORKSPACE.md",
-  "server_command_authority": "docs/SERVER_COMMAND_CONTRACT.md",
   "required_fields": [
     "PURPOSE",
     "EXPECTED_RESULT",
@@ -19,43 +18,16 @@
     "APPROVAL_BOUNDARY",
     "CHANGE_BOUNDARY",
     "CONTEXT_SCOPE",
-    "NEXT_ACTION",
-    "EXECUTION_ROUTE",
-    "EXECUTION_CAPABILITY",
-    "EXECUTION_AUTHORIZATION",
-    "MUTATION_CLASS",
-    "PRE_EXECUTION_COMPLETE",
     "BLOCKER"
-  ],
-  "execution_routes": [
-    "DETERMINISTIC_LOCAL_OR_CI",
-    "SERVER_COMMAND",
-    "SERVER_AI",
-    "PROJECT_RUNTIME"
-  ],
-  "mutation_classes": [
-    "READ_ONLY_INSPECTION",
-    "REVERSIBLE_LOCAL_MUTATION",
-    "REPOSITORY_MUTATION",
-    "WORKSPACE_CLIENT_MUTATION",
-    "RUNTIME_MUTATION",
-    "PROVIDER_MUTATION",
-    "CREDENTIAL_MUTATION",
-    "PRODUCTION_MUTATION"
   ],
   "rules": {
     "unknown_values_must_not_be_guessed": true,
-    "execution_capability_is_not_authorization": true,
-    "authorization_is_task_scoped": true,
     "server_core_mutation_requires_explicit_owner_authorization": true,
-    "pre_execution_complete_does_not_mean_executed": true,
     "fixed_development_routine_must_not_be_skipped_without_reason": true,
-    "deterministic_execution_preferred_when_it_closes_the_task": true,
+    "target_repository_is_not_every_repository_read": true,
+    "read_only_reference_does_not_grant_mutation_permission": true,
+    "project_document_updates_stay_with_target_project": true,
     "debugai_reuses_existing_evidence_before_server_ai_research": true,
-    "server_command_document_scope": "technical_execution_safety_and_evidence_only",
-    "mutation_retry_requires_prior_apply_state_resolution": true,
-    "pending_async_checks_should_be_polled_when_required_for_current_acceptance": true,
-    "pending_polling_must_be_bounded": true,
-    "chat_ui_and_notion_are_outside_server_core_execution_routes": true
+    "chat_ui_notion_and_external_app_interaction_are_outside_server_core": true
   }
 }
