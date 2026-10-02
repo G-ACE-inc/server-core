@@ -17,11 +17,13 @@ Workspace内で作業するAI / Agent / Developerは、Project固有作業へ入
 5. 対象Project内の必要なDesign / Tree / Delta / System Document / Source / Test
 ```
 
-server-core全体を毎回読み込まず、Taskの責務・対象・依存関係に必要な範囲だけを段階的に開く。
+server-core全体を毎回読み込まず、Taskに必要な範囲だけ段階的に開く。
 
-## 2. Pre-execution Handoff
+## 2. Canonical Pre-execution Handoff
 
-Project SourceまたはDocumentを変更する前、またはServer / Provider / Client / Runtime Operationを実行する前に、最低限次を解決する。
+Pre-execution field名は `/home/admin1/server-core/operations/pre-execution-schema.json` を正とし、独自aliasを作らない。
+
+Project Source/Document変更、Server / Provider / Client / Runtime Operationの前にTaskに必要な範囲で解決する。
 
 ```text
 PURPOSE
@@ -32,7 +34,8 @@ TARGET_REPOSITORY
 MUTATION_REPOSITORIES
 READ_ONLY_REPOSITORIES
 SERVER_CORE_MUTATION_AUTHORIZED
-REQUIRED_AUTHORITY
+REQUIRED_SERVER_CORE_AUTHORITY
+REQUIRED_PROJECT_AUTHORITY
 REUSE_CANDIDATES
 VERIFY_PATH
 CHANGE_BOUNDARY
@@ -41,133 +44,108 @@ NEXT_ACTION
 EXECUTION_ROUTE
 EXECUTION_CAPABILITY
 EXECUTION_AUTHORIZATION
+AUTHORIZATION_DOMAIN
+AUTHORIZATION_SCOPE
+MUTATION_CLASS
 PRE_EXECUTION_COMPLETE
 BLOCKER
 ```
 
-不明な値は推測で埋めず、調査対象として明示する。
+不明な値を推測で埋めない。
 
-`PRE_EXECUTION_COMPLETE=YES` は、exact target、required Authority、mutation boundary、次のexact action、必要Input/Revision/Endpoint/Service identity、verification path、authorization stateがTaskに必要な範囲で確定した場合だけ使用する。
+`PRE_EXECUTION_COMPLETE=YES` はexact target、required Authority、mutation boundary、next exact action、必要Input/Revision/Endpoint/Service identity、verification path、authorization scope/stateがTaskに必要な範囲で確定した場合だけ使用する。外部実行が必要な場合、これは「実行直前まで準備済み」を意味し、実行済み/PASSを意味しない。
 
-現在のAI/Clientに実行Toolが無い場合でも、上記が確定していれば `EXECUTION_CAPABILITY=UNAVAILABLE_IN_CURRENT_CLIENT` として実行直前までhandoffできる。実行Tool不在と実行許可不足は分離する。
+## 3. Executor Selection
 
-承認待ち、Runtime identity未確認、exact command/action未確定、credential contract不明等が残る場合は `PRE_EXECUTION_COMPLETE=NO` とし、`BLOCKER` を明示する。推測Commandで埋めない。
+Taskを安全に閉じられる最小costの実行経路を選ぶ。
 
-## 3. Mutation Target Lock
+```text
+existing deterministic check / CI
+  -> directly available assistant tool / connector
+  -> existing read-only helper
+  -> exact operator Server command
+  -> Server-side AI only when deterministic/direct routes are insufficient
+```
+
+現在のAI/Clientで直接実行できる処理をoperatorへ戻さない。Server-side AIはdeterministic checkや既存Toolで閉じられない場合に限定する。
+
+Server command/operator handoffが必要なら `docs/SERVER_COMMAND_CONTRACT.md` を読み、interaction budget、paste safety、child-shell safety、bounded output、`GACE_RESULT_BEGIN...GACE_RESULT_END` result envelopeへ従う。
+
+## 4. Mutation Target / Authorization Lock
 
 Repositoryを読むことと、そのRepositoryへ書き込むことを分離する。
 
 - `TARGET_REPOSITORY` はTaskの主対象。
-- `MUTATION_REPOSITORIES` は今回File/Config/Document/Commitを変更してよいRepositoryの明示集合。
-- `READ_ONLY_REPOSITORIES` は参照・Authority確認・再利用調査だけを行うRepository。
-- `server-core` は **explicit owner authorizationが無い限り常にread-only**。`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立しない限り `MUTATION_REPOSITORIES` に入れない。
-- Workspace共通Contractに影響があるように見えること、server-coreを先に読むこと、server-coreのScript/Runbookを使うこと、別Projectの障害調査を行うことは、server-core変更許可ではない。
-- Shared Capabilityのowner Repositoryを読むことは、その実装を変更する許可ではない。利用・接続TaskではCapability ownerは原則read-onlyとし、consumer Project側だけを変更する。
-- Integration Taskでproducer / consumer / shared serviceの複数Repositoryが登場しても、必要なInterface変更が確認されるまで他Repositoryへ書き込まない。
-- 複数Repository変更が本当に必要なら、各Repositoryの変更理由・対象・verificationを分離してから変更する。
+- `MUTATION_REPOSITORIES` は今回write/commitしてよいRepositoryの明示集合。
+- `READ_ONLY_REPOSITORIES` は参照・Authority確認・再利用調査だけのRepository。
+- server-coreはexplicit owner authorizationが無い限りread-only。`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示成立しない限りmutation対象へ入れない。
+- Shared Capability/service ownerを読むことは実装変更許可ではない。
+- 複数Repositoryが登場しても必要性が確認されるまで他Repositoryへ書き込まない。
 
-File変更、Document更新、Git操作、Commit/Pushの直前に、現在のRepositoryが `MUTATION_REPOSITORIES` に含まれることを確認する。server-coreの場合は追加で `SERVER_CORE_MUTATION_AUTHORIZED=YES` を確認する。Local Git作業では必要に応じて `git rev-parse --show-toplevel` とtarget pathを照合する。
+AuthorizationはCurrent Task/change unit/target operationへscopeする。過去Taskの許可を別Task、別Repository、別Provider resource、別credential、別Runtime/Production operationへcarry-forwardしない。
 
-server-coreのScript/Documentを参照または実行するためにserver-coreへ移動したことを、Task対象Repositoryがserver-coreへ変わった証拠にしない。
+write/commit前にcurrent repository rootとmutation targetを照合する。
 
-## 4. Context Loading
+## 5. Multi-task / Multi-worker Safety
 
-対象ProjectではREADMEを入口にし、対象Source・Input/Output・直接依存・関連Testから開始する。
+複数Project、Agent、change unitが並行する前提で扱う。
 
-必要な場合だけ次へ広げる。
+- intended change unit外のuncommitted diffをstage/overwriteしない。
+- shared checkoutのswitch/reset/rebaseは他Taskへの影響を閉じられない限り行わない。
+- readbackは可能ならGit object/API inspectionを優先する。
+- `git fetch`、temporary checkout/detach、branch switchは最終状態を戻してもpure read-onlyではなく `REVERSIBLE_LOCAL_MUTATION`。
+- server-core auto-commit helperは明示された `--file PATH` だけをstageする。
 
-```text
-Target Boundary
-  -> Adjacent Boundary
-  -> Reuse Unit / Module / Component
-  -> System / Repository
-```
+## 6. Context Loading / Development
+
+対象Project READMEから対象Source、Input/Output、直接依存、関連Testを読み、不足時だけ `Target -> Adjacent -> Reuse Unit -> System/Repository` へ広げる。
 
 `.env`、credential、dependency cache、build output、archive、logs、backups等はTask対象でない限り通常Contextへ含めない。
 
-## 5. Development Rules
+新規実装前に既存Design / Code / Module / Type / Schema / Test / Template / shared capabilityを確認し、`そのまま利用 -> 設定・型調整 -> 薄いAdapter -> 共通部分抽出 -> 新規実装` の順で判断する。
 
-- 目的と期待結果を先に定義する。
-- 新規実装前に既存Design / Code / Module / Type / Schema / Test / Template / shared capabilityを確認する。
-- 再利用は `そのまま利用 -> 設定・型調整 -> 薄いAdapter -> 共通部分抽出 -> 新規実装` の順で判断する。
-- Public contract、Input/Output、依存方向、Config owner、State ownerを必要範囲で明確化する。
-- Project固有実装はowning Projectへ置き、server-coreへ吸収しない。
-- Design BaselineをCurrent実装に合わせるためだけに書き換えない。正式変更はDesign Deltaで追跡する。
+Project固有実装はowning Projectへ置く。Design BaselineをCurrent実装へ合わせるだけの上書きをしない。
 
-## 6. Documentation Ownership
+## 7. Documentation Ownership
 
 Document変更先はTARGET_PROJECT / TARGET_REPOSITORYに従う。
 
-対象Projectで「README」「READMEに付属するDocument」「各種Document」「READMEからリンクするDocument」の更新を求められた場合、対象はそのProject Repository内のREADME / Design / Tree / Delta / System / Operations / Contract等である。
+対象ProjectのREADME/付属Document/README-linked Document更新をserver-core Document更新へ読み替えない。
 
-server-coreは共通入口であって、Project Documentの既定変更先ではない。Project固有Document整備をserver-core Document更新へ読み替えない。
+server-core Documentはserver-core自体のexplicit owner authorizationがある場合だけ変更する。
 
-server-core Documentは、server-core自体の変更についてexplicit owner authorizationがある場合だけ変更する。Workspace共通Contract変更の必要性をAIが判断しただけでは書き換えない。
+## 8. Verification / State
 
-## 7. Verification
+PASSはTask acceptanceに必要なevidenceで判定する。Process起動、Error無し、HTTP 200、Build成功、Test runner終了、CI greenだけをTask全体のPASSへ自動昇格しない。
 
-PASS判定はTaskの受入条件に合わせる。
-
-Process起動、Error無し、HTTP 200、Build成功、Test runner終了、CI greenだけを、Task全体の完成証拠として扱わない。
-
-必要な範囲で確認する。
-- Input / execution condition
-- expected output
-- changed state
-- state that must not change
-- regression
-- important failure cases
-- Runtime / Provider readback when relevant
-
-未実行・未確認・未検証の状態はそのまま保持する。
-
-## 8. Documentation / GitHub History
-
-仕様・構造・運用契約が変わった場合は、対象ProjectのDocumentation Gateに従う。
-
-GitHub commit / PRは時系列の作業履歴。Design / README / Registry等のCurrent Authorityへ一時的なセッション指示や作業日誌を混在させない。
-
-Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
+未実行・未確認・未検証はそのまま保持する。Config/registration/auth/transport/discovery/call/runtime/production等のState Semanticsは `SERVER_CORE_PROTOCOL.md` を正とする。
 
 ## 9. Change Boundary
 
-変更操作は、対象Repository・Runbook・Provider contractで定義された権限と承認条件に従う。
+Merge、Production deploy/publish/cutover、force push/destructive history rewrite、active service stop/restart/recreate、credential mutation、Provider resource mutation等はread-only確認と分離し、対象Authorityのauthorizationを必要とする。
 
-特に次はread-only確認と分離する。
-- main / PR merge
-- Production deploy / publish / cutover
-- force push / destructive history rewrite
-- active service stop / restart / recreate
-- Secret / credential mutation
-- Provider resource create/update/delete
-
-server-coreへのwrite / commit / branch mutationは別途explicit owner authorizationが必要。Taskの依頼文、別Projectの作業、共通Authority参照から暗黙に推論しない。
+server-coreへのwrite/commit/branch mutationは別途explicit owner authorizationが必要。
 
 ## 10. Helper Execution Boundary
 
-server-coreのhelperを読む・Pathを解決する・実行可能であることと、Workspace / Client / Repository / Provider / Runtimeをmutationしてよいことを分離する。
+helperの存在/Path解決/実行可能性はmutation permissionではない。
 
-helper実行前に、Taskに必要なOperationがread-onlyかmutationかを確認する。mutation flagやrepair optionが存在すること自体を実行許可として扱わない。
+- `storage_lifecycle_audit.py`: bounded read-only audit、default compact result envelope。
+- Skill resolver: full read、glob/path traversal拒否。
+- `verify-workspace-mcp.sh`: config-only default。client readbackはexplicit option。
+- `init-dev-workspace.sh`: default read-only check。Workspace mutationはexplicit option。
+- `install-workspace-mcp.sh`: Workspace client config mutationはexplicit option。
+- `workspace_command_center_check.py`: default wiring check。repairはexplicit mutation authorization。
+- `ai-auto-commit.sh`: server-core専用、server-core authorization + explicit `--file PATH` change unit必須。
 
-- `storage_lifecycle_audit.py` とSkill resolverはread-only helperとして扱う。
-- `verify-workspace-mcp.sh` はdefault config-only verification。外部client問い合わせは明示されたreadbackとして扱う。
-- `init-dev-workspace.sh`、`install-workspace-mcp.sh`、`workspace_command_center_check.py --repair` のmutation optionはWorkspace/client mutation permissionが別途成立している場合だけ使う。
-- `ai-auto-commit.sh` はserver-core mutation authorizationが成立している場合だけ使う。
-- server-core外Projectからhelperを呼んでも、callerのRepositoryやserver-coreを自動的にmutation targetへ追加しない。
-- helperが失敗しても隣接Repository、Provider、Secret、Runtimeを推測で修正しない。失敗ownerを先に確定する。
+helper failureから隣接Repository/Provider/credential/runtimeの推測修正へ進まない。
 
-## 11. Runtime
+## 11. Runtime / Integration
 
-本番常駐の標準経路はDocker / Docker Compose。Project固有の正式例外がある場合はそのAuthorityを優先する。
+本番常駐は原則Docker / Docker Compose。Project Authorityで正式例外が定義される場合だけ例外を適用する。
 
-ServerはRuntime / Processing環境であり、GitHub Source履歴・Design・Documentの代替正本にしない。
+ServerはRuntime/Processing環境でありGitHub Source/Design/Documentの代替正本ではない。
 
-## 12. Shared Capability / Integration
+Shared Capabilityを使う/接続する/検証するTaskとowner implementation変更を分離する。TGserver/webhook gateway等のProject-owned serviceはShared Capabilityと混同せず `docs/PROJECT_INTEGRATION_RULES.md` に従う。
 
-Shared CapabilityのDiscovery / owner / connection / permission / availability contractはserver-coreで管理し、実装本体はowning Project/runtimeに置く。
-
-Shared Capabilityを「使う」「接続する」「検証する」Taskは、そのCapability実装を変更するTaskとは別である。owner Repositoryは必要なSource/Contractを参照してよいが、明示された実装変更理由が無い限りread-onlyとする。
-
-TGserver / webhook gateway等のProject-owned serviceはShared Capabilityと混同せず、`docs/PROJECT_INTEGRATION_RULES.md` に従って接続する。
-
-Credential値をSource / Document / Logへ保存しない。Capabilityの利用可否は、必要なTaskで実設定・transport・interface・representative callを確認する。
+Credential実値をSource / Document / Logへ保存しない。Current availabilityは必要なTaskで実設定・transport・interface・representative callを確認する。
