@@ -7,8 +7,6 @@ Role: Server上で実行するCommand / Scriptのtechnical safety・partial stat
 
 このContractは、Server上で実行するOperationについて、exact target、shell/process safety、mutation classification、authorization boundary、concurrency、exit-status、bounded diagnostics、interruption recovery、evidence promotionを定義する。
 
-Chat UI、会話形式、Notion運用、外部アプリ固有のinteraction ruleは扱わない。
-
 ## 2. Pre-command Requirement
 
 Server operationを実行する前に、Taskに必要な範囲で少なくとも次を確認する。
