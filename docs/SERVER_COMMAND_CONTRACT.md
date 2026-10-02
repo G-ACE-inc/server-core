@@ -1,31 +1,25 @@
 # SERVER COMMAND EXECUTION CONTRACT
 
 Version: 2026-10-02
-Role: Server-side work that cannot be executed directly by the current assistant/client is prepared and handed off safely, with minimum operator interaction and explicit evidence boundaries.
+Role: Technical safety and evidence contract for Server-side operations that are executed outside the current assistant/client.
 
 ## 1. Purpose
 
-This contract defines how server commands are prepared, executed by an operator when required, and returned for verification.
+This contract defines the **Server-operation technical boundary**: exact target resolution, shell/process safety, mutation classification, authorization scope, concurrency, exit-status handling, bounded diagnostics and evidence promotion.
 
 It does not grant mutation permission. Repository, Workspace, Provider, credential, runtime and production authorization are owned by their respective authorities.
 
-## 2. Executor Selection
+## 2. Operator Interface Boundary
 
-Before issuing a Server command, use the least costly capable execution route in this order when the Task permits it:
+The Workspace top-level operating authority owns the GPT/operator interaction interface, including command presentation shape, current command-size budget, copy/paste formatting and the outer result-return format.
 
-1. existing deterministic repository checks / static inspection / CI;
-2. directly available assistant tools/connectors;
-3. existing read-only server helper;
-4. exact operator Server command;
-5. Server-side AI only when deterministic tooling and the current assistant/client cannot complete the required reasoning/action safely.
+This server-core Document does **not** duplicate or override those interface values. It only defines what a technically valid Server operation must guarantee underneath that interface.
 
-Do not ask the operator to perform work that the current assistant/client can already complete directly.
+If the top-level operator-interface authority and this technical contract appear inconsistent, do not silently choose one. Classify `AUTHORITY_CONFLICT`, preserve the stronger safety boundary and resolve the ownership conflict before mutation.
 
-Do not invoke Server-side AI for work that a deterministic command, existing helper, source inspection, test, CI or provider readback can settle reliably.
+## 3. Technical Pre-command Requirement
 
-## 3. Pre-command Requirement
-
-Before producing an operator command, resolve the canonical Pre-execution Contract defined by `docs/G_ACE_WORKSPACE.md` and identify at minimum:
+Before a Server operation is handed off, resolve the canonical Pre-execution Contract defined by `docs/G_ACE_WORKSPACE.md` / `operations/pre-execution-schema.json` and identify at minimum:
 
 ```text
 TARGET_PROJECT
@@ -36,65 +30,31 @@ NEXT_ACTION
 EXECUTION_ROUTE
 EXECUTION_CAPABILITY
 EXECUTION_AUTHORIZATION
+AUTHORIZATION_DOMAIN
+AUTHORIZATION_SCOPE
+MUTATION_CLASS
 VERIFY_PATH
 PRE_EXECUTION_COMPLETE
 BLOCKER
 ```
 
-A command may be emitted only when the exact operation and its authorization boundary are known. Unknown path, branch, runtime identity, service identity, provider target or mutation authority must not be filled by assumption.
+A Server operation may proceed only when the exact target and its authorization boundary are known. Unknown path, branch, runtime identity, service identity, provider target or mutation authority must not be filled by assumption.
 
-## 4. Interaction Budget
+## 4. Shell / Process Safety
 
-Operator interaction is a scarce resource. Prefer one paste-ready command that safely bundles:
+A command intended for an existing interactive terminal must not terminate or corrupt the parent shell as a side effect of fail-fast behavior.
 
-```text
-precheck -> exact action -> verification -> concise result envelope
-```
+Technical requirements:
+- fail-fast state such as `set -e`, `set -u` and `pipefail` belongs inside an isolated child shell/process when the caller shell must remain usable;
+- an `exit` used for workflow control must exit the isolated child process, not the operator's parent interactive shell;
+- `cd` failure must not allow execution to continue in an unintended directory;
+- unbounded interactive waits and unbounded `tail -f` style operations require an explicit timeout/cancellation boundary;
+- pipeline success must represent the intended pipeline, not only the final process when earlier failure is material;
+- the primary operation return code must be captured before later diagnostic output can overwrite `$?`.
 
-Do not split a deterministic workflow into repeated `run -> paste -> next command` cycles when the same workflow can safely evaluate its own conditions and return one consolidated result.
+Isolation may use `bash -lc '...'` when appropriate, but equivalent safe process isolation is valid. The technical requirement is parent-shell preservation and correct failure propagation, not a specific quoting style.
 
-Ask for intermediate output only when the next safe action genuinely depends on information that cannot be evaluated inside the command.
-
-The total command body in one assistant response must not exceed **6072 characters**. If the safe workflow cannot fit, split only at a real safety/authority boundary.
-
-## 5. Paste Safety
-
-Operator commands must be complete, literal and paste-ready.
-
-Requirements:
-- put executable text in one fenced code block unless a real safety boundary requires separate blocks;
-- do not include shell prompt prefixes such as `user@host:$`;
-- do not mix expected output, previous output or explanatory prose into the command block;
-- do not use `...`, `<placeholder>`, fake paths or omitted values in an executable command;
-- avoid unnecessary blank lines and decorative comments;
-- prefer compact composition with `&&`, `;` and grouped commands when readability and safety remain acceptable;
-- never require the operator to edit the command manually unless the Task itself requires a secret/value that must not be disclosed to the assistant.
-
-## 6. Interactive Shell Safety
-
-Never apply fail-fast shell state directly to the operator's interactive shell.
-
-Forbidden as a top-level interactive command pattern:
-
-```text
-set -e
-set -u
-set -o pipefail
-set -euo pipefail
-exit
-```
-
-When fail-fast behavior is required, run the workflow inside a child shell such as:
-
-```text
-bash -lc '...'
-```
-
-`exit` may be used inside that child shell. A child failure must return control to the operator's existing terminal instead of terminating the interactive session.
-
-Read-only probes that may return non-zero should also be isolated when their exit behavior could disrupt the operator shell.
-
-## 7. Mutation Classification
+## 5. Mutation Classification
 
 Do not label a workflow `READ_ONLY` merely because final state is restored.
 
@@ -116,7 +76,7 @@ Examples:
 - config/file writes are mutation even when later restored;
 - a health/readback HTTP call is read-only only if the called operation itself has no mutation side effect.
 
-## 8. Authorization Scope
+## 6. Authorization Scope
 
 An authorization state must be scoped to the current Task/change unit. Do not carry mutation permission forward merely because an earlier turn or adjacent Task allowed it.
 
@@ -132,68 +92,59 @@ AUTHORIZATION_STATE
 
 A new Task, target repository, provider resource, credential, runtime or production operation requires its own boundary evaluation.
 
-## 9. Multi-task / Multi-worker Safety
+## 7. Multi-task / Multi-worker Safety
 
 Assume multiple Projects, agents or change units may be active concurrently.
 
-Before a write/commit operation:
+Before a write/commit/runtime operation:
 - identify the exact change unit;
 - ensure unrelated uncommitted changes are not staged or overwritten;
 - do not use repository-wide staging when intended-file ownership is not exclusive;
 - refuse automatic commit when the intended diff cannot be separated from other work;
+- serialize helpers that mutate the same Git index, client config or shared runtime state, or fail closed when another writer is active;
 - avoid switching or resetting a shared checkout when another active task may depend on its current state;
-- prefer read-only Git object inspection over working-tree switching when possible.
+- prefer read-only Git object/API inspection over working-tree switching when possible.
 
-## 10. Result Envelope
+## 8. Exit Status / Partial Apply
 
-Server commands intended for operator execution should emit one concise final envelope even if detailed diagnostics are printed earlier.
+A successful outer command must not hide a failed primary operation.
 
-Canonical format:
+- preserve the primary operation's real return code;
+- if multiple required operations run, record each material result or aggregate only after all required results are known;
+- if an operation mutates state and a later required step fails, report `PARTIAL` unless rollback/recovery has been actually verified;
+- do not call a multi-step workflow atomic unless the implementation actually provides transaction/rollback semantics;
+- recovery instructions are not recovery evidence.
 
-```text
-GACE_RESULT_BEGIN
-TASK=<stable short identifier>
-TARGET=<exact target>
-ACTION=<what was actually executed>
-MUTATION_CLASS=<classification>
-RESULT=PASS|FAIL|BLOCKED|PARTIAL
-EVIDENCE=<compact decisive evidence>
-NOT_PROVEN=<important limits>
-NEXT_ACTION=<NONE or exact next action>
-GACE_RESULT_END
-```
+## 9. Output / Diagnostic Budget
 
-Use additional fields only when they materially improve verification. Never put secret values in the envelope.
-
-The operator should normally be asked to return the `GACE_RESULT_BEGIN ... GACE_RESULT_END` block plus any explicitly requested failure excerpt, not an unbounded terminal dump.
-
-## 11. Output Budget
-
-Commands should suppress or summarize unbounded output by default.
+Server-side commands and helpers should suppress or summarize unbounded output by default.
 
 For inventories/logs:
 - return counts, failing identifiers and bounded excerpts first;
 - write large diagnostic output to a temporary file only when needed;
-- print the path and a bounded summary rather than flooding the chat;
-- never hide a failure merely to keep output short.
+- expose only the bounded evidence needed for the acceptance decision;
+- never hide a failure merely to keep output short;
+- never print Secret / Token / credential values as diagnostics.
 
 A successful audit should not dump every healthy container/file/record when a concise count and exception list proves the acceptance condition.
 
-## 12. Completion Boundary
+The exact operator-facing return envelope is owned by the Workspace top-level operating authority. Server helpers may expose machine-readable status fields, but must not redefine the external interface contract independently.
+
+## 10. Completion Boundary
 
 `PRE_EXECUTION_COMPLETE=YES` means the exact external operation can be handed off safely. It does not mean that operation has executed.
 
-After operator execution, promote state only from returned evidence. Never infer Server/Provider/Runtime/Production PASS from command issuance alone.
+After external execution, promote state only from returned evidence. Never infer Server/Provider/Runtime/Production PASS from command issuance alone.
 
-If the returned envelope is incomplete or contradicts detailed evidence, keep the stronger state `UNKNOWN / NOT_VERIFIED / PARTIAL` until resolved.
+If evidence is incomplete or contradicts detailed diagnostics, keep the stronger state `UNKNOWN / NOT_VERIFIED / PARTIAL` until resolved.
 
-## 13. Invariants
+## 11. Invariants
 
-- minimize operator round trips;
-- minimize paid/remote AI usage when deterministic routes are sufficient;
-- never terminate the operator's interactive shell as a side effect of fail-fast command design;
+- preserve the caller's interactive shell when a child operation fails;
 - never present reversible local Git mutation as pure read-only inspection;
 - never mix another task's diff into an automated commit;
+- serialize same-target writers or fail closed on lock contention;
 - never expose credential values in command output;
+- never hide partial mutation behind a successful final print command;
 - never claim execution, verification or PASS without returned evidence;
-- server-core mutation permission and Server command execution permission remain separate boundaries.
+- server-core mutation permission and Server-operation execution permission remain separate boundaries.
