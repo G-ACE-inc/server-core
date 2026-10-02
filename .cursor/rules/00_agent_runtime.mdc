@@ -60,7 +60,27 @@ Target Boundary
 - 実装済み / 完成 / 稼働はREADMEだけで判断せず、Source / Test / Runtime Evidenceで確認する。
 - 必要工程を理由なく省略せず、固定ルーティーンから勝手に脱線しない。
 
-## 5. Verification
+## 5. LibralCore
+
+共通開発方法論は `/home/admin1/server-core/CORE.md` を必要時に読む。
+
+論理構造:
+
+```text
+Part -> Feature -> Component -> System -> Application System
+```
+
+物理分割は分類のためではなく、再利用、交換、権限、障害範囲、状態所有、独立検証、運用上の実益がある場合に行う。
+
+## 6. Project Integration
+
+TGserver / webhook gateway / Libral Vault / Project-level MCP・ToolをProjectへ導入・変更するときは、`/home/admin1/server-core/docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で読む。
+
+TGserver / webhook gatewayはProject-owned Integrationとして扱い、複数Projectから利用されても自動的にShared Capabilityへ変更しない。Libral VaultはShared Capability側のContractとconsumer Project側のusageを分離する。
+
+Integration確認のためowner側を読んだことをowner実装の変更許可として扱わない。
+
+## 7. Verification
 
 次だけでPASSにしない。
 - Process起動
@@ -76,7 +96,7 @@ Target Boundary
 
 未確認 / 未実行 / 未検証を推測でPASSへ変えない。
 
-## 6. Documentation Gate
+## 8. Documentation Gate
 
 作業終了前に判定する。
 
@@ -93,7 +113,7 @@ System / Feature bundle / reusable ModuleがREADMEだけでは説明なしに引
 
 Document変更先はTARGET_PROJECT / TARGET_REPOSITORYに従う。対象ProjectのDocument更新をserver-core Document更新へ読み替えない。
 
-## 7. GitHub Work History
+## 9. GitHub Work History
 
 ファイル変更を伴う完成作業では、対象Repositoryの運用に従ってcommit / pushし、可能ならremote readbackまで確認する。
 
@@ -101,7 +121,7 @@ Commitは実作業報告として、必要に応じて目的、主要変更、�
 
 Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
 
-## 8. Approval Boundary
+## 10. Approval Boundary
 
 Masterの明示指示なしに次を行わない。
 - main / PR merge
@@ -115,13 +135,13 @@ Masterの明示指示なしに次を行わない。
 
 server-coreへのwrite / commit / branch mutationはserver-core自体の明示許可が必要。
 
-## 9. Runtime
+## 11. Runtime
 
 本番常駐は **Docker Composeを正** とする。Host上の `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` 等を本番常駐経路として採用しない。
 
 ServerはRuntime / Processing環境であり、GitHub Source履歴やProject Designの代替正本にしない。
 
-## 10. Shared Workspace Capabilities
+## 12. Shared Workspace Capabilities
 
 共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。
 
@@ -131,7 +151,7 @@ TGserver / webhook gateway等のProject-owned serviceは、複数Projectで利�
 
 DebugAIを利用するTaskでは、既に取得済みのEvidence / Tool result / prior verified stateを再利用し、同じ調査をServer AIへ重複実行させない。
 
-## 11. Server Command / Recovery
+## 13. Server Command / Recovery
 
 Server commandはparent interactive shellを意図せず終了させず、exact target、real return code、partial apply、bounded diagnostics、credential非表示を守る。
 
