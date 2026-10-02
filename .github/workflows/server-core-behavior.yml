@@ -1,0 +1,150 @@
+name: server-core-behavior
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-core-behavior-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  behavior:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Shell and Python syntax
+        run: |
+          set -euo pipefail
+          bash -n scripts/init-dev-workspace.sh scripts/install-workspace-mcp.sh scripts/verify-workspace-mcp.sh scripts/ai-auto-commit.sh scripts/resolve-codex-skill.sh scripts/github-skill-path.sh
+          python3 -m py_compile scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py
+
+      - name: Canonical pre-execution schema
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('operations/pre-execution-schema.json').read_text())
+          required=set(p['required_fields'])
+          must={'TARGET_REPOSITORY','MUTATION_REPOSITORIES','READ_ONLY_REPOSITORIES','NEXT_ACTION','EXECUTION_ROUTE','EXECUTION_CAPABILITY','EXECUTION_AUTHORIZATION','AUTHORIZATION_SCOPE','MUTATION_CLASS','PRE_EXECUTION_COMPLETE','BLOCKER'}
+          assert must <= required
+          assert 'SERVER_COMMAND' in p['execution_routes']
+          assert 'REVERSIBLE_LOCAL_MUTATION' in p['mutation_classes']
+          assert p['rules']['authorization_is_task_scoped'] is True
+          print('PRE_EXECUTION_SCHEMA=PASS')
+          PY
+          grep -q 'GACE_RESULT_BEGIN' docs/SERVER_COMMAND_CONTRACT.md
+          grep -q '6072' docs/SERVER_COMMAND_CONTRACT.md
+          grep -q "bash -lc" docs/SERVER_COMMAND_CONTRACT.md
+
+      - name: Project path traversal guard
+        run: |
+          set -euo pipefail
+          grep -q 'validate_project_name' scripts/init-dev-workspace.sh
+          grep -q 'unsafe project name' scripts/init-dev-workspace.sh
+          ! grep -q 'mkdir -p "$TARGET"' scripts/init-dev-workspace.sh
+          grep -q 'mkdir -p -- "$TARGET"' scripts/init-dev-workspace.sh
+
+      - name: Skill resolver full read and glob rejection
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          skill="$tmp/plugins/cache/openai-curated-remote/github/9.9.9/skills/demo"
+          mkdir -p "$skill"
+          seq 1 300 | sed 's/^/line-/' > "$skill/SKILL.md"
+          out="$(CODEX_HOME="$tmp" scripts/resolve-codex-skill.sh github:demo --read)"
+          test "$(printf '%s\n' "$out" | wc -l)" -eq 300
+          printf '%s\n' "$out" | tail -n 1 | grep -qx 'line-300'
+          if CODEX_HOME="$tmp" scripts/resolve-codex-skill.sh 'github:*' --read >"$tmp/glob.out" 2>&1; then
+            echo 'resolver accepted glob skill name' >&2
+            exit 1
+          fi
+          echo 'SKILL_RESOLVER_BEHAVIOR=PASS'
+
+      - name: MCP permission and credential-container behavior
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir -p "$tmp/.cursor"
+          cat > "$tmp/.cursor/mcp.json" <<'JSON'
+          {
+            "mcpServers": {
+              "cloudflare-api": {"url":"https://mcp.cloudflare.com/mcp","auth":{"CLIENT_ID":"fixture-client-id"}},
+              "huggingface": {"url":"https://huggingface.co/mcp","headers":{"Authorization":"Bearer FIXTURE_LOCAL_CREDENTIAL_123456"}}
+            }
+          }
+          JSON
+          chmod 0644 "$tmp/.cursor/mcp.json"
+          cp "$tmp/.cursor/mcp.json" "$tmp/before.json"
+          if HOME="$tmp" bash scripts/install-workspace-mcp.sh >"$tmp/noauth.out" 2>&1; then
+            echo 'installer mutated without explicit flag' >&2
+            exit 1
+          fi
+          cmp "$tmp/before.json" "$tmp/.cursor/mcp.json"
+          HOME="$tmp" bash scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation
+          test "$(stat -c '%a' "$tmp/.cursor/mcp.json")" = 600
+          grep -q 'FIXTURE_LOCAL_CREDENTIAL_123456' "$tmp/.cursor/mcp.json"
+          HOME="$tmp" bash scripts/verify-workspace-mcp.sh >"$tmp/verify.out"
+          grep -q 'WORKSPACE_MCP_CONFIG=PASS' "$tmp/verify.out"
+          grep -q 'MCP_CLIENT_CREDENTIAL_CONTAINERS=PERMITTED_NOT_DISCLOSED' "$tmp/verify.out"
+          ! grep -q 'FIXTURE_LOCAL_CREDENTIAL_123456' "$tmp/verify.out"
+          test "$(find "$tmp/.cursor" -maxdepth 1 -name 'mcp.json.backup-*' | wc -l)" -le 3
+          echo 'MCP_PERMISSION_BEHAVIOR=PASS'
+
+      - name: Auto-commit explicit change unit and secret redaction
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          git clone -q "$GITHUB_WORKSPACE" "$tmp/repo"
+          cd "$tmp/repo"
+          git checkout -q -b ci-helper-test
+          git config user.name 'server-core-ci'
+          git config user.email 'server-core-ci@example.invalid'
+          printf '\nci-a\n' >> README.md
+          printf '\nci-b\n' >> CORE.md
+          bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file README.md -m 'test: explicit change unit'
+          git show --name-only --pretty='' HEAD | grep -qx 'README.md'
+          git status --porcelain | grep -q 'CORE.md'
+          printf '{"token":"SUPER_SECRET_VALUE_123456789"}\n' > ci-secret.json
+          if bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file ci-secret.json -m 'test: secret guard' >"$tmp/secret.out" 2>&1; then
+            echo 'secret-like JSON was committed' >&2
+            exit 1
+          fi
+          grep -q 'ci-secret.json:1' "$tmp/secret.out"
+          ! grep -q 'SUPER_SECRET_VALUE_123456789' "$tmp/secret.out"
+          echo 'AUTO_COMMIT_BEHAVIOR=PASS'
+
+      - name: Storage audit bounded result
+        run: |
+          set -euo pipefail
+          python3 scripts/storage_lifecycle_audit.py --self-test
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir -p "$tmp/root/a/b/c"
+          printf x > "$tmp/root/a/b/c/file"
+          cat > "$tmp/policy.json" <<JSON
+          {"mode":"audit_only","allow_delete":false,"roots":[{"path":"$tmp/root","class":"test","default_action":"preserve"}],"docker":{"inspect":false,"allow_prune":false,"allow_volume_delete":false},"disk_pressure":{},"safety":{"unknown_owner":"preserve"}}
+          JSON
+          set +e
+          python3 scripts/storage_lifecycle_audit.py --policy "$tmp/policy.json" --max-depth 1 --max-files 10 --max-seconds 2 > "$tmp/audit.out"
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+          grep -q '^GACE_RESULT_BEGIN$' "$tmp/audit.out"
+          grep -q '^RESULT=PARTIAL$' "$tmp/audit.out"
+          grep -q 'full_scan=False' "$tmp/audit.out"
+          grep -q '^GACE_RESULT_END$' "$tmp/audit.out"
+          echo 'STORAGE_BOUNDED_BEHAVIOR=PASS'
