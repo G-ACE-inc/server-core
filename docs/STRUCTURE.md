@@ -20,7 +20,7 @@ README.md
 - `CORE.md` — LibralCore開発方法論
 - `SERVER_CORE_PROTOCOL.md` — 共通運用・変更・安全境界
 - `.aiignore` / `.cursorignore` — context exclusion hints
-- `.cursor/` — Workspace runtime rules / client integration
+- `.cursor/` — Workspace runtime rules / client integration boundary
 - `.github/` — CI / repository automation
 - `docs/` — Design / Router / Registry / Operations contracts
 - `operations/` — credential値を持たないmachine-readable contracts / policies
@@ -87,8 +87,9 @@ Mutation option/flagがDocumentに記載されていることを、Task上の実
 
 - `.cursor/rules/00_agent_runtime.mdc` — Workspace routing / execution / verification kernel
 - `.cursor/rules/cloudflare-operations.mdc` — Cloudflare Task-specific operational rule
-- `.cursor/mcp.json` — Project/client-specific MCP config when present
-- `.cursor/agents/` — agent-related repository assets when present
+- `.cursor/agents` — external Cursor agent directoryへのWorkspace link
+
+Repository-local `.cursor/mcp.json` はCurrent Authorityとして追跡しない。Workspace-global MCP contractは `operations/workspace-mcp.json`、runtime/client configは `~/.cursor/mcp.json` を対象とし、Repository内へclient-local ID/configを二重管理しない。
 
 Workspace-wide always-applied rules are limited to behavior required for repository, Server, Provider, routing, verification or safety operation.
 
@@ -149,3 +150,4 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - Project固有implementationをserver-coreへ移してownershipを曖昧にしない
 - explicit owner authorization無しにserver-coreのStructure/Documentを変更しない
 - helperの存在/参照/実行可能性をmutation authorizationと扱わない
+- Repository-local client configをWorkspace-global Authorityと二重管理しない
