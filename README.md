@@ -75,12 +75,12 @@ REQUEST
 - `docs/SERVER_CORE_DESIGN.md` — server-core設計基準線
 - `docs/DESIGN_DELTA.md` — 正式な設計差分
 - `docs/LOAD_SCOPE.md` — Task routing / progressive context loading
-- `docs/G_ACE_WORKSPACE.md` — Workspace運用
+- `docs/G_ACE_WORKSPACE.md` — Workspace運用・Evidence handoff
 - `docs/STRUCTURE.md` — server-core Navigation / Project Tree
 
 ### Development / Repository
 - `CORE.md` — LibralCore開発方法論
-- `SERVER_CORE_PROTOCOL.md` — 共通運用・変更・安全境界
+- `SERVER_CORE_PROTOCOL.md` — 共通運用・変更・安全境界・State Semantics
 - `docs/PROJECT_TEMPLATE.md` — Project / Document標準
 - `docs/AUTO_COMMIT.md` — Commit / Push / Remote Readback
 - `docs/DEPLOY_RUNBOOK.md` — GitHub revisionからServer RuntimeまでのDeploy境界
@@ -105,7 +105,7 @@ REQUEST
 | server-core設計 / 責務 | `docs/SERVER_CORE_DESIGN.md` + 必要なら `docs/DESIGN_DELTA.md` |
 | 開発方法論 / 再利用 / Module | `CORE.md` |
 | 共通運用 / 変更境界 | `SERVER_CORE_PROTOCOL.md` |
-| Workspace運用 | `docs/G_ACE_WORKSPACE.md` |
+| Workspace運用 / Evidence handoff | `docs/G_ACE_WORKSPACE.md` |
 | Project / Capability / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
 | Workspace MCP | `docs/WORKSPACE_MCP.md` |
 | Project Integration | `docs/PROJECT_INTEGRATION_RULES.md` |
@@ -148,6 +148,8 @@ Capability本体はowning Project/runtimeへ残す。Project固有の実装値�
 AvailabilityはTask時に必要な範囲で実設定 / transport / interface / representative callを確認する。過去利用実績とCurrent Runtime状態を分離する。
 
 Capabilityを利用・検証しただけでowner実装を変更しない。実装改修が必要と確認された場合だけ、そのowner Repositoryを別mutation対象として扱う。
+
+Current stateを別Task/別AIへ引き継ぐ場合、`docs/G_ACE_WORKSPACE.md` のEvidence Handoffに従い、観測経路・時点・証明範囲・未証明範囲を失わない。
 
 ## Project Integration Boundary
 
