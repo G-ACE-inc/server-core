@@ -53,6 +53,8 @@ INTENDED_FILES
 
 同一server-core checkoutでhelper commitが同時実行された場合、先にlockを取得したchange unitだけを進める。lock取得に失敗したhelperは待機・上書き・再試行を自動化せずfail closedし、Current HEAD / working treeを再確認してから別change unitとして再開する。
 
+今回のintended Fileにすでにstaged contentが存在する場合は、既存change unitとの混在を判別できないためhelper commitを開始しない。別Taskのstageを自動でunstage/rewriteしない。
+
 別RepositoryのScriptをabsolute pathで呼んだこと、別Repositoryへ一時的に`cd`したこと、共通Authorityを読んだことをCommit対象変更の根拠にしない。
 
 ## 4. Commit = Work History
@@ -71,7 +73,8 @@ Commit件名は変更の目的・内容が分かる形にする。複雑な変�
 - Current authorizationが同じTask/change unitへscopeされている
 - `git status --short --branch`
 - intended files / intended diff
-- unrelated working-tree changesの有無
+- intended Fileに既存staged contentが無い
+- unrelated working-tree/staged changesの有無
 - credential / `.env`実値 / debug residue / unintended deletionが無い
 - applicable test / verify
 - documentation impact
@@ -102,15 +105,20 @@ Helperはfail-closedで確認する。
 - `flock`による同一checkoutのcommit change-unit直列化。lock競合時はcommitを実行しない
 - safe repository-relative `--file` path
 - intended Fileが実際にchangedであること
+- intended Fileに既存staged contentが無いこと
 - `.env`系File拒否
 - secret-like patternの簡易検出
 - secret検出時は値ではなく`path:line`だけを出力
 - commit messageのcredential-like value検査
 - `git diff --check`
+- changed shell scriptのsyntax checkをstage前に実行
 - staged setが指定File集合と一致
-- changed shell scriptのsyntax check
 
 Helperは`git add -A`を使用しない。指定していない他Taskの変更をstageしない。
+
+Helperが自分でstageした後、Commit成立前に検証/hook/commit等が失敗した場合は、helperが追加したintended Fileのstageを解除してworking-tree変更だけを残す。既存staged change unitを勝手に復元・変更する必要が生じないよう、intended Fileのpre-staged状態は開始前に拒否する。
+
+Commit成功後にPushだけ失敗した場合はCommitを巻き戻さず、`RESULT=PARTIAL COMMIT=PASS PUSH=FAIL SHA=<sha>` として部分成功を明示する。Push未要求時は `PUSH=NOT_REQUESTED` とし、Commit成功とPush状態を混同しない。
 
 `--authorize-server-core-mutation` はpermissionを新規作成するflagではなく、すでにCurrent Taskで成立しているauthorizationを実行時に再確認するGateである。
 
@@ -143,6 +151,7 @@ Push成功だけでGitHub反映済みとしない。必要な作業ではremote 
 - Repositoryが `MUTATION_REPOSITORIES` に含まれない
 - server-core authorizationがCurrent Task/change unitで成立していない
 - 同一checkoutのserver-core auto-commit lockを別change unitが保持中
+- intended Fileに既存staged contentがある
 - 他作業のuncommitted差分と分離できない
 - staged setがintended filesと一致しない
 - repository policyが別Routeを要求
@@ -153,9 +162,12 @@ Production publish/deployはCommit/Pushとは別のchange boundary。
 ## 11. Invariants
 
 - 未実行TestをPASSと記録しない。
-- failure / unverified stateを隠さない。
+- failure / unverified / partial stateを隠さない。
 - credential実値をCommit message / Diff / Document / diagnostic outputへ書かない。
 - Authorityを読んだだけのRepositoryへwrite/commitしない。
 - server-core helperを他Projectのcommit手段として使用しない。
 - unrelated diffをrepository-wide stagingへ巻き込まない。
 - concurrent helper commitを同じcheckoutで並行実行しない。
+- pre-existing staged intended Fileを別change unitへ混ぜない。
+- Commit前failureでhelper自身が作ったstageを残さない。
+- Commit成功/Push失敗を全体成功または全体失敗へ丸めない。
