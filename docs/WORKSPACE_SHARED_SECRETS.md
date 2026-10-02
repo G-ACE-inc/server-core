@@ -5,6 +5,8 @@ Role: Workspace Shared Secret / credentialを安全に利用するための共�
 
 この文書はSecret値の保管場所ではない。Secret / Token / password / credential / session値をGit / Source / Document / Logへ保存しない。
 
+Generic mutation / state semanticsは `SERVER_CORE_PROTOCOL.md` を正とし、本Documentはcredential/broker Domain固有条件だけを追加する。
+
 ## 1. server-core Responsibility
 
 server-coreが管理するのは次のContract情報だけ。
@@ -58,17 +60,19 @@ Contract記載はcredential値の存在・Current availabilityを保証しない
 
 ## 4. Broker Contract
 
-Current broker authority: Libral Vault。
+Broker implementation authority: Libral Vault。
 
-Runtime entry:
+以下は**Broker Contract上の既定接続情報**であり、Current Serverで稼働中というlive-state evidenceではない。
 
 ```text
-Vault endpoint: http://127.0.0.1:8791
+Vault endpoint default: http://127.0.0.1:8791
 Action API: POST /internal/v1/actions/http
 Secret registration API: POST /internal/v1/secrets
 Consumer: g-ace-workspace
 Internal auth source: /home/admin1/.config/libral-vault/internal-token
 ```
+
+Task判断にCurrent availabilityが必要な場合は、実Server/runtimeからbroker healthと必要なprovider operationをreadbackする。
 
 Internal auth valueはruntimeでのみ読み、Source / Git / Document / Logへ複製しない。
 
@@ -87,7 +91,7 @@ Provider request pattern:
 
 Vaultがprovider credentialをinjectし、callerはplaintext provider tokenを必要としない。
 
-Broker endpoint/registration APIがDocumentに記載されていても、それ自体はregistration permissionではない。
+Broker endpoint/registration APIがDocumentに記載されていても、それ自体はregistration permissionでもCurrent Runtime PASSでもない。
 
 ## 5. Use Rule
 
@@ -127,7 +131,7 @@ Vaultはplaintext tokenを返さない設計を前提とする。
 
 Credential availabilityはprovider identity endpointまたはharmless representative API callで確認する。
 
-状態を分離する。
+Credential/broker固有の状態を分離する。
 
 ```text
 CONTRACT_PRESENT
