@@ -2,6 +2,8 @@
   "schema_version": 1,
   "mode": "audit_only",
   "allow_delete": false,
+  "runtime_readback_required": true,
+  "roots_are_audit_scope_not_presence_or_ownership_proof": true,
   "roots": [
     {
       "path": "/home/admin1/logs",
