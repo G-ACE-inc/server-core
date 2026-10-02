@@ -78,13 +78,7 @@ server-core excludes Project-specific implementation bodies and runtime internal
 ### Actual change
 `docs/CLOUDFLARE_OPERATIONS.md` was changed from an application-specific Tunnel/Token/Container runbook into a Workspace-wide Cloudflare command contract.
 
-server-core keeps:
-- routing;
-- shared access contracts;
-- mutation/verification boundaries;
-- credential contract linkage.
-
-Project-specific hostnames, origins, Docker/Compose services, runtime credential injection and release procedures belong to the owning Project.
+server-core keeps routing, shared access contracts, mutation/verification boundaries and credential contract linkage. Project-specific hostnames, origins, Docker/Compose services, runtime credential injection and release procedures belong to the owning Project.
 
 ### Reason / root cause
 A Workspace command center must not make one application's Cloudflare runtime details the Workspace-wide truth.
@@ -96,7 +90,7 @@ The former server-core document contained application-specific hostname, origin,
 `af9abd3e9d402f73430d7c97f270463a62f75f18`
 
 ### Compatibility / rollback
-No live Cloudflare resource or credential was changed by the documentation ownership correction. Reintroducing Project-specific runtime values as server-core Current Authority would restore stale-runtime risk.
+No live Cloudflare resource or credential was changed by the documentation ownership correction.
 
 ## 2026-09-30 — Separate Project Integration from Shared Capability control
 
@@ -104,12 +98,7 @@ No live Cloudflare resource or credential was changed by the documentation owner
 Shared capability control existed, but Project-owned integration services were not clearly separated from Workspace-shared capability contracts.
 
 ### Actual change
-The architecture separates:
-- Shared Capability contracts: reusable MCP/Tool interfaces, DebugAI access, reusable KB access, GitHub/provider/shared credential interfaces, monitoring/recovery interfaces where shared;
-- Project Integration: Project-owned services such as TGserver and webhook gateway;
-- Dual boundary: Libral Vault remains a Shared Capability while Project-specific consumer/injection/runtime usage is an integration concern.
-
-`docs/PROJECT_INTEGRATION_RULES.md` is the common integration authority.
+The architecture separates Shared Capability contracts, Project-owned services such as TGserver/webhook gateway, and dual-boundary Libral Vault usage. `docs/PROJECT_INTEGRATION_RULES.md` is the common integration authority.
 
 ### Reason / root cause
 Treating Project-owned systems as generic shared capabilities blurs owner, runtime and failure responsibility.
@@ -123,20 +112,13 @@ No Project implementation moves. The change clarifies discovery/routing/contract
 Project-specific Cloudflare implementation belongs to the owning Project; server-core keeps the common Cloudflare contract and shared access boundaries.
 
 ### Actual change
-Stale Project-specific assets were removed:
-- `operations/cloudflare.json`
-- `scripts/cloudflare_ops.py`
-
-The Cloudflare Cursor rule was rewritten as a Workspace-wide operation rule.
+Stale Project-specific assets `operations/cloudflare.json` and `scripts/cloudflare_ops.py` were removed. The Cloudflare Cursor rule was rewritten as a Workspace-wide operation rule.
 
 ### Reason / root cause
-Those files still encoded a former application-specific runtime and credential path, contradicting the current ownership and shared-credential architecture.
-
-### Evidence
-The removed manifest/helper contained application-specific runtime identifiers and obsolete credential handling. Current Workspace Account API contract is `operations/cloudflare-account.json`; Project-specific Tunnel credential ownership remains with the owning Project.
+Those files encoded a former application-specific runtime and credential path, contradicting current ownership and shared-credential architecture.
 
 ### Compatibility
-No live Cloudflare resource or credential was changed. Git history retains the removed implementation as historical evidence.
+No live Cloudflare resource or credential was changed. Git history retains the removed implementation.
 
 ## 2026-10-01 — Workspace-global MCP execution route
 
@@ -147,54 +129,32 @@ MCP was a Workspace shared capability, but the executable client route could var
 Use Cursor User Global MCP (`~/.cursor/mcp.json`) as the Workspace-wide execution entry for server-core-managed shared remote MCPs. Project `.cursor/mcp.json` remains for Project-owned / Project-scoped MCPs.
 
 Source of truth:
-- `operations/workspace-mcp.json` — managed manifest without provider credentials;
-- `scripts/install-workspace-mcp.sh` — safe merge into the user-global config;
-- `scripts/verify-workspace-mcp.sh` — configuration verification;
-- `docs/WORKSPACE_MCP.md` — state semantics and live-verification contract.
+- `operations/workspace-mcp.json` — managed manifest without provider credential values;
+- `scripts/install-workspace-mcp.sh` — gated merge into user-global config;
+- `scripts/verify-workspace-mcp.sh` — scoped configuration verification;
+- `docs/WORKSPACE_MCP.md` — state/permission/credential semantics.
 
-Current server-core-managed entries:
-- Cloudflare API MCP;
-- Hugging Face MCP.
-
-Existing non-managed user/client MCP entries are preserved and are not automatically adopted into server-core ownership.
+Existing non-managed client entries and client-local credential containers may be preserved but are not adopted into server-core ownership or treated as live-auth evidence.
 
 ### Security / ownership
-- Provider credential values are not copied into Project repositories or the manifest.
-- Credential use follows the appropriate OAuth or Workspace broker contract.
-- A managed-name collision with a different runtime definition fails closed.
+Client config and backups are protected with owner-only permissions and bounded backup retention. Credential values are not printed or copied into repository authority.
 
 ### Verification boundary
 Configuration verification and Live availability are separate. `CONFIG_PRESENT` / `CONFIG_REGISTERED` is not equivalent to authentication, transport, interface discovery or representative-call PASS.
 
-Project-owned MCPs such as DebugAI or Deterministic Japanese Parser remain owned by their Projects even if a client/global entry exists.
-
 ## 2026-10-01 — Separate durable capability state from transient live-verification progress
 
 ### Baseline
-Earlier wording mixed durable implementation facts, historical usage, current client configuration and current exact-revision live verification. That made an implemented capability appear absent when only a fresh live check was pending.
+Earlier wording mixed durable implementation facts, historical usage, current client configuration and current exact-revision live verification.
 
 ### Actual change
-Capability documentation now separates at least these concepts:
-
-```text
-IMPLEMENTATION / SOURCE VERIFIED
-CONFIG PRESENT / REGISTERED
-HISTORICAL LIVE USE
-CURRENT RUNTIME / CLIENT READBACK
-CURRENT REPRESENTATIVE CALL
-AVAILABLE VERIFIED
-```
-
-For DebugAI MCP, server-core records that implementation/protocol verification and historical live use exist, while Current availability is read back when a Task requires it. server-core does not freeze a changing Project Branch/HEAD or per-task verification sequence into the Workspace Design.
+Capability documentation separates implementation/source verified, config present/registered, historical live use, current runtime/client readback, current representative call and available verified.
 
 ### Reason / root cause
 Implementation existence, past successful usage, current registration and current runtime health are different facts with different authorities and lifetimes.
 
-### Evidence
-`docs/WORKSPACE_MCP.md` and `docs/WORKSPACE_REGISTRY.md` now use separate state semantics and assign current runtime/client readback to the owning Project/client path.
-
 ### Compatibility
-No DebugAI implementation body, server service, provider setting or credential is changed by this documentation correction.
+No capability implementation body, server service, provider setting or credential is changed by this documentation correction.
 
 ## 2026-10-01 — Remove transient and personal policy from server-core operational authority
 
@@ -202,56 +162,33 @@ No DebugAI implementation body, server service, provider setting or credential i
 Some server-core documents and Cursor rules had accumulated session-specific wording, personal approval labels, temporary project status, device-specific assumptions, and reasoning/language instructions unrelated to durable Workspace operation.
 
 ### Actual change
-server-core Current Authority is limited to durable Workspace/Server operation contracts:
-- Project/owner routing;
-- context loading;
-- development/reuse boundary;
-- verification contract;
-- GitHub work history;
-- Server/Provider mutation boundary;
-- credential safety;
-- shared capability discovery/registration/availability semantics;
-- storage/deploy/recovery contracts.
-
-Removed or generalized:
-- personal names/titles as approval-policy identifiers;
-- session-specific completion or prohibition wording;
-- reasoning/language instructions unrelated to server operation;
-- per-task/branch progress copied into durable docs;
-- device-specific KB storage path as a server-core invariant;
-- Project-specific storage products presented as Workspace-wide storage authorities.
+server-core Current Authority is limited to durable Workspace/Server operation contracts: Project/owner routing, context loading, development/reuse boundary, verification contract, GitHub work history, Server/Provider mutation boundary, credential safety, shared capability discovery/registration/availability semantics, and storage/deploy/recovery contracts.
 
 ### Reason / root cause
-Transient instructions and short-lived work state are not stable server-core operating contracts. Keeping them in always-applied rules or Current Authority causes scope creep, stale facts and over-interpretation.
-
-### Evidence
-Repository-wide audit of README, Protocol, Design, Load Scope, Workspace, Registry, MCP, Secret, Deploy, Storage, KB, Structure and Cursor rules identified these categories and corrected them on the post-merge documentation cleanup branch.
+Transient instructions and short-lived work state are not stable server-core operating contracts.
 
 ### Compatibility / migration
-- Server runtime implementation is unchanged by this documentation/rule hygiene change.
-- Durable safety properties remain: no credential persistence, no inferred PASS, explicit ownership, explicit mutation boundary, verified source/runtime separation.
-- Project-specific details remain available from the owning Project authority.
+Durable safety properties remain and Project-specific details remain with owning Project authority.
 
 ## 2026-10-02 — Make server-core mutation explicitly opt-in
 
 ### Baseline design
-server-core already separated read-only inspection from mutation and routed Project-specific changes to their owning repositories, but the baseline did not state strongly enough that server-core itself requires a separate explicit authorization before any write.
+server-core already separated read-only inspection from mutation but did not state strongly enough that server-core itself requires a separate explicit authorization before any write.
 
 ### Actual change
-server-core is formally **read-only by default**. Source, Document, Config, branch and commit mutation in server-core requires explicit owner authorization for server-core itself.
+server-core is formally read-only by default. Source, Document, Config, branch and commit mutation in server-core requires explicit owner authorization for server-core itself.
 
 Operationally:
 - `SERVER_CORE_MUTATION_AUTHORIZED=YES` is required before server-core enters `MUTATION_REPOSITORIES`;
 - reading server-core or using its Runbooks does not authorize writes;
-- finding a common-contract inconsistency does not authorize a self-directed repair;
-- another Project's README/Document work, failure investigation, Shared Capability use, or Workspace-common impact does not authorize server-core mutation;
-- if authorization is absent or ambiguous, server-core remains read-only.
+- finding a common-contract inconsistency does not authorize self-directed repair;
+- another Project's work, failure investigation or Shared Capability use does not authorize server-core mutation.
 
 ### Reason / root cause
-A command-center repository is consulted by many Project tasks. Without a separate mutation gate, an agent can incorrectly treat reference authority, common impact, or repository proximity as write permission and modify server-core while working on another Project.
+A command-center repository is consulted by many Project tasks. Reference scope and mutation scope must be independently locked.
 
 ### Evidence
-Cross-project documentation-routing review showed that reference scope and mutation scope must be independently locked. The same boundary is now represented in README, Protocol, Load Scope, Workspace guidance, Project Template, always-applied runtime rule and CI guard.
+Cross-project documentation-routing review and helper hardening exposed the need for a separate server-core mutation gate.
 
 ### Affected scope
 - `README.md`
@@ -261,17 +198,60 @@ Cross-project documentation-routing review showed that reference scope and mutat
 - `docs/G_ACE_WORKSPACE.md`
 - `docs/PROJECT_TEMPLATE.md`
 - `docs/SERVER_CORE_DESIGN.md`
-- `docs/DESIGN_DELTA.md`
 - `.github/workflows/server-core-guard.yml`
 
 ### Compatibility / migration
-- Project work continues to read server-core as the common routing authority.
-- Existing Project ownership does not change.
-- No Server runtime, Provider, Secret, Project implementation or deployment change is implied.
-- Work requiring a server-core change now stops at the mutation boundary until explicit server-core authorization exists.
+Project work continues to read server-core as common routing authority. Existing Project ownership does not change.
 
 ### Verification state
-Repository CI must confirm that the mutation gate remains represented in the always-applied rule and routing authorities. Runtime verification is not required because this is a repository/authority boundary, not a Server service change.
+Repository CI confirms mutation gates; runtime verification is not required for this repository-authority boundary.
+
+## 2026-10-02 — Add execution orchestration and canonical external-operation handoff
+
+### Baseline design
+server-core could route work to the correct Project and record `EXECUTION_ROUTE`, but it did not own a complete rule for choosing the least-cost capable executor, minimizing operator round trips, producing paste-safe Server commands, scoping authorization to a Task/change unit, or preventing concurrent change units from being mixed.
+
+### Actual change
+Execution orchestration becomes a Command Center responsibility.
+
+Canonical architecture:
+- `docs/G_ACE_WORKSPACE.md` owns Workspace task sequence and Pre-execution semantics;
+- `operations/pre-execution-schema.json` owns field names, execution-route values and mutation classes;
+- `docs/SERVER_COMMAND_CONTRACT.md` owns operator Server command batching, 6072-character response budget, paste boundary, child-shell fail-fast safety, bounded output and `GACE_RESULT_BEGIN...GACE_RESULT_END` evidence envelope;
+- deterministic checks/direct assistant tools are preferred before operator Server commands;
+- Server-side AI is used only when deterministic/direct routes cannot safely close the work;
+- authorization is scoped to the current Task/change unit/target operation;
+- reversible local Git changes are not mislabeled pure read-only;
+- multiple agents/change units must not be mixed into one stage/commit.
+
+### Reason / root cause
+Real Workspace use showed that correct Project routing alone does not prevent excessive command round trips, accidental interactive-shell termination, unnecessary Server-AI cost, overlarge readback output, or one worker staging another worker's uncommitted changes.
+
+### Evidence
+Behavioral defects were reproduced in the pre-change helper/command design: repository-wide staging, unbounded storage output, silent Skill truncation, Project path traversal and ambiguous command/readback boundaries. The branch adds code fixes and behavior CI for these failure classes.
+
+### Affected scope
+- `README.md`
+- `.cursor/rules/00_agent_runtime.mdc`
+- `CORE.md`
+- `docs/SERVER_CORE_DESIGN.md`
+- `docs/G_ACE_WORKSPACE.md`
+- `docs/LOAD_SCOPE.md`
+- `docs/SERVER_COMMAND_CONTRACT.md`
+- `docs/AUTO_COMMIT.md`
+- `docs/STRUCTURE.md`
+- `operations/pre-execution-schema.json`
+- Workspace helper scripts
+- behavior CI
+
+### Applied commit / PR
+PR #8. Traceable commits on its feature branch include `935de3b21ab80c984dc181cbf06a5a2df0b68907` (Server Command Contract), `01610d335784114c6f50f42c63b531dab722437b` (canonical Pre-execution schema), and subsequent helper/authority hardening commits in the same PR.
+
+### Compatibility / migration / rollback
+Project implementation ownership does not change. Existing commands remain valid only when they satisfy the new safety/authorization boundaries. Rolling back would restore executor-selection, command-safety and multi-worker ambiguity.
+
+### Verification state
+Behavior CI is required in addition to the existing authority/structure guard before this change is treated as merge-ready. Current live Server/provider operations remain separate evidence domains.
 
 ## Update Rule
 
