@@ -33,7 +33,8 @@ README.md
 - `SERVER_CORE_DESIGN.md` — server-core Design Baseline
 - `DESIGN_DELTA.md` — accepted architecture/responsibility changes
 - `LOAD_SCOPE.md` — Task routing / progressive context loading
-- `G_ACE_WORKSPACE.md` — Workspace operation contract
+- `G_ACE_WORKSPACE.md` — Workspace operation / canonical Pre-execution ownership
+- `SERVER_COMMAND_CONTRACT.md` — Server command handoff / executor selection / paste safety / result envelope
 - `STRUCTURE.md` — 本Navigation Index
 
 ### Development / repository governance
@@ -63,6 +64,7 @@ Current machine-readable contracts/policies:
 - `huggingface.json`
 - `workspace-mcp.json`
 - `storage-lifecycle.json`
+- `pre-execution-schema.json` — canonical Pre-execution field names / execution routes / mutation classes
 
 `operations/` はcredential実値を保持しない。
 
@@ -71,15 +73,15 @@ Current machine-readable contracts/policies:
 Scriptの存在は実行許可を意味しない。read-only helperとmutation-capable helperを区別する。
 
 ### Read-only by default
-- `storage_lifecycle_audit.py` — read-only storage/disk/Docker audit。delete/pruneしない。
-- `verify-workspace-mcp.sh` — defaultはglobal MCP config readbackのみ。`--client-readback` 時だけ外部clientへ問い合わせる。
-- `resolve-codex-skill.sh`, `github-skill-path.sh` — installed skill path/read resolver。
-- `workspace_command_center_check.py` — defaultはread-only verification。`--repair` は別途 `--authorize-workspace-mutation` が必要。
+- `storage_lifecycle_audit.py` — bounded read-only storage/disk/Docker audit。default出力は`GACE_RESULT_BEGIN...END`の要約。delete/pruneしない。
+- `verify-workspace-mcp.sh` — defaultはglobal MCP config contract readbackのみ。`--client-readback` 時だけ外部clientへ問い合わせる。
+- `resolve-codex-skill.sh`, `github-skill-path.sh` — installed skill path/full-read resolver。
+- `workspace_command_center_check.py` — defaultはWorkspace wiringのread-only verification。`--repair` は別途 `--authorize-workspace-mutation` が必要。
 
 ### Mutation-capable with explicit gate
-- `init-dev-workspace.sh` — defaultはread-only check。Workspace wiring / MCP configを変更する場合は `--apply-workspace-mutation` が必要。Project directory作成はさらに `--project NAME --create-project` が必要。
-- `install-workspace-mcp.sh` — `~/.cursor/mcp.json` mutation。`--apply-workspace-mcp-mutation` 必須。
-- `ai-auto-commit.sh` — server-core専用commit helper。`--authorize-server-core-mutation` 必須で、`main` / `master` へのdirect auto-commitを拒否する。
+- `init-dev-workspace.sh` — defaultはread-only check。Workspace wiring / MCP configを変更する場合は `--apply-workspace-mutation` が必要。Project directory作成はさらに `--project NAME --create-project` が必要。Project名はsingle-directory安全文字列へ制限する。
+- `install-workspace-mcp.sh` — `~/.cursor/mcp.json` mutation。`--apply-workspace-mcp-mutation` 必須。client credential containerを保持しつつfile modeを0600相当へ締め、bounded backup retentionを適用する。
+- `ai-auto-commit.sh` — server-core専用commit helper。`--authorize-server-core-mutation` と1件以上の`--file PATH`が必須。repository-wide `git add -A` は行わず、main/masterへのdirect auto-commitを拒否する。
 
 Mutation option/flagがDocumentに記載されていることを、Task上の実行許可として扱わない。
 
@@ -118,6 +120,8 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - reusable KB access design -> `docs/KB_REUSE_DESIGN.md`
 - chronological work history -> GitHub commit / PR
 - Workspace routing -> `README.md` + `docs/LOAD_SCOPE.md`
+- canonical Pre-execution semantics -> `docs/G_ACE_WORKSPACE.md` + `operations/pre-execution-schema.json`
+- operator Server command contract -> `docs/SERVER_COMMAND_CONTRACT.md`
 - credential broker/use -> `docs/WORKSPACE_SHARED_SECRETS.md`
 - managed Workspace MCP -> `docs/WORKSPACE_MCP.md`
 
@@ -151,3 +155,4 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - explicit owner authorization無しにserver-coreのStructure/Documentを変更しない
 - helperの存在/参照/実行可能性をmutation authorizationと扱わない
 - Repository-local client configをWorkspace-global Authorityと二重管理しない
+- Pre-execution field namesを複数Documentで独自派生させず`operations/pre-execution-schema.json`へ揃える
