@@ -50,21 +50,18 @@ jobs:
           test -z "$env_files" || { printf '%s\n' "$env_files"; exit 1; }
           echo 'CURRENT_AUTHORITY_HYGIENE=PASS'
 
-      - name: Canonical authority references
+      - name: Canonical authority references and scope
         run: |
           set -euo pipefail
           grep -q 'docs/SERVER_COMMAND_CONTRACT.md' README.md
           grep -q 'operations/pre-execution-schema.json' README.md
-          grep -q 'operations/pre-execution-schema.json' docs/G_ACE_WORKSPACE.md
-          grep -q 'operations/pre-execution-schema.json' docs/LOAD_SCOPE.md
-          grep -q 'operations/pre-execution-schema.json' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'SERVER_CORE_PROTOCOL.md' docs/PROJECT_INTEGRATION_RULES.md
-          grep -q 'explicit owner authorization' README.md
+          grep -q 'server-core command center' docs/G_ACE_WORKSPACE.md
+          grep -q 'Development Routine' docs/G_ACE_WORKSPACE.md
+          grep -q 'SERVER_CORE_MUTATION_AUTHORIZED' README.md
           grep -q 'SERVER_CORE_MUTATION_AUTHORIZED' SERVER_CORE_PROTOCOL.md
           grep -q 'REVERSIBLE_LOCAL_MUTATION' docs/SERVER_COMMAND_CONTRACT.md
-          grep -q '## 2. Operator Interface Boundary' docs/SERVER_COMMAND_CONTRACT.md
-          grep -q 'operator_interface_defined_outside_server_core' operations/pre-execution-schema.json
-          ! grep -q '6072' docs/SERVER_COMMAND_CONTRACT.md
+          grep -q 'Chat UI' docs/SERVER_COMMAND_CONTRACT.md
+          ! git grep -nE 'Workspace top-level|GPT↔operator|operator-facing command presentation|ASSISTANT_TOOL|USER_UI|EXTERNAL_CLIENT' -- README.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/LOAD_SCOPE.md docs/SERVER_COMMAND_CONTRACT.md .cursor/rules/00_agent_runtime.mdc operations/pre-execution-schema.json
           echo 'AUTHORITY_ROUTING=PASS'
 
       - name: Machine contract validation
@@ -76,11 +73,13 @@ jobs:
           pre=json.loads(Path('operations/pre-execution-schema.json').read_text())
           assert pre['schema_version']
           required=set(pre['required_fields'])
-          assert {'TARGET_REPOSITORY','MUTATION_REPOSITORIES','READ_ONLY_REPOSITORIES','EXECUTION_ROUTE','EXECUTION_AUTHORIZATION','AUTHORIZATION_SCOPE','MUTATION_CLASS','PRE_EXECUTION_COMPLETE','BLOCKER'} <= required
-          assert {'ASSISTANT_TOOL','DETERMINISTIC_LOCAL_OR_CI','SERVER_COMMAND','SERVER_AI'} <= set(pre['execution_routes'])
+          assert {'TARGET_REPOSITORY','MUTATION_REPOSITORIES','READ_ONLY_REPOSITORIES','EXECUTION_ROUTE','EXECUTION_AUTHORIZATION','MUTATION_CLASS','PRE_EXECUTION_COMPLETE','BLOCKER'} <= required
+          assert set(pre['execution_routes']) == {'DETERMINISTIC_LOCAL_OR_CI','SERVER_COMMAND','SERVER_AI','PROJECT_RUNTIME'}
           assert {'READ_ONLY_INSPECTION','REVERSIBLE_LOCAL_MUTATION','REPOSITORY_MUTATION','RUNTIME_MUTATION','PROVIDER_MUTATION','PRODUCTION_MUTATION'} <= set(pre['mutation_classes'])
           assert pre['rules']['authorization_is_task_scoped'] is True
-          assert pre['rules']['operator_interface_defined_outside_server_core'] is True
+          assert pre['rules']['fixed_development_routine_must_not_be_skipped_without_reason'] is True
+          assert pre['rules']['debugai_reuses_existing_evidence_before_server_ai_research'] is True
+          assert pre['rules']['chat_ui_and_notion_are_outside_server_core_execution_routes'] is True
           mcp=json.loads(Path('operations/workspace-mcp.json').read_text())
           assert mcp['scope']=='workspace-global'
           assert set(mcp['servers']) >= {'cloudflare-api','huggingface'}
