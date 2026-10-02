@@ -53,23 +53,25 @@ jobs:
       - name: Canonical authority references and restored scope
         run: |
           set -euo pipefail
-          grep -q 'docs/SERVER_COMMAND_CONTRACT.md' README.md
-          grep -q 'operations/pre-execution-schema.json' README.md
-          grep -q 'server-core command center' docs/G_ACE_WORKSPACE.md
-          grep -q 'Development Routine' docs/G_ACE_WORKSPACE.md
-          grep -q 'SERVER_CORE_MUTATION_AUTHORIZED' README.md
-          grep -q 'SERVER_CORE_MUTATION_AUTHORIZED' SERVER_CORE_PROTOCOL.md
-          grep -q 'REVERSIBLE_LOCAL_MUTATION' docs/SERVER_COMMAND_CONTRACT.md
-          grep -q 'Chat UI' docs/SERVER_COMMAND_CONTRACT.md
-          grep -q 'Docker Composeを正' README.md
-          grep -q 'Docker Composeを正' CORE.md
-          grep -q 'Docker Composeを正' SERVER_CORE_PROTOCOL.md
-          grep -q 'Docker Composeを正' docs/G_ACE_WORKSPACE.md
-          grep -q 'Docker Composeを正' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'Docker Composeを正' docs/DEPLOY_RUNBOOK.md
-          grep -q 'Docker Compose as the canonical production residency path' docs/SERVER_CORE_DESIGN.md
-          ! git grep -nE 'Workspace top-level|GPT↔operator|operator-facing command presentation|ASSISTANT_TOOL|USER_UI|EXTERNAL_CLIENT|EXECUTION_ROUTE|EXECUTION_CAPABILITY|EXECUTION_AUTHORIZATION|PRE_EXECUTION_COMPLETE' -- README.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/LOAD_SCOPE.md docs/SERVER_COMMAND_CONTRACT.md .cursor/rules/00_agent_runtime.mdc operations/pre-execution-schema.json
-          ! git grep -nE 'Project固有の正式例外|formally defined Project exception|Project Authorityで正式例外|正式な例外経路' -- README.md CORE.md SERVER_CORE_PROTOCOL.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/DEPLOY_RUNBOOK.md .cursor/rules/00_agent_runtime.mdc
+          require_text() { local pattern="$1" file="$2" label="$3"; grep -qE "$pattern" "$file" || { echo "MISSING_INVARIANT=$label FILE=$file"; exit 1; }; }
+          require_absent() { local pattern="$1" label="$2"; shift 2; if git grep -nE "$pattern" -- "$@"; then echo "FORBIDDEN_INVARIANT=$label"; exit 1; fi; }
+          require_text 'docs/SERVER_COMMAND_CONTRACT\.md' README.md server_command_authority
+          require_text 'operations/pre-execution-schema\.json' README.md dispatch_schema_reference
+          require_text 'server-core.*Command Center' docs/G_ACE_WORKSPACE.md workspace_command_center
+          require_text 'Development Routine' docs/G_ACE_WORKSPACE.md fixed_development_routine
+          require_text 'SERVER_CORE_MUTATION_AUTHORIZED' README.md server_core_mutation_gate_readme
+          require_text 'SERVER_CORE_MUTATION_AUTHORIZED' SERVER_CORE_PROTOCOL.md server_core_mutation_gate_protocol
+          require_text 'REVERSIBLE_LOCAL_MUTATION' docs/SERVER_COMMAND_CONTRACT.md reversible_local_mutation
+          require_text 'Chat UI' docs/SERVER_COMMAND_CONTRACT.md chat_ui_exclusion
+          require_text 'Docker Composeを正' README.md docker_compose_readme
+          require_text 'Docker Composeを正' CORE.md docker_compose_core
+          require_text 'Docker Composeを正' SERVER_CORE_PROTOCOL.md docker_compose_protocol
+          require_text 'Docker Composeを正' docs/G_ACE_WORKSPACE.md docker_compose_workspace
+          require_text 'Docker Composeを正' .cursor/rules/00_agent_runtime.mdc docker_compose_agent_runtime
+          require_text 'Docker Composeを正' docs/DEPLOY_RUNBOOK.md docker_compose_deploy
+          require_text 'Docker Compose as the canonical production residency path' docs/SERVER_CORE_DESIGN.md docker_compose_design
+          require_absent 'Workspace top-level|GPT↔operator|operator-facing command presentation|ASSISTANT_TOOL|USER_UI|EXTERNAL_CLIENT|EXECUTION_ROUTE|EXECUTION_CAPABILITY|EXECUTION_AUTHORIZATION|PRE_EXECUTION_COMPLETE' overgeneralized_executor_policy README.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/LOAD_SCOPE.md docs/SERVER_COMMAND_CONTRACT.md .cursor/rules/00_agent_runtime.mdc operations/pre-execution-schema.json
+          require_absent 'Project固有の正式例外|formally defined Project exception|Project Authorityで正式例外|正式な例外経路' docker_compose_exception README.md CORE.md SERVER_CORE_PROTOCOL.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/DEPLOY_RUNBOOK.md .cursor/rules/00_agent_runtime.mdc
           echo 'AUTHORITY_ROUTING=PASS'
 
       - name: Machine contract validation
