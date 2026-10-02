@@ -103,8 +103,24 @@ Installer contract:
 9. backup retentionはmachine contractの`backup_keep`へ制限（Current: 3）;
 10. backupにはclient-local credential containerが含まれ得るため、Current Authorityとして読込・表示・commitしない;
 11. Provider tokenをRepositoryから書き込まない;
-12. Cursor global config directoryをsingle-writer lock scopeとし、別Installer mutationと競合した場合は待機・上書きせずfail closedする;
-13. backup名とtemporary config名は同一秒・同一Host上の再実行でも衝突しない識別子を持つ。
+12. **client directoryへ最初のmutationを行う前に**current user HOMEをsingle-writer advisory lock scopeとして取得し、別Installer mutationと競合した場合は待機・上書きせずfail closedする;
+13. backup名とtemporary config名は同一秒・同一Host上の再実行でも衝突しない識別子を持つ;
+14. client directory permission変更、backup作成、config置換、backup retentionを別stateとして追跡し、後段failureで前段mutationを隠さない。
+
+Installerはterminal evidenceとして次を返す。
+
+```text
+GACE_MCP_INSTALL_RESULT_BEGIN
+RESULT=PASS|PARTIAL|FAIL
+EXIT_CODE=<integer>
+CLIENT_DIR_UPDATED=YES|NO
+BACKUP_CREATED=YES|NO
+CONFIG_UPDATED=YES|NO
+BACKUP_RETENTION=PASS|FAIL|NOT_APPLICABLE
+GACE_MCP_INSTALL_RESULT_END
+```
+
+`RESULT=PARTIAL` は少なくとも1つのWorkspace/client mutationが適用済みなのにrequired後段処理が失敗したことを意味する。再実行前にCurrent config / permission / backup状態をreadbackし、response未受信やnonzero exitだけを理由に同じmutationを盲目的に繰り返さない。
 
 これはWorkspace/client mutationであり、server-core Repositoryへのwrite permissionではない。
 
