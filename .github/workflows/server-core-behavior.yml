@@ -104,6 +104,16 @@ jobs:
           git config user.email 'server-core-ci@example.invalid'
           printf '\nci-a\n' >> README.md
           printf '\nci-b\n' >> CORE.md
+          lock="$(git rev-parse --git-dir)/gace-ai-auto-commit.lock"
+          ( exec 8>"$lock"; flock -x 8; sleep 1 ) & lock_pid=$!
+          sleep 0.1
+          set +e
+          bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file README.md -m 'test: concurrent refusal' >"$tmp/lock.out" 2>&1
+          lock_rc=$?
+          set -e
+          test "$lock_rc" -ne 0
+          grep -q 'another server-core auto-commit change unit is active' "$tmp/lock.out"
+          wait "$lock_pid"
           bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file README.md -m 'test: explicit change unit'
           python3 - <<'PY'
           import subprocess
