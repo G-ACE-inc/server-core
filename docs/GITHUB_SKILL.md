@@ -8,7 +8,7 @@ GitHub関連Skillの参照Pathを固定versionに依存せず解決するため�
 
 Skill実体は外部client/plugin環境が所有する。server-coreは固定cache version/pathをCurrent Authorityとして持たず、resolver scriptの利用方法だけを管理する。
 
-resolverはSkillのPath/本文を見つけるためのread-only helperであり、GitHub Repository mutation permission、server-core mutation permission、client/plugin installation mutation permissionを付与しない。
+GitHub Skillを解決・読込・実行できることは、対象Repositoryへのwrite permission、server-core自体のmutation permission、client/plugin installation mutation permissionを意味しない。GitHub操作の前に対象Repositoryと許可されたOperationを別途確定する。
 
 ## Standard Commands
 
@@ -41,15 +41,15 @@ scripts/resolve-codex-skill.sh github:<skill-name> --read
 - 固定version directoryをDocumentやScriptへ埋め込まない。
 - Skill名が不明な場合は、利用client/plugin側のCurrent inventoryを確認する。
 - resolverが失敗した場合は、固定Pathを推測せず、client/pluginのCurrent installation stateをreadbackする。
-- Skillの存在、Path解決、本文readback、client登録、実行可否、GitHub write permissionは別状態として扱う。
-- resolver実行またはSkill本文を読むことを、対象Repositoryへのwrite/commit/push/merge permissionとして扱わない。
+- Skillの存在、client登録、実行可否は別状態として扱う。
+- GitHub Repository read/write、PR/Issue mutation、branch/ref mutation、Workflow mutation、server-core Repository mutationは別Operationとして扱う。
 - GitHub操作自体のAuthority/permissionは対象Repositoryと利用clientのCurrent contractを正とする。
-- server-core外Projectからresolverを利用しても、server-coreは参照元のままでありmutation対象へ昇格しない。
+- resolverの存在・成功、Issue/PR template、owner label、Git history方針からmutation authorizationを推論しない。
+- client/plugin installationやSkill inventoryを変更する場合は、そのclient側の明示的なchange boundaryを別途確認する。
 
 ## Non-goals
 
 - 特定client versionの固定
 - 特定Skill一覧のCurrent Authority化
 - plugin cache内部構造のserver-core ownership
-- client/plugin installation stateの変更
 - GitHub Repository policyやapproval条件の上書き
