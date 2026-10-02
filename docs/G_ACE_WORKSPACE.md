@@ -231,7 +231,28 @@ Container / Port / Domain / Provider / Deploy状態がTask判断に必要なら�
 
 Runtime readbackのために別Repository/Providerを参照しても、mutation permissionは自動付与されない。
 
-## 18. Completion Rule
+## 18. Evidence Handoff
+
+Stateを別Project、別AI、次Taskへ引き継ぐ場合、証明範囲を失わない。
+
+TaskでCurrent stateが重要なら、必要範囲で次を分離して残す。
+
+```text
+SUBJECT
+EVIDENCE_SCOPE
+OBSERVED_AT
+OBSERVATION_ROUTE
+RESULT
+NOT_PROVEN
+SOURCE_REVISION when relevant
+RUNTIME_OR_PROVIDER_IDENTITY when relevant
+```
+
+`HTTP 200` はそのendpoint応答の証拠、`CONFIG_PRESENT` は設定存在の証拠、`CI SUCCESS` はそのrevision/checkの証拠である。これらを隣接Domainの `AVAILABLE / RUNTIME_PASS / PRODUCTION_PASS / COMPLETE` へ自動昇格しない。
+
+Durable Authorityへ残すのはowner、contract、state semantics、verification method等の安定情報。時点付きlive result、branch/HEAD進捗、Task固有failureはGitHub work historyまたはTask evidenceとして扱い、Registry/Designをchronological status boardへしない。
+
+## 19. Completion Rule
 
 Workspace Taskの完了は、Taskに必要な範囲で次が閉じた場合に判定する。
 - correct Project / authority routing
