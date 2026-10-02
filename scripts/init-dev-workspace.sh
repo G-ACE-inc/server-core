@@ -7,6 +7,52 @@ DUPLICATE_SERVER_CORE="${PROJECTS_DIR}/server-core"
 SERVER_CORE_RULES="${SERVER_CORE_ROOT}/.cursor/rules"
 PROJECTS_RULES="${PROJECTS_DIR}/.cursor/rules"
 SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+APPLY=0
+CREATE_PROJECT=0
+PROJECT_NAME=""
+
+usage() {
+  cat <<'USAGE'
+Usage: scripts/init-dev-workspace.sh [--check] [--apply-workspace-mutation] [--project NAME --create-project]
+
+Default behavior is read-only verification. Workspace/client mutation requires
+--apply-workspace-mutation. Creating a Project directory additionally requires
+--create-project together with --project NAME.
+USAGE
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --check)
+      shift
+      ;;
+    --apply-workspace-mutation)
+      APPLY=1
+      shift
+      ;;
+    --create-project)
+      CREATE_PROJECT=1
+      shift
+      ;;
+    --project)
+      if [[ $# -lt 2 ]]; then
+        echo "[error] missing value for --project" >&2
+        exit 2
+      fi
+      PROJECT_NAME="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "[error] unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
 
 if [[ "$SCRIPT_ROOT" != "$SERVER_CORE_ROOT" ]]; then
   echo "[error] server-core workspace initializer must run from canonical checkout: ${SERVER_CORE_ROOT}" >&2
@@ -22,30 +68,38 @@ if [[ -e "$DUPLICATE_SERVER_CORE" ]]; then
   exit 1
 fi
 
-PROJECT_NAME=""
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --project)
-      if [[ $# -lt 2 ]]; then
-        echo "Missing value for --project" >&2
-        exit 2
-      fi
-      PROJECT_NAME="$2"
-      shift 2
-      ;;
-    *)
-      echo "Unknown argument: $1" >&2
-      exit 2
-      ;;
-  esac
-done
-
 if [[ ! -d "$SERVER_CORE_RULES" ]]; then
   echo "[error] server-core rules directory is missing: $SERVER_CORE_RULES" >&2
   exit 1
 fi
 
-if [[ -n "$PROJECT_NAME" ]]; then
+if [[ "$CREATE_PROJECT" == "1" && -z "$PROJECT_NAME" ]]; then
+  echo "[error] --create-project requires --project NAME" >&2
+  echo "NO_CHANGES_PERFORMED" >&2
+  exit 2
+fi
+if [[ -n "$PROJECT_NAME" && "$CREATE_PROJECT" != "1" ]]; then
+  echo "[error] --project NAME does not create or modify anything without --create-project" >&2
+  echo "NO_CHANGES_PERFORMED" >&2
+  exit 2
+fi
+if [[ "$CREATE_PROJECT" == "1" && "$APPLY" != "1" ]]; then
+  echo "[error] Project directory creation requires --apply-workspace-mutation" >&2
+  echo "NO_CHANGES_PERFORMED" >&2
+  exit 2
+fi
+
+if [[ "$APPLY" != "1" ]]; then
+  echo "WORKSPACE_INIT_MODE=READ_ONLY_CHECK"
+  python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py"
+  bash "${SERVER_CORE_ROOT}/scripts/verify-workspace-mcp.sh"
+  echo "Done. No changes performed."
+  exit 0
+fi
+
+echo "WORKSPACE_INIT_MODE=AUTHORIZED_MUTATION"
+
+if [[ "$CREATE_PROJECT" == "1" ]]; then
   TARGET="${PROJECTS_DIR}/${PROJECT_NAME}"
   if [[ -d "$TARGET" ]]; then
     echo "[skip] ${TARGET} already exists"
@@ -74,8 +128,8 @@ else
   echo "[created] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
 fi
 
-python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py" --repair
-bash "${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh"
+python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py" --repair --authorize-workspace-mutation
+bash "${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh" --apply-workspace-mcp-mutation
 bash "${SERVER_CORE_ROOT}/scripts/verify-workspace-mcp.sh"
 python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py"
 echo "Done."
