@@ -24,150 +24,124 @@ PRODUCTION
 
 ## 2. Commit / Push Policy
 
-Commit / Pushは対象RepositoryのCurrent policyとTaskのchange boundaryに従う。
+Commit / Pushは対象RepositoryのCurrent policyとTask/change unitのboundaryに従う。
 
 - File変更がある場合、GitHub履歴へ残すことを標準とする。
 - Pushが許可されているRepository/Branchではremote readbackまで行う。
 - Branch保護、review/PR、merge approval等はRepository policyを優先する。
 - 一時的なセッション指示や個別作業ルールをRepository共通仕様として固定しない。
 
-## 3. Repository Lock
+## 3. Repository / Change-unit Lock
 
-Commit / Pushの対象は、今回の `MUTATION_REPOSITORIES` に含まれるRepositoryだけ。
+Commit / Pushの対象は今回の `MUTATION_REPOSITORIES` に含まれるRepositoryだけ。
 
 server-coreやShared Capability owner RepositoryをAuthority確認のために読んだだけなら、そのRepositoryをCommit対象にしない。
 
-**server-coreは例外的に追加Gateを持つ。** `MUTATION_REPOSITORIES` に含まれているという自己申告だけでは不十分で、server-core自体の変更についてexplicit owner authorizationがあり、`SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立している場合だけserver-coreへwrite / commit / pushできる。AI/Agent自身がこの値を推測でYESへ変更してはならない。
+server-coreは追加Gateを持つ。server-core自体の変更についてexplicit owner authorizationがあり、`SERVER_CORE_MUTATION_AUTHORIZED=YES` がCurrent Task/change unitで成立している場合だけwrite / commit / pushできる。
 
-Commit前に最低限次を一致させる。
+Commit前に一致させる。
 
 ```text
 INTENDED_REPOSITORY
 CURRENT_GIT_TOPLEVEL
 CURRENT_BRANCH
 INTENDED_DIFF
+INTENDED_FILES
 ```
 
-Local Gitでは必要に応じて `git rev-parse --show-toplevel` を使い、TaskのTARGET_REPOSITORYと一致していることを確認する。
+複数Task/Agentが同一Repositoryで並行する可能性を前提とし、**今回のchange unitに属さないuncommitted diffをstageしない。** Repository全体を暗黙stageするhelperを標準にしない。
 
-別RepositoryのScriptをabsolute pathで呼んだこと、別Repositoryへ一時的に `cd` したこと、共通Authorityを読んだことを、Commit対象変更の根拠にしない。
-
-複数Repositoryを変更した場合はRepositoryごとにCommit / Push / Remote Readbackを分離する。1つのRepositoryのCommitへ別Projectの変更を混在させない。
+別RepositoryのScriptをabsolute pathで呼んだこと、別Repositoryへ一時的に`cd`したこと、共通Authorityを読んだことをCommit対象変更の根拠にしない。
 
 ## 4. Commit = Work History
 
-Commit件名は変更の目的・内容が分かる形にする。
+Commit件名は変更の目的・内容が分かる形にする。複雑な変更では必要な範囲でPurpose / Changed / Affected / Verified / Docs / Remainingを残す。
 
-複雑な変更では本文に必要な範囲で残す。
+未実行Testや未確認状態をPASSとして書かない。Architecture/Responsibility baselineが変わる場合はDesign Deltaも更新する。
 
-```text
-Purpose:
-- why
-
-Changed:
-- material changes
-
-Affected:
-- affected scope
-
-Verified:
-- test / verification actually executed
-
-Docs:
-- authority/docs updated when required
-
-Remaining:
-- pending / blocked / unknown
-```
-
-単純な変更へ不要な定型文を強制しない。
-
-Design変更理由をCommit本文だけに閉じ込めず、Architecture/Responsibility baselineが変わる場合はDesign Deltaを更新する。
-
-## 5. Commit Message Types
-
-Repositoryに正式Conventionがある場合はそちらを優先する。
-
-一般例:
-- `feat:` new capability
-- `fix:` defect fix
-- `docs:` documentation only
-- `chore:` tooling/config/maintenance
-- `refactor:` behavior-preserving structure change
-- `test:` test/verification change
-
-## 6. Before Commit
+## 5. Before Commit
 
 最低限確認する。
 - target repository / branch / HEAD
 - current Git top-level
 - repositoryが `MUTATION_REPOSITORIES` に含まれる
-- **server-coreの場合は `SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立している**
+- server-coreの場合 `SERVER_CORE_MUTATION_AUTHORIZED=YES`
+- Current authorizationが同じTask/change unitへscopeされている
 - `git status --short --branch`
-- intended diff
+- intended files / intended diff
+- unrelated working-tree changesの有無
 - credential / `.env`実値 / debug residue / unintended deletionが無い
 - applicable test / verify
 - documentation impact
 
-## 7. server-core Commit Helper
+他作業の差分と今回の差分を安全に分離できない場合は自動Commitを行わない。
 
-`/home/admin1/server-core/scripts/ai-auto-commit.sh` は**server-core専用**。他Projectをcommitする汎用helperではない。
+## 6. server-core Commit Helper
 
-server-core自体の変更についてexplicit owner authorizationがあり、feature branch上である場合だけ使用する。
+`/home/admin1/server-core/scripts/ai-auto-commit.sh` はserver-core専用。server-core自体へのexplicit owner authorizationがあり、feature branch上である場合だけ使用する。
 
-```bash
-scripts/ai-auto-commit.sh --authorize-server-core-mutation --push
-```
-
-Message指定例:
+**1件以上の`--file PATH`が必須**であり、指定Fileだけをchange unitとしてstageする。
 
 ```bash
-scripts/ai-auto-commit.sh --authorize-server-core-mutation --push -m "fix: describe change"
+scripts/ai-auto-commit.sh --authorize-server-core-mutation --file docs/example.md --push
 ```
 
-Helperは次をfail-closedで確認する。
-- `--authorize-server-core-mutation` が明示されている
-- Script自身の所在から解決したRepositoryがserver-core canonical checkoutである
-- current branchがdetached HEADではない
-- `main` / `master` への直接auto-commitではない
-- `.env`系Fileが含まれない
+複数File:
+
+```bash
+scripts/ai-auto-commit.sh --authorize-server-core-mutation --file README.md --file docs/example.md --push -m "docs: update execution contract"
+```
+
+Helperはfail-closedで確認する。
+- explicit server-core mutation flag
+- Script所在地から解決したcanonical server-core repository
+- non-detached feature branch
+- direct `main` / `master`拒否
+- safe repository-relative `--file` path
+- intended Fileが実際にchangedであること
+- `.env`系File拒否
 - secret-like patternの簡易検出
+- secret検出時は値ではなく`path:line`だけを出力
+- commit messageのcredential-like value検査
 - `git diff --check`
-- shell script syntax check
+- staged setが指定File集合と一致
+- changed shell scriptのsyntax check
 
-他Projectからabsolute pathでserver-core helperを呼んでも、呼出元Projectをcommit対象にしてはならない。Helperはcurrent working directoryではなく**Script自身のRepository**へ固定される。
+Helperは`git add -A`を使用しない。指定していない他Taskの変更をstageしない。
 
-`--authorize-server-core-mutation` は単なるCLI convenienceではなく、すでに成立しているexplicit owner authorizationを実行時に再確認するためのGateである。AI/Agentが自分の判断だけで付けてはならない。
+`--authorize-server-core-mutation` はpermissionを新規作成するflagではなく、すでにCurrent Taskで成立しているauthorizationを実行時に再確認するGateである。
 
-対象Projectに独自helperが無い場合は、そのProjectのCurrent policyに従った通常Git操作を使う。server-core helperを代用しない。
+対象Projectに独自helperが無い場合は、そのProjectのCurrent policyに従う。server-core helperを他Project commitへ代用しない。
+
+## 7. Credential Output Safety
+
+Secret scanは完全なcredential detectorではないため、Source/Provider contract上のSecret boundary確認を置き換えない。
+
+検出したcredential-like value自体をTerminal/CI/Commit messageへ出力しない。検出位置だけを示してfail closedする。
+
+Binary/読取不能Fileを「安全」と推測しない。credential-bearing可能性があるFileはそのAuthorityに従って別途確認する。
 
 ## 8. Remote Readback
 
-Push成功だけでGitHub反映済みとしない。
+Push成功だけでGitHub反映済みとしない。必要な作業ではremote branch / commit SHA / changed file / PR head等を再取得して確認する。
 
-必要な作業ではremote branch / commit SHA / changed file / PR head等を再取得して確認する。
+## 9. Multiple Repositories / Workers
 
-Remote readbackも対象Repositoryごとに行う。
-
-## 9. Multiple Repositories
-
-複数Repositoryを変更した場合はRepositoryごとに履歴を分離する。
+複数Repositoryを変更した場合はRepositoryごとに履歴を分離する。複数workerが同一Repositoryへ関与する場合もchange unitを混在させない。
 
 各RepositoryのSHA、branch、verification state、変更理由を追跡できる状態にする。
 
-1つのTaskに複数Repositoryが登場することと、複数Repositoryへwriteが必要であることは同義ではない。
-
 ## 10. Stop / Exception Conditions
 
-次の場合は自動Commit/Pushを止め、対象RepositoryのCurrent boundaryを確認する。
+次の場合は自動Commit/Pushを止める。
 - credential / `.env`実値がDiffへ混入
-- target外Fileの変更
+- target外Fileの変更しかない
 - Branch / Repository identityが不明
-- current Git top-levelが意図したRepositoryと一致しない
 - Repositoryが `MUTATION_REPOSITORIES` に含まれない
-- **server-coreで `SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示成立していない**
-- 他作業の未commit差分と分離できない
-- repository policyがPush/PR routeを要求している
+- server-core authorizationがCurrent Task/change unitで成立していない
+- 他作業のuncommitted差分と分離できない
+- staged setがintended filesと一致しない
+- repository policyが別Routeを要求
 - failing/incomplete stateをremoteへ残す理由とscopeが不明
 
 Production publish/deployはCommit/Pushとは別のchange boundary。
@@ -176,9 +150,7 @@ Production publish/deployはCommit/Pushとは別のchange boundary。
 
 - 未実行TestをPASSと記録しない。
 - failure / unverified stateを隠さない。
-- Current仕様Documentをchronological work logの代替にしない。
-- credential実値をCommit message / Diff / Documentへ書かない。
-- Design BaselineをCurrent実装へ追従させるだけの履歴消しをしない。
+- credential実値をCommit message / Diff / Document / diagnostic outputへ書かない。
 - Authorityを読んだだけのRepositoryへwrite/commitしない。
-- server-coreはexplicit owner authorization無しにwrite/commit/pushしない。
 - server-core helperを他Projectのcommit手段として使用しない。
+- unrelated diffをrepository-wide stagingへ巻き込まない。
