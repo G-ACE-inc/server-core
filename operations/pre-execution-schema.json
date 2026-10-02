@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "name": "gace-pre-execution-handoff",
+  "authority": "docs/G_ACE_WORKSPACE.md",
+  "server_command_authority": "docs/SERVER_COMMAND_CONTRACT.md",
+  "required_fields": [
+    "PURPOSE",
+    "EXPECTED_RESULT",
+    "TARGET_PROJECT",
+    "TARGET_RESPONSIBILITY",
+    "TARGET_REPOSITORY",
+    "MUTATION_REPOSITORIES",
+    "READ_ONLY_REPOSITORIES",
+    "SERVER_CORE_MUTATION_AUTHORIZED",
+    "REQUIRED_SERVER_CORE_AUTHORITY",
+    "REQUIRED_PROJECT_AUTHORITY",
+    "REUSE_CANDIDATES",
+    "VERIFY_PATH",
+    "CHANGE_BOUNDARY",
+    "CONTEXT_SCOPE",
+    "NEXT_ACTION",
+    "EXECUTION_ROUTE",
+    "EXECUTION_CAPABILITY",
+    "EXECUTION_AUTHORIZATION",
+    "AUTHORIZATION_DOMAIN",
+    "AUTHORIZATION_SCOPE",
+    "MUTATION_CLASS",
+    "PRE_EXECUTION_COMPLETE",
+    "BLOCKER"
+  ],
+  "execution_routes": [
+    "ASSISTANT_TOOL",
+    "DETERMINISTIC_LOCAL_OR_CI",
+    "SERVER_COMMAND",
+    "SERVER_AI",
+    "USER_UI",
+    "EXTERNAL_CLIENT",
+    "PROJECT_RUNTIME"
+  ],
+  "mutation_classes": [
+    "READ_ONLY_INSPECTION",
+    "REVERSIBLE_LOCAL_MUTATION",
+    "REPOSITORY_MUTATION",
+    "WORKSPACE_CLIENT_MUTATION",
+    "RUNTIME_MUTATION",
+    "PROVIDER_MUTATION",
+    "CREDENTIAL_MUTATION",
+    "PRODUCTION_MUTATION"
+  ],
+  "rules": {
+    "unknown_values_must_not_be_guessed": true,
+    "execution_capability_is_not_authorization": true,
+    "authorization_is_task_scoped": true,
+    "server_core_mutation_requires_explicit_owner_authorization": true,
+    "pre_execution_complete_does_not_mean_executed": true,
+    "server_command_result_envelope": "GACE_RESULT_BEGIN...GACE_RESULT_END"
+  }
+}
