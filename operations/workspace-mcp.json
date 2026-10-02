@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.4",
+  "schema_version": "1.5",
   "scope": "workspace-global",
   "consumer": "g-ace-workspace",
   "client": "cursor",
@@ -35,7 +35,7 @@
     "collision": "fail-closed-on-runtime-transport-mismatch",
     "concurrency": "single-writer-fail-closed",
     "lock_scope": "cursor-global-config-directory",
-    "required_mode": "0600_or_stricter_existing_mode",
+    "required_mode": "owner_read_only_0400_or_owner_read_write_0600_non_executable",
     "backup_keep": 3,
     "backup_contains_client_local_credentials_possible": true,
     "preserve_existing_auth_fields": [
