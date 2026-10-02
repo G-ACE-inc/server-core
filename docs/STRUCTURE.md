@@ -1,6 +1,6 @@
 # SERVER CORE STRUCTURE
 
-Version: 2026-10-01
+Version: 2026-10-02
 Role: `/home/admin1/server-core` のProject Tree / Navigation Index。
 
 ## Entry Flow
@@ -68,13 +68,20 @@ Current machine-readable contracts/policies:
 
 ## scripts/
 
-- `ai-auto-commit.sh` — GitHub commit/push helper
-- `resolve-codex-skill.sh`, `github-skill-path.sh` — GitHub skill resolver
-- `init-dev-workspace.sh` — Workspace initialization + managed MCP configuration
-- `install-workspace-mcp.sh` — Cursor Global MCP merge installer
-- `verify-workspace-mcp.sh` — Global MCP config verification
-- `storage_lifecycle_audit.py` — read-only storage/disk/Docker audit
-- `workspace_command_center_check.py` — canonical Workspace structure/settings verification and bounded repair
+Scriptの存在は実行許可を意味しない。read-only helperとmutation-capable helperを区別する。
+
+### Read-only by default
+- `storage_lifecycle_audit.py` — read-only storage/disk/Docker audit。delete/pruneしない。
+- `verify-workspace-mcp.sh` — defaultはglobal MCP config readbackのみ。`--client-readback` 時だけ外部clientへ問い合わせる。
+- `resolve-codex-skill.sh`, `github-skill-path.sh` — installed skill path/read resolver。
+- `workspace_command_center_check.py` — defaultはread-only verification。`--repair` は別途 `--authorize-workspace-mutation` が必要。
+
+### Mutation-capable with explicit gate
+- `init-dev-workspace.sh` — defaultはread-only check。Workspace wiring / MCP configを変更する場合は `--apply-workspace-mutation` が必要。Project directory作成はさらに `--project NAME --create-project` が必要。
+- `install-workspace-mcp.sh` — `~/.cursor/mcp.json` mutation。`--apply-workspace-mcp-mutation` 必須。
+- `ai-auto-commit.sh` — server-core専用commit helper。`--authorize-server-core-mutation` 必須で、`main` / `master` へのdirect auto-commitを拒否する。
+
+Mutation option/flagがDocumentに記載されていることを、Task上の実行許可として扱わない。
 
 ## .cursor/
 
@@ -141,3 +148,4 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - credential実値を保存しない
 - Project固有implementationをserver-coreへ移してownershipを曖昧にしない
 - explicit owner authorization無しにserver-coreのStructure/Documentを変更しない
+- helperの存在/参照/実行可能性をmutation authorizationと扱わない
