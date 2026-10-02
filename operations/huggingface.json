@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "scope": "workspace",
   "provider": "huggingface",
   "secret_provider": "libral-vault",
@@ -11,6 +11,13 @@
   "store_path": "/internal/v1/secrets",
   "use_path": "/internal/v1/actions/http",
   "runtime_readback_required": true,
+  "state_semantics": {
+    "contract_present": "machine_contract_exists_only",
+    "broker_healthy": "vault_health_readback_passed_only",
+    "credential_available": "requires_consumer_permission_and_provider_identity_or_representative_call",
+    "provider_available_verified": "requires_authentication_transport_interface_and_representative_call_for_task_scope",
+    "http_success_alone_is_available_verified": false
+  },
   "secret_id": "hf-token",
   "consumer": "g-ace-workspace",
   "allowed_consumers": ["g-ace-workspace"],
