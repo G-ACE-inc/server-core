@@ -43,9 +43,17 @@ jobs:
           assert p['rules']['authorization_is_task_scoped'] is True
           assert p['rules']['operator_interface_defined_outside_server_core'] is True
           assert p['rules']['server_command_document_scope'] == 'technical_execution_safety_and_evidence_only'
+          assert p['rules']['response_delivery_failure_is_not_operation_failure'] is True
+          assert p['rules']['interrupted_turn_recovery_requires_durable_readback'] is True
+          assert p['rules']['mutation_retry_requires_prior_apply_state_resolution'] is True
+          assert p['rules']['pending_async_checks_should_be_polled_within_available_turn'] is True
+          assert p['rules']['pending_polling_must_be_bounded'] is True
           print('PRE_EXECUTION_SCHEMA=PASS')
           PY
           grep -q '## 2. Operator Interface Boundary' docs/SERVER_COMMAND_CONTRACT.md
+          grep -q '## 10. Interruption / Pending-State Recovery' docs/SERVER_COMMAND_CONTRACT.md
+          grep -q 'response-delivery failure is not operation failure' docs/SERVER_COMMAND_CONTRACT.md
+          grep -q 'continue bounded polling to a terminal state' docs/SERVER_COMMAND_CONTRACT.md
           grep -q 'technical shell/process safety' docs/LOAD_SCOPE.md
           grep -q 'operator-facing command presentation' .cursor/rules/00_agent_runtime.mdc
 
