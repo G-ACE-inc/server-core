@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.4",
+  "schema_version": "1.5",
   "name": "gace-command-center-dispatch",
   "authority": "docs/G_ACE_WORKSPACE.md",
   "required_fields": [
@@ -27,7 +27,6 @@
     "target_repository_is_not_every_repository_read": true,
     "read_only_reference_does_not_grant_mutation_permission": true,
     "project_document_updates_stay_with_target_project": true,
-    "debugai_reuses_existing_evidence_before_server_ai_research": true,
-    "chat_ui_notion_and_external_app_interaction_are_outside_server_core": true
+    "debugai_reuses_existing_evidence_before_server_ai_research": true
   }
 }
