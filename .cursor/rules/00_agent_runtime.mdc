@@ -1,5 +1,5 @@
 ---
-description: G-ACE Workspace共通の実行入口・Context Routing・変更/検証境界。
+description: G-ACE Workspace共通のAI実行入口・Context Routing・完了境界。
 alwaysApply: true
 ---
 
@@ -7,153 +7,152 @@ alwaysApply: true
 
 ## 1. Authority Entry
 
-Workspace内で作業するAI / Agent / Developerは、Project固有作業へ入る前にserver-coreを共通入口として扱う。
+Workspace内で作業するAI / Agent / Composerは、Project固有作業へ入る前にserver-coreを共通入口として扱う。
 
 ```text
 1. /home/admin1/server-core/README.md
 2. /home/admin1/server-core/docs/LOAD_SCOPE.md
-3. Taskに必要なserver-core Authorityだけ
+3. 今回のTaskに必要なserver-core正本だけ
 4. 対象Project README
-5. 対象Project内の必要なDesign / Tree / Delta / System Document / Source / Test
+5. 対象Project内の必要なDesign / Project Tree / Design Delta / System Document / Source / Testだけ
 ```
 
-server-core全体を毎回読み込まず、Taskに必要な範囲だけ段階的に開く。
+server-coreの全正本を一括読込しない。同一Task範囲で一度確認済みの内容は、変更・矛盾・情報不足が無ければ繰り返し読まない。
 
-このRuleはserver-core内部のWorkspace Routerであり、Task PacketまたはWorkspace最上位Authorityで要求される事前Bootstrapを置き換えない。
+## 2. Task / Repository Lock
 
-## 2. Canonical Pre-execution Handoff
-
-Pre-execution field名は `/home/admin1/server-core/operations/pre-execution-schema.json` を正とし、独自aliasを作らない。
-
-Project Source/Document変更、Server / Provider / Client / Runtime Operationの前にTaskに必要な範囲で解決する。
+作業開始時に目的・期待結果・対象Project・対象Repository・Authority・検証経路を必要範囲で固定する。
 
 ```text
-PURPOSE
-EXPECTED_RESULT
-TARGET_PROJECT
-TARGET_RESPONSIBILITY
 TARGET_REPOSITORY
 MUTATION_REPOSITORIES
 READ_ONLY_REPOSITORIES
 SERVER_CORE_MUTATION_AUTHORIZED
-REQUIRED_SERVER_CORE_AUTHORITY
-REQUIRED_PROJECT_AUTHORITY
-REUSE_CANDIDATES
-VERIFY_PATH
-CHANGE_BOUNDARY
-CONTEXT_SCOPE
-NEXT_ACTION
-EXECUTION_ROUTE
-EXECUTION_CAPABILITY
-EXECUTION_AUTHORIZATION
-AUTHORIZATION_DOMAIN
-AUTHORIZATION_SCOPE
-MUTATION_CLASS
-PRE_EXECUTION_COMPLETE
-BLOCKER
 ```
 
-不明な値を推測で埋めない。
+Repositoryを読むことと変更することを分離する。server-coreはserver-core自体の明示許可が無い限りread-only。
 
-`PRE_EXECUTION_COMPLETE=YES` はexact target、required Authority、mutation boundary、next exact action、必要Input/Revision/Endpoint/Service identity、verification path、authorization scope/stateがTaskに必要な範囲で確定した場合だけ使用する。外部実行が必要な場合、これは「実行直前まで準備済み」を意味し、実行済み/PASSを意味しない。
+別Task / 別Projectのuncommitted diffをstage / overwriteしない。shared checkoutのswitch/reset/rebaseは他Taskへの影響を閉じられない限り行わない。
 
-## 3. Executor Route Boundary
+## 3. Context Loading
 
-実行主体の優先順位・Cost Policy・operator interaction interfaceはWorkspace最上位AuthorityまたはTask PacketをOwnerとする。本Ruleで独自の順序や数値制約を再定義しない。
+対象ProjectではREADMEを入口とし、通常は対象Source・Input/Output・直接依存・関連Testから開始する。
 
-server-core側では、選定された `EXECUTION_ROUTE` / `EXECUTION_CAPABILITY` がmachine schemaとtechnical boundaryに適合することだけを確認する。
+必要な場合だけ次の順で拡張する。
 
-`EXECUTION_ROUTE=SERVER_COMMAND` の場合は `docs/SERVER_COMMAND_CONTRACT.md` を読み、technical shell/process safety、mutation classification、same-target concurrency、exit-status、bounded diagnostics、interruption recovery、evidence promotionを確認する。operator-facing command presentationは最上位Authorityを正とする。
+```text
+Target Boundary
+  -> Adjacent Boundary
+  -> Reuse Unit / Module / Component
+  -> System / Repository
+```
 
-## 4. Mutation Target / Authorization Lock
+`.env` / secrets / node_modules / dist / build / `.next` / archive / logs / dumps / cache / backupsは通常Contextへ入れない。Task対象になった場合だけ必要範囲を読む。
 
-Repositoryを読むことと、そのRepositoryへ書き込むことを分離する。
+## 4. Development Rules
 
-- `TARGET_REPOSITORY` はTaskの主対象。
-- `MUTATION_REPOSITORIES` は今回write/commitしてよいRepositoryの明示集合。
-- `READ_ONLY_REPOSITORIES` は参照・Authority確認・再利用調査だけのRepository。
-- server-coreはexplicit owner authorizationが無い限りread-only。`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示成立しない限りmutation対象へ入れない。
-- Shared Capability/service ownerを読むことは実装変更許可ではない。
-- 複数Repositoryが登場しても必要性が確認されるまで他Repositoryへ書き込まない。
+- 目的と期待結果を最初に固定する。
+- 新規Code生成前に既存Design / Code / Module / Type / Schema / Test / Template / 登録済み共有資産の再利用可否を確認する。
+- 再利用は `そのまま利用 -> 設定・型調整 -> 薄いAdapter -> 共通部分抽出 -> 新規実装` の順で判断する。
+- 公開契約、Input、Output、依存方向、設定所有者、状態所有者を必要範囲で明確にする。
+- DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
+- 実装がDesignと意図的に異なる場合はDesign Deltaへ差分、理由、Evidence、適用Commitを残す。
+- 実装済み / 完成 / 稼働はREADMEだけで判断せず、Source / Test / Runtime Evidenceで確認する。
+- 必要工程を理由なく省略せず、固定ルーティーンから勝手に脱線しない。
 
-AuthorizationはCurrent Task/change unit/target operationへscopeする。過去Taskの許可を別Task、別Repository、別Provider resource、別credential、別Runtime/Production operationへcarry-forwardしない。
+## 5. Execution Route
 
-write/commit前にcurrent repository rootとmutation targetを照合する。
+Server / Workspace上のtechnical execution routeとして次だけを扱う。
 
-## 5. Multi-task / Multi-worker Safety
+```text
+DETERMINISTIC_LOCAL_OR_CI
+SERVER_COMMAND
+SERVER_AI
+PROJECT_RUNTIME
+```
 
-複数Project、Agent、change unitが並行する前提で扱う。
+- deterministic script / test / CIで閉じられる処理を不要にAIへ置き換えない。
+- DebugAIを利用するTaskでは、既に取得済みのEvidence / Tool result / prior verified stateを再利用し、同じ調査をServer AIへ重複実行させない。
+- `SERVER_COMMAND` は `/home/admin1/server-core/docs/SERVER_COMMAND_CONTRACT.md` に従う。
+- execution capabilityとmutation authorizationを混同しない。
 
-- intended change unit外のuncommitted diffをstage/overwriteしない。
-- shared checkoutのswitch/reset/rebaseは他Taskへの影響を閉じられない限り行わない。
-- readbackは可能ならGit object/API inspectionを優先する。
-- `git fetch`、temporary checkout/detach、branch switchは最終状態を戻してもpure read-onlyではなく `REVERSIBLE_LOCAL_MUTATION`。
-- server-core auto-commit helperは明示された `--file PATH` だけをstageし、同一checkoutのhelper commitをsingle-writer lockで直列化する。
-- Workspace MCP installerはglobal Cursor config mutationをsingle-writerで扱い、競合時はfail closedする。
+Chat UI、会話形式、Notion、外部アプリ固有interactionはserver-coreの実行ルールに持ち込まない。
 
-## 6. Context Loading / Development
+## 6. Verification
 
-対象Project READMEから対象Source、Input/Output、直接依存、関連Testを読み、不足時だけ `Target -> Adjacent -> Reuse Unit -> System/Repository` へ広げる。
+次だけでPASSにしない。
+- Process起動
+- Error無し
+- HTTP 200
+- `true`
+- 空配列
+- Build成功
+- Test runner終了
+- CI green
 
-`.env`、credential、dependency cache、build output、archive、logs、backups等はTask対象でない限り通常Contextへ含めない。
+必要な範囲でInput、実行条件、期待出力、状態変化、変化してはならない状態、回帰、主要失敗条件、Runtime/Provider readbackを確認する。
 
-新規実装前に既存Design / Code / Module / Type / Schema / Test / Template / shared capabilityを確認し、`そのまま利用 -> 設定・型調整 -> 薄いAdapter -> 共通部分抽出 -> 新規実装` の順で判断する。
+未確認 / 未実行 / 未検証を推測でPASSへ変えない。
 
-Project固有実装はowning Projectへ置く。Design BaselineをCurrent実装へ合わせるだけの上書きをしない。
+## 7. Documentation Gate
 
-## 7. Documentation Ownership
+作業終了前に判定する。
 
-Document変更先はTARGET_PROJECT / TARGET_REPOSITORYに従う。
+```text
+README_UPDATE_REQUIRED=YES/NO
+PROJECT_TREE_UPDATE_REQUIRED=YES/NO
+DESIGN_DELTA_REQUIRED=YES/NO
+SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
+```
 
-対象ProjectのREADME/付属Document/README-linked Document更新をserver-core Document更新へ読み替えない。
+Requiredなのに未更新ならDocumentation Completeとしない。
 
-server-core Documentはserver-core自体のexplicit owner authorizationがある場合だけ変更する。
+System / Feature bundle / reusable ModuleがREADMEだけでは説明なしに引継げない場合は、既存Documentを更新するか技術Documentを作成しREADMEから到達可能にする。
 
-## 8. Verification / State
+Document変更先はTARGET_PROJECT / TARGET_REPOSITORYに従う。対象ProjectのDocument更新をserver-core Document更新へ読み替えない。
 
-PASSはTask acceptanceに必要なevidenceで判定する。Process起動、Error無し、HTTP 200、Build成功、Test runner終了、CI greenだけをTask全体のPASSへ自動昇格しない。
+## 8. GitHub Work History
 
-未実行・未確認・未検証はそのまま保持する。Config/registration/auth/transport/discovery/call/runtime/production等のState Semanticsは `SERVER_CORE_PROTOCOL.md` を正とする。
+ファイル変更を伴う完成作業では、対象Repositoryの運用に従ってcommit / pushし、可能ならremote readbackまで確認する。
 
-## 9. Change Boundary
+Commitは実作業報告として、必要に応じて目的、主要変更、影響範囲、検証、Document更新、残作業を追える内容にする。
 
-Merge、Production deploy/publish/cutover、force push/destructive history rewrite、active service stop/restart/recreate、credential mutation、Provider resource mutation等はread-only確認と分離し、対象Authorityのauthorizationを必要とする。
+Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
 
-server-coreへのwrite/commit/branch mutationは別途explicit owner authorizationが必要。
+## 9. Approval Boundary
 
-## 10. Helper Execution Boundary
+Masterの明示指示なしに次を行わない。
+- main / PR merge
+- Production deploy / 公開 / 切替
+- Force push / Branch削除 / reset --hard / rebase
+- 既存Service stop / restart / recreate
+- Cloudflare / Hugging Face等のResource作成・変更・削除
+- Secret追加・削除・rotation
+- 新規Model download
+- 新規Repository / Project / Space作成
 
-helperの存在/Path解決/実行可能性はmutation permissionではない。
+server-coreへのwrite / commit / branch mutationはserver-core自体の明示許可が必要。
 
-- `storage_lifecycle_audit.py`: bounded read-only audit、default compact result envelope。
-- Skill resolver: full read、glob/path traversal拒否。
-- `verify-workspace-mcp.sh`: config-only default。client readbackはexplicit option。
-- `init-dev-workspace.sh`: default read-only check。Workspace mutationはexplicit option。
-- `install-workspace-mcp.sh`: Workspace client config mutationはexplicit option + single-writer fail-closed。
-- `workspace_command_center_check.py`: default wiring check。repairはexplicit mutation authorization。
-- `ai-auto-commit.sh`: server-core専用、server-core authorization + explicit `--file PATH` change unit必須 + single-writer fail-closed。
+## 10. Runtime
 
-helper failureから隣接Repository/Provider/credential/runtimeの推測修正へ進まない。
+本番常駐の標準経路はDocker / Docker Composeとする。Project Authorityで正式例外が定義される場合だけ例外を適用する。
 
-## 11. Runtime / Integration
+ServerはRuntime / Processing環境であり、GitHub Source履歴やProject Designの代替正本にしない。
 
-本番常駐は原則Docker / Docker Compose。Project Authorityで正式例外が定義される場合だけ例外を適用する。
+## 11. Shared Workspace Capabilities
 
-ServerはRuntime/Processing環境でありGitHub Source/Design/Documentの代替正本ではない。
+共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。
 
-Shared Capabilityを使う/接続する/検証するTaskとowner implementation変更を分離する。TGserver/webhook gateway等のProject-owned serviceはShared Capabilityと混同せず `docs/PROJECT_INTEGRATION_RULES.md` に従う。
+Secret値をGit / Log / Documentへ出さない。未登録・未実装・未検証のCapabilityを利用可能と扱わない。
 
-Credential実値をSource / Document / Logへ保存しない。Current availabilityは必要なTaskで実設定・transport・interface・representative callを確認する。
+TGserver / webhook gateway等のProject-owned serviceは、複数Projectで利用されても自動的にShared Capabilityへ変更しない。
 
-## 12. Execution Continuity / Recovery
+## 12. Server Command / Recovery
 
-AI/client/UIのconnection error、response truncation、retry表示、tool response delivery failureは、対象Operationの成功/失敗/未実行を意味しない。
+Server commandはparent interactive shellを意図せず終了させず、exact target、real return code、partial apply、bounded diagnostics、credential非表示を守る。
 
-- 同一turn内で依存するCI/async checkが `queued` / `in_progress` かつquery可能なら、初回readbackだけで停止せずbounded pollingでterminal stateまで確認する。
-- transient read failureは、安全に再試行または別readbackできるなら確認してからBLOCKED判定する。
-- connection/response interruption後の次の実行可能turnでは、PR/branch exact HEAD、commit、CI/run ID、Runtime/Provider state等のdurable stateを最初にreadbackして再開点を復元する。
-- 前turnのresponseが届かなかったことだけを理由に同じmutationを再実行しない。`NOT_APPLIED / APPLIED / PARTIAL / UNKNOWN` を判定してからretryする。
-- stable run/job/request IDがある場合は新規重複実行より既存IDの追跡を優先する。
-- 復旧に必要な情報がGitHub/Authority/Task evidenceに残っている場合、operatorへ既知contextの再入力を要求しない。
+Operation途中でconnection / process / tool responseが途切れた場合は、対象Repository / run ID / Runtime等のdurable stateをreadbackし、前回mutationが `NOT_APPLIED / APPLIED / PARTIAL / UNKNOWN` のどれかを確認してから再実行する。
 
-UI transport statusとOperation stateを分離し、未確認状態を推測で埋めない。
+## Final Rule
+
+Masterの現在の明示指示を最優先とする。手抜き、中抜き、必要工程を落とす簡略化、捏造、推測補完、未実行の実行済み扱い、未検証のPASS扱いは禁止する。
