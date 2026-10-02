@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "name": "gace-pre-execution-handoff",
   "authority": "docs/G_ACE_WORKSPACE.md",
   "server_command_authority": "docs/SERVER_COMMAND_CONTRACT.md",
@@ -54,6 +54,11 @@
     "server_core_mutation_requires_explicit_owner_authorization": true,
     "pre_execution_complete_does_not_mean_executed": true,
     "operator_interface_defined_outside_server_core": true,
-    "server_command_document_scope": "technical_execution_safety_and_evidence_only"
+    "server_command_document_scope": "technical_execution_safety_and_evidence_only",
+    "response_delivery_failure_is_not_operation_failure": true,
+    "interrupted_turn_recovery_requires_durable_readback": true,
+    "mutation_retry_requires_prior_apply_state_resolution": true,
+    "pending_async_checks_should_be_polled_within_available_turn": true,
+    "pending_polling_must_be_bounded": true
   }
 }
