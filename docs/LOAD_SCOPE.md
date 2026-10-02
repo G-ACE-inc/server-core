@@ -28,7 +28,7 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | Server command technical safety / evidence | `docs/SERVER_COMMAND_CONTRACT.md` |
 | Project / Repository / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
 | Workspace MCP | `docs/WORKSPACE_MCP.md` |
-| Project Integration | `docs/PROJECT_INTEGRATION_RULES.md` |
+| Project Integration（TGserver / webhook gateway / Libral Vault / Project-level MCP・Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Git / Commit / Push / work report | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
 | 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
@@ -141,7 +141,15 @@ server-core側Documentは、server-core自体の変更が明示的に許可さ�
 
 ## 7. Project Integration Routing
 
-Project-owned service、Libral Vault、MCP、Tool integrationを変更または追加するときは `docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で確認する。
+TGserver / webhook gateway / Libral Vault / Project-level MCP・Tool integrationを変更または追加するときは、`docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で確認する。
+
+```text
+server-core README
+  -> LOAD_SCOPE
+  -> PROJECT_INTEGRATION_RULES
+  -> target Project README
+  -> target Project authority / Source / Test
+```
 
 Integration Contractを読むこと自体はserver-coreやservice/provider owner Projectへの変更理由ではない。
 
