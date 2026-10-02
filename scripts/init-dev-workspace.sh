@@ -186,8 +186,9 @@ install_out="$(bash "${SERVER_CORE_ROOT}/scripts/install-workspace-mcp.sh" --app
 install_rc=$?
 set -e
 printf '%s\n' "$install_out"
-grep -q '^\[backup\] ' <<<"$install_out" && record_mutation "GLOBAL_MCP_BACKUP_CREATED"
-grep -q '^\[updated\] ' <<<"$install_out" && record_mutation "GLOBAL_MCP_UPDATED"
+grep -q '^CLIENT_DIR_UPDATED=YES$' <<<"$install_out" && record_mutation "GLOBAL_MCP_CLIENT_DIR_UPDATED"
+grep -q '^BACKUP_CREATED=YES$' <<<"$install_out" && record_mutation "GLOBAL_MCP_BACKUP_CREATED"
+grep -q '^CONFIG_UPDATED=YES$' <<<"$install_out" && record_mutation "GLOBAL_MCP_UPDATED"
 [[ "$install_rc" -eq 0 ]] || exit "$install_rc"
 
 bash "${SERVER_CORE_ROOT}/scripts/verify-workspace-mcp.sh"
