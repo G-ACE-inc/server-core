@@ -78,7 +78,7 @@ server-coreのInstaller/Verifierは:
 - credential値をRepository manifestへ複製しない;
 - credential containerの存在だけで`AUTHENTICATION_VERIFIED`へ昇格しない。
 
-したがってVerification Contractは「global client configにcredential文字列が一切存在しない」ことを要求しない。要求するのは、**Repository-managed manifestがprovider secret値を持たず、client configが適切なfile permissionで保護され、値を漏洩させずにmanaged transport contractを検証できること**である。
+したがってVerification Contractは「global client configにcredential文字列が一切存在しない」ことを要求しない。要求するのは、**Repository-managed manifestがprovider secret値を持たず、client configがowner-only・non-executableなfile permissionで保護され、値を漏洩させずにmanaged transport contractを検証できること**である。
 
 ## Installation / Permission / Backup / Concurrency
 
@@ -97,13 +97,14 @@ Installer contract:
 3. managed entryを追加/整合;
 4. unrelated existing entryを保持;
 5. runtime-definition collisionはfail closed;
-6. client configをowner-only permission（0600相当、既存がより厳しい場合はそれを維持）へ整合;
-7. mutation前backupも同等のsecure modeで作成;
-8. backup retentionはmachine contractの`backup_keep`へ制限（Current: 3）;
-9. backupにはclient-local credential containerが含まれ得るため、Current Authorityとして読込・表示・commitしない;
-10. Provider tokenをRepositoryから書き込まない;
-11. Cursor global config directoryをsingle-writer lock scopeとし、別Installer mutationと競合した場合は待機・上書きせずfail closedする;
-12. backup名とtemporary config名は同一秒・同一Host上の再実行でも衝突しない識別子を持つ。
+6. client configをowner-only・non-executable permissionへ整合する。通常は0600、既存がowner read-onlyの場合は0400を維持する;
+7. group/other permission、execute bit、write-only mode等を安全な既定として受理しない;
+8. mutation前backupも同じowner-only・non-executable modeで作成;
+9. backup retentionはmachine contractの`backup_keep`へ制限（Current: 3）;
+10. backupにはclient-local credential containerが含まれ得るため、Current Authorityとして読込・表示・commitしない;
+11. Provider tokenをRepositoryから書き込まない;
+12. Cursor global config directoryをsingle-writer lock scopeとし、別Installer mutationと競合した場合は待機・上書きせずfail closedする;
+13. backup名とtemporary config名は同一秒・同一Host上の再実行でも衝突しない識別子を持つ。
 
 これはWorkspace/client mutationであり、server-core Repositoryへのwrite permissionではない。
 
@@ -139,7 +140,7 @@ scripts/verify-workspace-mcp.sh
 確認範囲:
 - global MCP file exists;
 - JSON valid;
-- file permissionにgroup/other accessが無い;
+- file permissionが0400または0600のowner-only・non-executable modeである;
 - required managed servers exist;
 - managed runtime transport definition matches manifest;
 - Repository manifestがclient credential containerを埋め込んでいない;
