@@ -34,14 +34,16 @@ Integration Taskでは、**consumer Project、service/capability owner、server-
 ```text
 consumer Project = mutation candidate
 service/capability owner Repository = read-only unless implementation change is required
-server-core = read-only unless Workspace common contract itself changes
+server-core = read-only unless explicit owner authorization specifically permits server-core mutation
 ```
 
-「TGserverを使う」「DebugAI MCPを使う」「Vaultを使う」「Cloudflareへ接続する」のような利用指示だけで、service/capability ownerの実装を変更しない。
+Workspace common contract自体に変更が必要と判明しても、それだけではserver-coreをmutation対象へ昇格しない。server-core変更は `SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立した場合だけ実行する。
 
-owner側変更が必要なのは、既存Interfaceでは要求を満たせないことがSource/Contract/verificationから確認され、owner Repository側の変更理由が明確になった場合だけ。
+「TGserverを使う」「DebugAI MCPを使う」「Vaultを使う」「Cloudflareへ接続する」のような利用指示だけで、service/capability ownerの実装やserver-coreを変更しない。
 
-複数Repository変更が必要な場合は、Repositoryごとに目的、diff、test/verification、Git historyを分離する。
+owner側変更が必要なのは、既存Interfaceでは要求を満たせないことがSource/Contract/verificationから確認され、owner Repository側の変更理由が明確になった場合だけ。ただしserver-coreは理由が明確でもexplicit owner authorizationが無ければread-onlyを維持する。
+
+複数Repository変更が必要な場合は、Repositoryごとに目的、diff、test/verification、Git historyを分離する。server-coreを含める場合はserver-core自体の変更許可を別途確認する。
 
 ## 3. TGserver Integration
 
@@ -101,7 +103,7 @@ ProjectがMCP / Toolを利用する場合、必要範囲で次を明確化する
 
 MCP/Toolを利用・登録・接続・検証するTaskだけでは、そのMCP/Tool実装Repositoryを変更しない。current Interfaceで要求を満たせないことが確認された場合だけowner側実装変更へ進む。
 
-Project固有MCP/ToolをWorkspace globalとして扱う場合はserver-core Registry / Workspace MCP contract側にもownershipとregistration authorityを反映する。ただし、単なるProject内利用ではserver-core Registry更新を必須にしない。
+Project固有MCP/ToolをWorkspace globalとして扱う必要がある場合は、server-core Registry / Workspace MCP contract側の反映要否を判定する。ただしserver-core側反映が必要でも、`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示成立するまではserver-coreはread-onlyとし、必要変更を報告・提案する。単なるProject内利用ではserver-core Registry更新を必須にしない。
 
 ## 7. Provider Integration
 
@@ -119,9 +121,11 @@ Integration変更後に**影響したAuthorityだけ**更新する。
 
 - Project README: Current integration entry / usageが変わる場合
 - Project System/Operations document: stable interface / runtime / recovery理解に必要な場合
-- Workspace Registry: Workspace共通owner / discovery / connection authority自体が変わる場合
-- server-core Integration Contract: Workspace共通ルール自体が変わる場合
-- Design Delta: architecture/responsibility baselineから正式に変わる場合だけ
+- Workspace Registry: Workspace共通owner / discovery / connection authority自体が変わる場合の更新候補
+- server-core Integration Contract: Workspace共通ルール自体が変わる場合の更新候補
+- Design Delta: architecture/responsibility baselineから正式に変わる場合の更新候補
+
+server-core内のRegistry / Integration Contract / Design Deltaを実際に更新するには、server-core自体についてexplicit owner authorizationが必要。影響があることや更新候補であることを、write permissionと扱わない。
 
 consumer ProjectのREADME/付属Document更新を、server-core Document更新へ読み替えない。
 
