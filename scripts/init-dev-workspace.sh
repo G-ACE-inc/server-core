@@ -23,17 +23,9 @@ USAGE
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --check)
-      shift
-      ;;
-    --apply-workspace-mutation)
-      APPLY=1
-      shift
-      ;;
-    --create-project)
-      CREATE_PROJECT=1
-      shift
-      ;;
+    --check) shift ;;
+    --apply-workspace-mutation) APPLY=1; shift ;;
+    --create-project) CREATE_PROJECT=1; shift ;;
     --project)
       if [[ $# -lt 2 ]]; then
         echo "[error] missing value for --project" >&2
@@ -42,10 +34,7 @@ while [[ $# -gt 0 ]]; do
       PROJECT_NAME="$2"
       shift 2
       ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
+    -h|--help) usage; exit 0 ;;
     *)
       echo "[error] unknown argument: $1" >&2
       usage >&2
@@ -89,6 +78,20 @@ if [[ "$CREATE_PROJECT" == "1" && "$APPLY" != "1" ]]; then
   exit 2
 fi
 
+validate_project_name() {
+  local name="$1"
+  if [[ -z "$name" || "$name" == "." || "$name" == ".." || "$name" == */* || "$name" == *\\* ]]; then
+    return 1
+  fi
+  [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]
+}
+
+if [[ "$CREATE_PROJECT" == "1" ]] && ! validate_project_name "$PROJECT_NAME"; then
+  echo "[error] unsafe project name; expected a single directory name using A-Z a-z 0-9 . _ -" >&2
+  echo "NO_CHANGES_PERFORMED" >&2
+  exit 2
+fi
+
 if [[ "$APPLY" != "1" ]]; then
   echo "WORKSPACE_INIT_MODE=READ_ONLY_CHECK"
   python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py"
@@ -101,13 +104,21 @@ echo "WORKSPACE_INIT_MODE=AUTHORIZED_MUTATION"
 
 if [[ "$CREATE_PROJECT" == "1" ]]; then
   TARGET="${PROJECTS_DIR}/${PROJECT_NAME}"
+  case "$TARGET" in
+    "${PROJECTS_DIR}/"*) ;;
+    *)
+      echo "[error] project target escaped canonical projects root: ${TARGET}" >&2
+      echo "NO_CHANGES_PERFORMED" >&2
+      exit 2
+      ;;
+  esac
   if [[ -d "$TARGET" ]]; then
     echo "[skip] ${TARGET} already exists"
   elif [[ -e "$TARGET" ]]; then
     echo "[error] project target exists but is not a directory: ${TARGET}" >&2
     exit 1
   else
-    mkdir -p "$TARGET"
+    mkdir -p -- "$TARGET"
     echo "[created] ${TARGET}"
   fi
 fi
