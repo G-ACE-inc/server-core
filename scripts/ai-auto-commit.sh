@@ -137,4 +137,7 @@ if [[ -z "$message" ]]; then
 fi
 
 git commit -m "$message"
-[[ "$push_mode" == "1" ]] && git push origin "$branch"
+if [[ "$push_mode" == "1" ]]; then
+  git push origin "$branch"
+fi
+exit 0
