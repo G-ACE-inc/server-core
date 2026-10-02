@@ -1,6 +1,6 @@
 # SERVER CORE OPERATION PROTOCOL
 
-Version: 2026-10-02
+Version: 2026-10-03
 Role: G-ACE Workspace Command Centerの共通運用・変更・安全境界。
 
 ## Purpose
@@ -11,19 +11,21 @@ server-coreはTaskをRouting / Dispatchするが、Project固有実装のowner�
 
 ## Authority / Change Control
 
-変更操作は、対象Repository / Project / Provider / RuntimeのCurrent Authorityで定義された権限と承認条件に従う。
+最終決定者はMaster。
 
-質問、検討、read-only確認、提案、操作説明をMutation承認として扱わない。
+質問、検討、read-only確認、提案、操作説明をMutation承認として扱わない。未確認状態を推測で補完しない。
 
-次の操作はread-only確認と分離し、対象Authorityの承認条件を満たした場合だけ実行する。
+Masterの明示指示なしに次を実行しない。
 - main / PR merge
 - Production deploy / publish / cutover
 - force push / destructive history rewrite
 - active service stop / restart / recreate
 - Secret / credential add / delete / rotation
 - Provider resource create / update / delete
+- 新規Model download
+- 新規Repository / Project / Space作成
 
-**server-coreへのwrite / commit / branch mutationは、server-core自体の変更についてexplicit owner authorizationが必要。** 他ProjectのTask、共通Authority参照、障害調査、Shared Capability利用、Workspace共通Contractへの影響可能性から暗黙に承認を推論しない。
+**server-coreへのwrite / commit / branch mutationは、server-core自体の変更についてMasterの明示許可が必要。** 他ProjectのTask、共通Authority参照、障害調査、Shared Capability利用、Workspace共通Contractへの影響可能性から暗黙に承認を推論しない。
 
 ## Repository Mutation Ownership
 
@@ -39,7 +41,7 @@ SERVER_CORE_MUTATION_AUTHORIZED
 - `TARGET_REPOSITORY`: 主対象ProjectのRepository。
 - `MUTATION_REPOSITORIES`: 今回Source / Config / Document / Commitを変更してよいRepository。
 - `READ_ONLY_REPOSITORIES`: Authority確認、再利用調査、Integration確認、Runtime調査のために読むだけのRepository。
-- `SERVER_CORE_MUTATION_AUTHORIZED`: server-core自体の変更についてexplicit owner authorizationがある場合だけ `YES`。
+- `SERVER_CORE_MUTATION_AUTHORIZED`: server-core自体の変更についてMasterの明示許可がある場合だけ `YES`。
 
 server-coreは `SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立しない限りread-only。Workspace共通Contract変更が必要に見えても、自動的にmutation対象へ昇格しない。
 
@@ -52,12 +54,12 @@ Git操作前にはcurrent repository identityとmutation targetを照合する�
 ```text
 server-core/README.md
   -> server-core/docs/LOAD_SCOPE.md
-  -> Taskに必要なserver-core Authorityだけ
+  -> 今回必要なserver-core Authorityだけ
   -> 対象Project README
-  -> 必要なProject Authority / Source / Test
+  -> 必要なProject Authority / Source / Testだけ
 ```
 
-全正本を一括読込しない。
+全正本を一括読込しない。同一Taskで確認済みのAuthorityは、変更・矛盾・情報不足が無い限り繰り返し読まない。
 
 Workspace仕様: `docs/G_ACE_WORKSPACE.md`  
 Discovery: `docs/WORKSPACE_REGISTRY.md`  
@@ -72,7 +74,8 @@ Design Delta: `docs/DESIGN_DELTA.md`
 - 公開契約は可能な限りCode上のInterface / Type / Schema / Testと整合させる。
 - Design BaselineをCurrent実装へ合わせるためだけに書き換えない。
 - Project Document更新Taskをserver-core Document更新へ読み替えない。
-- server-core側に改善余地を発見しても、明示許可なしに併せて修正しない。
+- server-core側に改善余地を発見しても、Masterの明示許可なしに併せて修正しない。
+- 必要工程を理由なく省略せず、固定ルーティーンから勝手に脱線しない。
 
 ## Verification
 
@@ -142,7 +145,7 @@ implementation / fix
  -> PR / CI when required
  -> confirmed GitHub revision
  -> target runtime identity lock
- -> required change approval
+ -> Master approval when required
  -> Server deploy
  -> Runtime verification
 ```
@@ -161,7 +164,7 @@ Capabilityを利用・登録・接続・検証することと、Capability imple
 
 Registry記載や過去利用実績だけでCurrent Runtimeを証明しない。必要時は実設定・Provider・Endpoint・Docker・GitHub等をreadbackする。
 
-Capabilityの**durableなowner / authority / state semantics / verification boundary**は `docs/WORKSPACE_REGISTRY.md` を正とする。Capabilityの**Current live state**はRegistry記載を代用せず、Task時の実client/provider/runtime readbackを正とする。本Protocolへ個別Projectの一時状態を複製しない。
+Capabilityのdurableなowner / authority / state semantics / verification boundaryは `docs/WORKSPACE_REGISTRY.md` を正とする。CapabilityのCurrent live stateはRegistry記載を代用せず、Task時の実client/provider/runtime readbackを正とする。本Protocolへ個別Projectの一時状態を複製しない。
 
 ## Project Integration
 
@@ -213,6 +216,6 @@ Secret Contractを読むこと、credential availabilityを確認すること、
 - owner不明のFile / Module / Runtime / DataへMutationしない。
 - `MUTATION_REPOSITORIES` 外のRepositoryへwrite/commitしない。
 - Authorityを読んだだけのRepositoryへmutationしない。
-- server-coreはexplicit owner authorizationなしにwrite/commit/branch mutationしない。
+- server-coreはMasterの明示許可なしにwrite/commit/branch mutationしない。
 - credential実値をSource / Git / Document / Logへ保存しない。
 - Project固有実装をserver-coreへ移して責務境界を崩さない。
