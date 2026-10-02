@@ -51,6 +51,8 @@ INTENDED_FILES
 
 複数Task/Agentが同一Repositoryで並行する可能性を前提とし、**今回のchange unitに属さないuncommitted diffをstageしない。** Repository全体を暗黙stageするhelperを標準にしない。
 
+同一server-core checkoutでhelper commitが同時実行された場合、先にlockを取得したchange unitだけを進める。lock取得に失敗したhelperは待機・上書き・再試行を自動化せずfail closedし、Current HEAD / working treeを再確認してから別change unitとして再開する。
+
 別RepositoryのScriptをabsolute pathで呼んだこと、別Repositoryへ一時的に`cd`したこと、共通Authorityを読んだことをCommit対象変更の根拠にしない。
 
 ## 4. Commit = Work History
@@ -97,6 +99,7 @@ Helperはfail-closedで確認する。
 - Script所在地から解決したcanonical server-core repository
 - non-detached feature branch
 - direct `main` / `master`拒否
+- `flock`による同一checkoutのcommit change-unit直列化。lock競合時はcommitを実行しない
 - safe repository-relative `--file` path
 - intended Fileが実際にchangedであること
 - `.env`系File拒否
@@ -139,6 +142,7 @@ Push成功だけでGitHub反映済みとしない。必要な作業ではremote 
 - Branch / Repository identityが不明
 - Repositoryが `MUTATION_REPOSITORIES` に含まれない
 - server-core authorizationがCurrent Task/change unitで成立していない
+- 同一checkoutのserver-core auto-commit lockを別change unitが保持中
 - 他作業のuncommitted差分と分離できない
 - staged setがintended filesと一致しない
 - repository policyが別Routeを要求
@@ -154,3 +158,4 @@ Production publish/deployはCommit/Pushとは別のchange boundary。
 - Authorityを読んだだけのRepositoryへwrite/commitしない。
 - server-core helperを他Projectのcommit手段として使用しない。
 - unrelated diffをrepository-wide stagingへ巻き込まない。
+- concurrent helper commitを同じcheckoutで並行実行しない。
