@@ -62,7 +62,6 @@ jobs:
           require_text 'SERVER_CORE_MUTATION_AUTHORIZED' README.md server_core_mutation_gate_readme
           require_text 'SERVER_CORE_MUTATION_AUTHORIZED' SERVER_CORE_PROTOCOL.md server_core_mutation_gate_protocol
           require_text 'REVERSIBLE_LOCAL_MUTATION' docs/SERVER_COMMAND_CONTRACT.md reversible_local_mutation
-          require_text 'Chat UI' docs/SERVER_COMMAND_CONTRACT.md chat_ui_exclusion
           require_text 'Docker Composeを正' README.md docker_compose_readme
           require_text 'Docker Compose.*正' CORE.md docker_compose_core
           require_text 'Docker Composeを正' SERVER_CORE_PROTOCOL.md docker_compose_protocol
@@ -70,7 +69,7 @@ jobs:
           require_text 'Docker Composeを正' .cursor/rules/00_agent_runtime.mdc docker_compose_agent_runtime
           require_text 'Docker Composeを正' docs/DEPLOY_RUNBOOK.md docker_compose_deploy
           require_text 'Docker Compose as the canonical production residency path' docs/SERVER_CORE_DESIGN.md docker_compose_design
-          require_absent 'Workspace top-level|GPT↔operator|operator-facing command presentation|ASSISTANT_TOOL|USER_UI|EXTERNAL_CLIENT|EXECUTION_ROUTE|EXECUTION_CAPABILITY|EXECUTION_AUTHORIZATION|PRE_EXECUTION_COMPLETE' overgeneralized_executor_policy README.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/LOAD_SCOPE.md docs/SERVER_COMMAND_CONTRACT.md .cursor/rules/00_agent_runtime.mdc operations/pre-execution-schema.json
+          require_absent 'Workspace top-level|GPT↔operator|operator-facing command presentation|ASSISTANT_TOOL|USER_UI|EXTERNAL_CLIENT|EXECUTION_ROUTE|EXECUTION_CAPABILITY|EXECUTION_AUTHORIZATION|PRE_EXECUTION_COMPLETE|Chat UI|ChatGPT|Notion|generic executor|generic AI cost policy' overgeneralized_non_server_policy README.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/LOAD_SCOPE.md docs/SERVER_COMMAND_CONTRACT.md .cursor/rules/00_agent_runtime.mdc operations/pre-execution-schema.json
           require_absent 'Project固有の正式例外|formally defined Project exception|Project Authorityで正式例外|正式な例外経路' docker_compose_exception README.md CORE.md SERVER_CORE_PROTOCOL.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/DEPLOY_RUNBOOK.md .cursor/rules/00_agent_runtime.mdc
           echo 'AUTHORITY_ROUTING=PASS'
 
@@ -81,7 +80,7 @@ jobs:
           import json
           from pathlib import Path
           pre=json.loads(Path('operations/pre-execution-schema.json').read_text())
-          assert pre['schema_version'] == '1.4'
+          assert pre['schema_version'] == '1.5'
           assert pre['name'] == 'gace-command-center-dispatch'
           required=set(pre['required_fields'])
           assert {'PURPOSE','EXPECTED_RESULT','TARGET_PROJECT','TARGET_REPOSITORY','MUTATION_REPOSITORIES','READ_ONLY_REPOSITORIES','SERVER_CORE_MUTATION_AUTHORIZED','REQUIRED_SERVER_CORE_AUTHORITY','REQUIRED_PROJECT_AUTHORITY','REUSE_CANDIDATES','VERIFY_PATH','APPROVAL_BOUNDARY','CHANGE_BOUNDARY','CONTEXT_SCOPE','BLOCKER'} <= required
@@ -91,7 +90,7 @@ jobs:
           assert 'mutation_classes' not in pre
           assert pre['rules']['fixed_development_routine_must_not_be_skipped_without_reason'] is True
           assert pre['rules']['debugai_reuses_existing_evidence_before_server_ai_research'] is True
-          assert pre['rules']['chat_ui_notion_and_external_app_interaction_are_outside_server_core'] is True
+          assert 'chat_ui_notion_and_external_app_interaction_are_outside_server_core' not in pre['rules']
           mcp=json.loads(Path('operations/workspace-mcp.json').read_text())
           assert mcp['scope']=='workspace-global'
           assert set(mcp['servers']) >= {'cloudflare-api','huggingface'}
