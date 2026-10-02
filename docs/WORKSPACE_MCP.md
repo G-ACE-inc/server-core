@@ -47,60 +47,63 @@ CHANGE MCP IMPLEMENTATION
 これらは別Operationである。
 
 - `USE / CALL MCP`: 原則mutationなし。MCP owner Repositoryもserver-coreもread-only。
-- `VERIFY CONFIG ONLY`: `~/.cursor/mcp.json` のread-only validation。外部client commandを実行しない。
-- `VERIFY CLIENT REGISTRATION`: 明示的にclient readbackが必要な場合だけCursor CLI等へ問い合わせる。
-- `VERIFY LIVE AVAILABILITY`: TaskでCurrent利用可能性が必要な場合に、そのTaskを実行するclient/provider経路でauthentication / transport / interface discovery / representative callを確認する。server-core verifierのconfig/client-registration結果だけでは代用しない。
-- `REGISTER PROJECT-SCOPED MCP`: consumer Project側Config/Documentがmutation候補。server-coreやMCP owner実装は原則read-only。
-- `CHANGE WORKSPACE-GLOBAL REGISTRATION`: user-global MCP configのmutation。server-core Repositoryのmanifest/Document/Script変更を自動的には許可しない。server-core側Contract変更が必要なら、server-core自体の変更についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立した場合だけmutation対象にする。
-- `CHANGE MCP IMPLEMENTATION`: owning MCP Projectだけをmutation対象とし、server-coreは共通Contract変更が必要でも explicit owner authorization が無い限りread-only。
+- `VERIFY CONFIG ONLY`: `~/.cursor/mcp.json` のread-only contract validation。外部client commandを実行しない。
+- `VERIFY CLIENT REGISTRATION`: Task上必要な場合だけCursor CLI等へ問い合わせる。
+- `VERIFY LIVE AVAILABILITY`: Taskを実行するclient/provider経路でauthentication / transport / interface discovery / representative callを確認する。
+- `REGISTER PROJECT-SCOPED MCP`: consumer Project側Config/Documentがmutation候補。
+- `CHANGE WORKSPACE-GLOBAL REGISTRATION`: user-global MCP configのmutation。server-core Repository mutationとは別。
+- `CHANGE MCP IMPLEMENTATION`: owning MCP Project側の実装Task。
 
-「MCPを使う」「MCPを検証する」「MCPをProjectへ接続する」「Workspace-global registrationを整合する」だけでserver-coreのmanifest/document/scriptやMCP owner Sourceを書き換えない。
+「MCPを使う」「MCPを検証する」「MCPをProjectへ接続する」だけでserver-coreやMCP owner Sourceを書き換えない。
 
 ## Managed Shared MCPs
 
-Current machine-readable manifest authority: `operations/workspace-mcp.json`。
+Machine-readable manifest authority: `operations/workspace-mcp.json`。
 
 Current managed entries:
 - Cloudflare API MCP
 - Hugging Face MCP
 
-Provider credential値はmanifestへ入れない。
+Provider bearer token/password/secret値はmanifestへ入れない。
 
-## Existing Non-managed Entries
+## Existing Non-managed Entries / Client Credential Containers
 
 Installerはserver-core管理外の既存MCP entryを保持する。
 
-既存entryがglobal configに存在しても、それだけでserver-core ownership、Current runtime availability、authentication successを意味しない。
+Client-global configでは、client/OAuth/providerが生成・保持した `auth` / `headers` / `env` credential containerが存在し得る。これは**client-local runtime state**でありRepository Authorityではない。
 
-Project-owned MCPのowner / runtime / client registrationは対象Project authorityを正とする。
+server-coreのInstaller/Verifierは:
+- 既存credential containerをmerge policyに従って保持できる;
+- credential値をstdout/stderrへ表示しない;
+- credential値をRepository manifestへ複製しない;
+- credential containerの存在だけで`AUTHENTICATION_VERIFIED`へ昇格しない。
 
-Non-managed entryを確認しただけでserver-core manifestへ取り込まない。
+したがってVerification Contractは「global client configにcredential文字列が一切存在しない」ことを要求しない。要求するのは、**Repository-managed manifestがprovider secret値を持たず、client configが適切なfile permissionで保護され、値を漏洩させずにmanaged transport contractを検証できること**である。
 
-## Installation
+## Installation / Permission / Backup
 
-Workspace-global registration自体の変更が明示的に対象の場合だけ、canonical server-core checkoutから実行する。
+Workspace-global registration自体の変更が明示的に対象の場合だけ実行する。
 
 ```bash
 cd /home/admin1/server-core
 scripts/install-workspace-mcp.sh --apply-workspace-mcp-mutation
 ```
 
-`--apply-workspace-mcp-mutation` が無い場合、Installerは変更せずfail closedする。
-
-これは `~/.cursor/mcp.json` のruntime/client config mutation authorizationであり、server-core Repositoryへのwrite permissionではない。
-
-Project固有MCP利用TaskやMCP実装TaskのたびにこのInstallerを実行しない。
+`--apply-workspace-mcp-mutation` が無い場合は変更せずfail closedする。
 
 Installer contract:
-1. explicit mutation flagを要求する;
-2. manifestを検証する;
-3. `~/.cursor/mcp.json` が無ければ作成する;
-4. server-core管理外の既存entryを保持する;
-5. managed shared entryを追加/整合する;
-6. 同名で異なるruntime definitionとの衝突はfail closedする;
-7. mutation前にbackupを作る;
-8. credential containerをmerge policyに従って保持する;
-9. Provider tokenをRepositoryから書き込まない。
+1. explicit mutation flagを要求;
+2. manifestを検証;
+3. managed entryを追加/整合;
+4. unrelated existing entryを保持;
+5. runtime-definition collisionはfail closed;
+6. client configをowner-only permission（0600相当、既存がより厳しい場合はそれを維持）へ整合;
+7. mutation前backupも同等のsecure modeで作成;
+8. backup retentionはmachine contractの`backup_keep`へ制限（Current: 3）;
+9. backupにはclient-local credential containerが含まれ得るため、Current Authorityとして読込・表示・commitしない;
+10. Provider tokenをRepositoryから書き込まない。
+
+これはWorkspace/client mutationであり、server-core Repositoryへのwrite permissionではない。
 
 ## Workspace Initialization
 
@@ -111,60 +114,51 @@ cd /home/admin1/server-core
 scripts/init-dev-workspace.sh --check
 ```
 
-引数なしもread-only checkとして扱う。Workspace file、rules wiring、global MCP configを検証するが変更しない。
-
-Workspace wiring / global MCP configを実際に修復・整合するTaskだけ、明示的にmutation modeを使う。
+Workspace wiring / global MCP configを実際に修復するTaskだけmutation modeを使う。
 
 ```bash
 scripts/init-dev-workspace.sh --apply-workspace-mutation
 ```
 
-Project directory作成まで含む場合は、さらにProject作成を明示する。
+Project directory作成まで含む場合は、Taskで確定したsingle-directory Project名を指定する。
 
 ```bash
 scripts/init-dev-workspace.sh --apply-workspace-mutation --project PROJECT_NAME --create-project
 ```
 
-Project名はTaskで確定した実名を使用し、推測値を入れない。
-
-Initializer mutation modeはWorkspace rules symlink、Workspace file、managed global MCP configを変更し得る。実行許可とserver-core Repository書換え許可は別である。
-
 Project Source/Document更新Taskの通常手順としてInitializer mutation modeを実行しない。
 
 ## Configuration Verification
-
-Configのみのread-only verification:
 
 ```bash
 scripts/verify-workspace-mcp.sh
 ```
 
-確認項目:
-- global MCP file exists
-- valid JSON
-- required managed servers exist
-- managed runtime transport definition matches manifest
-- obvious plaintext credential pattern is absent
+確認範囲:
+- global MCP file exists;
+- JSON valid;
+- file permissionにgroup/other accessが無い;
+- required managed servers exist;
+- managed runtime transport definition matches manifest;
+- Repository manifestがclient credential containerを埋め込んでいない;
+- client-local credential containerは値を表示せず保持可能。
 
-このVerifierは成功時でも `CONFIG_REGISTERED` 相当までしか証明しない。authentication / transport / interface discovery / representative call / `AVAILABLE_VERIFIED` をPASSへ昇格させない。
+成功しても証明するのは`CONFIG_REGISTERED`相当まで。authentication / transport / interface discovery / representative call / `AVAILABLE_VERIFIED`へ昇格しない。
 
-Client-side registration readbackがTask上必要な場合だけ:
+Client registration readbackが必要な場合だけ:
 
 ```bash
 scripts/verify-workspace-mcp.sh --client-readback
 ```
 
-このoptionは利用可能なCursor CLIへread-only問い合わせを行う。Default verificationは外部client commandを起動しない。Client readbackが成功しても証明範囲はregistration stateまでであり、live availabilityではない。
-
-Project-owned MCPのCurrent availability確認は、そのProject/client/runtime Authorityに従う。server-core verifierで代用しない。
+成功しても証明範囲はclient registrationまで。
 
 ## State Semantics
 
-MCP状態は分離する。
-
 ```text
 IMPLEMENTATION_VERIFIED
-CONFIG_PRESENT / CONFIG_REGISTERED
+CONFIG_PRESENT
+CONFIG_REGISTERED
 CLIENT_REGISTRATION_VERIFIED
 AUTHENTICATION_VERIFIED
 TRANSPORT_VERIFIED
@@ -173,87 +167,51 @@ REPRESENTATIVE_CALL_PASS
 AVAILABLE_VERIFIED
 ```
 
-`CONFIG_PRESENT` や過去利用実績だけでCurrent `AVAILABLE_VERIFIED` としない。
-
-逆に、Current live再検証待ちを理由に、実装済みMCPを `NOT_IMPLEMENTED` へ降格しない。
+前段の存在/成功から後段を推測しない。Current live再検証待ちを理由にSource/implementation/protocolの既検証状態を未実装へ降格しない。
 
 ## Live Verification Responsibility
 
-server-coreが所有するのは、Workspace共通MCPについて「どの状態を分離し、何を確認すれば利用可能と判定できるか」というverification contractである。
+server-coreは「何を確認すればCurrent利用可能と判定できるか」を定義する。Current live statusそのものはTask実行時に実client/provider経路からreadbackする。
 
-Current live status自体をserver-core DocumentやRegistryへ恒久的な健康状態として固定しない。Task実行時に必要なCurrent状態は、そのTaskで実際にMCPを利用するclient/provider経路からreadbackする。
-
-Managed remote MCP（Cloudflare API / Hugging Face）のCurrent `AVAILABLE_VERIFIED` は、必要なTaskで次を満たした場合だけ成立する。
+Managed remote MCPの`AVAILABLE_VERIFIED`はTaskに必要な範囲で次を満たした場合だけ成立する。
 
 ```text
 CONFIG_REGISTERED=YES
-CLIENT_REGISTRATION_VERIFIED=YES when client registration is relevant
+CLIENT_REGISTRATION_VERIFIED=YES when applicable
 AUTHENTICATION_VERIFIED=YES
 TRANSPORT_VERIFIED=YES
 INTERFACE_DISCOVERY_VERIFIED=YES
-REPRESENTATIVE_CALL=PASS
+REPRESENTATIVE_CALL_PASS=YES
 ```
 
-代表callはTask目的に対して無害なread-only callを優先する。live verificationのためだけにProvider resource、credential、server-core Repository、consumer Projectを変更しない。
+代表callはharmless/read-only operationを優先する。verificationのためだけにProvider resource、credential、server-core Repository、consumer Projectを変更しない。
 
-live verification failureはfailure evidenceであり、server-core修正・credential rotation・MCP implementation変更の自動許可ではない。原因ownerを特定してから対象境界へ戻す。
+## DebugAI / Deterministic Japanese Parser Boundary
 
-## DebugAI MCP Boundary
+Project-owned MCP implementationはそれぞれowning Project Authorityが所有する。server-coreはowner、利用/registration/readback入口、availability semanticsだけを管理する。
 
-DebugAI MCP implementation/protocolはDebugAI Project Authorityが所有する。server-coreはそのowner、利用入口、registration/readback方法、availability semanticsだけを管理する。
-
-Durable stateとして保持する区別:
+Durableに区別する。
 
 ```text
-IMPLEMENTATION = verified by DebugAI authority
-PROTOCOL / TOOL SURFACE = verified by DebugAI authority
-HISTORICAL_LIVE_USE = recorded
-CURRENT_SERVER / CLIENT AVAILABILITY = readback when required
+IMPLEMENTATION / PROTOCOL VERIFIED
+HISTORICAL LIVE USE when recorded by owning authority
+CURRENT CLIENT REGISTRATION
+CURRENT LIVE AVAILABILITY
 ```
 
-DebugAI MCPのSource/README/付属Document更新TaskはDebugAI Repository側で行う。server-coreを先に読んだことを理由にserver-core Documentへ書かない。
-
-個別Branch/HEAD、作業中の検証手順、セッション内の一時報告をWorkspace共通Contractへ固定しない。
-
-## Deterministic Japanese Parser MCP Boundary
-
-Deterministic Japanese Parser MCPはProject-owned implementation。
-
-Global/client configでentry presenceが確認される場合でも、server-core manifest ownershipとは別状態として扱う。Current availabilityが必要なTaskでは、client registration、transport、tool discovery、representative parser callを必要範囲で確認する。
-
-Parser implementation/Document変更はParser Project側で行う。config presence確認だけでserver-core ownershipへ移さない。
+Global config entry presenceだけでserver-core ownershipやCurrent availabilityへ昇格しない。Source/README/付属Document変更はowning Project側で行う。
 
 ## Credential Rule
 
-OAuth-capable remote MCPはclient/global layerの正式認証経路を使う。
+OAuth-capable remote MCPはclient/global layerの正式認証経路を使う。Bearer token等が必要な場合は `docs/WORKSPACE_SHARED_SECRETS.md` のapproved broker contractを利用し、Project Repositoryへ実値を複製しない。
 
-Bearer token等が必要な場合は `docs/WORKSPACE_SHARED_SECRETS.md` のapproved broker contractを利用し、Project configやRepositoryへ実値を複製しない。
-
-Credential Contract参照をcredential registration/rotation permissionと扱わない。
+Credential Contract参照をregistration/rotation permissionと扱わない。
 
 ## Project Boundary
 
-Project repositoryはWorkspace shared MCP entryを複製しない。
+Project repositoryはWorkspace shared MCP entryを複製しない。同名Project overrideが必要な場合はowner、理由、scope、verificationを対象Project側で明確化する。
 
-同名Project-level MCP overrideが必要な場合は、owner、理由、scope、verificationを対象Project側で明確化する。
-
-Project-level usage/documentationをWorkspace-global contract更新へ自動昇格しない。
-
-server-coreのWorkspace MCP contract自体を変更する必要が見つかった場合も、`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示成立するまではread-onlyで報告・提案に留める。
-
-## Runtime Verification
-
-Current live availabilityがTask判断に必要な場合は、必要な範囲で次を確認する。
-- actual client registration
-- authentication
-- transport connection
-- tool/interface discovery
-- representative call
-- failure behavior
-
-Config検証とLive availability検証を混同しない。
-
-検証でfailureを発見した場合も、原因ownerを確定する前にserver-core / MCP owner / consumer Projectのいずれかへ推測修正しない。
+server-core Workspace MCP contract自体の変更は、server-coreへのexplicit owner authorizationが成立した場合だけ行う。
 
 ## Non-goals
 
@@ -261,6 +219,5 @@ Config検証とLive availability検証を混同しない。
 - Provider credential実値をGitへ保存しない。
 - Project固有endpoint/pathを推測して登録しない。
 - ConfigだけでCurrent runtime healthyと断定しない。
-- 個別Taskの進捗ログを本Documentへ蓄積しない。
+- 個別Task進捗を本Documentへ蓄積しない。
 - MCP利用TaskをMCP実装変更Taskへ自動変換しない。
-- explicit owner authorization無しにserver-core Repositoryを変更しない。
