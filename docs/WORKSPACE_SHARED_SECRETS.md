@@ -34,12 +34,12 @@ CHANGE_BROKER_IMPLEMENTATION
 
 - `USE_EXISTING_CONTRACT`: 既存broker contractを利用するだけ。server-core Document、Vault implementation、credential値を変更しない。
 - `VERIFY_AVAILABILITY`: health / identity / representative callのreadback。credential mutationを行わない。
-- `ADD_CONTRACT`: Workspace共通contract自体の追加。server-core contract変更対象。
+- `ADD_CONTRACT`: Workspace共通contract自体の追加。server-core Repository変更が必要になる場合は、server-core自体についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立した場合だけ実行する。
 - `REGISTER_CREDENTIAL`: broker runtime mutation。Source/Document変更とは別Operation。
 - `REPLACE_OR_ROTATE_CREDENTIAL`: active credential mutation。明示されたchange boundaryを必要とする。
-- `CHANGE_BROKER_IMPLEMENTATION`: Libral Vault owning Project側の実装Task。server-coreは共通Contractが変わらない限りread-only。
+- `CHANGE_BROKER_IMPLEMENTATION`: Libral Vault owning Project側の実装Task。server-coreは共通Contract変更が必要でも explicit owner authorization が無い限りread-only。
 
-「credentialを使う」「接続確認する」「provider APIを呼ぶ」だけでregistration / rotation / Vault implementation変更へ進まない。
+「credentialを使う」「接続確認する」「provider APIを呼ぶ」「共有Contractが必要そう」と判断しただけでregistration / rotation / Vault implementation変更やserver-core Repository変更へ進まない。
 
 ## 3. Current Shared Contracts
 
@@ -101,7 +101,7 @@ Project needs provider access
 
 既存Contract利用で足りる場合、Project-local token copy、new secret registration、server-core contract変更を行わない。
 
-既存Contractが無い場合は、secret id、consumer、allowlist、broker route、verification method、failure behaviorを先に定義する。Project-local token copyを即席で作らない。
+既存Contractが無い場合は、secret id、consumer、allowlist、broker route、verification method、failure behaviorを先に定義する。Project-local token copyを即席で作らない。server-core側に新規Contractを追加する必要がある場合でも、明示的なserver-core mutation authorizationが成立するまでは提案・設計確認に留める。
 
 ## 6. Registration / Replacement
 
@@ -166,13 +166,18 @@ BROKER_PATH_DEFINED=YES
 IDENTITY_OR_REPRESENTATIVE_VERIFY_DEFINED=YES
 FAILURE_BEHAVIOR_DEFINED=YES
 PLAINTEXT_PERSISTENCE=NO
+SERVER_CORE_MUTATION_AUTHORIZED=YES when server-core contract files must change
 ```
 
-Unknown項目がある状態で `AVAILABLE_VERIFIED` としない。
+Unknown項目がある状態で `AVAILABLE_VERIFIED` としない。`SERVER_CORE_MUTATION_AUTHORIZED` はAI/Agent自身が必要性から推測してYESへ昇格させない。
 
 ## 11. Registry Sync
 
-shared credential contractが追加/削除/rename、consumer/broker path変更された場合:
+shared credential contractが追加/削除/rename、consumer/broker path変更された場合、server-core側Current Authorityの更新が必要かを判定する。
+
+server-core Repository変更が必要な場合は、先に `SERVER_CORE_MUTATION_AUTHORIZED=YES` を確認する。未成立ならserver-coreはread-onlyのまま、必要変更を報告・提案する。
+
+成立している場合だけ、必要範囲で:
 - relevant `operations/*.json` contractを更新
 - `docs/WORKSPACE_REGISTRY.md` を更新
 - common use/failure modelが変わる場合は本Documentを更新
@@ -194,6 +199,7 @@ Credentialを単に利用・検証しただけではRegistry/Document updateを�
 - credential availabilityをTaskで必要なbroker/provider verificationなしに断定しない。
 - credential利用をregistration/rotation permissionと読み替えない。
 - broker Contract参照をVault implementation mutation permissionと読み替えない。
+- explicit owner authorization無しにserver-core contract filesを変更しない。
 
 ## 13. Availability Boundary
 
