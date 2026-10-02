@@ -131,13 +131,26 @@ Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productio
 
 server-coreへのwrite / commit / branch mutationは別途explicit owner authorizationが必要。Taskの依頼文、別Projectの作業、共通Authority参照から暗黙に推論しない。
 
-## 10. Runtime
+## 10. Helper Execution Boundary
+
+server-coreのhelperを読む・Pathを解決する・実行可能であることと、Workspace / Client / Repository / Provider / Runtimeをmutationしてよいことを分離する。
+
+helper実行前に、Taskに必要なOperationがread-onlyかmutationかを確認する。mutation flagやrepair optionが存在すること自体を実行許可として扱わない。
+
+- `storage_lifecycle_audit.py` とSkill resolverはread-only helperとして扱う。
+- `verify-workspace-mcp.sh` はdefault config-only verification。外部client問い合わせは明示されたreadbackとして扱う。
+- `init-dev-workspace.sh`、`install-workspace-mcp.sh`、`workspace_command_center_check.py --repair` のmutation optionはWorkspace/client mutation permissionが別途成立している場合だけ使う。
+- `ai-auto-commit.sh` はserver-core mutation authorizationが成立している場合だけ使う。
+- server-core外Projectからhelperを呼んでも、callerのRepositoryやserver-coreを自動的にmutation targetへ追加しない。
+- helperが失敗しても隣接Repository、Provider、Secret、Runtimeを推測で修正しない。失敗ownerを先に確定する。
+
+## 11. Runtime
 
 本番常駐の標準経路はDocker / Docker Compose。Project固有の正式例外がある場合はそのAuthorityを優先する。
 
 ServerはRuntime / Processing環境であり、GitHub Source履歴・Design・Documentの代替正本にしない。
 
-## 11. Shared Capability / Integration
+## 12. Shared Capability / Integration
 
 Shared CapabilityのDiscovery / owner / connection / permission / availability contractはserver-coreで管理し、実装本体はowning Project/runtimeに置く。
 
