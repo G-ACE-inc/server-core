@@ -6,6 +6,10 @@ SERVER_CORE_ROOT="/home/admin1/server-core"
 DUPLICATE_SERVER_CORE="${PROJECTS_DIR}/server-core"
 SERVER_CORE_RULES="${SERVER_CORE_ROOT}/.cursor/rules"
 PROJECTS_RULES="${PROJECTS_DIR}/.cursor/rules"
+SERVER_CORE_COPILOT="${SERVER_CORE_ROOT}/.github/copilot-instructions.md"
+PROJECTS_COPILOT="${PROJECTS_DIR}/.github/copilot-instructions.md"
+SERVER_CORE_AGENTS="${SERVER_CORE_ROOT}/AGENTS.md"
+PROJECTS_AGENTS="${PROJECTS_DIR}/AGENTS.md"
 SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APPLY=0
 CREATE_PROJECT=0
@@ -57,10 +61,12 @@ if [[ -e "$DUPLICATE_SERVER_CORE" ]]; then
   exit 1
 fi
 
-if [[ ! -d "$SERVER_CORE_RULES" ]]; then
-  echo "[error] server-core rules directory is missing: $SERVER_CORE_RULES" >&2
-  exit 1
-fi
+for required in "$SERVER_CORE_RULES" "$SERVER_CORE_COPILOT" "$SERVER_CORE_AGENTS"; do
+  if [[ ! -e "$required" ]]; then
+    echo "[error] required AI entry authority is missing: $required" >&2
+    exit 1
+  fi
+done
 
 if [[ "$CREATE_PROJECT" == "1" && -z "$PROJECT_NAME" ]]; then
   echo "[error] --create-project requires --project NAME" >&2
@@ -109,6 +115,29 @@ record_mutation() {
   done
   mutations+=("$value")
 }
+
+ensure_symlink() {
+  local target="$1"
+  local link="$2"
+  local mutation_label="$3"
+  if [[ -L "$link" ]]; then
+    if [[ "$(readlink -f "$link")" == "$(readlink -f "$target")" ]]; then
+      echo "[ok] ${link} -> ${target}"
+    else
+      echo "[error] ${link} is a symlink to an unexpected target: $(readlink -f "$link")" >&2
+      exit 1
+    fi
+  elif [[ -e "$link" ]]; then
+    echo "[error] ${link} already exists and is not the required symlink; no deletion performed" >&2
+    exit 1
+  else
+    mkdir -p "$(dirname "$link")"
+    ln -s "$target" "$link"
+    record_mutation "$mutation_label"
+    echo "[created] ${link} -> ${target}"
+  fi
+}
+
 finish_apply() {
   local rc=$?
   trap - EXIT
@@ -155,22 +184,9 @@ if [[ "$CREATE_PROJECT" == "1" ]]; then
   fi
 fi
 
-if [[ -L "$PROJECTS_RULES" ]]; then
-  if [[ "$(readlink -f "$PROJECTS_RULES")" == "$(readlink -f "$SERVER_CORE_RULES")" ]]; then
-    echo "[ok] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
-  else
-    echo "[error] ${PROJECTS_RULES} is a symlink to an unexpected target: $(readlink -f "$PROJECTS_RULES")" >&2
-    exit 1
-  fi
-elif [[ -e "$PROJECTS_RULES" ]]; then
-  echo "[error] ${PROJECTS_RULES} already exists and is not the required symlink; no deletion performed" >&2
-  exit 1
-else
-  mkdir -p "$(dirname "$PROJECTS_RULES")"
-  ln -s "$SERVER_CORE_RULES" "$PROJECTS_RULES"
-  record_mutation "RULES_LINK_CREATED"
-  echo "[created] ${PROJECTS_RULES} -> ${SERVER_CORE_RULES}"
-fi
+ensure_symlink "$SERVER_CORE_RULES" "$PROJECTS_RULES" "CURSOR_RULES_LINK_CREATED"
+ensure_symlink "$SERVER_CORE_COPILOT" "$PROJECTS_COPILOT" "COPILOT_INSTRUCTIONS_LINK_CREATED"
+ensure_symlink "$SERVER_CORE_AGENTS" "$PROJECTS_AGENTS" "AGENTS_ENTRY_LINK_CREATED"
 
 set +e
 repair_out="$(python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py" --repair --authorize-workspace-mutation 2>&1)"
