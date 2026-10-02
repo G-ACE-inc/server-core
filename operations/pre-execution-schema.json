@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "1.3",
   "name": "gace-pre-execution-handoff",
   "authority": "docs/G_ACE_WORKSPACE.md",
   "server_command_authority": "docs/SERVER_COMMAND_CONTRACT.md",
@@ -16,25 +16,21 @@
     "REQUIRED_PROJECT_AUTHORITY",
     "REUSE_CANDIDATES",
     "VERIFY_PATH",
+    "APPROVAL_BOUNDARY",
     "CHANGE_BOUNDARY",
     "CONTEXT_SCOPE",
     "NEXT_ACTION",
     "EXECUTION_ROUTE",
     "EXECUTION_CAPABILITY",
     "EXECUTION_AUTHORIZATION",
-    "AUTHORIZATION_DOMAIN",
-    "AUTHORIZATION_SCOPE",
     "MUTATION_CLASS",
     "PRE_EXECUTION_COMPLETE",
     "BLOCKER"
   ],
   "execution_routes": [
-    "ASSISTANT_TOOL",
     "DETERMINISTIC_LOCAL_OR_CI",
     "SERVER_COMMAND",
     "SERVER_AI",
-    "USER_UI",
-    "EXTERNAL_CLIENT",
     "PROJECT_RUNTIME"
   ],
   "mutation_classes": [
@@ -53,12 +49,13 @@
     "authorization_is_task_scoped": true,
     "server_core_mutation_requires_explicit_owner_authorization": true,
     "pre_execution_complete_does_not_mean_executed": true,
-    "operator_interface_defined_outside_server_core": true,
+    "fixed_development_routine_must_not_be_skipped_without_reason": true,
+    "deterministic_execution_preferred_when_it_closes_the_task": true,
+    "debugai_reuses_existing_evidence_before_server_ai_research": true,
     "server_command_document_scope": "technical_execution_safety_and_evidence_only",
-    "response_delivery_failure_is_not_operation_failure": true,
-    "interrupted_turn_recovery_requires_durable_readback": true,
     "mutation_retry_requires_prior_apply_state_resolution": true,
-    "pending_async_checks_should_be_polled_within_available_turn": true,
-    "pending_polling_must_be_bounded": true
+    "pending_async_checks_should_be_polled_when_required_for_current_acceptance": true,
+    "pending_polling_must_be_bounded": true,
+    "chat_ui_and_notion_are_outside_server_core_execution_routes": true
   }
 }
