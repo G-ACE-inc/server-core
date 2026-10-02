@@ -41,10 +41,10 @@ jobs:
           grep -qx 'archive/' .cursorignore
           echo 'AUTHORITY_EXCLUSION=PASS'
 
-      - name: No conversational or credential material in current authority
+      - name: No session-only or credential material in current authority
         run: |
           set -euo pipefail
-          hits="$(git grep -nEI '(CONFIRMED_BY_MASTER|Masterの明示|Masterが|全チャット|thinkingブロック|hidden[- ]?reasoning|private reasoning.*rule)' -- '*.md' '*.mdc' ':!archive/**' ':!docs/DESIGN_DELTA.md' || true)"
+          hits="$(git grep -nEI '(CONFIRMED_BY_MASTER|全チャット|thinkingブロック|hidden[- ]?reasoning|private reasoning.*rule|このチャットだけ|今回の会話だけ)' -- '*.md' '*.mdc' ':!archive/**' ':!docs/DESIGN_DELTA.md' || true)"
           test -z "$hits" || { printf '%s\n' "$hits"; exit 1; }
           env_files="$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -Ev '(^|/)\.env\.example$' || true)"
           test -z "$env_files" || { printf '%s\n' "$env_files"; exit 1; }
