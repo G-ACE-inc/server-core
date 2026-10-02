@@ -265,3 +265,23 @@ Workspace Taskの完了は、Taskに必要な範囲で次が閉じた場合に�
 - change boundary compliance
 
 server-coreの役割はWorkspace全体の作業を正しいowner・Authority・Evidence・Runtime boundaryへ導くことである。
+
+## 20. Authority Ownership / Non-Duplication
+
+同じ共通Ruleを複数Documentで独立定義しない。詳細Ruleのownerを固定し、他Documentは必要な範囲だけ参照する。
+
+```text
+Cross-domain mutation / state semantics -> SERVER_CORE_PROTOCOL.md
+Workspace task sequence / evidence handoff -> docs/G_ACE_WORKSPACE.md
+Discovery / owner / durable capability semantics -> docs/WORKSPACE_REGISTRY.md
+Project-to-service/capability integration -> docs/PROJECT_INTEGRATION_RULES.md
+Shared credential lifecycle / broker use -> docs/WORKSPACE_SHARED_SECRETS.md
+Workspace MCP registration / verification -> docs/WORKSPACE_MCP.md
+Deploy state / runtime promotion -> docs/DEPLOY_RUNBOOK.md
+Storage audit / cleanup / recovery -> docs/STORAGE_LIFECYCLE.md
+Git work history -> docs/AUTO_COMMIT.md
+```
+
+Domain Documentは `SERVER_CORE_PROTOCOL.md` のgeneric mutation/state semanticsを再定義せず、そのDomain固有の追加条件だけを定義する。表現差がある場合は、generic ruleはProtocol、Domain-specific ruleは上記owner Documentを優先する。
+
+READMEは入口とRouting mapに限定し、詳細Rule本文の複製を増やさない。RegistryはDiscoveryとdurable semanticsに限定し、時点付きlive statusやTask進捗を保持しない。Design/Design DeltaはArchitectureと正式変更理由を扱い、日々の運用状態や作業ログを保持しない。
