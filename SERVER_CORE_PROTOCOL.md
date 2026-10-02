@@ -184,7 +184,7 @@ Storage auditでProject固有Dataを発見したことを、そのDataへのmuta
 
 ## Docker / Runtime
 
-本番常駐の標準経路はDocker / Docker Compose。Project固有の正式例外がある場合はそのAuthorityを優先する。
+本番常駐は **Docker Composeを正** とする。Host上の `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` 等を本番常駐経路として採用しない。
 
 Container起動だけでRuntime PASSとせず、Taskに必要なEndpoint / Output / State / side effectまで確認する。
 
