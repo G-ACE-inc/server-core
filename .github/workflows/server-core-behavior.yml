@@ -41,11 +41,13 @@ jobs:
           assert 'SERVER_COMMAND' in p['execution_routes']
           assert 'REVERSIBLE_LOCAL_MUTATION' in p['mutation_classes']
           assert p['rules']['authorization_is_task_scoped'] is True
+          assert p['rules']['operator_interface_defined_outside_server_core'] is True
+          assert p['rules']['server_command_document_scope'] == 'technical_execution_safety_and_evidence_only'
           print('PRE_EXECUTION_SCHEMA=PASS')
           PY
-          grep -q 'GACE_RESULT_BEGIN' docs/SERVER_COMMAND_CONTRACT.md
-          grep -q '6072' docs/SERVER_COMMAND_CONTRACT.md
-          grep -q "bash -lc" docs/SERVER_COMMAND_CONTRACT.md
+          grep -q '## 2. Operator Interface Boundary' docs/SERVER_COMMAND_CONTRACT.md
+          grep -q 'technical shell/process safety' docs/LOAD_SCOPE.md
+          grep -q 'operator-facing command presentation' .cursor/rules/00_agent_runtime.mdc
 
       - name: Project path traversal guard
         run: |
