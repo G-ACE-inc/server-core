@@ -22,9 +22,10 @@ Mutationは対象Project / Provider Authorityで定義された承認条件と�
 Cloudflare Provider mutation、対象Project Repository mutation、server-core Repository mutationは別permission domainである。Cloudflare変更が必要、またはCloudflare共通Contractに影響すると判断しただけでserver-coreを変更しない。server-core Source/Document/Config変更はserver-core自体についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立した場合だけ行う。
 
 ## Credential Boundary
-- Token / Secret / Credential値をSource / Git Diff / Document / Logへ出力しない。
+- Token / Secret / Credential値をChat / Terminal output / Source / Git Diff / Document / Logへ出力しない。
 - Workspace共有credentialはBroker経由で利用し、Projectへ実値を複製しない。
 - Account API credentialとProject固有Tunnel credentialを混同しない。
+- GPG-CoreをWorkspace Shared Secret Contractの暗黙代替として使用しない。
 - credential値の表示やdumpを検証方法にしない。
 
 ## Verification
