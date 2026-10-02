@@ -87,11 +87,11 @@ Deploy対象はGitHubでremote readback済みの具体的Revisionへ結び付け
 
 `latest`、記憶上のbranch状態、Local-only commitをProduction Revisionの証拠にしない。
 
-Project固有方式がある場合はそのRunbookを優先するが、最終的に「どのSource revisionをどのRuntimeへ反映したか」を追跡可能にする。
+Project固有手順がある場合も、最終的に「どのSource revisionをどのRuntimeへ反映したか」を追跡可能にする。
 
-## 6. Docker / Compose
+## 6. Docker Compose
 
-本番常駐の標準RuntimeはDocker / Docker Compose。Project固有の正式例外がある場合は対象Project Authorityを優先する。
+本番常駐は **Docker Composeを正** とする。Host上の `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` 等を本番常駐経路として採用しない。
 
 **server-coreの共通Runbookはgeneric deploy commandを提供しない。** `docker compose build` / `up` / restart / recreate等の実行Commandは、対象ProjectのCurrent Authorityでexact path、Compose file、profile、service、revision、approval boundaryが確定している場合だけ使用する。
 
@@ -133,7 +133,7 @@ Failure調査のため別Project/Shared Capabilityを確認しても、そのSou
 
 ## 9. Rollback
 
-RollbackはProject固有Contractを優先する。
+Rollbackは対象ProjectのData / Schema / Runtime契約を確認して行う。
 
 共通原則:
 - rollback target revisionを特定
@@ -183,4 +183,4 @@ ROLLBACK_STATE
 PRODUCTION_STATE when applicable
 ```
 
-Project-specific release gateがより厳しい場合はそちらを優先する。
+Project固有release gateがより厳しい場合はそちらを追加で満たす。
