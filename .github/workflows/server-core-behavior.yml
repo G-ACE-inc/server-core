@@ -105,14 +105,21 @@ jobs:
           printf '\nci-a\n' >> README.md
           printf '\nci-b\n' >> CORE.md
           bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file README.md -m 'test: explicit change unit'
-          mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
-          test "${#committed[@]}" -eq 1
-          test "${committed[0]}" = 'README.md'
-          if git diff --quiet -- CORE.md; then echo 'unrelated CORE.md change was staged/committed' >&2; exit 1; fi
+          python3 - <<'PY'
+          import subprocess
+          changed=subprocess.check_output(['git','diff-tree','--no-commit-id','--name-only','-r','HEAD'],text=True).splitlines()
+          assert changed == ['README.md'], f'committed_set={changed!r}'
+          core=subprocess.check_output(['git','status','--porcelain=v1','--','CORE.md'],text=True).strip()
+          assert core, 'CORE.md unrelated change disappeared'
+          PY
           printf '{"token":"SUPER_SECRET_VALUE_123456789"}\n' > ci-secret.json
-          if bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file ci-secret.json -m 'test: secret guard' >"$tmp/secret.out" 2>&1; then echo 'secret-like JSON was committed' >&2; exit 1; fi
-          grep -q 'ci-secret.json:1' "$tmp/secret.out"
-          ! grep -q 'SUPER_SECRET_VALUE_123456789' "$tmp/secret.out"
+          set +e
+          bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file ci-secret.json -m 'test: secret guard' >"$tmp/secret.out" 2>&1
+          rc=$?
+          set -e
+          test "$rc" -ne 0 || { echo 'secret-like JSON was committed' >&2; exit 1; }
+          grep -q 'ci-secret.json:1' "$tmp/secret.out" || { cat "$tmp/secret.out" >&2; exit 1; }
+          if grep -q 'SUPER_SECRET_VALUE_123456789' "$tmp/secret.out"; then echo 'secret value leaked in helper output' >&2; exit 1; fi
           echo 'AUTO_COMMIT_BEHAVIOR=PASS'
 
       - name: Workspace wiring result scope
