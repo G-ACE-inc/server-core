@@ -65,7 +65,7 @@ jobs:
           seq 1 300 | sed 's/^/line-/' > "$skill/SKILL.md"
           out="$(CODEX_HOME="$tmp" scripts/resolve-codex-skill.sh github:demo --read)"
           test "$(printf '%s\n' "$out" | wc -l)" -eq 300
-          printf '%s\n' "$out" | tail -n 1 | grep -qx 'line-300'
+          test "$(printf '%s\n' "$out" | tail -n 1)" = 'line-300'
           if CODEX_HOME="$tmp" scripts/resolve-codex-skill.sh 'github:*' --read >"$tmp/glob.out" 2>&1; then
             echo 'resolver accepted glob skill name' >&2
             exit 1
@@ -116,8 +116,9 @@ jobs:
           printf '\nci-a\n' >> README.md
           printf '\nci-b\n' >> CORE.md
           bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file README.md -m 'test: explicit change unit'
-          git show --name-only --pretty='' HEAD | grep -qx 'README.md'
-          git status --porcelain | grep -q 'CORE.md'
+          changed="$(git show --name-only --format= HEAD | sed '/^$/d')"
+          test "$changed" = 'README.md'
+          test -n "$(git status --porcelain=v1 -- CORE.md)"
           printf '{"token":"SUPER_SECRET_VALUE_123456789"}\n' > ci-secret.json
           if bash scripts/ai-auto-commit.sh --authorize-server-core-mutation --file ci-secret.json -m 'test: secret guard' >"$tmp/secret.out" 2>&1; then
             echo 'secret-like JSON was committed' >&2
@@ -126,6 +127,14 @@ jobs:
           grep -q 'ci-secret.json:1' "$tmp/secret.out"
           ! grep -q 'SUPER_SECRET_VALUE_123456789' "$tmp/secret.out"
           echo 'AUTO_COMMIT_BEHAVIOR=PASS'
+
+      - name: Workspace wiring result scope
+        run: |
+          set -euo pipefail
+          grep -q 'WORKSPACE_WIRING=PASS' scripts/workspace_command_center_check.py
+          grep -q 'NOT_PROVEN=FULL_AUTHORITY_COMPLETENESS,SCRIPT_SAFETY,PROJECT_RUNTIME,PROVIDER_AVAILABILITY' scripts/workspace_command_center_check.py
+          ! grep -q 'WORKSPACE_COMMAND_CENTER=PASS' scripts/workspace_command_center_check.py
+          echo 'WORKSPACE_WIRING_SCOPE=PASS'
 
       - name: Storage audit bounded result
         run: |
