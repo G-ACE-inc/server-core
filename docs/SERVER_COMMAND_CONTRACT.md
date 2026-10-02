@@ -1,25 +1,17 @@
 # SERVER COMMAND EXECUTION CONTRACT
 
-Version: 2026-10-02
-Role: Technical safety and evidence contract for Server-side operations that are executed outside the current assistant/client.
+Version: 2026-10-03
+Role: Server上で実行するCommand / Scriptのtechnical safety・partial state・evidence契約。
 
 ## 1. Purpose
 
-This contract defines the **Server-operation technical boundary**: exact target resolution, shell/process safety, mutation classification, authorization scope, concurrency, exit-status handling, bounded diagnostics, interruption recovery and evidence promotion.
+このContractは、Server上で実行するOperationについて、exact target、shell/process safety、mutation classification、authorization boundary、concurrency、exit-status、bounded diagnostics、interruption recovery、evidence promotionを定義する。
 
-It does not grant mutation permission. Repository, Workspace, Provider, credential, runtime and production authorization are owned by their respective authorities.
+Chat UI、会話形式、Notion運用、外部アプリ固有のinteraction ruleは扱わない。
 
-## 2. Operator Interface Boundary
+## 2. Pre-command Requirement
 
-The Workspace top-level operating authority owns the GPT/operator interaction interface, including command presentation shape, current command-size budget, copy/paste formatting and the outer result-return format.
-
-This server-core Document does **not** duplicate or override those interface values. It only defines what a technically valid Server operation must guarantee underneath that interface.
-
-If the top-level operator-interface authority and this technical contract appear inconsistent, do not silently choose one. Classify `AUTHORITY_CONFLICT`, preserve the stronger safety boundary and resolve the ownership conflict before mutation.
-
-## 3. Technical Pre-command Requirement
-
-Before a Server operation is handed off, resolve the canonical Pre-execution Contract defined by `docs/G_ACE_WORKSPACE.md` / `operations/pre-execution-schema.json` and identify at minimum:
+Server operationを実行する前に、`docs/G_ACE_WORKSPACE.md` / `operations/pre-execution-schema.json` に従い、Taskに必要な範囲で少なくとも次を解決する。
 
 ```text
 TARGET_PROJECT
@@ -30,35 +22,31 @@ NEXT_ACTION
 EXECUTION_ROUTE
 EXECUTION_CAPABILITY
 EXECUTION_AUTHORIZATION
-AUTHORIZATION_DOMAIN
-AUTHORIZATION_SCOPE
 MUTATION_CLASS
 VERIFY_PATH
 PRE_EXECUTION_COMPLETE
 BLOCKER
 ```
 
-A Server operation may proceed only when the exact target and its authorization boundary are known. Unknown path, branch, runtime identity, service identity, provider target or mutation authority must not be filled by assumption.
+Path、Branch、Runtime identity、Service identity、Provider target、mutation authorityが不明な場合は推測で補完しない。
 
-## 4. Shell / Process Safety
+## 3. Shell / Process Safety
 
-A command intended for an existing interactive terminal must not terminate or corrupt the parent shell as a side effect of fail-fast behavior.
+既存interactive terminalで実行するCommandは、fail-fast制御の副作用でparent shellを終了・破損させない。
 
 Technical requirements:
-- fail-fast state such as `set -e`, `set -u` and `pipefail` belongs inside an isolated child shell/process when the caller shell must remain usable;
-- an `exit` used for workflow control must exit the isolated child process, not the operator's parent interactive shell;
-- `cd` failure must not allow execution to continue in an unintended directory;
-- unbounded interactive waits and unbounded `tail -f` style operations require an explicit timeout/cancellation boundary;
-- pipeline success must represent the intended pipeline, not only the final process when earlier failure is material;
-- the primary operation return code must be captured before later diagnostic output can overwrite `$?`.
+- `set -e`, `set -u`, `pipefail` 等のfail-fast stateは、parent shellを維持する必要がある場合はisolated child shell/process内で使用する。
+- workflow control用の `exit` はparent interactive shellではなくisolated child processを終了させる。
+- `cd` 失敗後に別Directoryで処理を続行しない。
+- unbounded wait / `tail -f` 等にはtimeout / cancellation boundaryを持たせる。
+- pipeline failureが重要な場合はfinal processだけでなく必要なreturn codeを保持する。
+- primary operationのreturn codeを、後続diagnostic出力で上書きしない。
 
-Isolation may use `bash -lc '...'` when appropriate, but equivalent safe process isolation is valid. The technical requirement is parent-shell preservation and correct failure propagation, not a specific quoting style.
+Isolationは `bash -lc '...'` 等でよいが、要件はparent-shell preservationと正しいfailure propagationである。
 
-## 5. Mutation Classification
+## 4. Mutation Classification
 
-Do not label a workflow `READ_ONLY` merely because final state is restored.
-
-Use these classes where relevant:
+最終状態を戻しただけでworkflowを `READ_ONLY` と呼ばない。
 
 ```text
 READ_ONLY_INSPECTION
@@ -71,101 +59,74 @@ CREDENTIAL_MUTATION
 PRODUCTION_MUTATION
 ```
 
-Examples:
-- `git fetch`, temporary checkout/detach, or branch switching are `REVERSIBLE_LOCAL_MUTATION`, not pure read-only inspection;
-- config/file writes are mutation even when later restored;
-- a health/readback HTTP call is read-only only if the called operation itself has no mutation side effect.
+例:
+- `git fetch`, temporary checkout/detach, branch switchは `REVERSIBLE_LOCAL_MUTATION`。
+- config/file writeは後で戻してもmutation。
+- health/readback callは、そのOperation自体にside effectが無い場合だけread-only。
 
-## 6. Authorization Scope
+## 5. Authorization Scope
 
-An authorization state must be scoped to the current Task/change unit. Do not carry mutation permission forward merely because an earlier turn or adjacent Task allowed it.
+Mutation permissionはCurrent Task / change unit / target operationへscopeする。過去Taskや隣接Taskのpermissionをcarry-forwardしない。
 
-When mutation is involved, evidence should identify as applicable:
+Server operationを実行できることと、実行してよいことは別状態である。
 
-```text
-AUTHORIZATION_DOMAIN
-AUTHORIZATION_SCOPE
-AUTHORIZED_OPERATION
-TARGET_IDENTITY
-AUTHORIZATION_STATE
-```
+## 6. Multi-task / Multi-worker Safety
 
-A new Task, target repository, provider resource, credential, runtime or production operation requires its own boundary evaluation.
+複数Project、Agent、change unitが同時進行し得る前提で扱う。
 
-## 7. Multi-task / Multi-worker Safety
+- write/commit/runtime operation前にexact change unitを識別する。
+- unrelated uncommitted diffをstage / overwriteしない。
+- intended diffを分離できない場合はauto-commitしない。
+- 同じGit index / client config / shared runtime stateを変更するwriterはserializeするかfail closedする。
+- shared checkoutを別Taskへ影響する形でswitch/reset/rebaseしない。
+- readbackだけならworking tree mutationよりGit object/API inspectionを優先する。
 
-Assume multiple Projects, agents or change units may be active concurrently.
+## 7. Exit Status / Partial Apply
 
-Before a write/commit/runtime operation:
-- identify the exact change unit;
-- ensure unrelated uncommitted changes are not staged or overwritten;
-- do not use repository-wide staging when intended-file ownership is not exclusive;
-- refuse automatic commit when the intended diff cannot be separated from other work;
-- serialize helpers that mutate the same Git index, client config or shared runtime state, or fail closed when another writer is active;
-- avoid switching or resetting a shared checkout when another active task may depend on its current state;
-- prefer read-only Git object/API inspection over working-tree switching when possible.
+outer commandの成功表示でprimary operation failureを隠さない。
 
-## 8. Exit Status / Partial Apply
+- primary operationのreal return codeを保持する。
+- 複数required operationがある場合はmaterial resultを個別に保持する。
+- 前段Mutation成功後に後段required stepが失敗した場合、rollback/recoveryを実測確認できない限り `PARTIAL` とする。
+- transaction/rollback semanticsが無いmulti-step workflowをatomicと呼ばない。
+- recovery instructionはrecovery evidenceではない。
 
-A successful outer command must not hide a failed primary operation.
+## 8. Output / Diagnostic Budget
 
-- preserve the primary operation's real return code;
-- if multiple required operations run, record each material result or aggregate only after all required results are known;
-- if an operation mutates state and a later required step fails, report `PARTIAL` unless rollback/recovery has been actually verified;
-- do not call a multi-step workflow atomic unless the implementation actually provides transaction/rollback semantics;
-- recovery instructions are not recovery evidence.
+Server command / helperはunbounded outputをdefaultで出さない。
 
-## 9. Output / Diagnostic Budget
+- inventory/logはcount、failing identifier、bounded excerptを優先する。
+- 大量diagnosticは必要時だけtemporary fileへ退避する。
+- acceptance判定に必要なEvidenceだけを返す。
+- output短縮のためにfailure evidenceを隠さない。
+- Secret / Token / credential値をdiagnosticへ出さない。
 
-Server-side commands and helpers should suppress or summarize unbounded output by default.
+## 9. Interruption / Pending-State Recovery
 
-For inventories/logs:
-- return counts, failing identifiers and bounded excerpts first;
-- write large diagnostic output to a temporary file only when needed;
-- expose only the bounded evidence needed for the acceptance decision;
-- never hide a failure merely to keep output short;
-- never print Secret / Token / credential values as diagnostics.
+Command process interruption、tool response interruption、network failure、async operationの `queued / in_progress` は、それだけでunderlying operationの成功・失敗・未実行を証明しない。
 
-A successful audit should not dump every healthy container/file/record when a concise count and exception list proves the acceptance condition.
+- Current acceptanceに必要なCI / async checkがquery可能なら、bounded pollingでterminal stateまで確認する。
+- indefinite waitは禁止し、上限到達時はrun/job/request IDとpending stateを保持する。
+- interruption後はexact repository/PR HEAD、commit、run/job/request ID、Runtime/Provider readback等のdurable stateから再開点を復元する。
+- previous mutationが `NOT_APPLIED / APPLIED / PARTIAL / UNKNOWN` のどれかを確認する前に同じmutationをblind retryしない。
+- stable run/job/request IDがある場合はduplicate operationより既存IDの追跡を優先する。
 
-The exact operator-facing return envelope is owned by the Workspace top-level operating authority. Server helpers may expose machine-readable status fields, but must not redefine the external interface contract independently.
+## 10. Completion Boundary
 
-## 10. Interruption / Pending-State Recovery
+`PRE_EXECUTION_COMPLETE=YES` は、外部Operationを安全に実行できるところまでtarget/action/authorization/verify pathが確定したことを意味する。実行済みではない。
 
-UI transport failure, chat response truncation, network disconnect, client retry UI, tool-response delivery failure and an async operation still being `queued` / `in_progress` are **not** proof that the underlying operation failed, succeeded or never started.
+実行後はreturned evidenceからのみstateを昇格する。Command発行だけでServer/Provider/Runtime/Production PASSへ進めない。
 
-Within an available execution turn:
-- when a dependent CI / async check is expected to settle and its status is queryable, continue bounded polling to a terminal state instead of stopping after the first `queued` / `in_progress` readback;
-- do not wait indefinitely; use a bounded wait/retry budget appropriate to the operation and preserve the pending identifier when the budget is exhausted;
-- a transient read failure should be retried or independently read back when safe before declaring the Task blocked.
+Evidence不足やdiagnostic contradictionがある場合は `UNKNOWN / NOT_VERIFIED / PARTIAL` を維持する。
 
-After an assistant/client/network interruption:
-- recover from durable external state first: exact repository/PR HEAD, commit presence, CI/workflow state, runtime/provider readback or other authoritative target state as applicable;
-- do not blindly repeat the last mutation merely because the previous response was not delivered;
-- determine whether the previous mutation was `NOT_APPLIED`, `APPLIED`, `PARTIAL`, or `UNKNOWN` before retrying;
-- if the operation has a stable run/job/request identifier, continue from that identifier when possible rather than starting a duplicate operation;
-- if the prior action is idempotent, idempotency does not remove the need to read back target state when duplicate side effects or concurrent work are possible;
-- the next available execution turn should resume from the last verified durable state without requiring the operator to reconstruct already-recorded context.
+## 11. Invariants
 
-A UI message such as “waiting for the full response”, “network error”, “retry”, or equivalent transport status is evidence about response delivery only. It must not be promoted into Server/Repository/Provider operation state.
-
-## 11. Completion Boundary
-
-`PRE_EXECUTION_COMPLETE=YES` means the exact external operation can be handed off safely. It does not mean that operation has executed.
-
-After external execution, promote state only from returned evidence. Never infer Server/Provider/Runtime/Production PASS from command issuance alone.
-
-If evidence is incomplete or contradicts detailed diagnostics, keep the stronger state `UNKNOWN / NOT_VERIFIED / PARTIAL` until resolved.
-
-## 12. Invariants
-
-- preserve the caller's interactive shell when a child operation fails;
-- never present reversible local Git mutation as pure read-only inspection;
-- never mix another task's diff into an automated commit;
-- serialize same-target writers or fail closed on lock contention;
-- never expose credential values in command output;
-- never hide partial mutation behind a successful final print command;
-- never claim execution, verification or PASS without returned evidence;
-- response-delivery failure is not operation failure;
-- after interruption, read back durable target state before retrying a mutation;
-- server-core mutation permission and Server-operation execution permission remain separate boundaries.
+- parent interactive shellを維持する。
+- reversible local Git mutationをpure read-onlyと表現しない。
+- 別Taskのdiffをautomated commitへ混ぜない。
+- same-target writerはserializeするかfail closedする。
+- credential値をoutputへ出さない。
+- partial mutationをfinal success printで隠さない。
+- execution / verification / PASSをreturned evidence無しで主張しない。
+- interruption後はdurable target stateをreadbackしてからmutation retryする。
+- server-core mutation permissionとServer operation permissionを別境界として扱う。
