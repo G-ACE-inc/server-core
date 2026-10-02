@@ -2,7 +2,7 @@
 
 `server-core` は、G-ACE Workspace全体の**共通運用・Routing・Authority入口**である。
 
-各Projectの実装本体を抱え込む場所ではない。Workspace内の作業を、正しいProject、正しいAuthority、正しいShared Capability、正しい検証経路へ振り分けるためのCommand Centerである。
+各Projectの実装本体を抱え込む場所ではない。Workspace内の作業を、正しいProject、正しいAuthority、正しい実行主体、正しいShared Capability、正しい検証経路へ振り分けるためのCommand Centerである。
 
 ## Start Here
 
@@ -26,11 +26,30 @@ server-core全Documentを毎回読み込まない。Task対象に必要なAuthor
 1. **Task Routing** — Taskの対象Project、責務、Repository、必要Authorityを決める。
 2. **Authority / Context Control** — Current Authorityを特定し、必要情報だけを読み込む。
 3. **Project Dispatch** — Project固有実装をowning Projectへ送る。
-4. **Shared Capability Discovery** — MCP / Tool / DebugAI / KB / Provider / Secret Contractのowner・接続・利用境界を示す。
-5. **Verification Governance** — Source / Test / CI / Runtime / Provider readbackを混同せず、Taskごとの受入条件を確認する。
-6. **GitHub Work History** — Commit / PRを変更履歴として残す。
-7. **Server / Runtime Governance** — confirmed sourceからDeploy、Runtime verification、Storage/Backup/Recoveryまでの共通境界を定義する。
-8. **Pre-execution Handoff** — 現在のAI/Clientで実行できないOperationでも、exact target / action / authorization / verify pathを確定し、推測せず実行直前までhandoffする。
+4. **Execution Orchestration** — assistant/tool/deterministic check/Server command/Server AI/UIのどの経路を使うかを決め、不要なoperator操作とAI costを増やさない。
+5. **Shared Capability Discovery** — MCP / Tool / DebugAI / KB / Provider / Secret Contractのowner・接続・利用境界を示す。
+6. **Verification Governance** — Source / Test / CI / Runtime / Provider readbackを混同せず、Taskごとの受入条件を確認する。
+7. **GitHub Work History** — Commit / PRを変更履歴として残す。
+8. **Server / Runtime Governance** — confirmed sourceからDeploy、Runtime verification、Storage/Backup/Recoveryまでの共通境界を定義する。
+9. **Pre-execution Handoff** — 現在のAI/Clientで実行できないOperationでも、exact target / action / authorization / verify pathを確定し、推測せず実行直前までhandoffする。
+
+## Execution Orchestration
+
+実行主体はTaskごとに選ぶ。単にServerで実行可能という理由でoperatorやServer AIへ回さない。
+
+優先順位:
+
+```text
+existing deterministic check / CI
+  -> directly available assistant tool / connector
+  -> existing read-only helper
+  -> exact operator Server command
+  -> Server-side AI only when deterministic/direct routes are insufficient
+```
+
+現在のassistant/clientが直接実行できる処理をoperatorへ戻さない。Server-side AIはcostを伴う実行主体として扱い、deterministic command、Source/Test、既存helper、CI、Provider readbackで閉じられるTaskでは使用しない。
+
+Server commandをoperatorへ渡す場合の詳細Authorityは `docs/SERVER_COMMAND_CONTRACT.md`。Pre-execution field名・execution route・mutation classのmachine-readable正本は `operations/pre-execution-schema.json`。
 
 ## Mutation Ownership
 
@@ -48,6 +67,8 @@ READ_ONLY_REPOSITORIES = Authority/Reuse/Integration確認だけのRepository
 
 明示許可は、別Projectの作業依頼、`server-coreを読め`、`必要ならDocumentを更新`、`共通Ruleも確認`、`改善できるところは進めろ` 等から推論してはならない。**server-core自体を変更してよいことが明確でない限り、server-coreはread-onlyを維持する。**
 
+AuthorizationはTask/change unitへscopeする。過去Taskで成立したmutation permissionを別Task・別Repository・別Provider・別Runtimeへcarry-forwardしない。
+
 Shared CapabilityやProject-owned serviceを「使う・接続する・検証する」ことは、そのowner Repository実装を変更する意味ではない。consumer Project側で閉じられるTaskはconsumer側だけを変更する。
 
 ## Standard Flow
@@ -59,7 +80,8 @@ REQUEST
   -> LOAD REQUIRED AUTHORITY
   -> DISPATCH TO PROJECT
   -> REUSE CHECK
-  -> IMPLEMENT / DEBUG
+  -> SELECT EXECUTOR
+  -> IMPLEMENT / DEBUG / PREPARE EXACT ACTION
   -> VERIFY
   -> DOCUMENTATION GATE
   -> COMMIT / PUSH / REMOTE READBACK
@@ -70,7 +92,7 @@ REQUEST
 
 `Source`, `Test`, `Commit`, `Push`, `PR`, `CI`, `Merge`, `Deploy`, `Runtime`, `Production` は別状態として扱う。
 
-実行前の状態表現と外部実行handoffは `docs/G_ACE_WORKSPACE.md` の Pre-execution Readiness を正とする。
+実行前の状態表現と外部実行handoffは `docs/G_ACE_WORKSPACE.md`、operator Server commandの生成・返却形式は `docs/SERVER_COMMAND_CONTRACT.md` を正とする。
 
 ## Authority Map
 
@@ -79,6 +101,8 @@ REQUEST
 - `docs/DESIGN_DELTA.md` — 正式な設計差分
 - `docs/LOAD_SCOPE.md` — Task routing / progressive context loading
 - `docs/G_ACE_WORKSPACE.md` — Workspace運用・Pre-execution readiness・Evidence handoff
+- `docs/SERVER_COMMAND_CONTRACT.md` — Server executor selection / compact command handoff / shell safety / result envelope
+- `operations/pre-execution-schema.json` — canonical Pre-execution field names / routes / mutation classes
 - `docs/STRUCTURE.md` — server-core Navigation / Project Tree
 
 ### Development / Repository
@@ -109,6 +133,7 @@ REQUEST
 | 開発方法論 / 再利用 / Module | `CORE.md` |
 | 共通運用 / 変更境界 | `SERVER_CORE_PROTOCOL.md` |
 | Workspace運用 / Pre-execution / Evidence handoff | `docs/G_ACE_WORKSPACE.md` |
+| Server command / operator handoff / command output | `docs/SERVER_COMMAND_CONTRACT.md` |
 | Project / Capability / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
 | Workspace MCP | `docs/WORKSPACE_MCP.md` |
 | Project Integration | `docs/PROJECT_INTEGRATION_RULES.md` |
@@ -170,8 +195,8 @@ server-coreのScriptを**読むこと・存在を確認すること・Document�
 - `scripts/install-workspace-mcp.sh` は `~/.cursor/mcp.json` を変更し得るため、`--apply-workspace-mcp-mutation` が無ければ変更しない。
 - `scripts/verify-workspace-mcp.sh` はdefaultでconfig-only readback。外部client readbackは `--client-readback` 指定時だけ行う。
 - `scripts/workspace_command_center_check.py --repair` は `--authorize-workspace-mutation` を追加指定しない限りrepairしない。
-- `scripts/ai-auto-commit.sh` はserver-core専用で、server-core自体への明示許可を表す `--authorize-server-core-mutation` が必須。
-- `scripts/storage_lifecycle_audit.py` はread-only auditであり、cleanup/delete/pruneを実行しない。
+- `scripts/ai-auto-commit.sh` はserver-core専用で、`--authorize-server-core-mutation` と明示的な `--file PATH` change unitが必須。repository-wide stagingを行わない。
+- `scripts/storage_lifecycle_audit.py` はbounded read-only auditであり、cleanup/delete/pruneを実行しない。default出力はcompact result envelope。
 
 Scriptにmutation optionが存在すること自体を実行許可として扱わない。Taskの対象とchange boundaryに必要なOperationだけ選ぶ。
 
