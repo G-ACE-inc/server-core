@@ -32,7 +32,7 @@ server-coreはWorkspace全体について次を担当する。
 4. **Shared Capability Control** — MCP / Tool / Skill / DebugAI / KB / Secret Contract / Provider Contractの発見入口を持つ。
 5. **Development / Verification Governance** — 再利用、Design、Delta、Tree、Test、Documentation Gate、PASS条件を統一する。
 6. **GitHub Work History** — Commit / PRを実作業履歴として残す。
-7. **Runtime / Operations Governance** — confirmed GitHub revisionからのDeploy、Docker、Log/Cache/Cleanup、Backup/Recovery、安全境界を統一する。
+7. **Runtime / Operations Governance** — confirmed GitHub revisionからのDeploy、Docker Compose、Log/Cache/Cleanup、Backup/Recovery、安全境界を統一する。
 8. **Mutation Ownership** — Task対象Repository、参照専用Repository、変更許可Repositoryを分離し、別Task・別Projectへ変更を漏らさない。
 9. **Evidence / State Separation** — Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Productionを別状態として扱う。
 
@@ -84,9 +84,9 @@ SERVER_CORE_MUTATION_AUTHORIZED
 - `docs/SERVER_CORE_DESIGN.md` — server-core設計基準線
 - `docs/DESIGN_DELTA.md` — 設計差分と理由
 - `docs/LOAD_SCOPE.md` — Task routing / progressive context loading
-- `docs/G_ACE_WORKSPACE.md` — Workspace正規運用
+- `docs/G_ACE_WORKSPACE.md` — Workspace正規運用 / 固定開発ルーティーン
 - `docs/SERVER_COMMAND_CONTRACT.md` — Server commandのtechnical safety / partial state / evidence boundary
-- `operations/pre-execution-schema.json` — execution handoffのmachine-readable field contract
+- `operations/pre-execution-schema.json` — command-center dispatch fieldsのmachine-readable contract
 - `docs/STRUCTURE.md` — server-core Project Tree / Navigation
 
 ### Development / GitHub
@@ -102,7 +102,7 @@ SERVER_CORE_MUTATION_AUTHORIZED
 - `docs/PROJECT_INTEGRATION_RULES.md` — Project-owned service / Vault / MCP / Tool導入契約
 - `docs/WORKSPACE_SHARED_SECRETS.md` — Vault経由Shared Secret / Token契約
 - `docs/KB_REUSE_DESIGN.md` — reusable-development KB設計
-- `docs/STORAGE_LIFECYCLE.md` — Log / Cache / Cleanup / Backup / Recovery設計
+- `docs/STORAGE_LIFECYCLE.md` — Log / Cache / Cleanup / Backup/Recovery設計
 - `docs/CLOUDFLARE_OPERATIONS.md` — Cloudflare共通運用契約
 
 ### Support
@@ -205,6 +205,8 @@ Capability本体は所有Project/runtimeへ残す。
 
 Capabilityを利用・接続・検証することと、そのowner実装を変更することは分離する。TGserver / webhook gateway等のProject-owned serviceは、複数Projectで使っていても自動的にShared Capability扱いへ変更しない。
 
+DebugAIを使うTaskでは、既に取得済みのEvidence / Tool結果 / prior verified stateを再利用し、同じ調査をServer AIへ重複実行させない。これはDebugAI利用時の重複調査防止であり、Workspace全体のgeneric AI cost policyではない。
+
 ## Helper Execution Boundary
 
 server-coreのScriptを読むことと、実行してWorkspace / Client / Runtimeを変更することを分離する。
@@ -222,7 +224,7 @@ Helperが存在すること自体をmutation許可として扱わない。
 
 VPSはRuntime / Processing環境であり、GitHub Source履歴・Design・Documentの代替正本にしない。
 
-本番常駐は原則Docker / Docker Compose。Project固有の正式例外がある場合は対象Project Authorityを優先する。
+本番常駐は **Docker Composeを正** とし、Host上の `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` 等を本番常駐経路として採用しない。
 
 Deploy Authority: `docs/DEPLOY_RUNBOOK.md`  
 Storage Authority: `docs/STORAGE_LIFECYCLE.md`
