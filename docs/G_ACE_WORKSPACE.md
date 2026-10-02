@@ -193,7 +193,7 @@ Authority: `docs/KB_REUSE_DESIGN.md`。
 
 ## 14. Server / Runtime
 
-本番常駐は原則Docker / Docker Compose。Project固有の正式例外は対象Project Authorityを優先する。
+本番常駐は **Docker Composeを正** とする。Host上の `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` 等を本番常駐経路として採用しない。
 
 ServerはRuntime/Processing環境であり、Project Source履歴・Design・Documentの正本をServerだけに置かない。
 
