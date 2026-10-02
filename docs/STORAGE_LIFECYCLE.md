@@ -13,6 +13,8 @@ Cleanupの目的は空き容量確保そのものではなく、**削除して�
 
 server-coreはWorkspace共通のStorage分類、Audit、Safety Gateを定義する。
 
+これは共通Authorityの責務を示すだけで、server-core Repositoryのwrite permissionではない。Storage共通Contractやpolicy sourceの変更が必要と判明しても、server-core自体についてexplicit owner authorizationがあり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立するまではserver-coreを変更しない。
+
 Project固有のretention、shipping acknowledgement、retry、recovery、restore条件はowning Project側Contractを正とする。
 
 server-coreはProject固有Dataのownerにならない。
@@ -113,6 +115,8 @@ Generic automationで禁止:
 
 Mutation実装時はdry-run/candidate、actual delete result、disk deltaを追跡可能にする。
 
+Storage cleanup/runtime mutationの承認と、server-core Repository内のpolicy/script変更許可は別Operationとして扱う。cleanupが承認されてもserver-core Source/Document変更を自動許可しない。
+
 ## 9. Backup Lifecycle
 
 Backupは最低限次を持つ。
@@ -173,6 +177,8 @@ Auditは最低限次を収集できる設計にする。
 
 Audit成功をCleanup成功と扱わない。
 
+Audit結果からpolicy/script改善が必要と判断しても、それだけでserver-core Repositoryを変更しない。`SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示成立している場合だけserver-core側Source/Documentを変更する。
+
 ## 12. Cleanup Automation Contract
 
 Mutation実装後は少なくとも以下を出力する。
@@ -218,6 +224,8 @@ Mutation実装後はTaskに必要な範囲で検証する。
 - backup generations
 
 採用する値はowner、根拠、適用範囲、rollbackを追跡する。
+
+server-core共通文書/policyへ採用値を反映する必要がある場合も、explicit server-core mutation authorizationが無ければwriteせず、必要変更を報告・提案する。
 
 ## 17. Completion Boundary
 
