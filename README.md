@@ -15,11 +15,15 @@ Workspace内の作業開始順は固定する。
 ```text
 server-core/README.md
   -> docs/LOAD_SCOPE.md
-  -> 今回必要なserver-core Authorityだけ
+  -> docs/G_ACE_WORKSPACE.md の固定Routine
+  -> 今回必要な追加server-core Authorityだけ
   -> 対象Project README
+  -> Current GitHub state（branch / HEAD / latest commit / PR / CIをTaskに必要な範囲で確認）
   -> 必要なDesign / Project Tree / Design Delta / System Document
   -> 対象Source / 直接依存 / 関連Test
 ```
+
+Source / Config / Test / API / Bug fix / 接続変更を伴う開発Taskでは、`docs/LOAD_SCOPE.md` に従って `CORE.md` を必須開発原則として読む。`G_ACE_WORKSPACE.md` が固定RoutineのOwnerであり、他DocumentはRoutineの一部だけを抜き出して代替しない。
 
 server-coreの全正本を一括読込しない。同一Taskで確認済みのAuthorityは、変更・矛盾・情報不足が無い限り繰り返し読まない。
 
@@ -45,14 +49,18 @@ server-coreはWorkspace全体について次を担当する。
 ```text
 REQUEST
   -> ROUTE
+  -> LOAD FIXED ROUTINE
   -> LOAD REQUIRED AUTHORITY
   -> DISPATCH TO PROJECT
+  -> READ PROJECT README
+  -> READ CURRENT GITHUB STATE
+  -> READ REQUIRED DESIGN
   -> REUSE CHECK
   -> IMPLEMENT / DEBUG
   -> VERIFY
   -> DOCUMENTATION GATE
   -> COMMIT = WORK REPORT
-  -> PUSH / REMOTE READBACK / PR / CI
+  -> PUSH / REMOTE READBACK / PR CURRENT SYNC / CI
   -> APPROVAL BOUNDARY
   -> DEPLOY / RUNTIME VERIFY only when authorized
 ```
@@ -88,7 +96,7 @@ SERVER_CORE_MUTATION_AUTHORIZED
 - `docs/SERVER_CORE_DESIGN.md` — server-core設計基準線
 - `docs/DESIGN_DELTA.md` — 設計差分と理由
 - `docs/LOAD_SCOPE.md` — Task routing / progressive context loading
-- `docs/G_ACE_WORKSPACE.md` — Workspace正規運用 / 固定開発ルーティーン
+- `docs/G_ACE_WORKSPACE.md` — Workspace正規運用 / **固定開発Routineの唯一Owner**
 - `docs/SERVER_COMMAND_CONTRACT.md` — Server commandのtechnical safety / partial state / evidence boundary
 - `operations/pre-execution-schema.json` — command-center dispatch fieldsのmachine-readable contract
 - `docs/STRUCTURE.md` — server-core Project Tree / Navigation
@@ -97,7 +105,7 @@ SERVER_CORE_MUTATION_AUTHORIZED
 - `CORE.md` — LibralCore開発方法論
 - `SERVER_CORE_PROTOCOL.md` — 共通運用・禁止・Approval Boundary・State Semantics
 - `docs/PROJECT_TEMPLATE.md` — Project/Document標準
-- `docs/AUTO_COMMIT.md` — Commit = Work Report / Push / Remote Readback
+- `docs/AUTO_COMMIT.md` — Commit = Work Report / Push / Remote Readback / PR Current同期
 - `docs/DEPLOY_RUNBOOK.md` — confirmed GitHub revisionからRuntime verificationまでの共通Deploy境界
 
 ### Shared Platform
@@ -117,13 +125,13 @@ SERVER_CORE_MUTATION_AUTHORIZED
 
 | Task | 追加で読むAuthority |
 |---|---|
+| 全Workspace開発Task | `docs/G_ACE_WORKSPACE.md` |
+| Source / Config / Test / API / Bug fix / 接続変更を伴うTask | `CORE.md` |
 | server-core設計 / 責務 | `docs/SERVER_CORE_DESIGN.md` + 必要なら `docs/DESIGN_DELTA.md` |
-| 開発方法論 / Module / 再利用 | `CORE.md` |
 | 共通運用 / 禁止 / Approval Boundary / State | `SERVER_CORE_PROTOCOL.md` |
 | Context / 読込範囲 | `docs/LOAD_SCOPE.md` |
-| Workspace運用 | `docs/G_ACE_WORKSPACE.md` |
 | Server command technical safety / evidence | `docs/SERVER_COMMAND_CONTRACT.md` |
-| Git / Commit / Push | `docs/AUTO_COMMIT.md` |
+| Git / Commit / Push / PR Current同期 | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
 | 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
 | Project / MCP / Tool / DebugAI / Secret / Runtime発見 | `docs/WORKSPACE_REGISTRY.md` |
@@ -142,10 +150,10 @@ SERVER_CORE_MUTATION_AUTHORIZED
 Current completed / verified stateと入口を示す。Design正本にはしない。
 
 ### Design
-Architecture / Contract / Boundary / ResponsibilityのBaseline。Current実装へ合わせて履歴を消す上書きをしない。
+Architecture / Contract / Boundary / ResponsibilityのBaseline。Current実装へ合わせて履歴を消す上書きをしない。元のDesign記述を保持し、正式変更は元記述の下へ変更履歴として追記する。
 
 ### Design Delta
-Designとの差を正式採用する場合、差分・理由・Evidence・影響範囲・適用Commit・Compatibility/rollbackを残す。
+Designとの差を正式採用する場合、差分・理由・Evidence・影響範囲・適用Commit・Compatibility/rollbackを残す。Design本文の履歴保存を置き換えるのではなく補助する。
 
 ### Project Tree
 主要File/Directoryの責務、Entry Point、関連Design/Testを示すNavigation Index。
@@ -180,7 +188,7 @@ Commitは単なる保存点ではなく作業報告として扱う。
 - Docs
 - Remaining / Unverified
 
-Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
+Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。Open PRがあるTaskは、Push/Remote Readback後にPR headと本文がCurrent HEADの作業状態を表しているか確認し、古ければPR本文を同期する。
 
 詳細は `docs/AUTO_COMMIT.md`。
 
@@ -207,7 +215,7 @@ Capability本体は所有Project/runtimeへ残す。
 - Vault経由Secret / Token;
 - shared development tools / skills。
 
-Capabilityを利用・接続・検証することと、そのowner実装を変更することは分離する。TGserver / webhook gateway等のProject-owned serviceは、複数Projectで使っていても自動的にShared Capability扱いへ変更しない。
+Capabilityを利用・接続・検証することと、そのowner実装を変更することを分離する。TGserver / webhook gateway等のProject-owned serviceは、複数Projectで使っていても自動的にShared Capability扱いへ変更しない。
 
 DebugAIを使うTaskでは、既に取得済みのEvidence / Tool結果 / prior verified stateを再利用し、同じ調査をServer AIへ重複実行させない。
 

@@ -9,8 +9,9 @@
 ## Workspace Integration
 
 ```text
-server-core README / LOAD_SCOPE
+server-core README / LOAD_SCOPE / G_ACE_WORKSPACE fixed routine
   -> Project README
+  -> Current GitHub state / Commit / PR
   -> Project固有Authority
   -> Source / Test
 ```
@@ -55,12 +56,14 @@ Commit前にはcurrent Git top-levelと対象Repositoryを照合し、別Project
 
 新規Code生成前に確認する。
 1. 目的と期待結果
-2. 同じ責務を持つ既存Design / Code / Module / Type / Schema / Test / Template
-3. そのまま利用可能か
-4. 設定・引数・型調整で利用可能か
-5. 薄いAdapterで利用可能か
-6. 共通部分を抽出できるか
-7. 新規実装が必要か
+2. Project README
+3. Current branch / HEAD / latest commit / Open PR / CI（Taskに必要な範囲）
+4. 同じ責務を持つ既存Design / Code / Module / Type / Schema / Test / Template
+5. そのまま利用可能か
+6. 設定・引数・型調整で利用可能か
+7. 薄いAdapterで利用可能か
+8. 共通部分を抽出できるか
+9. 新規実装が必要か
 
 既存資産を利用しない場合は、複雑化、性能、品質、依存、互換性等の具体的理由を確認する。
 
@@ -76,10 +79,10 @@ Design / Tree / Delta / System Documentは必要条件を満たした場合だ�
 ## Single Source of Truth
 
 - Code Interface / Type / Schema / Test: executable contract
-- Design: architecture / responsibility / boundary baseline
+- Design: architecture / responsibility / boundary baseline **and preserved formal change history**
 - README: current completed / verified entry point
 - Project Tree: navigation index
-- Design Delta: intentional architecture/responsibility difference
+- Design Delta: intentional architecture/responsibility differenceの詳細・理由・Evidence・適用Commit
 - System Document: stable operational/technical handoff
 - Commit / PR: chronological work history
 
@@ -105,9 +108,19 @@ READMEからリンクするProject Documentは、そのProjectの継続開発・
 
 DesignはArchitecture / Contract / Boundary / ResponsibilityのBaselineを保存する。
 
-Current実装に合わせて履歴を消す上書きをしない。
+**元の設計を消さない。Current実装に合わせて既存Design記述を書き換えて過去の意図を失わせない。正式な変更は、元のDesign記述を保持したまま、その下へ変更履歴として追記する。**
 
-Architecture自体を正式変更する場合は、旧Baseline、変更理由、新しいDecision、適用Commitを追跡可能にする。
+各正式変更履歴では必要な範囲で次を残す。
+- 変更前の設計 / baseline
+- 変更点
+- 理由 / root cause
+- Evidence
+- 影響範囲
+- 適用Commit / PR
+- Compatibility / migration / rollback
+- verification state
+
+Design Deltaはこの変更を横断的に説明・参照するために使えるが、元Design側の履歴保存を置き換えるものではない。Design Deltaだけに変更を残して元DesignをCurrent状態へ上書きする運用は禁止する。
 
 ## Project Tree
 
@@ -135,6 +148,8 @@ Design BaselineとArchitecture/Responsibilityが意図的に変わる場合に�
 - Compatibility / migration / rollback considerations
 
 単なる文言修正、Current runtime refresh、作業進捗、Bug fixだけでDesign Deltaを作らない。
+
+Design Deltaは「元Designを残したまま履歴を積む」Contractの補助記録である。Deltaがあることを理由に元Design履歴を削除・置換しない。
 
 ## System / Feature-bundle Document
 
@@ -191,7 +206,7 @@ SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
 判定基準:
 - Current completed / verified state変更 -> README
 - File/Directory/主要責務/Entry Point変更 -> Tree
-- Architecture/Responsibility baseline正式変更 -> Delta
+- Architecture/Responsibility baseline正式変更 -> 元Designへの履歴追記 + Delta要否判定
 - stable System/ModuleをREADMEだけでは安全に引継げない -> System Document
 
 判定対象は原則として**現在作業している対象Project**である。server-coreのDocumentation Gateは、server-core自体の変更についてexplicit owner authorizationがある場合だけ適用する。
@@ -233,6 +248,7 @@ Moduleは再利用、交換、独立修正、権限/障害分離等の実益が�
 
 通常Taskの起点:
 - 目的と期待結果
+- Current GitHub state
 - 対象責務
 - 再利用候補
 - Input / Output
@@ -261,7 +277,9 @@ Commit / PRを実作業履歴の正本とする。
 
 Commitは必要に応じてPurpose、material changes、affected scope、verification、documentation、remaining/unverified workを追える作業報告にする。
 
-Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionを別状態として扱う。
+Commit / Push / Remote Readback / PR / PR Current Sync / CI / Merge / Deploy / Runtime / Productionを別状態として扱う。
+
+Open PRが存在する場合は、Push/Remote Readback後にPR head/bodyをCurrent HEADへ同期し、古いPR本文を残したままGitHub履歴完了としない。詳細は `docs/AUTO_COMMIT.md`。
 
 ## Credential / Environment
 
@@ -273,14 +291,18 @@ Credential実値をGitへ保存しない。Workspace shared credential contract�
 
 ```text
 目的と期待結果
-  -> server-core routing
+  -> server-core routing / fixed routine
   -> Project README
+  -> Current GitHub state / Commit / PR
   -> mutation/read-only repository lock
-  -> Project内のREADME-linked Authority / Source / Test
+  -> Project内のREADME-linked Design / Tree / Delta / System Document
+  -> Source / Test
   -> reuse check
+  -> executor / cost routing
   -> implementation / debug
   -> verification
   -> Project documentation gate
   -> GitHub work history
+  -> PR Current sync when PR exists
   -> remote/runtime verification when required
 ```

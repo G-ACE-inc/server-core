@@ -13,6 +13,7 @@ COMMIT
 PUSH
 REMOTE_READBACK
 PR
+PR_CURRENT_SYNC
 CI
 MERGE
 DEPLOY
@@ -138,13 +139,40 @@ Binary/読取不能Fileを「安全」と推測しない。credential-bearing可
 
 Push成功だけでGitHub反映済みとしない。必要な作業ではremote branch / commit SHA / changed file / PR head等を再取得して確認する。
 
-## 9. Multiple Repositories / Workers
+## 9. PR Current Sync Gate
+
+Open PRが存在するchange unitでは、Push / Remote Readback後にPRをCurrent HEADへ同期する。
+
+最低限確認する。
+
+```text
+PR_STATE
+PR_HEAD_SHA
+PR_BASE
+PR_BODY_CURRENT
+CI_STATE
+```
+
+PR本文は少なくともCurrent HEADのTaskについて次を表す状態にする。
+- Purpose / intended result
+- material changes
+- affected scope
+- verification / CI state
+- documentation state
+- remaining / unverified work
+- approval boundary
+
+Source/Commitが進んだのにPR本文が旧状態のままなら `PR_CURRENT_SYNC=FAIL` とし、GitHub work history completionへ昇格しない。PR本文を同期した後は再取得してCurrent HEADと内容をreadbackする。
+
+PR作成自体が不要なRepository/Task、PRが存在しないTaskでは `PR_CURRENT_SYNC=NOT_APPLICABLE` とする。PR本文同期はPR merge承認を意味しない。main / PR mergeは別Approval Boundaryのまま維持する。
+
+## 10. Multiple Repositories / Workers
 
 複数Repositoryを変更した場合はRepositoryごとに履歴を分離する。複数workerが同一Repositoryへ関与する場合もchange unitを混在させない。
 
 各RepositoryのSHA、branch、verification state、変更理由を追跡できる状態にする。
 
-## 10. Stop / Exception Conditions
+## 11. Stop / Exception Conditions
 
 次の場合は自動Commit/Pushを止める。
 - credential / `.env`実値がDiffへ混入
@@ -162,7 +190,7 @@ Push成功だけでGitHub反映済みとしない。必要な作業ではremote 
 
 Production publish/deployはCommit/Pushとは別のApproval Boundary。
 
-## 11. Invariants
+## 12. Invariants
 
 - 未実行TestをPASSと記録しない。
 - failure / unverified / partial stateを隠さない。
@@ -174,3 +202,4 @@ Production publish/deployはCommit/Pushとは別のApproval Boundary。
 - pre-existing staged intended Fileを別change unitへ混ぜない。
 - Commit前failureでhelper自身が作ったstageを残さない。
 - Commit成功/Push失敗を全体成功または全体失敗へ丸めない。
+- Open PRがあるのにPR本文のCurrent HEAD同期を未確認のままGitHub履歴完了としない。

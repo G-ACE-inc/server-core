@@ -1,13 +1,15 @@
 # G-ACE WORKSPACE
 
 Version: 2026-10-03
-Role: G-ACE Workspaceでserver-core司令室を必ず起点にして作業するための正規運用契約。
+Role: G-ACE Workspaceでserver-core司令室を必ず起点にして作業するための正規運用契約。**固定Development Routineの唯一Owner**。
 
 ## 1. Purpose
 
 標準Workspace `/home/admin1/workspace/G-ACE.code-workspace` では、AI / Developerはserver-coreを共通Command Centerとして使用する。
 
 server-coreはTask routing、共通Authority、shared capability discovery、GitHub work history、operations boundaryを管理する。Project固有Design / Source / Test / Runtime logic / Project Documentは各Projectが所有する。
+
+このDocumentがWorkspace固定RoutineのOwnerである。他Documentに部分Routineがあっても、このRoutineを置き換えたり工程を省略したりしない。
 
 ## 2. Mandatory Entry
 
@@ -16,10 +18,15 @@ Workspace作業は必ず次から開始する。
 ```text
 /home/admin1/server-core/README.md
   -> /home/admin1/server-core/docs/LOAD_SCOPE.md
-  -> 今回必要なserver-core Authorityだけ
+  -> /home/admin1/server-core/docs/G_ACE_WORKSPACE.md
+  -> 今回必要な追加server-core Authorityだけ
   -> 対象Project README
-  -> 対象Projectの必要Authority / Source / Testだけ
+  -> Current GitHub state（branch / HEAD / latest commit / PR / CIをTaskに必要な範囲で確認）
+  -> 対象Projectの必要Design / Tree / Delta / System Document
+  -> 対象Source / 直接依存 / 関連Test
 ```
+
+Source / Config / Test / API / Bug fix / 接続変更 / Feature / Debugを伴うTaskでは `CORE.md` を必須開発原則として適用する。
 
 Masterが新規チャット冒頭でこの指示を繰り返さなくてもAI側で適用されることをWorkspace要件とする。Cursorは `/home/admin1/server-core/.cursor/rules/00_agent_runtime.mdc` の `alwaysApply: true` を正とする。VS Code / GitHub Copilot系は `/home/admin1/server-core/.github/copilot-instructions.md`、複数Agent互換入口は `/home/admin1/server-core/AGENTS.md` を正とし、Workspace初期化時に `/home/admin1/projects` ルートへ同一正本のSymlinkを作成する。Workspace checkerはこれらのリンクとAI instruction設定を検証する。
 
@@ -89,7 +96,13 @@ Task対象になった場合だけ必要範囲を開く。
 
 対象ProjectではREADMEを入口にする。
 
-READMEから、存在する場合は次へ直接到達できる状態を標準とする。
+READMEの直後に、Task判断へ必要なCurrent GitHub stateを確認する。
+- current branch / HEAD
+- latest relevant commit
+- open PR / PR head / PR body
+- CI status when applicable
+
+その後、READMEから存在する場合は次へ直接到達する。
 - Design
 - Project Tree
 - Design Delta
@@ -102,27 +115,33 @@ READMEから、存在する場合は次へ直接到達できる状態を標準�
 
 ## 7. Development Routine
 
+このSectionが固定Routineの正本である。
+
 ```text
-server-core command center
+server-core README
+  -> LOAD_SCOPE
+  -> G_ACE_WORKSPACE fixed routine
+  -> required additional server-core Authority
   -> target Project README
+  -> Current GitHub state / Commit / PR
   -> required Design / Tree / Delta / System Document
-  -> repository / branch / HEAD / status
   -> Source / direct dependency / tests
   -> reuse check
+  -> executor routing / cost routing
   -> implementation / debug
   -> diff
   -> verification
   -> documentation gate
   -> GitHub commit as work report
   -> push / remote readback
-  -> PR / CI when required
+  -> PR Current sync / CI when required
   -> approval boundary
   -> deploy/runtime only when authorized
 ```
 
-この順序を通常ルーティーンとして維持し、必要工程を理由なく省略しない。
+この順序を通常ルーティーンとして維持し、必要工程を理由なく省略しない。別Documentを部分的に読んだことを固定Routine適用済みの代用にしない。
 
-## 8. Documentation Gate
+## 8. Documentation Gate / Design History
 
 作業終了前に必ず判定する。
 
@@ -135,7 +154,7 @@ SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
 
 Requiredなのに未更新ならDocumentation Completeではない。
 
-DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
+DesignはCurrent実装へ合わせて履歴が消える形で上書きしない。**元のDesign記述を保持し、その下へ正式な変更点を履歴として積む。** Design Deltaは変更理由・Evidence・影響・適用Commit等を追跡する補助Authorityであり、元Designの変更履歴を消して置き換える用途にしない。
 
 ## 9. GitHub Work History
 
@@ -159,17 +178,31 @@ RUNTIME
 PRODUCTION
 ```
 
+Open PRが存在するTaskでは、Push/Remote Readback後にPR headとPR本文がCurrent HEADの目的・主要変更・検証・残作業を表しているか確認する。古ければPR本文をCurrentへ同期し、PR同期未確認のまま「GitHub履歴完了」としない。
+
 Authority: `docs/AUTO_COMMIT.md`。
 
-## 10. Shared MCP / Tool / DebugAI
+## 10. Executor / DebugAI / Cost Routing
 
-共有Capabilityの発見入口は `docs/WORKSPACE_REGISTRY.md`。
+Executor選択は「何ができるか」だけでなく、**同じ確実性をより低Costで得られる経路を優先する**。
 
-server-coreが管理するのは接続契約・owner・permission boundary・availability / verification stateであり、Capability本体ではない。
+優先順:
 
-`.cursor/mcp.json` 等の実設定とRegistry文書を分離する。文書記載だけでMCP利用可能とは扱わない。
+```text
+1. 既存Verified Evidence / 既取得Tool結果を再利用
+2. deterministic command / static check / focused test / readback
+3. DebugAI
+4. Workspace AI / Server AI
+5. 高Cost AIは特殊判断・未解決複雑問題だけ
+```
 
-DebugAIは独立Project/runtimeとして扱い、Source実装、MCP Protocol、Workspace registration、Current live runtimeを別状態として保持する。DebugAIを利用する場合は、既に取得済みのEvidenceや既存Tool結果を再利用し、同じ調査をServer AIへ重複実行させない。
+DebugAIの担当は、対象Projectの設計・Source・Testを使った**設計確認 -> 調査 -> Test -> 検証 -> Debug -> 再Testの反復実作業**である。Code修正を伴う反復Debugも対象とする。DebugAIは独立Project/runtimeとして扱い、実装や登録状態を推測しない。利用可能性が必要ならCurrent runtime/clientをreadbackする。
+
+単純な状態確認、既知値確認、File/Process/Endpoint readback、決定論的Testで閉じられる作業に高Cost AIを使わない。
+
+DebugAIで閉じられる反復調査・再現・修正・検証を、同じEvidenceを渡さず高Cost Server AIへ重複実行させない。DebugAIだけでは責務/Architecture/Approval判断を閉じられない場合にWorkspace AI / Server AIへEscalateする。
+
+Cost削減のためにTest・Evidence・必要工程を省略してはならない。**Cost最小化は同じ品質・同じEvidenceをより安い実行経路で得ること**を意味する。
 
 ## 11. Project Integration
 
@@ -236,10 +269,12 @@ Container / Port / Domain / Provider / Deploy状態がTask判断に必要なら�
 
 Workspace Taskが完了と言えるのは、Taskに必要な範囲で次が閉じた場合だけ。
 - correct Project/authority routing;
+- Current GitHub state確認;
+- required Design/history確認;
 - implementation or requested work;
 - required verification;
 - Documentation Gate;
-- GitHub work history;
+- GitHub work history and PR Current sync when PR exists;
 - required remote/CI/runtime evidence;
 - approval boundary compliance。
 

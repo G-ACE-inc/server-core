@@ -10,10 +10,17 @@ Workspace内の作業開始順は固定する。
 ```text
 1. server-core/README.md
 2. server-core/docs/LOAD_SCOPE.md
-3. 今回のTaskに必要なserver-core Authorityだけ
-4. 対象Project README
-5. 対象Project内の必要なDesign / Tree / Delta / System Document / Source / Testだけ
+3. server-core/docs/G_ACE_WORKSPACE.md の固定Routine
+4. 今回のTaskに必要な追加server-core Authorityだけ
+5. 対象Project README
+6. Current GitHub state（branch / HEAD / latest commit / PR / CIをTaskに必要な範囲で確認）
+7. 対象Project内の必要なDesign / Tree / Delta / System Document
+8. 対象Source / 直接依存 / 関連Test
 ```
+
+`docs/G_ACE_WORKSPACE.md` は全Workspace開発Taskで必須のRoutine Ownerであり、他Documentの一部記述だけで代用しない。
+
+Source / Config / Test / API / Bug fix / 接続変更 / Feature実装 / Debugを伴うTaskでは `CORE.md` を必須開発原則として読む。「開発方法論Taskではない」という分類でCOREを省略しない。
 
 README以外のserver-core Authorityを新Task開始時に一括読込しない。同一Taskで一度確認済みのAuthorityは、変更・矛盾・情報不足が無い限り毎ターン再読込しない。
 
@@ -21,15 +28,15 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 
 | Task | 追加で読むserver-core Authority |
 |---|---|
+| 全Workspace開発Task | `docs/G_ACE_WORKSPACE.md` |
+| Source / Config / Test / API / Bug fix / 接続変更 / Feature / Debug | `CORE.md` |
 | server-core自身の設計/司令室責務 | `docs/SERVER_CORE_DESIGN.md` + 必要なら `docs/DESIGN_DELTA.md` |
-| 開発方法論 / 責務 / 5段 / Module / 再利用 | `CORE.md` |
 | 共通運用 / 禁止 / Approval Boundary / State | `SERVER_CORE_PROTOCOL.md` |
-| Workspace運用 / dispatch | `docs/G_ACE_WORKSPACE.md` |
 | Server command technical safety / evidence | `docs/SERVER_COMMAND_CONTRACT.md` |
 | Project / Repository / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
 | Workspace MCP | `docs/WORKSPACE_MCP.md` |
 | Project Integration（TGserver / webhook gateway / Libral Vault / Project-level MCP・Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
-| Git / Commit / Push / work report | `docs/AUTO_COMMIT.md` |
+| Git / Commit / Push / work report / PR Current同期 | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
 | 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
 | Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
@@ -40,7 +47,7 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | 用語 | `docs/GLOSSARY.md` |
 | server-core構造 | `docs/STRUCTURE.md` |
 
-複合作業では必要Authorityだけ組み合わせる。
+複合作業では必要Authorityだけ組み合わせる。ただし固定Routine Ownerと、Code/Config/Test変更時のCOREは省略対象にしない。
 
 ## 3. Dispatch Decision
 
@@ -90,20 +97,23 @@ BLOCKER
 
 ## 5. Target Repository Loading
 
-対象Projectへ入った後はREADMEを入口とする。
+対象Projectへ入った後はREADMEを入口とする。READMEを読んだ後、Designより先にCurrent GitHub stateを確認する。
 
 ### Level 0: Repository Entry
 - README Current State
+- branch / HEAD / latest commit
+- Open PRとPR head/body、CI（Taskに関係する場合）
 - Designへのリンク
 - Project Treeへのリンク
 - Design Deltaへのリンク
 - completed System / Feature-bundle / Module Documentへのリンク
 - run / test / verify entry
 
-存在しないDocumentを推測で作成済み扱いしない。
+存在しないDocumentを推測で作成済み扱いしない。READMEや過去報告だけでCurrent Source/PR状態を代用しない。
 
 ### Level 1: Target Boundary
 最初に読む。
+- 必要なDesign / Tree / Delta / System Document
 - 対象Source
 - Input / Output
 - 直接依存
@@ -146,14 +156,18 @@ TGserver / webhook gateway / Libral Vault / Project-level MCP・Tool integration
 ```text
 server-core README
   -> LOAD_SCOPE
+  -> G_ACE_WORKSPACE fixed routine
   -> PROJECT_INTEGRATION_RULES
   -> target Project README
+  -> Current GitHub state
   -> target Project authority / Source / Test
 ```
 
 Integration Contractを読むこと自体はserver-coreやservice/provider owner Projectへの変更理由ではない。
 
-## 8. DebugAI Reuse Rule
+## 8. DebugAI / Cost Routing Rule
+
+DebugAIの実行役割とAI Cost優先順位は `docs/G_ACE_WORKSPACE.md` を正とする。
 
 DebugAIを使うTaskでは、既に取得済みのEvidence / Tool結果 / prior verified stateを先に再利用し、同じ調査・診断をServer AIへ重複実行させない。
 
@@ -198,14 +212,15 @@ Registry entryはCurrent Runtime健康状態の証明でもmutation permission�
 ## 11. Documentation Read Rule
 
 - README = Current completed / verified entry
-- Design = architecture baseline
-- Design Delta = intentional difference / rationale
+- Current GitHub state = branch / HEAD / commit / PR / CIの実Source状態
+- Design = architecture baseline + preserved change history
+- Design Delta = intentional difference / rationale / cross-reference
 - Project Tree = navigation index
 - System/Module Document = completed unit handoff
 - Commit / PR = chronological work history
 - Registry = discovery / owner / connection / verification boundary
 
-DesignとCurrent実装が違う場合、DesignをCurrentへ合わせて履歴を消さない。Project固有Documentとserver-core共通Documentを相互代用しない。
+DesignとCurrent実装が違う場合、DesignをCurrentへ合わせて履歴を消さない。元のDesignを保持し、その下へ正式変更履歴を積む。Project固有Documentとserver-core共通Documentを相互代用しない。
 
 ## 12. Runtime / Registry Rule
 
@@ -221,7 +236,8 @@ Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / Gi
 - purpose / expected result;
 - target Project / responsibility;
 - mutation/read-only repository boundary;
-- Design baseline when relevant;
+- Current branch / HEAD / commit / PR state when applicable;
+- Design baseline/history when relevant;
 - input / output;
 - direct dependencies / constraints;
 - reuse candidates;
@@ -234,7 +250,7 @@ Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / Gi
 
 ## 14. Router Failure Rule
 
-Task owner、Authority、Runtime state、credential contract、mutation target等が不明な場合は推測で補完しない。
+Task owner、Authority、Current GitHub state、Runtime state、credential contract、mutation target等が不明な場合は推測で補完しない。
 
 Document更新先が不明な場合もserver-coreを既定の変更先にしない。対象Project READMEとRepository ownershipを確認してから更新する。
 

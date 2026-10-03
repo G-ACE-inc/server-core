@@ -397,3 +397,45 @@ Repository CI verifies the instruction files, Workspace wiring contract and regr
 ## Update rule
 
 When a later architecture decision changes the server-core baseline, append a new section. Do not rewrite or delete prior accepted deltas merely because the current implementation changed. Editorial correction, wording cleanup and current-runtime refresh belong in normal Git history unless they change the Design contract.
+
+## 2026-10-03 — Unify fixed routine ownership and execution-cost routing
+
+### Baseline design
+server-core already contained the required development stages, but the executable routine was repeated across README, LOAD_SCOPE, Workspace, Protocol, Project Template and GitHub documents. CORE could be routed only when a task was explicitly classified as development-methodology work. DebugAI had discovery/state semantics, but its operational responsibility and cost priority were not fixed strongly enough. PR state existed separately from Commit/Push, but PR body freshness was not a completion gate.
+
+### Actual change
+The command-center contract is tightened without creating a new framework or new document owner:
+- `docs/G_ACE_WORKSPACE.md` is the single owner of the fixed Workspace development routine;
+- `docs/LOAD_SCOPE.md` always routes Workspace development through that routine and requires `CORE.md` for Source/Config/Test/API/Bug/connection/Feature/Debug changes;
+- target Project startup is fixed as Project README -> Current GitHub state/Commit/PR -> required Design/history -> Source/Test;
+- executor cost routing prefers existing verified evidence and deterministic checks first, then DebugAI for iterative design-check/investigation/test/verification/debug/retest work, then Workspace/Server AI, with high-cost AI reserved for unresolved special judgment;
+- cost reduction may not remove required evidence, tests or workflow stages;
+- Project Design keeps the original design text and appends formal change history below it; Design Delta supplements rather than replaces that preserved history;
+- Open PRs must be checked and synchronized to the Current HEAD after Push/Remote Readback before GitHub work-history completion.
+
+### Reason / root cause
+A correct rule distributed across multiple documents can still be skipped when an AI decides only one document is relevant. The command center must make the execution path deterministic enough for a non-technical Master while retaining progressive context loading and avoiding unnecessary AI cost.
+
+### Evidence
+Master's server-core audit identified six concrete weaknesses: routine fragmentation, CORE bypass risk, Project startup ordering mismatch, DebugAI responsibility ambiguity, weak AI-cost routing, partial Design-history semantics and weak PR-current synchronization. Current exact-head readback confirmed each gap in the existing documents before this change.
+
+### Affected scope
+- `README.md`
+- `docs/LOAD_SCOPE.md`
+- `docs/G_ACE_WORKSPACE.md`
+- `docs/PROJECT_TEMPLATE.md`
+- `docs/AUTO_COMMIT.md`
+- `docs/DESIGN_DELTA.md`
+
+### Applied commit / PR
+Applied by the same PR #8 change unit that introduces this delta. Exact commit is the GitHub commit containing this section.
+
+### Compatibility / migration / rollback
+- No Project implementation, Runtime, provider, Secret, service or production resource is changed.
+- Existing specialized authorities remain owners of their domains; only routing and completion gates are strengthened.
+- Progressive loading remains; this does not require loading all server-core documents.
+- DebugAI availability still requires Current runtime/client evidence when needed and is never assumed from documentation alone.
+- main merge and production operations remain separate Master approval boundaries.
+
+### Verification state
+Repository CI must pass on the exact resulting PR head. Live Workspace wiring was previously verified at `e7b7b700...`; because Source changes after that revision, exact-new-head live client instruction consumption and any runtime-dependent capability state remain separate evidence and are not implied by this documentation commit.
