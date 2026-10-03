@@ -1,14 +1,10 @@
-# AUTO COMMIT / GITHUB WORK REPORT
+# AUTO COMMIT / GITHUB WORK HISTORY
 
-## 目的
+## Purpose
 
-AI / Developerの作業結果をGitHubへ確実に残し、Commitだけでも実作業の目的・変更・検証・未完状態を後から追えるようにする。
+Source/config/document changesをGitHubへ追跡可能な形で残し、後から目的・変更・検証・未完状態を確認できるようにする。
 
-## Completion Rule
-
-ファイル変更を伴う完成作業は、Masterが明示的に禁止した場合を除き、対象Repositoryの標準に従ってcommit / pushする。
-
-ただし次を分離する。
+## 1. State Separation
 
 ```text
 SOURCE
@@ -17,6 +13,7 @@ COMMIT
 PUSH
 REMOTE_READBACK
 PR
+PR_CURRENT_SYNC
 CI
 MERGE
 DEPLOY
@@ -24,128 +21,185 @@ RUNTIME
 PRODUCTION
 ```
 
-CommitやPushが成功しても、CI / Deploy / Runtime / Productionを推測でPASSにしない。
+前段の成功から後段の成功を推測しない。
 
-## Commit = Work Report
+## 2. Commit / Push Policy
 
-Commitは単なる保存点ではなく、実作業報告として扱う。
+File変更を伴う完成作業は、Masterが明示的に禁止した場合を除き、対象RepositoryのCurrent policyに従ってGitHub履歴へ残すことを標準とする。
 
-件名は変更の目的・内容が一文で分かる形にする。
+- Pushが許可されているRepository/Branchではremote readbackまで行う。
+- Branch保護、review/PR、merge approval等はRepository policyを優先する。
+- main / PR mergeはMasterの別の明示指示が必要。
+- 一時的なセッション指示や個別作業メモをRepository共通仕様として固定しない。
 
-必要な場合は本文へ次を残す。
+## 3. Repository / Change-unit Lock
+
+Commit / Pushの対象は今回の `MUTATION_REPOSITORIES` に含まれるRepositoryだけ。
+
+server-coreやShared Capability owner RepositoryをAuthority確認のために読んだだけなら、そのRepositoryをCommit対象にしない。
+
+server-coreは追加Gateを持つ。server-core自体の変更についてMasterの明示許可があり、`SERVER_CORE_MUTATION_AUTHORIZED=YES` がCurrent Task/change unitで成立している場合だけwrite / commit / pushできる。
+
+Commit前に一致させる。
 
 ```text
-Purpose:
-- なぜこの作業をしたか
-
-Changed:
-- 主要変更
-
-Affected:
-- 影響範囲
-
-Verified:
-- 実行したTest / Verifyと結果
-
-Docs:
-- README / Tree / Delta / System Document等の更新
-
-Remaining:
-- 未完 / 未検証 / Blocked / Unknown
+INTENDED_REPOSITORY
+CURRENT_GIT_TOPLEVEL
+CURRENT_BRANCH
+INTENDED_DIFF
+INTENDED_FILES
 ```
 
-全項目を毎回埋める必要はない。単純な変更は簡潔にし、複雑な変更・Debug・設計差分・部分完了では必要な情報を残す。
+複数Task/Agentが同一Repositoryで並行する可能性を前提とし、**今回のchange unitに属さないuncommitted diffをstageしない。** Repository全体を暗黙stageするhelperを標準にしない。
 
-Designとの差・変更理由をCommit本文だけに閉じ込めない。Design Deltaが必要な変更では正式Deltaも更新する。
+同一server-core checkoutでhelper commitが同時実行された場合、先にlockを取得したchange unitだけを進める。lock取得に失敗したhelperは待機・上書き・再試行を自動化せずfail closedし、Current HEAD / working treeを再確認してから別change unitとして再開する。
 
-## Commit Message Types
+今回のintended Fileにすでにstaged contentが存在する場合は、既存change unitとの混在を判別できないためhelper commitを開始しない。別Taskのstageを自動でunstage/rewriteしない。
 
-推奨:
-- `Feat:` 新機能・新定義
-- `Fix:` Bug / defect修正
-- `Docs:` 文書のみ
-- `Chore:` 設定・Tool・運用
-- `Refactor:` 外部動作を変えない構造改善
-- `Test:` Test / verification変更
+別RepositoryのScriptをabsolute pathで呼んだこと、別Repositoryへ一時的に`cd`したこと、共通Authorityを読んだことをCommit対象変更の根拠にしない。
 
-既存Repositoryに正式Conventionがある場合はそちらを優先する。
+## 4. Commit = Work Report
 
-## Before Commit
+Commitは単なる保存点ではなく実作業報告として扱う。
+
+Commit件名は変更の目的・内容が分かる形にする。複雑な変更では必要な範囲でPurpose / Changed / Affected / Verified / Docs / Remainingを残す。
+
+未実行Testや未確認状態をPASSとして書かない。Architecture/Responsibility baselineが変わる場合はDesign Deltaも更新する。
+
+## 5. Before Commit
 
 最低限確認する。
-- 対象Repository / Branch / HEAD
+- target repository / branch / HEAD
+- current Git top-level
+- repositoryが `MUTATION_REPOSITORIES` に含まれる
+- server-coreの場合 `SERVER_CORE_MUTATION_AUTHORIZED=YES`
+- Current authorizationが同じTask/change unitへscopeされている
 - `git status --short --branch`
-- Diff
-- Secret / credential / debug残骸 / 意図しない削除が無い
-- 必要なTest / Verify
+- intended files / intended diff
+- intended Fileに既存staged contentが無い
+- unrelated working-tree/staged changesの有無
+- credential / `.env`実値 / debug residue / unintended deletionが無い
+- applicable test / verify
 - Documentation Gate
 
-Documentation Gate:
+他作業の差分と今回の差分を安全に分離できない場合は自動Commitを行わない。
+
+## 6. server-core Commit Helper
+
+`/home/admin1/server-core/scripts/ai-auto-commit.sh` はserver-core専用。server-core自体へのMasterの明示許可があり、feature branch上である場合だけ使用する。
+
+**1件以上の`--file PATH`が必須**であり、指定Fileだけをchange unitとしてstageする。
+
+```bash
+scripts/ai-auto-commit.sh --authorize-server-core-mutation --file docs/example.md --push
+```
+
+複数File:
+
+```bash
+scripts/ai-auto-commit.sh --authorize-server-core-mutation --file README.md --file docs/example.md --push -m "docs: update execution contract"
+```
+
+Helperはfail-closedで確認する。
+- explicit server-core mutation flag
+- Script所在地から解決したcanonical server-core repository
+- non-detached feature branch
+- direct `main` / `master`拒否
+- `flock`による同一checkoutのcommit change-unit直列化。lock競合時はcommitを実行しない
+- safe repository-relative `--file` path
+- intended Fileが実際にchangedであること
+- intended Fileに既存staged contentが無いこと
+- `.env`系File拒否
+- secret-like patternの簡易検出
+- secret検出時は値ではなく`path:line`だけを出力
+- commit messageのcredential-like value検査
+- `git diff --check`
+- changed shell scriptのsyntax checkをstage前に実行
+- staged setが指定File集合と一致
+
+Helperは`git add -A`を使用しない。指定していない他Taskの変更をstageしない。
+
+Helperが自分でstageした後、Commit成立前に検証/hook/commit等が失敗した場合は、helperが追加したintended Fileのstageを解除してworking-tree変更だけを残す。既存staged change unitを勝手に復元・変更する必要が生じないよう、intended Fileのpre-staged状態は開始前に拒否する。
+
+Commit成功後にPushだけ失敗した場合はCommitを巻き戻さず、`RESULT=PARTIAL COMMIT=PASS PUSH=FAIL SHA=<sha>` として部分成功を明示する。Push未要求時は `PUSH=NOT_REQUESTED` とし、Commit成功とPush状態を混同しない。
+
+`--authorize-server-core-mutation` はpermissionを新規作成するflagではなく、すでにCurrent Taskで成立しているMasterの明示許可を実行時に再確認するGateである。
+
+対象Projectに独自helperが無い場合は、そのProjectのCurrent policyに従う。server-core helperを他Project commitへ代用しない。
+
+## 7. Credential Output Safety
+
+Secret scanは完全なcredential detectorではないため、Source/Provider contract上のSecret boundary確認を置き換えない。
+
+検出したcredential-like value自体をTerminal/CI/Commit messageへ出力しない。検出位置だけを示してfail closedする。
+
+Binary/読取不能Fileを「安全」と推測しない。credential-bearing可能性があるFileはそのAuthorityに従って別途確認する。
+
+## 8. Remote Readback
+
+Push成功だけでGitHub反映済みとしない。必要な作業ではremote branch / commit SHA / changed file / PR head等を再取得して確認する。
+
+## 9. PR Current Sync Gate
+
+Open PRが存在するchange unitでは、Push / Remote Readback後にPRをCurrent HEADへ同期する。
+
+最低限確認する。
 
 ```text
-README_UPDATE_REQUIRED=YES/NO
-PROJECT_TREE_UPDATE_REQUIRED=YES/NO
-DESIGN_DELTA_REQUIRED=YES/NO
-SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
+PR_STATE
+PR_HEAD_SHA
+PR_BASE
+PR_BODY_CURRENT
+CI_STATE
 ```
 
-Requiredなのに未更新ならDocumentation Completeとしない。
+PR本文は少なくともCurrent HEADのTaskについて次を表す状態にする。
+- Purpose / intended result
+- material changes
+- affected scope
+- verification / CI state
+- documentation state
+- remaining / unverified work
+- approval boundary
 
-## Standard Script
+Source/Commitが進んだのにPR本文が旧状態のままなら `PR_CURRENT_SYNC=FAIL` とし、GitHub work history completionへ昇格しない。PR本文を同期した後は再取得してCurrent HEADと内容をreadbackする。
 
-Repositoryに `scripts/ai-auto-commit.sh` があり、そのRepositoryのCurrent運用で有効な場合:
+PR作成自体が不要なRepository/Task、PRが存在しないTaskでは `PR_CURRENT_SYNC=NOT_APPLICABLE` とする。PR本文同期はPR merge承認を意味しない。main / PR mergeは別Approval Boundaryのまま維持する。
 
-```bash
-scripts/ai-auto-commit.sh --push
-```
+## 10. Multiple Repositories / Workers
 
-Message指定:
+複数Repositoryを変更した場合はRepositoryごとに履歴を分離する。複数workerが同一Repositoryへ関与する場合もchange unitを混在させない。
 
-```bash
-scripts/ai-auto-commit.sh --push -m "Fix: xxxxxx"
-```
+各RepositoryのSHA、branch、verification state、変更理由を追跡できる状態にする。
 
-Scriptの存在だけで安全性を推測しない。対象RepositoryのCurrent Scriptを確認する。
+## 11. Stop / Exception Conditions
 
-server-core既存scriptの主な責務:
-- 変更File確認
-- `.env` 系commit拒否
-- secretらしい値の簡易検出
-- `git diff --check`
-- shell script `bash -n`
-- stage / commit
-- `--push` 時のcurrent branch push
-
-## Remote Readback
-
-Push/write成功だけでGitHub反映済みとしない。
-
-必要な作業ではremote branch / commit SHA / changed file / PR head等を再取得して確認する。
-
-## Multiple Repositories
-
-複数Repositoryへ変更した場合はRepositoryごとに履歴を分離する。
-
-1つのCommitで別Repositoryの変更を表現しない。
-
-各Repositoryで対象SHAと状態を報告できるようにする。
-
-## Stop / Exception Conditions
-
-次の場合は自動Commit/Pushを継続せず、Current Taskの安全境界に従う。
-- Secret / `.env` 実値がDiffへ混入
-- 対象外Fileの変更
-- 未検証の壊れた途中状態をRemoteへ載せる合理的理由がない
-- Masterがcommit / push禁止を明示
+次の場合は自動Commit/Pushを止める。
+- credential / `.env`実値がDiffへ混入
+- target外Fileの変更しかない
 - Branch / Repository identityが不明
-- 他作業者の未commit差分と分離できない
+- Repositoryが `MUTATION_REPOSITORIES` に含まれない
+- server-core authorizationがCurrent Task/change unitで成立していない
+- 同一checkoutのserver-core auto-commit lockを別change unitが保持中
+- intended Fileに既存staged contentがある
+- 他作業のuncommitted差分と分離できない
+- staged setがintended filesと一致しない
+- repository policyが別Routeを要求
+- failing/incomplete stateをremoteへ残す理由とscopeが不明
+- Masterがcommit / push禁止を明示
 
-Production起動・公開・切替を含むかどうかはCommit/Pushとは別Approval Boundaryとして扱う。
+Production publish/deployはCommit/Pushとは別のApproval Boundary。
 
-## Prohibitions
+## 12. Invariants
 
-- 未実行TestをPASSとCommit本文へ書く
-- 失敗や未検証を隠す
-- Current仕様Documentを時系列作業日誌の代替にする
-- Secret値をCommit message / Diff / Documentへ書く
-- DesignをCurrent実装へ上書きして差分履歴を消す
+- 未実行TestをPASSと記録しない。
+- failure / unverified / partial stateを隠さない。
+- credential実値をCommit message / Diff / Document / diagnostic outputへ書かない。
+- Authorityを読んだだけのRepositoryへwrite/commitしない。
+- server-core helperを他Projectのcommit手段として使用しない。
+- unrelated diffをrepository-wide stagingへ巻き込まない。
+- concurrent helper commitを同じcheckoutで並行実行しない。
+- pre-existing staged intended Fileを別change unitへ混ぜない。
+- Commit前failureでhelper自身が作ったstageを残さない。
+- Commit成功/Push失敗を全体成功または全体失敗へ丸めない。
+- Open PRがあるのにPR本文のCurrent HEAD同期を未確認のままGitHub履歴完了としない。

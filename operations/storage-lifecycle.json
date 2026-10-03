@@ -1,7 +1,19 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "mode": "audit_only",
   "allow_delete": false,
+  "runtime_readback_required": true,
+  "roots_are_audit_scope_not_presence_or_ownership_proof": true,
+  "state_semantics": {
+    "policy_defined": "source_contract_only",
+    "audit_source_implemented": "audit_implementation_exists_only",
+    "audit_run_pass": "read_only_observation_completed_only",
+    "candidate_classified": "candidate_or_preserve_or_unknown_only",
+    "cleanup_authorized": "separate_runtime_mutation_permission_required",
+    "cleanup_applied": "requires_actual_delete_result_and_disk_delta",
+    "recovery_verified": "requires_restore_or_rebuild_verification_when_applicable",
+    "audit_pass_implies_cleanup_ready": false
+  },
   "roots": [
     {
       "path": "/home/admin1/logs",

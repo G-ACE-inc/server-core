@@ -1,54 +1,91 @@
 # GITHUB FREE MAX
 
-## 目的
-GitHub無料枠で、AI開発の効率と安全性を最大化する。
+## Purpose
 
-## リポジトリ内で有効化済み
-- `.github/workflows/server-core-guard.yml`: 軽量CI
-- `.github/dependabot.yml`: GitHub Actions用Dependabot
-- `.github/pull_request_template.md`: PR標準化
-- `.github/ISSUE_TEMPLATE/ai-task.yml`: AI作業Issueテンプレート
-- `scripts/ai-auto-commit.sh`: AI作業後の自動commit / push
+GitHubの利用Costを無駄に増やさず、G-ACEのAI開発に必要な安全性・追跡性・検証品質を維持する。
 
-## GitHub画面で推奨する設定
-GitHub CLIが未導入の環境では、次をGitHub画面から設定する。
+このDocumentは固定の料金表やPlan上限値の正本ではない。GitHubのPlan、billing、Actions quota、Security/Ruleset availability等の可変条件がTask判断に必要な場合は、その時点のGitHub公式情報またはRepository設定をreadbackする。
 
-### Actions
-- Actionsを有効化する。
-- Workflow permissionsは原則 `Read repository contents permission` にする。
-- GitHub ActionsによるPR作成を使う場合だけ、`Allow GitHub Actions to create and approve pull requests` を有効化する。
+## Repository-side Efficiency Policy
 
-### Branch / Rules
-public repositoryでrulesetsが使える場合:
+server-coreでCurrent利用するGitHub側の主要仕組み:
+- `.github/workflows/server-core-guard.yml` — Authority / Contract / safety regressionを軽量に検出する。
+- `.github/workflows/server-core-behavior.yml` — Source変更で壊れ得るhelper / wiring / bounded behaviorを実行検証する。
+- `.github/dependabot.yml` — GitHub Actions dependency更新を週1回・bounded PR数・grouped updateで確認する。
+- `.github/pull_request_template.md` — Scope / verification / approval boundaryをPRへ残す。
+- `.github/ISSUE_TEMPLATE/ai-task.yml` — AI TaskのScope / mutation boundaryを固定する。
 
-- `main` を対象にrulesetを作成する。
-- `server-core-guard` の成功を必須にする。
-- force pushを禁止する。
-- deletionを禁止する。
-- 実装変更はPR経由を優先する。
+CIやAutomationは「多いほど安全」と扱わない。Acceptanceと回帰防止に必要な検証だけを持ち、同じEvidenceを複数Workflowで理由なく重複計算しない。
 
-private repositoryで無料枠の制約がある場合:
+## Cost / Resource Rule
 
-- 軽量CIと自動commitを優先する。
-- main直pushは、管理者が許可した正本更新または小規模文書更新に限定する。
+- GitHub connector等、既に利用可能なAPI/Toolで完了できるreadbackやmetadata確認を優先し、同じ確認のためだけにServer/Workspace AIや重いCIを起動しない。
+- CIはSource/Contract変更で壊れ得る重要InvariantとBehaviorへ集中させる。
+- Scheduled jobは必要最小限にする。Current DependabotはGitHub Actions dependencyを週1回確認する。
+- Dependabot PRはgroup化し、同時open数をbounded化する。
+- 重いE2E / Runtime / Provider検証はAcceptanceに必要な場合だけ行い、文書変更だけを理由に無関係なRuntime検証を増やさない。
+- Current CI Evidenceを再利用できる場合、同じSHA・同じ条件のWorkflowを理由なく再実行しない。
+- 外部Wait / queued jobのPollingだけでAI TurnやGitHub Resourceを浪費しない。
+- Cost削減のために必要なVerificationを削除・skipしない。
 
-### Security
-- Dependency graphを有効化する。
-- Dependabot alertsを有効化する。
-- Dependabot security updatesを有効化する。
-- 利用可能な場合はsecret scanningを有効化する。
+## GitHub Settings Boundary
 
-## 無料枠を浪費しない方針
-- CIは軽量な文書・secret・表記チェックに限定する。
-- cron実行は最小化し、Dependabotは週1回にする。
-- self-hosted runnerが使える場合は、重い検証をそちらへ寄せる。
-- public repositoryでは標準GitHub-hosted runnerのActionsを活用する。
-- private repositoryではActions分数を消費するため、重い処理を避ける。
+Repository/Organization側のGitHub設定変更は、Source File変更とは別のProvider/Repository Settings mutationとして扱う。
 
-## 公式参照
-- GitHub Actions billing and usage: https://docs.github.com/en/actions/concepts/billing-and-usage
-- GITHUB_TOKEN authentication: https://docs.github.com/en/actions/tutorials/authenticate-with-github_token
-- GitHub Actions repository settings: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository
-- Dependabot version updates: https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-version-updates
-- Repository rulesets: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository
-- Secure use of GitHub Actions: https://docs.github.com/en/actions/reference/security/secure-use
+次の設定を変更する必要がある場合は、Current Repository設定とGitHub公式仕様を確認し、Masterの承認Boundaryに従う。
+- Actions permissions / workflow permissions
+- Branch protection / rulesets
+- Security feature settings
+- Dependabot feature settings
+- Secret scanning等のSecurity設定
+
+Documentに推奨事項があること自体を、GitHub側設定変更の承認として扱わない。
+
+## Dependabot Contract
+
+Current Repository contract:
+
+```text
+ECOSYSTEM=github-actions
+INTERVAL=weekly
+DAY=monday
+TIME=05:00
+TIMEZONE=Asia/Tokyo
+OPEN_PULL_REQUESTS_LIMIT=3
+GROUP=github-actions
+```
+
+この設定はdependency updateの発見とPR作成をbounded化するためのRepository Source Contractであり、PRのMerge承認ではない。DependabotがPRを作成しても、通常のPR / CI / Merge boundaryを適用する。
+
+## Verification
+
+GitHub運用変更では必要範囲で次を分離して確認する。
+
+```text
+SOURCE_CONFIG
+REMOTE_REPOSITORY_READBACK
+PR
+CI
+REPOSITORY_SETTING
+BILLING_OR_PLAN_CONDITION
+```
+
+Sourceに設定FileがあることだけでGitHub側featureが有効・利用可能・課金条件内と断定しない。
+
+## Official references
+
+可変仕様を判断するときはGitHub公式DocumentationをCurrent sourceとして確認する。
+- GitHub Actions billing and usage
+- GitHub Actions repository settings
+- Dependabot version updates / options reference
+- Repository rulesets
+- Secure use of GitHub Actions
+
+## Invariants
+
+- GitHub利用Costの削減を理由に必要Testを消さない。
+- 同じEvidenceを理由なく複数経路で再取得しない。
+- Scheduled automationを無目的に増やさない。
+- Plan固有の上限値やfeature availabilityを恒久値として固定しない。
+- Repository Source変更とGitHub Provider/Settings mutationを混同しない。
+- Dependabot PR作成をMerge承認と扱わない。

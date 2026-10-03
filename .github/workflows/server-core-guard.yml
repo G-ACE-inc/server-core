@@ -17,296 +17,154 @@ concurrency:
 jobs:
   guard:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
-      - name: Required authority files
+      - name: Required authority and machine contracts
         run: |
           set -euo pipefail
-          test -f README.md
-          test -f SERVER_CORE_PROTOCOL.md
-          test -f CORE.md
-          test -f docs/SERVER_CORE_DESIGN.md
-          test -f docs/DESIGN_DELTA.md
-          test -f docs/LOAD_SCOPE.md
-          test -f docs/STRUCTURE.md
-          test -f docs/WORKSPACE_REGISTRY.md
-          test -f docs/KB_REUSE_DESIGN.md
-          test -f docs/STORAGE_LIFECYCLE.md
-          test -f docs/GLOSSARY.md
-          test -f docs/PROJECT_TEMPLATE.md
-          test -f docs/DEPLOY_RUNBOOK.md
-          test -f docs/AUTO_COMMIT.md
-          test -f docs/GITHUB_FREE_MAX.md
-          test -f docs/GITHUB_SKILL.md
-          test -f docs/G_ACE_WORKSPACE.md
-          test -f docs/WORKSPACE_SHARED_SECRETS.md
-          test -f docs/CLOUDFLARE_OPERATIONS.md
-          test -f operations/storage-lifecycle.json
-          test -f operations/workspace-mcp.json
-          test -f docs/WORKSPACE_MCP.md
-          test -f scripts/install-workspace-mcp.sh
-          test -f scripts/verify-workspace-mcp.sh
-          test -f scripts/storage_lifecycle_audit.py
-          test -x scripts/ai-auto-commit.sh
-          test -x scripts/resolve-codex-skill.sh
-          test -x scripts/github-skill-path.sh
+          required=(README.md AGENTS.md CORE.md SERVER_CORE_PROTOCOL.md .github/copilot-instructions.md .github/dependabot.yml docs/SERVER_CORE_DESIGN.md docs/DESIGN_DELTA.md docs/LOAD_SCOPE.md docs/G_ACE_WORKSPACE.md docs/SERVER_COMMAND_CONTRACT.md docs/STRUCTURE.md docs/WORKSPACE_REGISTRY.md docs/PROJECT_TEMPLATE.md docs/PROJECT_INTEGRATION_RULES.md docs/AUTO_COMMIT.md docs/DEPLOY_RUNBOOK.md docs/WORKSPACE_MCP.md docs/WORKSPACE_SHARED_SECRETS.md docs/KB_REUSE_DESIGN.md docs/STORAGE_LIFECYCLE.md docs/CLOUDFLARE_OPERATIONS.md docs/GITHUB_SKILL.md docs/GITHUB_FREE_MAX.md docs/GLOSSARY.md operations/pre-execution-schema.json operations/workspace-mcp.json operations/storage-lifecycle.json operations/cloudflare-account.json operations/huggingface.json scripts/init-dev-workspace.sh scripts/install-workspace-mcp.sh scripts/verify-workspace-mcp.sh scripts/ai-auto-commit.sh scripts/resolve-codex-skill.sh scripts/github-skill-path.sh scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py archive/isolated/2026-06-26/PROJECT_STATUS.before-tgserver-canonical.archived.md)
+          for path in "${required[@]}"; do test -e "$path" || { echo "MISSING_REQUIRED=$path"; exit 1; }; done
+          echo 'REQUIRED_AUTHORITY=PASS'
 
-      - name: No redundant retired authorities
+      - name: Retired and client-local authority exclusion
         run: |
           set -euo pipefail
-          test ! -e KB.md
-          test ! -e PROJECT_STATUS.md
-          test ! -e add-status.sh
-          test ! -e docs/OPERATION_CHECKLIST.md
-          ! git grep -nE '(^|[^A-Za-z0-9_])(KB\.md|PROJECT_STATUS\.md|OPERATION_CHECKLIST\.md)([^A-Za-z0-9_]|$)' -- ':!archive/**' ':!.github/workflows/server-core-guard.yml'
+          blocked=(KB.md PROJECT_STATUS.md add-status.sh docs/OPERATION_CHECKLIST.md .cursor/mcp.json .cursor/agents .cursor/rules/01_japanese_thinking.mdc)
+          for path in "${blocked[@]}"; do test ! -e "$path" || { echo "BLOCKED_CURRENT_AUTHORITY=$path"; exit 1; }; done
+          grep -qx '.cursor/mcp.json' .gitignore
+          grep -qx '.cursor/agents' .gitignore
+          ! grep -Eq '^(\.github|scripts)/?$' .aiignore .cursorignore
+          grep -qx 'archive/' .aiignore
+          grep -qx 'archive/' .cursorignore
+          echo 'AUTHORITY_EXCLUSION=PASS'
 
-      - name: Command center authority contract
+      - name: No session-only or credential material in current authority
         run: |
           set -euo pipefail
-          grep -q 'G-ACE Workspace Command Center' README.md
-          grep -q 'Workspace command center' docs/SERVER_CORE_DESIGN.md
-          grep -q 'Command Center Responsibilities' docs/SERVER_CORE_DESIGN.md
-          grep -q 'Command Flow' docs/SERVER_CORE_DESIGN.md
-          grep -q 'Command-Center Invariants' docs/SERVER_CORE_DESIGN.md
-          grep -q 'SERVER CORE DESIGN DELTA' docs/DESIGN_DELTA.md
-          grep -q 'Formalize server-core as the G-ACE Workspace command center' docs/DESIGN_DELTA.md
-          grep -q 'COMMAND ROUTER' docs/LOAD_SCOPE.md
-          grep -q 'Command-Center Dispatch' docs/G_ACE_WORKSPACE.md
-          grep -q 'G-ACE WORKSPACE REGISTRY' docs/WORKSPACE_REGISTRY.md
-          grep -q 'Dispatch Rule' docs/WORKSPACE_REGISTRY.md
-          grep -q 'Availability Gate' docs/WORKSPACE_REGISTRY.md
-          grep -q 'WORKSPACE SHARED SECRETS' docs/WORKSPACE_SHARED_SECRETS.md
-          grep -q 'WORKSPACE SHARED MCP' docs/WORKSPACE_MCP.md
-          grep -q 'workspace-global' operations/workspace-mcp.json
-          grep -q 'cloudflare-api' operations/workspace-mcp.json
-          grep -q 'huggingface' operations/workspace-mcp.json
-          grep -q 'Add-New-Contract Gate' docs/WORKSPACE_SHARED_SECRETS.md
-          grep -q 'Command Center' docs/STRUCTURE.md
+          hits="$(git grep -nEI '(CONFIRMED_BY_MASTER|全チャット|thinkingブロック|hidden[- ]?reasoning|private reasoning.*rule|このチャットだけ|今回の会話だけ)' -- '*.md' '*.mdc' ':!archive/**' ':!docs/DESIGN_DELTA.md' || true)"
+          test -z "$hits" || { printf '%s\n' "$hits"; exit 1; }
+          env_files="$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -Ev '(^|/)\.env\.example$' || true)"
+          test -z "$env_files" || { printf '%s\n' "$env_files"; exit 1; }
+          echo 'CURRENT_AUTHORITY_HYGIENE=PASS'
 
-      - name: Provider ownership boundary
+      - name: Canonical authority references and restored scope
         run: |
           set -euo pipefail
-          grep -q 'WORKSPACE COMMAND CONTRACT' docs/CLOUDFLARE_OPERATIONS.md
-          grep -q 'Project-specific Cloudflare Documentation' docs/CLOUDFLARE_OPERATIONS.md
-          grep -q 'server-coreはCloudflareを.*司令室' docs/CLOUDFLARE_OPERATIONS.md
-          ! grep -q 'api\.asterav8\.jp' docs/CLOUDFLARE_OPERATIONS.md
-          ! grep -q 'astera-v8-prod' docs/CLOUDFLARE_OPERATIONS.md
-          test ! -e operations/cloudflare.json
-          test ! -e scripts/cloudflare_ops.py
-          ! git grep -nE '/home/admin1/projects/GPG-Core|astera-v8-prod|api\\.asterav8\\.jp|scripts/cloudflare_ops\\.py|operations/cloudflare\\.json' -- ':!archive/**' ':!docs/DESIGN_DELTA.md'
-          grep -q 'libral-vault' operations/cloudflare-account.json
-          grep -q 'secret_provider.*libral-vault' operations/cloudflare-account.json
+          require_text() { local pattern="$1" file="$2" label="$3"; grep -qE "$pattern" "$file" || { echo "MISSING_INVARIANT=$label FILE=$file"; exit 1; }; }
+          require_absent() { local pattern="$1" label="$2"; shift 2; if git grep -nE "$pattern" -- "$@"; then echo "FORBIDDEN_INVARIANT=$label"; exit 1; fi; }
+          require_text 'docs/SERVER_COMMAND_CONTRACT\.md' README.md server_command_authority
+          require_text 'operations/pre-execution-schema\.json' README.md dispatch_schema_reference
+          require_text 'server-core.*Command Center' docs/G_ACE_WORKSPACE.md workspace_command_center
+          require_text 'Development Routine' docs/G_ACE_WORKSPACE.md fixed_development_routine
+          require_text '非技術者のMaster' README.md master_nontechnical_command_center_purpose
+          require_text 'non-technical Master' docs/SERVER_CORE_DESIGN.md master_nontechnical_design_purpose
+          require_text '非技術者のMaster' .cursor/rules/00_agent_runtime.mdc master_nontechnical_agent_runtime
+          require_text 'Master does not repeat' .github/copilot-instructions.md copilot_automatic_server_core_entry
+          require_text 'start of every new chat/task' AGENTS.md shared_agent_automatic_server_core_entry
+          require_text 'Masterが新規チャット冒頭' docs/G_ACE_WORKSPACE.md workspace_automatic_ai_entry_requirement
+          require_text '会話履歴や一時作業状態' README.md self_contained_workspace_recovery
+          require_text 'SERVER_CORE_MUTATION_AUTHORIZED' README.md server_core_mutation_gate_readme
+          require_text 'SERVER_CORE_MUTATION_AUTHORIZED' SERVER_CORE_PROTOCOL.md server_core_mutation_gate_protocol
+          require_text 'REVERSIBLE_LOCAL_MUTATION' docs/SERVER_COMMAND_CONTRACT.md reversible_local_mutation
+          require_text 'Current completed / verified state' docs/GLOSSARY.md project_readme_current_state
+          require_text 'Work Report Commit' docs/GLOSSARY.md commit_as_work_report
+          require_text 'd88e99273319dad1b27092e14085c7060710fc92' docs/DESIGN_DELTA.md command_center_delta_commit_preserved
+          require_text 'af9abd3e9d402f73430d7c97f270463a62f75f18' docs/DESIGN_DELTA.md cloudflare_delta_commit_preserved
+          require_text 'Do not rewrite or delete prior accepted deltas' docs/DESIGN_DELTA.md append_only_design_delta_history
+          require_text 'ARCHIVED OLD WORK HISTORY - DO NOT LOAD AS CURRENT CONTEXT' archive/isolated/2026-06-26/PROJECT_STATUS.before-tgserver-canonical.archived.md archived_history_preserved
+          require_text 'GitHubの利用Costを無駄に増やさず' docs/GITHUB_FREE_MAX.md github_cost_policy
+          require_text 'INTERVAL=weekly' docs/GITHUB_FREE_MAX.md bounded_dependabot_policy
+          require_text 'package-ecosystem: github-actions' .github/dependabot.yml dependabot_github_actions
+          require_text 'interval: weekly' .github/dependabot.yml dependabot_weekly
+          require_text 'open-pull-requests-limit: 3' .github/dependabot.yml dependabot_bounded_prs
+          require_text 'Docker Composeを正' README.md docker_compose_readme
+          require_text 'Docker Compose.*正' CORE.md docker_compose_core
+          require_text 'Docker Composeを正' SERVER_CORE_PROTOCOL.md docker_compose_protocol
+          require_text 'Docker Composeを正' docs/G_ACE_WORKSPACE.md docker_compose_workspace
+          require_text 'Docker Composeを正' .cursor/rules/00_agent_runtime.mdc docker_compose_agent_runtime
+          require_text 'Docker Composeを正' docs/DEPLOY_RUNBOOK.md docker_compose_deploy
+          require_text 'Docker Compose as the canonical production residency path' docs/SERVER_CORE_DESIGN.md docker_compose_design
+          require_absent 'Workspace top-level|GPT↔operator|operator-facing command presentation|ASSISTANT_TOOL|USER_UI|EXTERNAL_CLIENT|EXECUTION_ROUTE|EXECUTION_CAPABILITY|EXECUTION_AUTHORIZATION|PRE_EXECUTION_COMPLETE|Chat UI|ChatGPT|Notion|generic executor|generic AI cost policy' overgeneralized_non_server_policy README.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/LOAD_SCOPE.md docs/SERVER_COMMAND_CONTRACT.md .cursor/rules/00_agent_runtime.mdc operations/pre-execution-schema.json
+          require_absent 'Project固有の正式例外|formally defined Project exception|Project Authorityで正式例外|正式な例外経路' docker_compose_exception README.md CORE.md SERVER_CORE_PROTOCOL.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/DEPLOY_RUNBOOK.md .cursor/rules/00_agent_runtime.mdc
+          echo 'AUTHORITY_ROUTING=PASS'
 
-      - name: LibralCore execution contract
+      - name: Machine contract validation
         run: |
           set -euo pipefail
-          grep -q '開発AIが再利用可能な設計とCodeを効率よく生成・修正するための開発概念' CORE.md
-          grep -q '開発時間、AIコンテキスト、Token' CORE.md
-          grep -q '開発上の再利用単位' CORE.md
-          grep -q '既存資産をそのまま利用' CORE.md
-          grep -q '目的と期待結果を確定' CORE.md
-          grep -q '5段階層型モジュラーアーキテクチャ' CORE.md
-          grep -q '^Part$' CORE.md
-          grep -q '^Feature$' CORE.md
-          grep -q '^Component$' CORE.md
-          grep -q '^System$' CORE.md
-          grep -q '^Application System$' CORE.md
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          pre=json.loads(Path('operations/pre-execution-schema.json').read_text())
+          assert pre['schema_version'] == '1.5'
+          assert pre['name'] == 'gace-command-center-dispatch'
+          required=set(pre['required_fields'])
+          assert {'PURPOSE','EXPECTED_RESULT','TARGET_PROJECT','TARGET_REPOSITORY','MUTATION_REPOSITORIES','READ_ONLY_REPOSITORIES','SERVER_CORE_MUTATION_AUTHORIZED','REQUIRED_SERVER_CORE_AUTHORITY','REQUIRED_PROJECT_AUTHORITY','REUSE_CANDIDATES','VERIFY_PATH','APPROVAL_BOUNDARY','CHANGE_BOUNDARY','CONTEXT_SCOPE','BLOCKER'} <= required
+          assert 'EXECUTION_ROUTE' not in required
+          assert 'PRE_EXECUTION_COMPLETE' not in required
+          assert 'execution_routes' not in pre
+          assert 'mutation_classes' not in pre
+          assert pre['rules']['fixed_development_routine_must_not_be_skipped_without_reason'] is True
+          assert pre['rules']['debugai_reuses_existing_evidence_before_server_ai_research'] is True
+          assert 'chat_ui_notion_and_external_app_interaction_are_outside_server_core' not in pre['rules']
+          mcp=json.loads(Path('operations/workspace-mcp.json').read_text())
+          assert mcp['scope']=='workspace-global'
+          assert set(mcp['servers']) >= {'cloudflare-api','huggingface'}
+          assert mcp['installation']['backup_keep'] >= 1
+          assert mcp['installation']['required_mode']=='owner_read_only_0400_or_owner_read_write_0600_non_executable'
+          assert mcp['installation']['concurrency']=='single-writer-fail-closed'
+          for name,cfg in mcp['servers'].items():
+              assert cfg.get('url','').startswith('https://')
+              assert 'headers' not in cfg and 'env' not in cfg
+          storage=json.loads(Path('operations/storage-lifecycle.json').read_text())
+          assert storage['mode']=='audit_only'
+          assert storage['allow_delete'] is False
+          assert storage['docker']['allow_prune'] is False
+          assert storage['docker']['allow_volume_delete'] is False
+          for name in ('cloudflare-account.json','huggingface.json'):
+              obj=json.loads((Path('operations')/name).read_text())
+              assert isinstance(obj,dict)
+          print('MACHINE_CONTRACTS=PASS')
+          PY
 
-      - name: Routed workspace contract
+      - name: Script syntax and mutation gates
         run: |
           set -euo pipefail
-          grep -q 'server-core/README.md' docs/LOAD_SCOPE.md
-          grep -q 'docs/LOAD_SCOPE.md' README.md
-          grep -q 'Documentation Gate' docs/SERVER_CORE_DESIGN.md
-          grep -q 'GitHub Work Report Contract' docs/SERVER_CORE_DESIGN.md
-          grep -q 'server-core司令室' docs/G_ACE_WORKSPACE.md
-          grep -q 'server-core/README.md' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'Pre-execution Handoff' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'TARGET_PROJECT' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'VERIFY_PATH' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'CONTEXT_SCOPE' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'WORKSPACE_REGISTRY.md' README.md
-          grep -q 'KB_REUSE_DESIGN.md' docs/LOAD_SCOPE.md
-          grep -q 'STORAGE_LIFECYCLE.md' SERVER_CORE_PROTOCOL.md
+          bash -n scripts/init-dev-workspace.sh scripts/install-workspace-mcp.sh scripts/verify-workspace-mcp.sh scripts/ai-auto-commit.sh scripts/resolve-codex-skill.sh scripts/github-skill-path.sh
+          python3 -m py_compile scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py
+          grep -q -- '--apply-workspace-mutation' scripts/init-dev-workspace.sh
+          grep -q -- '--create-project' scripts/init-dev-workspace.sh
+          grep -q 'validate_project_name' scripts/init-dev-workspace.sh
+          grep -q 'COPILOT_INSTRUCTIONS_LINK_CREATED' scripts/init-dev-workspace.sh
+          grep -q 'AGENTS_ENTRY_LINK_CREATED' scripts/init-dev-workspace.sh
+          grep -q 'COPILOT_INSTRUCTIONS_LINK' scripts/workspace_command_center_check.py
+          grep -q 'AGENTS_ENTRY_LINK' scripts/workspace_command_center_check.py
+          grep -q 'github.copilot.chat.codeGeneration.useInstructionFiles' scripts/workspace_command_center_check.py
+          grep -q 'chat.useAgentsMdFile' scripts/workspace_command_center_check.py
+          grep -q -- '--apply-workspace-mcp-mutation' scripts/install-workspace-mcp.sh
+          grep -q 'flock -n 9' scripts/install-workspace-mcp.sh
+          grep -q -- '--client-readback' scripts/verify-workspace-mcp.sh
+          grep -q -- '--authorize-workspace-mutation' scripts/workspace_command_center_check.py
+          grep -q 'WORKSPACE_WIRING=PASS' scripts/workspace_command_center_check.py
+          grep -q -- '--authorize-server-core-mutation' scripts/ai-auto-commit.sh
+          grep -q -- '--file' scripts/ai-auto-commit.sh
+          grep -q 'flock -n 9' scripts/ai-auto-commit.sh
+          grep -q 'refusing unreadable or non-UTF-8 intended file' scripts/ai-auto-commit.sh
+          ! grep -q 'git add -A' scripts/ai-auto-commit.sh
+          echo 'SCRIPT_GATES=PASS'
 
-      - name: Progressive load scope
+      - name: Read-only helper self tests
         run: |
           set -euo pipefail
-          grep -q 'Level 1: Target Boundary' docs/LOAD_SCOPE.md
-          grep -q 'Level 2: Adjacent Boundary' docs/LOAD_SCOPE.md
-          grep -q 'Level 3: Reuse Unit' docs/LOAD_SCOPE.md
-          grep -q 'Level 4: System / Repository' docs/LOAD_SCOPE.md
-          grep -q 'Reuse Search Order' docs/LOAD_SCOPE.md
-          grep -q 'Stop Reading Condition' docs/LOAD_SCOPE.md
-          grep -q 'archive/' docs/LOAD_SCOPE.md
-          grep -q '.github/' docs/LOAD_SCOPE.md
-          grep -q 'scripts/' docs/LOAD_SCOPE.md
-
-      - name: Minimum project template
-        run: |
-          set -euo pipefail
-          grep -q '開発開始前の確認' docs/PROJECT_TEMPLATE.md
-          grep -q '最小必須構成' docs/PROJECT_TEMPLATE.md
-          grep -q 'Single Source of Truth' docs/PROJECT_TEMPLATE.md
-          grep -q 'Module化判定' docs/PROJECT_TEMPLATE.md
-          grep -q 'AIへ渡す最小情報' docs/PROJECT_TEMPLATE.md
-          grep -q 'Documentation Gate' docs/PROJECT_TEMPLATE.md
-          grep -q 'System / Feature-bundle Document' docs/PROJECT_TEMPLATE.md
-          grep -q '実行順序' docs/PROJECT_TEMPLATE.md
-          grep -q '期待出力、状態変化、既存機能回帰' docs/PROJECT_TEMPLATE.md
-
-      - name: GitHub work-report and deploy contracts
-        run: |
-          set -euo pipefail
-          grep -q 'Commit = Work Report' docs/AUTO_COMMIT.md
-          grep -q 'REMOTE_READBACK' docs/AUTO_COMMIT.md
-          grep -q 'confirmed GitHub revision' docs/DEPLOY_RUNBOOK.md
-          grep -q 'Runtime Verification' docs/DEPLOY_RUNBOOK.md
-
-      - name: KB design contract
-        run: |
-          set -euo pipefail
-          grep -q 'Command-Center Boundary' docs/KB_REUSE_DESIGN.md
-          grep -q 'Registration Contract' docs/KB_REUSE_DESIGN.md
-          grep -q 'MCP / API Bridge' docs/KB_REUSE_DESIGN.md
-          grep -q 'Document / Runtime Completion Boundary' docs/KB_REUSE_DESIGN.md
-
-      - name: Storage lifecycle audit contract
-        run: |
-          set -euo pipefail
-          grep -q 'Safe Deletion Gate' docs/STORAGE_LIFECYCLE.md
-          grep -q 'SAFE_TO_DELETE' docs/STORAGE_LIFECYCLE.md
-          grep -q 'Document / Runtime Completion Boundary' docs/STORAGE_LIFECYCLE.md
-          python3 -m py_compile scripts/storage_lifecycle_audit.py
           python3 scripts/storage_lifecycle_audit.py --self-test
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          p = json.loads(Path('operations/storage-lifecycle.json').read_text())
-          assert p['mode'] == 'audit_only'
-          assert p['allow_delete'] is False
-          assert p['docker']['allow_prune'] is False
-          assert p['docker']['allow_volume_delete'] is False
-          print('STORAGE_LIFECYCLE_POLICY=PASS')
-          PY
-
-      - name: Project integration contract
-        run: |
-          set -euo pipefail
-          test -f docs/PROJECT_INTEGRATION_RULES.md
-          grep -q '## TGserver Integration' docs/PROJECT_INTEGRATION_RULES.md
-          grep -q '## webhook gateway Integration' docs/PROJECT_INTEGRATION_RULES.md
-          grep -q '## Libral Vault Usage' docs/PROJECT_INTEGRATION_RULES.md
-          grep -q '## MCP / Tool Usage' docs/PROJECT_INTEGRATION_RULES.md
-          grep -q 'Secret実値は保存しない' docs/PROJECT_INTEGRATION_RULES.md
-          grep -q 'Project Integration' README.md
-          grep -q 'TGserver / webhook gatewayはShared Capabilityではなく' docs/WORKSPACE_REGISTRY.md
-          grep -q 'TGserver / webhook gatewayはShared CapabilityではなくProject Integration' docs/SERVER_CORE_DESIGN.md
-          grep -q 'PROJECT_INTEGRATION_RULES.md' docs/LOAD_SCOPE.md
-
-      - name: Workspace initializer safety
-        run: |
-          set -euo pipefail
-          bash -n scripts/init-dev-workspace.sh
-          bash -n scripts/install-workspace-mcp.sh
-          bash -n scripts/verify-workspace-mcp.sh
-          ! grep -nE 'rm[[:space:]]+-rf.*PROJECTS_RULES|rm[[:space:]]+-rf.*projects/\.cursor/rules' scripts/init-dev-workspace.sh
-          grep -q 'already exists and is not the required symlink; no deletion performed' scripts/init-dev-workspace.sh
-          grep -q 'unexpected target' scripts/init-dev-workspace.sh
-
-      - name: Workspace MCP manifest schema
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          p = json.loads(Path('operations/workspace-mcp.json').read_text())
-          assert p['scope'] == 'workspace-global'
-          assert set(p['servers']) >= {'cloudflare-api', 'huggingface'}
-          for name, cfg in p['servers'].items():
-              assert cfg.get('url', '').startswith('https://')
-              assert 'token' not in json.dumps(cfg).lower()
-              assert 'secret' not in json.dumps(cfg).lower()
-          print('WORKSPACE_MCP_MANIFEST=PASS')
-          PY
-
-      - name: Workspace MCP merge compatibility
-        run: |
-          set -euo pipefail
           tmp="$(mktemp -d)"
           trap 'rm -rf "$tmp"' EXIT
-          mkdir -p "$tmp/.cursor"
-          cat > "$tmp/.cursor/mcp.json" <<'JSON'
-          {
-            "mcpServers": {
-              "cloudflare-api": {
-                "url": "https://mcp.cloudflare.com/mcp",
-                "auth": {
-                  "CLIENT_ID": "8ilRHxRMw6Ntq3dP"
-                }
-              },
-              "huggingface": {
-                "url": "https://huggingface.co/mcp",
-                "headers": {
-                  "Authorization": "Bearer REDACTED_TEST_CREDENTIAL"
-                }
-              }
-            }
-          }
-          JSON
-          HOME="$tmp" bash scripts/install-workspace-mcp.sh
-          HOME="$tmp" bash scripts/verify-workspace-mcp.sh
-          grep -q 'REDACTED_TEST_CREDENTIAL' "$tmp/.cursor/mcp.json"
-          echo 'WORKSPACE_MCP_AUTH_PRESERVATION=PASS'
-
-      - name: No tracked env files
-        run: |
-          set -euo pipefail
-          blocked="$(
-            git ls-files |
-              grep -E '(^|/)\.env($|\.)' |
-              grep -Ev '(^|/)\.env\.example$' || true
-          )"
-          if [ -n "$blocked" ]; then
-            echo "$blocked"
-            exit 1
-          fi
-
-      - name: No legacy TGserver spelling
-        run: |
-          set -euo pipefail
-          hits="$(
-            git grep -n 'TGServer' -- '*.md' ':!docs/GLOSSARY.md' ':!archive/**' || true
-          )"
-          if [ -n "$hits" ]; then
-            echo "$hits"
-            exit 1
-          fi
-
-      - name: Secret pattern guard
-        run: |
-          set -euo pipefail
-          hits="$(
-            git grep -nEI \
-              '(api[_-]?key|secret|token|password|credential|session)[[:alnum:]_ -]*[:=][[:space:]]*[\"]?[A-Za-z0-9_./+=-]{12,}' \
-              -- \
-              ':!docs/**' \
-              ':!archive/**' \
-              ':!.github/workflows/server-core-guard.yml' \
-              ':!scripts/ai-auto-commit.sh' || true
-          )"
-          hits="$(printf '%s\n' "$hits" | grep -Ev '=[[:space:]]*(os\.environ\.get|check_token_not_in_env)\(' || true)"
-          if [ -n "$hits" ]; then
-            echo "$hits"
-            exit 1
-          fi
-
-      - name: Shell syntax
-        run: |
-          set -euo pipefail
-          while IFS= read -r file; do
-            bash -n "$file"
-          done < <(git ls-files '*.sh')
+          if HOME="$tmp" bash scripts/install-workspace-mcp.sh >"$tmp/install.out" 2>&1; then exit 1; fi
+          test ! -e "$tmp/.cursor/mcp.json"
+          grep -q 'NO_CHANGES_PERFORMED' "$tmp/install.out"
+          if python3 scripts/workspace_command_center_check.py --root "$tmp" --repair >"$tmp/repair.out" 2>&1; then exit 1; fi
+          test ! -e "$tmp/workspace/G-ACE.code-workspace"
+          grep -q 'NO_CHANGES_PERFORMED' "$tmp/repair.out"
+          echo 'NEGATIVE_MUTATION_GATES=PASS'

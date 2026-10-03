@@ -1,21 +1,24 @@
 # GITHUB SKILL
 
-## 目的
-Codex GitHub plugin skillの参照パスを固定バージョンに依存せず解決する。
+## Purpose
 
-## 背景
-GitHub skillはCodex plugin cache配下に配置される。
+GitHub関連Skillの参照Pathを固定versionに依存せず解決し、Workspace AIが利用可能なGitHub資源を重複実装・重複操作せず優先利用するためのresolver contract。
 
-cacheのバージョンディレクトリは更新されるため、次のような固定パスを正本にしてはならない。
+## Boundary
 
-```text
-/home/admin1/.codex/plugins/cache/openai-curated-remote/github/0.1.7-.../skills/github/SKILL.md
-```
+Skill実体は外部client/plugin環境が所有する。server-coreは固定cache version/pathをCurrent Authorityとして持たず、resolver scriptの利用方法と資源選択Ruleだけを管理する。
 
-実環境では `0.1.8-...` のように変わる。
+GitHub Skillを解決・読込・実行できることは、対象Repositoryへのwrite permission、server-core自体のmutation permission、client/plugin installation mutation permissionを意味しない。GitHub操作の前に対象Repositoryと許可されたOperationを別途確定する。
 
-## 標準コマンド
-GitHub umbrella skillのパスを表示する。
+## Resource Priority
+
+GitHub connectorがCurrent clientで利用可能な場合は、Repository / PR / Issue / CI / readback等の対応Operationをconnectorで行うことを優先する。local `git` / `gh` / Skillはconnectorで不足するOperation、Server-local state確認、または対象TaskのAuthorityが明示的に要求する範囲へ限定する。
+
+同じGitHub情報をconnectorとlocal commandで理由なく重複取得しない。既に取得済みのCurrent Evidenceを再利用する。
+
+## Standard Commands
+
+GitHub umbrella skillのPathを解決する。
 
 ```bash
 scripts/github-skill-path.sh
@@ -27,29 +30,43 @@ scripts/github-skill-path.sh
 scripts/github-skill-path.sh github --read
 ```
 
-専門skillを読む。
+特定Skill名を解決する場合:
 
 ```bash
-scripts/github-skill-path.sh gh-fix-ci --read
-scripts/github-skill-path.sh gh-address-comments --read
-scripts/github-skill-path.sh yeet --read
+scripts/github-skill-path.sh <skill-name> --read
 ```
 
 汎用resolverを使う場合:
 
 ```bash
-scripts/resolve-codex-skill.sh github:github --read
+scripts/resolve-codex-skill.sh github:<skill-name> --read
 ```
 
-## 現在確認済みのGitHub skill
+## Known Skill Discovery Candidates
+
+過去に確認されたGitHub Skill名は、Current inventoryを探すための候補として次を保持する。
+
 - `github`
 - `gh-address-comments`
 - `gh-fix-ci`
 - `yeet`
 
-## 運用
-GitHub作業を行う場合、まず `github` skillを読み、必要に応じて専門skillへ進む。
+これらをCurrent利用可能と無条件に扱わない。実際に使うTaskではresolver / client inventoryでCurrent存在を確認する。Skill名やversionが変わった場合は固定Pathを推測しない。
 
-固定パスが失敗した場合は、直接探し直すのではなく `scripts/github-skill-path.sh` を使う。
+## Operation Rule
 
-GitHub connectorが利用可能な場合はconnectorを優先し、ローカル `git` と `gh` は不足分に限定する。
+- 固定version directoryをDocumentやScriptへ埋め込まない。
+- Skill名が不明な場合は、利用client/plugin側のCurrent inventoryを確認する。
+- resolverが失敗した場合は、固定Pathを推測せず、client/pluginのCurrent installation stateをreadbackする。
+- Skillの存在、client登録、実行可否は別状態として扱う。
+- GitHub Repository read/write、PR/Issue mutation、branch/ref mutation、Workflow mutation、server-core Repository mutationは別Operationとして扱う。
+- GitHub操作自体のAuthority/permissionは対象Repositoryと利用clientのCurrent contractを正とする。
+- resolverの存在・成功、Issue/PR template、owner label、Git history方針からmutation authorizationを推論しない。
+- client/plugin installationやSkill inventoryを変更する場合は、そのclient側の明示的なchange boundaryを別途確認する。
+
+## Non-goals
+
+- 特定client versionの固定
+- 過去のSkill候補をCurrent availableとして固定
+- plugin cache内部構造のserver-core ownership
+- GitHub Repository policyやapproval条件の上書き

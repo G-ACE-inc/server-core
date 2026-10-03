@@ -1,8 +1,20 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.6",
   "scope": "workspace-global",
   "consumer": "g-ace-workspace",
   "client": "cursor",
+  "runtime_readback_required": true,
+  "state_semantics": {
+    "config_present": "client_config_entry_exists_only",
+    "config_registered": "managed_runtime_definition_matches_manifest_only",
+    "client_registration_verified": "client_reports_registration_only",
+    "authentication_verified": "requires_live_authentication_readback",
+    "transport_verified": "requires_live_transport_readback",
+    "interface_discovery_verified": "requires_live_tool_or_interface_discovery",
+    "representative_call_pass": "requires_task_relevant_live_call",
+    "available_verified": "requires_all_task-required_live_gates",
+    "config_or_client_registration_implies_available_verified": false
+  },
   "servers": {
     "cloudflare-api": {
       "url": "https://mcp.cloudflare.com/mcp",
@@ -18,8 +30,14 @@
   },
   "installation": {
     "target": "~/.cursor/mcp.json",
+    "target_role": "managed_client_config_target_not_live_availability_proof",
     "merge": "preserve-existing-servers",
     "collision": "fail-closed-on-runtime-transport-mismatch",
+    "concurrency": "single-writer-fail-closed",
+    "lock_scope": "current-user-home-before-client-dir-mutation",
+    "required_mode": "owner_read_only_0400_or_owner_read_write_0600_non_executable",
+    "backup_keep": 3,
+    "backup_contains_client_local_credentials_possible": true,
     "preserve_existing_auth_fields": [
       "auth",
       "headers",

@@ -5,11 +5,11 @@ alwaysApply: true
 
 # G-ACE Workspace Runtime
 
-## Authority Entry
+## 1. Authority Entry
 
 Workspace内で作業するAI / Agent / Composerは、Project固有作業へ入る前にserver-coreを共通入口として扱う。
 
-開始順:
+この入口の目的は、**非技術者のMasterへRoutineなServer情報・資源探索・開発手順・検証手順の技術判断を毎回返さず、AI自身がserver-coreから必要Authorityを取得して固定ルーティーンを適用すること**である。既存Ruleを一般的な開発方法へ勝手に置換せず、必要工程・既存要件を省略しない。会話履歴や一時作業状態が無い場合もserver-coreから再開地点を復元できる構成を維持する。
 
 ```text
 1. /home/admin1/server-core/README.md
@@ -19,11 +19,24 @@ Workspace内で作業するAI / Agent / Composerは、Project固有作業へ入�
 5. 対象Project内の必要なDesign / Project Tree / Design Delta / System Document / Source / Testだけ
 ```
 
-server-coreの全正本を一括読込しない。
+server-coreの全正本を一括読込しない。同一Task範囲で一度確認済みの内容は、変更・矛盾・情報不足が無ければ繰り返し読まない。
 
-同一Task範囲で一度確認済みの内容は、変更または情報不足が無ければ毎ターン再読込しない。
+## 2. Task / Repository Lock
 
-## Context Loading
+作業開始時に目的・期待結果・対象Project・対象Repository・Authority・検証経路を必要範囲で固定する。
+
+```text
+TARGET_REPOSITORY
+MUTATION_REPOSITORIES
+READ_ONLY_REPOSITORIES
+SERVER_CORE_MUTATION_AUTHORIZED
+```
+
+Repositoryを読むことと変更することを分離する。server-coreはserver-core自体の明示許可が無い限りread-only。
+
+別Task / 別Projectのuncommitted diffをstage / overwriteしない。shared checkoutのswitch/reset/rebaseは他Taskへの影響を閉じられない限り行わない。
+
+## 3. Context Loading
 
 対象ProjectではREADMEを入口とし、通常は対象Source・Input/Output・直接依存・関連Testから開始する。
 
@@ -38,7 +51,7 @@ Target Boundary
 
 `.env` / secrets / node_modules / dist / build / `.next` / archive / logs / dumps / cache / backupsは通常Contextへ入れない。Task対象になった場合だけ必要範囲を読む。
 
-## Development Rules
+## 4. Development Rules
 
 - 目的と期待結果を最初に固定する。
 - 新規Code生成前に既存Design / Code / Module / Type / Schema / Test / Template / 登録済み共有資産の再利用可否を確認する。
@@ -47,37 +60,9 @@ Target Boundary
 - DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
 - 実装がDesignと意図的に異なる場合はDesign Deltaへ差分、理由、Evidence、適用Commitを残す。
 - 実装済み / 完成 / 稼働はREADMEだけで判断せず、Source / Test / Runtime Evidenceで確認する。
+- 必要工程を理由なく省略せず、固定ルーティーンから勝手に脱線しない。
 
-## Pre-execution Handoff
-
-server-core routing is not complete merely because the documents were read. Before changing Project Source, the AI must have a resolved handoff boundary:
-
-```text
-PURPOSE
-EXPECTED_RESULT
-TARGET_PROJECT
-TARGET_RESPONSIBILITY
-TARGET_REPOSITORY
-AUTHORITY_REQUIRED
-REUSE_CANDIDATES
-VERIFY_PATH
-APPROVAL_BOUNDARY
-CONTEXT_SCOPE
-```
-
-The AI may proceed to Project execution when these are known or explicitly marked `UNKNOWN / NOT_VERIFIED` where the uncertainty is itself part of the investigation. Unknowns must never be silently filled by assumption.
-
-The handoff must identify:
-- the owning Project and Repository;
-- the minimum server-core Authority already consumed;
-- the Project README / required Project Authority to load next;
-- reusable existing assets that must be checked before new implementation;
-- the verification path and required evidence;
-- the exact Approval Boundary that stops further execution.
-
-This is the boundary between **Command-Center routing** and **Project execution**. server-core does not perform the Project's implementation itself.
-
-## LibralCore
+## 5. LibralCore
 
 共通開発方法論は `/home/admin1/server-core/CORE.md` を必要時に読む。
 
@@ -89,7 +74,15 @@ Part -> Feature -> Component -> System -> Application System
 
 物理分割は分類のためではなく、再利用、交換、権限、障害範囲、状態所有、独立検証、運用上の実益がある場合に行う。
 
-## Verification
+## 6. Project Integration
+
+TGserver / webhook gateway / Libral Vault / Project-level MCP・ToolをProjectへ導入・変更するときは、`/home/admin1/server-core/docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で読む。
+
+TGserver / webhook gatewayはProject-owned Integrationとして扱い、複数Projectから利用されても自動的にShared Capabilityへ変更しない。Libral VaultはShared Capability側のContractとconsumer Project側のusageを分離する。
+
+Integration確認のためowner側を読んだことをowner実装の変更許可として扱わない。
+
+## 7. Verification
 
 次だけでPASSにしない。
 - Process起動
@@ -105,7 +98,7 @@ Part -> Feature -> Component -> System -> Application System
 
 未確認 / 未実行 / 未検証を推測でPASSへ変えない。
 
-## Documentation Gate
+## 8. Documentation Gate
 
 作業終了前に判定する。
 
@@ -120,15 +113,17 @@ Requiredなのに未更新ならDocumentation Completeとしない。
 
 System / Feature bundle / reusable ModuleがREADMEだけでは説明なしに引継げない場合は、既存Documentを更新するか技術Documentを作成しREADMEから到達可能にする。
 
-## GitHub Work History
+Document変更先はTARGET_PROJECT / TARGET_REPOSITORYに従う。対象ProjectのDocument更新をserver-core Document更新へ読み替えない。
 
-ファイル変更を伴う完成作業では、管理者が明示禁止した場合を除き、対象Repositoryの運用に従ってcommit / pushし、可能ならremote readbackまで確認する。
+## 9. GitHub Work History
+
+ファイル変更を伴う完成作業では、対象Repositoryの運用に従ってcommit / pushし、可能ならremote readbackまで確認する。
 
 Commitは実作業報告として、必要に応じて目的、主要変更、影響範囲、検証、Document更新、残作業を追える内容にする。
 
 Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
 
-## Approval Boundary
+## 10. Approval Boundary
 
 Masterの明示指示なしに次を行わない。
 - main / PR merge
@@ -140,25 +135,29 @@ Masterの明示指示なしに次を行わない。
 - 新規Model download
 - 新規Repository / Project / Space作成
 
-## Runtime
+server-coreへのwrite / commit / branch mutationはserver-core自体の明示許可が必要。
 
-本番常駐の標準経路はDocker / Docker Composeとする。
+## 11. Runtime
 
-Hostの `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` を本番常駐経路として追加しない。
+本番常駐は **Docker Composeを正** とする。Host上の `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` 等を本番常駐経路として採用しない。
 
 ServerはRuntime / Processing環境であり、GitHub Source履歴やProject Designの代替正本にしない。
 
-## Project Integration
+## 12. Shared Workspace Capabilities
 
-TGserver / webhook gateway / Libral Vault / Project-level MCP・ToolをProjectへ導入・変更するときは、`/home/admin1/server-core/docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で読む。TGserver / webhook gatewayはProject-owned Integration、Libral VaultはShared Capability + Project usage contractとして扱う。
+共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。
 
-## Shared Workspace Capabilities
+Secret値をGit / Log / Documentへ出さない。未登録・未実装・未検証のCapabilityを利用可能と扱わない。
 
-共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。TGserver / webhook gatewayはShared CapabilityではなくProject Integration Ruleで扱う。
+TGserver / webhook gateway等のProject-owned serviceは、複数Projectで利用されても自動的にShared Capabilityへ変更しない。
 
-Secret値をChat / Git / Log / Documentへ出さない。
+DebugAIを利用するTaskでは、既に取得済みのEvidence / Tool result / prior verified stateを再利用し、同じ調査をServer AIへ重複実行させない。
 
-未登録・未実装・未検証のCapabilityを利用可能と扱わない。
+## 13. Server Command / Recovery
+
+Server commandはparent interactive shellを意図せず終了させず、exact target、real return code、partial apply、bounded diagnostics、credential非表示を守る。
+
+Operation途中でconnection / process / tool responseが途切れた場合は、対象Repository / run ID / Runtime等のdurable stateをreadbackし、前回mutationが `NOT_APPLIED / APPLIED / PARTIAL / UNKNOWN` のどれかを確認してから再実行する。
 
 ## Final Rule
 

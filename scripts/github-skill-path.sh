@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-exec "$repo_root/scripts/resolve-codex-skill.sh" "github:${1:-github}" "${@:2}"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+exec "$script_dir/resolve-codex-skill.sh" "github:${1:-github}" "${@:2}"

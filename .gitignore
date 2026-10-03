@@ -1,2 +1,4 @@
 __pycache__/
 *.pyc
+.cursor/mcp.json
+.cursor/agents

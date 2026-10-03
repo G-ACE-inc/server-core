@@ -206,6 +206,7 @@ The final branch/PR HEAD must pass `server-core-guard`. This change itself does 
 ## Update rule
 
 When a later architecture decision changes the server-core baseline, append a new section. Do not rewrite or delete prior accepted deltas merely because the current implementation changed.
+
 ## 2026-10-01 — Workspace-global MCP execution route
 
 ### Baseline
@@ -242,3 +243,199 @@ DebugAI MCP and Deterministic Japanese Parser MCP are not globally registered ye
 
 ### Compatibility
 Project-specific MCPs remain supported. Cursor project-level configuration may override a global server name; such overrides are prohibited by Workspace policy unless explicitly approved.
+
+## 2026-10-01 — Separate durable capability state from transient live-verification progress
+
+### Baseline design
+Earlier wording mixed durable implementation facts, historical usage, current client configuration and current exact-revision live verification.
+
+### Actual change
+Capability documentation separates implementation/source verified, config present/registered, historical live use, current runtime/client readback, current representative call and available verified.
+
+### Reason / root cause
+Implementation existence, past successful usage, current registration and current runtime health are different facts with different authorities and lifetimes.
+
+### Compatibility / migration / rollback
+No capability implementation body, server service, provider setting or credential is changed by this documentation correction.
+
+### Verification state
+Repository CI verifies the state-separation contract. Current live availability remains task-time evidence.
+
+## 2026-10-01 — Remove transient and personal policy from server-core operational authority
+
+### Baseline design
+Some server-core documents and Cursor rules had accumulated session-specific wording, personal approval labels, temporary project status, device-specific assumptions, and reasoning/language instructions unrelated to durable Workspace operation.
+
+### Actual change
+server-core Current Authority is limited to durable Workspace/Server operation contracts: Project/owner routing, context loading, development/reuse boundary, verification contract, GitHub work history, Server/Provider mutation boundary, credential safety, shared capability discovery/registration/availability semantics, and storage/deploy/recovery contracts.
+
+### Reason / root cause
+Transient instructions and short-lived work state are not stable server-core operating contracts.
+
+### Compatibility / migration / rollback
+Durable safety properties remain and Project-specific details remain with owning Project authority.
+
+### Verification state
+Retired/client-local/session-only material is excluded by repository guard checks.
+
+## 2026-10-02 — Make server-core mutation explicitly opt-in
+
+### Baseline design
+server-core already separated read-only inspection from mutation but did not state strongly enough that server-core itself requires a separate explicit authorization before any write.
+
+### Actual change
+server-core is formally read-only by default. Source, Document, Config, branch and commit mutation in server-core requires explicit owner authorization for server-core itself.
+
+Operationally:
+- `SERVER_CORE_MUTATION_AUTHORIZED=YES` is required before server-core enters `MUTATION_REPOSITORIES`;
+- reading server-core or using its Runbooks does not authorize writes;
+- finding a common-contract inconsistency does not authorize self-directed repair;
+- another Project's work, failure investigation or Shared Capability use does not authorize server-core mutation.
+
+### Reason / root cause
+A command-center repository is consulted by many Project tasks. Reference scope and mutation scope must be independently locked.
+
+### Compatibility / migration / rollback
+Project work continues to read server-core as common routing authority. Existing Project ownership does not change.
+
+### Verification state
+Repository guard/behavior CI checks the explicit mutation gates and helper fail-closed behavior.
+
+## 2026-10-03 — Restore fixed server-workflow scope after execution-policy over-generalization
+
+### Baseline design
+The original command-center design required Workspace work to start from server-core and follow a repeatable routine through Project routing, required Authority, reuse, implementation/debug, verification, Documentation Gate, GitHub work history, approval boundary and optional Deploy/Runtime verification.
+
+It explicitly did not depend on ChatGPT-only or Notion-only state.
+
+### Problem found
+PR #8 temporarily generalized this into a separate "Workspace top-level" execution-policy layer and introduced concepts such as GPT/operator interface ownership and generic UI/client execution routes.
+
+That interpretation was broader than the server-core requirement and risked replacing the fixed server-side development routine with an abstract executor-policy architecture.
+
+### Corrected design
+The command center is restored to the original scope:
+- server-core itself is the Workspace command entry for Server/Workspace workers;
+- the fixed development routine remains `route -> authority -> Project -> reuse -> implement/debug -> verify -> documentation -> GitHub -> approval -> deploy/runtime when applicable`;
+- generic executor-selection schema and UI/client execution routes are not part of server-core;
+- Chat UI, conversation formatting, Notion operation and external application interaction rules are outside server-core;
+- Server command safety remains in `docs/SERVER_COMMAND_CONTRACT.md` and does not become a general executor-policy layer;
+- production residency remains Docker Compose; host-resident production paths are not introduced as Project-specific exceptions;
+- useful PR #8 safety work is retained: explicit mutation ownership, server-core read-only default, concurrent change-unit isolation, same-target writer locks, partial-apply reporting, bounded diagnostics, state separation, MCP config hardening, Skill full-read/glob rejection and bounded storage audit;
+- DebugAI-specific efficiency is narrow: reuse existing evidence/tool results before repeating the same investigation through Server AI. This is not a generic Workspace AI cost policy.
+
+### Reason / root cause
+server-core exists to make a non-expert-operated development environment repeatable and resistant to drift. Generalizing it into a conventional flexible executor-policy layer weakens that purpose and introduces rules that were not part of the original requirement.
+
+### Evidence
+Master required restoration of the original command-center purpose and rejected the generic executor/UI/operator interpretation. Reverse audit compared the current PR against the accepted baseline and restored removed routing/operation requirements while retaining safety hardening.
+
+### Affected scope
+- `README.md`
+- `CORE.md`
+- `SERVER_CORE_PROTOCOL.md`
+- `.cursor/rules/00_agent_runtime.mdc`
+- `docs/SERVER_CORE_DESIGN.md`
+- `docs/G_ACE_WORKSPACE.md`
+- `docs/LOAD_SCOPE.md`
+- `docs/SERVER_COMMAND_CONTRACT.md`
+- `docs/DEPLOY_RUNBOOK.md`
+- `operations/pre-execution-schema.json`
+- `.github/workflows/server-core-guard.yml`
+- `.github/workflows/server-core-behavior.yml`
+
+### Applied commit / PR
+PR #8 corrective commits on `docs/post-merge-state-cleanup-20261001`.
+
+### Compatibility / migration / rollback
+Project ownership, Shared Capability contracts, MCP hardening, helper safety, State Semantics and Runtime boundaries remain in place. The correction removes only the over-generalized authority layer and UI/client concepts that were not part of server-core's intended scope.
+
+### Verification state
+Repository guard and behavior CI must pass at the exact corrected branch HEAD. Current live Server/provider state remains a separate evidence domain.
+
+## 2026-10-03 — Make automatic server-core entry a Workspace AI requirement
+
+### Baseline design
+Cursor had an always-applied server-core runtime rule, but equivalent automatic entry for VS Code/Copilot and other compatible agents was not proven as a durable Workspace-wide contract.
+
+### Actual change
+A new chat/task in the G-ACE Workspace must enter through server-core without requiring Master to repeat the instruction each time.
+
+The durable entry surfaces are:
+- Cursor: `.cursor/rules/00_agent_runtime.mdc` with `alwaysApply: true`;
+- VS Code / GitHub Copilot: `.github/copilot-instructions.md`;
+- cross-agent compatible entry: `AGENTS.md`;
+- `/home/admin1/projects` receives the shared Cursor/Copilot/AGENTS entry points through the canonical Workspace wiring;
+- `scripts/workspace_command_center_check.py` verifies the links/settings and can repair them only under explicit Workspace-mutation authorization.
+
+### Reason / root cause
+The Workspace command-center purpose is not satisfied if Master must manually tell each new AI chat to read server-core. The command-center entry must be durable and automatic at the client/Workspace layer.
+
+### Evidence
+Master explicitly required Cursor/VS AI to check server-core at chat start even when no reminder is given. Source/config/CI can prove the intended wiring contract, while actual live client instruction consumption remains a separate Runtime/client evidence item.
+
+### Affected scope
+- `.cursor/rules/00_agent_runtime.mdc`
+- `.github/copilot-instructions.md`
+- `AGENTS.md`
+- `docs/G_ACE_WORKSPACE.md`
+- `docs/STRUCTURE.md`
+- `scripts/init-dev-workspace.sh`
+- `scripts/workspace_command_center_check.py`
+- `.github/workflows/server-core-guard.yml`
+- `.github/workflows/server-core-behavior.yml`
+
+### Applied commit / PR
+PR #8 corrective commits on `docs/post-merge-state-cleanup-20261001`.
+
+### Compatibility / migration / rollback
+Cursor's existing automatic rule remains. The change adds equivalent durable entry surfaces for VS/Copilot and cross-agent use without moving Project implementation into server-core.
+
+### Verification state
+Repository CI verifies the instruction files, Workspace wiring contract and regression guards. Current exact-head VPS wiring and actual Cursor/VS instruction consumption remain `NOT_VERIFIED` until live readback is performed.
+
+## Update rule
+
+When a later architecture decision changes the server-core baseline, append a new section. Do not rewrite or delete prior accepted deltas merely because the current implementation changed. Editorial correction, wording cleanup and current-runtime refresh belong in normal Git history unless they change the Design contract.
+
+## 2026-10-03 — Unify fixed routine ownership and execution-cost routing
+
+### Baseline design
+server-core already contained the required development stages, but the executable routine was repeated across README, LOAD_SCOPE, Workspace, Protocol, Project Template and GitHub documents. CORE could be routed only when a task was explicitly classified as development-methodology work. DebugAI had discovery/state semantics, but its operational responsibility and cost priority were not fixed strongly enough. PR state existed separately from Commit/Push, but PR body freshness was not a completion gate.
+
+### Actual change
+The command-center contract is tightened without creating a new framework or new document owner:
+- `docs/G_ACE_WORKSPACE.md` is the single owner of the fixed Workspace development routine;
+- `docs/LOAD_SCOPE.md` always routes Workspace development through that routine and requires `CORE.md` for Source/Config/Test/API/Bug/connection/Feature/Debug changes;
+- target Project startup is fixed as Project README -> Current GitHub state/Commit/PR -> required Design/history -> Source/Test;
+- executor cost routing prefers existing verified evidence and deterministic checks first, then DebugAI for iterative design-check/investigation/test/verification/debug/retest work, then Workspace/Server AI, with high-cost AI reserved for unresolved special judgment;
+- cost reduction may not remove required evidence, tests or workflow stages;
+- Project Design keeps the original design text and appends formal change history below it; Design Delta supplements rather than replaces that preserved history;
+- Open PRs must be checked and synchronized to the Current HEAD after Push/Remote Readback before GitHub work-history completion.
+
+### Reason / root cause
+A correct rule distributed across multiple documents can still be skipped when an AI decides only one document is relevant. The command center must make the execution path deterministic enough for a non-technical Master while retaining progressive context loading and avoiding unnecessary AI cost.
+
+### Evidence
+Master's server-core audit identified six concrete weaknesses: routine fragmentation, CORE bypass risk, Project startup ordering mismatch, DebugAI responsibility ambiguity, weak AI-cost routing, partial Design-history semantics and weak PR-current synchronization. Current exact-head readback confirmed each gap in the existing documents before this change.
+
+### Affected scope
+- `README.md`
+- `docs/LOAD_SCOPE.md`
+- `docs/G_ACE_WORKSPACE.md`
+- `docs/PROJECT_TEMPLATE.md`
+- `docs/AUTO_COMMIT.md`
+- `docs/DESIGN_DELTA.md`
+
+### Applied commit / PR
+Applied by the same PR #8 change unit that introduces this delta. Exact commit is the GitHub commit containing this section.
+
+### Compatibility / migration / rollback
+- No Project implementation, Runtime, provider, Secret, service or production resource is changed.
+- Existing specialized authorities remain owners of their domains; only routing and completion gates are strengthened.
+- Progressive loading remains; this does not require loading all server-core documents.
+- DebugAI availability still requires Current runtime/client evidence when needed and is never assumed from documentation alone.
+- main merge and production operations remain separate Master approval boundaries.
+
+### Verification state
+Repository CI must pass on the exact resulting PR head. Live Workspace wiring was previously verified at `e7b7b700...`; because Source changes after that revision, exact-new-head live client instruction consumption and any runtime-dependent capability state remain separate evidence and are not implied by this documentation commit.

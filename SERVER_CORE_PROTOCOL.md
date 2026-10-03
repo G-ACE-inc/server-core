@@ -1,34 +1,55 @@
 # SERVER CORE OPERATION PROTOCOL
 
-Version: 2026-09-30
-Role: G-ACE Workspace Command Centerの共通運用・承認・安全境界。
+Version: 2026-10-03
+Role: G-ACE Workspace Command Centerの共通運用・変更・安全境界。
 
 ## Purpose
 
-G-ACE Workspace全体で共通に適用するAuthority、変更権限、GitHub、Runtime、Secret、Storageの**共通境界だけ**を定める。
+G-ACE Workspace全体で共通に必要なAuthority、変更境界、GitHub、Runtime、Secret、Storageの運用契約を定める。
 
-server-coreは司令室としてTaskをRouting/Dispatchするが、Project固有実装のownerにはならない。
+server-coreはTaskをRouting / Dispatchするが、Project固有実装のownerにはならない。開発方法論、Project構成、Deploy詳細、KB、Storage lifecycle等は各専用Authorityへ分離し、本Protocolへ重複させない。
 
-開発方法論、Project構成、Context routing、Deploy、KB、Storage lifecycle等の詳細をここへ重複記載しない。作業は `README.md` -> `docs/LOAD_SCOPE.md` から必要Authorityだけ読む。
-
-人間、AI、自動処理のすべてに適用する。
-
-## Authority / Approval
+## Authority / Change Control
 
 最終決定者はMaster。
 
-質問、検討、提案、操作説明を変更承認として扱わない。未確認状態を推測で補完しない。
+質問、検討、read-only確認、提案、操作説明をMutation承認として扱わない。未確認状態を推測で補完しない。
 
 Masterの明示指示なしに次を実行しない。
 - main / PR merge
-- Production deploy / 公開 / 切替
-- Force push / Branch削除 / destructive reset / rebase
-- 稼働中Serviceの停止 / recreate
-- Secret追加・削除・rotation
-- Provider resourceの作成・変更・削除
+- Production deploy / publish / cutover
+- force push / destructive history rewrite
+- active service stop / restart / recreate
+- Secret / credential add / delete / rotation
+- Provider resource create / update / delete
 - 新規Model download
+- 新規Repository / Project / Space作成
 
-## Workspace Entry / Command Dispatch
+**server-coreへのwrite / commit / branch mutationは、server-core自体の変更についてMasterの明示許可が必要。** 他ProjectのTask、共通Authority参照、障害調査、Shared Capability利用、Workspace共通Contractへの影響可能性から暗黙に承認を推論しない。
+
+## Repository Mutation Ownership
+
+Taskで参照するRepositoryと、Taskで変更してよいRepositoryを分離する。
+
+```text
+TARGET_REPOSITORY
+MUTATION_REPOSITORIES
+READ_ONLY_REPOSITORIES
+SERVER_CORE_MUTATION_AUTHORIZED
+```
+
+- `TARGET_REPOSITORY`: 主対象ProjectのRepository。
+- `MUTATION_REPOSITORIES`: 今回Source / Config / Document / Commitを変更してよいRepository。
+- `READ_ONLY_REPOSITORIES`: Authority確認、再利用調査、Integration確認、Runtime調査のために読むだけのRepository。
+- `SERVER_CORE_MUTATION_AUTHORIZED`: server-core自体の変更についてMasterの明示許可がある場合だけ `YES`。
+
+server-coreは `SERVER_CORE_MUTATION_AUTHORIZED=YES` が明示的に成立しない限りread-only。Workspace共通Contract変更が必要に見えても、自動的にmutation対象へ昇格しない。
+
+Shared Capability / service / Provider owner Repositoryを確認したことは、そのRepository実装の変更理由にならない。利用・接続・検証Taskではowner側をread-onlyとし、owner-side changeが必要と確認された場合だけ別mutation対象へ昇格する。
+
+Git操作前にはcurrent repository identityとmutation targetを照合する。別RepositoryのScriptを実行するために `cd` したことを、Task owner変更の根拠にしない。server-coreの場合はさらに `SERVER_CORE_MUTATION_AUTHORIZED=YES` を確認する。
+
+## Workspace Entry / Dispatch
 
 ```text
 server-core/README.md
@@ -38,24 +59,27 @@ server-core/README.md
   -> 必要なProject Authority / Source / Testだけ
 ```
 
-全正本を一括読込しない。
+全正本を一括読込しない。同一Taskで確認済みのAuthorityは、変更・矛盾・情報不足が無い限り繰り返し読まない。
 
-Workspace正規仕様: `docs/G_ACE_WORKSPACE.md`  
+Workspace仕様: `docs/G_ACE_WORKSPACE.md`  
 Discovery: `docs/WORKSPACE_REGISTRY.md`  
-server-core Design: `docs/SERVER_CORE_DESIGN.md`  
-Design差分: `docs/DESIGN_DELTA.md`
+Design: `docs/SERVER_CORE_DESIGN.md`  
+Design Delta: `docs/DESIGN_DELTA.md`
 
 ## Development Boundary
 
 - 開発方法論・再利用・5段Architecture・Module判断: `CORE.md`
-- Project構成、README / Design / Project Tree / Design Delta / System Document、Documentation Gate: `docs/PROJECT_TEMPLATE.md`
-- DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
-- Project固有の実装・Design・System仕様は各Project側に置く。
-- 公開契約は可能な限りCode上のInterface / Type / Schemaを正本とする。
+- Project構成・Documentation Gate: `docs/PROJECT_TEMPLATE.md`
+- Project固有の実装・Design・System仕様はowning Project側に置く。
+- 公開契約は可能な限りCode上のInterface / Type / Schema / Testと整合させる。
+- Design BaselineをCurrent実装へ合わせるためだけに書き換えない。
+- Project Document更新Taskをserver-core Document更新へ読み替えない。
+- server-core側に改善余地を発見しても、Masterの明示許可なしに併せて修正しない。
+- 必要工程を理由なく省略せず、固定ルーティーンから勝手に脱線しない。
 
-## Validation
+## Verification
 
-必要範囲で確認する。
+Taskの受入条件に必要な範囲で確認する。
 - Input
 - execution condition
 - expected output
@@ -65,17 +89,45 @@ Design差分: `docs/DESIGN_DELTA.md`
 - major failure cases
 - Runtime / Provider readback when relevant
 
-Process起動、Error無し、`True`、空配列、HTTP 200、Build成功、CI greenだけではPASSとしない。
+Process起動、Error無し、HTTP 200、Build成功、CI green等は、それ自体がTaskの受入条件でない限り、Task全体のPASS証拠にはしない。
 
 未実行・未確認・未検証は `NOT_EXECUTED / UNKNOWN / NOT_VERIFIED` を維持する。
 
+## State Semantics
+
+状態名はDomainごとに証明範囲を固定し、隣接状態へ自動昇格させない。
+
+```text
+SOURCE_VERIFIED != CONFIG_PRESENT
+CONFIG_PRESENT != CONFIG_REGISTERED
+CONFIG_REGISTERED != CLIENT_REGISTRATION_VERIFIED
+CLIENT_REGISTRATION_VERIFIED != AUTHENTICATION_VERIFIED
+AUTHENTICATION_VERIFIED != TRANSPORT_VERIFIED
+TRANSPORT_VERIFIED != INTERFACE_DISCOVERY_VERIFIED
+INTERFACE_DISCOVERY_VERIFIED != REPRESENTATIVE_CALL_PASS
+REPRESENTATIVE_CALL_PASS != AVAILABLE_VERIFIED unless that Capability gate is satisfied
+AUDIT_PASS != MUTATION_AUTHORIZED
+MUTATION_AUTHORIZED != MUTATION_APPLIED
+BUILD_PASS != DEPLOY_PASS
+DEPLOY_PASS != RUNTIME_PASS
+RUNTIME_PASS != PRODUCTION_PASS
+```
+
+`HEALTHY`、`AVAILABLE`、`VERIFIED`、`REGISTERED`、`IMPLEMENTED`、`APPLIED` 等の語を使う場合は、何を実測・検証した状態かをAuthority / machine contract / readback evidenceで特定する。
+
+単一のHTTP 200、config entry、process/container起動、client listing、Source存在、過去利用実績を、それより強いCurrent stateへ読み替えない。
+
+逆に、Current live再検証待ちを理由に、Source/implementation/protocolの既検証状態を未実装へ降格しない。
+
 ## Documentation / Work History
 
-Current仕様Documentへ作業日誌を混在させない。
+Current仕様Documentへ一時的なセッション指示、個別作業メモ、時系列作業日誌を混在させない。
 
-作業履歴の正本はGitHub commit / PR。Commitは実作業報告として扱う。
+時系列の作業履歴はGitHub commit / PRへ残す。完成状態、Project構造、Designとの差、運用Contractが変わった場合はDocumentation Gateに従う。
 
-完成・検証状態、Project構造、Designとの差、完成System等が変わった場合はDocumentation Gateに従う。
+対象ProjectのREADME / README-linked Documentは対象Project Repository側で更新する。server-coreはProject Documentの既定保存先ではない。
+
+server-core Documentは `SERVER_CORE_MUTATION_AUTHORIZED=YES` のときだけ更新する。
 
 Commit / Push / Remote Readbackは `docs/AUTO_COMMIT.md` を正とする。
 
@@ -87,111 +139,83 @@ GitHub revisionとServer Runtimeを別状態として扱う。
 implementation / fix
  -> verify
  -> documentation gate
- -> commit as work report
+ -> commit
  -> push
  -> remote readback
  -> PR / CI when required
  -> confirmed GitHub revision
- -> required Master approval
+ -> target runtime identity lock
+ -> Master approval when required
  -> Server deploy
  -> Runtime verification
 ```
 
 Deploy詳細は `docs/DEPLOY_RUNBOOK.md`。
 
-Server上の直接Source修正を正式開発履歴の代替にしない。Runtime修正が必要でも原則Repository開発Loopへ戻す。
+Server上の直接Source修正を正式開発履歴の代替にしない。Runtimeで修正必要性を発見した場合は、原則対象Repository開発Loopへ戻す。
+
+server-core Runbookを参照したことを、server-core自身がDeploy targetである証拠にしない。
 
 ## Shared Capability Boundary
 
-server-coreは共有Capabilityの実装本体を抱え込まず、Discovery・接続契約・所有者・権限境界・Availability stateを管理する。
+server-coreは共有Capabilityの実装本体を抱え込まず、Discovery・接続契約・owner・permission/change boundary・verification methodを管理する。
 
-Discovery Authority: `docs/WORKSPACE_REGISTRY.md`
+Capabilityを利用・登録・接続・検証することと、Capability implementationを変更することを分離する。
 
-Registry記載だけでCurrent Runtimeを証明しない。必要時は実設定・Provider・Endpoint・Docker・GitHub等をreadbackする。
+Registry記載や過去利用実績だけでCurrent Runtimeを証明しない。必要時は実設定・Provider・Endpoint・Docker・GitHub等をreadbackする。
 
-### DebugAI
+Capabilityのdurableなowner / authority / state semantics / verification boundaryは `docs/WORKSPACE_REGISTRY.md` を正とする。CapabilityのCurrent live stateはRegistry記載を代用せず、Task時の実client/provider/runtime readbackを正とする。本Protocolへ個別Projectの一時状態を複製しない。
 
-DebugAIは独立Project/runtime。
+## Project Integration
 
-Current source authorityは `seigo-gace/debug-ai` main。MCP Adapterを含むSourceはmainへmerge済みでsource-side verification済み。
+TGserver / webhook gateway等のProject-owned service、Libral Vault、MCP、ToolのProject導入契約は `docs/PROJECT_INTEGRATION_RULES.md` を正とする。
 
-ただし、Contabo Live DebugAI MCP Runtime接続とWorkspace MCP登録は別状態であり、確認完了までWorkspace上の `AVAILABLE_VERIFIED` とは扱わない。
+Shared CapabilityとProject-owned serviceを混同しない。
 
-### Reusable KB
+Integration Taskではconsumer Projectとservice/capability ownerを別mutation domainとして扱う。通常の利用・接続でowner実装を変更しない。
 
-再利用開発KBのDesign Baselineは `docs/KB_REUSE_DESIGN.md`。
+## Storage / Backup / Recovery
 
-Target storageはMaster PC `F:` 1 TB drive。server-coreはKB data本体を保持せずAccess / Registration / Lifecycle / Safety Contractだけを管理する。
+共通Storage分類・cleanup safety・backup/recovery契約は `docs/STORAGE_LIFECYCLE.md` を正とする。
 
-VPSからPC filesystemを直接読める前提を置かず、実装・検証済みAPI/MCP等のBridgeを使う。
+server-coreはProject固有Dataのownerにならない。owner不明、active use、retry/recovery中、restore path不明、persistent volumeの可能性があるDataをgeneric cleanup対象にしない。
 
-禁止:
-- 生ログの直接KB化
-- 判定基準なしの自動知識化
-- 未検証AI出力をvalidated assetとして登録
-- Secret / Token / credentialのKB保存
-- 未実装Bridgeを利用可能として扱う
-
-## Log / Cache / Cleanup / Backup
-
-詳細Design Baselineは `docs/STORAGE_LIFECYCLE.md`。
-
-共通境界:
-- Telegram: owning Project contractで定義されたdurable raw-log authority
-- Meilisearch: rebuildable search index
-- Redis: dedup / hot-cache
-- `/home/admin1/logs`: temporary operational disk state
-- VPS: processing/runtime environment
-- `/home/admin1/backups`: backup area。generic cleanup対象ではない
-
-Generic automatic cleanupはfail-closed。
-
-次を自動削除しない。
-- owner不明
-- active use
-- 未送信 / retry pending
-- recovery required
-- active transaction / lock
-- restore/rebuild path不明
-- Docker volumeを含むpersistent state
-
-`docker system prune -a --volumes` の汎用定期実行は禁止する。
+Storage auditでProject固有Dataを発見したことを、そのDataへのmutation permissionと扱わない。
 
 ## Docker / Runtime
 
-本番常駐の標準経路はDocker / Docker Compose。
+本番常駐は **Docker Composeを正** とする。Host上の `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` 等を本番常駐経路として採用しない。
 
-Hostのnode / python / pm2 / nohup / screen / tmux等を新しい本番常駐経路として追加しない。短時間の診断・検証Commandとは区別する。
+Container起動だけでRuntime PASSとせず、Taskに必要なEndpoint / Output / State / side effectまで確認する。
 
-Container起動だけでRuntime PASSとせず、必要なEndpoint / Output / State / side effectまで確認する。
+Runtime上に複数Projectが存在しても、対象Project外のservice/container/volumeへ同一Taskで推測変更しない。
 
-## Secret / Token
+## Secret / Credential
 
-Secret / Token / password / session / credentialをGit / Chat / Log / Documentへ保存しない。
-
-`.env` はcommit禁止。共有が必要なkey名は値なし `.env.example` に記載できる。
+Secret / Token / password / session / credentialの実値をGit / Source / Document / Logへ保存しない。
 
 Workspace共有Secretは `docs/WORKSPACE_SHARED_SECRETS.md` を正とし、各Projectへ実値を複製しない。
+
+Secret Contractを読むこと、credential availabilityを確認すること、credentialを登録/rotationすることを別Operationとして扱う。
 
 ## Archive
 
 旧版・退避は `archive/YYYY-MM-DD/` を基本とする。
 
-- Secretをarchiveへ保存しない
-- archiveをCurrent state / Design / Ruleとして扱わない
+- credential実値をarchiveへ保存しない
+- archiveをCurrent Authorityとして扱わない
 - 通常Contextへ入れない
 
-## Absolute Prohibitions
+## Operational Invariants
 
-- 推測を事実として扱う
-- 未実行を実行済み、未検証をPASSにする
-- Testをskip/deleteして完成扱いにする
-- Design履歴を消す上書き
-- 作業履歴をCurrent仕様文書へ混在
-- 目的のないFile / Document / Module追加
-- Secret / Token実値の保存・commit
-- 未実装Capabilityを利用可能として扱う
-- `/home/admin1/logs` を永続保管庫として使う
-- KBへの無判定直接投入
-- Server cleanupでowner不明・active・recovery dataを削除
-- server-coreへProject固有実装を司令室都合だけで移す
+- 推測をCurrent事実として扱わない。
+- 未実行を実行済み、未検証をPASSとして記録しない。
+- Testを削除・無効化して完成条件を満たしたことにしない。
+- Design履歴を消してCurrent実装へ合わせない。
+- Current仕様Documentを時系列作業日誌にしない。
+- owner不明のFile / Module / Runtime / DataへMutationしない。
+- `MUTATION_REPOSITORIES` 外のRepositoryへwrite/commitしない。
+- Authorityを読んだだけのRepositoryへmutationしない。
+- server-coreはMasterの明示許可なしにwrite/commit/branch mutationしない。
+- credential実値をSource / Git / Document / Logへ保存しない。
+- Project固有実装をserver-coreへ移して責務境界を崩さない。

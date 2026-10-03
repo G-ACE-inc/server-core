@@ -1,26 +1,26 @@
 # G-ACE REUSABLE DEVELOPMENT KB DESIGN
 
-Version: 2026-09-30
+Version: 2026-10-03
 Status: Design Baseline / Runtime NOT_IMPLEMENTED
 
 ## 1. Purpose
 
 Master PCの `F:` 1 TB storageを、G-ACE開発で再利用できる検証済み資産・知識の共通KBとして運用する。
 
-目的は情報を大量保存することではなく、Workspace内AIが既存資産を再利用し、新規生成・再調査・再検証・Token消費を減らすこと。
+目的は情報を大量保存することではなく、Workspace内AIが既存資産を再利用し、新規生成・重複実装・再調査・再検証・Token消費を減らすこと。
 
 ## 2. Command-Center Boundary
 
-server-core司令室はKB data本体を所有しない。
+server-core司令室はKB data本体、index実装を所有しない。
 
 server-coreが所有するのは:
-- KB discovery contract;
-- asset registration contract;
-- search/retrieval contract;
-- lifecycle / versioning rule;
-- safety / secret boundary;
-- bridge availability state;
-- Workspaceからの利用Routing。
+- KB discovery contract
+- asset registration contract
+- search/retrieval contract
+- lifecycle / versioning rule
+- safety / Secret boundary
+- bridge availability state
+- Workspaceからの利用Routing
 
 KB implementation/runtime/dataは別ownerへ分離する。
 
@@ -30,7 +30,9 @@ KB implementation/runtime/dataは別ownerへ分離する。
 - Master PC `F:` が予定Storage authority。
 - Server/VPSからPC filesystemを直接読める前提を置かない。
 - Workspace AIからの利用は、実装・検証済みAPI/MCP等のBridgeを通す。
-- Bridgeが無い間は `NOT_IMPLEMENTED` / `NOT_AVAILABLE` を維持する。
+- Bridgeが無い間は `NOT_IMPLEMENTED / NOT_AVAILABLE` を維持する。
+
+複数のKB関連RepositoryまたはRuntimeが存在する場合でも、自動的に同一Authority扱いしない。統合/再利用はowner、purpose、data model、source authority、bridge、validation、backup/recovery responsibilityを確認してから行う。
 
 ## 4. Existing KB-related Repositories
 
@@ -41,17 +43,9 @@ Workspace Registryには既存KB関連Repositoryが存在する場合がある�
 - `seigo-gace/kb-system`
 - `seigo-gace/gace-dev-kb`
 
-これらをMaster PC `F:` reusable-development KBと**自動的に同一Authority扱いしない**。
+これらをMaster PC `F:` reusable-development KBと自動的に同一Authority扱いしない。
 
-統合/再利用する場合は事前に次を決める。
-- owner;
-- purpose;
-- data model;
-- source authority;
-- migration path;
-- API/MCP bridge;
-- validation state;
-- backup/recovery responsibility。
+統合/再利用する場合は事前にowner、purpose、data model、source authority、migration path、API/MCP bridge、validation state、backup/recovery responsibilityを決める。
 
 既存資産を確認せず新規KB実装を増やさない。
 
@@ -69,16 +63,14 @@ Workspace Registryには既存KB関連Repositoryが存在する場合がある�
 - validated development knowledge
 
 直接登録禁止:
-- raw log;
--推測;
--未検証AI出力;
-- Secret / Token / credential;
-- raw chain-of-thought;
-- owner不明データ。
+- raw operational logs
+- unsupported speculation
+- unverified generated output
+- Secret / Token / credential
+- owner不明Data
+- Project固有の一時状態だけで再利用価値がないもの
 
 ## 6. Registration Contract
-
-KB登録前に最低限判定する。
 
 ```text
 SOURCE_IDENTIFIED=YES
@@ -89,8 +81,6 @@ SECRET_SCAN=PASS
 VERSION_OR_REVISION_BOUND=YES when applicable
 LICENSE_OR_USAGE_BOUNDARY_KNOWN=YES when external asset
 ```
-
-再利用価値がなくProject固有だけの一時情報は登録しない。
 
 ## 7. Asset Metadata
 
@@ -112,7 +102,7 @@ Assetごとに必要範囲で保持する。
 
 ## 8. Search / Retrieval
 
-KB全体をPromptへ流さない。
+KB全体をContextへ流さない。
 
 ```text
 query
@@ -140,17 +130,9 @@ KB candidateは再利用候補であり、対象ProjectのCurrent Design / Inter
 ## 10. MCP / API Bridge
 
 Preferred target:
-- read/search/fetchはMCPから利用可能;
--内部TransportとしてAPI利用可;
-- register/update/deleteはreadより強い権限へ分離。
-
-Minimum capability candidate:
-- search assets
-- get asset metadata
-- fetch asset content/reference
-- register validated asset
-- mark superseded
-- health / storage status
+- read/search/fetchはMCPから利用可能
+- 内部TransportとしてAPI利用可
+- register/update/deleteはreadより強い権限へ分離
 
 Bridge completion gate:
 
@@ -171,32 +153,32 @@ REPRESENTATIVE_REUSE_E2E=PASS
 
 ## 11. Safety
 
-- Secret / Token / password / credential保存禁止
-- repository-private資産はvisibility/usage boundaryを継承
+- Secret / Token / password / credentialをasset化しない
+- private repository assetはvisibility/usage boundaryを継承する
 - source revisionを失わない
-- overwriteよりversion/supersedeを優先
+- overwriteよりversion/supersedeを優先する
 - unknown ownershipを自動削除しない
 - corruption検知なしに修復済み扱いしない
-- external assetはlicense/usage boundaryを失わない
+- external assetはlicense/usage boundaryを保持する
 
 ## 12. Storage Lifecycle
 
 KBはCacheではない。容量圧迫だけを理由にvalidated canonical assetを無条件削除しない。
 
 削除候補:
-- duplicate cache/binaryでcanonicalが別に存在
+- canonicalが別に存在するduplicate cache/binary
 - superseded copyでrelation確認済み
 - invalid import / incomplete transaction
 - temporary staging data
 
-削除前にAsset metadata/indexとの整合性を確認する。
+削除前にmetadata/indexとの整合性を確認する。
 
 ## 13. Backup / Recovery
 
 実装時に必須:
 - metadata/index backup
 - asset backup strategy
-- integrity hash
+- integrity check/hash
 - restore target
 - restore procedure
 - representative restore verification
@@ -209,14 +191,14 @@ Backup未実装なら `BACKUP=NOT_IMPLEMENTED` と明記する。
 初期KBに以下を持たせない。
 - raw log保管庫
 - 全Repository mirror
-- AI conversation archive
+- conversation archive
 - Secret vault
 - Runtime cache
-- 未検証の自動知識化
+- unverified auto-generated knowledge dump
 
 ## 15. Document / Runtime Completion Boundary
 
-このMDはKBの**Design Contract**として完成可能であり、KB runtime未実装とは別状態。
+このMDはKBのDesign Contractとして完成可能であり、KB runtime未実装とは別状態。
 
 Current boundary:
 
@@ -233,3 +215,5 @@ Runtime実装後はCurrent implementationへ合わせてDesign履歴を消さず
 ## 16. Design Change Rule
 
 この文書はBaseline。Current実装へ合わせて履歴を消す上書きをしない。正式Architecture変更は理由・Evidence・適用Commitを追跡可能にする。
+
+本Documentを変更するのは、server-core自体の変更についてMasterの明示許可があり `SERVER_CORE_MUTATION_AUTHORIZED=YES` が成立した場合だけ。
