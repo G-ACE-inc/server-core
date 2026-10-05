@@ -1,6 +1,6 @@
 # SERVER CORE LOAD SCOPE / COMMAND ROUTER
 
-Version: 2026-09-30
+Version: 2026-10-05
 Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分け、必要情報だけを段階的に読ませるためのRouter。
 
 ## 1. Mandatory Start
@@ -26,6 +26,7 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | server-core自身の設計/司令室責務 | `docs/SERVER_CORE_DESIGN.md` + 必要なら `docs/DESIGN_DELTA.md` |
 | 開発方法論 / 責務 / 5段 / Module / 再利用 | `CORE.md` |
 | 共通運用 / 禁止 / Approval Boundary | `SERVER_CORE_PROTOCOL.md` |
+| Master Terminal Command / Copy&Paste / GACE_RESULT / Shell Safety / Syntax Validation | `docs/MASTER_TERMINAL_COMMAND.md` |
 | Workspace運用 / dispatch | `docs/G_ACE_WORKSPACE.md` |
 | Project / Repository / shared Capability / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
 | Project Integration（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
