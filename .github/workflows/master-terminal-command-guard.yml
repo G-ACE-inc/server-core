@@ -1,0 +1,74 @@
+name: master-terminal-command-guard
+
+on:
+  pull_request:
+    paths:
+      - 'docs/MASTER_TERMINAL_COMMAND.md'
+      - 'docs/LOAD_SCOPE.md'
+      - 'README.md'
+      - '.cursor/rules/02_master_terminal_command.mdc'
+      - '.github/workflows/master-terminal-command-guard.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/MASTER_TERMINAL_COMMAND.md'
+      - 'docs/LOAD_SCOPE.md'
+      - 'README.md'
+      - '.cursor/rules/02_master_terminal_command.mdc'
+      - '.github/workflows/master-terminal-command-guard.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Required command authorities
+        run: |
+          set -euo pipefail
+          test -f docs/MASTER_TERMINAL_COMMAND.md
+          test -f .cursor/rules/02_master_terminal_command.mdc
+          grep -q 'MASTER TERMINAL COMMAND CONTRACT' docs/MASTER_TERMINAL_COMMAND.md
+          grep -q 'MASTER_TERMINAL_COMMAND.md' docs/LOAD_SCOPE.md
+          grep -q 'MASTER_TERMINAL_COMMAND.md' README.md
+          grep -q 'MASTER_TERMINAL_COMMAND.md' .cursor/rules/02_master_terminal_command.mdc
+          grep -q 'alwaysApply: true' .cursor/rules/02_master_terminal_command.mdc
+
+      - name: Non-negotiable command invariants
+        run: |
+          set -euo pipefail
+          f=docs/MASTER_TERMINAL_COMMAND.md
+          grep -q 'MAX_LINES<=66' "$f"
+          grep -q 'TOTAL_COMMAND_CHARS<=6072' "$f"
+          grep -q 'ONE_CODE_BLOCK=YES' "$f"
+          grep -q 'ONE_EXEC_COMMAND=YES' "$f"
+          grep -q 'EXACT_COMMAND_SYNTAX_VALIDATION=PASS' "$f"
+          grep -q 'POST_VALIDATION_COMMAND_MUTATION=0' "$f"
+          grep -q 'INTERACTIVE_SHELL_SURVIVES=YES' "$f"
+          grep -q 'GACE_RESULT_BEGIN' "$f"
+          grep -q 'PROJECT_END=' "$f"
+          grep -q 'GACE_RESULT_END' "$f"
+          grep -q 'bash -n' "$f"
+          grep -q 'System.Management.Automation.Language.Parser' "$f"
+          grep -q '原則1行' "$f"
+          grep -q '最大66行' "$f"
+          grep -q '6072文字以内' "$f"
+          grep -q '裸の`exit`' "$f"
+
+      - name: Cursor enforcement invariants
+        run: |
+          set -euo pipefail
+          f=.cursor/rules/02_master_terminal_command.mdc
+          grep -q 'MAX_LINES<=66' "$f"
+          grep -q 'TOTAL_COMMAND_CHARS<=6072' "$f"
+          grep -q 'EXACT_COMMAND_SYNTAX_VALIDATION=PASS' "$f"
+          grep -q 'POST_VALIDATION_COMMAND_MUTATION=0' "$f"
+          grep -q 'INTERACTIVE_SHELL_SURVIVES=YES' "$f"
+          grep -q 'bash -n' "$f"
+          grep -q 'System.Management.Automation.Language.Parser' "$f"
