@@ -69,6 +69,7 @@ Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Production�
 - `docs/SERVER_CORE_DESIGN.md` — server-core設計基準線
 - `docs/DESIGN_DELTA.md` — 設計差分と理由
 - `docs/LOAD_SCOPE.md` — Task routing / progressive context loading
+- `docs/MASTER_TERMINAL_COMMAND.md` — Master Terminal Copy&Paste Command / Syntax Validation / GACE_RESULT / Shell Safety契約
 - `docs/G_ACE_WORKSPACE.md` — Workspace正規運用
 - `docs/STRUCTURE.md` — server-core Project Tree / Navigation
 
@@ -100,6 +101,7 @@ Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Production�
 | 開発方法論 / 責務 / Module / 再利用 | `CORE.md` |
 | 共通運用 / 禁止 / Approval Boundary | `SERVER_CORE_PROTOCOL.md` |
 | Context / 読込範囲 | `docs/LOAD_SCOPE.md` |
+| Master Terminal Command / Copy&Paste / GACE_RESULT / Shell Safety / Syntax Validation | `docs/MASTER_TERMINAL_COMMAND.md` |
 | Workspace運用 | `docs/G_ACE_WORKSPACE.md` |
 | Git / Commit / Push | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
@@ -123,7 +125,7 @@ Current completed / verified stateと入口を示す。Design正本にはしな�
 ### Design
 Architecture / Contract / Boundary / ResponsibilityのBaseline。
 
-Current実装へ合わせて履歴を消す上書きを禁止する。
+Current実装へ合わせて履歴が消える上書きを禁止する。
 
 ### Design Delta
 Designとの差を正式採用する場合、差分・理由・Evidence・影響範囲・適用Commit・Compatibility/rollbackを残す。
