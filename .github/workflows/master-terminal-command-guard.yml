@@ -56,7 +56,7 @@ jobs:
           grep -q 'GACE_RESULT_END' "$f"
           grep -q 'bash -n' "$f"
           grep -q 'System.Management.Automation.Language.Parser' "$f"
-          grep -q '原則1行' "$f"
+          grep -q '1行原則' "$f"
           grep -q '最大66行' "$f"
           grep -q '6072文字以内' "$f"
           grep -q '裸の`exit`' "$f"
