@@ -139,6 +139,13 @@ def parse_json(raw, code):
         fail(code)
 
 
+def verify_gh_project_cli(contract):
+    help_text = gh_run(["project", "item-edit", "--help"], contract)
+    required_flags = ("--owner", "--url", "--field", "--value")
+    if not all(flag in help_text for flag in required_flags):
+        fail("GH_PROJECT_ITEM_EDIT_UNSUPPORTED")
+
+
 def verify_project_identity(contract):
     project = contract["project"]
     raw = gh_run(
@@ -229,7 +236,7 @@ def result_lines(result):
     print("GACE_RESULT_BEGIN")
     for key in (
         "RESULT", "REQUEST_ID", "PROJECT", "ITEM_URL", "FIELD", "VALUE",
-        "READBACK", "MUTATION_PERFORMED", "ERROR",
+        "GH_CLI_CONTRACT", "READBACK", "MUTATION_PERFORMED", "ERROR",
     ):
         if key in result:
             print(f"{key}={result[key]}")
@@ -238,6 +245,7 @@ def result_lines(result):
 
 def execute(request, contract):
     request = validate_request(request, contract)
+    verify_gh_project_cli(contract)
     verify_project_identity(contract)
     item_id = find_item_id(request["item_url"], contract)
     before = read_field_value(item_id, request["field"], contract)
@@ -255,6 +263,7 @@ def execute(request, contract):
         "ITEM_URL": request["item_url"],
         "FIELD": request["field"],
         "VALUE": request["value"],
+        "GH_CLI_CONTRACT": "PASS",
         "READBACK": readback,
         "MUTATION_PERFORMED": mutation,
     }
