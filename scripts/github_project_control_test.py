@@ -33,6 +33,13 @@ def save_state(value):
 with log_path.open("a", encoding="utf-8") as fh:
     fh.write(json.dumps(args) + "\n")
 
+if args == ["project", "item-edit", "--help"]:
+    if os.environ.get("MOCK_GH_OLD_CLI") == "1":
+        print("Usage: gh project item-edit --id --field-id --project-id")
+    else:
+        print("Usage: gh project item-edit [<number>] --owner --url --field --value")
+    raise SystemExit(0)
+
 if args[:2] == ["project", "view"]:
     print(json.dumps({"id":"PVT_kwHODOQFoM4BEJII","title":"G-ACE Development Platform"}))
     raise SystemExit(0)
@@ -123,6 +130,7 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("RESULT=PASS", result.stdout)
         self.assertIn("MUTATION_PERFORMED=YES", result.stdout)
+        self.assertIn("GH_CLI_CONTRACT=PASS", result.stdout)
         self.assertIn("READBACK=CI_PASS", result.stdout)
         edits = [call for call in self.log_calls() if call[:2] == ["project", "item-edit"]]
         self.assertEqual(len(edits), 1)
@@ -164,6 +172,15 @@ class RunnerTest(unittest.TestCase):
         result = self.run_request(self.request())
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("ERROR=PROJECT_ITEM_NOT_FOUND_OR_AMBIGUOUS", result.stdout)
+
+
+    def test_unsupported_gh_project_cli_fails_before_project_read(self):
+        self.env["MOCK_GH_OLD_CLI"] = "1"
+        result = self.run_request(self.request())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ERROR=GH_PROJECT_ITEM_EDIT_UNSUPPORTED", result.stdout)
+        calls = self.log_calls()
+        self.assertEqual(calls, [["project", "item-edit", "--help"]])
 
 
 if __name__ == "__main__":
