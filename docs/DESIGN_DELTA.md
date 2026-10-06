@@ -439,3 +439,47 @@ Applied by the same PR #8 change unit that introduces this delta. Exact commit i
 
 ### Verification state
 Repository CI must pass on the exact resulting PR head. Live Workspace wiring was previously verified at `e7b7b700...`; because Source changes after that revision, exact-new-head live client instruction consumption and any runtime-dependent capability state remain separate evidence and are not implied by this documentation commit.
+
+
+## 2026-10-06 — Add bounded GitHub Project #1 control operation
+
+### Baseline design
+server-core already owns Workspace GitHub operation governance, shared-capability discovery, mutation boundaries and Server command safety. The Current CHAT operating model moved development control toward GitHub Project #1, but the CHAT GitHub connector could not mutate Projects v2 fields. The only verified Project write path remained the VPS `gh project` credential, which forced Master to act as a manual command runner.
+
+### Actual change
+server-core now contains a narrowly scoped GitHub Project control operation:
+- `operations/github-project-control.json` fixes the target to Personal Project #1 `G-ACE Development Platform`, owner `seigo-gace`, node ID `PVT_kwHODOQFoM4BEJII`;
+- only Issue/PR items under `seigo-gace` or `G-ACE-inc` are accepted;
+- only `Wave / Gate / Change Unit / Mutation Owner` may be changed;
+- the helper accepts a structured `gace.github-project-control/v1` request, never an arbitrary shell command;
+- the existing VPS `gh` authentication is the intended credential source; no GitHub Actions PAT is introduced by this Source change;
+- same-target execution uses a non-blocking lock;
+- the current value is read before mutation for idempotency and the exact item/field is read back through GraphQL after mutation;
+- Source contract tests use a mock `gh` binary and do not touch the live Project.
+
+This does **not** introduce a generic Workspace executor and does not move DebugAI product logic into server-core.
+
+### Reason / root cause
+GitHub Project #1 and its control fields had already been created and verified, but the CHAT connector had no Projects v2 mutation surface. Current Project records therefore still showed final item-edit / `NOT_VERIFIED_FROM_CHAT` gaps, and Master remained in the execution loop. Workspace search found no existing shared GitHub→VPS trigger suitable for this Project operation.
+
+### Evidence
+- server-core Issue #10 is the Task Issue for this Change Unit;
+- GitHub CLI requires `project` scope for Project operations;
+- prior Project #1 VPS read/write evidence already proved that the existing VPS credential can perform Project operations;
+- current Source adds the bounded contract, one-shot helper and CI regression coverage.
+
+### Affected scope
+- `operations/github-project-control.json`
+- `scripts/github_project_control.py`
+- `scripts/github_project_control_test.py`
+- `.github/workflows/server-core-behavior.yml`
+- `.github/workflows/server-core-guard.yml`
+- `docs/WORKSPACE_REGISTRY.md`
+- `docs/STRUCTURE.md`
+- this Design Delta
+
+### Verification state
+`SOURCE_IMPLEMENTED` on Issue #10 branch. Exact-head CI, automatic GitHub→VPS trigger, current VPS credential readback, live Project mutation and CHAT-originated E2E remain separate evidence and are **NOT_VERIFIED** until completed.
+
+### Compatibility / approval boundary
+No main merge, Production activation, service restart/recreate, Secret/Provider mutation or live Project mutation is implied by this Source change. The comparison copy of Notion「Notion活用の大原則」is not modified by this Change Unit.
