@@ -102,7 +102,7 @@ class RunnerTest(unittest.TestCase):
         path.write_text(json.dumps(value), encoding="utf-8")
         return path
 
-    def run(self, request, *extra):
+    def run_request(self, request, *extra):
         return subprocess.run(
             [sys.executable, str(SCRIPT), "--request", str(request), "--contract", str(CONTRACT), *extra],
             cwd=ROOT,
@@ -119,7 +119,7 @@ class RunnerTest(unittest.TestCase):
 
     def test_mutates_only_bounded_field_and_exact_readback_passes(self):
         self.state.write_text(json.dumps({"Gate":"SOURCE_IN_PROGRESS"}), encoding="utf-8")
-        result = self.run(self.request())
+        result = self.run_request(self.request())
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("RESULT=PASS", result.stdout)
         self.assertIn("MUTATION_PERFORMED=YES", result.stdout)
@@ -131,22 +131,22 @@ class RunnerTest(unittest.TestCase):
 
     def test_matching_value_is_idempotent_and_skips_mutation(self):
         self.state.write_text(json.dumps({"Gate":"CI_PASS"}), encoding="utf-8")
-        result = self.run(self.request())
+        result = self.run_request(self.request())
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("MUTATION_PERFORMED=NO", result.stdout)
         self.assertFalse(any(call[:2] == ["project", "item-edit"] for call in self.log_calls()))
 
     def test_external_repository_and_unknown_field_fail_before_github(self):
-        bad_url = self.run(self.request(item_url="https://github.com/other/repo/issues/1"), "--validate-only")
+        bad_url = self.run_request(self.request(item_url="https://github.com/other/repo/issues/1"), "--validate-only")
         self.assertNotEqual(bad_url.returncode, 0)
         self.assertIn("ERROR=REQUEST_ITEM_URL_NOT_ALLOWED", bad_url.stdout)
-        bad_field = self.run(self.request(field="Status"), "--validate-only")
+        bad_field = self.run_request(self.request(field="Status"), "--validate-only")
         self.assertNotEqual(bad_field.returncode, 0)
         self.assertIn("ERROR=REQUEST_FIELD_NOT_ALLOWED", bad_field.stdout)
         self.assertFalse(self.log.exists())
 
     def test_gate_value_is_bounded(self):
-        result = self.run(self.request(value="ci pass"), "--validate-only")
+        result = self.run_request(self.request(value="ci pass"), "--validate-only")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("ERROR=REQUEST_VALUE_NOT_ALLOWED", result.stdout)
         self.assertFalse(self.log.exists())
@@ -154,14 +154,14 @@ class RunnerTest(unittest.TestCase):
     def test_readback_mismatch_fails(self):
         self.state.write_text(json.dumps({"Gate":"SOURCE_IN_PROGRESS"}), encoding="utf-8")
         self.env["MOCK_GH_NO_UPDATE"] = "1"
-        result = self.run(self.request())
+        result = self.run_request(self.request())
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("ERROR=PROJECT_FIELD_READBACK_MISMATCH", result.stdout)
 
     def test_missing_project_item_fails_closed(self):
         self.state.write_text(json.dumps({"Gate":"SOURCE_IN_PROGRESS"}), encoding="utf-8")
         self.env["MOCK_GH_ITEM_MISSING"] = "1"
-        result = self.run(self.request())
+        result = self.run_request(self.request())
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("ERROR=PROJECT_ITEM_NOT_FOUND_OR_AMBIGUOUS", result.stdout)
 
