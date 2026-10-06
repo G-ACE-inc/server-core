@@ -83,7 +83,10 @@ Scriptの存在は実行許可を意味しない。read-only helperとmutation-c
 
 ### Mutation-capable with explicit gate
 - `github_project_control.py` — Personal Project #1の`Wave / Gate / Change Unit / Mutation Owner`だけを固定Contractで更新し、対象Item/FieldをGraphQLでexact readbackするone-shot helper。任意Shell/APIを受けず、same-target lockでfail closedする。
-- `github_project_control_test.py` — 上記helperのmock `gh` contract regression。外部Repo、未許可Field、不正値、readback不一致をfail closed検証する。
+- `github_project_control_test.py` — 上記helperのmock `gh` contract regression。外部Repo、未許可Field、不正値、readback不一致、旧CLI contractをfail closed検証する。
+- `github_project_request_from_comment.py` — `[GACE-PROJECT]` owner-only Issue Commentをfixed request schemaへ変換する。request idはComment identityから決定論生成し、任意Command/unknown key/secret-like valueを拒否する。
+- `github_project_request_from_comment_test.py` — owner限定、stable request id、unknown field、secret-like value、wrong control repoの回帰Test。
+- `.github/workflows/github-project-control-request.yml` — owner comment→request build→`--validate-only`→短期Artifact/Issue evidenceまで。**Project mutationは実行しない。**
 - `init-dev-workspace.sh` — defaultはread-only check。Workspace wiring / MCP configを変更する場合は `--apply-workspace-mutation` が必要。Cursor rules、Copilot instructions、AGENTS entryをcanonical server-coreから`/home/admin1/projects`へ配線する。Project directory作成はさらに `--project NAME --create-project` が必要。
 - `install-workspace-mcp.sh` — `~/.cursor/mcp.json` mutation。`--apply-workspace-mcp-mutation` 必須。client credential containerを保持しつつowner-only/non-executable modeへ整合し、bounded backup retentionを適用する。
 - `ai-auto-commit.sh` — server-core専用commit helper。`--authorize-server-core-mutation` と1件以上の`--file PATH`が必須。repository-wide `git add -A` は行わず、main/masterへのdirect auto-commitを拒否する。
