@@ -453,6 +453,7 @@ server-core now contains a narrowly scoped GitHub Project control operation:
 - only `Wave / Gate / Change Unit / Mutation Owner` may be changed;
 - the helper accepts a structured `gace.github-project-control/v1` request, never an arbitrary shell command;
 - the existing VPS `gh` authentication is the intended credential source; no GitHub Actions PAT is introduced by this Source change;
+- before any live mutation, the runner feature-probes `gh project item-edit --help` and requires the current name-based `--owner / --url / --field / --value` contract; unsupported/old CLI fails closed before Project read/write;
 - same-target execution uses a non-blocking lock;
 - the current value is read before mutation for idempotency and the exact item/field is read back through GraphQL after mutation;
 - Source contract tests use a mock `gh` binary and do not touch the live Project.
