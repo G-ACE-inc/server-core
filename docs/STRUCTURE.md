@@ -67,6 +67,7 @@ Current machine-readable contracts/policies:
 - `workspace-mcp.json`
 - `storage-lifecycle.json`
 - `pre-execution-schema.json` — command-center dispatch fields / routing invariants
+- `github-project-control.json` — Personal GitHub Project #1 bounded mutation/readback contract
 
 `operations/` はcredential実値を保持しない。
 
@@ -81,6 +82,8 @@ Scriptの存在は実行許可を意味しない。read-only helperとmutation-c
 - `workspace_command_center_check.py` — defaultはWorkspace wiringのread-only verification。Cursor rules / VS Code Copilot instructions / AGENTS entryも確認し、`--repair` は別途 `--authorize-workspace-mutation` が必要。
 
 ### Mutation-capable with explicit gate
+- `github_project_control.py` — Personal Project #1の`Wave / Gate / Change Unit / Mutation Owner`だけを固定Contractで更新し、対象Item/FieldをGraphQLでexact readbackするone-shot helper。任意Shell/APIを受けず、same-target lockでfail closedする。
+- `github_project_control_test.py` — 上記helperのmock `gh` contract regression。外部Repo、未許可Field、不正値、readback不一致をfail closed検証する。
 - `init-dev-workspace.sh` — defaultはread-only check。Workspace wiring / MCP configを変更する場合は `--apply-workspace-mutation` が必要。Cursor rules、Copilot instructions、AGENTS entryをcanonical server-coreから`/home/admin1/projects`へ配線する。Project directory作成はさらに `--project NAME --create-project` が必要。
 - `install-workspace-mcp.sh` — `~/.cursor/mcp.json` mutation。`--apply-workspace-mcp-mutation` 必須。client credential containerを保持しつつowner-only/non-executable modeへ整合し、bounded backup retentionを適用する。
 - `ai-auto-commit.sh` — server-core専用commit helper。`--authorize-server-core-mutation` と1件以上の`--file PATH`が必須。repository-wide `git add -A` は行わず、main/masterへのdirect auto-commitを拒否する。
@@ -141,6 +144,7 @@ IntegrationしただけでProject固有実装をserver-coreへ移さない。
 - credential broker/use -> `docs/WORKSPACE_SHARED_SECRETS.md`
 - managed Workspace MCP -> `docs/WORKSPACE_MCP.md`
 - GitHub Cost / scheduled dependency-update policy -> `docs/GITHUB_FREE_MAX.md` + `.github/dependabot.yml`
+- GitHub Project #1 bounded control contract -> `operations/github-project-control.json` + `scripts/github_project_control.py`
 - AI automatic entry -> `.cursor/rules/00_agent_runtime.mdc` + `.github/copilot-instructions.md` + `AGENTS.md`
 
 ## Project Tree Update Conditions
