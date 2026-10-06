@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "name": "gace-github-project-control",
+  "request_schema": "gace.github-project-control/v1",
+  "request_actor": "seigo-gace",
+  "project": {
+    "owner": "seigo-gace",
+    "number": 1,
+    "node_id": "PVT_kwHODOQFoM4BEJII",
+    "title": "G-ACE Development Platform"
+  },
+  "allowed_repository_owners": [
+    "seigo-gace",
+    "G-ACE-inc"
+  ],
+  "allowed_fields": {
+    "Wave": {
+      "max_length": 16,
+      "pattern": "Wave [0-9]{1,2}"
+    },
+    "Gate": {
+      "max_length": 64,
+      "pattern": "[A-Z][A-Z0-9_]{0,63}"
+    },
+    "Change Unit": {
+      "max_length": 160
+    },
+    "Mutation Owner": {
+      "max_length": 120
+    }
+  },
+  "item_read_limit": 1000,
+  "timeouts": {
+    "command_seconds": 30
+  },
+  "rules": {
+    "arbitrary_shell_forbidden": true,
+    "project_identity_fixed": true,
+    "field_allowlist_required": true,
+    "exact_readback_required": true,
+    "same_target_concurrency_fail_closed": true
+  }
+}
