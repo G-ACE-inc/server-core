@@ -26,7 +26,7 @@ jobs:
         run: |
           set -euo pipefail
           bash -n scripts/init-dev-workspace.sh scripts/install-workspace-mcp.sh scripts/verify-workspace-mcp.sh scripts/ai-auto-commit.sh scripts/resolve-codex-skill.sh scripts/github-skill-path.sh
-          python3 -m py_compile scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py
+          python3 -m py_compile scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py scripts/github_project_control.py scripts/github_project_control_test.py
 
       - name: Command-center dispatch schema and workflow scope
         run: |
@@ -60,6 +60,23 @@ jobs:
           grep -q '## 8. DebugAI / Cost Routing Rule' docs/LOAD_SCOPE.md
           ! git grep -nE 'Workspace top-level|GPT↔operator|operator-facing command presentation|ASSISTANT_TOOL|USER_UI|EXTERNAL_CLIENT|EXECUTION_ROUTE|EXECUTION_CAPABILITY|EXECUTION_AUTHORIZATION|PRE_EXECUTION_COMPLETE|Chat UI|ChatGPT|Notion|generic executor|generic AI cost policy' -- README.md docs/SERVER_CORE_DESIGN.md docs/G_ACE_WORKSPACE.md docs/LOAD_SCOPE.md docs/SERVER_COMMAND_CONTRACT.md .cursor/rules/00_agent_runtime.mdc operations/pre-execution-schema.json
           echo 'WORKFLOW_SCOPE=PASS'
+
+      - name: GitHub Project control contract
+        run: |
+          set -euo pipefail
+          python3 scripts/github_project_control_test.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('operations/github-project-control.json').read_text())
+          assert p['schema_version'] == '1.0'
+          assert p['request_schema'] == 'gace.github-project-control/v1'
+          assert p['project'] == {'owner':'seigo-gace','number':1,'node_id':'PVT_kwHODOQFoM4BEJII','title':'G-ACE Development Platform'}
+          assert set(p['allowed_fields']) == {'Wave','Gate','Change Unit','Mutation Owner'}
+          assert p['rules']['arbitrary_shell_forbidden'] is True
+          assert p['rules']['exact_readback_required'] is True
+          print('GITHUB_PROJECT_CONTROL_CONTRACT=PASS')
+          PY
 
       - name: Project path traversal guard
         run: |
