@@ -132,7 +132,7 @@ class RunnerTest(unittest.TestCase):
         self.assertIn("MUTATION_PERFORMED=YES", result.stdout)
         self.assertIn("GH_CLI_CONTRACT=PASS", result.stdout)
         self.assertIn("READBACK=CI_PASS", result.stdout)
-        edits = [call for call in self.log_calls() if call[:2] == ["project", "item-edit"]]
+        edits = [call for call in self.log_calls() if call[:2] == ["project", "item-edit"] and "--help" not in call]
         self.assertEqual(len(edits), 1)
         self.assertIn("--field", edits[0])
         self.assertIn("Gate", edits[0])
@@ -142,7 +142,7 @@ class RunnerTest(unittest.TestCase):
         result = self.run_request(self.request())
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("MUTATION_PERFORMED=NO", result.stdout)
-        self.assertFalse(any(call[:2] == ["project", "item-edit"] for call in self.log_calls()))
+        self.assertFalse(any(call[:2] == ["project", "item-edit"] and "--help" not in call for call in self.log_calls()))
 
     def test_external_repository_and_unknown_field_fail_before_github(self):
         bad_url = self.run_request(self.request(item_url="https://github.com/other/repo/issues/1"), "--validate-only")
