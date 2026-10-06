@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONTRACT = ROOT / "operations" / "github-project-control.json"
 REQUEST_ID_RE = re.compile(r"^gpc_[0-9a-f]{24}$")
-CONTROL_CHAR_RE = re.compile(r"[\\x00-\\x1f\\x7f]")
+CONTROL_CHAR_RE = re.compile(r"[\x00-\x1f\x7f]")
 
 
 class ControlError(RuntimeError):
