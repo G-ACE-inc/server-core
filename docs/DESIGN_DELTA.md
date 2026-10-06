@@ -456,6 +456,8 @@ server-core now contains a narrowly scoped GitHub Project control operation:
 - before any live mutation, the runner feature-probes `gh project item-edit --help` and requires the current name-based `--owner / --url / --field / --value` contract; unsupported/old CLI fails closed before Project read/write;
 - same-target execution uses a non-blocking lock;
 - the current value is read before mutation for idempotency and the exact item/field is read back through GraphQL after mutation;
+- `.github/workflows/github-project-control-request.yml` reuses the existing owner-only GitHub control-plane pattern: a `[GACE-PROJECT]` comment from `seigo-gace` is converted into a deterministic fixed-schema request, validated through the same Project contract, stored as one-day evidence, and commented back as `PROJECT_CONTROL_EXECUTION=NOT_RUN`;
+- comment input cannot supply a request id, actor, operation, command, Project identity, arbitrary URL endpoint, or credential; unknown keys and secret-like values fail closed;
 - Source contract tests use a mock `gh` binary and do not touch the live Project.
 
 This does **not** introduce a generic Workspace executor and does not move DebugAI product logic into server-core.
@@ -473,6 +475,9 @@ GitHub Project #1 and its control fields had already been created and verified, 
 - `operations/github-project-control.json`
 - `scripts/github_project_control.py`
 - `scripts/github_project_control_test.py`
+- `scripts/github_project_request_from_comment.py`
+- `scripts/github_project_request_from_comment_test.py`
+- `.github/workflows/github-project-control-request.yml`
 - `.github/workflows/server-core-behavior.yml`
 - `.github/workflows/server-core-guard.yml`
 - `docs/WORKSPACE_REGISTRY.md`
@@ -480,7 +485,7 @@ GitHub Project #1 and its control fields had already been created and verified, 
 - this Design Delta
 
 ### Verification state
-`SOURCE_IMPLEMENTED` on Issue #10 branch. Exact-head CI, automatic GitHub→VPS trigger, current VPS credential readback, live Project mutation and CHAT-originated E2E remain separate evidence and are **NOT_VERIFIED** until completed.
+`SOURCE_IMPLEMENTED` on Issue #10 branch. Owner-only CHAT/GitHub comment→bounded request validation is implemented at Source/Test level, but `issue_comment` runtime activation requires the workflow to exist on the default branch. Automatic GitHub→VPS execution, current VPS credential readback, live Project mutation and full CHAT-originated E2E remain separate evidence and are **NOT_VERIFIED** until completed.
 
 ### Compatibility / approval boundary
 No main merge, Production activation, service restart/recreate, Secret/Provider mutation or live Project mutation is implied by this Source change. The comparison copy of Notion「Notion活用の大原則」is not modified by this Change Unit.
