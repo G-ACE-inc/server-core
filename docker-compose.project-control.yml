@@ -1,0 +1,53 @@
+services:
+  server-core-project-control:
+    build:
+      context: .
+      dockerfile: Dockerfile.project-control
+    init: true
+    user: "${GACE_SERVER_UID:?GACE_SERVER_UID is required}:${GACE_SERVER_GID:?GACE_SERVER_GID is required}"
+    environment:
+      GH_CONFIG_DIR: /run/gh
+      GH_PROMPT_DISABLED: "1"
+      GACE_PROJECT_CONTROL_LOCK: /tmp/github-project-control.lock
+      GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE: /run/secrets/project-control-delivery
+      GACE_PROJECT_CONTROL_SIGNATURE_TOLERANCE_SECONDS: "${GACE_PROJECT_CONTROL_SIGNATURE_TOLERANCE_SECONDS:-300}"
+    volumes:
+      - type: bind
+        source: "${GACE_PROJECT_CONTROL_GH_CONFIG_DIR:?GACE_PROJECT_CONTROL_GH_CONFIG_DIR is required}"
+        target: /run/gh
+        read_only: true
+      - type: bind
+        source: "${GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE:?GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE is required}"
+        target: /run/secrets/project-control-delivery
+        read_only: true
+    networks:
+      - default
+      - gace-internal
+    expose:
+      - "8788"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 64
+    mem_limit: 128m
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8788/healthz', timeout=2); raise SystemExit(0 if r.status == 200 else 1)"
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    restart: unless-stopped
+
+networks:
+  default: {}
+  gace-internal:
+    external: true
+    name: "${GACE_INTERNAL_NETWORK_NAME:-gace-internal}"

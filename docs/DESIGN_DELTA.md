@@ -526,3 +526,25 @@ The Generic Internal Event API returns a durable asynchronous 202 receipt, which
 The owner-comment workflow now submits validated requests through `/internal/events` and reports `PENDING_SERVER_RESULT`; it no longer reports validation-only `NOT_RUN` once dispatch Source is active. Workflow failure after durable dispatch is explicitly treated as `PENDING_OR_UNKNOWN`, not as proof that no mutation occurred.
 
 This remains Source/Test state only. GitHub Actions Gateway URL/token availability, Gateway destination deployment, receiver runtime, receiver delivery Secret, VPS `gh` issue-comment permission and live Project E2E remain runtime evidence gates.
+
+
+## 2026-10-07 — Package Project Control receiver as Docker Compose runtime Source
+
+### Baseline
+server-core production-resident services must use Docker Compose. The internal Project Control receiver existed as tested Python Source but had no canonical container/runtime definition.
+
+### Actual change
+- `Dockerfile.project-control` packages only the Project Control contract, runner and bounded receiver with Python + GitHub CLI.
+- image default is non-root; Compose overrides the numeric UID/GID from required runtime values so a read-only mount of the existing VPS `gh` config can preserve host file permissions without copying the credential.
+- `GH_CONFIG_DIR=/run/gh` points GitHub CLI at that read-only credential mount.
+- the delivery signing Secret is injected only as a read-only runtime file; no value is stored in Source.
+- the receiver publishes no host port; only container port 8788 is exposed.
+- the service joins its own default network for outbound GitHub API access and the external shared `gace-internal` network for Webhook Gateway worker delivery.
+- `Dockerfile.project-control.dockerignore` restricts build context to the exact runner/receiver/contract inputs.
+- CI builds the image and validates Compose interpolation with fixture paths; it does not create the external network or deploy the service.
+
+### Runtime boundary
+The external `gace-internal` Docker network, numeric runtime UID/GID, host `gh` config path, delivery Secret file, receiver deployment and health remain runtime facts and are NOT_VERIFIED until an approved server operation performs exact readback. No host path is hard-coded in Source.
+
+### Approval boundary
+This Source does not create the Docker network, register/inject any Secret, start/recreate a container, merge a PR or perform a live Project mutation.

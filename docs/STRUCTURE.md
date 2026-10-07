@@ -23,6 +23,9 @@ README.md
 - `.aiignore` / `.cursorignore` — historical archive exclusion。Current operational filesを隠さない
 - `.cursor/` — Cursor Workspace runtime rules / client integration contract。host-local client wiringは追跡しない
 - `.github/` — VS Code/GitHub Copilot instruction、CI、dependency update、repository automation、task templates
+- `Dockerfile.project-control` — bounded GitHub Project Control receiver image。Python + GitHub CLIのみを含み、non-root defaultで起動する
+- `Dockerfile.project-control.dockerignore` — Project Control image build contextを必要Source/Contractだけへ限定する
+- `docker-compose.project-control.yml` — receiverのProduction residency Source。host portを公開せず、既存`gh` configとdelivery Secretをread-only mountし、shared internal networkへ接続する
 - `docs/` — Design / Router / Registry / Operations contracts
 - `operations/` — credential値を持たないmachine-readable contracts / policies
 - `scripts/` — Workspace automation / verify / audit helpers
@@ -89,6 +92,7 @@ Scriptの存在は実行許可を意味しない。read-only helperとmutation-c
 - `github_project_internal_send.py` — Generic Internal Event API `/internal/events` へ固定destination/event typeでbounded Project Control requestを送信し、202 durable receiptだけを受理するproducer helper。URL/Token値はSourceへ保持しない。
 - `github_project_internal_receiver.py` — Gatewayの固定destination header + Standard Webhooks署名を検証し、`/internal/github-project-control` でProject Control contractだけを実行するbounded receiver。任意Command/任意URLを受けない。
 - `github_project_internal_transport_test.py` — internal sender/receiverの固定destination、署名、stale拒否、invalid field拒否、retryable failure mappingを実HTTPで回帰検証する。
+- `github_project_runtime_config_test.py` — receiver image/Composeのnon-root、credential read-only mount、no-host-port、shared internal network、minimal build contextをSource-level検証する。
 - `.github/workflows/github-project-control-request.yml` — owner comment→request build→`--validate-only`→短期Artifact/Issue evidenceまで。**Project mutationは実行しない。**
 - `init-dev-workspace.sh` — defaultはread-only check。Workspace wiring / MCP configを変更する場合は `--apply-workspace-mutation` が必要。Cursor rules、Copilot instructions、AGENTS entryをcanonical server-coreから`/home/admin1/projects`へ配線する。Project directory作成はさらに `--project NAME --create-project` が必要。
 - `install-workspace-mcp.sh` — `~/.cursor/mcp.json` mutation。`--apply-workspace-mcp-mutation` 必須。client credential containerを保持しつつowner-only/non-executable modeへ整合し、bounded backup retentionを適用する。
