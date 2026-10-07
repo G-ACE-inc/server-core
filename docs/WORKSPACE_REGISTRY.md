@@ -127,6 +127,8 @@ current in-progress exact-head representative live calls = PENDING
 
 Current-head re-verification pending is **not** equivalent to `NOT_IMPLEMENTED` or `NOT_REGISTERED`. Historical successful use is also **not** sufficient to claim the current changing HEAD as freshly live-verified. Preserve both facts.
 
+Shared execution ownership after migration is different from DebugAI product ownership: the bounded Server Command queue / Host runner contract is owned by server-core as Shared Server Executor, while DebugAI remains a specialized consumer/adapter. Until adapter migration E2E passes, the existing DebugAI-local path remains intact as rollback/proven evidence.
+
 ## 5. Shared Tool / Skill Registry
 
 | Capability | Authority / owner | Purpose | Current boundary |
@@ -137,7 +139,8 @@ Current-head re-verification pending is **not** equivalent to `NOT_IMPLEMENTED` 
 | Deploy routine | `docs/DEPLOY_RUNBOOK.md` | confirmed revision -> approved deploy -> runtime verify | DOCUMENTED; target runtime specific |
 | Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare common contract | IMPLEMENTED_CONTRACT |
 | Shared Secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 | IMPLEMENTED_CONTRACT; runtime availability must be checked |
-| DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent | source/CLI/HTTP/MCP implemented; prior Codex use confirmed; current exact-head live reverify pending |
+| DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent / consumer of shared server execution | source/CLI/HTTP/MCP implemented; prior Codex use confirmed; current exact-head live reverify pending |
+| Shared Server Executor | `G-ACE-inc/server-core` — `docs/SHARED_SERVER_EXECUTOR.md`, `operations/server-command.json` | CHAT / DebugAI / server AI向けbounded VPS operation queue + Host runner | SOURCE_IMPLEMENTED_ON_ISSUE10_BRANCH; runtime reflection / DebugAI adapter switch / CHAT E2E NOT_RUN |
 | Storage lifecycle audit | `scripts/storage_lifecycle_audit.py`, `operations/storage-lifecycle.json` | disk/log/backup/Docker read-only audit | SOURCE_VERIFIED / SERVER_RUNTIME_NOT_VERIFIED |
 | Storage cleanup mutation | future approved implementation | safe deletion/rotation | NOT_IMPLEMENTED |
 
