@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch G-ACE shared bounded server command queue
+
+[Path]
+PathExistsGlob=/home/admin1/server-core/.gace-control/server-command/requests/cmd_*.json
+Unit=gace-server-command.service
+
+[Install]
+WantedBy=default.target
