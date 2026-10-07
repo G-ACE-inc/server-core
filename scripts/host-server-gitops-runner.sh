@@ -132,7 +132,7 @@ verify_repo_identity(){
     fail SERVER_GITOPS_CURRENT_BRANCH_MISMATCH
     return 1
   }
-  remote_url="$(cd "$target_path" && "$GIT_BIN" remote get-url origin)" || {
+  remote_url="$(cd "$target_path" && "$GIT_BIN" config --get remote.origin.url)" || {
     fail SERVER_GITOPS_REMOTE_URL_READ_FAILED
     return 1
   }
