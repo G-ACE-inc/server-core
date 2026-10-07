@@ -350,3 +350,43 @@ The external `gace-internal` Docker network, numeric runtime UID/GID, host `gh` 
 
 ### Approval boundary
 This Source does not create the Docker network, register/inject any Secret, start/recreate a container, merge a PR or perform a live Project mutation.
+
+
+## 2026-10-07 — Split GitHub Project operating rules into SERVER_AI and GPT_CHAT planes
+
+### Master intent
+server-core was originally created so server-side AI could enter the Workspace through one control room and reproduce the same server/development operation without Master having to remember or restate rules. Server-side AI has variable usage cost, so its always-loaded rule payload must stay minimal. GPT CHAT is the primary orchestrator and needs a richer rule set that historically lived in GPT-only Notion operating principles.
+
+The target operating authority is GitHub Project #1, not a single oversized server-core rule payload.
+
+### Architecture change
+- GitHub Project #1 becomes the Current operating control plane.
+- Control Issue #15 owns the dual-plane migration.
+- Issue #16 owns the SERVER_AI Minimal Kernel.
+- Issue #17 owns the GPT_CHAT Orchestrator Kernel.
+- `operations/github-project-rule-plane.json` fixes those identities and the loading contract.
+- `docs/GITHUB_PROJECT_RULE_PLANE.md` defines authority ownership and cutover gates.
+- server-core remains the stable bootstrap/router/control room for Workspace/server operations and bounded Project control; it does not store both complete AI rule sets.
+- Project Current stays in GitHub Project; Source/CI evidence stays in the owning repository; Runtime state stays in runtime readback.
+- historical Notion GPT-only principles remain migration source/history until GitHub loading/readback/cutover is verified.
+
+### Cost reduction
+The previous always-applied Cursor runtime rule embedded a broad operating contract. It is replaced with a small SERVER_AI bootstrap that routes to the machine contract and Rule Plane #16. Matching minimal entry files are added for Codex-compatible agents (`AGENTS.md`) and GitHub Copilot (`.github/copilot-instructions.md`).
+
+CI enforces maximum bootstrap line counts and verifies that SERVER_AI entry points route through #16 while GPT_CHAT #17 is not default-loaded.
+
+### Compatibility / safety
+Shared invariants are preserved: Fresh Current, reuse-first, minimum context, evidence/state separation, approval boundaries, Secret safety, Docker Compose production residency and GitHub work reports. Detailed GPT CHAT reporting/conversation rules are intentionally not copied into server AI bootstrap context.
+
+This Source change does not register Issues #15/#16/#17 as Projects v2 items, mutate Project fields, delete Notion history, deploy runtime, rotate Secrets or merge itself. Those remain separate verified gates.
+
+### Migration state
+```text
+RULE_ITEMS_CREATED=YES
+MACHINE_CONTRACT_SOURCE=IMPLEMENTED_ON_BRANCH
+SERVER_AI_BOOTSTRAP_SOURCE=IMPLEMENTED_ON_BRANCH
+GPT_CHAT_KERNEL_ISSUE=CREATED
+PROJECT_ITEM_REGISTRATION=NOT_VERIFIED
+RULE_LOADING_RUNTIME=NOT_VERIFIED
+NOTION_CUTOVER=NOT_RUN
+```
