@@ -8,12 +8,15 @@ QUEUE="${GACE_SERVER_COMMAND_QUEUE_ROOT:-$SERVER_CORE_REPO/.gace-control/server-
 JQ_BIN="${GACE_SERVER_COMMAND_JQ_BIN:-jq}"
 GIT_BIN="${GACE_SERVER_COMMAND_GIT_BIN:-git}"
 TIMEOUT_BIN="${GACE_SERVER_COMMAND_TIMEOUT_BIN:-timeout}"
+DF_BIN="${GACE_SERVER_COMMAND_DF_BIN:-df}"
+GH_BIN="${GACE_SERVER_COMMAND_GH_BIN:-gh}"
 
 err_code=""
 request_id=""
 command_id=""
 target_id=""
 target_path=""
+target_repo=""
 result_json="{}"
 
 fail(){ err_code="${1:-ERROR}"; return 1; }
@@ -43,8 +46,16 @@ resolve_target(){
     fail SERVER_COMMAND_TARGET_NOT_ALLOWED
     return 1
   }
+  target_repo="$("$JQ_BIN" -er --arg t "$target_id" '.targets[$t].github_repository // empty' "$CONTRACT")" || {
+    fail SERVER_COMMAND_TARGET_REPOSITORY_INVALID
+    return 1
+  }
   [[ "$env_name" =~ ^[A-Z][A-Z0-9_]*$ ]] || {
     fail SERVER_COMMAND_TARGET_ENV_INVALID
+    return 1
+  }
+  [[ "$target_repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || {
+    fail SERVER_COMMAND_TARGET_REPOSITORY_INVALID
     return 1
   }
   target_path="${!env_name:-$default_path}"
@@ -99,8 +110,26 @@ validate_request(){
   }
   resolve_target
 }
+git_target_required(){
+  [ -d "$target_path/.git" ] || {
+    fail SERVER_COMMAND_TARGET_NOT_GIT_REPO
+    return 1
+  }
+}
+changed_paths(){
+  (
+    cd "$target_path" &&
+    {
+      "$GIT_BIN" diff --name-only
+      "$GIT_BIN" diff --cached --name-only
+      "$GIT_BIN" ls-files --others --exclude-standard
+    } |
+      sed '/^$/d;/^\.gace-control\//d;/^\.debugai-input\//d' |
+      LC_ALL=C sort -u
+  )
+}
 run_read_command(){
-  local output timeout_s max_output byte_count
+  local output timeout_s max_output byte_count branch dirty
   timeout_s="$("$JQ_BIN" -er --arg c "$command_id" '.commands[$c].timeout_seconds' "$CONTRACT")" || {
     fail SERVER_COMMAND_TIMEOUT_CONTRACT_INVALID
     return 1
@@ -114,11 +143,102 @@ run_read_command(){
       output="$target_path"
       ;;
     workspace.git_head)
-      [ -d "$target_path/.git" ] || {
-        fail SERVER_COMMAND_TARGET_NOT_GIT_REPO
+      git_target_required || return 1
+      output="$(cd "$target_path" && run_timed "${timeout_s}s" "$GIT_BIN" rev-parse HEAD)" || {
+        fail COMMAND_EXEC_FAILED
         return 1
       }
-      output="$(cd "$target_path" && run_timed "${timeout_s}s" "$GIT_BIN" rev-parse HEAD)" || {
+      ;;
+    workspace.git_status)
+      git_target_required || return 1
+      branch="$(cd "$target_path" && run_timed "${timeout_s}s" "$GIT_BIN" branch --show-current)" || {
+        fail COMMAND_EXEC_FAILED
+        return 1
+      }
+      dirty="$(changed_paths | wc -l | tr -d '[:space:]')" || {
+        fail COMMAND_EXEC_FAILED
+        return 1
+      }
+      output="branch=$branch|dirty_count=$dirty"
+      ;;
+    workspace.git_changed_paths)
+      git_target_required || return 1
+      output="$(changed_paths | head -n 40)" || {
+        fail COMMAND_EXEC_FAILED
+        return 1
+      }
+      ;;
+    workspace.git_recent_commits)
+      git_target_required || return 1
+      output="$(cd "$target_path" && run_timed "${timeout_s}s" "$GIT_BIN" log -n 8 --format='%h %s')" || {
+        fail COMMAND_EXEC_FAILED
+        return 1
+      }
+      ;;
+    system.disk_usage)
+      command -v "$DF_BIN" >/dev/null 2>&1 || {
+        fail DF_UNAVAILABLE
+        return 1
+      }
+      output="$("$DF_BIN" -Pk "$target_path" | awk 'NR==2 {print "blocks_kb="$2"|used_kb="$3"|available_kb="$4"|used_percent="$5}')" || {
+        fail COMMAND_EXEC_FAILED
+        return 1
+      }
+      ;;
+    github.auth_status)
+      command -v "$GH_BIN" >/dev/null 2>&1 || {
+        fail GH_CLI_UNAVAILABLE
+        return 1
+      }
+      output="$("$GH_BIN" auth status -h github.com 2>&1 | sed -E 's/(Token: ).*/\1[REDACTED]/; s/(oauth_token: ).*/\1[REDACTED]/' | head -n 12)" || {
+        fail GH_AUTH_UNAVAILABLE
+        return 1
+      }
+      ;;
+    github.repo_view)
+      command -v "$GH_BIN" >/dev/null 2>&1 || {
+        fail GH_CLI_UNAVAILABLE
+        return 1
+      }
+      output="$(run_timed "${timeout_s}s" "$GH_BIN" repo view "$target_repo" --json nameWithOwner,defaultBranchRef,isPrivate,url 2>/dev/null)" || {
+        fail COMMAND_EXEC_FAILED
+        return 1
+      }
+      ;;
+    github.pr_current)
+      command -v "$GH_BIN" >/dev/null 2>&1 || {
+        fail GH_CLI_UNAVAILABLE
+        return 1
+      }
+      git_target_required || return 1
+      branch="$(cd "$target_path" && "$GIT_BIN" branch --show-current)" || {
+        fail COMMAND_EXEC_FAILED
+        return 1
+      }
+      [ -n "$branch" ] || {
+        fail GITHUB_CURRENT_BRANCH_MISSING
+        return 1
+      }
+      output="$(run_timed "${timeout_s}s" "$GH_BIN" pr view "$branch" --repo "$target_repo" --json number,state,isDraft,mergeable,headRefName,headRefOid,baseRefName,url 2>/dev/null)" || {
+        fail COMMAND_EXEC_FAILED
+        return 1
+      }
+      ;;
+    github.actions_recent)
+      command -v "$GH_BIN" >/dev/null 2>&1 || {
+        fail GH_CLI_UNAVAILABLE
+        return 1
+      }
+      git_target_required || return 1
+      branch="$(cd "$target_path" && "$GIT_BIN" branch --show-current)" || {
+        fail COMMAND_EXEC_FAILED
+        return 1
+      }
+      [ -n "$branch" ] || {
+        fail GITHUB_CURRENT_BRANCH_MISSING
+        return 1
+      }
+      output="$(run_timed "${timeout_s}s" "$GH_BIN" run list --repo "$target_repo" --branch "$branch" --limit 8 --json databaseId,name,status,conclusion,headSha,event,url 2>/dev/null)" || {
         fail COMMAND_EXEC_FAILED
         return 1
       }
@@ -150,6 +270,7 @@ process_file(){
   command_id=""
   target_id=""
   target_path=""
+  target_repo=""
   err_code=""
   result_json="{}"
 
