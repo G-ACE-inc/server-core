@@ -31,6 +31,12 @@ README.md
   - Workspace Agent runtime rules / MCP client config
 - `.github/`
   - GitHub Actions / Dependabot / Issue/PR support
+- `Dockerfile.project-control`
+  - bounded GitHub Project Control receiver image
+- `Dockerfile.project-control.dockerignore`
+  - Project Control image build context allowlist
+- `docker-compose.project-control.yml`
+  - Project Control receiver Docker Compose runtime Source; no host port publication
 - `docs/`
   - Design / Delta / Router / Registry / Project standard / Operations contract
 - `operations/`
@@ -97,6 +103,7 @@ Current known manifests:
 - `huggingface.json`
 - `workspace-mcp.json`
 - `storage-lifecycle.json`
+- `github-project-control.json` — Personal GitHub Project #1 bounded mutation/readback contract
 
 `storage-lifecycle.json` current safety boundary:
 - `mode=audit_only`
@@ -122,6 +129,16 @@ Secret / Token値をoperationsへ保存しない。
   - Storage / disk / Docker read-only audit
   - mutation機能なし
   - `--self-test`でSafety contract検証
+- `github_project_control.py`
+  - Personal Project #1の`Wave / Gate / Change Unit / Mutation Owner`だけを固定Contractで更新しexact readbackする
+- `github_project_request_from_comment.py`
+  - owner-only `[GACE-PROJECT]` commentをfixed requestへ変換する
+- `github_project_internal_send.py`
+  - Generic Internal Event API `/internal/events`へ固定destinationで送信する
+- `github_project_internal_receiver.py`
+  - 固定destination + HMAC署名を検証しProject-Control-only requestだけを実行する
+- `github_project_*_test.py`
+  - request / transport / runtime config回帰
 
 ## .cursor/
 
@@ -152,6 +169,8 @@ server-coreが持つのは:
 - Workspace common use rule。
 
 Discovery authority: `docs/WORKSPACE_REGISTRY.md`。
+
+GitHub Project #1 bounded control contract -> `operations/github-project-control.json` + Project Control scripts / workflow。
 
 ## Project Integration Boundary
 
