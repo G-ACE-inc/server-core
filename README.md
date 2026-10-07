@@ -105,6 +105,7 @@ Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Production�
 - `docs/KB_REUSE_DESIGN.md` — F: 1TB reusable-development KB設計
 - `docs/STORAGE_LIFECYCLE.md` — Log / Cache / Cleanup / Backup / Recovery設計
 - `docs/CLOUDFLARE_OPERATIONS.md` — Cloudflare固有運用
+- `docs/SHARED_SERVER_EXECUTOR.md` — CHAT / DebugAI / server AI共通のbounded VPS executor契約
 
 ### Support
 - `docs/GLOSSARY.md` — 正式用語
@@ -130,6 +131,7 @@ Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Production�
 | 再利用KB | `docs/KB_REUSE_DESIGN.md` |
 | Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
 | Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
+| CHAT / DebugAI / server AI からのbounded VPS操作 | `docs/SHARED_SERVER_EXECUTOR.md` + `operations/server-command.json` |
 | 用語 | `docs/GLOSSARY.md` |
 | GitHub Project Rule Plane / AI profile routing | `docs/GITHUB_PROJECT_RULE_PLANE.md` + `operations/github-project-rule-plane.json` |
 | server-core構造 | `docs/STRUCTURE.md` |
@@ -199,6 +201,7 @@ Capability本体は所有Project/runtimeへ残す。
 - Workspace-global MCP;
 - MCP;
 - DebugAI;
+- Shared Server Executor;
 - GitHub tools;
 - reusable KB;
 - Cloudflare / Hugging Face;
@@ -237,6 +240,7 @@ Runtime値はRegistryや古い報告から推測せず、必要時に実readback
 Source/CIで確認されているものとLive Runtimeを分離する。
 
 - server-core command-center routing / documentation contracts: SOURCE / CI verified
+- Shared Server Executor (bounded request/queue/Host runner/systemd source): SOURCE branch in progress; live reflection NOT_RUN
 - read-only Storage Audit source: SOURCE / CI verified
 - DebugAI MCP source: DebugAI mainへmerge済み、source-side CI verified; Workspace registration / live runtimeは別状態
 - F: reusable KB bridge/runtime: NOT_IMPLEMENTED
