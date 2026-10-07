@@ -44,6 +44,8 @@ README.md
   - Design / Delta / Router / Registry / Project standard / Operations contract
 - `operations/`
   - Secret値を持たないProvider / shared contract / audit-policy manifests
+- `ops/systemd-user/`
+  - shared bounded Server Commandのpath watcher / oneshot Host runner unit source
 - `scripts/`
   - 共通自動化・resolver・read-only audit
 - `archive/`
@@ -90,6 +92,8 @@ README.md
   - Log / Cache / Cleanup / Backup / Recovery / Disk pressure Design Baseline
 - `CLOUDFLARE_OPERATIONS.md`
   - Cloudflare固有運用契約
+- `SHARED_SERVER_EXECUTOR.md`
+  - DebugAI Liveで実証したbounded Server Command / Host runnerをserver-core共通executorへ抽出した契約
 
 ### Task-specific support
 - `GITHUB_FREE_MAX.md`
@@ -110,6 +114,7 @@ Current known manifests:
 - `storage-lifecycle.json`
 - `github-project-control.json` — Personal GitHub Project #1 bounded mutation/readback contract
 - `github-project-rule-plane.json` — Project #1 / Issue #15/#16/#17を固定するdual rule-plane machine contract
+- `server-command.json` — Shared bounded Server Commandのschema / allowlist / target / queue / safety contract
 
 `storage-lifecycle.json` current safety boundary:
 - `mode=audit_only`
@@ -145,6 +150,12 @@ Secret / Token値をoperationsへ保存しない。
   - 固定destination + HMAC署名を検証しProject-Control-only requestだけを実行する
 - `github_project_*_test.py`
   - request / transport / runtime config回帰
+- `server_command_request.py`
+  - Shared Server Commandのbounded request/status queue client
+- `host-server-command-runner.sh`
+  - systemd path watcherから起動するsingle-writer Host runner。requester supplied shell/path/argsを受けない
+- `server_command_executor_test.py`
+  - queue -> Host runner -> PASS/FAIL status / exact readbackの回帰Test
 
 ## .cursor/
 
@@ -177,6 +188,8 @@ server-coreが持つのは:
 Discovery authority: `docs/WORKSPACE_REGISTRY.md`。
 
 GitHub Project #1 bounded control contract -> `operations/github-project-control.json` + Project Control scripts / workflow。
+
+Shared Server Executor contract -> `operations/server-command.json` + `docs/SHARED_SERVER_EXECUTOR.md` + queue client / Host runner / systemd watcher。
 
 ## Project Integration Boundary
 
