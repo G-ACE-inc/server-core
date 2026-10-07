@@ -1,0 +1,29 @@
+name: github-project-control-verify
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Project Control tests
+        run: |
+          python3 -m py_compile scripts/github_project_control.py scripts/github_project_control_test.py scripts/github_project_request_from_comment.py scripts/github_project_request_from_comment_test.py scripts/github_project_internal_send.py scripts/github_project_internal_receiver.py scripts/github_project_internal_transport_test.py scripts/github_project_runtime_config_test.py
+          python3 scripts/github_project_control_test.py
+          python3 scripts/github_project_request_from_comment_test.py
+          python3 scripts/github_project_internal_transport_test.py
+          python3 scripts/github_project_runtime_config_test.py
+      - name: Project Control container source
+        run: |
+          docker build -f Dockerfile.project-control -t gace-server-core-project-control:ci .
+          GACE_SERVER_UID=10001 GACE_SERVER_GID=10001 GACE_PROJECT_CONTROL_GH_CONFIG_DIR=/tmp/gace-gh-config GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE=/tmp/gace-project-control-delivery-secret docker compose -f docker-compose.project-control.yml config --quiet

@@ -242,3 +242,111 @@ DebugAI MCP and Deterministic Japanese Parser MCP are not globally registered ye
 
 ### Compatibility
 Project-specific MCPs remain supported. Cursor project-level configuration may override a global server name; such overrides are prohibited by Workspace policy unless explicitly approved.
+
+## 2026-10-06 — Add bounded GitHub Project #1 control operation
+
+### Baseline design
+server-core already owns Workspace GitHub operation governance, shared-capability discovery, mutation boundaries and Server command safety. The Current CHAT operating model moved development control toward GitHub Project #1, but the CHAT GitHub connector could not mutate Projects v2 fields. The only verified Project write path remained the VPS `gh project` credential, which forced Master to act as a manual command runner.
+
+### Actual change
+server-core now contains a narrowly scoped GitHub Project control operation:
+- `operations/github-project-control.json` fixes the target to Personal Project #1 `G-ACE Development Platform`, owner `seigo-gace`, node ID `PVT_kwHODOQFoM4BEJII`;
+- only Issue/PR items under `seigo-gace` or `G-ACE-inc` are accepted;
+- only `Wave / Gate / Change Unit / Mutation Owner` may be changed;
+- the helper accepts a structured `gace.github-project-control/v1` request, never an arbitrary shell command;
+- the existing VPS `gh` authentication is the intended credential source; no GitHub Actions PAT is introduced by this Source change;
+- the initial implementation feature-probed the name-based `gh project item-edit --owner / --url / --field / --value` surface, but Fresh VPS evidence proved the installed `gh 2.52.0` does not support that contract; the Current compatibility correction removes that mutation dependency, resolves the exact Project field id/type through `gh api graphql`, uses `updateProjectV2ItemFieldValue` for bounded text/single-select updates, and fails closed on missing/ambiguous/unsupported field metadata;
+- same-target execution uses a non-blocking lock;
+- the current value is read before mutation for idempotency and the exact item/field is read back through GraphQL after mutation;
+- `.github/workflows/github-project-control-request.yml` reuses the existing owner-only GitHub control-plane pattern: a `[GACE-PROJECT]` comment from `seigo-gace` is converted into a deterministic fixed-schema request, validated through the same Project contract, stored as one-day evidence, and commented back as `PROJECT_CONTROL_EXECUTION=NOT_RUN`;
+- comment input cannot supply a request id, actor, operation, command, Project identity, arbitrary URL endpoint, or credential; unknown keys and secret-like values fail closed;
+- Source contract tests use a mock `gh` binary and do not touch the live Project.
+
+This does **not** introduce a generic Workspace executor and does not move DebugAI product logic into server-core.
+
+### Reason / root cause
+GitHub Project #1 and its control fields had already been created and verified, but the CHAT connector had no Projects v2 mutation surface. Current Project records therefore still showed final item-edit / `NOT_VERIFIED_FROM_CHAT` gaps, and Master remained in the execution loop. Workspace search found no existing shared GitHub→VPS **executor trigger** suitable for this Project operation. After Notion reconciliation, the existing TGserver ZERO Search Bridge is recognized as an owner-only `GitHub Issue -> GitHub Actions -> Cloudflare Access -> Server API` transport pattern. That path is now a mandatory reuse candidate, but it does not currently prove invocation of the server-core Project runner.
+
+### Evidence
+- server-core Issue #10 is the Task Issue for this Change Unit;
+- GitHub CLI requires `project` scope for Project operations;
+- prior Project #1 VPS read/write evidence already proved that the existing VPS credential can perform Project operations;
+- current Source adds the bounded contract, one-shot helper and CI regression coverage.
+- Fresh compatibility evidence: actual VPS `gh 2.52.0` rejects the original name-based item-edit contract, while GitHub's GraphQL `updateProjectV2ItemFieldValue` contract accepts explicit project/item/field ids and a typed field value; the helper already uses `gh api graphql` for exact readback, so the correction stays on the existing credential/tool path.
+
+### Affected scope
+- `operations/github-project-control.json`
+- `scripts/github_project_control.py`
+- `scripts/github_project_control_test.py`
+- `scripts/github_project_request_from_comment.py`
+- `scripts/github_project_request_from_comment_test.py`
+- `.github/workflows/github-project-control-request.yml`
+- `.github/workflows/server-core-behavior.yml`
+- `.github/workflows/server-core-guard.yml`
+- `docs/WORKSPACE_REGISTRY.md`
+- `docs/STRUCTURE.md`
+- this Design Delta
+
+### Verification state
+`SOURCE_IMPLEMENTED` on Issue #10 branch. Owner-only CHAT/GitHub comment→bounded request validation is implemented at Source/Test level, but `issue_comment` runtime activation requires the workflow to exist on the default branch. Automatic GitHub→VPS execution, current VPS credential readback, live Project mutation and full CHAT-originated E2E remain separate evidence and are **NOT_VERIFIED** until completed.
+
+### Compatibility / approval boundary
+No main merge, Production activation, service restart/recreate, Secret/Provider mutation or live Project mutation is implied by this Source change. The comparison copy of Notion「Notion活用の大原則」is not modified by this Change Unit.
+
+
+## 2026-10-07 — Reuse Generic Internal Event API for Project Control transport
+
+### Baseline design
+The initial Issue #10 transport investigation considered external/provider webhook ingress and other GitHub-to-Server patterns. Fresh log-commonization evidence proved the Workspace already has a product-neutral trusted internal producer API in `seigo-gace/webhook-gateway`: `POST /internal/events`. G-ACE KB already uses that API to route bounded internal events without giving the producer TGserver URL or Cloudflare credentials.
+
+### Actual change
+Project Control transport now adopts that existing internal contract at Source level:
+- external/provider `/ingress/:slug` is not the Project Control transport;
+- `scripts/github_project_internal_send.py` submits only validated `gace.github-project-control/v1` data to the fixed `server-core-project-control` destination through `/internal/events`;
+- `scripts/github_project_internal_receiver.py` exposes only `/healthz` and `/internal/github-project-control`;
+- delivery requires the fixed destination header plus the existing Webhook Gateway Standard Webhooks-style HMAC signature contract with timestamp tolerance;
+- the receiver reuses `github_project_control.py` directly and does not accept arbitrary commands or target URLs;
+- operational Project/GitHub failures return retryable 5xx status while malformed/auth-invalid delivery fails before mutation;
+- `operations/github-project-control.json` records interface names and expected environment-variable names only, never credential values.
+
+### Reuse evidence
+- Webhook Gateway commit `b20364e5cc7fe62885833a07a5aef2d1c69cb2fa` added the Generic Internal Event API.
+- Webhook Gateway PR #18 / main `5361ddde2342793716f0538e7d4c7986595be1be` preserves that API and registers the product-neutral TGserver ZERO bulk destination.
+- G-ACE KB merge `da08bac504e8a66c7bb1e10a7b3d40d3f76c45c3` replaced direct TGserver transport with the Generic Internal Event API.
+- Fresh TGserver ZERO Reader run `37604153196` proved the Reader path healthy but returned no P014 hits and `PRODUCER_VERIFIED=false`; therefore runtime delivery is not inferred from Source reuse.
+
+### Remaining boundary
+This Source change does not register the `server-core-project-control` destination in webhook-gateway, create/rotate a Secret, deploy a receiver, expose a Production endpoint, merge PR #11, or execute a live Project mutation. Those remain separate Current/approval/runtime gates. Existing internal API token availability for the server-core producer and receiver delivery-secret availability are `NOT_VERIFIED` until runtime readback.
+
+### Verification state
+Internal producer/receiver Source and focused tests are implemented on the Issue #10 branch. Exact-head CI must pass before this state is promoted. Runtime remains `NOT_VERIFIED`.
+
+
+### 2026-10-07 result-evidence continuation
+The Generic Internal Event API returns a durable asynchronous 202 receipt, which is not equivalent to Project mutation completion. The bounded receiver therefore publishes final execution evidence to the fixed canonical sink `G-ACE-inc/server-core#10` only after `github_project_control.py` returns PASS with exact field readback. Gateway delivery is acknowledged only after that GitHub result comment succeeds. A deterministic request-id marker suppresses duplicate result comments when Gateway retries an idempotent Project operation.
+
+The owner-comment workflow now submits validated requests through `/internal/events` and reports `PENDING_SERVER_RESULT`; it no longer reports validation-only `NOT_RUN` once dispatch Source is active. Workflow failure after durable dispatch is explicitly treated as `PENDING_OR_UNKNOWN`, not as proof that no mutation occurred.
+
+This remains Source/Test state only. GitHub Actions Gateway URL/token availability, Gateway destination deployment, receiver runtime, receiver delivery Secret, VPS `gh` issue-comment permission and live Project E2E remain runtime evidence gates.
+
+
+## 2026-10-07 — Package Project Control receiver as Docker Compose runtime Source
+
+### Baseline
+server-core production-resident services must use Docker Compose. The internal Project Control receiver existed as tested Python Source but had no canonical container/runtime definition.
+
+### Actual change
+- `Dockerfile.project-control` packages only the Project Control contract, runner and bounded receiver with Python + GitHub CLI.
+- image default is non-root; Compose overrides the numeric UID/GID from required runtime values so a read-only mount of the existing VPS `gh` config can preserve host file permissions without copying the credential.
+- `GH_CONFIG_DIR=/run/gh` points GitHub CLI at that read-only credential mount.
+- the delivery signing Secret is injected only as a read-only runtime file; no value is stored in Source.
+- the receiver publishes no host port; only container port 8788 is exposed.
+- the service joins its own default network for outbound GitHub API access and the external shared `gace-internal` network for Webhook Gateway worker delivery.
+- `Dockerfile.project-control.dockerignore` restricts build context to the exact runner/receiver/contract inputs.
+- CI builds the image and validates Compose interpolation with fixture paths; it does not create the external network or deploy the service.
+
+### Runtime boundary
+The external `gace-internal` Docker network, numeric runtime UID/GID, host `gh` config path, delivery Secret file, receiver deployment and health remain runtime facts and are NOT_VERIFIED until an approved server operation performs exact readback. No host path is hard-coded in Source.
+
+### Approval boundary
+This Source does not create the Docker network, register/inject any Secret, start/recreate a container, merge a PR or perform a live Project mutation.

@@ -1,0 +1,6 @@
+**
+!operations/
+!operations/github-project-control.json
+!scripts/
+!scripts/github_project_control.py
+!scripts/github_project_internal_receiver.py
