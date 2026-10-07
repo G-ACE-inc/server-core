@@ -1,0 +1,19 @@
+FROM python:3.13-alpine
+
+RUN apk add --no-cache ca-certificates github-cli
+
+WORKDIR /app
+COPY operations/github-project-control.json /app/operations/github-project-control.json
+COPY scripts/github_project_control.py /app/scripts/github_project_control.py
+COPY scripts/github_project_internal_receiver.py /app/scripts/github_project_internal_receiver.py
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    GH_PROMPT_DISABLED=1 \
+    GH_CONFIG_DIR=/run/gh \
+    HOME=/tmp
+
+USER 65532:65532
+EXPOSE 8788
+ENTRYPOINT ["python3", "/app/scripts/github_project_internal_receiver.py"]
+CMD ["--host", "0.0.0.0", "--port", "8788"]
