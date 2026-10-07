@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "name": "gace-github-project-debugai-routing",
+  "project": {
+    "owner": "seigo-gace",
+    "number": 1,
+    "node_id": "PVT_kwHODOQFoM4BEJII",
+    "title": "G-ACE Development Platform"
+  },
+  "server_core_role": "control-plane-routing-only",
+  "execution_backend": {
+    "mcp_server": "debugai",
+    "implementation_owner": "seigo-gace/debug-ai",
+    "entry": "/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs",
+    "tools": {
+      "server_read_request": "debugai_server_read",
+      "server_read_status": "debugai_server_status",
+      "gitops_request": "debugai_gitops_request",
+      "gitops_status": "debugai_gitops_status"
+    }
+  },
+  "operation_classes": {
+    "read_only_server": {
+      "request_tool": "debugai_server_read",
+      "status_tool": "debugai_server_status",
+      "master_approval_required": false
+    },
+    "guarded_gitops": {
+      "request_tool": "debugai_gitops_request",
+      "status_tool": "debugai_gitops_status",
+      "master_approval_required_for_protected_mutation": true
+    }
+  },
+  "boundaries": {
+    "debugai_implementation_copied_into_server_core": false,
+    "debugai_repository_mutation_required_for_registration": false,
+    "arbitrary_shell_bridge": false,
+    "github_project_is_current_control_surface": true,
+    "server_core_owns_routing_contract": true,
+    "debugai_owns_mcp_execution_body": true
+  }
+}
