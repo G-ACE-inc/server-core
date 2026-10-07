@@ -14,6 +14,9 @@
     "huggingface": {
       "url": "https://huggingface.co/mcp",
       "authentication": "oauth_or_client_generated_config"
+    },
+    "debugai": {
+      "command": "/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs"
     }
   },
   "installation": {
