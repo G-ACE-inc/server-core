@@ -1,165 +1,33 @@
 ---
-description: G-ACE Workspace共通のAI実行入口・Context Routing・完了境界。
+description: G-ACE SERVER_AI minimal bootstrap. Current rules live in GitHub Project rule plane.
 alwaysApply: true
 ---
 
-# G-ACE Workspace Runtime
+# G-ACE SERVER_AI BOOTSTRAP
 
-## Authority Entry
+PROFILE=SERVER_AI
 
-Workspace内で作業するAI / Agent / Composerは、Project固有作業へ入る前にserver-coreを共通入口として扱う。
+1. Read `/home/admin1/server-core/README.md`.
+2. Read `/home/admin1/server-core/docs/LOAD_SCOPE.md`.
+3. Read `/home/admin1/server-core/operations/github-project-rule-plane.json`.
+4. Resolve canonical SERVER_AI rule item #16 and GitHub Project #1 Current when GitHub access is available.
+5. Load only the target repository Current and the minimum authority/source/test required for the task.
 
-開始順:
+Do not default-load GPT_CHAT rule item #17.
+Do not load all server-core documents.
+Do not load unrelated repositories or historical Notion material by default.
 
-```text
-1. /home/admin1/server-core/README.md
-2. /home/admin1/server-core/docs/LOAD_SCOPE.md
-3. 今回のTaskに必要なserver-core正本だけ
-4. 対象Project README
-5. 対象Project内の必要なDesign / Project Tree / Design Delta / System Document / Source / Testだけ
-```
+Execution invariants:
+- Fresh Current before mutation.
+- Reuse existing verified evidence/code/tool before new implementation.
+- Prefer deterministic checks and AVAILABLE_VERIFIED tools before paid AI reasoning.
+- Keep FACT / INFERENCE / UNKNOWN separate.
+- Keep SOURCE / TEST / CI / MERGE / DEPLOY / RUNTIME separate.
+- Never expose Secret/Token values.
+- Production-resident services use Docker / Docker Compose.
+- Respect Master approval boundaries.
+- Commit/PR is the GitHub work report when files change.
 
-server-coreの全正本を一括読込しない。
+If Project/rule Current cannot be read, do not guess. Use the local server-core bootstrap only for safe routing and mark `RULE_PLANE_CURRENT=NOT_VERIFIED`.
 
-同一Task範囲で一度確認済みの内容は、変更または情報不足が無ければ毎ターン再読込しない。
-
-## Context Loading
-
-対象ProjectではREADMEを入口とし、通常は対象Source・Input/Output・直接依存・関連Testから開始する。
-
-必要な場合だけ次の順で拡張する。
-
-```text
-Target Boundary
-  -> Adjacent Boundary
-  -> Reuse Unit / Module / Component
-  -> System / Repository
-```
-
-`.env` / secrets / node_modules / dist / build / `.next` / archive / logs / dumps / cache / backupsは通常Contextへ入れない。Task対象になった場合だけ必要範囲を読む。
-
-## Development Rules
-
-- 目的と期待結果を最初に固定する。
-- 新規Code生成前に既存Design / Code / Module / Type / Schema / Test / Template / 登録済み共有資産の再利用可否を確認する。
-- 再利用は `そのまま利用 -> 設定・型調整 -> 薄いAdapter -> 共通部分抽出 -> 新規実装` の順で判断する。
-- 公開契約、Input、Output、依存方向、設定所有者、状態所有者を必要範囲で明確にする。
-- DesignをCurrent実装へ合わせて履歴が消える形で上書きしない。
-- 実装がDesignと意図的に異なる場合はDesign Deltaへ差分、理由、Evidence、適用Commitを残す。
-- 実装済み / 完成 / 稼働はREADMEだけで判断せず、Source / Test / Runtime Evidenceで確認する。
-
-## Pre-execution Handoff
-
-server-core routing is not complete merely because the documents were read. Before changing Project Source, the AI must have a resolved handoff boundary:
-
-```text
-PURPOSE
-EXPECTED_RESULT
-TARGET_PROJECT
-TARGET_RESPONSIBILITY
-TARGET_REPOSITORY
-AUTHORITY_REQUIRED
-REUSE_CANDIDATES
-VERIFY_PATH
-APPROVAL_BOUNDARY
-CONTEXT_SCOPE
-```
-
-The AI may proceed to Project execution when these are known or explicitly marked `UNKNOWN / NOT_VERIFIED` where the uncertainty is itself part of the investigation. Unknowns must never be silently filled by assumption.
-
-The handoff must identify:
-- the owning Project and Repository;
-- the minimum server-core Authority already consumed;
-- the Project README / required Project Authority to load next;
-- reusable existing assets that must be checked before new implementation;
-- the verification path and required evidence;
-- the exact Approval Boundary that stops further execution.
-
-This is the boundary between **Command-Center routing** and **Project execution**. server-core does not perform the Project's implementation itself.
-
-## LibralCore
-
-共通開発方法論は `/home/admin1/server-core/CORE.md` を必要時に読む。
-
-論理構造:
-
-```text
-Part -> Feature -> Component -> System -> Application System
-```
-
-物理分割は分類のためではなく、再利用、交換、権限、障害範囲、状態所有、独立検証、運用上の実益がある場合に行う。
-
-## Verification
-
-次だけでPASSにしない。
-- Process起動
-- Error無し
-- HTTP 200
-- `true`
-- 空配列
-- Build成功
-- Test runner終了
-- CI green
-
-必要な範囲でInput、実行条件、期待出力、状態変化、変化してはならない状態、回帰、主要失敗条件、Runtime/Provider readbackを確認する。
-
-未確認 / 未実行 / 未検証を推測でPASSへ変えない。
-
-## Documentation Gate
-
-作業終了前に判定する。
-
-```text
-README_UPDATE_REQUIRED=YES/NO
-PROJECT_TREE_UPDATE_REQUIRED=YES/NO
-DESIGN_DELTA_REQUIRED=YES/NO
-SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
-```
-
-Requiredなのに未更新ならDocumentation Completeとしない。
-
-System / Feature bundle / reusable ModuleがREADMEだけでは説明なしに引継げない場合は、既存Documentを更新するか技術Documentを作成しREADMEから到達可能にする。
-
-## GitHub Work History
-
-ファイル変更を伴う完成作業では、管理者が明示禁止した場合を除き、対象Repositoryの運用に従ってcommit / pushし、可能ならremote readbackまで確認する。
-
-Commitは実作業報告として、必要に応じて目的、主要変更、影響範囲、検証、Document更新、残作業を追える内容にする。
-
-Commit / Push / Remote Readback / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
-
-## Approval Boundary
-
-Masterの明示指示なしに次を行わない。
-- main / PR merge
-- Production deploy / 公開 / 切替
-- Force push / Branch削除 / reset --hard / rebase
-- 既存Service stop / restart / recreate
-- Cloudflare / Hugging Face等のResource作成・変更・削除
-- Secret追加・削除・rotation
-- 新規Model download
-- 新規Repository / Project / Space作成
-
-## Runtime
-
-本番常駐の標準経路はDocker / Docker Composeとする。
-
-Hostの `node` / `python` / `npm start` / `pm2` / `nohup` / `screen` / `tmux` を本番常駐経路として追加しない。
-
-ServerはRuntime / Processing環境であり、GitHub Source履歴やProject Designの代替正本にしない。
-
-## Project Integration
-
-TGserver / webhook gateway / Libral Vault / Project-level MCP・ToolをProjectへ導入・変更するときは、`/home/admin1/server-core/docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で読む。TGserver / webhook gatewayはProject-owned Integration、Libral VaultはShared Capability + Project usage contractとして扱う。
-
-## Shared Workspace Capabilities
-
-共有MCP / Tool / Secret / Token / KB / DebugAI等はserver-coreを発見入口とし、実体は所有Project / Runtimeへ分離する。TGserver / webhook gatewayはShared CapabilityではなくProject Integration Ruleで扱う。
-
-Secret値をChat / Git / Log / Documentへ出さない。
-
-未登録・未実装・未検証のCapabilityを利用可能と扱わない。
-
-## Final Rule
-
-Masterの現在の明示指示を最優先とする。手抜き、中抜き、必要工程を落とす簡略化、捏造、推測補完、未実行の実行済み扱い、未検証のPASS扱いは禁止する。
+server-core is the Workspace control room. Project implementation remains in the owning repository.
