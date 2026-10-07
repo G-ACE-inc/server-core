@@ -71,6 +71,13 @@ jobs:
           test -f scripts/github_project_internal_receiver.py
           test -f scripts/github_project_internal_transport_test.py
           test -f scripts/github_project_runtime_config_test.py
+          test -f docs/SHARED_SERVER_EXECUTOR.md
+          test -f operations/server-command.json
+          test -f scripts/server_command_request.py
+          test -f scripts/host-server-command-runner.sh
+          test -f scripts/server_command_executor_test.py
+          test -f ops/systemd-user/gace-server-command.path
+          test -f ops/systemd-user/gace-server-command.service
 
       - name: No redundant retired authorities
         run: |
@@ -105,6 +112,24 @@ jobs:
           grep -q 'Command Center' docs/STRUCTURE.md
           grep -q 'GITHUB PROJECT DUAL RULE PLANE' docs/GITHUB_PROJECT_RULE_PLANE.md
           python3 scripts/github_project_rule_plane_test.py
+          grep -q 'SHARED SERVER EXECUTOR' docs/SHARED_SERVER_EXECUTOR.md
+          python3 scripts/server_command_executor_test.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('operations/server-command.json').read_text())
+          assert p['name']=='gace-shared-server-command'
+          assert set(p['commands'])=={'workspace.pwd','workspace.git_head'}
+          assert set(p['targets'])=={'server-core','debug-ai'}
+          b=p['boundaries']
+          assert b['arbitrary_shell'] is False
+          assert b['arbitrary_path'] is False
+          assert b['arbitrary_environment'] is False
+          assert b['requester_supplied_command_arguments'] is False
+          assert b['persistent_mutation'] is False
+          assert b['single_writer_host_runner'] is True
+          print('SHARED_SERVER_EXECUTOR_CONTRACT=PASS')
+          PY
 
       - name: Provider ownership boundary
         run: |
