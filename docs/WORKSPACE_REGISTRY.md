@@ -120,11 +120,13 @@ MCP implementation = VERIFIED
 MCP stdio / protocol = VERIFIED
 MCP tool surface = 13 tools (9 original + 4 bounded control tools)
 prior Codex usage = CONFIRMED_BY_MASTER
-reflected Server head = 1c6da080d340ab6a47d447c78a21c8738f2e748a
-packaged source/image parity = PASS (260 files)
+reflected Server head = 4190f8701d989648e78c60400a9147cc6d4794ad
+packaged source/image parity = PASS (261 files)
 Workspace configuration readback = PASS
 bounded Server Command MCP request/status/Host HEAD = PASS
-guarded deploy completion = follow-up reflection pending
+guarded deploy completion = PASS (gitops_0444c77ff07c828e1a835ee2)
+bounded control E2E = PASS (cmd_803e4df00579d8697dda3181)
+missing exact-SHA Host approval = rejected (gitops_3ede30a4f460f4d2e909a0ee)
 remote ChatGPT direct MCP connector = NOT_VERIFIED
 ```
 
@@ -149,7 +151,7 @@ does not by itself establish a remote ChatGPT connector.
 | Deploy routine | `docs/DEPLOY_RUNBOOK.md` | confirmed revision -> approved deploy -> runtime verify | DOCUMENTED; target runtime specific |
 | Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare common contract | IMPLEMENTED_CONTRACT |
 | Shared Secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 | IMPLEMENTED_CONTRACT; runtime availability must be checked |
-| DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent | source/CLI/HTTP/MCP implemented; prior Codex use confirmed; current exact-head live reverify pending |
+| DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent | source/CLI/HTTP/MCP implemented; 13 tools and shared bounded control E2E live PASS on explicitly reflected 4190f87 |
 | Storage lifecycle audit | `scripts/storage_lifecycle_audit.py`, `operations/storage-lifecycle.json` | disk/log/backup/Docker read-only audit | SOURCE_VERIFIED / SERVER_RUNTIME_NOT_VERIFIED |
 | Storage cleanup mutation | future approved implementation | safe deletion/rotation | NOT_IMPLEMENTED |
 
