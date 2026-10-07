@@ -25,12 +25,15 @@ README.md
   - reuse / Module / ownership / public contract基準
 - `SERVER_CORE_PROTOCOL.md`
   - 共通運用・禁止・Approval Boundary
+- `AGENTS.md`
+  - Codex等SERVER_AI向け最小bootstrap。詳細Ruleを埋め込まずRule Plane #16へroutingする
 - `.aiignore` / `.cursorignore`
   - normal context exclusion hints
 - `.cursor/`
   - Workspace Agent runtime rules / MCP client config
 - `.github/`
   - GitHub Actions / Dependabot / Issue/PR support
+  - `copilot-instructions.md` はGitHub Copilot向けSERVER_AI最小bootstrap
 - `Dockerfile.project-control`
   - bounded GitHub Project Control receiver image
 - `Dockerfile.project-control.dockerignore`
@@ -54,7 +57,9 @@ README.md
 - `DESIGN_DELTA.md`
   - Baselineとの差分・理由・Evidence・適用Commit
 - `LOAD_SCOPE.md`
-  - Task routing / progressive context loading / dispatch
+  - Task routing / progressive context loading / executor profile dispatch
+- `GITHUB_PROJECT_RULE_PLANE.md`
+  - GitHub Project #1でSERVER_AI / GPT_CHATのRule Planeを分離管理するAuthority / loading contract
 - `G_ACE_WORKSPACE.md`
   - Workspace正規運用契約
 - `STRUCTURE.md`
@@ -104,6 +109,7 @@ Current known manifests:
 - `workspace-mcp.json`
 - `storage-lifecycle.json`
 - `github-project-control.json` — Personal GitHub Project #1 bounded mutation/readback contract
+- `github-project-rule-plane.json` — Project #1 / Issue #15/#16/#17を固定するdual rule-plane machine contract
 
 `storage-lifecycle.json` current safety boundary:
 - `mode=audit_only`
@@ -143,8 +149,8 @@ Secret / Token値をoperationsへ保存しない。
 ## .cursor/
 
 - `.cursor/rules/00_agent_runtime.mdc`
-  - Workspace Agent向けlightweight execution kernel
-  - server-core README -> LOAD_SCOPE -> target Projectを強制
+  - Cursor SERVER_AI向け最小bootstrap
+  - server-core -> rule-plane contract -> #16 / Project Current -> targetをroutingし、GPT_CHAT #17をdefault loadしない
 - `.cursor/rules/01_japanese_thinking.mdc`
   - language-related rule
 - `.cursor/rules/cloudflare-operations.mdc`
