@@ -83,7 +83,12 @@ jobs:
           assert t['receiver_endpoint'] == '/internal/github-project-control'
           assert t['payload_mode'] == 'json'
           assert t['gateway_destination_registration_required'] is True
+          assert t['result_sink'] == {'repository':'G-ACE-inc/server-core','issue_number':10,'dedupe_window_comments':100}
           assert t['runtime_verified'] is False
+          workflow=Path('.github/workflows/github-project-control-request.yml').read_text()
+          assert 'scripts/github_project_internal_send.py' in workflow
+          assert 'PENDING_SERVER_RESULT' in workflow
+          assert 'PROJECT_CONTROL_EXECUTION=NOT_RUN' not in workflow
           print('GITHUB_PROJECT_CONTROL_CONTRACT=PASS')
           PY
 

@@ -50,6 +50,28 @@ def validate_contract(contract):
     fields = contract.get("allowed_fields")
     if not isinstance(fields, dict) or set(fields) != {"Wave", "Gate", "Change Unit", "Mutation Owner"}:
         fail("CONTRACT_FIELDS_INVALID")
+    transport = contract.get("internal_event_transport")
+    if not isinstance(transport, dict):
+        fail("CONTRACT_INTERNAL_TRANSPORT_INVALID")
+    expected_transport = {
+        "producer_endpoint": "/internal/events",
+        "source_id": "server-core-github",
+        "event_type": "gace.github-project-control.requested",
+        "destination_id": "server-core-project-control",
+        "payload_mode": "json",
+        "receiver_endpoint": "/internal/github-project-control",
+        "delivery_auth": "standard-webhooks-v1-hmac-sha256",
+    }
+    for key, expected in expected_transport.items():
+        if transport.get(key) != expected:
+            fail("CONTRACT_INTERNAL_TRANSPORT_INVALID")
+    sink = transport.get("result_sink")
+    if sink != {
+        "repository": "G-ACE-inc/server-core",
+        "issue_number": 10,
+        "dedupe_window_comments": 100,
+    }:
+        fail("CONTRACT_RESULT_SINK_INVALID")
     return contract
 
 

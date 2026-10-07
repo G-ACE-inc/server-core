@@ -29,7 +29,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/github_project_request_from_comment.py             "$GITHUB_EVENT_PATH"             github-project-control-request.json             github-project-control-meta.json
+          python3 scripts/github_project_request_from_comment.py \
+            "$GITHUB_EVENT_PATH" \
+            github-project-control-request.json \
+            github-project-control-meta.json
           request_id="$(python3 -c "import json; print(json.load(open('github-project-control-request.json'))['id'])")"
           echo "request_id=$request_id" >> "$GITHUB_OUTPUT"
 
@@ -37,8 +40,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/github_project_control.py             --request github-project-control-request.json             --validate-only
-          echo 'PROJECT_CONTROL_EXECUTION=NOT_RUN'
+          python3 scripts/github_project_control.py \
+            --request github-project-control-request.json \
+            --validate-only
+
+      - name: Submit through Generic Internal Event API
+        id: dispatch
+        shell: bash
+        env:
+          GACE_EVENT_GATEWAY_URL: ${{ vars.GACE_EVENT_GATEWAY_URL }}
+          GACE_EVENT_GATEWAY_TOKEN: ${{ secrets.GACE_EVENT_GATEWAY_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 scripts/github_project_internal_send.py \
+            --request github-project-control-request.json \
+            | tee github-project-control-dispatch.txt
 
       - name: Upload bounded request evidence
         uses: actions/upload-artifact@v4
@@ -47,10 +63,11 @@ jobs:
           path: |
             github-project-control-request.json
             github-project-control-meta.json
+            github-project-control-dispatch.txt
           if-no-files-found: error
           retention-days: 1
 
-      - name: Comment validated request evidence
+      - name: Comment durable dispatch evidence
         uses: actions/github-script@v7
         env:
           REQUEST_ID: ${{ steps.build.outputs.request_id }}
@@ -58,15 +75,17 @@ jobs:
           script: |
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const body = [
-              'G-ACE Project control request validated.',
+              'G-ACE Project control request accepted by the Generic Internal Event API.',
               '',
               `- REQUEST_ID: ${process.env.REQUEST_ID}`,
               '- REQUEST_VALIDATION: PASS',
-              '- PROJECT_CONTROL_EXECUTION: NOT_RUN',
+              '- INTERNAL_EVENT_DURABLE_ACCEPT: PASS',
+              '- PROJECT_CONTROL_EXECUTION: PENDING_SERVER_RESULT',
+              '- RESULT_SINK: G-ACE-inc/server-core Issue #10',
               `- artifact: github-project-control-request-${context.runId}`,
               `- workflow run: ${runUrl}`,
               '',
-              'Validation does not mean the Project field was mutated. Server-side execution remains a separate gate.',
+              'The 202 durable receipt is not Project mutation proof. Final PASS is posted by the bounded server receiver only after exact Project field readback.',
             ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -75,15 +94,31 @@ jobs:
               body,
             });
 
-      - name: Comment validation failure
+      - name: Comment failure / partial state
         if: failure()
         uses: actions/github-script@v7
+        env:
+          DISPATCH_OUTCOME: ${{ steps.dispatch.outcome }}
+          REQUEST_ID: ${{ steps.build.outputs.request_id }}
         with:
           script: |
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const dispatched = process.env.DISPATCH_OUTCOME === 'success';
+            const body = [
+              'G-ACE Project control workflow did not reach a confirmed final result.',
+              '',
+              `- REQUEST_ID: ${process.env.REQUEST_ID || 'unknown'}`,
+              `- INTERNAL_EVENT_DISPATCH: ${dispatched ? 'PASS' : 'NOT_CONFIRMED'}`,
+              `- PROJECT_CONTROL_EXECUTION: ${dispatched ? 'PENDING_OR_UNKNOWN' : 'NOT_CONFIRMED'}`,
+              `- workflow run: ${runUrl}`,
+              '',
+              dispatched
+                ? 'The event may already be durably queued. Do not retry manually until the canonical result sink is checked.'
+                : 'No completed Project mutation is claimed.',
+            ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `G-ACE Project control request validation failed. No Project mutation was executed.\n\nWorkflow run: ${runUrl}`,
+              body,
             });

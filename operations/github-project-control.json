@@ -60,6 +60,11 @@
       "GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE"
     ],
     "gateway_destination_registration_required": true,
-    "runtime_verified": false
+    "runtime_verified": false,
+    "result_sink": {
+      "repository": "G-ACE-inc/server-core",
+      "issue_number": 10,
+      "dedupe_window_comments": 100
+    }
   }
 }

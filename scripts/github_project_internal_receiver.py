@@ -14,7 +14,9 @@ from github_project_control import (
     ControlError,
     DEFAULT_CONTRACT,
     execute,
+    gh_run,
     load_json,
+    parse_json,
     validate_contract,
     validate_request,
 )
@@ -24,6 +26,15 @@ HEALTH_PATH = "/healthz"
 EXPECTED_DESTINATION = "server-core-project-control"
 MAX_BODY_BYTES = 16_384
 DEFAULT_TOLERANCE_SECONDS = 300
+RESULT_COMMENTS_QUERY = """query($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name) {
+    issue(number: $number) {
+      comments(last: 100) {
+        nodes { body }
+      }
+    }
+  }
+}"""
 
 
 class ReceiverError(RuntimeError):
@@ -117,7 +128,60 @@ def execution_status(code):
     return 500
 
 
-def make_handler(contract, *, secret=None, execute_fn=execute, now_fn=time.time):
+def publish_result_comment(request, result, contract, *, gh_fn=gh_run):
+    sink = contract["internal_event_transport"]["result_sink"]
+    repository = sink["repository"]
+    owner, name = repository.split("/", 1)
+    issue_number = int(sink["issue_number"])
+    marker = f"<!-- gace-project-control-result:{request['id']} -->"
+    raw = gh_fn(
+        [
+            "api", "graphql",
+            "-f", "query=" + RESULT_COMMENTS_QUERY,
+            "-f", "owner=" + owner,
+            "-f", "name=" + name,
+            "-F", "number=" + str(issue_number),
+        ],
+        contract,
+    )
+    data = parse_json(raw, "RESULT_SINK_READBACK_JSON_INVALID")
+    try:
+        nodes = data["data"]["repository"]["issue"]["comments"]["nodes"]
+    except Exception:
+        fail("RESULT_SINK_READBACK_INVALID", 503)
+    if not isinstance(nodes, list):
+        fail("RESULT_SINK_READBACK_INVALID", 503)
+    if any(isinstance(node, dict) and marker in str(node.get("body") or "") for node in nodes):
+        return "ALREADY_PUBLISHED"
+
+    body = "\n".join([
+        marker,
+        "G-ACE Project control execution completed.",
+        "",
+        f"- REQUEST_ID: {request['id']}",
+        "- PROJECT_CONTROL_EXECUTION: PASS",
+        f"- ITEM_URL: {request['item_url']}",
+        f"- FIELD: {request['field']}",
+        f"- VALUE: {request['value']}",
+        f"- READBACK: {result.get('READBACK')}",
+        f"- MUTATION_PERFORMED: {result.get('MUTATION_PERFORMED')}",
+        "- RUNTIME_EVIDENCE: receiver execution + exact Project field readback",
+    ])
+    gh_fn(
+        ["api", f"repos/{repository}/issues/{issue_number}/comments", "-f", "body=" + body],
+        contract,
+    )
+    return "PUBLISHED"
+
+
+def make_handler(
+    contract,
+    *,
+    secret=None,
+    execute_fn=execute,
+    publish_fn=publish_result_comment,
+    now_fn=time.time,
+):
     class Handler(BaseHTTPRequestHandler):
         server_version = "gace-project-control/1"
 
@@ -164,6 +228,7 @@ def make_handler(contract, *, secret=None, execute_fn=execute, now_fn=time.time)
                 verify_delivery(headers, body, secret=secret, now=now_fn(), tolerance_seconds=tolerance)
                 request = parse_request_body(body, contract)
                 result = execute_fn(request, contract)
+                evidence = publish_fn(request, result, contract)
                 self.send_json(
                     200,
                     {
@@ -171,6 +236,7 @@ def make_handler(contract, *, secret=None, execute_fn=execute, now_fn=time.time)
                         "request_id": result.get("REQUEST_ID"),
                         "readback": result.get("READBACK"),
                         "mutation_performed": result.get("MUTATION_PERFORMED"),
+                        "result_evidence": evidence,
                     },
                     accepted=True,
                 )
