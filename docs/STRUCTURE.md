@@ -178,6 +178,12 @@ Discovery authority: `docs/WORKSPACE_REGISTRY.md`。
 
 GitHub Project #1 bounded control contract -> `operations/github-project-control.json` + Project Control scripts / workflow。
 
+Workspace DebugAI stdio entry -> `operations/workspace-mcp.json` -> existing
+Compose container `/app/bin/debugai-mcp.mjs`; installer owns exact prior transport
+migration and verification owns config readback. DebugAI retains execution ownership.
+`scripts/verify-debugai-project-route.sh` checks that route with a live stdio MCP
+client and exact Host revision comparison; it cannot approve/apply/deploy.
+
 ## Project Integration Boundary
 
 `docs/PROJECT_INTEGRATION_RULES.md` is the common contract for adopting TGserver / webhook gateway / Libral Vault / MCP / Tool in a Project. TGserver and webhook gateway remain Project-owned services; Libral Vault remains a Workspace-shared Secret capability with Project-specific usage contracts.
