@@ -1,0 +1,6 @@
+[Unit]
+Description=G-ACE shared bounded server command executor
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash /home/admin1/server-core/scripts/host-server-command-runner.sh
