@@ -15,18 +15,35 @@ server-coreは司令室としてTaskをRouting/Dispatchするが、Project固有
 
 ## Authority / Approval
 
-最終決定者はMaster。
+Master is the final authority for Product intent, specification, user-visible acceptance, release/exposure decisions, cost/Provider/Model policy, irreversible persistent-state change, and explicitly protected operations.
 
-質問、検討、提案、操作説明を変更承認として扱わない。未確認状態を推測で補完しない。
+ChatGPT / Server AI is the technical decision-maker within the approved Product intent, scope, and safety boundaries.
 
-Masterの明示指示なしに次を実行しない。
-- main / PR merge
-- Production deploy / 公開 / 切替
-- Force push / Branch削除 / destructive reset / rebase
-- 稼働中Serviceの停止 / recreate
-- Secret追加・削除・rotation
-- Provider resourceの作成・変更・削除
-- 新規Model download
+Questions, discussion, proposals, and operation explanations are not approval. Do not fill unverified state by inference.
+
+### Protected Operations
+
+Master explicit approval is required for:
+- main / final PR merge or formal release;
+- external/public production exposure or release-state change;
+- Force push / Branch deletion / destructive reset / destructive rebase;
+- irreversible or destructive persistent-state mutation;
+- Secret addition / deletion / rotation;
+- Provider resource creation / deletion or material policy/cost change;
+- new paid or policy-changing Model adoption;
+- any operation explicitly marked Master-gated by Current Project rules.
+
+Do not require Master approval solely because an operation is technically named deploy, restart, recreate, rollback, reflection, or model download.
+
+A technical runtime operation may proceed without Master approval when all of the following are true:
+- it stays within already-approved Product intent and scope;
+- it does not expand public/user exposure;
+- it does not introduce irreversible persistent-state change;
+- it does not change cost, Provider, Model policy, or Secret authority;
+- rollback or recovery is defined;
+- Current Project rules do not explicitly mark it Master-gated.
+
+When classification is unclear, judge by actual effect and decision responsibility, not by operation name.
 
 ## Workspace Entry / Command Dispatch
 
