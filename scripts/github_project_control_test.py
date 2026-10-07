@@ -30,15 +30,12 @@ def load_state():
 def save_state(value):
     state_path.write_text(json.dumps(value))
 
+def arg(name):
+    prefix = name + "="
+    return next((value[len(prefix):] for value in args if value.startswith(prefix)), None)
+
 with log_path.open("a", encoding="utf-8") as fh:
     fh.write(json.dumps(args) + "\n")
-
-if args == ["project", "item-edit", "--help"]:
-    if os.environ.get("MOCK_GH_OLD_CLI") == "1":
-        print("Usage: gh project item-edit --id --field-id --project-id")
-    else:
-        print("Usage: gh project item-edit [<number>] --owner --url --field --value")
-    raise SystemExit(0)
 
 if args[:2] == ["project", "view"]:
     print(json.dumps({"id":"PVT_kwHODOQFoM4BEJII","title":"G-ACE Development Platform"}))
@@ -51,23 +48,68 @@ if args[:2] == ["project", "item-list"]:
         print(json.dumps({"items":[{"id":"PVTI_TEST","content":{"url":item_url}}]}))
     raise SystemExit(0)
 
-if args[:2] == ["project", "item-edit"]:
-    field = args[args.index("--field") + 1]
-    value = args[args.index("--value") + 1]
-    if os.environ.get("MOCK_GH_NO_UPDATE") != "1":
-        state = load_state()
-        state[field] = value
-        save_state(state)
-    print(json.dumps({"ok":True}))
-    raise SystemExit(0)
-
 if args[:2] == ["api", "graphql"]:
-    field_arg = next(x for x in args if x.startswith("field="))
-    field = field_arg.split("=", 1)[1]
-    value = load_state().get(field)
-    payload = None if value is None else {"text": value}
-    print(json.dumps({"data":{"node":{"fieldValueByName":payload}}}))
-    raise SystemExit(0)
+    query = arg("query") or ""
+    if "fields(first: 100)" in query:
+        if os.environ.get("MOCK_GH_FIELD_MISSING") == "1":
+            nodes = []
+        elif os.environ.get("MOCK_GH_FIELD_TYPE") == "single":
+            options = [{"id":"OPT_SOURCE","name":"SOURCE_IN_PROGRESS"}]
+            if os.environ.get("MOCK_GH_OPTION_MISSING") != "1":
+                options.append({"id":"OPT_CI","name":"CI_PASS"})
+            nodes = [
+                {"__typename":"ProjectV2SingleSelectField","id":"PVTSSF_GATE","name":"Gate","options":options},
+                {"__typename":"ProjectV2Field","id":"PVTF_WAVE","name":"Wave","dataType":"TEXT"},
+                {"__typename":"ProjectV2Field","id":"PVTF_CHANGE_UNIT","name":"Change Unit","dataType":"TEXT"},
+                {"__typename":"ProjectV2Field","id":"PVTF_MUTATION_OWNER","name":"Mutation Owner","dataType":"TEXT"},
+            ]
+        elif os.environ.get("MOCK_GH_FIELD_TYPE") == "unsupported":
+            nodes = [{"__typename":"ProjectV2Field","id":"PVTF_GATE","name":"Gate","dataType":"NUMBER"}]
+        else:
+            nodes = [
+                {"__typename":"ProjectV2Field","id":"PVTF_GATE","name":"Gate","dataType":"TEXT"},
+                {"__typename":"ProjectV2Field","id":"PVTF_WAVE","name":"Wave","dataType":"TEXT"},
+                {"__typename":"ProjectV2Field","id":"PVTF_CHANGE_UNIT","name":"Change Unit","dataType":"TEXT"},
+                {"__typename":"ProjectV2Field","id":"PVTF_MUTATION_OWNER","name":"Mutation Owner","dataType":"TEXT"},
+            ]
+        print(json.dumps({"data":{"node":{"fields":{"nodes":nodes}}}}))
+        raise SystemExit(0)
+
+    if "updateProjectV2ItemFieldValue" in query:
+        field_id = arg("field")
+        encoded_value = arg("value")
+        field_name = {
+            "PVTF_GATE":"Gate",
+            "PVTSSF_GATE":"Gate",
+            "PVTF_WAVE":"Wave",
+            "PVTF_CHANGE_UNIT":"Change Unit",
+            "PVTF_MUTATION_OWNER":"Mutation Owner",
+        }.get(field_id)
+        if field_name is None:
+            raise SystemExit(3)
+        value = encoded_value
+        if field_id == "PVTSSF_GATE":
+            value = {"OPT_SOURCE":"SOURCE_IN_PROGRESS","OPT_CI":"CI_PASS"}.get(encoded_value)
+            if value is None:
+                raise SystemExit(4)
+        if os.environ.get("MOCK_GH_NO_UPDATE") != "1":
+            state = load_state()
+            state[field_name] = value
+            save_state(state)
+        print(json.dumps({"data":{"updateProjectV2ItemFieldValue":{"projectV2Item":{"id":"PVTI_TEST"}}}}))
+        raise SystemExit(0)
+
+    if "fieldValueByName" in query:
+        field = arg("field")
+        value = load_state().get(field)
+        if value is None:
+            payload = None
+        elif os.environ.get("MOCK_GH_FIELD_TYPE") == "single" and field == "Gate":
+            payload = {"name": value}
+        else:
+            payload = {"text": value}
+        print(json.dumps({"data":{"node":{"fieldValueByName":payload}}}))
+        raise SystemExit(0)
 
 raise SystemExit(2)
 '''
@@ -132,17 +174,27 @@ class RunnerTest(unittest.TestCase):
         self.assertIn("MUTATION_PERFORMED=YES", result.stdout)
         self.assertIn("GH_CLI_CONTRACT=PASS", result.stdout)
         self.assertIn("READBACK=CI_PASS", result.stdout)
-        edits = [call for call in self.log_calls() if call[:2] == ["project", "item-edit"] and "--help" not in call]
-        self.assertEqual(len(edits), 1)
-        self.assertIn("--field", edits[0])
-        self.assertIn("Gate", edits[0])
+        calls = self.log_calls()
+        mutations = [
+            call for call in calls
+            if call[:2] == ["api", "graphql"]
+            and any("updateProjectV2ItemFieldValue" in arg for arg in call)
+        ]
+        self.assertEqual(len(mutations), 1)
+        self.assertIn("field=PVTF_GATE", mutations[0])
+        self.assertIn("value=CI_PASS", mutations[0])
+        self.assertFalse(any(call[:2] == ["project", "item-edit"] for call in calls))
 
     def test_matching_value_is_idempotent_and_skips_mutation(self):
         self.state.write_text(json.dumps({"Gate":"CI_PASS"}), encoding="utf-8")
         result = self.run_request(self.request())
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("MUTATION_PERFORMED=NO", result.stdout)
-        self.assertFalse(any(call[:2] == ["project", "item-edit"] and "--help" not in call for call in self.log_calls()))
+        self.assertFalse(any(
+            call[:2] == ["api", "graphql"]
+            and any("updateProjectV2ItemFieldValue" in arg for arg in call)
+            for call in self.log_calls()
+        ))
 
     def test_external_repository_and_unknown_field_fail_before_github(self):
         bad_url = self.run_request(self.request(item_url="https://github.com/other/repo/issues/1"), "--validate-only")
@@ -174,13 +226,46 @@ class RunnerTest(unittest.TestCase):
         self.assertIn("ERROR=PROJECT_ITEM_NOT_FOUND_OR_AMBIGUOUS", result.stdout)
 
 
-    def test_unsupported_gh_project_cli_fails_before_project_read(self):
-        self.env["MOCK_GH_OLD_CLI"] = "1"
+    def test_unsupported_field_type_fails_before_mutation(self):
+        self.state.write_text(json.dumps({"Gate":"SOURCE_IN_PROGRESS"}), encoding="utf-8")
+        self.env["MOCK_GH_FIELD_TYPE"] = "unsupported"
         result = self.run_request(self.request())
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("ERROR=GH_PROJECT_ITEM_EDIT_UNSUPPORTED", result.stdout)
-        calls = self.log_calls()
-        self.assertEqual(calls, [["project", "item-edit", "--help"]])
+        self.assertIn("ERROR=PROJECT_FIELD_TYPE_UNSUPPORTED", result.stdout)
+        self.assertFalse(any(
+            call[:2] == ["api", "graphql"]
+            and any("updateProjectV2ItemFieldValue" in arg for arg in call)
+            for call in self.log_calls()
+        ))
+
+    def test_single_select_field_uses_option_id_and_exact_readback(self):
+        self.state.write_text(json.dumps({"Gate":"SOURCE_IN_PROGRESS"}), encoding="utf-8")
+        self.env["MOCK_GH_FIELD_TYPE"] = "single"
+        result = self.run_request(self.request())
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("RESULT=PASS", result.stdout)
+        self.assertIn("READBACK=CI_PASS", result.stdout)
+        mutations = [
+            call for call in self.log_calls()
+            if call[:2] == ["api", "graphql"]
+            and any("updateProjectV2ItemFieldValue" in arg for arg in call)
+        ]
+        self.assertEqual(len(mutations), 1)
+        self.assertIn("field=PVTSSF_GATE", mutations[0])
+        self.assertIn("value=OPT_CI", mutations[0])
+
+    def test_single_select_unknown_option_fails_closed(self):
+        self.state.write_text(json.dumps({"Gate":"SOURCE_IN_PROGRESS"}), encoding="utf-8")
+        self.env["MOCK_GH_FIELD_TYPE"] = "single"
+        self.env["MOCK_GH_OPTION_MISSING"] = "1"
+        result = self.run_request(self.request())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ERROR=PROJECT_FIELD_OPTION_NOT_FOUND_OR_AMBIGUOUS", result.stdout)
+        self.assertFalse(any(
+            call[:2] == ["api", "graphql"]
+            and any("updateProjectV2ItemFieldValue" in arg for arg in call)
+            for call in self.log_calls()
+        ))
 
 
 if __name__ == "__main__":

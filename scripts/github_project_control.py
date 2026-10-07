@@ -139,11 +139,79 @@ def parse_json(raw, code):
         fail(code)
 
 
-def verify_gh_project_cli(contract):
-    help_text = gh_run(["project", "item-edit", "--help"], contract)
-    required_flags = ("--owner", "--url", "--field", "--value")
-    if not all(flag in help_text for flag in required_flags):
-        fail("GH_PROJECT_ITEM_EDIT_UNSUPPORTED")
+FIELD_CONFIG_QUERY = """query($project: ID!) {
+  node(id: $project) {
+    ... on ProjectV2 {
+      fields(first: 100) {
+        nodes {
+          __typename
+          ... on ProjectV2Field { id name dataType }
+          ... on ProjectV2SingleSelectField { id name options { id name } }
+        }
+      }
+    }
+  }
+}"""
+
+TEXT_FIELD_MUTATION = """mutation($project: ID!, $item: ID!, $field: ID!, $value: String!) {
+  updateProjectV2ItemFieldValue(input: {
+    projectId: $project
+    itemId: $item
+    fieldId: $field
+    value: { text: $value }
+  }) {
+    projectV2Item { id }
+  }
+}"""
+
+SINGLE_SELECT_FIELD_MUTATION = """mutation($project: ID!, $item: ID!, $field: ID!, $value: String!) {
+  updateProjectV2ItemFieldValue(input: {
+    projectId: $project
+    itemId: $item
+    fieldId: $field
+    value: { singleSelectOptionId: $value }
+  }) {
+    projectV2Item { id }
+  }
+}"""
+
+
+def resolve_field_mutation(field, value, contract):
+    project = contract["project"]
+    raw = gh_run(
+        ["api", "graphql", "-f", "query=" + FIELD_CONFIG_QUERY, "-f", "project=" + project["node_id"]],
+        contract,
+    )
+    data = parse_json(raw, "PROJECT_FIELD_CONFIG_JSON_INVALID")
+    try:
+        nodes = data["data"]["node"]["fields"]["nodes"]
+    except Exception:
+        fail("PROJECT_FIELD_CONFIG_MISSING")
+    if not isinstance(nodes, list):
+        fail("PROJECT_FIELD_CONFIG_INVALID")
+    matches = [
+        node for node in nodes
+        if isinstance(node, dict) and node.get("name") == field and isinstance(node.get("id"), str)
+    ]
+    if len(matches) != 1:
+        fail("PROJECT_FIELD_CONFIG_NOT_FOUND_OR_AMBIGUOUS")
+    meta = matches[0]
+    if meta.get("__typename") == "ProjectV2Field":
+        if meta.get("dataType") != "TEXT":
+            fail("PROJECT_FIELD_TYPE_UNSUPPORTED")
+        return meta["id"], "text", value
+    if meta.get("__typename") == "ProjectV2SingleSelectField":
+        options = meta.get("options")
+        if not isinstance(options, list):
+            fail("PROJECT_FIELD_OPTIONS_INVALID")
+        option_matches = [
+            option for option in options
+            if isinstance(option, dict) and option.get("name") == value and isinstance(option.get("id"), str)
+        ]
+        if len(option_matches) != 1:
+            fail("PROJECT_FIELD_OPTION_NOT_FOUND_OR_AMBIGUOUS")
+        return meta["id"], "single_select", option_matches[0]["id"]
+    fail("PROJECT_FIELD_TYPE_UNSUPPORTED")
 
 
 def verify_project_identity(contract):
@@ -218,18 +286,28 @@ def read_field_value(item_id, field, contract):
     fail("PROJECT_FIELD_READBACK_INVALID")
 
 
-def edit_field(item_url, field, value, contract):
+def edit_field(item_id, field, value, contract):
     project = contract["project"]
-    gh_run(
+    field_id, value_kind, encoded_value = resolve_field_mutation(field, value, contract)
+    mutation = TEXT_FIELD_MUTATION if value_kind == "text" else SINGLE_SELECT_FIELD_MUTATION
+    raw = gh_run(
         [
-            "project", "item-edit", str(project["number"]),
-            "--owner", project["owner"],
-            "--url", item_url,
-            "--field", field,
-            "--value", value,
+            "api", "graphql",
+            "-f", "query=" + mutation,
+            "-f", "project=" + project["node_id"],
+            "-f", "item=" + item_id,
+            "-f", "field=" + field_id,
+            "-f", "value=" + encoded_value,
         ],
         contract,
     )
+    data = parse_json(raw, "PROJECT_FIELD_MUTATION_JSON_INVALID")
+    try:
+        updated_id = data["data"]["updateProjectV2ItemFieldValue"]["projectV2Item"]["id"]
+    except Exception:
+        fail("PROJECT_FIELD_MUTATION_INVALID")
+    if updated_id != item_id:
+        fail("PROJECT_FIELD_MUTATION_INVALID")
 
 
 def result_lines(result):
@@ -245,13 +323,12 @@ def result_lines(result):
 
 def execute(request, contract):
     request = validate_request(request, contract)
-    verify_gh_project_cli(contract)
     verify_project_identity(contract)
     item_id = find_item_id(request["item_url"], contract)
     before = read_field_value(item_id, request["field"], contract)
     mutation = "NO"
     if before != request["value"]:
-        edit_field(request["item_url"], request["field"], request["value"], contract)
+        edit_field(item_id, request["field"], request["value"], contract)
         mutation = "YES"
     readback = read_field_value(item_id, request["field"], contract)
     if readback != request["value"]:

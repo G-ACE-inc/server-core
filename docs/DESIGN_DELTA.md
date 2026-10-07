@@ -453,7 +453,7 @@ server-core now contains a narrowly scoped GitHub Project control operation:
 - only `Wave / Gate / Change Unit / Mutation Owner` may be changed;
 - the helper accepts a structured `gace.github-project-control/v1` request, never an arbitrary shell command;
 - the existing VPS `gh` authentication is the intended credential source; no GitHub Actions PAT is introduced by this Source change;
-- before any live mutation, the runner feature-probes `gh project item-edit --help` and requires the current name-based `--owner / --url / --field / --value` contract; unsupported/old CLI fails closed before Project read/write;
+- the initial implementation feature-probed the name-based `gh project item-edit --owner / --url / --field / --value` surface, but Fresh VPS evidence proved the installed `gh 2.52.0` does not support that contract; the Current compatibility correction removes that mutation dependency, resolves the exact Project field id/type through `gh api graphql`, uses `updateProjectV2ItemFieldValue` for bounded text/single-select updates, and fails closed on missing/ambiguous/unsupported field metadata;
 - same-target execution uses a non-blocking lock;
 - the current value is read before mutation for idempotency and the exact item/field is read back through GraphQL after mutation;
 - `.github/workflows/github-project-control-request.yml` reuses the existing owner-only GitHub control-plane pattern: a `[GACE-PROJECT]` comment from `seigo-gace` is converted into a deterministic fixed-schema request, validated through the same Project contract, stored as one-day evidence, and commented back as `PROJECT_CONTROL_EXECUTION=NOT_RUN`;
@@ -470,6 +470,7 @@ GitHub Project #1 and its control fields had already been created and verified, 
 - GitHub CLI requires `project` scope for Project operations;
 - prior Project #1 VPS read/write evidence already proved that the existing VPS credential can perform Project operations;
 - current Source adds the bounded contract, one-shot helper and CI regression coverage.
+- Fresh compatibility evidence: actual VPS `gh 2.52.0` rejects the original name-based item-edit contract, while GitHub's GraphQL `updateProjectV2ItemFieldValue` contract accepts explicit project/item/field ids and a typed field value; the helper already uses `gh api graphql` for exact readback, so the correction stays on the existing credential/tool path.
 
 ### Affected scope
 - `operations/github-project-control.json`
