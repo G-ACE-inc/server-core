@@ -1,0 +1,27 @@
+name: project-control-runtime-readback-command-verify
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-parser:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse exact Master PowerShell launcher
+        shell: powershell
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/project_control_runtime_readback_launcher.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if($errors.Count -ne 0){$errors | ForEach-Object { Write-Error $_.Message }; throw 'POWERSHELL_PARSE_FAILED'}
+          Write-Host 'PROJECT_CONTROL_RUNTIME_READBACK_LAUNCHER_PARSE=PASS'
