@@ -11,7 +11,9 @@
   "execution_backend": {
     "mcp_server": "debugai",
     "implementation_owner": "seigo-gace/debug-ai",
-    "entry": "/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs",
+    "entry": "/app/bin/debugai-mcp.mjs",
+    "transport_definition": "operations/workspace-mcp.json#servers.debugai",
+    "runtime": "existing-docker-compose-container",
     "tools": {
       "server_read_request": "debugai_server_read",
       "server_read_status": "debugai_server_status",

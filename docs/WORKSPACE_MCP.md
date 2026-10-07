@@ -55,7 +55,7 @@ Current Server shell does not have Cursor Agent CLI installed. `agent mcp list` 
 |---|---|---|---|
 | Cloudflare API | `https://mcp.cloudflare.com/mcp` | Cursor OAuth | `CONFIG_REGISTERED`; live connection pending |
 | Hugging Face | `https://huggingface.co/mcp` | Provider/Client OAuth or generated client config | `CONFIG_REGISTERED`; live connection pending |
-| DebugAI | `/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs` (stdio) | local Workspace runtime; no Provider token in manifest | `CONFIG_SOURCE_REGISTERED`; implementation owned by DebugAI |
+| DebugAI | `/usr/bin/docker exec -i debug-ai-debug-ai-1 node /app/bin/debugai-mcp.mjs` (stdio) | existing Docker Compose runtime; no Provider token in manifest | configuration/discovery/health and representative Server execution are separate gates |
 
 Cloudflare documents Cursor integration through its API MCP and OAuth authorization. Hugging Face provides an official MCP server for Cursor and other MCP-compatible clients.
 
@@ -147,6 +147,13 @@ The verification command checks:
 
 A valid config is not equivalent to a live connection.
 
+For the existing local DebugAI route, run `bash scripts/verify-debugai-project-route.sh`.
+The client checks thirteen tools, health, rejection of an unapproved GitOps
+request, and a real `project.git_head` request/status lifecycle against the Host
+checkout. Fast operations may complete between polls; `started_at` and
+`finished_at` bind actual execution even when a RUNNING poll is not observed.
+This check grants no deploy approval and does not test a remote CHAT connection.
+
 ```text
 CONFIG_PRESENT / CONFIG_REGISTERED
   -> AUTHENTICATION_VERIFIED
@@ -185,7 +192,11 @@ Do not downgrade an already implemented/previously used MCP to `NOT_IMPLEMENTED`
 
 Do not invent a new local path or endpoint while DebugAI is being changed. server-core owns the discovery/registration/verification contract; DebugAI owns its implementation body.
 
-Current registration contract now uses the existing DebugAI stdio entry `/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs` through `operations/workspace-mcp.json`. GitHub Project server-operation routing is fixed separately in `operations/github-project-debugai-routing.json`; server-core owns that routing contract, while DebugAI retains all MCP/Server Command/GitOps implementation.
+Current registration runs the existing `/app/bin/debugai-mcp.mjs` inside the existing `debug-ai-debug-ai-1` Compose container through `operations/workspace-mcp.json`. Host Node/Python is not required for MCP execution. No TTY is allocated, preserving stdio JSON-RPC. Container name is bound to the current Compose deployment; if it changes, update and reverify the contract rather than selecting an arbitrary container.
+
+The installer permits migration only from the manifest's explicit prior DebugAI command definition, preserving covered auth containers and backing up the existing file. Unknown transport collisions still fail closed. Host environment fields are preserved in the client config; `docker exec` does not forward them automatically. The existing container's runtime environment remains authoritative.
+
+GitHub Project server-operation routing is fixed separately in `operations/github-project-debugai-routing.json`; server-core owns that routing contract, while DebugAI retains all MCP/Server Command/GitOps implementation. Cursor global registration does not configure a remote ChatGPT connector; CHAT-side tool availability must be verified on that execution surface separately.
 
 ## Deterministic Japanese Parser MCP
 

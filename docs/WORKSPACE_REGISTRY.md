@@ -118,7 +118,7 @@ Current distinction:
 repository = seigo-gace/debug-ai
 MCP implementation = VERIFIED
 MCP stdio / protocol = VERIFIED
-MCP tool surface = 9 tools VERIFIED
+MCP tool surface = 13 tools (9 original + 4 bounded control tools)
 prior Codex usage = CONFIRMED_BY_MASTER
 current in-progress exact-head Server readback = PENDING
 current in-progress exact-head Codex registration readback = PENDING
@@ -128,6 +128,13 @@ current in-progress exact-head representative live calls = PENDING
 Current-head re-verification pending is **not** equivalent to `NOT_IMPLEMENTED` or `NOT_REGISTERED`. Historical successful use is also **not** sufficient to claim the current changing HEAD as freshly live-verified. Preserve both facts.
 
 GitHub Project #1のserver操作は、server-coreで別executorを複製せず、`operations/github-project-debugai-routing.json` に従い既存DebugAI MCPへdispatchする。server-coreはCurrent/control/routing/approval契約を所有し、DebugAIはMCP/Server Command/GitOps実装本体を所有する。
+
+Workspace stdio uses the existing Compose container, as specified by
+`operations/workspace-mcp.json`. `scripts/verify-debugai-project-route.sh` is a
+bounded verification client: it checks discovery/health, unapproved GitOps
+rejection and exact Host git-head readback through the existing MCP request/status
+path. It never performs a deploy or creates another executor. Cursor registration
+does not by itself establish a remote ChatGPT connector.
 
 ## 5. Shared Tool / Skill Registry
 

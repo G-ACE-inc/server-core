@@ -392,6 +392,20 @@ NOTION_CUTOVER=NOT_RUN
 ```
 
 
+## 2026-10-08 — Run shared DebugAI stdio in its existing container
+
+The previous direct Host entry depended on a Node interpreter absent from the
+verified Host execution path. The shared manifest now invokes the same existing
+DebugAI MCP through `docker exec -i` in its existing Compose container. This is a
+registration correction, with no new server transport, executor, queue or public
+endpoint. The installer migrates only the exact declared old transport, backs up
+the config, preserves covered auth fields and rejects unknown collisions.
+
+Rollback restores the prior config backup, but the direct entry still requires a
+verified Host interpreter; rollback is not an availability claim. Source parity,
+Server Command execution, guarded GitOps and remote CHAT connection remain
+separate verification gates. Work-report commit records the applied revision.
+
 ## 2026-10-07 — Register existing DebugAI MCP as GitHub Project server-operation backend
 
 ### Correction

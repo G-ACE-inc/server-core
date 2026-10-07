@@ -16,7 +16,8 @@
       "authentication": "oauth_or_client_generated_config"
     },
     "debugai": {
-      "command": "/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs"
+      "command": "/usr/bin/docker",
+      "args": ["exec", "-i", "debug-ai-debug-ai-1", "node", "/app/bin/debugai-mcp.mjs"]
     }
   },
   "installation": {
@@ -27,6 +28,9 @@
       "auth",
       "headers",
       "env"
-    ]
+    ],
+    "managed_transport_migrations": {
+      "debugai": [{"command": "/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs"}]
+    }
   }
 }

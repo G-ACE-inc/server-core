@@ -234,6 +234,7 @@ jobs:
           bash -n scripts/init-dev-workspace.sh
           bash -n scripts/install-workspace-mcp.sh
           bash -n scripts/verify-workspace-mcp.sh
+          bash -n scripts/verify-debugai-project-route.sh
           ! grep -nE 'rm[[:space:]]+-rf.*PROJECTS_RULES|rm[[:space:]]+-rf.*projects/\.cursor/rules' scripts/init-dev-workspace.sh
           grep -q 'already exists and is not the required symlink; no deletion performed' scripts/init-dev-workspace.sh
           grep -q 'unexpected target' scripts/init-dev-workspace.sh
@@ -254,7 +255,8 @@ jobs:
               assert 'token' not in json.dumps(cfg).lower()
               assert 'secret' not in json.dumps(cfg).lower()
           assert p['servers']['debugai'] == {
-              'command': '/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs'
+              'command': '/usr/bin/docker',
+              'args': ['exec', '-i', 'debug-ai-debug-ai-1', 'node', '/app/bin/debugai-mcp.mjs']
           }
           route = json.loads(Path('operations/github-project-debugai-routing.json').read_text())
           assert route['project']['node_id'] == 'PVT_kwHODOQFoM4BEJII'
@@ -291,6 +293,10 @@ jobs:
                 "headers": {
                   "Authorization": "Bearer REDACTED_TEST_CREDENTIAL"
                 }
+              },
+              "debugai": {
+                "command": "/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs",
+                "env": {"DEBUGAI_URL": "http://127.0.0.1:8787"}
               }
             }
           }
@@ -298,7 +304,23 @@ jobs:
           HOME="$tmp" bash scripts/install-workspace-mcp.sh
           HOME="$tmp" bash scripts/verify-workspace-mcp.sh
           grep -q 'REDACTED_TEST_CREDENTIAL' "$tmp/.cursor/mcp.json"
+          grep -q 'DEBUGAI_URL' "$tmp/.cursor/mcp.json"
+          HOME="$tmp" bash scripts/install-workspace-mcp.sh
           echo 'WORKSPACE_MCP_AUTH_PRESERVATION=PASS'
+          python3 - "$tmp/.cursor/mcp.json" <<'PY'
+          import json, sys
+          from pathlib import Path
+          p = Path(sys.argv[1])
+          cfg = json.loads(p.read_text())
+          cfg['mcpServers']['debugai']['command'] = '/unknown/executor'
+          p.write_text(json.dumps(cfg))
+          PY
+          before="$(sha256sum "$tmp/.cursor/mcp.json")"
+          if HOME="$tmp" bash scripts/install-workspace-mcp.sh; then
+            echo 'UNEXPECTED_TRANSPORT_COLLISION_ACCEPTED'; exit 1
+          fi
+          test "$before" = "$(sha256sum "$tmp/.cursor/mcp.json")"
+          echo 'WORKSPACE_MCP_UNKNOWN_TRANSPORT_FAIL_CLOSED=PASS'
 
       - name: No tracked env files
         run: |

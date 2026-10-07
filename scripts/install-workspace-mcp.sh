@@ -74,14 +74,25 @@ current_servers = current.setdefault('mcpServers', {})
 if not isinstance(current_servers, dict):
     raise SystemExit('[error] existing mcpServers is not an object')
 
+transport_migrations = manifest.get('installation', {}).get('managed_transport_migrations', {})
+migrate_names = set()
 for name, definition in runtime_servers.items():
     if name in current_servers and not runtime_compatible(current_servers[name], definition):
-        raise SystemExit(f'[error] MCP name collision: {name}; existing runtime transport definition differs')
+        previous = transport_migrations.get(name, [])
+        if any(runtime_compatible(current_servers[name], old) for old in previous):
+            migrate_names.add(name)
+        else:
+            raise SystemExit(f'[error] MCP name collision: {name}; existing runtime transport definition differs')
 
 changed = False
 for name, definition in runtime_servers.items():
     if name not in current_servers:
         current_servers[name] = definition
+        changed = True
+    elif name in migrate_names:
+        preserved = {key: value for key, value in current_servers[name].items()
+                     if key in preserve_auth_fields}
+        current_servers[name] = {**preserved, **definition}
         changed = True
 
 if changed:
