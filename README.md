@@ -125,6 +125,7 @@ Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Production�
 | 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
 | Project / shared Capability / MCP / Tool / DebugAI / Secret / Runtime発見 | `docs/WORKSPACE_REGISTRY.md` |
 | Workspace共通MCPの登録 / Cursor Global MCP / 検証 | `docs/WORKSPACE_MCP.md` |
+| GitHub Projectからの共通server操作routing | `operations/github-project-debugai-routing.json` + `docs/WORKSPACE_MCP.md` |
 | Project導入（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
 | 再利用KB | `docs/KB_REUSE_DESIGN.md` |
@@ -238,7 +239,7 @@ Source/CIで確認されているものとLive Runtimeを分離する。
 
 - server-core command-center routing / documentation contracts: SOURCE / CI verified
 - read-only Storage Audit source: SOURCE / CI verified
-- DebugAI MCP source: DebugAI mainへmerge済み、source-side CI verified; Workspace registration / live runtimeは別状態
+- DebugAI MCP source: DebugAI実装/protocol verified; Workspace-global registration Sourceは`operations/workspace-mcp.json`へ追加済み（このChange UnitのCI pending）；current exact-head representative live callは別状態
 - F: reusable KB bridge/runtime: NOT_IMPLEMENTED
 - generic storage cleanup mutation: NOT_IMPLEMENTED
 - current server storage audit: NOT_VERIFIED
