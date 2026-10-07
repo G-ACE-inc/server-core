@@ -133,12 +133,15 @@ Current-head re-verification pending is **not** equivalent to `NOT_IMPLEMENTED` 
 |---|---|---|---|
 | GitHub work report / auto commit | `docs/AUTO_COMMIT.md`, `scripts/ai-auto-commit.sh` | Diff確認・Commit・Push | IMPLEMENTED_SOURCE |
 | GitHub skill resolver | `docs/GITHUB_SKILL.md`, resolver scripts | GitHub skill path resolution | IMPLEMENTED_SOURCE |
+| GitHub Project Control | `operations/github-project-control.json`, Project Control scripts / workflow | owner-only CHAT/GitHub commentをbounded requestへ変換し、Generic Internal Event API経由でProject-Control専用receiverへ配送し、Personal Project #1の4 Control Fieldを更新・exact readback | Source/Test + Docker Compose runtime packaging implemented; Gateway destination Source tracked separately; Runtime network/credential/deploy/live E2E remain NOT_VERIFIED |
 | Deploy routine | `docs/DEPLOY_RUNBOOK.md` | confirmed revision -> approved deploy -> runtime verify | DOCUMENTED; target runtime specific |
 | Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare common contract | IMPLEMENTED_CONTRACT |
 | Shared Secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 | IMPLEMENTED_CONTRACT; runtime availability must be checked |
 | DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent | source/CLI/HTTP/MCP implemented; prior Codex use confirmed; current exact-head live reverify pending |
 | Storage lifecycle audit | `scripts/storage_lifecycle_audit.py`, `operations/storage-lifecycle.json` | disk/log/backup/Docker read-only audit | SOURCE_VERIFIED / SERVER_RUNTIME_NOT_VERIFIED |
 | Storage cleanup mutation | future approved implementation | safe deletion/rotation | NOT_IMPLEMENTED |
+
+GitHub Project Controlの`SOURCE_IMPLEMENTED`は、固定Contract/Runner、owner-only Comment→Request、Generic Internal Event API producer、署名付きbounded receiver、final Issue result sink、Docker Compose runtime Source/Testまでを示す。Gateway destination登録、consumer token / delivery SecretのCurrent injection、receiver Runtime、VPS Current `gh` credential、実Project mutation/readbackは別Evidenceであり、E2E成立前に`AVAILABLE_VERIFIED`へ昇格しない。
 
 Tool追加条件:
 - Workspace内で反復利用する実益がある;
