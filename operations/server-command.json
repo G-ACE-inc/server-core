@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "name": "gace-shared-server-command",
+  "request_schema": "gace.server-command-request/v1",
+  "status_schema": "gace.server-command-status/v1",
+  "request_id_pattern": "^cmd_[0-9a-f]{24}$",
+  "queue": {
+    "relative_root": ".gace-control/server-command",
+    "max_requests_per_run": 8,
+    "ttl_ms": 60000,
+    "max_output_bytes": 4096
+  },
+  "targets": {
+    "server-core": {
+      "host_path_env": "GACE_SERVER_COMMAND_TARGET_SERVER_CORE",
+      "default_host_path": "/home/admin1/server-core"
+    },
+    "debug-ai": {
+      "host_path_env": "GACE_SERVER_COMMAND_TARGET_DEBUG_AI",
+      "default_host_path": "/home/admin1/projects/debug-ai"
+    }
+  },
+  "commands": {
+    "workspace.pwd": {
+      "action": "read",
+      "arguments": "none",
+      "timeout_seconds": 5
+    },
+    "workspace.git_head": {
+      "action": "read",
+      "arguments": "none",
+      "timeout_seconds": 5
+    }
+  },
+  "boundaries": {
+    "arbitrary_shell": false,
+    "arbitrary_path": false,
+    "arbitrary_environment": false,
+    "requester_supplied_command_arguments": false,
+    "single_writer_host_runner": true,
+    "bounded_output": true,
+    "expired_request_fail_closed": true,
+    "persistent_mutation": false
+  },
+  "reuse": {
+    "source_repository": "seigo-gace/debug-ai",
+    "live_evidence_head": "efe1de7c5b3108f7b64843bb814f7d5710e3e28c",
+    "source_files": [
+      "server/control/server-command-request.js",
+      "scripts/host-server-command-runner.sh",
+      "ops/systemd-user/debugai-server-command.path",
+      "ops/systemd-user/debugai-server-command.service"
+    ],
+    "debugai_product_logic_copied": false
+  }
+}
