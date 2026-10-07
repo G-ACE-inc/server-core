@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "name": "gace-github-project-rule-plane",
+  "project": {
+    "owner": "seigo-gace",
+    "number": 1,
+    "node_id": "PVT_kwHODOQFoM4BEJII",
+    "title": "G-ACE Development Platform"
+  },
+  "control_plane": {
+    "repository": "G-ACE-inc/server-core",
+    "issue_number": 15,
+    "issue_url": "https://github.com/G-ACE-inc/server-core/issues/15"
+  },
+  "rule_planes": {
+    "server_ai": {
+      "profile": "SERVER_AI",
+      "issue_number": 16,
+      "issue_url": "https://github.com/G-ACE-inc/server-core/issues/16",
+      "payload_class": "MINIMAL",
+      "server_core_bootstrap_required": true,
+      "default_for_server_agents": true,
+      "max_bootstrap_lines": 70,
+      "forbidden_default_load": ["GPT_CHAT"]
+    },
+    "gpt_chat": {
+      "profile": "GPT_CHAT",
+      "issue_number": 17,
+      "issue_url": "https://github.com/G-ACE-inc/server-core/issues/17",
+      "payload_class": "EXTENDED",
+      "server_ai_default_load": false,
+      "server_core_load_mode": "WHEN_WORKSPACE_OR_SERVER_CAPABILITY_REQUIRED"
+    }
+  },
+  "authority_model": {
+    "current_control_plane": "GITHUB_PROJECT",
+    "project_current_primary": true,
+    "repository_source_evidence_remains_repository_owned": true,
+    "runtime_evidence_remains_runtime_owned": true,
+    "server_core_role": "BOOTSTRAP_ROUTER_CONTROL_ROOM",
+    "full_gpt_rule_payload_in_server_ai_context_forbidden": true
+  },
+  "migration": {
+    "source": "NOTION_GPT_ONLY_OPERATING_PRINCIPLES",
+    "target": "GITHUB_PROJECT_DUAL_RULE_PLANE",
+    "notion_role": "MIGRATION_SOURCE_HISTORY_UNTIL_CUTOVER",
+    "project_item_registration": "NOT_VERIFIED",
+    "cutover": "NOT_RUN"
+  }
+}

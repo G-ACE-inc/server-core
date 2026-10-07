@@ -31,6 +31,11 @@ jobs:
           test -f docs/SERVER_CORE_DESIGN.md
           test -f docs/DESIGN_DELTA.md
           test -f docs/LOAD_SCOPE.md
+          test -f docs/GITHUB_PROJECT_RULE_PLANE.md
+          test -f operations/github-project-rule-plane.json
+          test -f AGENTS.md
+          test -f .github/copilot-instructions.md
+          test -f scripts/github_project_rule_plane_test.py
           test -f docs/STRUCTURE.md
           test -f docs/WORKSPACE_REGISTRY.md
           test -f docs/KB_REUSE_DESIGN.md
@@ -98,6 +103,8 @@ jobs:
           grep -q 'huggingface' operations/workspace-mcp.json
           grep -q 'Add-New-Contract Gate' docs/WORKSPACE_SHARED_SECRETS.md
           grep -q 'Command Center' docs/STRUCTURE.md
+          grep -q 'GITHUB PROJECT DUAL RULE PLANE' docs/GITHUB_PROJECT_RULE_PLANE.md
+          python3 scripts/github_project_rule_plane_test.py
 
       - name: Provider ownership boundary
         run: |
@@ -136,11 +143,11 @@ jobs:
           grep -q 'Documentation Gate' docs/SERVER_CORE_DESIGN.md
           grep -q 'GitHub Work Report Contract' docs/SERVER_CORE_DESIGN.md
           grep -q 'server-core司令室' docs/G_ACE_WORKSPACE.md
-          grep -q 'server-core/README.md' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'Pre-execution Handoff' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'TARGET_PROJECT' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'VERIFY_PATH' .cursor/rules/00_agent_runtime.mdc
-          grep -q 'CONTEXT_SCOPE' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'SERVER_AI' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'github-project-rule-plane.json' .cursor/rules/00_agent_runtime.mdc
+          grep -q '#16' .cursor/rules/00_agent_runtime.mdc
+          grep -q 'SERVER_AI' AGENTS.md
+          grep -q 'SERVER_AI' .github/copilot-instructions.md
           grep -q 'WORKSPACE_REGISTRY.md' README.md
           grep -q 'KB_REUSE_DESIGN.md' docs/LOAD_SCOPE.md
           grep -q 'STORAGE_LIFECYCLE.md' SERVER_CORE_PROTOCOL.md

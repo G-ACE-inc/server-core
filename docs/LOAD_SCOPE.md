@@ -3,17 +3,31 @@
 Version: 2026-10-05
 Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分け、必要情報だけを段階的に読ませるためのRouter。
 
-## 1. Mandatory Start
+## 1. Executor Profile / Mandatory Start
 
-Workspace内の作業開始順は固定する。
+最初に実行主体を分ける。Rule payloadを混ぜない。
+
+### SERVER_AI
 
 ```text
 1. server-core/README.md
 2. server-core/docs/LOAD_SCOPE.md
-3. 今回のTaskに必要なserver-core Authorityだけ
-4. 対象Project README
-5. 対象Project内の必要なDesign / Tree / Delta / System Document / Source / Testだけ
+3. operations/github-project-rule-plane.json
+4. canonical Rule Plane #16 / GitHub Project #1 Current when accessible
+5. 対象Repository Current
+6. 今回必要なserver-core / Project Authority・Source・Testだけ
 ```
+
+### GPT_CHAT
+
+```text
+1. canonical Rule Plane #17
+2. GitHub Project #1 Current
+3. Workspace/server controlが必要なTaskだけserver-coreを読む
+4. target Project Current / Repository Evidence
+```
+
+GPT_CHAT拡張RuleをSERVER_AIへdefault loadしない。
 
 README以外のserver-core Authorityを新Task開始時に一括読込しない。
 
@@ -40,6 +54,7 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | GitHub無料枠 | `docs/GITHUB_FREE_MAX.md` |
 | GitHub skill resolver | `docs/GITHUB_SKILL.md` |
 | 用語 | `docs/GLOSSARY.md` |
+| GitHub Project Rule Plane / executor profile | `docs/GITHUB_PROJECT_RULE_PLANE.md` + `operations/github-project-rule-plane.json` |
 | server-core構造 | `docs/STRUCTURE.md` |
 
 複合作業では必要Authorityだけ組み合わせる。
