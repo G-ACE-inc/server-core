@@ -100,7 +100,7 @@ MCPの利用可能性は「文書にある」だけでは成立しない。
 | MCP | Owner / authority | Config authority | Purpose | Current boundary |
 |---|---|---|---|---|
 | Cloudflare API MCP | Cloudflare / Workspace config | `~/.cursor/mcp.json` via `operations/workspace-mcp.json` | Cloudflare操作入口 | GLOBAL_CONFIG_SOURCE_VERIFIED; live use pending |
-| DebugAI MCP | `seigo-gace/debug-ai` | DebugAI-owned MCP runtime; server-core owns discovery/registration/verification contract | DebugAIを親AIからMCP利用 | IMPLEMENTED_SOURCE / MCP_PROTOCOL_VERIFIED / PRIOR_CODEX_USAGE_CONFIRMED; CURRENT_EXACT_HEAD_LIVE_REVERIFY_PENDING |
+| DebugAI MCP | `seigo-gace/debug-ai` | implementation/runtime=`seigo-gace/debug-ai`; Workspace registration/routing=`operations/workspace-mcp.json` + `operations/github-project-debugai-routing.json` | GitHub Project / 親AIから既存DebugAI MCP経由でbounded Server Command / guarded GitOpsを共通利用 | MCP_IMPLEMENTED / MCP_PROTOCOL_VERIFIED / PRIOR_USAGE_CONFIRMED / WORKSPACE_CONFIG_SOURCE_REGISTERED; current exact-head representative live call remains separate |
 | Reuse KB MCP | future F: KB bridge owner | future verified global config | F: reusable-development KB検索/登録 | NOT_IMPLEMENTED |
 | Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | global MCP after runtime readback | deterministic Japanese parser | repository DISCOVERED; GLOBAL_REGISTRATION_PENDING / LIVE availability NOT_VERIFIED |
 
@@ -126,6 +126,8 @@ current in-progress exact-head representative live calls = PENDING
 ```
 
 Current-head re-verification pending is **not** equivalent to `NOT_IMPLEMENTED` or `NOT_REGISTERED`. Historical successful use is also **not** sufficient to claim the current changing HEAD as freshly live-verified. Preserve both facts.
+
+GitHub Project #1のserver操作は、server-coreで別executorを複製せず、`operations/github-project-debugai-routing.json` に従い既存DebugAI MCPへdispatchする。server-coreはCurrent/control/routing/approval契約を所有し、DebugAIはMCP/Server Command/GitOps実装本体を所有する。
 
 ## 5. Shared Tool / Skill Registry
 
