@@ -390,3 +390,78 @@ PROJECT_ITEM_REGISTRATION=NOT_VERIFIED
 RULE_LOADING_RUNTIME=NOT_VERIFIED
 NOTION_CUTOVER=NOT_RUN
 ```
+
+
+## 2026-10-07 — Extract DebugAI-proven bounded Server Command into shared server-core executor
+
+### Baseline / correction
+Issue #10 exists to make the primary GPT CHAT able to operate the VPS without using Master as a routine command relay.
+
+The proven implementation source already exists and is actively used in `seigo-gace/debug-ai`: a bounded Server Command request service, durable filesystem queue, one-shot Host runner, systemd path watcher, exact status/readback and RuntimeEvidence/TGserver reporting. Historical live evidence at `efe1de7c5b3108f7b64843bb814f7d5710e3e28c` proved `server.command.read(project.pwd)` through the Host execution path.
+
+A detour attempted to make Generic Internal Event API + a new Project-Control receiver the primary CHAT-to-server executor. That transport remains valid for internal events where appropriate, but it is not the canonical executor bootstrap. The shared executor must reuse the already-proven DebugAI pattern.
+
+### Ownership change
+The reusable executor contract is promoted to server-core:
+- `operations/server-command.json` — machine allowlist / queue / safety contract;
+- `scripts/server_command_request.py` — bounded request/status queue client;
+- `scripts/host-server-command-runner.sh` — one-shot Host runner;
+- `ops/systemd-user/gace-server-command.path` / `.service` — queue watcher;
+- `docs/SHARED_SERVER_EXECUTOR.md` — authority / ownership / migration contract.
+
+server-core owns the shared contract and Workspace/server routing. DebugAI remains the specialized debugging consumer.
+
+### Explicit preservation requirement
+The currently used DebugAI-local Server Command / Host runner path MUST NOT be deleted, disabled, replaced in-place, or treated as obsolete by this Change Unit.
+
+```text
+DEBUGAI_EXISTING_PATH=PRESERVE
+DEBUGAI_REPOSITORY_MUTATION=NO
+DEBUGAI_RUNTIME_CHANGE=NO
+DEBUGAI_DELETION=FORBIDDEN_WITHOUT_SEPARATE_MASTER_APPROVAL
+SHARED_EXECUTOR_MIGRATION=PARALLEL_ADDITION_FIRST
+CUTOVER=ONLY_AFTER_SHARED_E2E_AND_ROLLBACK_PROOF
+```
+
+The shared path is added in parallel. DebugAI adapter migration happens only after the shared server-core executor is live-verified. Even after migration, deleting the DebugAI-local fallback requires a separate explicit Master approval.
+
+### Initial shared surface
+The first commonized command set intentionally matches the smallest Live-proven read-only contract:
+- `workspace.pwd`
+- `workspace.git_head`
+
+Targets are fixed by `target_id`; requesters cannot pass shell source, executable names, arguments, arbitrary paths, environment variables, or timeout overrides.
+
+### Safety invariants preserved
+- random request id;
+- request expiry / fail-closed;
+- atomic queue/status writes;
+- single-writer lock;
+- bounded batch;
+- bounded output;
+- exact PASS/FAIL status;
+- fixed allowlists;
+- no arbitrary shell;
+- no persistent mutation in the initial shared surface.
+
+### State separation
+```text
+SOURCE_STATE=SHARED_EXECUTOR_IMPLEMENTED_ON_BRANCH
+TEST_STATE=PENDING_CI
+DEBUGAI_EXISTING_PATH=PRESERVED
+DEBUGAI_ADAPTER_SWITCH=NOT_RUN
+SERVER_RUNTIME_REFLECTION=NOT_RUN
+CHAT_DIRECT_E2E=NOT_RUN
+PERSISTENT_MUTATION=NOT_IMPLEMENTED
+MERGE=NOT_RUN
+DEPLOY=NOT_RUN
+```
+
+### Next sequence
+1. exact-head CI for shared executor Source;
+2. approved server-core runtime reflection of the shared watcher/runner;
+3. read-only live E2E for `workspace.pwd` and `workspace.git_head`;
+4. only then adapt DebugAI to use the shared executor while keeping its existing local path available for rollback;
+5. prove DebugAI E2E through the shared path;
+6. expose the same bounded capability to GPT CHAT;
+7. destructive/persistent commands remain separately gated.
