@@ -239,7 +239,7 @@ Source/CIで確認されているものとLive Runtimeを分離する。
 
 - server-core command-center routing / documentation contracts: SOURCE / CI verified
 - read-only Storage Audit source: SOURCE / CI verified
-- DebugAI MCP source: existing implementation/protocol verified; Workspace stdio uses `docker exec -i debug-ai-debug-ai-1 node /app/bin/debugai-mcp.mjs` and does not require Host Node. Registration and live tool/health checks remain separate from Server Command execution and current source parity; the live Host validator failure requires the owning DebugAI fix and approved reflection.
+- DebugAI shared control route: Workspace registration, 13-tool discovery, health and real Server Command `QUEUED -> RUNNING -> PASS` with exact Host HEAD verified on reflected `1c6da080d340ab6a47d447c78a21c8738f2e748a`; 260 packaged files match the running image. GitOps readiness/status follow-up is source/CI verified; its additional approved reflection and successful deploy receipt remain separate gates. Workspace stdio uses the existing Compose container without Host Node.
 - F: reusable KB bridge/runtime: NOT_IMPLEMENTED
 - generic storage cleanup mutation: NOT_IMPLEMENTED
 - current server storage audit: NOT_VERIFIED
