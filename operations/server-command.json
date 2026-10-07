@@ -13,11 +13,13 @@
   "targets": {
     "server-core": {
       "host_path_env": "GACE_SERVER_COMMAND_TARGET_SERVER_CORE",
-      "default_host_path": "/home/admin1/server-core"
+      "default_host_path": "/home/admin1/server-core",
+      "github_repository": "G-ACE-inc/server-core"
     },
     "debug-ai": {
       "host_path_env": "GACE_SERVER_COMMAND_TARGET_DEBUG_AI",
-      "default_host_path": "/home/admin1/projects/debug-ai"
+      "default_host_path": "/home/admin1/projects/debug-ai",
+      "github_repository": "seigo-gace/debug-ai"
     }
   },
   "commands": {
@@ -30,6 +32,46 @@
       "action": "read",
       "arguments": "none",
       "timeout_seconds": 5
+    },
+    "workspace.git_status": {
+      "action": "read",
+      "arguments": "none",
+      "timeout_seconds": 5
+    },
+    "workspace.git_changed_paths": {
+      "action": "read",
+      "arguments": "none",
+      "timeout_seconds": 5
+    },
+    "workspace.git_recent_commits": {
+      "action": "read",
+      "arguments": "none",
+      "timeout_seconds": 5
+    },
+    "system.disk_usage": {
+      "action": "read",
+      "arguments": "none",
+      "timeout_seconds": 5
+    },
+    "github.auth_status": {
+      "action": "read",
+      "arguments": "none",
+      "timeout_seconds": 10
+    },
+    "github.repo_view": {
+      "action": "read",
+      "arguments": "none",
+      "timeout_seconds": 10
+    },
+    "github.pr_current": {
+      "action": "read",
+      "arguments": "none",
+      "timeout_seconds": 10
+    },
+    "github.actions_recent": {
+      "action": "read",
+      "arguments": "none",
+      "timeout_seconds": 10
     }
   },
   "boundaries": {
@@ -51,6 +93,18 @@
       "ops/systemd-user/debugai-server-command.path",
       "ops/systemd-user/debugai-server-command.service"
     ],
-    "debugai_product_logic_copied": false
+    "debugai_product_logic_copied": false,
+    "current_debugai_generic_read_commands": [
+      "project.pwd",
+      "project.git_head",
+      "project.git_status",
+      "project.git_changed_paths",
+      "project.git_recent_commits",
+      "system.disk_usage",
+      "github.auth_status",
+      "github.repo_view",
+      "github.pr_current",
+      "github.actions_recent"
+    ]
   }
 }
