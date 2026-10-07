@@ -41,7 +41,7 @@ Server readback on 2026-10-01 confirmed that `/home/admin1/.cursor/mcp.json` con
 |---|---|---|---|
 | Cloudflare API | managed by `operations/workspace-mcp.json` | `CONFIG_REGISTERED`; installer/verify PASS | authentication / transport / tool discovery / representative call still `NOT_VERIFIED` |
 | Hugging Face | managed by `operations/workspace-mcp.json` | `CONFIG_REGISTERED`; installer/verify PASS | authentication / transport / tool discovery / representative call still `NOT_VERIFIED` |
-| DebugAI | managed by `operations/workspace-mcp.json`; implementation remains `seigo-gace/debug-ai` | `CONFIG_REGISTERED`; installer/verify PASS | 13 tools, health and bounded Server Command live PASS on the explicitly reflected revision; guarded deploy completion is separate |
+| DebugAI | managed by `operations/workspace-mcp.json`; implementation remains `seigo-gace/debug-ai` | `CONFIG_REGISTERED`; installer/verify PASS | 13 tools, health, bounded Server Command and guarded deploy live PASS on the explicitly reflected revision |
 | GitHub | pre-existing global entry; preserved, not rewritten by current manifest | `CONFIG_PRESENT` | live Cursor-client verification remains separate |
 | Deterministic Japanese Parser | pre-existing global entry; preserved, not rewritten by current manifest | `CONFIG_PRESENT` | live transport / tool discovery / representative call remain `NOT_VERIFIED` |
 
@@ -178,10 +178,12 @@ DebugAI MCP **is implemented**. Current DebugAI authority records stdio source/u
 The shared control-path verification is bound to the explicitly reflected revision,
 not an arbitrary future DebugAI HEAD. Live stdio discovery/health and real Server
 Command request/status/Host HEAD readback passed on reflected
-`1c6da080d340ab6a47d447c78a21c8738f2e748a`. The owning repository's unrelated
+`4190f8701d989648e78c60400a9147cc6d4794ad`. The owning repository's unrelated
 workflow, benchmark, durable-continuation and Strict Completion qualifications
-remain separate from this bounded control route. Production GitOps readiness/status
-follow-up requires its own approved reflection and terminal deploy receipt.
+remain separate from this bounded control route. The existing guarded GitOps deploy
+completed PASS under a new single-use exact-SHA Host receipt. The existing watcher
+runs both bounded Bash runners with authorized Docker group access; no new executor
+or queue was introduced.
 
 Use the following distinction:
 
@@ -189,11 +191,15 @@ Use the following distinction:
 MCP_IMPLEMENTATION=VERIFIED
 MCP_PROTOCOL=VERIFIED
 PRIOR_CODEX_USAGE=CONFIRMED_BY_MASTER
-REFLECTED_SERVER_HEAD=1c6da080d340ab6a47d447c78a21c8738f2e748a
-REFLECTED_SOURCE_IMAGE_PARITY=PASS_260_PACKAGED_FILES
+REFLECTED_SERVER_HEAD=4190f8701d989648e78c60400a9147cc6d4794ad
+REFLECTED_SOURCE_IMAGE_PARITY=PASS_261_PACKAGED_FILES
 WORKSPACE_REGISTRATION_READBACK=PASS
 REPRESENTATIVE_SERVER_COMMAND_MCP_CALL=PASS
-GUARDED_GITOPS_COMPLETION=FOLLOWUP_REFLECTION_PENDING
+GUARDED_GITOPS_COMPLETION=PASS
+GUARDED_GITOPS_DEPLOY_ID=gitops_0444c77ff07c828e1a835ee2
+REPRESENTATIVE_SERVER_COMMAND_ID=cmd_803e4df00579d8697dda3181
+HOST_APPROVAL_REJECTION=PASS
+PROJECT_COMMON_SERVER_E2E=PASS
 REMOTE_CHATGPT_DIRECT_MCP_CONNECTOR=NOT_VERIFIED
 ```
 
