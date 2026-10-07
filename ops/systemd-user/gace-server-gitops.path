@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch G-ACE shared guarded server GitOps queue
+
+[Path]
+PathExistsGlob=/home/admin1/server-core/.gace-control/server-gitops/requests/gitops_*.json
+Unit=gace-server-gitops.service
+
+[Install]
+WantedBy=default.target
