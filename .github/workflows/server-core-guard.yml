@@ -119,7 +119,7 @@ jobs:
           from pathlib import Path
           p=json.loads(Path('operations/server-command.json').read_text())
           assert p['name']=='gace-shared-server-command'
-          assert set(p['commands'])=={'workspace.pwd','workspace.git_head'}
+          assert set(p['commands'])=={'workspace.pwd','workspace.git_head','workspace.git_status','workspace.git_changed_paths','workspace.git_recent_commits','system.disk_usage','github.auth_status','github.repo_view','github.pr_current','github.actions_recent'}
           assert set(p['targets'])=={'server-core','debug-ai'}
           b=p['boundaries']
           assert b['arbitrary_shell'] is False
