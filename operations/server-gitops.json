@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "name": "gace-shared-server-gitops",
+  "request_schema": "gace.server-gitops-request/v1",
+  "status_schema": "gace.server-gitops-status/v1",
+  "request_id_pattern": "^gitops_[0-9a-f]{24}$",
+  "queue": {
+    "relative_root": ".gace-control/server-gitops",
+    "ttl_ms": 60000,
+    "max_requests_per_run": 4,
+    "max_output_bytes": 4096
+  },
+  "approval": {
+    "repository": "G-ACE-inc/server-core",
+    "issue_number": 10,
+    "actor": "seigo-gace",
+    "marker": "[GACE-SERVER-APPROVE]",
+    "max_age_seconds": 900,
+    "consumed_relative_root": ".gace-control/server-gitops/approvals-used"
+  },
+  "actions": {
+    "deploy": {
+      "approval_class": "MASTER",
+      "mode": "exact_sha_source_sync"
+    }
+  },
+  "targets": {
+    "server-core": {
+      "enabled": true,
+      "host_path_env": "GACE_SERVER_GITOPS_TARGET_SERVER_CORE",
+      "default_host_path": "/home/admin1/server-core",
+      "github_repository": "G-ACE-inc/server-core",
+      "allowed_branches": [
+        "main"
+      ]
+    },
+    "debug-ai": {
+      "enabled": false,
+      "host_path_env": "GACE_SERVER_GITOPS_TARGET_DEBUG_AI",
+      "default_host_path": "/home/admin1/projects/debug-ai",
+      "github_repository": "seigo-gace/debug-ai",
+      "preservation": "EXISTING_DEBUGAI_GITOPS_REMAINS_ACTIVE"
+    }
+  },
+  "boundaries": {
+    "arbitrary_shell": false,
+    "arbitrary_path": false,
+    "arbitrary_repository": false,
+    "force_push": false,
+    "destructive_reset": false,
+    "non_fast_forward": false,
+    "dirty_worktree": false,
+    "exact_remote_sha_required": true,
+    "github_owner_approval_required": true,
+    "approval_replay_forbidden": true
+  },
+  "reuse": {
+    "source_repository": "seigo-gace/debug-ai",
+    "source_files": [
+      "server/control/gitops-request.js",
+      "scripts/host-gitops-runner.sh"
+    ],
+    "retained_in_debugai": true,
+    "debugai_existing_path_deleted": false
+  }
+}
