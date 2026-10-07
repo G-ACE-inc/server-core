@@ -53,6 +53,19 @@ jobs:
           test -x scripts/ai-auto-commit.sh
           test -x scripts/resolve-codex-skill.sh
           test -x scripts/github-skill-path.sh
+          test -f operations/github-project-control.json
+          test -f Dockerfile.project-control
+          test -f Dockerfile.project-control.dockerignore
+          test -f docker-compose.project-control.yml
+          test -f .github/workflows/github-project-control-request.yml
+          test -f scripts/github_project_control.py
+          test -f scripts/github_project_control_test.py
+          test -f scripts/github_project_request_from_comment.py
+          test -f scripts/github_project_request_from_comment_test.py
+          test -f scripts/github_project_internal_send.py
+          test -f scripts/github_project_internal_receiver.py
+          test -f scripts/github_project_internal_transport_test.py
+          test -f scripts/github_project_runtime_config_test.py
 
       - name: No redundant retired authorities
         run: |
