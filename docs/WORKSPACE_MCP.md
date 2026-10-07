@@ -41,7 +41,7 @@ Server readback on 2026-10-01 confirmed that `/home/admin1/.cursor/mcp.json` con
 |---|---|---|---|
 | Cloudflare API | managed by `operations/workspace-mcp.json` | `CONFIG_REGISTERED`; installer/verify PASS | authentication / transport / tool discovery / representative call still `NOT_VERIFIED` |
 | Hugging Face | managed by `operations/workspace-mcp.json` | `CONFIG_REGISTERED`; installer/verify PASS | authentication / transport / tool discovery / representative call still `NOT_VERIFIED` |
-| DebugAI | managed by `operations/workspace-mcp.json`; implementation remains `seigo-gace/debug-ai` | `CONFIG_SOURCE_REGISTERED`; installer/verify CI pending on this Change Unit | prior use exists; current exact-head representative live call remains separate |
+| DebugAI | managed by `operations/workspace-mcp.json`; implementation remains `seigo-gace/debug-ai` | `CONFIG_REGISTERED`; installer/verify PASS | 13 tools, health and bounded Server Command live PASS on the explicitly reflected revision; guarded deploy completion is separate |
 | GitHub | pre-existing global entry; preserved, not rewritten by current manifest | `CONFIG_PRESENT` | live Cursor-client verification remains separate |
 | Deterministic Japanese Parser | pre-existing global entry; preserved, not rewritten by current manifest | `CONFIG_PRESENT` | live transport / tool discovery / representative call remain `NOT_VERIFIED` |
 
@@ -175,7 +175,13 @@ If a Project has the same server name as a global shared MCP, the Project defini
 
 DebugAI MCP **is implemented**. Current DebugAI authority records stdio source/unit/real-protocol verification, 9 MCP tools, health, and durable continuation surfaces as PASS. Master also reports prior successful Codex use of DebugAI, so server-core must not classify DebugAI MCP as `NOT_IMPLEMENTED`, `NOT_REGISTERED`, or as having no usage history.
 
-The remaining boundary is narrower: **current exact-head Server/Codex live re-verification is pending**. The active DebugAI work is still in progress, and its current authority explicitly delegates real Server readback, current Codex registration readback, and representative current-head live calls to the Codex-side verification phase.
+The shared control-path verification is bound to the explicitly reflected revision,
+not an arbitrary future DebugAI HEAD. Live stdio discovery/health and real Server
+Command request/status/Host HEAD readback passed on reflected
+`1c6da080d340ab6a47d447c78a21c8738f2e748a`. The owning repository's unrelated
+workflow, benchmark, durable-continuation and Strict Completion qualifications
+remain separate from this bounded control route. Production GitOps readiness/status
+follow-up requires its own approved reflection and terminal deploy receipt.
 
 Use the following distinction:
 
@@ -183,9 +189,12 @@ Use the following distinction:
 MCP_IMPLEMENTATION=VERIFIED
 MCP_PROTOCOL=VERIFIED
 PRIOR_CODEX_USAGE=CONFIRMED_BY_MASTER
-CURRENT_EXACT_HEAD_SERVER_READBACK=PENDING
-CURRENT_EXACT_HEAD_CODEX_REGISTRATION_READBACK=PENDING
-CURRENT_EXACT_HEAD_REPRESENTATIVE_CALL=PENDING
+REFLECTED_SERVER_HEAD=1c6da080d340ab6a47d447c78a21c8738f2e748a
+REFLECTED_SOURCE_IMAGE_PARITY=PASS_260_PACKAGED_FILES
+WORKSPACE_REGISTRATION_READBACK=PASS
+REPRESENTATIVE_SERVER_COMMAND_MCP_CALL=PASS
+GUARDED_GITOPS_COMPLETION=FOLLOWUP_REFLECTION_PENDING
+REMOTE_CHATGPT_DIRECT_MCP_CONNECTOR=NOT_VERIFIED
 ```
 
 Do not downgrade an already implemented/previously used MCP to `NOT_IMPLEMENTED` merely because the latest exact HEAD has not yet been re-verified live. Conversely, prior use is not proof that the current in-progress HEAD is live and identical; current-head availability remains a separate verification state.

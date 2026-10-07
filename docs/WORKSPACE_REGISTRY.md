@@ -100,7 +100,7 @@ MCPの利用可能性は「文書にある」だけでは成立しない。
 | MCP | Owner / authority | Config authority | Purpose | Current boundary |
 |---|---|---|---|---|
 | Cloudflare API MCP | Cloudflare / Workspace config | `~/.cursor/mcp.json` via `operations/workspace-mcp.json` | Cloudflare操作入口 | GLOBAL_CONFIG_SOURCE_VERIFIED; live use pending |
-| DebugAI MCP | `seigo-gace/debug-ai` | implementation/runtime=`seigo-gace/debug-ai`; Workspace registration/routing=`operations/workspace-mcp.json` + `operations/github-project-debugai-routing.json` | GitHub Project / 親AIから既存DebugAI MCP経由でbounded Server Command / guarded GitOpsを共通利用 | MCP_IMPLEMENTED / MCP_PROTOCOL_VERIFIED / PRIOR_USAGE_CONFIRMED / WORKSPACE_CONFIG_SOURCE_REGISTERED; current exact-head representative live call remains separate |
+| DebugAI MCP | `seigo-gace/debug-ai` | implementation/runtime=`seigo-gace/debug-ai`; Workspace registration/routing=`operations/workspace-mcp.json` + `operations/github-project-debugai-routing.json` | GitHub Project / 親AIから既存DebugAI MCP経由でbounded Server Command / guarded GitOpsを共通利用 | Workspace config, 13 tools, health and real bounded Server Command PASS at reflected revision; guarded deploy completion and broader DebugAI qualification remain separate |
 | Reuse KB MCP | future F: KB bridge owner | future verified global config | F: reusable-development KB検索/登録 | NOT_IMPLEMENTED |
 | Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | global MCP after runtime readback | deterministic Japanese parser | repository DISCOVERED; GLOBAL_REGISTRATION_PENDING / LIVE availability NOT_VERIFIED |
 
@@ -120,9 +120,12 @@ MCP implementation = VERIFIED
 MCP stdio / protocol = VERIFIED
 MCP tool surface = 13 tools (9 original + 4 bounded control tools)
 prior Codex usage = CONFIRMED_BY_MASTER
-current in-progress exact-head Server readback = PENDING
-current in-progress exact-head Codex registration readback = PENDING
-current in-progress exact-head representative live calls = PENDING
+reflected Server head = 1c6da080d340ab6a47d447c78a21c8738f2e748a
+packaged source/image parity = PASS (260 files)
+Workspace configuration readback = PASS
+bounded Server Command MCP request/status/Host HEAD = PASS
+guarded deploy completion = follow-up reflection pending
+remote ChatGPT direct MCP connector = NOT_VERIFIED
 ```
 
 Current-head re-verification pending is **not** equivalent to `NOT_IMPLEMENTED` or `NOT_REGISTERED`. Historical successful use is also **not** sufficient to claim the current changing HEAD as freshly live-verified. Preserve both facts.
