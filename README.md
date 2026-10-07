@@ -2,19 +2,35 @@
 
 `server-core` は、G-ACE Workspace全体の**司令室**である。
 
-各Projectの実装本体を抱え込む場所ではない。Workspaceで作業するAI / Developerが、**どのProjectで、何を読み、どの共通Tool/MCP/Secret/KBを使い、どう検証し、どうGitHubへ残し、どのApproval Boundaryまで進めるか**を決める共通Command Centerである。
+Current運用の最上位Control PlaneはGitHub Project #1へ移行する。server-coreは両AI用Rule全文を抱える場所ではなく、**GitHub Projectを運用するためのbootstrap / router / control room**として、Workspace/serverの安定した入口・安全境界・shared capability・bounded runtimeを提供する。
+
+Rule Planeは二つに分離する。
+- Server AI Minimal Kernel: `G-ACE-inc/server-core#16`
+- GPT CHAT Orchestrator Kernel: `G-ACE-inc/server-core#17`
+
+Machine contract: [`operations/github-project-rule-plane.json`](operations/github-project-rule-plane.json)  
+Design / loading contract: [`docs/GITHUB_PROJECT_RULE_PLANE.md`](docs/GITHUB_PROJECT_RULE_PLANE.md)
+
+各Projectの実装本体は所有Repositoryに残す。
 
 ## 必ずここから開始
 
 Workspace内の作業開始順は固定する。
 
 ```text
-server-core/README.md
+SERVER_AI
+  -> server-core/README.md
   -> docs/LOAD_SCOPE.md
-  -> 今回必要なserver-core Authorityだけ
-  -> 対象Project README
-  -> 必要なDesign / Project Tree / Design Delta / System Document
-  -> 対象Source / 直接依存 / 関連Test
+  -> operations/github-project-rule-plane.json
+  -> Rule Plane #16 / GitHub Project Current
+  -> target Repository Current
+  -> 必要なAuthority / Source / Testだけ
+
+GPT_CHAT
+  -> Rule Plane #17
+  -> GitHub Project Current
+  -> server-core only when Workspace/server control is required
+  -> target Repository Current / Evidence
 ```
 
 server-coreの全正本を一括読込しない。
@@ -69,6 +85,7 @@ Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Production�
 - `docs/SERVER_CORE_DESIGN.md` — server-core設計基準線
 - `docs/DESIGN_DELTA.md` — 設計差分と理由
 - `docs/LOAD_SCOPE.md` — Task routing / progressive context loading
+- `docs/GITHUB_PROJECT_RULE_PLANE.md` — GitHub Project上のSERVER_AI / GPT_CHAT二層Rule運用
 - `docs/MASTER_TERMINAL_COMMAND.md` — Master Terminal Copy&Paste Command / Syntax Validation / GACE_RESULT / Shell Safety契約
 - `docs/G_ACE_WORKSPACE.md` — Workspace正規運用
 - `docs/STRUCTURE.md` — server-core Project Tree / Navigation
@@ -114,6 +131,7 @@ Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Production�
 | Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
 | Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
 | 用語 | `docs/GLOSSARY.md` |
+| GitHub Project Rule Plane / AI profile routing | `docs/GITHUB_PROJECT_RULE_PLANE.md` + `operations/github-project-rule-plane.json` |
 | server-core構造 | `docs/STRUCTURE.md` |
 | server-core設計判断 / 差分 | `docs/SERVER_CORE_DESIGN.md` + `docs/DESIGN_DELTA.md` |
 
