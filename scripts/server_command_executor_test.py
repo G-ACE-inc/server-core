@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import importlib.util
-import json
 import os
 import subprocess
 import tempfile
@@ -58,60 +57,51 @@ class SharedServerCommandTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
 
-    def test_pwd_request_runs_through_host_queue_and_readback(self):
-        queued = mod.enqueue(
-            self.contract,
-            "workspace.pwd",
-            "server-core",
-            env=self.env,
-        )
-        self.assertEqual(queued["state"], "QUEUED")
+    def execute(self, command_id):
+        queued = mod.enqueue(self.contract, command_id, "server-core", env=self.env)
         self.run_runner()
         status = mod.status(self.contract, queued["id"], env=self.env)
         self.assertEqual(status["state"], "PASS")
         self.assertTrue(status["result"]["read_only"])
-        self.assertEqual(status["result"]["command_id"], "workspace.pwd")
+        self.assertEqual(status["result"]["command_id"], command_id)
         self.assertEqual(status["result"]["target_id"], "server-core")
-        self.assertEqual(status["result"]["stdout"], str(self.target.resolve()))
+        return status["result"]["stdout"]
+
+    def test_pwd_request_runs_through_host_queue_and_readback(self):
+        self.assertEqual(self.execute("workspace.pwd"), str(self.target.resolve()))
 
     def test_git_head_request_returns_exact_head(self):
-        queued = mod.enqueue(
-            self.contract,
-            "workspace.git_head",
-            "server-core",
-            env=self.env,
-        )
-        self.run_runner()
-        status = mod.status(self.contract, queued["id"], env=self.env)
-        self.assertEqual(status["state"], "PASS")
-        self.assertEqual(status["result"]["stdout"], self.head)
+        self.assertEqual(self.execute("workspace.git_head"), self.head)
+
+    def test_generic_git_diagnostics_match_target_state(self):
+        status = self.execute("workspace.git_status")
+        self.assertIn("dirty_count=0", status)
+        recent = self.execute("workspace.git_recent_commits")
+        self.assertIn("proof", recent)
+        (self.target / "changed.txt").write_text("changed\n", encoding="utf-8")
+        changed = self.execute("workspace.git_changed_paths")
+        self.assertIn("changed.txt", changed)
+        status = self.execute("workspace.git_status")
+        self.assertIn("dirty_count=1", status)
+
+    def test_disk_usage_is_bounded_read_only_fact(self):
+        value = self.execute("system.disk_usage")
+        self.assertIn("blocks_kb=", value)
+        self.assertIn("used_percent=", value)
 
     def test_unknown_command_fails_before_queue_write(self):
         with self.assertRaisesRegex(mod.ServerCommandError, "SERVER_COMMAND_NOT_ALLOWED"):
-            mod.enqueue(
-                self.contract,
-                "shell.exec",
-                "server-core",
-                env=self.env,
-            )
+            mod.enqueue(self.contract, "shell.exec", "server-core", env=self.env)
         requests = self.queue / "requests"
         self.assertFalse(requests.exists())
 
     def test_unknown_target_fails_before_queue_write(self):
         with self.assertRaisesRegex(mod.ServerCommandError, "SERVER_COMMAND_TARGET_NOT_ALLOWED"):
-            mod.enqueue(
-                self.contract,
-                "workspace.pwd",
-                "arbitrary-path",
-                env=self.env,
-            )
+            mod.enqueue(self.contract, "workspace.pwd", "arbitrary-path", env=self.env)
 
     def test_expired_request_fails_closed(self):
         request = mod.make_request(
-            self.contract,
-            "workspace.pwd",
-            "server-core",
-            now_ms=1,
+            self.contract, "workspace.pwd", "server-core", now_ms=1
         )
         mod.atomic_json(self.queue / "requests" / f"{request['id']}.json", request)
         self.run_runner()
@@ -120,10 +110,26 @@ class SharedServerCommandTests(unittest.TestCase):
         self.assertEqual(status["error"], "REQUEST_EXPIRED")
 
     def test_contract_keeps_mutating_surfaces_disabled(self):
+        self.assertEqual(
+            set(self.contract["commands"]),
+            {
+                "workspace.pwd",
+                "workspace.git_head",
+                "workspace.git_status",
+                "workspace.git_changed_paths",
+                "workspace.git_recent_commits",
+                "system.disk_usage",
+                "github.auth_status",
+                "github.repo_view",
+                "github.pr_current",
+                "github.actions_recent",
+            },
+        )
         bounds = self.contract["boundaries"]
         self.assertFalse(bounds["arbitrary_shell"])
         self.assertFalse(bounds["arbitrary_path"])
         self.assertFalse(bounds["arbitrary_environment"])
+        self.assertFalse(bounds["requester_supplied_command_arguments"])
         self.assertFalse(bounds["persistent_mutation"])
         self.assertTrue(bounds["single_writer_host_runner"])
         self.assertTrue(bounds["expired_request_fail_closed"])
