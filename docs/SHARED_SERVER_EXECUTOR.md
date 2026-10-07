@@ -64,6 +64,14 @@ Current shared command allowlist:
 ```text
 workspace.pwd
 workspace.git_head
+workspace.git_status
+workspace.git_changed_paths
+workspace.git_recent_commits
+system.disk_usage
+github.auth_status
+github.repo_view
+github.pr_current
+github.actions_recent
 ```
 
 Current target allowlist:
@@ -118,13 +126,13 @@ The Internal Event API / Webhook Gateway may still be used for events/logging wh
 
 ## Current source scope
 
-This first shared extraction intentionally keeps the Live-proven minimal read-only surface.
+The shared read surface carries the DebugAI-proven generic repository/server/GitHub diagnostics while leaving DebugAI-specific service/sandbox commands in DebugAI.
 
 ```text
 ARBITRARY_SHELL=NO
 ARBITRARY_PATH=NO
 PERSISTENT_MUTATION=NO
-READ_ONLY_COMMANDS=2
+READ_ONLY_COMMANDS=10
 TARGETS=2
 HOST_RUNNER_SOURCE=IMPLEMENTED
 SYSTEMD_SOURCE=IMPLEMENTED
@@ -137,7 +145,7 @@ CHAT_DIRECT_E2E=NOT_RUN
 
 1. Source/CI prove the shared executor contract in server-core.
 2. Reflect the shared queue/runner/watcher to VPS after explicit runtime approval.
-3. Verify exact readback for `workspace.pwd` and `workspace.git_head`.
+3. Verify exact readback across the generic read allowlist, beginning with `workspace.pwd`, `workspace.git_head`, `workspace.git_status`, `system.disk_usage` and GitHub identity/readback.
 4. Change the existing DebugAI MCP/workflow adapter to submit to the shared server-core queue instead of the DebugAI-local queue.
 5. Prove DebugAI read-only E2E through the shared executor.
 6. Expose the same bounded capability to GPT CHAT through the existing approved MCP/connector route.
