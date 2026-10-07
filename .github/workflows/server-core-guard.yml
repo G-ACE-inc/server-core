@@ -59,6 +59,7 @@ jobs:
           test -x scripts/resolve-codex-skill.sh
           test -x scripts/github-skill-path.sh
           test -f operations/github-project-control.json
+          test -f operations/github-project-debugai-routing.json
           test -f Dockerfile.project-control
           test -f Dockerfile.project-control.dockerignore
           test -f docker-compose.project-control.yml
@@ -245,12 +246,29 @@ jobs:
           from pathlib import Path
           p = json.loads(Path('operations/workspace-mcp.json').read_text())
           assert p['scope'] == 'workspace-global'
-          assert set(p['servers']) >= {'cloudflare-api', 'huggingface'}
+          assert set(p['servers']) >= {'cloudflare-api', 'huggingface', 'debugai'}
           for name, cfg in p['servers'].items():
-              assert cfg.get('url', '').startswith('https://')
+              is_remote = isinstance(cfg.get('url'), str) and cfg['url'].startswith('https://')
+              is_local = isinstance(cfg.get('command'), str) and cfg['command'].startswith('/')
+              assert is_remote ^ is_local, (name, cfg)
               assert 'token' not in json.dumps(cfg).lower()
               assert 'secret' not in json.dumps(cfg).lower()
+          assert p['servers']['debugai'] == {
+              'command': '/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs'
+          }
+          route = json.loads(Path('operations/github-project-debugai-routing.json').read_text())
+          assert route['project']['node_id'] == 'PVT_kwHODOQFoM4BEJII'
+          assert route['execution_backend']['mcp_server'] == 'debugai'
+          assert route['execution_backend']['tools'] == {
+              'server_read_request': 'debugai_server_read',
+              'server_read_status': 'debugai_server_status',
+              'gitops_request': 'debugai_gitops_request',
+              'gitops_status': 'debugai_gitops_status',
+          }
+          assert route['boundaries']['debugai_implementation_copied_into_server_core'] is False
+          assert route['boundaries']['arbitrary_shell_bridge'] is False
           print('WORKSPACE_MCP_MANIFEST=PASS')
+          print('GITHUB_PROJECT_DEBUGAI_ROUTING=PASS')
           PY
 
       - name: Workspace MCP merge compatibility

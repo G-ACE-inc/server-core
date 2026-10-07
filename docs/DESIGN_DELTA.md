@@ -390,3 +390,53 @@ PROJECT_ITEM_REGISTRATION=NOT_VERIFIED
 RULE_LOADING_RUNTIME=NOT_VERIFIED
 NOTION_CUTOVER=NOT_RUN
 ```
+
+
+## 2026-10-07 — Register existing DebugAI MCP as GitHub Project server-operation backend
+
+### Correction
+Master clarified the already-working execution boundary:
+
+```text
+GPT CHAT / parent AI
+  -> existing DebugAI MCP
+  -> existing bounded Server Command / guarded GitOps
+  -> existing Host runner
+  -> VPS
+```
+
+The unfinished work is not a new executor. It is the Workspace/common-control layer that lets GitHub Project #1 use that existing DebugAI MCP across Projects.
+
+The later PR #20 extraction idea duplicated the executor responsibility into server-core and is not the adopted architecture for this Change Unit.
+
+### Adopted ownership
+- GitHub Project #1: Current / control surface.
+- server-core: Workspace registration, routing, permission/approval contract, discovery and verification state.
+- DebugAI: MCP implementation, Server Command, GitOps, Host runner, queue/status execution body.
+- Project repositories: own their implementation and Current evidence.
+
+### Source change
+- add existing DebugAI stdio MCP entry to `operations/workspace-mcp.json`;
+- add `operations/github-project-debugai-routing.json` fixing Project #1 -> DebugAI MCP routing and the four existing control tools;
+- adjust server-core Guard so Workspace MCP supports either HTTPS remote servers or absolute local stdio commands;
+- update Workspace MCP/Registry authority without copying DebugAI implementation.
+
+### Safety boundary
+```text
+DEBUGAI_IMPLEMENTATION_COPIED_TO_SERVER_CORE=NO
+DEBUGAI_REPOSITORY_MUTATION=NO
+NEW_EXECUTOR=NO
+NEW_HOST_RUNNER=NO
+NEW_QUEUE=NO
+ARBITRARY_SHELL_BRIDGE=NO
+SERVER_CORE_ROLE=CONTROL_ROUTING_ONLY
+DEBUGAI_ROLE=EXECUTION_BACKEND
+```
+
+Read-only server operations route through `debugai_server_read/status`.
+Protected GitOps routes through `debugai_gitops_request/status` and retains the existing DebugAI approval/exact-SHA/Host-runner gates.
+
+### Runtime boundary
+This Source registration is not a live representative-call claim. Actual Workspace config installation/readback and a representative DebugAI MCP call remain runtime verification gates.
+
+PR #20 remains separate/paused and must not be merged as the active solution merely because it exists.

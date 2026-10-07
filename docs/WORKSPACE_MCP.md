@@ -41,6 +41,7 @@ Server readback on 2026-10-01 confirmed that `/home/admin1/.cursor/mcp.json` con
 |---|---|---|---|
 | Cloudflare API | managed by `operations/workspace-mcp.json` | `CONFIG_REGISTERED`; installer/verify PASS | authentication / transport / tool discovery / representative call still `NOT_VERIFIED` |
 | Hugging Face | managed by `operations/workspace-mcp.json` | `CONFIG_REGISTERED`; installer/verify PASS | authentication / transport / tool discovery / representative call still `NOT_VERIFIED` |
+| DebugAI | managed by `operations/workspace-mcp.json`; implementation remains `seigo-gace/debug-ai` | `CONFIG_SOURCE_REGISTERED`; installer/verify CI pending on this Change Unit | prior use exists; current exact-head representative live call remains separate |
 | GitHub | pre-existing global entry; preserved, not rewritten by current manifest | `CONFIG_PRESENT` | live Cursor-client verification remains separate |
 | Deterministic Japanese Parser | pre-existing global entry; preserved, not rewritten by current manifest | `CONFIG_PRESENT` | live transport / tool discovery / representative call remain `NOT_VERIFIED` |
 
@@ -54,6 +55,7 @@ Current Server shell does not have Cursor Agent CLI installed. `agent mcp list` 
 |---|---|---|---|
 | Cloudflare API | `https://mcp.cloudflare.com/mcp` | Cursor OAuth | `CONFIG_REGISTERED`; live connection pending |
 | Hugging Face | `https://huggingface.co/mcp` | Provider/Client OAuth or generated client config | `CONFIG_REGISTERED`; live connection pending |
+| DebugAI | `/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs` (stdio) | local Workspace runtime; no Provider token in manifest | `CONFIG_SOURCE_REGISTERED`; implementation owned by DebugAI |
 
 Cloudflare documents Cursor integration through its API MCP and OAuth authorization. Hugging Face provides an official MCP server for Cursor and other MCP-compatible clients.
 
@@ -85,6 +87,7 @@ Cursor User Global MCP
    |
    +--> Cloudflare API MCP
    +--> Hugging Face MCP
+   +--> DebugAI MCP (existing stdio implementation)
    +--> preserved pre-existing global MCP entries
 ```
 
@@ -181,6 +184,8 @@ CURRENT_EXACT_HEAD_REPRESENTATIVE_CALL=PENDING
 Do not downgrade an already implemented/previously used MCP to `NOT_IMPLEMENTED` merely because the latest exact HEAD has not yet been re-verified live. Conversely, prior use is not proof that the current in-progress HEAD is live and identical; current-head availability remains a separate verification state.
 
 Do not invent a new local path or endpoint while DebugAI is being changed. server-core owns the discovery/registration/verification contract; DebugAI owns its implementation body.
+
+Current registration contract now uses the existing DebugAI stdio entry `/home/admin1/projects/debug-ai/bin/debugai-mcp.mjs` through `operations/workspace-mcp.json`. GitHub Project server-operation routing is fixed separately in `operations/github-project-debugai-routing.json`; server-core owns that routing contract, while DebugAI retains all MCP/Server Command/GitOps implementation.
 
 ## Deterministic Japanese Parser MCP
 
