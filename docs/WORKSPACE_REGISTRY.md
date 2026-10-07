@@ -165,7 +165,7 @@ DebugAIを使うTaskでは、既に取得済みのEvidence / Tool結果 / prior 
 |---|---|---|---|
 | GitHub work report / auto commit | `docs/AUTO_COMMIT.md`, `scripts/ai-auto-commit.sh` | Diff確認・Commit・Push | source implemented; Repository policy applies |
 | GitHub skill resolver | `docs/GITHUB_SKILL.md`, resolver scripts | GitHub skill path resolution | source implemented |
-| GitHub Project Control | `operations/github-project-control.json`, `scripts/github_project_control.py`, `.github/workflows/github-project-control-request.yml` | owner-only CHAT/GitHub commentをbounded requestへ変換・検証し、Personal Project #1の4 Control Fieldを既存VPS `gh`認証で更新・exact readback | request-validation source implemented / automatic GitHub→VPS execution and runtime E2E `NOT_VERIFIED` |
+| GitHub Project Control | `operations/github-project-control.json`, `scripts/github_project_control.py`, `scripts/github_project_internal_send.py`, `scripts/github_project_internal_receiver.py`, `.github/workflows/github-project-control-request.yml` | owner-only CHAT/GitHub commentをbounded requestへ変換し、既存Generic Internal Event APIを通してProject-Control専用receiverへ配送し、Personal Project #1の4 Control Fieldを既存VPS `gh`認証で更新・exact readback | request/GraphQL/internal sender/receiver Source+Test implemented; Gateway destination registration, runtime credential injection, automatic E2E and live Project mutation `NOT_VERIFIED` |
 | Deploy routine | `docs/DEPLOY_RUNBOOK.md` | confirmed revision -> approved deploy -> runtime verify | target runtime specific |
 | Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare common contract | Project-specific resource state readback required |
 | Shared Secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 | broker/provider runtime verification required |
@@ -173,7 +173,7 @@ DebugAIを使うTaskでは、既に取得済みのEvidence / Tool結果 / prior 
 | Storage lifecycle audit | `scripts/storage_lifecycle_audit.py`, `operations/storage-lifecycle.json` | disk/log/backup/Docker read-only audit | source implemented; current server result task-time readback |
 | Storage cleanup mutation | future approved implementation | safe deletion/rotation | NOT_IMPLEMENTED |
 
-GitHub Project Controlの`SOURCE_IMPLEMENTED`はContract/Runner/owner-only Comment→Request validation Workflow/TestのSource状態だけを示す。Issue Commentからのrequest検証はProject mutationではない。GitHub→VPS execution、VPS Current credential、実Project mutation/readbackは別Evidenceであり、E2E成立前に`AVAILABLE_VERIFIED`へ昇格しない。
+GitHub Project Controlの`SOURCE_IMPLEMENTED`はContract/Runner/owner-only Comment→Request validationに加え、Generic Internal Event API producer helperと署名付きbounded receiverのSource/Test状態までを示す。Issue Comment validationやinternal delivery SourceはProject mutationではない。Gateway destination登録、consumer token/receiver secretのCurrent injection、receiver Runtime、VPS Current `gh` credential、実Project mutation/readbackは別Evidenceであり、E2E成立前に`AVAILABLE_VERIFIED`へ昇格しない。
 
 Tool追加条件:
 - Workspace内で反復利用する実益がある;

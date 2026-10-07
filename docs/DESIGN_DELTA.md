@@ -490,3 +490,31 @@ GitHub Project #1 and its control fields had already been created and verified, 
 
 ### Compatibility / approval boundary
 No main merge, Production activation, service restart/recreate, Secret/Provider mutation or live Project mutation is implied by this Source change. The comparison copy of Notion「Notion活用の大原則」is not modified by this Change Unit.
+
+
+## 2026-10-07 — Reuse Generic Internal Event API for Project Control transport
+
+### Baseline design
+The initial Issue #10 transport investigation considered external/provider webhook ingress and other GitHub-to-Server patterns. Fresh log-commonization evidence proved the Workspace already has a product-neutral trusted internal producer API in `seigo-gace/webhook-gateway`: `POST /internal/events`. G-ACE KB already uses that API to route bounded internal events without giving the producer TGserver URL or Cloudflare credentials.
+
+### Actual change
+Project Control transport now adopts that existing internal contract at Source level:
+- external/provider `/ingress/:slug` is not the Project Control transport;
+- `scripts/github_project_internal_send.py` submits only validated `gace.github-project-control/v1` data to the fixed `server-core-project-control` destination through `/internal/events`;
+- `scripts/github_project_internal_receiver.py` exposes only `/healthz` and `/internal/github-project-control`;
+- delivery requires the fixed destination header plus the existing Webhook Gateway Standard Webhooks-style HMAC signature contract with timestamp tolerance;
+- the receiver reuses `github_project_control.py` directly and does not accept arbitrary commands or target URLs;
+- operational Project/GitHub failures return retryable 5xx status while malformed/auth-invalid delivery fails before mutation;
+- `operations/github-project-control.json` records interface names and expected environment-variable names only, never credential values.
+
+### Reuse evidence
+- Webhook Gateway commit `b20364e5cc7fe62885833a07a5aef2d1c69cb2fa` added the Generic Internal Event API.
+- Webhook Gateway PR #18 / main `5361ddde2342793716f0538e7d4c7986595be1be` preserves that API and registers the product-neutral TGserver ZERO bulk destination.
+- G-ACE KB merge `da08bac504e8a66c7bb1e10a7b3d40d3f76c45c3` replaced direct TGserver transport with the Generic Internal Event API.
+- Fresh TGserver ZERO Reader run `37604153196` proved the Reader path healthy but returned no P014 hits and `PRODUCER_VERIFIED=false`; therefore runtime delivery is not inferred from Source reuse.
+
+### Remaining boundary
+This Source change does not register the `server-core-project-control` destination in webhook-gateway, create/rotate a Secret, deploy a receiver, expose a Production endpoint, merge PR #11, or execute a live Project mutation. Those remain separate Current/approval/runtime gates. Existing internal API token availability for the server-core producer and receiver delivery-secret availability are `NOT_VERIFIED` until runtime readback.
+
+### Verification state
+Internal producer/receiver Source and focused tests are implemented on the Issue #10 branch. Exact-head CI must pass before this state is promoted. Runtime remains `NOT_VERIFIED`.

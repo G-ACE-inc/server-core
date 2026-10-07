@@ -39,5 +39,27 @@
     "field_allowlist_required": true,
     "exact_readback_required": true,
     "same_target_concurrency_fail_closed": true
+  },
+  "internal_event_transport": {
+    "producer_endpoint": "/internal/events",
+    "source_id": "server-core-github",
+    "event_type": "gace.github-project-control.requested",
+    "destination_id": "server-core-project-control",
+    "payload_mode": "json",
+    "receiver_endpoint": "/internal/github-project-control",
+    "receiver_success_header": {
+      "x-gace-accepted": "true"
+    },
+    "delivery_auth": "standard-webhooks-v1-hmac-sha256",
+    "producer_env_names": [
+      "GACE_EVENT_GATEWAY_URL",
+      "GACE_EVENT_GATEWAY_TOKEN"
+    ],
+    "receiver_secret_env_names": [
+      "GACE_PROJECT_CONTROL_DELIVERY_SECRET",
+      "GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE"
+    ],
+    "gateway_destination_registration_required": true,
+    "runtime_verified": false
   }
 }

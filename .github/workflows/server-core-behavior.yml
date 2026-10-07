@@ -26,7 +26,7 @@ jobs:
         run: |
           set -euo pipefail
           bash -n scripts/init-dev-workspace.sh scripts/install-workspace-mcp.sh scripts/verify-workspace-mcp.sh scripts/ai-auto-commit.sh scripts/resolve-codex-skill.sh scripts/github-skill-path.sh
-          python3 -m py_compile scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py scripts/github_project_control.py scripts/github_project_control_test.py scripts/github_project_request_from_comment.py scripts/github_project_request_from_comment_test.py
+          python3 -m py_compile scripts/storage_lifecycle_audit.py scripts/workspace_command_center_check.py scripts/github_project_control.py scripts/github_project_control_test.py scripts/github_project_request_from_comment.py scripts/github_project_request_from_comment_test.py scripts/github_project_internal_send.py scripts/github_project_internal_receiver.py scripts/github_project_internal_transport_test.py
 
       - name: Command-center dispatch schema and workflow scope
         run: |
@@ -66,6 +66,7 @@ jobs:
           set -euo pipefail
           python3 scripts/github_project_control_test.py
           python3 scripts/github_project_request_from_comment_test.py
+          python3 scripts/github_project_internal_transport_test.py
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -76,6 +77,13 @@ jobs:
           assert set(p['allowed_fields']) == {'Wave','Gate','Change Unit','Mutation Owner'}
           assert p['rules']['arbitrary_shell_forbidden'] is True
           assert p['rules']['exact_readback_required'] is True
+          t=p['internal_event_transport']
+          assert t['producer_endpoint'] == '/internal/events'
+          assert t['destination_id'] == 'server-core-project-control'
+          assert t['receiver_endpoint'] == '/internal/github-project-control'
+          assert t['payload_mode'] == 'json'
+          assert t['gateway_destination_registration_required'] is True
+          assert t['runtime_verified'] is False
           print('GITHUB_PROJECT_CONTROL_CONTRACT=PASS')
           PY
 
