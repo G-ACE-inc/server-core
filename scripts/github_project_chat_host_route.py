@@ -114,9 +114,9 @@ def parse_evidence(lines: list[str]) -> dict[str, Any]:
     contract = doc["evidence_contract"]
     found: dict[str, str] = {}
     duplicate_conflicts: list[str] = []
-    marker_re = re.compile(r"^([A-Z][A-Z0-9_]{1,80})=([^\\r\\n]*)$")
-    timestamp_re = re.compile(r"^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z\\s+")
-    ansi_re = re.compile(r"\\x1b\\[[0-9;]*[A-Za-z]")
+    marker_re = re.compile(r"^([A-Z][A-Z0-9_]{1,80})=([^\r\n]*)$")
+    timestamp_re = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\s+")
+    ansi_re = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
     for raw_line in lines:
         line = timestamp_re.sub("", ansi_re.sub("", raw_line)).strip()
         # GitHub Actions logs contain script source and 'Run echo' annotations;
