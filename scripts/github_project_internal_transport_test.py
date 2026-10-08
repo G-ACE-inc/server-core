@@ -137,8 +137,8 @@ class InternalTransportTests(unittest.TestCase):
         server = ThreadingHTTPServer(
             ("127.0.0.1", 0),
             receiver.make_handler(
-                claim_fn=lambda *_: "INTENT_LOGGED",
-                CONTRACT, secret=b"delivery-secret", execute_fn=fake_execute,
+                CONTRACT,
+                claim_fn=lambda *_: "INTENT_LOGGED", secret=b"delivery-secret", execute_fn=fake_execute,
                 publish_fn=lambda _request, _result, _contract: "PUBLISHED",
                 now_fn=lambda:1700000000,
             ),
@@ -187,8 +187,8 @@ class InternalTransportTests(unittest.TestCase):
                 server = ThreadingHTTPServer(
                     ("127.0.0.1", 0),
                     receiver.make_handler(
-                claim_fn=lambda *_: "INTENT_LOGGED",
-                        CONTRACT, secret=b"delivery-secret",
+                CONTRACT,
+                claim_fn=lambda *_: "INTENT_LOGGED", secret=b"delivery-secret",
                         execute_fn=lambda request, _contract: (
                             executed.append(request),
                             {"REQUEST_ID": request["id"], "READBACK": request["value"],
@@ -247,8 +247,8 @@ class InternalTransportTests(unittest.TestCase):
                 server = ThreadingHTTPServer(
                     ("127.0.0.1", 0),
                     receiver.make_handler(
-                claim_fn=lambda *_: "INTENT_LOGGED",
-                        CONTRACT, secret=b"delivery-secret",
+                CONTRACT,
+                claim_fn=lambda *_: "INTENT_LOGGED", secret=b"delivery-secret",
                         execute_fn=fake_execute, publish_fn=lambda *_: "PUBLISHED",
                         now_fn=lambda: 1700000000,
                     ),
@@ -319,8 +319,8 @@ class InternalTransportTests(unittest.TestCase):
         server=ThreadingHTTPServer(
             ("127.0.0.1",0),
             receiver.make_handler(
-                claim_fn=lambda *_: "INTENT_LOGGED",
-                CONTRACT,secret=b"delivery-secret",execute_fn=fake_execute,
+                CONTRACT,
+                claim_fn=lambda *_: "INTENT_LOGGED",secret=b"delivery-secret",execute_fn=fake_execute,
                 publish_fn=lambda _request,_result,_contract:"PUBLISHED",
                 now_fn=lambda:1700000000,
             ),
