@@ -34,7 +34,8 @@
       "remote": "https://github.com/seigo-gace/debug-ai.git",
       "default_branch": "main",
       "allowed_branches": [
-        "feat/tgserver-async-log-sink-20261003"
+        "feat/tgserver-async-log-sink-20261003",
+        "master-internal-runtime-20261008"
       ],
       "allowed_operations": [
         "deploy"
