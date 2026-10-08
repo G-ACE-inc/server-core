@@ -229,8 +229,8 @@ def make_handler(
                 verify_delivery(headers, body, secret=secret, now=now_fn(), tolerance_seconds=tolerance)
                 request = parse_request_body(body, contract)
                 # Serialize mutation AND its result publication with CLI on the
-                # existing Docker tmpfs lock. A replay may still require a
-                # durable request journal; this lock alone is not deduplication.
+                # container-local lock path. Host CLI on another filesystem
+                # does not share that lock; this is not durable deduplication.
                 with project_control_lock():
                     result = execute_fn(request, contract)
                     evidence = publish_fn(request, result, contract)
