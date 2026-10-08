@@ -46,6 +46,36 @@ through a new uncontrolled shell path. The official MCP remains the adopted
 shared Project read capability; these existing GraphQL readers are reused,
 not a replacement for the official MCP Server-AI/CHAT E2E acceptance.
 
+## Independent Host ephemeral runtime evidence (2026-10-08)
+
+The existing authorized Server AI executor (Composer) has **separately** tested
+the exact official digest on the actual VPS in a *temporary, non-production*
+container with loopback-only binding. The evidence is in
+[server-core #10 / comment 6059563905](https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6059563905):
+
+- Host `x86_64` pulled image RepoDigest exactly matched the pinned SHA.
+- No token: HTTP 401; malformed Bearer: HTTP 400.
+- A permitted **per-request Host gh credential** (secret value never recorded)
+  yielded MCP initialize HTTP 200, `tools/list` containing exactly the two
+  read-only Project tools `projects_get` / `projects_list`, and a live
+  `projects_list` result identifying Project #1.
+- The ephemeral container was removed; no production Compose stack, public
+  listener, new Secret, network, Project field mutation or client registration.
+  Existing 13-tool DebugAI MCP remained operational.
+
+**Do not promote this evidence to persistent Host Runtime verification.**
+`gace-internal` and the Project Control receiver were absent on the Host
+during preflight; `server-core` checkout was still `main`, not this PR.
+Persistent private-network installation, authorized client registration and
+full shared Server AI/GPT CHAT E2E remain separate admission gates.
+
+Independently, Codex performed read-only authenticated Project #1 item/field
+readback: [Issue #10 / comment 6059550077](https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6059550077).
+All 8 registered items and four exact fields per item were retrieved and
+unchanged, with some `Wave` values `null`; controlling Issues #10 and #15
+were **not registered** in the Project. This is an actual observation, not
+authorization to add items, invent missing field values, or update any Gate.
+
 ## Activation prerequisites — must be demonstrated, not assumed
 
 1. The Source image is now pinned to the **official GitHub GHCR v1.11.0
