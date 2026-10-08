@@ -7,11 +7,11 @@ It never dispatches events or calls a Project mutation.
 import argparse
 import json
 
+import github_project_control as control
 from github_project_control import (
     ControlError,
     DEFAULT_CONTRACT,
     find_item_id,
-    gh_run,
     load_json,
     parse_json,
     read_field_value,
@@ -49,7 +49,7 @@ def read_registered_current(contract):
     """Enumerate existing Project items without adding or changing any item."""
     verify_project_identity(contract)
     project = contract["project"]
-    raw = gh_run(
+    raw = control.gh_run(
         ["project", "item-list", str(project["number"]),
          "--owner", project["owner"],
          "--limit", str(contract.get("item_read_limit", 1000)),
