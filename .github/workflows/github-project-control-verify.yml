@@ -62,7 +62,7 @@ jobs:
               -H 'Content-Type: application/json' \
               -H 'Accept: application/json, text/event-stream' \
               -X POST --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"gace-ci","version":"1"}}}' \
-              http://127.0.0.1:18082/ 2>/dev/null || true)"
+              http://127.0.0.1:18082/mcp 2>/dev/null || true)"
             if test "$status" = "401"; then break; fi
             sleep 1
           done
@@ -72,6 +72,19 @@ jobs:
           }
           grep -iq '^www-authenticate: Bearer' /tmp/mcp-unauth-headers
           echo "GITHUB_MCP_EPHEMERAL_HTTP_NO_TOKEN_DENIED=PASS"
+          invalid_status="$(curl -sS --max-time 3 -o /tmp/mcp-invalid-body \
+            -w '%{http_code}' \
+            -H 'Authorization: Bearer invalid-not-a-real-token' \
+            -H 'Content-Type: application/json' \
+            -H 'Accept: application/json, text/event-stream' \
+            -X POST --data '{"jsonrpc":"2.0","id":2,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"gace-ci-invalid","version":"1"}}}' \
+            http://127.0.0.1:18082/mcp 2>/dev/null || true)"
+          case "$invalid_status" in 400|401|403) ;; *)
+            echo "GITHUB_MCP_INVALID_TOKEN_REJECTED=FAIL code=$invalid_status"
+            exit 1
+            ;;
+          esac
+          echo "GITHUB_MCP_EPHEMERAL_HTTP_INVALID_TOKEN_DENIED=PASS"
           docker rm -f "$cid" >/dev/null
           trap - EXIT
 
