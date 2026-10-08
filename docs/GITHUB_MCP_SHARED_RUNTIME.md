@@ -56,7 +56,15 @@ not a replacement for the official MCP Server-AI/CHAT E2E acceptance.
    The tag is provenance metadata, **never** a mutable pull reference.
    The Host must still independently read back the actual pulled digest,
    compatible platform, runtime argv, process identity and allowed caller
-   before runtime admission; CI alone is not a deployment or Host check.
+   before runtime admission. The current PR CI also runs the exact pinned
+   image as nonroot/read-only with a loopback-only port on an ephemeral
+   GitHub-hosted runner, then performs an unauthenticated MCP JSON-RPC
+   initialize request; HTTP 401 and the Bearer authentication challenge
+   are mandatory. This test uses no GitHub credential and performs no
+   Host deployment, so it proves **missing-token rejection**, not authorized
+   Project tool discovery, permitted credential scope or Host E2E.
+   Evidence: https://github.com/G-ACE-inc/server-core/actions/runs/37775172247
+   (`GITHUB_MCP_EPHEMERAL_HTTP_NO_TOKEN_DENIED=PASS`).
 2. Verify the intended consumer, authorization and actual GitHub Projects
    credential scopes. HTTP accepts a **per-request** bearer credential
    supplied by a trusted client, not a globally shared token in this Compose
@@ -65,10 +73,10 @@ not a replacement for the official MCP Server-AI/CHAT E2E acceptance.
 3. Check/create the approved internal-only `gace-internal` network.
    Project Control currently also requires it; never silently start an
    unrelated receiver or recreate production services.
-4. Verify that the pinned image accepts the exact command and security
-   restrictions (`65532:65532`, read-only root, tmpfs) in an isolated
-   non-production test; confirm internal connection without publishing a
-   host port, and authenticated `projects_list` / `projects_get` for
+4. The pinned image's HTTP arguments, nonroot/read-only isolated
+   startup and missing-token HTTP 401 have passed in CI. The actual Host
+   still must confirm internal connectivity without publishing a host
+   port, and authenticated `projects_list` / `projects_get` for
    G-ACE Development Platform #1 and fields `Wave`, `Gate`,
    `Change Unit`, `Mutation Owner`.
 5. Verify no credential is reused outside its explicit allowed consumer and
