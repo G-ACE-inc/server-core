@@ -67,14 +67,16 @@ class GitHubEditorClientsTests(unittest.TestCase):
             self.run_apply()
         self.assertFalse(mcp.target_paths(self.home)["codex"].exists())
 
-    def test_existing_other_server_requires_merge_not_overwrite(self):
+    def test_existing_other_server_is_preserved_with_backup(self):
         p = mcp.target_paths(self.home)["vscode"]
         p.parent.mkdir()
         initial = '{"mcpServers":{"some-other-server":{"url":"https://example.test"}}}'
         p.write_text(initial)
-        with self.assertRaisesRegex(mcp.ClientConfigError, "MANUAL_MERGE"):
-            self.run_apply(("vscode",), token="")
-        self.assertEqual(p.read_text(), initial)
+        self.run_apply(("vscode",), token="")
+        changed = json.loads(p.read_text())
+        self.assertIn("some-other-server", changed["mcpServers"])
+        self.assertIn("github", changed["mcpServers"])
+        self.assertEqual(p.with_name("mcp-config.json.gace-backup").read_text(), initial)
 
     def test_symlink_config_rejected(self):
         target = self.home / "unrelated.json"
@@ -85,13 +87,16 @@ class GitHubEditorClientsTests(unittest.TestCase):
         with self.assertRaisesRegex(mcp.ClientConfigError, "SYMLINK"):
             mcp.run(home=self.home)
 
-    def test_codex_existing_unrelated_setting_not_overwritten(self):
+    def test_codex_preserves_existing_toml(self):
         p = mcp.target_paths(self.home)["codex"]
         p.parent.mkdir()
         p.write_text('model = "gpt-6"\n')
-        with self.assertRaisesRegex(mcp.ClientConfigError, "MANUAL_MERGE"):
-            self.run_apply(("codex",))
-        self.assertEqual(p.read_text(), 'model = "gpt-6"\n')
+        self.run_apply(("codex",))
+        config = mcp.tomllib.loads(p.read_text())
+        self.assertEqual(config["model"], "gpt-6")
+        self.assertIn("github", config["mcp_servers"])
+        self.assertEqual(p.with_name("config.toml.gace-backup").read_text(),
+                         'model = "gpt-6"\n')
 
 
 if __name__ == "__main__":
