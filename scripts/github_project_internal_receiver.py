@@ -17,6 +17,7 @@ from github_project_control import (
     gh_run,
     load_json,
     parse_json,
+    project_control_lock,
     validate_contract,
     validate_request,
 )
@@ -227,8 +228,12 @@ def make_handler(
                 ))
                 verify_delivery(headers, body, secret=secret, now=now_fn(), tolerance_seconds=tolerance)
                 request = parse_request_body(body, contract)
-                result = execute_fn(request, contract)
-                evidence = publish_fn(request, result, contract)
+                # Serialize mutation AND its result publication with CLI on the
+                # existing Docker tmpfs lock. A replay may still require a
+                # durable request journal; this lock alone is not deduplication.
+                with project_control_lock():
+                    result = execute_fn(request, contract)
+                    evidence = publish_fn(request, result, contract)
                 self.send_json(
                     200,
                     {
