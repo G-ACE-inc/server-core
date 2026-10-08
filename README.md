@@ -239,7 +239,7 @@ Source/CIで確認されているものとLive Runtimeを分離する。
 
 - server-core command-center routing / documentation contracts: SOURCE / CI verified
 - read-only Storage Audit source: SOURCE / CI verified
-- DebugAI shared control route: all twelve bounded control completion gates PASS on reflected `4190f8701d989648e78c60400a9147cc6d4794ad`. Workspace registration, 13-tool discovery, health, real Server Command `QUEUED -> RUNNING -> PASS`, exact Host HEAD and 261 packaged source/image files are verified. Existing guarded GitOps deploy `gitops_0444c77ff07c828e1a835ee2` completed PASS with HTTP 200 and Docker healthy; missing Host approval is rejected. Workspace stdio uses the existing Compose container without Host Node. Remote ChatGPT direct connector registration remains NOT_VERIFIED.
+- DebugAI shared control route and Standing Delegation: live PASS on reflected `cc3462ddb07fb1379d61dc7c2321a776794800c1`. Existing MCP 13 tools, health, real Server Command `QUEUED -> RUNNING -> PASS` with exact HEAD, and 263-file source/image parity are verified. Guarded delegated deploy `gitops_7f181b2e296bb0cace801248` completed PASS with an automatically issued/consumed Host receipt, HTTP 200 and Docker healthy. Duplicate operation replay and missing policy are rejected. Owner CI: 498 canonical tests and 47 real Host tests, zero skip; no per-operation Master approval file is needed within the installed policy scope. Remote ChatGPT direct connector remains NOT_VERIFIED.
 - F: reusable KB bridge/runtime: NOT_IMPLEMENTED
 - generic storage cleanup mutation: NOT_IMPLEMENTED
 - current server storage audit: NOT_VERIFIED

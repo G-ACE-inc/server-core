@@ -120,12 +120,12 @@ MCP implementation = VERIFIED
 MCP stdio / protocol = VERIFIED
 MCP tool surface = 13 tools (9 original + 4 bounded control tools)
 prior Codex usage = CONFIRMED_BY_MASTER
-reflected Server head = 4190f8701d989648e78c60400a9147cc6d4794ad
-packaged source/image parity = PASS (261 files)
+reflected Server head = cc3462ddb07fb1379d61dc7c2321a776794800c1
+packaged source/image parity = PASS (263 files)
 Workspace configuration readback = PASS
 bounded Server Command MCP request/status/Host HEAD = PASS
-guarded deploy completion = PASS (gitops_0444c77ff07c828e1a835ee2)
-bounded control E2E = PASS (cmd_803e4df00579d8697dda3181)
+guarded deploy completion = PASS (gitops_7f181b2e296bb0cace801248)
+bounded control E2E = PASS (cmd_01cb05dfdc1e107505c660bf)
 missing exact-SHA Host approval = rejected (gitops_3ede30a4f460f4d2e909a0ee)
 remote ChatGPT direct MCP connector = NOT_VERIFIED
 ```
@@ -151,7 +151,7 @@ does not by itself establish a remote ChatGPT connector.
 | Deploy routine | `docs/DEPLOY_RUNBOOK.md` | confirmed revision -> approved deploy -> runtime verify | DOCUMENTED; target runtime specific |
 | Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare common contract | IMPLEMENTED_CONTRACT |
 | Shared Secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 | IMPLEMENTED_CONTRACT; runtime availability must be checked |
-| DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent | source/CLI/HTTP/MCP implemented; 13 tools and shared bounded control E2E live PASS on explicitly reflected 4190f87 |
+| DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent | source/CLI/HTTP/MCP implemented; 13 tools and shared bounded control E2E live PASS on explicitly reflected cc3462d |
 | Storage lifecycle audit | `scripts/storage_lifecycle_audit.py`, `operations/storage-lifecycle.json` | disk/log/backup/Docker read-only audit | SOURCE_VERIFIED / SERVER_RUNTIME_NOT_VERIFIED |
 | Storage cleanup mutation | future approved implementation | safe deletion/rotation | NOT_IMPLEMENTED |
 
@@ -251,3 +251,15 @@ FAILURE_BEHAVIOR_KNOWN=YES
 - capability availability stateが変わった
 
 Registryは作業日誌ではない。時系列履歴はGitHub commit / PRへ残す。
+
+Standing Delegation live qualification is bound to reflected `cc3462ddb07fb1379d61dc7c2321a776794800c1`,
+not future source. Delegated MCP deploy `gitops_7f181b2e296bb0cace801248` showed
+QUEUED -> RUNNING -> PASS without a manually created per-operation receipt.
+Status returns the installed Master delegation `dlg_debugai_reflect_v1`, issuer,
+exact operation/SHA/scope and receipt consumption timestamp. Duplicate replay
+was rejected without changing its original terminal status or recreating the
+container. A missing-policy live request was rejected before receipt issuance.
+The installed narrow reflection policy expires 2026-10-15 14:03:30 JST; it grants
+no destructive/persistent/Secret/provider/model/public-exposure mutation.
+CLI/MCP availability in this Codex execution environment does not prove direct
+remote ChatGPT app connector installation or broader PR #40 product completion.
