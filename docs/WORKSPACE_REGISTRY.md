@@ -83,7 +83,7 @@ GitHub Repositoryが確認できる主要G-ACE Projectを記録する。Server P
 | TGserver | `seigo-gace/TGserver` | `/home/admin1/projects/TGserver` | log / delivery / storage integration Project | Current runtimeはProject README + Docker/readback |
 | Astera v8 | `seigo-gace/astera_v8` | `/home/admin1/projects/astera_v8` | judgment-material processing Project | Current runtimeはProject README + Docker/readback |
 | Astera App | `seigo-gace/astera-app` | `/home/admin1/projects/astera-app` | application/web Project | Provider/runtime readback required |
-| DebugAI | `seigo-gace/debug-ai` | independent Project/runtime | specialized debugging capability | MCP implementation/protocol verified; prior Codex use exists; current exact-head live re-verification separate |
+| DebugAI | `seigo-gace/debug-ai` | independent Project/runtime | specialized debugging capability | MCP 13 tools / Host delegated reflection E2E verified at recorded runtime HEAD; verify fresh live state when needed |
 | Webhook Gateway | `seigo-gace/webhook-gateway` | UNKNOWN until server readback | webhook/gateway Project | NOT_VERIFIED here |
 | Astera KB | `seigo-gace/astera-kb` | UNKNOWN until target readback | Astera evidence/search knowledge Project | NOT_VERIFIED here |
 | Astera HP | `seigo-gace/astera-hp` | Provider/runtime specific | public HP Project | Provider readback required |
@@ -148,7 +148,7 @@ MCPの利用可能性は「文書にある」だけでは成立しない。
 | MCP | Owner / authority | Config authority | Purpose | Current boundary |
 |---|---|---|---|---|
 | Cloudflare API MCP | Cloudflare / Workspace config | `~/.cursor/mcp.json` via `operations/workspace-mcp.json` | Cloudflare操作入口 | GLOBAL_CONFIG_SOURCE_VERIFIED; live use pending |
-| DebugAI MCP | `seigo-gace/debug-ai` | implementation/runtime=`seigo-gace/debug-ai`; Workspace registration/routing=`operations/workspace-mcp.json` + `operations/github-project-debugai-routing.json` | GitHub Project / 親AIから既存DebugAI MCP経由でbounded Server Command / guarded GitOpsを共通利用 | Workspace config, 13 tools, health and real bounded Server Command PASS at reflected revision; guarded deploy completion and broader DebugAI qualification remain separate |
+| DebugAI MCP | `seigo-gace/debug-ai` | implementation/runtime=`seigo-gace/debug-ai`; Workspace registration/routing=`operations/workspace-mcp.json` + `operations/github-project-debugai-routing.json` | GitHub Project / 親AIから既存DebugAI MCP経由でbounded Server Command / guarded GitOpsを共通利用 | Workspace config / 13 tools / Server Command / guarded deploy / Master Internal persistent E2E PASS at recorded 2695a0d; other Repo/product/client paths remain separate |
 | Reuse KB MCP | future F: KB bridge owner | future verified global config | F: reusable-development KB検索/登録 | NOT_IMPLEMENTED |
 | Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | global MCP after runtime readback | deterministic Japanese parser | repository DISCOVERED; GLOBAL_REGISTRATION_PENDING / LIVE availability NOT_VERIFIED |
 
@@ -158,27 +158,25 @@ Cloudflare API and Hugging Face official MCP are registered in the Workspace-glo
 
 ### DebugAI source / usage boundary
 
-Current DebugAI authority records MCP stdio source/unit/real-protocol, 9 tools, health, and durable continuation surface as PASS. Master also reports prior successful Codex use of DebugAI MCP. Therefore the Capability is already implemented and has usage history.
+DebugAIは既存9 tools + bounded control4 toolsの計13 tools、Server Command、guarded GitOps、Master Internal Persistentの実Host E2Eが指定Revisionで確認済み。Owner Projectの最新SourceとLive Runtimeは別々にFresh照合する。
 
-Current distinction:
+Recorded qualified runtime (2026-10-08; not an automatic claim about future HEAD):
 
 ```text
 repository = seigo-gace/debug-ai
-MCP implementation = VERIFIED
-MCP stdio / protocol = VERIFIED
-MCP tool surface = 13 tools (9 original + 4 bounded control tools)
-prior Codex usage = CONFIRMED_BY_MASTER
-reflected Server head = cc3462ddb07fb1379d61dc7c2321a776794800c1
-packaged source/image parity = PASS (263 files)
-Workspace configuration readback = PASS
-bounded Server Command MCP request/status/Host HEAD = PASS
-guarded deploy completion = PASS (gitops_7f181b2e296bb0cace801248)
-bounded control E2E = PASS (cmd_01cb05dfdc1e107505c660bf)
-missing exact-SHA Host approval = rejected (gitops_3ede30a4f460f4d2e909a0ee)
+MCP discovery = 13 tools VERIFIED
+bounded Server Command / guarded GitOps = REAL E2E PASS
+Master Internal Persistent enrollment = DebugAI ONLY, enabled/unrevoked/no expiry
+recorded reflected Host SHA = 2695a0d3714d25593de16dd0f0a21deba7c29f43
+packaged source/image parity = 266/266
+automatic single-use receipt / replay reject / health = LIVE PASS
+legacy manual approval / finite Standing = PRESERVED
+other repos = NOT_ENROLLED
 remote ChatGPT direct MCP connector = NOT_VERIFIED
+broader DebugAI product / Unified Development Log = NOT_QUALIFIED_BY_THIS_CU
 ```
 
-Current-head re-verification pending is **not** equivalent to `NOT_IMPLEMENTED` or `NOT_REGISTERED`. Historical successful use is also **not** sufficient to claim the current changing HEAD as freshly live-verified. Preserve both facts.
+Runtime判断にはOwner Current・実Host readbackを用い、Registry記載だけで別RevisionをPASS扱いしない。歴史的なfinite Standing成功記録は後段に保持する。
 
 GitHub Project #1のserver操作は、server-coreで別executorを複製せず、`operations/github-project-debugai-routing.json` に従い既存DebugAI MCPへdispatchする。server-coreはCurrent/control/routing/approval契約を所有し、DebugAIはMCP/Server Command/GitOps実装本体を所有する。
 
@@ -199,7 +197,7 @@ does not by itself establish a remote ChatGPT connector.
 | Deploy routine | `docs/DEPLOY_RUNBOOK.md` | confirmed revision -> approved deploy -> runtime verify | DOCUMENTED; target runtime specific |
 | Cloudflare operations | `docs/CLOUDFLARE_OPERATIONS.md`, `operations/` | Cloudflare common contract | IMPLEMENTED_CONTRACT |
 | Shared Secret broker | `docs/WORKSPACE_SHARED_SECRETS.md` | Secret値をProjectへ複製せず利用 | IMPLEMENTED_CONTRACT; runtime availability must be checked |
-| DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent | source/CLI/HTTP/MCP implemented; 13 tools and shared bounded control E2E live PASS on explicitly reflected cc3462d |
+| DebugAI | `seigo-gace/debug-ai` | specialized debugging sub-agent | source/CLI/HTTP/MCP implemented; recorded Master Internal 13 tools/Host E2E PASS on 2695a0d; current live readback when needed |
 | Storage lifecycle audit | `scripts/storage_lifecycle_audit.py`, `operations/storage-lifecycle.json` | disk/log/backup/Docker read-only audit | SOURCE_VERIFIED / SERVER_RUNTIME_NOT_VERIFIED |
 | Storage cleanup mutation | future approved implementation | safe deletion/rotation | NOT_IMPLEMENTED |
 
@@ -300,7 +298,9 @@ FAILURE_BEHAVIOR_KNOWN=YES
 
 Registryは作業日誌ではない。時系列履歴はGitHub commit / PRへ残す。
 
-Standing Delegation live qualification is bound to reflected `cc3462ddb07fb1379d61dc7c2321a776794800c1`,
+## Historical finite Standing Delegation qualification (preserved)
+
+This earlier Standing Delegation E2E is bound to reflected `cc3462ddb07fb1379d61dc7c2321a776794800c1`,
 not future source. Delegated MCP deploy `gitops_7f181b2e296bb0cace801248` showed
 QUEUED -> RUNNING -> PASS without a manually created per-operation receipt.
 Status returns the installed Master delegation `dlg_debugai_reflect_v1`, issuer,
@@ -335,5 +335,5 @@ Design delta: optional Master Internal registry lookup on the existing MCP/Host
 lane. Legacy manual and finite Standing modes remain compatible; no Commercial,
 licensing, Customer authentication, new executor/queue/transport/service or shell
 endpoint. Source/CI and real Runtime qualification remain separate; this source
-checkpoint does not claim live persistent-mode PASS. Protected product/spec/public/
+checkpoint is complemented by the separate actual 2695a0d Host persistent-mode E2E PASS. Protected product/spec/public/
 provider/model/Secret/destructive persistent decisions remain Master-owned.
