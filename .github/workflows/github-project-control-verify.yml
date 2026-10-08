@@ -38,6 +38,42 @@ jobs:
           grep -Fq -- '--listen-host' /tmp/github-mcp-http-help.txt
           grep -Fq -- '--scope-challenge' /tmp/github-mcp-http-help.txt
           echo "GITHUB_MCP_PINNED_BINARY_HTTP_OPTIONS=PASS"
+          # Ephemeral GitHub-hosted runner only. Bind the test port to loopback,
+          # never use a GitHub credential, and never touch the real Host.
+          cid="$(docker run -d --rm --name gace-github-mcp-ci-unauth \
+            --user 65532:65532 --read-only \
+            --tmpfs /tmp:rw,size=16m,mode=1777 \
+            --security-opt no-new-privileges --cap-drop ALL \
+            --pids-limit 64 --memory 128m \
+            --publish 127.0.0.1:18082:8082 \
+            --env GITHUB_TOOLSETS=projects --env GITHUB_READ_ONLY=1 \
+            ghcr.io/github/github-mcp-server@sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699 \
+            http --listen-host 0.0.0.0 --scope-challenge)"
+          trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          status=""
+          for i in $(seq 1 30); do
+            if ! test "$(docker inspect -f '{{.State.Running}}' "$cid")" = "true"; then
+              echo "GITHUB_MCP_EPHEMERAL_PROCESS=NOT_RUNNING"
+              docker logs "$cid" 2>&1 | tail -n 15
+              exit 1
+            fi
+            status="$(curl -sS --max-time 2 -o /tmp/mcp-unauth-body \
+              -D /tmp/mcp-unauth-headers -w '%{http_code}' \
+              -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' \
+              -X POST --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"gace-ci","version":"1"}}}' \
+              http://127.0.0.1:18082/ 2>/dev/null || true)"
+            if test "$status" = "401"; then break; fi
+            sleep 1
+          done
+          test "$status" = "401" || {
+            echo "GITHUB_MCP_UNAUTH_STATUS=FAIL code=$status"
+            exit 1
+          }
+          grep -iq '^www-authenticate: Bearer' /tmp/mcp-unauth-headers
+          echo "GITHUB_MCP_EPHEMERAL_HTTP_NO_TOKEN_DENIED=PASS"
+          docker rm -f "$cid" >/dev/null
+          trap - EXIT
 
       - name: Project Control container source
         run: |
