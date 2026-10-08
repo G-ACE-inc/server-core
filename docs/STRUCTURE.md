@@ -225,3 +225,7 @@ client and exact Host revision comparison; it cannot approve/apply/deploy.
 - Secret / Token実値保存
 - 実構造変更後に本Treeを未更新のままDocumentation Completeとすること
 - Project固有実装を司令室都合だけでserver-coreへ移すこと
+
+`operations/github-project-debugai-routing.json` owns shared Standing Delegation
+reflection dispatch metadata only. Policy verification/receipt issuance stays in
+DebugAI; server-core does not copy its executor or policy engine.

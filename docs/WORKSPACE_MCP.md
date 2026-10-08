@@ -226,3 +226,20 @@ The current server-core manifest does not own or rewrite that pre-existing entry
 - No automatic Provider mutation.
 - No production deployment.
 - No assumption that configuration equals runtime availability.
+
+## Standing Delegation routing
+
+Existing `debugai_gitops_request/status` supports the Host-installed Standing
+Delegation reference for bounded `deploy` / `debugai.compose.reflect`. Routing
+contract: `operations/github-project-debugai-routing.json`. Implementation and
+trust/receipt/revocation contract stay in owning DebugAI
+`docs/GITOPS_STANDING_DELEGATION.md`. No extra MCP approval tool or transport exists.
+
+Master may preauthorize this narrow technical scope. CHAT/Codex then decides and
+requests reflection; the Host verifies its installed issuer/policy, exact target,
+scope, identity, expiry/revocation, changed paths and single-use receipt. CHAT text
+and `human_approved` are not credential proof. Legacy manual receipts remain
+compatible. Secret/provider/model/public/persistent/destructive effects and broader
+DebugAI patch approval are not granted by this route. Remote ChatGPT direct
+connector registration remains a separate availability boundary. Source/CI
+qualification does not imply delegated Runtime E2E.

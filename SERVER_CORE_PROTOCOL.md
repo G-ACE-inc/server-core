@@ -17,6 +17,13 @@ server-coreは司令室としてTaskをRouting/Dispatchするが、Project固有
 
 最終決定者はMaster。
 
+適用Rule Plane #16とMasterの明示委任がある場合、委任Scope内の通常技術判断・
+反映・restart/recreateはAIが判断・承認処理・実行する。操作名だけでMaster Gateへ戻さない。
+DebugAIのStanding DelegationはHost専用Policyを検証してから既存single-use receiptを発行する。
+CHAT本文・`human_approved=true`単独をRuntime credentialにしない。
+Product/spec/user-visible intent、不可逆persistent state、新規public exposure、
+cost/provider/model/Secret authority、明示Protected境界は委任対象外として維持する。
+
 質問、検討、提案、操作説明を変更承認として扱わない。未確認状態を推測で補完しない。
 
 Masterの明示指示なしに次を実行しない。

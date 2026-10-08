@@ -31,6 +31,24 @@
       "request_tool": "debugai_gitops_request",
       "status_tool": "debugai_gitops_status",
       "master_approval_required_for_protected_mutation": true
+    },
+    "standing_delegation_reflection": {
+      "request_tool": "debugai_gitops_request",
+      "status_tool": "debugai_gitops_status",
+      "action": "deploy",
+      "scope": "debugai.compose.reflect",
+      "authorization_source": "host-installed-standing-delegation-policy",
+      "request_reference": {
+        "delegation": {
+          "id": "HOST_POLICY_ID",
+          "scope": "debugai.compose.reflect"
+        }
+      },
+      "per_operation_master_decision_required": false,
+      "host_delegation_verification_required": true,
+      "single_use_exact_sha_receipt_required": true,
+      "protected_effects_allowed": false,
+      "implementation_contract": "seigo-gace/debug-ai/docs/GITOPS_STANDING_DELEGATION.md"
     }
   },
   "boundaries": {

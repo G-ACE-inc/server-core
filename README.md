@@ -246,6 +246,13 @@ Source/CIで確認されているものとLive Runtimeを分離する。
 
 これらのRuntime pendingを理由にMD設計を未完成扱いにはしない。逆にMDが完成していてもRuntime PASSとはしない。
 
+## Standing Delegation
+
+既存DebugAIのbounded Compose反映へ、Host専用Standing Delegation Policy参照をroutingする。
+委任Scope内の通常技術判断はAIが完結し、Hostが既存single-use receiptを安全に発行する。
+詳細は `docs/WORKSPACE_MCP.md` とowner側 `docs/GITOPS_STANDING_DELEGATION.md`。
+委任Scope外のMaster-owned boundaryと直接ChatGPT connectorのavailabilityは別に維持する。
+
 ## Approval Boundary
 
 Masterの明示指示なしに次を越えない。
