@@ -4,7 +4,7 @@
 
 GitHub上で確認できる対象RevisionからServerへ反映し、DeployとRuntime検証をSource開発から分離する。
 
-本RunbookはMasterのProduction承認を代替しない。
+本RunbookはMasterのProduct/Release/Protected承認を代替しない。既存のHost検証済み MASTER_INTERNAL_PERSISTENT の範囲内では個別の手動承認を重ねて要求しないが、CHAT本文は承認credentialではない。未登録・未委任の場合は従来のMaster承認・Host gateを維持する。
 
 ## Standard Source-to-Server Flow
 
@@ -17,7 +17,8 @@ Development / Debug
   -> Remote Readback
   -> PR / CI when required
   -> confirmed GitHub revision
-  -> Master approval when required
+  -> impact / Current Master Gate / verified Host delegation check
+  -> Master approval when gated; otherwise bounded Host authorization
   -> Server deploy
   -> Runtime verification
 ```
@@ -34,7 +35,9 @@ Deploy前に必要範囲で確認する。
 - current Server checkout / deployed revision
 - Project-specific deploy contract / runbook
 - `.env` / Secret実値を表示・転記・commitしない
-- Master承認が必要なProduction / 公開 / 切替で承認済みである
+- 公開範囲/正式Release/不可逆Data等のMaster Gateには明示承認がある
+- Master Internal既存の通常技術反映なら、Current Registry・Host enrollment・Project item/owner/server mapping・branch/exact SHA/scope/paths/effectsの検証済み委任がある
+- 上記委任がないProduction/稼働Service変更は旧Master承認/Host receiptを使用し、fail-closedする
 
 ## Server Readback Before Change
 
@@ -114,10 +117,11 @@ RollbackはProject固有Contractを優先する。
 ## Prohibitions
 
 Masterの明示承認なしに:
-- Production deploy / 公開 / 切替
-- 既存Serviceのstop / restart / recreate（診断と分離）
-- Secret変更
-- Provider Resource変更
+- 正式Release・Public exposure/公開範囲の変更
+- 不可逆/破壊的persistent-state変更、Secret変更、Provider Resource変更
+- 検証済みMaster Internal委任がないProduction deploy / 稼働Service stop/restart/recreate
+
+検証済みMaster Internal委任でも許可外Repo/Branch/SHA/Scope/changed path/Runtime targetやProtected effectは実行禁止。既存manual approval/有限Standing経路を変更しない。
 
 常時禁止:
 - Secret実値のChat / Git / Log / Document出力
