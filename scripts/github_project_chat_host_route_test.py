@@ -97,7 +97,7 @@ def emitted_lines(state="PASS", safety="NO"):
 
 def test_actual_github_log_timestamp_and_ansi():
     lines = [
-        '2026-10-08T15:47:45.0519354Z \\x1b[36;1mecho "PRODUCTION_DEPLOY_CALLED=YES"\\x1b[0m',
+        '2026-10-08T15:47:45.0519354Z \x1b[36;1mecho "PRODUCTION_DEPLOY_CALLED=YES"\x1b[0m',
         '2026-10-08T15:47:45.0517823Z ##[group]Run echo "SERVER_COMMAND_STATE=FAIL"',
     ] + emitted_lines()
     out = load_mod().parse_evidence(lines)
@@ -140,8 +140,8 @@ def test_duplicate_conflicting_terminal_fail_closed():
 
 def test_echo_only_no_false_pass():
     lines = [
-        '2026-10-08T15:47:45.0519354Z \\x1b[36;1mecho "SERVER_COMMAND_REQUEST_ID=cmd_ffbd9cb5f1ecacad2f814676"\\x1b[0m',
-        '2026-10-08T15:47:45.0519354Z \\x1b[36;1mecho "SERVER_COMMAND_STATE=PASS"\\x1b[0m',
+        '2026-10-08T15:47:45.0519354Z \x1b[36;1mecho "SERVER_COMMAND_REQUEST_ID=cmd_ffbd9cb5f1ecacad2f814676"\x1b[0m',
+        '2026-10-08T15:47:45.0519354Z \x1b[36;1mecho "SERVER_COMMAND_STATE=PASS"\x1b[0m',
     ]
     assert not load_mod().parse_evidence(lines)["evidence_usable_for_chat"]
 
