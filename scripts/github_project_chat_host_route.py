@@ -59,6 +59,12 @@ def validate_dispatch(
     sc = route["server_command"]
     if command_id not in (sc.get("allowed_command_ids") or []):
         return _fail("COMMAND_NOT_ALLOWLISTED")
+    supported = route.get("workflow_supported_command_ids") or []
+    if command_id not in supported:
+        return _fail("COMMAND_UNSUPPORTED_BY_TRIGGER")
+    command_effect = (route.get("command_effects") or {}).get(command_id)
+    if command_effect not in ("read_only", "bounded_probe_start"):
+        return _fail("COMMAND_EFFECT_UNVERIFIED")
     # Prefix admission is unsafe: a nested path is a different execution target.
     if execution_repo != sc.get("execution_repo"):
         return _fail("EXECUTION_REPO_FORBIDDEN")
@@ -73,7 +79,8 @@ def validate_dispatch(
         "branch": branch,
         "command_id": command_id,
         "execution_repo": execution_repo,
-        "read_only": sc.get("read_only", True),
+        "read_only": command_effect == "read_only",
+        "command_effect": command_effect,
         "transport": doc["transport"]["kind"],
         "host_authorization_verified": False,
         "static_preflight_only": True,
