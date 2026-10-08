@@ -79,7 +79,8 @@
         "scripts/host-gitops-delegation.sh",
         "scripts/host-gitops-master-internal.sh",
         "scripts/host-gitops-register-master.sh",
-        ".github/workflows/ci.yml"
+        ".github/workflows/ci.yml",
+        "scripts/host-asteria-baseline-probe.sh"
       ]
     }
   ]
