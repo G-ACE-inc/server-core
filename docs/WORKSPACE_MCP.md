@@ -281,3 +281,9 @@ licensing, Customer authentication, new executor/queue/transport/service or shel
 endpoint. Source/CI and real Runtime qualification remain separate; this source
 checkpoint does not claim live persistent-mode PASS. Protected product/spec/public/
 provider/model/Secret/destructive persistent decisions remain Master-owned.
+
+Master internal runtime uses the registered `master-internal-runtime-20261008`
+branch so concurrent shared-feature work is not implicitly reflected. Legacy and
+finite Standing branch pinning remain unchanged. The initial verifier source
+preparation is a trusted exact-qualified-source action; formal reflection and
+Runtime acceptance still use the existing MCP/Host automatic receipt cycle.

@@ -61,7 +61,8 @@
       "single_use_exact_sha_receipt_required": true,
       "protected_effects_allowed": false,
       "commercial_legacy_changed": false,
-      "implementation_contract": "seigo-gace/debug-ai/docs/MASTER_INTERNAL_PERSISTENT_DELEGATION.md"
+      "implementation_contract": "seigo-gace/debug-ai/docs/MASTER_INTERNAL_PERSISTENT_DELEGATION.md",
+      "initial_runtime_branch": "master-internal-runtime-20261008"
     }
   },
   "boundaries": {
