@@ -24,7 +24,14 @@ Official upstream:
 ## Reused bounded Project Current reader (source only)
 
 `scripts/github_project_read_current.py --item-url <approved GitHub Issue or PR URL>`
-reuses the **existing** `github_project_control.py` Project identity, item lookup,
+reads one known item. `scripts/github_project_read_current.py --all-registered`
+reads the **actual registered** Project #1 Issue/PR items (maximum 25)
+by reusing the existing `gh project item-list` + four existing GraphQL
+field readers. Duplicate IDs/URLs fail closed; foreign-owner or draft items
+are counted as excluded, making the result `PARTIAL` rather than claiming
+an exhaustive/current authority for unsupported items. A Control Issue such
+as #10 that is not on the Project is **not fabricated**. Both modes
+reuse the **existing** `github_project_control.py` Project identity, item lookup,
 field-read GraphQL and error contracts. It reads **only** `Wave`, `Gate`,
 `Change Unit` and `Mutation Owner` for Project #1 and emits sanitized JSON;
 unassigned fields stay `null` and return `PARTIAL`. Invalid targets and missing
