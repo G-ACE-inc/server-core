@@ -1,0 +1,85 @@
+{
+  "schema": "gace.workspace-master-internal-registry/v1",
+  "project": {
+    "owner": "seigo-gace",
+    "number": 1,
+    "node_id": "PVT_kwHODOQFoM4BEJII"
+  },
+  "master_principal": "seigo-gace",
+  "master_owners": [
+    "seigo-gace",
+    "G-ACE-inc"
+  ],
+  "implementation_owner": "seigo-gace/debug-ai",
+  "repositories": [
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_master_debugai_v1",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "seigo-gace/debug-ai",
+      "repository_id": 1386844196,
+      "repository_node_id": "R_kgDOUqmQJA",
+      "repository_owner": "seigo-gace",
+      "master_principal": "seigo-gace",
+      "project": {
+        "owner": "seigo-gace",
+        "number": 1,
+        "node_id": "PVT_kwHODOQFoM4BEJII",
+        "item_id": "PVTI_lAHODOQFoM4BEJIIzg-sWS8",
+        "control_url": "https://github.com/seigo-gace/debug-ai/issues/41"
+      },
+      "server_project_id": "debug-ai",
+      "server_project_path": "/home/admin1/projects/debug-ai",
+      "repo": "/workspace/debug-ai",
+      "remote": "https://github.com/seigo-gace/debug-ai.git",
+      "default_branch": "main",
+      "allowed_branches": [
+        "feat/tgserver-async-log-sink-20261003"
+      ],
+      "allowed_operations": [
+        "deploy"
+      ],
+      "allowed_scopes": [
+        "debugai.compose.reflect"
+      ],
+      "runtime_target": {
+        "id": "debugai.compose",
+        "compose_file": "compose.yaml",
+        "compose_digest": "50d8f1ad15633810dc2f5d3f04a71a1b9094b3a58e0c88e29dbbf07129fcf08f",
+        "services": [
+          "debug-ai",
+          "sandbox-runner"
+        ],
+        "health_service": "debug-ai",
+        "health_url": "http://127.0.0.1:8787/health"
+      },
+      "issuer": "master:seigo-gace",
+      "authority": "gace-master",
+      "audit_identity": "master:seigo-gace/internal:debug-ai",
+      "request_identity": "debugai.authenticated-control",
+      "allow_production": true,
+      "effects": {
+        "destructive": false,
+        "persistent_data": false,
+        "secrets": false,
+        "provider_model": false,
+        "public_exposure": false
+      },
+      "enabled": true,
+      "revoked": false,
+      "allowed_paths": [
+        "README.md",
+        "DEBUGAI.md",
+        "docs/",
+        "ops/tests/",
+        "server/tests/",
+        "server/control/gitops-request.js",
+        "scripts/host-gitops-runner.sh",
+        "scripts/host-gitops-delegation.sh",
+        "scripts/host-gitops-master-internal.sh",
+        "scripts/host-gitops-register-master.sh",
+        ".github/workflows/ci.yml"
+      ]
+    }
+  ]
+}
