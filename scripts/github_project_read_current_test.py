@@ -78,6 +78,24 @@ class ProjectCurrentReadTests(unittest.TestCase):
             with self.assertRaisesRegex(control.ControlError, "GH_COMMAND_FAILED"):
                 current.read_current(self.ITEM, self.contract)
 
+    def test_control_issue_registration_reconciles_manifest_without_guessing(self):
+        expected = current.expected_control_issue_urls(self.contract)
+        self.assertEqual(set(expected), {
+            "https://github.com/G-ACE-inc/server-core/issues/10",
+            "https://github.com/G-ACE-inc/server-core/issues/15",
+            "https://github.com/G-ACE-inc/server-core/issues/16",
+            "https://github.com/G-ACE-inc/server-core/issues/17",
+        })
+        values = {"Wave": "Wave 1", "Gate": "CI_PASS",
+                  "Change Unit": "Source", "Mutation Owner": "G-ACE"}
+        _, fake_gh = self.stub(values)
+        with patch.object(control, "gh_run", side_effect=fake_gh):
+            result = current.read_registered_current(self.contract)
+        self.assertEqual(result["status"], "PARTIAL")
+        self.assertEqual(set(result["unregistered_control_issue_urls"]), set(expected))
+        self.assertEqual(result["registered_item_count"], 1)
+        self.assertFalse(result["mutation_performed"])
+
     def test_registered_item_batch_uses_same_project_identity_and_four_field_reads(self):
         values = {"Wave": "Wave 1", "Gate": "CI_PASS",
                   "Change Unit": "Project bounded readback",
@@ -85,12 +103,13 @@ class ProjectCurrentReadTests(unittest.TestCase):
         calls, fake_gh = self.stub(values)
         with patch.object(control, "gh_run", side_effect=fake_gh):
             result = current.read_registered_current(self.contract)
-        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["status"], "PARTIAL")
         self.assertEqual(result["registered_item_count"], 1)
         self.assertEqual(result["excluded_item_count"], 0)
         self.assertEqual(result["items"][0]["item_id"], "PVTI_TEST")
         self.assertEqual(result["items"][0]["item_url"], self.ITEM)
         self.assertEqual(result["items"][0]["fields"], values)
+        self.assertEqual(len(result["unregistered_control_issue_urls"]), 4)
         self.assertEqual(len(calls), 6)
         self.assertTrue(all("mutation(" not in " ".join(c) for c in calls))
 
