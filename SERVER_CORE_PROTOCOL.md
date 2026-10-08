@@ -45,6 +45,10 @@ A technical runtime operation may proceed without Master approval when all of th
 
 When classification is unclear, judge by actual effect and decision responsibility, not by operation name.
 
+Master may delegate technical judgment and execution within an already-approved scope. Such delegation changes who makes the technical decision; it does not remove Runtime authorization, Host validation, audit, or fail-closed controls.
+
+Natural-language CHAT instructions, including "任せる" / "一任", are not themselves Runtime credentials. A delegated technical operation may pass the execution boundary only through a Current, verifiable authorization mechanism. When such a verified mechanism exists, do not require repetitive Master approval for every technical step inside its scope.
+
 ## Workspace Entry / Command Dispatch
 
 ```text
@@ -109,8 +113,9 @@ implementation / fix
  -> remote readback
  -> PR / CI when required
  -> confirmed GitHub revision
- -> required Master approval
- -> Server deploy
+ -> decision / impact boundary check
+ -> Master approval only when Current rules classify the decision as Master-gated
+ -> Server deploy / runtime operation through the verified authorized path
  -> Runtime verification
 ```
 
@@ -130,9 +135,18 @@ Registry記載だけでCurrent Runtimeを証明しない。必要時は実設定
 
 DebugAIは独立Project/runtime。
 
-Current source authorityは `seigo-gace/debug-ai` main。MCP Adapterを含むSourceはmainへmerge済みでsource-side verification済み。
+共通のbounded server execution経路は `AVAILABLE_VERIFIED`。server-core registration/routingから既存DebugAI MCPを経由し、bounded Host / guarded GitOps executionとexact status/readbackを行える。
 
-ただし、Contabo Live DebugAI MCP Runtime接続とWorkspace MCP登録は別状態であり、確認完了までWorkspace上の `AVAILABLE_VERIFIED` とは扱わない。
+確認済みCapability:
+- DebugAI MCP 13 tools discovery
+- Server Command `QUEUED -> RUNNING -> PASS`
+- exact server Git HEAD readback
+- guarded GitOps execution / final status readback
+- required approvalが無い操作のfail-closed rejection
+
+Server work / Runtime Evidenceが必要な場合は、Masterへroutine VPS commandを要求したり別transportを設計したりする前に、この既存共通経路を優先する。
+
+ただし、remote ChatGPT app direct MCP connectorは `NOT_VERIFIED`。この共通経路の完成をDebugAI PR #40全体やUnified Development Log全体の完成とみなさない。
 
 ### Reusable KB
 
