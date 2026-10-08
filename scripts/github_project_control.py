@@ -372,7 +372,7 @@ def execute(request, contract):
 
 @contextmanager
 def project_control_lock():
-    """Share the same nonblocking process lock across CLI and HTTP receiver."""
+    """Serialize callers sharing one filesystem namespace and lock path."""
     lock_path = Path(os.environ.get(
         "GACE_PROJECT_CONTROL_LOCK",
         str(Path.home() / ".cache" / "gace" / "github-project-control.lock"),
