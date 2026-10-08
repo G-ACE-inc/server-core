@@ -21,6 +21,24 @@ Official upstream:
 - https://github.com/github/github-mcp-server
 - https://github.com/github/github-mcp-server/blob/main/docs/streamable-http.md
 
+## Reused bounded Project Current reader (source only)
+
+`scripts/github_project_read_current.py --item-url <approved GitHub Issue or PR URL>`
+reuses the **existing** `github_project_control.py` Project identity, item lookup,
+field-read GraphQL and error contracts. It reads **only** `Wave`, `Gate`,
+`Change Unit` and `Mutation Owner` for Project #1 and emits sanitized JSON;
+unassigned fields stay `null` and return `PARTIAL`. Invalid targets and missing
+GitHub permissions fail closed. No second mutation engine, generic GraphQL
+forwarder, new transport, token, runtime permission or additional repository
+registration is created. Its source tests run in existing Project Control CI.
+
+This is a bounded diagnostic/readback helper for an **already authorized**
+Server AI/Host execution context, not proof that GPT CHAT can execute it or
+that real GitHub Project field values have been retrieved. Do not deploy it
+through a new uncontrolled shell path. The official MCP remains the adopted
+shared Project read capability; these existing GraphQL readers are reused,
+not a replacement for the official MCP Server-AI/CHAT E2E acceptance.
+
 ## Activation prerequisites — must be demonstrated, not assumed
 
 1. Verify image provenance and choose one real **immutable SHA256 digest** for
