@@ -178,7 +178,7 @@ DebugAI MCP **is implemented**. Current DebugAI authority records stdio source/u
 The shared control-path verification is bound to the explicitly reflected revision,
 not an arbitrary future DebugAI HEAD. Live stdio discovery/health and real Server
 Command request/status/Host HEAD readback passed on reflected
-`4190f8701d989648e78c60400a9147cc6d4794ad`. The owning repository's unrelated
+`cc3462ddb07fb1379d61dc7c2321a776794800c1`. The owning repository's unrelated
 workflow, benchmark, durable-continuation and Strict Completion qualifications
 remain separate from this bounded control route. The existing guarded GitOps deploy
 completed PASS under a new single-use exact-SHA Host receipt. The existing watcher
@@ -191,13 +191,13 @@ Use the following distinction:
 MCP_IMPLEMENTATION=VERIFIED
 MCP_PROTOCOL=VERIFIED
 PRIOR_CODEX_USAGE=CONFIRMED_BY_MASTER
-REFLECTED_SERVER_HEAD=4190f8701d989648e78c60400a9147cc6d4794ad
-REFLECTED_SOURCE_IMAGE_PARITY=PASS_261_PACKAGED_FILES
+REFLECTED_SERVER_HEAD=cc3462ddb07fb1379d61dc7c2321a776794800c1
+REFLECTED_SOURCE_IMAGE_PARITY=PASS_263_PACKAGED_FILES
 WORKSPACE_REGISTRATION_READBACK=PASS
 REPRESENTATIVE_SERVER_COMMAND_MCP_CALL=PASS
 GUARDED_GITOPS_COMPLETION=PASS
-GUARDED_GITOPS_DEPLOY_ID=gitops_0444c77ff07c828e1a835ee2
-REPRESENTATIVE_SERVER_COMMAND_ID=cmd_803e4df00579d8697dda3181
+GUARDED_GITOPS_DEPLOY_ID=gitops_7f181b2e296bb0cace801248
+REPRESENTATIVE_SERVER_COMMAND_ID=cmd_01cb05dfdc1e107505c660bf
 HOST_APPROVAL_REJECTION=PASS
 PROJECT_COMMON_SERVER_E2E=PASS
 REMOTE_CHATGPT_DIRECT_MCP_CONNECTOR=NOT_VERIFIED
@@ -243,3 +243,15 @@ compatible. Secret/provider/model/public/persistent/destructive effects and broa
 DebugAI patch approval are not granted by this route. Remote ChatGPT direct
 connector registration remains a separate availability boundary. Source/CI
 qualification does not imply delegated Runtime E2E.
+
+Standing Delegation live qualification is bound to reflected `cc3462ddb07fb1379d61dc7c2321a776794800c1`,
+not future source. Delegated MCP deploy `gitops_7f181b2e296bb0cace801248` showed
+QUEUED -> RUNNING -> PASS without a manually created per-operation receipt.
+Status returns the installed Master delegation `dlg_debugai_reflect_v1`, issuer,
+exact operation/SHA/scope and receipt consumption timestamp. Duplicate replay
+was rejected without changing its original terminal status or recreating the
+container. A missing-policy live request was rejected before receipt issuance.
+The installed narrow reflection policy expires 2026-10-15 14:03:30 JST; it grants
+no destructive/persistent/Secret/provider/model/public-exposure mutation.
+CLI/MCP availability in this Codex execution environment does not prove direct
+remote ChatGPT app connector installation or broader PR #40 product completion.
