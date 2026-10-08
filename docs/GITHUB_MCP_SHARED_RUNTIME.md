@@ -108,9 +108,21 @@ an absent Issue ID.
    supplied by a trusted client, not a globally shared token in this Compose
    file. No plaintext credentials in Git, Chat, logs, or a published endpoint.
    Host `gh auth status` proves a Host client, not this container's identity.
-3. Check/create the approved internal-only `gace-internal` network.
-   Project Control currently also requires it; never silently start an
-   unrelated receiver or recreate production services.
+3. Check/create the approved dedicated, private-inbound `gace-internal`
+   network. `internal-only` in this design means **no Host-published service
+   ports and only admitted clients**, not Docker's network `--internal`
+   isolation flag. When the MCP joins only an `--internal` network, it has no
+   normal default route for outbound HTTPS to `api.github.com`; Projects
+   read calls then fail unless an **independently reviewed egress proxy**
+   exists. Use a dedicated user-defined bridge with controlled membership
+   and normal outbound GitHub API HTTPS only after permitted admission;
+   verify DNS/HTTPS and inbound isolation before declaring E2E complete.
+   Creating this network is an explicit protected Host effect, not implied
+   by source/CI success. Do not start the Project Control receiver with
+   the read-only MCP: the two Compose services have **no direct dependency**
+   and require separate admission. Docker authority:
+   https://docs.docker.com/reference/cli/docker/network/create/#network-internal-mode---internal
+   https://docs.docker.com/engine/network/drivers/bridge/
 4. The pinned image's HTTP arguments, nonroot/read-only isolated
    startup and missing-token HTTP 401 have passed in CI. The actual Host
    still must confirm internal connectivity without publishing a host
