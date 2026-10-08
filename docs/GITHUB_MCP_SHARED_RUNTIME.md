@@ -142,6 +142,22 @@ an absent Issue ID.
    identity/scopes (not secret), unauthorized-deny evidence and audit; only
    then classify the capability as RUNTIME_VERIFIED.
 
+## Phase A admission (Host — separate from Source/CI)
+
+Machine contract: `operations/github-mcp-readonly-runtime.json`.  
+Rollback and network rules (bridge **without** Docker `--internal`, no host port publish,
+DebugAI not on `gace-internal` today): `docs/GITHUB_MCP_PHASE_A_ADMISSION.md`.
+
+| Gate | Phase A (readonly MCP) | Phase B (Project Control receiver) |
+|------|------------------------|-------------------------------------|
+| Compose file | `docker-compose.github-mcp-readonly.yml` | `docker-compose.project-control.yml` |
+| Required for the other | **No** | **No** |
+| Shared network name | Optional `gace-internal` bridge only | Same optional name |
+| `workspace-mcp.json` advert | **After** RUNTIME_VERIFIED E2E | N/A |
+
+CI (GitHub-hosted): bridged MCP without published ports, inbound 401 without token,
+and outbound `https://api.github.com` probe from the same bridge (`scripts/github_mcp_ci_bridge_egress_verify.sh`).
+
 ## Change Unit boundary
 
 Only Source/Test/CI are in scope here. No Host, Secret, Docker, production,

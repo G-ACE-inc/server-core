@@ -7,6 +7,8 @@ COMPOSE = (ROOT / "docker-compose.github-mcp-readonly.yml").read_text(encoding="
 CORE = (ROOT / "docker-compose.project-control.yml").read_text(encoding="utf-8")
 CI = (ROOT / ".github/workflows/github-project-control-verify.yml").read_text(encoding="utf-8")
 
+RUNTIME = (ROOT / "operations/github-mcp-readonly-runtime.json").read_text(encoding="utf-8")
+
 
 def assert_config() -> None:
     required = [
@@ -39,6 +41,13 @@ def assert_config() -> None:
         assert forbidden not in COMPOSE, ("MCP_SOURCE_BOUNDARY_VIOLATION", forbidden)
     assert COMPOSE.count("GITHUB_READ_ONLY:") == 1, "MCP_READ_ONLY_CONFIG_CHANGED"
     assert COMPOSE.count("GITHUB_TOOLSETS:") == 1, "MCP_TOOLSET_CONFIG_CHANGED"
+
+    import json as _json
+    _rt = _json.loads(RUNTIME)
+    assert _rt["network"]["docker_internal_isolation_flag"] is False
+    assert "github_mcp_phase_a_contract_test.py" in CI
+    assert "github_mcp_ci_bridge_egress_verify.sh" in CI
+
     print("SHARED_GITHUB_MCP_SOURCE_CONTRACT=PASS")
     print("GITHUB_MCP_RUNTIME_DEPLOYED=NO")
 

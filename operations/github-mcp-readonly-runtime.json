@@ -1,0 +1,45 @@
+{
+  "schema": "gace.github-mcp-readonly-runtime/v1",
+  "phase": "A",
+  "owner_issue": "G-ACE-inc/server-core#10",
+  "compose_file": "docker-compose.github-mcp-readonly.yml",
+  "pinned_image_digest": "sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699",
+  "network": {
+    "default_name": "gace-internal",
+    "env_override": "GACE_INTERNAL_NETWORK_NAME",
+    "driver": "bridge",
+    "docker_internal_isolation_flag": false,
+    "host_port_publish": false,
+    "inbound_policy": "docker_network_membership_only",
+    "outbound_policy": "normal_https_dns_to_github_api_required"
+  },
+  "service": {
+    "dns_name": "gace-github-mcp-readonly",
+    "container_port": 8082,
+    "http_path": "/mcp"
+  },
+  "authentication": {
+    "model": "per_request_bearer_scope_challenge",
+    "shared_pat_in_compose": false,
+    "tool_surface": ["projects_get", "projects_list"]
+  },
+  "client_contract": {
+    "workspace_mcp_advertise_gate": "RUNTIME_VERIFIED_AND_AUTHENTICATED_E2E",
+    "debugai_compose_on_gace_internal": false,
+    "primary_routing_authority": "operations/github-project-debugai-routing.json",
+    "post_admission_client_options": [
+      "bounded_internal_client_container_on_gace_internal_with_per_request_bearer",
+      "future_reviewed_debugai_secondary_network_attachment"
+    ],
+    "forbidden": [
+      "remote_chatgpt_direct_mcp_tunnel",
+      "shared_pat_in_compose",
+      "host_published_mcp_port",
+      "debugai_typed_read_adapter_in_server_core"
+    ]
+  },
+  "phase_b_independent_service": {
+    "compose_file": "docker-compose.project-control.yml",
+    "requires_separate_admission": true
+  }
+}
