@@ -15,25 +15,23 @@ server-coreは司令室としてTaskをRouting/Dispatchするが、Project固有
 
 ## Authority / Approval
 
-最終決定者はMaster。
+最終決定者はMaster（Product目的・仕様・重要なUX・公開/Release・費用/Provider/Model方針・Secret権限・不可逆Data・最終受入）。AIは明示された目的・Scope・Current Rule内の通常技術判断と実行を担当する。質問・提案・説明は承認ではない。
 
-適用Rule Plane #16とMasterの明示委任がある場合、委任Scope内の通常技術判断・
-反映・restart/recreateはAIが判断・承認処理・実行する。操作名だけでMaster Gateへ戻さない。
-DebugAIのStanding DelegationはHost専用Policyを検証してから既存single-use receiptを発行する。
-CHAT本文・`human_approved=true`単独をRuntime credentialにしない。
-Product/spec/user-visible intent、不可逆persistent state、新規public exposure、
-cost/provider/model/Secret authority、明示Protected境界は委任対象外として維持する。
+### 明示的Master Gate（維持）
+- main / PR merge、正式Release、Public exposure/公開範囲の拡大・切替
+- Force push、Branch削除、destructive reset/rebase、不可逆/破壊的なpersistent-state変更
+- Secret追加/削除/rotation、Provider resourceの作成/変更/削除やCost/Policy変更
+- 新規Model download / Model方針変更（既存の明示承認Scope外）
+- Current Project Ruleが明示的にMaster Gateとする操作
 
-質問、検討、提案、操作説明を変更承認として扱わない。未確認状態を推測で補完しない。
+### Runtime委任の判定
+Production deploy、restart/recreate、reflection、rollback等は操作名だけで無条件にMaster Gateとしない。ただし委任が未検証のProduction操作・稼働Service変更は既存Master承認を要求し、承認を推測しない。
 
-Masterの明示指示なしに次を実行しない。
-- main / PR merge
-- Production deploy / 公開 / 切替
-- Force push / Branch削除 / destructive reset / rebase
-- 稼働中Serviceの停止 / recreate
-- Secret追加・削除・rotation
-- Provider resourceの作成・変更・削除
-- 新規Model download
+Master Internalに限り、Current GitHub Project #1の登録に加えて operations/master-internal-repositories.json の明示entryとHost private admissionの一致、Repo immutable ID/owner/admin、Project item、server project/path、runtime/Compose、allowed branch/operation/scope/paths、enabled/unrevoked、Protected effectsの全検証が成立する場合にのみ MASTER_INTERNAL_PERSISTENT を認める。現在の登録はDebugAI 1 Repoだけ。他Repoは登録済みと仮定しない。
+
+永続なのはRepo委任だけ。各実行でFresh exact SHA/remote/ancestry、Scope、request identity、target/healthを検証し、Hostが短命single-use receiptを発行・消費する。CHAT本文・human_approved=true・GitHub Project item単独はRuntime credentialではない。無効・不一致・未登録・失効・revokeはfail-closed。Registry変更・Repo追加は既存のreviewed registration/Host admission/readback/auditを通す。
+
+旧manual完全承認経路と有限Standing Delegationを維持する。外部顧客・販売・License・Subscription・AsteraAPPへMaster Internal権限を継承しない。将来販売用の経路はこのChange Unitでは変更しない。Host実装のOwnerはDebugAI、server-coreは登録/経路/共通境界のみを所有する。
 
 ## Workspace Entry / Command Dispatch
 
@@ -99,9 +97,10 @@ implementation / fix
  -> remote readback
  -> PR / CI when required
  -> confirmed GitHub revision
- -> required Master approval
- -> Server deploy
- -> Runtime verification
+ -> Current impact / delegation / Master Gate check
+ -> Master approval if gated; otherwise verified Host authorization
+ -> bounded Server deploy / runtime operation
+ -> exact Runtime verification
 ```
 
 Deploy詳細は `docs/DEPLOY_RUNBOOK.md`。
@@ -118,11 +117,11 @@ Registry記載だけでCurrent Runtimeを証明しない。必要時は実設定
 
 ### DebugAI
 
-DebugAIは独立Project/runtime。
+DebugAIは独立Project/runtime。Sourceのmain、開発feature、実稼働runtimeは別状態として扱う。
 
-Current source authorityは `seigo-gace/debug-ai` main。MCP Adapterを含むSourceはmainへmerge済みでsource-side verification済み。
+既存DebugAI MCPの13 tools、bounded Server Command、guarded GitOps、exact HEAD/health readbackは指定されたLive Revisionで検証済み。Master Internal Persistent DelegationもDebugAI 1 RepoでRuntime E2E済み。正確な最新稼働Revision・enrollment/allowed scopeはOwner Current #41、`operations/master-internal-repositories.json` と実Host readbackで確認する。Registryの過去成功を将来のRuntime PASSとしない。
 
-ただし、Contabo Live DebugAI MCP Runtime接続とWorkspace MCP登録は別状態であり、確認完了までWorkspace上の `AVAILABLE_VERIFIED` とは扱わない。
+Workspace/server作業ではこの既存のbounded経路を優先する。ChatGPTアプリ直接remote MCP connectorは未検証、他RepoのHost登録も未検証。DebugAI製品全体・統合開発Log完成を推定しない。旧manual approvalを販売用途へ変更しない。
 
 ### Reusable KB
 
