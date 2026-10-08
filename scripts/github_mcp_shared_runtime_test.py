@@ -12,7 +12,7 @@ def assert_config() -> None:
     required = [
         "gace-github-mcp-readonly:",
         "ghcr.io/github/github-mcp-server@sha256:",
-        "GACE_GITHUB_MCP_IMAGE_SHA256:?",
+        "ghcr.io/github/github-mcp-server@sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699",
         'command: ["http", "--listen-host", "0.0.0.0", "--scope-challenge"]',
         "GITHUB_TOOLSETS: projects",
         'GITHUB_READ_ONLY: "1"',
