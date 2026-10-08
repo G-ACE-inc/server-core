@@ -46,6 +46,7 @@ def assert_config() -> None:
     _rt = _json.loads(RUNTIME)
     assert _rt["network"]["docker_internal_isolation_flag"] is False
     assert "github_mcp_phase_a_contract_test.py" in CI
+    assert "github_mcp_ci_acceptance_matrix_test.py" in CI
     assert "github_mcp_ci_bridge_egress_verify.sh" in CI
 
     print("SHARED_GITHUB_MCP_SOURCE_CONTRACT=PASS")

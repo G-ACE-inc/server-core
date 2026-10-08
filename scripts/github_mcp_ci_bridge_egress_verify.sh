@@ -6,6 +6,61 @@ DIGEST='ghcr.io/github/github-mcp-server@sha256:fbec75de11c255213fa08d80fb166abe
 NETWORK="gace-mcp-ci-bridge-${RANDOM}"
 CID=""
 MCP_NAME="gace-github-mcp-readonly"
+EGRESS_URL="${GACE_MCP_EGRESS_PROBE_URL:-https://api.github.com/zen}"
+
+egress_probe() {
+  local net="$1"
+  local code=""
+  for _ in $(seq 1 3); do
+    code="$(docker run --rm --network "$net" curlimages/curl:8.5.0 \
+      -sS --max-time 15 -o /dev/null -w '%{http_code}' \
+      "$EGRESS_URL" 2>/dev/null || echo 000)"
+    case "$code" in
+      200|403|429) echo "$code"; return 0 ;;
+    esac
+    sleep 2
+  done
+  echo "$code"
+  return 1
+}
+
+fail_inconclusive_egress() {
+  local code="$1"
+  echo "GITHUB_MCP_BRIDGE_EGRESS_HTTPS=INCONCLUSIVE code=${code}"
+  echo "NETWORK_INCONCLUSIVE=YES"
+  exit 1
+}
+
+assert_no_published_host_ports() {
+  local cid="$1"
+  local mode
+  mode="$(docker inspect -f '{{.HostConfig.NetworkMode}}' "$cid")"
+  if test "$mode" = "host"; then
+    echo "GITHUB_MCP_HOST_NETWORK_MODE=FAIL"
+    exit 1
+  fi
+  local bindings
+  bindings="$(docker inspect -f '{{json .HostConfig.PortBindings}}' "$cid")"
+  if test "$bindings" != "null" && test "$bindings" != "{}"; then
+    echo "GITHUB_MCP_PUBLISHED_PORT_BINDINGS=FAIL bindings=${bindings}"
+    exit 1
+  fi
+  if docker port "$cid" 2>/dev/null | grep -q .; then
+    echo "GITHUB_MCP_DOCKER_PORT_MAPPING=FAIL"
+    exit 1
+  fi
+  echo "GITHUB_MCP_BRIDGE_NO_HOST_PORT=PASS readback=zero_host_port_bindings"
+}
+
+if test "${1:-}" = "--egress-probe-only"; then
+  docker network create "$NETWORK" >/dev/null
+  trap 'docker network rm "$NETWORK" >/dev/null 2>&1 || true' EXIT
+  code="$(egress_probe "$NETWORK" || true)"
+  case "$code" in
+    200|403|429) echo "GITHUB_MCP_EGRESS_PROBE_ONLY=PASS code=${code}"; exit 0 ;;
+  esac
+  fail_inconclusive_egress "$code"
+fi
 
 cleanup() {
   docker rm -f "$CID" >/dev/null 2>&1 || true
@@ -14,7 +69,6 @@ cleanup() {
 trap cleanup EXIT
 
 docker network create "$NETWORK" >/dev/null
-
 docker pull "$DIGEST" >/dev/null
 
 CID="$(docker run -d --rm --name "$MCP_NAME" \
@@ -48,26 +102,18 @@ done
 test "$ready" = "1"
 
 echo "GITHUB_MCP_BRIDGE_INBOUND_NO_TOKEN_DENIED=PASS"
+assert_no_published_host_ports "$CID"
 
-egress_code=""
-for _ in $(seq 1 3); do
-  egress_code="$(docker run --rm --network "$NETWORK" curlimages/curl:8.5.0 \
-    -sS --max-time 15 -o /dev/null -w '%{http_code}' \
-    https://api.github.com/zen 2>/dev/null || echo 000)"
-  case "$egress_code" in
-    200|403|429) break ;;
-  esac
-  sleep 2
-done
-
-case "$egress_code" in
+code="$(egress_probe "$NETWORK" || true)"
+case "$code" in
   200|403|429)
-    echo "GITHUB_MCP_BRIDGE_EGRESS_HTTPS=PASS code=${egress_code}"
+    echo "GITHUB_MCP_BRIDGE_EGRESS_HTTPS=PASS code=${code}"
+    echo "GITHUB_MCP_CI_EGRESS_SCOPE=bridge_sidecar_https_only"
     ;;
   *)
-    echo "GITHUB_MCP_BRIDGE_EGRESS_HTTPS=INCONCLUSIVE code=${egress_code}"
-    echo "NETWORK_INCONCLUSIVE=YES"
+    fail_inconclusive_egress "$code"
     ;;
 esac
 
-echo "GITHUB_MCP_BRIDGE_NO_HOST_PORT=PASS"
+echo "GITHUB_MCP_MCP_PROJECTS_ON_BRIDGE=NOT_VERIFIED"
+echo "GITHUB_MCP_AUTHENTICATED_PROJECT_E2E=ADMISSION_GATE_NO_CI_TOKEN"

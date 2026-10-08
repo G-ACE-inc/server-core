@@ -10,8 +10,15 @@
     "driver": "bridge",
     "docker_internal_isolation_flag": false,
     "host_port_publish": false,
-    "inbound_policy": "docker_network_membership_only",
+    "host_network_mode": false,
+    "inbound_policy": "no_host_port_publish_per_request_bearer_all_callers",
+    "inbound_bridge_note": "user_defined_bridge_allows_docker_host_and_attached_containers_not_internet_without_port_publish",
     "outbound_policy": "normal_https_dns_to_github_api_required"
+  },
+  "ci_verification": {
+    "bridge_sidecar_https_egress": "github_actions_verify_job",
+    "mcp_authenticated_projects_on_bridge": "NOT_VERIFIED_ADMISSION_GATE",
+    "persistent_host_runtime": "NOT_VERIFIED"
   },
   "service": {
     "dns_name": "gace-github-mcp-readonly",

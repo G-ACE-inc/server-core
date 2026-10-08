@@ -155,8 +155,11 @@ DebugAI not on `gace-internal` today): `docs/GITHUB_MCP_PHASE_A_ADMISSION.md`.
 | Shared network name | Optional `gace-internal` bridge only | Same optional name |
 | `workspace-mcp.json` advert | **After** RUNTIME_VERIFIED E2E | N/A |
 
-CI (GitHub-hosted): bridged MCP without published ports, inbound 401 without token,
-and outbound `https://api.github.com` probe from the same bridge (`scripts/github_mcp_ci_bridge_egress_verify.sh`).
+CI (GitHub-hosted): bridged MCP without published ports (Docker inspect readback),
+inbound 401 without token, and outbound `https://api.github.com` probe from a **sidecar**
+on the same bridge (`scripts/github_mcp_ci_bridge_egress_verify.sh`). Unreachable egress
+exits nonzero (`NETWORK_INCONCLUSIVE=YES`). CI does **not** prove authenticated MCP
+`projects_*` on the bridge (`ci_verification` in `operations/github-mcp-readonly-runtime.json`).
 
 ## Change Unit boundary
 

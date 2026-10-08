@@ -36,6 +36,12 @@ def main() -> None:
     assert "--internal" in ADMISSION
     assert "api.github.com" in ADMISSION
 
+    assert "Docker Host" in ADMISSION
+    assert runtime["network"]["inbound_policy"].startswith("no_host_port_publish")
+    assert runtime["network"].get("host_network_mode") is False
+    ci = runtime.get("ci_verification", {})
+    assert ci.get("mcp_authenticated_projects_on_bridge") == "NOT_VERIFIED_ADMISSION_GATE"
+
     assert "\n    ports:" not in COMPOSE
     assert "internal: true" not in COMPOSE
 

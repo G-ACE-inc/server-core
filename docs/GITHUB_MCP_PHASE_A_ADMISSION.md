@@ -25,7 +25,7 @@ docker network create "${GACE_INTERNAL_NETWORK_NAME:-gace-internal}"
 # Wrong for MCP egress: docker network create --internal gace-internal
 ```
 
-- **Inbound:** no `ports:` publish on the MCP compose service; reachability only from containers attached to the same network (and admitted clients).
+- **Inbound (no port publish):** the compose service must not map container port 8082 to a host `ports:` binding, so the service is **not reachable from the ordinary public Internet** via published NAT. On a default **user-defined bridge**, Docker also allows reachability from **attached containers and the Docker Host** (see [bridge driver](https://docs.docker.com/engine/network/drivers/bridge/) and [port publishing](https://docs.docker.com/engine/network/port-publishing/)). This is **not** `network_mode: host`. Security still requires **`--scope-challenge` and a per-request Bearer on every MCP call** for every caller (Host-local or container).
 - **Outbound:** normal DNS + HTTPS to `api.github.com` (and related GitHub API hosts) from the MCP container.
 
 Machine contract: `operations/github-mcp-readonly-runtime.json`.
