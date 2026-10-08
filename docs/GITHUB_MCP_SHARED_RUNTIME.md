@@ -48,9 +48,15 @@ not a replacement for the official MCP Server-AI/CHAT E2E acceptance.
 
 ## Activation prerequisites — must be demonstrated, not assumed
 
-1. Verify image provenance and choose one real **immutable SHA256 digest** for
-   `GACE_GITHUB_MCP_IMAGE_SHA256` (64 lowercase hexadecimal characters). Do
-   not substitute a floating tag, and do not treat the CI dummy digest as real.
+1. The Source image is now pinned to the **official GitHub GHCR v1.11.0
+   multi-architecture manifest** by immutable SHA256 digest
+   `fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699`.
+   Source: https://github.com/github/github-mcp-server/pkgs/container/github-mcp-server/1170256861
+   CI checks the registry manifest instead of inserting a dummy digest.
+   The tag is provenance metadata, **never** a mutable pull reference.
+   The Host must still independently read back the actual pulled digest,
+   compatible platform, runtime argv, process identity and allowed caller
+   before runtime admission; CI alone is not a deployment or Host check.
 2. Verify the intended consumer, authorization and actual GitHub Projects
    credential scopes. HTTP accepts a **per-request** bearer credential
    supplied by a trusted client, not a globally shared token in this Compose
