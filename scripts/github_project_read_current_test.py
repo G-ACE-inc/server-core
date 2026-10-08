@@ -78,6 +78,73 @@ class ProjectCurrentReadTests(unittest.TestCase):
             with self.assertRaisesRegex(control.ControlError, "GH_COMMAND_FAILED"):
                 current.read_current(self.ITEM, self.contract)
 
+    def test_registered_item_batch_uses_same_project_identity_and_four_field_reads(self):
+        values = {"Wave": "Wave 1", "Gate": "CI_PASS",
+                  "Change Unit": "Project bounded readback",
+                  "Mutation Owner": "G-ACE"}
+        calls, fake_gh = self.stub(values)
+        with patch.object(control, "gh_run", side_effect=fake_gh):
+            result = current.read_registered_current(self.contract)
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["registered_item_count"], 1)
+        self.assertEqual(result["excluded_item_count"], 0)
+        self.assertEqual(result["items"][0]["item_id"], "PVTI_TEST")
+        self.assertEqual(result["items"][0]["item_url"], self.ITEM)
+        self.assertEqual(result["items"][0]["fields"], values)
+        self.assertEqual(len(calls), 6)
+        self.assertTrue(all("mutation(" not in " ".join(c) for c in calls))
+
+    def test_missing_control_issue_is_not_fabricated_in_project_current(self):
+        values = {"Wave": None, "Gate": "CI_PASS",
+                  "Change Unit": "Actual registered task",
+                  "Mutation Owner": "DebugAI"}
+        _, fake_gh = self.stub(values)
+        with patch.object(control, "gh_run", side_effect=fake_gh):
+            result = current.read_registered_current(self.contract)
+        self.assertEqual(result["status"], "PARTIAL")
+        self.assertEqual(result["registered_item_count"], 1)
+        self.assertEqual(result["items"][0]["fields"]["Wave"], None)
+        self.assertNotIn("https://github.com/G-ACE-inc/server-core/issues/10",
+                         [item["item_url"] for item in result["items"]])
+
+    def test_untrusted_or_duplicate_registered_items_fail_closed(self):
+        def gh_with_items(items):
+            def fake(args, _contract):
+                if args[:2] == ["project", "view"]:
+                    return json.dumps({"title": "G-ACE Development Platform",
+                                       "id": "PVT_kwHODOQFoM4BEJII"})
+                if args[:2] == ["project", "item-list"]:
+                    return json.dumps({"items": items})
+                raise AssertionError("Field read must not occur for invalid item listing")
+            return fake
+        for items, code in [
+            ([{"id": "BAD", "content": {"url": self.ITEM}}], "PROJECT_ITEM_ID_INVALID"),
+            ([{"id": "PVTI_A", "content": {"url": self.ITEM}},
+              {"id": "PVTI_B", "content": {"url": self.ITEM}}], "PROJECT_ITEM_DUPLICATE"),
+        ]:
+            with self.subTest(code=code), patch.object(control, "gh_run",
+                                                     side_effect=gh_with_items(items)):
+                with self.assertRaisesRegex(control.ControlError, code):
+                    current.read_registered_current(self.contract)
+
+    def test_external_or_draft_project_items_are_counted_not_presented_as_pass(self):
+        values = {"Wave": "Wave 1", "Gate": "CI_PASS",
+                  "Change Unit": "Source", "Mutation Owner": "G-ACE"}
+        calls, fake_gh = self.stub(values)
+        def mixed(args, contract):
+            if args[:2] == ["project", "item-list"]:
+                return json.dumps({"items": [
+                    {"id": "PVTI_TEST", "content": {"url": self.ITEM}},
+                    {"id": "PVTI_EXT", "content": {"url": "https://github.com/other/repo/issues/3"}},
+                    {"id": "PVTI_DRAFT", "content": {"title": "Draft without URL"}},
+                ]})
+            return fake_gh(args, contract)
+        with patch.object(control, "gh_run", side_effect=mixed):
+            result = current.read_registered_current(self.contract)
+        self.assertEqual(result["status"], "PARTIAL")
+        self.assertEqual(result["excluded_item_count"], 2)
+        self.assertEqual(result["registered_item_count"], 1)
+
     def test_facade_never_has_a_second_graphql_mutation_implementation(self):
         source = (Path(__file__).resolve().parent /
                   "github_project_read_current.py").read_text(encoding="utf-8")
