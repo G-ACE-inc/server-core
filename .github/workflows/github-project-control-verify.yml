@@ -23,6 +23,11 @@ jobs:
           python3 scripts/github_project_request_from_comment_test.py
           python3 scripts/github_project_internal_transport_test.py
           python3 scripts/github_project_runtime_config_test.py
+      - name: Shared GitHub MCP source-only config
+        run: |
+          python3 scripts/github_mcp_shared_runtime_test.py
+          GACE_GITHUB_MCP_IMAGE_SHA256=$(printf 'a%.0s' {1..64}) docker compose -f docker-compose.github-mcp-readonly.yml config --quiet
+
       - name: Project Control container source
         run: |
           docker build -f Dockerfile.project-control -t gace-server-core-project-control:ci .

@@ -1,0 +1,29 @@
+# SOURCE-ONLY template. Not deployed; requires a verified official image digest,
+# the existing gace-internal network, and authorized per-request GitHub credentials.
+services:
+  gace-github-mcp-readonly:
+    image: ghcr.io/github/github-mcp-server@sha256:${GACE_GITHUB_MCP_IMAGE_SHA256:?Set verified immutable image digest}
+    command: ["http", "--listen-host", "0.0.0.0", "--scope-challenge"]
+    user: "65532:65532"
+    environment:
+      GITHUB_TOOLSETS: projects
+      GITHUB_READ_ONLY: "1"
+    networks:
+      - gace-internal
+    expose:
+      - "8082"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 64
+    mem_limit: 128m
+    restart: unless-stopped
+
+networks:
+  gace-internal:
+    external: true
+    name: "${GACE_INTERNAL_NETWORK_NAME:-gace-internal}"
