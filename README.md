@@ -1,5 +1,53 @@
 # Server Core — G-ACE Workspace Command Center
 
+## Master Internal Persistent Delegation — Runtime verified (2026-10-08)
+
+Fixed purpose: preserve sales/customer legacy full approval and extend only Master's
+own development to persistent delegation for formally registered, verified GitHub
+Project repositories. Current qualified runtime branch:
+`master-internal-runtime-20261008`; exact live Source/Host/Server HEAD:
+`2695a0d3714d25593de16dd0f0a21deba7c29f43`. Owner PR51/52/53 merged; exact runtime
+head all six CI checks SUCCESS, canonical499/499 and real Host83/83, zero skip;
+real isolated Sandbox full-suite499/499 PASS. Combined focused checks89/89 PASS.
+
+Only `seigo-gace/debug-ai` is currently enrolled. Host entry
+`dlg_master_debugai_v1` is enabled/unrevoked/no expiry and exactly matches the
+canonical `operations/master-internal-repositories.json`. Mapping binds immutable
+repo1386844196/nodeR_kgDOUqmQJA, Project itemPVTI_lAHODOQFoM4BEJIIzg-sWS8/control#41,
+actual `/home/admin1/projects/debug-ai`, pinned Compose/services/private health and
+runtime `debugai.compose`. Trusted admission/readback/audit is verified; repository
+addition is available through the documented reviewed registry/admission flow.
+
+Real automatic-receipt MCP bootstrap `gitops_74630292ae3dcf53619daa54` and explicit
+persistent operation `gitops_aef98099c653326e2f702a59` both completed
+QUEUED -> RUNNING -> PASS at the exact head, HTTP200 and running|healthy. Both used
+Host-issued/consumed <=5-minute single-use receipts; no manual per-operation receipt
+was created. Status binds Master issuer/authority/audit identity, repository/Project/
+server mapping/runtime/branch/SHA/scope and consumption timestamp. Duplicate replay
+was rejected with original terminal status and container unchanged. Packaged source
+parity266/266; thirteen tools and bounded Server Command remain verified.
+
+The existing finite `dlg_debugai_reflect_v1` remains byte-identical. Legacy manual
+receipt consumption, publish and publish-file validation remain byte-identical and
+valid/invalid compatibility tests pass. No Commercial authorization, licensing,
+subscription, Customer authentication or Astera sales path changed. Existing named
+volumes, private exposure and watcher/oneshot are preserved. No new executor, queue,
+transport, service, shell endpoint, Host Node/Python installation or credential.
+
+Concurrent shared-feature unified-product/telemetry work was preserved and excluded
+from this reflection. PR40 remains open/draft/unmerged into
+`feat/pre-server-benchmark-gates-20261001`; its newer shared source is a separate
+qualification/deployment state. Direct remote ChatGPT app connector remains
+NOT_VERIFIED. Master Internal CU is complete; future operations require fresh
+owner/Project/mapping/branch/SHA/path/effect/status verification. Other unmapped or
+unenrolled repositories fail closed. Product/spec/user-visible/public/cost/provider/
+model/Secret-authority/destructive persistent decisions remain Master-owned.
+
+Earlier Standing/source-checkpoint snapshots below are historical and do not
+supersede this runtime qualification. Latest canonical Current/audit:
+https://github.com/seigo-gace/debug-ai/issues/41 .
+
+
 `server-core` は、G-ACE Workspace全体の**司令室**である。
 
 Current運用の最上位Control PlaneはGitHub Project #1へ移行する。server-coreは両AI用Rule全文を抱える場所ではなく、**GitHub Projectを運用するためのbootstrap / router / control room**として、Workspace/serverの安定した入口・安全境界・shared capability・bounded runtimeを提供する。
@@ -239,7 +287,7 @@ Source/CIで確認されているものとLive Runtimeを分離する。
 
 - server-core command-center routing / documentation contracts: SOURCE / CI verified
 - read-only Storage Audit source: SOURCE / CI verified
-- DebugAI shared control route and Standing Delegation: live PASS on reflected `cc3462ddb07fb1379d61dc7c2321a776794800c1`. Existing MCP 13 tools, health, real Server Command `QUEUED -> RUNNING -> PASS` with exact HEAD, and 263-file source/image parity are verified. Guarded delegated deploy `gitops_7f181b2e296bb0cace801248` completed PASS with an automatically issued/consumed Host receipt, HTTP 200 and Docker healthy. Duplicate operation replay and missing policy are rejected. Owner CI: 498 canonical tests and 47 real Host tests, zero skip; no per-operation Master approval file is needed within the installed policy scope. Remote ChatGPT direct connector remains NOT_VERIFIED.
+- DebugAI shared control route / Master Internal Persistent Delegation: current live exact `2695a0d3714d25593de16dd0f0a21deba7c29f43`, automatic MCP receipt E2E PASS, canonical499/499 / Host83/83, thirteen tools, Server Command and packaged parity266/266 verified. Prior finite Standing E2E at `cc3462d...` is retained as historical evidence; its policy remains unchanged. Remote ChatGPT direct connector remains NOT_VERIFIED.
 - F: reusable KB bridge/runtime: NOT_IMPLEMENTED
 - generic storage cleanup mutation: NOT_IMPLEMENTED
 - current server storage audit: NOT_VERIFIED
