@@ -89,6 +89,7 @@ jobs:
           trap - EXIT
           python3 scripts/github_mcp_phase_a_contract_test.py
           python3 scripts/github_mcp_ci_acceptance_matrix_test.py
+          python3 scripts/github_mcp_host_admission_feasibility_test.py
           bash -n scripts/github_mcp_ci_bridge_egress_verify.sh
           bash scripts/github_mcp_ci_bridge_egress_verify.sh
 

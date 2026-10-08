@@ -39,6 +39,8 @@ def main() -> None:
     assert "Docker Host" in ADMISSION
     assert runtime["network"]["inbound_policy"].startswith("no_host_port_publish")
     assert runtime["network"].get("host_network_mode") is False
+    ha = runtime.get("host_admission", {})
+    assert ha.get("legacy_debugai_one_shot_supports_phase_a") is False
     ci = runtime.get("ci_verification", {})
     assert ci.get("mcp_authenticated_projects_on_bridge") == "NOT_VERIFIED_ADMISSION_GATE"
 

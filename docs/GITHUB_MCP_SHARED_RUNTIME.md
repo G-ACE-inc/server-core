@@ -145,8 +145,8 @@ an absent Issue ID.
 ## Phase A admission (Host — separate from Source/CI)
 
 Machine contract: `operations/github-mcp-readonly-runtime.json`.  
-Rollback and network rules (bridge **without** Docker `--internal`, no host port publish,
-DebugAI not on `gace-internal` today): `docs/GITHUB_MCP_PHASE_A_ADMISSION.md`.
+Rollback, network rules, and **verified Host authorization routes** (DebugAI one-shot /
+Master Internal do **not** cover Phase A): `docs/GITHUB_MCP_PHASE_A_ADMISSION.md`.
 
 | Gate | Phase A (readonly MCP) | Phase B (Project Control receiver) |
 |------|------------------------|-------------------------------------|

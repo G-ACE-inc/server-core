@@ -48,5 +48,14 @@
   "phase_b_independent_service": {
     "compose_file": "docker-compose.project-control.yml",
     "requires_separate_admission": true
+  },
+  "host_admission": {
+    "available_on_host": false,
+    "legacy_debugai_one_shot_supports_phase_a": false,
+    "master_internal_enrolled_repository": "seigo-gace/debug-ai",
+    "master_internal_persistent_data_effect": false,
+    "server_core_host_executor_implemented": false,
+    "required_next_actor": "master_then_host_admin_or_new_dedicated_lane",
+    "chat_or_issue_text_is_credential": false
   }
 }
