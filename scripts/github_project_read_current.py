@@ -45,6 +45,30 @@ def read_current(item_url, contract):
     }
 
 
+def expected_control_issue_urls(contract):
+    """Derive mandatory control/rule-plane items from existing canonical files."""
+    manifest = load_json(DEFAULT_CONTRACT.with_name("github-project-rule-plane.json"),
+                         "RULE_PLANE_JSON_INVALID")
+    if not isinstance(manifest, dict) or manifest.get("project") != contract["project"]:
+        raise ControlError("RULE_PLANE_PROJECT_MISMATCH")
+    try:
+        urls = [
+            manifest["control_plane"]["issue_url"],
+            manifest["rule_planes"]["server_ai"]["issue_url"],
+            manifest["rule_planes"]["gpt_chat"]["issue_url"],
+            ("https://github.com/" +
+             contract["internal_event_transport"]["result_sink"]["repository"] +
+             "/issues/" +
+             str(contract["internal_event_transport"]["result_sink"]["issue_number"])),
+        ]
+    except (KeyError, TypeError, ValueError):
+        raise ControlError("CONTROL_ISSUE_REGISTRY_INVALID")
+    normalized = tuple(validate_item_url(url, contract) for url in urls)
+    if len(normalized) != 4 or len(set(normalized)) != 4:
+        raise ControlError("CONTROL_ISSUE_REGISTRY_INVALID")
+    return normalized
+
+
 def read_registered_current(contract):
     """Enumerate existing Project items without adding or changing any item."""
     verify_project_identity(contract)
@@ -84,13 +108,14 @@ def read_registered_current(contract):
         registered.append({"url": valid_url, "item_id": item_id})
     if len(registered) > 25:
         raise ControlError("PROJECT_READ_BATCH_TOO_LARGE")
+    unregistered = sorted(set(expected_control_issue_urls(contract)) - seen_urls)
     out = []
     for item in registered:
         fields = {field: read_field_value(item["item_id"], field, contract)
                   for field in FIELDS}
         out.append({"item_url": item["url"], "item_id": item["item_id"],
                     "fields": fields})
-    complete = bool(out) and skipped == 0 and all(
+    complete = bool(out) and skipped == 0 and not unregistered and all(
         all(isinstance(v, str) and v.strip() for v in item["fields"].values())
         for item in out
     )
@@ -102,6 +127,7 @@ def read_registered_current(contract):
         "items": out,
         "excluded_item_count": skipped,
         "registered_item_count": len(out),
+        "unregistered_control_issue_urls": unregistered,
         "read_only": True,
         "mutation_performed": False,
     }
