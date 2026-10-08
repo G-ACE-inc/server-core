@@ -454,3 +454,26 @@ Protected GitOps routes through `debugai_gitops_request/status` and retains the 
 This Source registration is not a live representative-call claim. Actual Workspace config installation/readback and a representative DebugAI MCP call remain runtime verification gates.
 
 PR #20 remains separate/paused and must not be merged as the active solution merely because it exists.
+
+## 2026-10-08 — Route verifiable Standing Delegation to existing DebugAI
+
+Baseline: shared guarded GitOps routing requires exact-SHA Host approval but has no
+machine-verifiable delegated-authority reference. Master delegation decisions in
+CHAT cannot themselves be Runtime credentials.
+
+Change: shared route metadata references DebugAI's existing deploy/status tools and
+its Host-only Standing Delegation contract for `debugai.compose.reflect`. The owner
+verifies issuer/validity/revocation, scope/target/identity and issues the existing
+single-use receipt mechanism's bound v2 extension. server-core owns dispatch and
+decision boundaries only; no project policy engine is copied.
+
+Reason/evidence: explicit Master implementation instruction; fresh #16 decision
+authority; existing live shared route PASS; SHA-only manually created receipts are
+the remaining delegation handoff gap. DebugAI PR #50 carries source/tests/design.
+
+Affected: routing manifest, protocol, README, existing MCP and structure docs.
+Applied commit: the introducing commit/PR in repository GitHub work history.
+Compatibility/rollback: existing manual route remains available; revoke/expire
+Host policy to disable auto-issuance. No credential/provider/exposure mutation.
+Verification: routing/doc CI and owner exact-head CI; actual delegated production
+E2E remains a separate gate recorded in canonical Current.
