@@ -90,6 +90,11 @@ jobs:
           python3 scripts/github_mcp_phase_a_contract_test.py
           python3 scripts/github_mcp_ci_acceptance_matrix_test.py
           python3 scripts/github_mcp_host_admission_feasibility_test.py
+          python3 -m py_compile scripts/github_mcp_phase_a_host_bootstrap.py scripts/github_mcp_phase_a_host_bootstrap_test.py
+          python3 scripts/github_mcp_phase_a_host_bootstrap_test.py
+          python3 scripts/github_mcp_phase_a_host_bootstrap.py plan >/tmp/gace-phase-a-plan.json
+          python3 -c "import json; p=json.load(open('/tmp/gace-phase-a-plan.json')); assert p['schema']=='gace.github-mcp-phase-a-host-plan/v1'; assert p['apply_permitted'] is False"
+          echo "GITHUB_MCP_PHASE_A_HOST_PLAN_CI=PASS"
           bash -n scripts/github_mcp_ci_bridge_egress_verify.sh
           bash scripts/github_mcp_ci_bridge_egress_verify.sh
 

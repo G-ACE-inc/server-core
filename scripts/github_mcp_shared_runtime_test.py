@@ -48,6 +48,7 @@ def assert_config() -> None:
     assert "github_mcp_phase_a_contract_test.py" in CI
     assert "github_mcp_ci_acceptance_matrix_test.py" in CI
     assert "github_mcp_host_admission_feasibility_test.py" in CI
+    assert "github_mcp_phase_a_host_bootstrap_test.py" in CI
     assert "github_mcp_ci_bridge_egress_verify.sh" in CI
 
     print("SHARED_GITHUB_MCP_SOURCE_CONTRACT=PASS")

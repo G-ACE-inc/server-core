@@ -41,6 +41,9 @@ def main() -> None:
     assert runtime["network"].get("host_network_mode") is False
     ha = runtime.get("host_admission", {})
     assert ha.get("legacy_debugai_one_shot_supports_phase_a") is False
+    brief = (ROOT / "docs/GITHUB_MCP_PHASE_A_MASTER_IMPACT_BRIEF.md").read_text(encoding="utf-8")
+    assert "Not authorization" in brief
+    assert ha.get("phase_a_plan_script")
     ci = runtime.get("ci_verification", {})
     assert ci.get("mcp_authenticated_projects_on_bridge") == "NOT_VERIFIED_ADMISSION_GATE"
 

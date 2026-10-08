@@ -56,6 +56,10 @@
     "master_internal_persistent_data_effect": false,
     "server_core_host_executor_implemented": false,
     "required_next_actor": "master_then_host_admin_or_new_dedicated_lane",
-    "chat_or_issue_text_is_credential": false
+    "chat_or_issue_text_is_credential": false,
+    "phase_a_plan_script": "scripts/github_mcp_phase_a_host_bootstrap.py",
+    "phase_a_bootstrap_contract": "operations/github-mcp-phase-a-host-bootstrap.json",
+    "apply_mode": "FAIL_CLOSED_NOT_IMPLEMENTED",
+    "master_impact_brief": "docs/GITHUB_MCP_PHASE_A_MASTER_IMPACT_BRIEF.md"
   }
 }

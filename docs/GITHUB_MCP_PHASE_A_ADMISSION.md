@@ -94,6 +94,17 @@ no Phase B receiver; no Secret rotation; no workspace-mcp advert
 
 One-shot vs standing: a **future** dedicated Phase A receipt could be one-shot; the **existing** DebugAI one-shot path is **not** that receipt.
 
+### Pre-apply read-only plan (Source)
+
+```bash
+cd /home/admin1/server-core   # admitted checkout at exact SHA
+python3 scripts/github_mcp_phase_a_host_bootstrap.py plan
+```
+
+Emits JSON (`gace.github-mcp-phase-a-host-plan/v1`). Default mode performs **no** Docker/network mutations. `apply` remains **fail-closed** without verified external receipt.
+
+Master impact brief: `docs/GITHUB_MCP_PHASE_A_MASTER_IMPACT_BRIEF.md`.
+
 ### Post-admission verification (required before RUNTIME_VERIFIED)
 
 - Docker inspect: zero host port bindings; not `host` network mode.

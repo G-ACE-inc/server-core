@@ -45,6 +45,7 @@ def main() -> None:
 
     print("HOST_ADMISSION_AVAILABLE=NO")
     print("LEGACY_DEBUGAI_ONE_SHOT_SUPPORTS_PHASE_A=NO")
+    assert (ROOT / "scripts/github_mcp_phase_a_host_bootstrap.py").is_file()
     print("GITHUB_MCP_HOST_ADMISSION_FEASIBILITY=PASS")
 
 
