@@ -23,6 +23,8 @@ jobs:
           python3 scripts/github_project_request_from_comment_test.py
           python3 scripts/github_project_internal_transport_test.py
           python3 scripts/github_project_runtime_config_test.py
+          python3 -m py_compile scripts/github_project_chat_host_route.py scripts/github_project_chat_host_route_test.py
+          python3 scripts/github_project_chat_host_route_test.py
       - name: Project Control container source
         run: |
           docker build -f Dockerfile.project-control -t gace-server-core-project-control:ci .
