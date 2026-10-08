@@ -171,6 +171,119 @@ class InternalTransportTests(unittest.TestCase):
         finally:
             server.shutdown(); server.server_close(); thread.join(timeout=2)
 
+
+    def test_http_receiver_obeys_existing_cli_lock(self):
+        import fcntl
+        import os
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+
+        executed = []
+        with tempfile.TemporaryDirectory() as tmp:
+            lock_path = Path(tmp) / "shared.lock"
+            with patch.dict(os.environ, {"GACE_PROJECT_CONTROL_LOCK": str(lock_path)}):
+                server = ThreadingHTTPServer(
+                    ("127.0.0.1", 0),
+                    receiver.make_handler(
+                        CONTRACT, secret=b"delivery-secret",
+                        execute_fn=lambda request, _contract: (
+                            executed.append(request),
+                            {"REQUEST_ID": request["id"], "READBACK": request["value"],
+                             "MUTATION_PERFORMED": "YES"},
+                        )[1],
+                        publish_fn=lambda *_: "PUBLISHED",
+                        now_fn=lambda: 1700000000,
+                    ),
+                )
+                worker = threading.Thread(target=server.serve_forever, daemon=True)
+                worker.start()
+                try:
+                    body = json.dumps(request_payload(), separators=(",", ":")).encode()
+                    def post():
+                        return urllib.request.Request(
+                            f"http://127.0.0.1:{server.server_port}{receiver.RECEIVER_PATH}",
+                            data=body, method="POST", headers=signed_headers(body),
+                        )
+                    with lock_path.open("a+", encoding="utf-8") as held:
+                        fcntl.flock(held.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        with self.assertRaises(urllib.error.HTTPError) as err:
+                            urllib.request.urlopen(post(), timeout=3)
+                        self.assertEqual(err.exception.code, 503)
+                        self.assertEqual(json.loads(err.exception.read())["error"], "PROJECT_CONTROL_BUSY")
+                        self.assertEqual(executed, [])
+                        fcntl.flock(held.fileno(), fcntl.LOCK_UN)
+                    with urllib.request.urlopen(post(), timeout=3) as response:
+                        self.assertEqual(response.status, 200)
+                    self.assertEqual(len(executed), 1)
+                finally:
+                    server.shutdown()
+                    server.server_close()
+                    worker.join(timeout=2)
+
+    def test_threaded_receiver_denies_concurrent_field_write(self):
+        import os
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+
+        started = threading.Event()
+        release = threading.Event()
+        calls = []
+        first_result = []
+
+        def fake_execute(request, _contract):
+            calls.append(request["id"])
+            if len(calls) == 1:
+                started.set()
+                self.assertTrue(release.wait(timeout=5))
+            return {"REQUEST_ID": request["id"], "READBACK": request["value"],
+                    "MUTATION_PERFORMED": "YES"}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.dict(os.environ, {"GACE_PROJECT_CONTROL_LOCK": str(Path(tmp) / "shared.lock")}):
+                server = ThreadingHTTPServer(
+                    ("127.0.0.1", 0),
+                    receiver.make_handler(
+                        CONTRACT, secret=b"delivery-secret",
+                        execute_fn=fake_execute, publish_fn=lambda *_: "PUBLISHED",
+                        now_fn=lambda: 1700000000,
+                    ),
+                )
+                worker = threading.Thread(target=server.serve_forever, daemon=True)
+                worker.start()
+                def post(payload):
+                    body = json.dumps(payload, separators=(",", ":")).encode()
+                    request = urllib.request.Request(
+                        f"http://127.0.0.1:{server.server_port}{receiver.RECEIVER_PATH}",
+                        data=body, method="POST", headers=signed_headers(body),
+                    )
+                    return urllib.request.urlopen(request, timeout=3)
+                def first():
+                    try:
+                        with post(request_payload()) as response:
+                            first_result.append(response.status)
+                    except Exception as exc:
+                        first_result.append(type(exc).__name__)
+                first_thread = threading.Thread(target=first)
+                try:
+                    first_thread.start()
+                    self.assertTrue(started.wait(timeout=3))
+                    second = request_payload()
+                    second["id"] = "gpc_1123456789abcdef01234567"
+                    with self.assertRaises(urllib.error.HTTPError) as err:
+                        post(second)
+                    self.assertEqual(err.exception.code, 503)
+                    self.assertEqual(json.loads(err.exception.read())["error"], "PROJECT_CONTROL_BUSY")
+                    self.assertEqual(len(calls), 1)
+                finally:
+                    release.set()
+                    first_thread.join(timeout=3)
+                    server.shutdown()
+                    server.server_close()
+                    worker.join(timeout=2)
+                self.assertEqual(first_result, [200])
+
     def test_result_comment_is_bounded_and_deduplicated(self):
         calls=[]
         def fake_gh(args,_contract):
