@@ -49,6 +49,19 @@
       "single_use_exact_sha_receipt_required": true,
       "protected_effects_allowed": false,
       "implementation_contract": "seigo-gace/debug-ai/docs/GITOPS_STANDING_DELEGATION.md"
+    },
+    "master_internal_persistent": {
+      "request_tool": "debugai_gitops_request",
+      "status_tool": "debugai_gitops_status",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "authorization_source": "host-admitted-exact-workspace-registry-entry",
+      "registry": "operations/master-internal-repositories.json",
+      "per_operation_master_decision_required": false,
+      "fresh_project_owner_mapping_verification_required": true,
+      "single_use_exact_sha_receipt_required": true,
+      "protected_effects_allowed": false,
+      "commercial_legacy_changed": false,
+      "implementation_contract": "seigo-gace/debug-ai/docs/MASTER_INTERNAL_PERSISTENT_DELEGATION.md"
     }
   },
   "boundaries": {

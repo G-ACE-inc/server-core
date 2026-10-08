@@ -255,3 +255,29 @@ The installed narrow reflection policy expires 2026-10-15 14:03:30 JST; it grant
 no destructive/persistent/Secret/provider/model/public-exposure mutation.
 CLI/MCP availability in this Codex execution environment does not prove direct
 remote ChatGPT app connector installation or broader PR #40 product completion.
+
+## Master Internal Persistent Delegation
+
+Purpose is fixed: preserve the existing sales/customer full approval path and
+extend only Master's own development to persistent delegation for verified
+GitHub Project #1 repositories. Canonical Workspace registry/mapping:
+`operations/master-internal-repositories.json`; routing:
+`operations/github-project-debugai-routing.json`. This extends the existing
+Workspace registry, not a new control plane. DebugAI owns validation/admission
+implementation: `docs/MASTER_INTERNAL_PERSISTENT_DELEGATION.md` in its repository.
+
+Each entry has verified GitHub repo numeric/node/owner/Project-item identity,
+server project/path, default/allowed branches, operations/scopes, pinned Compose
+runtime/services/private health/digest, effect/path policy, enabled/revoked state
+and audit identity. Initial entry is DebugAI; other registered repos receive no
+automatic grant. Trusted Host admission verifies and reads back an exact private
+copy in the existing delegation trust root. Every execution rechecks GitHub
+owner/admin/principal, Project item, mapping and exact target before a short
+single-use receipt. Repo delegation has no expiry; disable/revoke is immediate.
+
+Design delta: optional Master Internal registry lookup on the existing MCP/Host
+lane. Legacy manual and finite Standing modes remain compatible; no Commercial,
+licensing, Customer authentication, new executor/queue/transport/service or shell
+endpoint. Source/CI and real Runtime qualification remain separate; this source
+checkpoint does not claim live persistent-mode PASS. Protected product/spec/public/
+provider/model/Secret/destructive persistent decisions remain Master-owned.
