@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import tempfile
 import tomllib
 from pathlib import Path
@@ -124,24 +125,40 @@ def inspect(*, home=None, clients=CLIENTS):
     return result
 
 
-def atomic_write(path, content):
-    if path.exists() or path.is_symlink():
-        raise ClientConfigError("CHANGED_SINCE_PREFLIGHT")
+def atomic_write(path, content, old_content):
+    if path.is_symlink():
+        raise ClientConfigError("CONFIG_SYMLINK_NOT_ALLOWED")
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.parent.is_symlink():
         raise ClientConfigError("CONFIG_DIRECTORY_SYMLINK_NOT_ALLOWED")
+    if old_content is None:
+        if path.exists():
+            raise ClientConfigError("CHANGED_SINCE_PREFLIGHT")
+    else:
+        if not path.is_file() or path.read_text(encoding="utf-8") != old_content:
+            raise ClientConfigError("CHANGED_SINCE_PREFLIGHT")
+        backup = path.with_name(path.name + ".gace-backup")
+        if backup.exists() or backup.is_symlink():
+            raise ClientConfigError("BACKUP_PATH_ALREADY_EXISTS")
+        shutil.copy2(path, backup)
+        os.chmod(backup, 0o600)
     fd, temporary = tempfile.mkstemp(prefix=".gace-github-mcp-", dir=path.parent)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as file:
             file.write(content)
         os.chmod(temporary, 0o600)
-        # No overwrite; pre-existing files are never edited, including
-        # unrelated client configuration or stored credentials.
-        os.link(temporary, path)
-    except FileExistsError as exc:
-        raise ClientConfigError("CHANGED_SINCE_PREFLIGHT") from exc
+        if old_content is None:
+            try:
+                os.link(temporary, path)
+            except FileExistsError as exc:
+                raise ClientConfigError("CHANGED_SINCE_PREFLIGHT") from exc
+        else:
+            if path.read_text(encoding="utf-8") != old_content or path.is_symlink():
+                raise ClientConfigError("CHANGED_SINCE_PREFLIGHT")
+            os.replace(temporary, path)
     finally:
-        os.unlink(temporary)
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def run(*, home=None, clients=CLIENTS, apply=False, environ=None):
@@ -157,16 +174,13 @@ def run(*, home=None, clients=CLIENTS, apply=False, environ=None):
     token_clients = set(clients).intersection(("cursor", "codex"))
     if token_clients and not str(env.get("GACE_GITHUB_MCP_TOKEN", "")).strip():
         raise ClientConfigError("GITHUB_MCP_TOKEN_ENV_ABSENT_NO_MUTATION")
-    # Don't mutate user-managed existing files; adding the same server to a
-    # nonempty profile requires deliberate merge, not overwriting auth/settings.
-    if any(v == "ADD" and items[c]["raw"] is not None for c, v in results.items()):
-        raise ClientConfigError("EXISTING_USER_CONFIG_REQUIRES_MANUAL_MERGE_NO_MUTATION")
+    # Merge only when GitHub is absent; existing GitHub entries are immutable.
     for client, obj in items.items():
         if obj["state"] != "ADD":
             continue
         rendered = (codex_render(obj["raw"], obj["expected"]) if client == "codex"
                     else json_render(client, obj["existing"], obj["expected"]))
-        atomic_write(obj["target"], rendered)
+        atomic_write(obj["target"], rendered, obj["raw"])
         results[client] = "CONFIG_WRITTEN_AUTH_NOT_VERIFIED"
     return {"status": "CONFIG_ONLY_NOT_RUNTIME_VERIFIED", "clients": results}
 
