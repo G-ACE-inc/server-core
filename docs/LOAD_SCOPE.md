@@ -31,7 +31,7 @@ GPT_CHAT拡張RuleをSERVER_AIへdefault loadしない。
 
 README以外のserver-core Authorityを新Task開始時に一括読込しない。
 
-同一Taskで一度確認済みのAuthorityは、変更・矛盾・情報不足が無い限り毎ターン再読込しない。
+同一Taskで一度確認済みの安定Authority全文は、変更・矛盾・情報不足が無い限り毎ターン再読込しない。ただし開発の各ターンでは関連するGitHub Project/IssueのCurrentと対象HEAD/PR/CI等の変化を軽量に再同期し、対象変更・新規Gate・競合時だけ必要なAuthority/Source範囲を再取得する。古い履歴・別Project・GPT CHAT拡張RuleをSERVER_AIへまとめて渡さない。
 
 ## 2. Command Routing
 
