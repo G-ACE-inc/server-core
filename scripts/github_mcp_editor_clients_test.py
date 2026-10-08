@@ -13,9 +13,9 @@ class GitHubEditorClientsTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name)
 
-    def run_apply(self, clients=mcp.CLIENTS, token="not-a-real-token"):
+    def run_apply(self, clients=mcp.CLIENTS, fixture_value="not-a-real-token"):
         return mcp.run(home=self.home, clients=clients, apply=True,
-                       environ={"GACE_GITHUB_MCP_TOKEN": token})
+                       environ={"GACE_GITHUB_MCP_TOKEN": fixture_value})
 
     def test_plan_read_only(self):
         result = mcp.run(home=self.home)
@@ -32,7 +32,7 @@ class GitHubEditorClientsTests(unittest.TestCase):
         self.assertEqual(entry["headers"]["X-MCP-Readonly"], "true")
 
     def test_vscode_portable_global_uses_oauth(self):
-        self.run_apply(("vscode",), token="")
+        self.run_apply(("vscode",), fixture_value="")
         parsed = json.loads((self.home / ".copilot/mcp-config.json").read_text())
         entry = parsed["mcpServers"]["github"]
         self.assertEqual(entry["type"], "http")
@@ -56,7 +56,7 @@ class GitHubEditorClientsTests(unittest.TestCase):
 
     def test_missing_env_fails_without_files(self):
         with self.assertRaisesRegex(mcp.ClientConfigError, "TOKEN_ENV_ABSENT"):
-            self.run_apply(("cursor",), token="")
+            self.run_apply(("cursor",), fixture_value="")
         self.assertFalse(any(self.home.iterdir()))
 
     def test_collision_blocks_other_clients(self):
@@ -72,7 +72,7 @@ class GitHubEditorClientsTests(unittest.TestCase):
         p.parent.mkdir()
         initial = '{"mcpServers":{"some-other-server":{"url":"https://example.test"}}}'
         p.write_text(initial)
-        self.run_apply(("vscode",), token="")
+        self.run_apply(("vscode",), fixture_value="")
         changed = json.loads(p.read_text())
         self.assertIn("some-other-server", changed["mcpServers"])
         self.assertIn("github", changed["mcpServers"])
