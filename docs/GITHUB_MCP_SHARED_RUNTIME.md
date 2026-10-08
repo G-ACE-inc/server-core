@@ -29,8 +29,11 @@ reads the **actual registered** Project #1 Issue/PR items (maximum 25)
 by reusing the existing `gh project item-list` + four existing GraphQL
 field readers. Duplicate IDs/URLs fail closed; foreign-owner or draft items
 are counted as excluded, making the result `PARTIAL` rather than claiming
-an exhaustive/current authority for unsupported items. A Control Issue such
-as #10 that is not on the Project is **not fabricated**. Both modes
+an exhaustive/current authority for unsupported items. Missing canonical control/rule-plane
+Issues #10/#15/#16/#17 are derived from the existing Rule Plane manifest
+and Project Control result sink and explicitly returned under
+`unregistered_control_issue_urls` with `status=PARTIAL`. No fake Project
+items or fields are generated. Both modes
 reuse the **existing** `github_project_control.py` Project identity, item lookup,
 field-read GraphQL and error contracts. It reads **only** `Wave`, `Gate`,
 `Change Unit` and `Mutation Owner` for Project #1 and emits sanitized JSON;
@@ -75,6 +78,11 @@ All 8 registered items and four exact fields per item were retrieved and
 unchanged, with some `Wave` values `null`; controlling Issues #10 and #15
 were **not registered** in the Project. This is an actual observation, not
 authorization to add items, invent missing field values, or update any Gate.
+
+The diagnostic helper is not an enrollment tool: actual Project item-add is
+a separate authenticated, single-writer mutation carried out only by the
+authorized owner. It is never inferred from a comment, a registry file, or
+an absent Issue ID.
 
 ## Activation prerequisites — must be demonstrated, not assumed
 
