@@ -239,6 +239,11 @@ jobs:
           grep -q 'already exists and is not the required symlink; no deletion performed' scripts/init-dev-workspace.sh
           grep -q 'unexpected target' scripts/init-dev-workspace.sh
 
+      - name: Shared GitHub MCP editor client contract
+        run: |
+          set -euo pipefail
+          python3 scripts/github_mcp_editor_clients_test.py
+
       - name: Workspace MCP manifest schema
         run: |
           set -euo pipefail
