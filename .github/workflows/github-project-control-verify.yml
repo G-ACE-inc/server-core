@@ -31,6 +31,13 @@ jobs:
           docker compose -f docker-compose.github-mcp-readonly.yml config --quiet
           docker manifest inspect ghcr.io/github/github-mcp-server@sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699 >/dev/null
           echo "GITHUB_MCP_PINNED_IMAGE_MANIFEST=PASS"
+          # Ephemeral CI, not the production Host: verify the pinned binary's
+          # actual HTTP flag contract with no network, tokens or privileged mounts.
+          docker pull ghcr.io/github/github-mcp-server@sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699 >/dev/null
+          docker run --rm --network none --read-only --user 65532:65532 --cap-drop ALL --security-opt no-new-privileges ghcr.io/github/github-mcp-server@sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699 http --help >/tmp/github-mcp-http-help.txt 2>&1
+          grep -Fq -- '--listen-host' /tmp/github-mcp-http-help.txt
+          grep -Fq -- '--scope-challenge' /tmp/github-mcp-http-help.txt
+          echo "GITHUB_MCP_PINNED_BINARY_HTTP_OPTIONS=PASS"
 
       - name: Project Control container source
         run: |
