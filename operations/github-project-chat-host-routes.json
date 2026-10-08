@@ -21,8 +21,14 @@
   "evidence_contract": {
     "action_green_is_not_runtime_pass": true,
     "required_markers_any_of_groups": [
-      ["SERVER_COMMAND_REQUEST_ID", "SERVER_COMMAND_STATE"],
-      ["LIVE_HOST_HEAD", "LIVE_HEALTH"]
+      [
+        "SERVER_COMMAND_REQUEST_ID",
+        "SERVER_COMMAND_STATE"
+      ],
+      [
+        "LIVE_HOST_HEAD",
+        "LIVE_HEALTH"
+      ]
     ],
     "recommended_markers": [
       "LIVE_API_AUTH=CONFIGURED",
@@ -45,7 +51,9 @@
       "github_trigger": {
         "workflow_file": ".github/workflows/chatgpt-live-api-verify.yml",
         "target_file": ".github/chatgpt-live-api-target.json",
-        "allowed_branches": ["feat/tgserver-async-log-sink-20261003"]
+        "allowed_branches": [
+          "feat/tgserver-async-log-sink-20261003"
+        ]
       },
       "server_command": {
         "execution_repo": "/workspace/debug-ai",
@@ -61,7 +69,15 @@
           "github.auth_status_scopes"
         ]
       },
-      "chat_handoff_note": "CHAT update_file on target_file only; push triggers Actions. Proven run 37801337126 — do not rebuild."
+      "chat_handoff_note": "CHAT update_file on target_file only; push triggers Actions. Proven run 37801337126 — do not rebuild.",
+      "workflow_supported_command_ids": [
+        "project.git_head",
+        "service.debug_ai_health"
+      ],
+      "command_effects": {
+        "project.git_head": "read_only",
+        "service.debug_ai_health": "read_only"
+      }
     },
     {
       "id": "route_asteria_baseline_probe",
@@ -71,11 +87,15 @@
       "github_trigger": {
         "workflow_file": ".github/workflows/chatgpt-asteria-baseline-probe.yml",
         "target_file": ".github/asteria-baseline-probe-target.json",
-        "allowed_branches": ["feat/tgserver-async-log-sink-20261003"]
+        "allowed_branches": [
+          "feat/tgserver-async-log-sink-20261003"
+        ]
       },
       "server_command": {
         "execution_repo": "/workspace/debug-ai",
-        "allowed_execution_repo_prefixes": ["/workspace/debug-ai"],
+        "allowed_execution_repo_prefixes": [
+          "/workspace/debug-ai"
+        ],
         "read_only": true,
         "allowed_command_ids": [
           "project.git_head",
@@ -83,7 +103,17 @@
           "asteria.baseline_probe_status"
         ]
       },
-      "chat_handoff_note": "Cross-project probe; workflow file lives in debug-ai repo. Evidence on asteria #6."
+      "chat_handoff_note": "Cross-project probe; workflow file lives in debug-ai repo. Evidence on asteria #6.",
+      "workflow_supported_command_ids": [
+        "project.git_head",
+        "asteria.baseline_probe_start",
+        "asteria.baseline_probe_status"
+      ],
+      "command_effects": {
+        "project.git_head": "read_only",
+        "asteria.baseline_probe_start": "bounded_probe_start",
+        "asteria.baseline_probe_status": "read_only"
+      }
     }
   ]
 }
