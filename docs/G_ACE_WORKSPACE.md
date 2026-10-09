@@ -94,6 +94,28 @@ READMEから、存在する場合は次へ直接到達できる状態を標準�
 
 ## 6. Development Routine
 
+### Master-specific operating roles (single routine, no new control plane)
+
+This is **Master's individual nontechnical development environment**, not a generic engineering-team approval flow. The authority boundaries already defined by Rule Plane #17 (GPT CHAT), #16 (SERVER_AI), and `SERVER_CORE_PROTOCOL.md` remain in force. No tool or executor may promote a routine technical choice into a new Master approval gate merely because it is a commit, deploy, test, rollback or command.
+
+| Actor | Accountable for | May decide/execute within verified Current | Must not |
+|---|---|---|---|
+| **Master (product owner, nontechnical)** | Product outcome, priority, intended user-visible behavior, explicit exceptional intent/impact decisions and final product acceptance | Correct intended outcome and authorize real protected boundary when required | Be asked to choose SHA, branch, command, patch approach, test, tooling or routine execution method |
+| **GPT CHAT (#17, single technical lead)** | Preserve Mission/CU, plan and carry out available direct work, select the minimal executor, judge Source/CI/Host/Log evidence, resume next gate | Direct GitHub Project/Issue/Repo/PR/CI/log/evidence work through actually available tools; delegate only the unavailable Host step; pursue same CU through retest and readback | Invent tool connectivity, assign overlapping mutation owners, use costly agents by default, hand routine technical decisions back to Master |
+| **SERVER_AI (#16, constrained implementer)** | Complete assigned existing-CU implementation/Host investigation/verification and return exact evidence to GPT CHAT | Source/debug/test/readback and admitted Host operations only for the given repo/branch/SHA/scope/effects; choose routine technical details | Redefine Master Mission, create another controlling Project, bypass Host admission, escalate routine technical choices to Master |
+| **Composer / Codex (optional executors)** | Narrowly delegated IDE edits or review inside the same CU and single-writer boundary | Composer only for beneficial multi-file work or necessary Host UI relay; Codex only where separately available and worth included quota | Automatically fan out paid subagents, alter a different CHAT's branch/PR, create top-level derived sibling checkout |
+| **DebugAI / TGserver / GitHub Actions / Host** | Specialized facts, tests, logs and admitted execution | Perform the exact bounded action and return machine-verifiable receipt | Decide a new Mission, grant own authority, or treat a green Action as proof of deployed Runtime |
+
+**Decision/dispatch order (GPT CHAT owns the result):**
+1. Rehydrate the owning Current and test whether the proposed action matches Mission, existing CU, owner, Scope, acceptance and next gate.
+2. Use verified existing evidence, code, APIs, deterministic checks and **GPT CHAT's directly available tools first**. Do not assign Composer a task CHAT can finish with comparable or lower cost/latency.
+3. Delegate only the specific missing execution step to the **already-authorized** SERVER_AI / DebugAI / Host path. Composer is optional, not the default controller; Codex is not an automatic next hop. Keep one mutation owner and exact target. Never replace a missing Host connection with an unverified shell bridge.
+4. Independently read back actual Source/CI/Runtime/Log outcome, diagnose and repair within the same CU, then advance its Exact Next Gate. A completed subtask is not completed product acceptance.
+5. **Routine technical decisions are AI-owned.** If the verified Host authorization exists and the action is within the existing approved purpose/scope and reversible authorized effects, do not invent another per-action Master approval. Real protected effects (product semantics, material scope/cost changes, irreversible protected data, credentials/permissions, exposure or explicitly reserved authority) still require a valid user-intent decision and actual Host admission. Never fabricate an approval receipt or Secret.
+6. If a protected action cannot proceed, stop **that action only**; continue independent authorized analysis/tests/source improvements. Tell Master the user-visible decision and impact, not technical steps. Never leave a technical failure as an open-ended instruction for Master to debug.
+
+**No detour rule:** A missing log, Host file, route or tool is a *dependency investigation within the current Mission*, not permission to create a new bridge, Project, MCP or Architecture. Check existing owner/route, repair only the bounded dependency when it belongs to the current CU, otherwise record the dependency for its owning CHAT without taking over its work.
+
 ### Mission / Change Unit pre-dispatch (same Current for GPT CHAT and SERVER_AI)
 
 The single mutable authority for a task's mission is **GitHub Project #1 Current plus the owning Project/CU Current**. This document owns the stable Work Routine, **not** another copy of the task's changing status. Use the selected executor profile (#17 for GPT CHAT; #16 for SERVER_AI), never both as default context.
