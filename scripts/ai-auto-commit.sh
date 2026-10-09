@@ -64,14 +64,30 @@ if [[ -z "$(git status --porcelain)" ]]; then
 fi
 
 changed_paths=()
-while IFS= read -r -d '' record; do
-  [[ ${#record} -lt 4 ]] && continue
-  path="${record:3}"
-  case "$path" in
-    *" -> "*) path="${path#* -> }" ;;
-  esac
-  changed_paths+=("$path")
-done < <(git status --porcelain=v1 -z)
+rehydrate_collect="${repo_root}/scripts/gace_mutation_rehydrate_check.py"
+if [[ -f "$rehydrate_collect" ]]; then
+  mapfile -t changed_paths < <(python3 "$rehydrate_collect" --collect-changed-paths --repo-root "$repo_root" 2>/dev/null || true)
+fi
+if ((${#changed_paths[@]} == 0)); then
+  while IFS= read -r -d '' record; do
+    [[ ${#record} -lt 4 ]] && continue
+    path="${record:3}"
+    xy="${record:0:2}"
+    case "$xy" in
+      *R*|*C*)
+        changed_paths+=("$path")
+        if IFS= read -r -d '' oldpath; then
+          changed_paths+=("$oldpath")
+        fi
+        continue
+        ;;
+    esac
+    case "$path" in
+      *" -> "*) path="${path#* -> }" ;;
+    esac
+    changed_paths+=("$path")
+  done < <(git status --porcelain=v1 -z)
+fi
 
 blocked_env=""
 for path in "${changed_paths[@]}"; do

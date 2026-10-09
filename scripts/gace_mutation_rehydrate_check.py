@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import re
+import shlex
 import subprocess
 from datetime import datetime, timezone
 from enum import Enum
@@ -128,8 +129,43 @@ def parse_binding() -> tuple[BindingState, dict | None, str | None]:
     missing = missing_binding_fields(data)
     if missing:
         return BindingState.INCOMPLETE, data, ",".join(missing)
+    prefix_err = invalid_binding_scope_prefixes(data)
+    if prefix_err:
+        return BindingState.INVALID, data, prefix_err
     return BindingState.VALID, data, None
 
+
+
+def scope_prefix_validation_error(prefix: str) -> str | None:
+    raw = prefix.strip()
+    if not raw:
+        return "SCOPE_PREFIX_EMPTY"
+    norm = raw.replace("\\", "/")
+    if norm.startswith("/") or (len(norm) > 1 and norm[1] == ":" and norm[0].isalpha()):
+        return "SCOPE_PREFIX_ABSOLUTE"
+    if ".." in PurePosixPath(norm).parts:
+        return "SCOPE_PREFIX_TRAVERSAL"
+    return None
+
+
+def canonical_scope_prefix(prefix: str) -> str:
+    norm = prefix.strip().replace("\\", "/")
+    if norm.startswith("./"):
+        norm = norm[2:]
+    return norm.rstrip("/")
+
+
+def invalid_binding_scope_prefixes(data: dict) -> str | None:
+    prefixes = data.get("in_scope_path_prefixes")
+    if not isinstance(prefixes, list):
+        return None
+    for item in prefixes:
+        if not isinstance(item, str):
+            return "in_scope_path_prefixes"
+        err = scope_prefix_validation_error(item)
+        if err:
+            return err
+    return None
 
 def missing_binding_fields(data: dict) -> list[str]:
     missing: list[str] = []
@@ -153,8 +189,7 @@ def normalize_repo(value: str) -> str:
 
 
 def normalize_scope_prefix(prefix: str) -> str:
-    p = prefix.strip().replace("\\", "/").lstrip("./")
-    return p.rstrip("/")
+    return canonical_scope_prefix(prefix)
 
 
 def normalize_changed_path(path: str) -> tuple[str | None, str | None]:
@@ -268,9 +303,17 @@ def check(
         )
 
     if state is BindingState.INVALID:
+        code = "BINDING_INVALID"
+        if detail in (
+            "SCOPE_PREFIX_EMPTY",
+            "SCOPE_PREFIX_ABSOLUTE",
+            "SCOPE_PREFIX_TRAVERSAL",
+            "in_scope_path_prefixes",
+        ):
+            code = "BINDING_SCOPE_PREFIX_INVALID"
         return emit(
             "DENY",
-            "BINDING_INVALID",
+            code,
             reason=detail or "invalid",
             current_mission_verified="NO",
         )
@@ -352,36 +395,125 @@ def checkpoint_comment_body(repo_root: Path) -> str:
     return "\n".join(lines) + "\n"
 
 
-def git_repo_root_for_command(command: str, cwd: Path) -> Path:
-    stripped = command.strip()
-    match = re.match(r"^git\s+-C\s+(\S+)", stripped, re.I)
-    if match:
-        candidate = Path(match.group(1))
-        if not candidate.is_absolute():
-            candidate = (cwd / candidate).resolve()
-        else:
-            candidate = candidate.resolve()
-        return candidate
-    return cwd.resolve()
 
 
-def git_command_tail(stripped: str) -> str:
-    tail = stripped.strip()
-    while True:
-        m = re.match(r"^git\s+(?:-C\s+\S+\s+|-c\s+\S+\s+)+", tail, re.I)
-        if not m:
-            break
-        tail = tail[m.end() :]
-    if tail.lower().startswith("git "):
-        tail = tail[4:]
-    return tail.strip()
+def _status_record_path(rec: bytes) -> str | None:
+    if len(rec) < 4 or rec[2:3] != b" ":
+        return None
+    return rec[3:].decode("utf-8", "surrogateescape")
 
 
-def is_git_write_command(command: str) -> bool:
+def _is_rename_or_copy_xy(xy: bytes) -> bool:
+    return b"R" in xy or b"C" in xy
+
+
+def parse_porcelain_v1_z(data: bytes) -> list[str]:
+    if not data:
+        return []
+    parts = data.split(b"\0")
+    while parts and parts[-1] == b"":
+        parts.pop()
+    paths: list[str] = []
+    i = 0
+    while i < len(parts):
+        rec = parts[i]
+        i += 1
+        path = _status_record_path(rec)
+        if path is None:
+            continue
+        xy = rec[:2]
+        if _is_rename_or_copy_xy(xy):
+            paths.append(path)
+            if i < len(parts) and _status_record_path(parts[i]) is None:
+                paths.append(parts[i].decode("utf-8", "surrogateescape"))
+                i += 1
+            continue
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        paths.append(path)
+    return paths
+
+
+def collect_changed_paths(repo_root: Path) -> list[str]:
+    proc = subprocess.run(
+        ["git", "-C", str(repo_root), "status", "--porcelain=v1", "-z"],
+        capture_output=True,
+        check=False,
+        timeout=30,
+    )
+    if proc.returncode != 0:
+        return []
+    return parse_porcelain_v1_z(proc.stdout)
+
+
+GIT_GLOBAL_SKIP_ONE = frozenset({
+    "--no-pager", "--no-replace-objects", "--bare", "--literal-pathspecs",
+    "--glob-pathspecs", "--icase-pathspecs", "--noglob-pathspecs",
+})
+
+
+def parse_git_invocation(command: str, cwd: Path) -> tuple[Path | None, str | None, str | None]:
+    try:
+        parts = shlex.split(command.strip(), posix=True)
+    except ValueError:
+        return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS"
+    if not parts or parts[0].lower() != "git":
+        return cwd.resolve(), "", None
+    idx = 1
+    effective = cwd.resolve()
+    while idx < len(parts):
+        tok = parts[idx]
+        if tok in ("-C", "--work-tree"):
+            if idx + 1 >= len(parts):
+                return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS"
+            val = parts[idx + 1]
+            idx += 2
+            candidate = Path(val)
+            if not candidate.is_absolute():
+                candidate = (effective / candidate).resolve()
+            else:
+                candidate = candidate.resolve()
+            effective = candidate
+            continue
+        if tok == "--git-dir":
+            if idx + 1 >= len(parts):
+                return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS"
+            idx += 2
+            continue
+        if tok == "-c":
+            if idx + 1 >= len(parts):
+                return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS"
+            idx += 2
+            continue
+        if tok in GIT_GLOBAL_SKIP_ONE:
+            idx += 1
+            continue
+        if tok.startswith("-") and tok not in ("-C", "-c"):
+            idx += 1
+            continue
+        break
+    tail = " ".join(parts[idx:]).strip() if idx < len(parts) else ""
+    return effective, tail, None
+
+
+def git_repo_root_for_command(command: str, cwd: Path) -> tuple[Path | None, str | None]:
+    root, _, err = parse_git_invocation(command, cwd)
+    if err:
+        return None, err
+    return root, None
+
+
+def git_command_tail(command: str, cwd: Path | None = None) -> str:
+    base = cwd if cwd is not None else Path.cwd()
+    _, tail, _ = parse_git_invocation(command, base)
+    return tail or ""
+
+
+def is_git_write_command(command: str, cwd: Path | None = None) -> bool:
     surface = command.strip()
     if not surface.lower().startswith("git"):
         return False
-    tail = git_command_tail(surface)
+    tail = git_command_tail(surface, cwd=cwd)
     return any(re.search(p, tail, re.I) for p in GIT_WRITE_TAIL_PATTERNS)
 
 
@@ -391,6 +523,7 @@ def main() -> int:
     parser.add_argument("--repo-root", type=Path, default=None)
     parser.add_argument("--paths-file", type=Path, default=None)
     parser.add_argument("--emit-checkpoint", action="store_true")
+    parser.add_argument("--collect-changed-paths", action="store_true")
     args = parser.parse_args()
 
     repo_root = args.repo_root
@@ -411,6 +544,11 @@ def main() -> int:
 
     if args.emit_checkpoint:
         print(checkpoint_comment_body(repo_root.resolve()), end="")
+        return 0
+
+    if args.collect_changed_paths:
+        for path in collect_changed_paths(repo_root.resolve()):
+            print(path)
         return 0
 
     changed: list[str] | None = None

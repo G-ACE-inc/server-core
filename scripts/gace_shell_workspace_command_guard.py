@@ -8,6 +8,9 @@ import json
 import os
 import re
 import shlex
+import subprocess
+import sys
+import traceback
 from pathlib import Path
 
 DEFAULT_PROJECTS = Path("/home/admin1/projects")
@@ -619,17 +622,51 @@ def _rehydrate_module():
     return mod
 
 
+def _is_git_write_surface(command: str) -> bool:
+    stripped = command.strip()
+    if not stripped.lower().startswith("git"):
+        return False
+    tail = _git_tail(stripped)
+    write_patterns = (
+        r"^commit\b", r"^push\b", r"^merge\b", r"^rebase\b", r"^reset\b",
+        r"^cherry-pick\b", r"^revert\b", r"^checkout\b", r"^switch\b",
+        r"^restore\b", r"^clean\b", r"^stash\s+push\b", r"^stash\s+drop\b",
+        r"^add\b", r"^rm\b", r"^mv\b",
+    )
+    return any(re.search(p, tail, re.I) for p in write_patterns)
+
+
 def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
-    mod = _rehydrate_module()
-    if mod is None or not mod.binding_raw_present():
+    if not os.environ.get("GACE_MUTATION_BINDING", "").strip():
         return None
-    if not mod.is_git_write_command(command):
+    if not _is_git_write_surface(command):
         return None
-    repo_root = mod.git_repo_root_for_command(command, cwd)
     try:
-        proc = __import__("subprocess").run(
+        mod = _rehydrate_module()
+    except Exception as exc:
+        return {
+            "result": "DENY",
+            "code": "REHYDRATE_MODULE_LOAD_FAILED",
+            "reason": type(exc).__name__,
+            "command_class": "GIT_WRITE",
+        }
+    if mod is None:
+        return {
+            "result": "DENY",
+            "code": "REHYDRATE_MODULE_UNAVAILABLE",
+            "command_class": "GIT_WRITE",
+        }
+    repo_root, parse_err = mod.git_repo_root_for_command(command, cwd)
+    if parse_err:
+        return {
+            "result": "DENY",
+            "code": parse_err,
+            "command_class": "GIT_WRITE",
+        }
+    try:
+        proc = subprocess.run(
             [
-                __import__("sys").executable,
+                sys.executable,
                 str(Path(__file__).resolve().with_name("gace_mutation_rehydrate_check.py")),
                 "--mode",
                 "mutate",
@@ -641,7 +678,7 @@ def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
             timeout=15,
             check=False,
         )
-    except (OSError, __import__("subprocess").TimeoutExpired):
+    except (OSError, subprocess.TimeoutExpired):
         return {"result": "DENY", "code": "REHYDRATE_CHECK_UNAVAILABLE", "command_class": "GIT_WRITE"}
     try:
         out = json.loads(proc.stdout.strip() or "{}")
@@ -811,28 +848,39 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    if args.hook_stdin:
-        command, cwd, err = parse_hook_payload(__import__("sys").stdin.read())
-        if err:
-            out = {"result": "DENY", "code": err, "command_class": "HOOK_INPUT"}
-            print(json.dumps(out, sort_keys=True))
-            return 1
-        assert command is not None and cwd is not None
-    else:
-        if not args.command:
-            parser.error("--command is required unless --hook-stdin is set")
-        command = args.command
-        cwd = Path(args.cwd)
+    try:
+        if args.hook_stdin:
+            command, cwd, err = parse_hook_payload(sys.stdin.read())
+            if err:
+                out = {"result": "DENY", "code": err, "command_class": "HOOK_INPUT"}
+                print(json.dumps(out, sort_keys=True))
+                return 1
+            assert command is not None and cwd is not None
+        else:
+            if not args.command:
+                parser.error("--command is required unless --hook-stdin is set")
+            command = args.command
+            cwd = Path(args.cwd)
 
-    out = classify_command(
-        command,
-        cwd=cwd,
-        projects_root=args.projects_root,
-        worktrees_root=args.worktrees_root,
-        registry_doc=args.registry_doc,
-    )
-    print(json.dumps(out, sort_keys=True))
-    return 0 if out.get("result") == "ALLOW" else 1
+        out = classify_command(
+            command,
+            cwd=cwd,
+            projects_root=args.projects_root,
+            worktrees_root=args.worktrees_root,
+            registry_doc=args.registry_doc,
+        )
+        print(json.dumps(out, sort_keys=True))
+        return 0 if out.get("result") == "ALLOW" else 1
+    except Exception as exc:
+        out = {
+            "result": "DENY",
+            "code": "GUARD_RUNTIME_EXCEPTION",
+            "reason": type(exc).__name__,
+            "command_class": "HOOK_RUNTIME",
+        }
+        print(json.dumps(out, sort_keys=True))
+        traceback.print_exc(file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

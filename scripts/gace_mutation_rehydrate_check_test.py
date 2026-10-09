@@ -185,5 +185,56 @@ class RehydrateTests(unittest.TestCase):
         self.assertIn("CURRENT_MISSION_VERIFIED: NO", proc.stdout)
 
 
+
+    def test_parse_porcelain_rename_two_paths(self):
+        from gace_mutation_rehydrate_check import parse_porcelain_v1_z  # noqa: PLC0415
+
+        data = b"R  scripts/new.py\0scripts/old.py\0"
+        self.assertEqual(parse_porcelain_v1_z(data), ["scripts/new.py", "scripts/old.py"])
+
+    def test_parse_porcelain_rename_with_spaces(self):
+        from gace_mutation_rehydrate_check import parse_porcelain_v1_z  # noqa: PLC0415
+
+        data = "R  scripts/new name.py\0scripts/old name.py\0".encode()
+        self.assertEqual(
+            parse_porcelain_v1_z(data),
+            ["scripts/new name.py", "scripts/old name.py"],
+        )
+
+    def test_deny_binding_prefix_traversal(self):
+        binding = full_binding(self.repo, in_scope_path_prefixes=["../private"])
+        out = run("mutate", self.repo, env={"GACE_MUTATION_BINDING": binding}, paths=["scripts/x.py"])
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "BINDING_SCOPE_PREFIX_INVALID")
+
+    def test_allow_rename_paths_under_scripts_binding(self):
+        binding = full_binding(self.repo, in_scope_path_prefixes=["scripts/"])
+        out = run(
+            "mutate",
+            self.repo,
+            env={"GACE_MUTATION_BINDING": binding},
+            paths=["scripts/new.py", "scripts/old.py"],
+        )
+        self.assertEqual(out["result"], "ALLOW")
+        self.assertEqual(out["code"], "IDENTITY_BOUND")
+
+    def test_git_c_config_not_repo_root(self):
+        mod = self._load_mod()
+        root, err = mod.git_repo_root_for_command(
+            "git -c core.color=false status", self.repo
+        )
+        self.assertIsNone(err)
+        self.assertEqual(root.resolve(), self.repo.resolve())
+
+    def test_git_multiple_c_uses_last(self):
+        mod = self._load_mod()
+        other = self.repo.parent / "other"
+        other.mkdir(exist_ok=True)
+        root, err = mod.git_repo_root_for_command(
+            f"git -C {self.repo} -C {other} status", self.repo
+        )
+        self.assertIsNone(err)
+        self.assertEqual(root.resolve(), other.resolve())
+
 if __name__ == "__main__":
     unittest.main()
