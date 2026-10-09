@@ -613,6 +613,68 @@ class HookTests(unittest.TestCase):
         self.assertEqual(out["result"], "DENY")
         self.assertEqual(out["code"], "GIT_ALTERNATE_REPOSITORY_SPEC")
 
+    def _bound_command_result(self, command):
+        import os
+        binding = self._full_binding_json()
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        proc = subprocess.run(
+            [
+                "python3", str(GUARD), "--command", command,
+                "--cwd", str(ROOT), "--projects-root", str(self.projects),
+                "--worktrees-root", str(self.worktrees),
+                "--registry-doc", str(REGISTRY),
+            ],
+            capture_output=True, text=True, check=False, env=env,
+        )
+        self.assertTrue(proc.stdout.strip(), proc.stderr)
+        return json.loads(proc.stdout.strip())
+
+    def test_bound_complex_shell_and_interpreter_denied_as_one_gate(self):
+        for cmd, expected in (
+            ("git status | git commit -m unsafe", "COMPOUND_SHELL_PARSE_AMBIGUOUS"),
+            ("git status\\ngit commit -m unsafe".replace("\\\\n", "\\n"), "GIT_SHELL_SYNTAX_UNVERIFIED"),
+            ("git status $(git commit -m unsafe)", "COMPOUND_SHELL_PARSE_AMBIGUOUS"),
+            ("bash -c 'git commit -m unsafe'", "GIT_INTERPRETER_COMMAND_UNVERIFIED"),
+            ("sh -c 'git status && git commit -m unsafe'", "GIT_INTERPRETER_COMMAND_UNVERIFIED"),
+            ("env GIT_DIR=/tmp/fake.git git commit -m unsafe", "GIT_WRAPPED_COMMAND_UNVERIFIED"),
+            ("cd /tmp && git commit -m unsafe", "GIT_SHELL_CONTEXT_UNVERIFIED"),
+            ("git status && cd /tmp && git commit -m unsafe", "GIT_SHELL_CONTEXT_UNVERIFIED"),
+            ("git fetch origin", "GIT_SUBCOMMAND_UNVERIFIED_UNDER_BINDING"),
+        ):
+            with self.subTest(cmd=cmd):
+                out = self._bound_command_result(cmd)
+                self.assertEqual(out["result"], "DENY", cmd)
+                self.assertEqual(out["code"], expected, cmd)
+
+    def test_bound_quoted_paths_keep_compound_git_write_binding(self):
+        binding = self._full_binding_json(branch="wrong-on-purpose")
+        import os
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        cmd = f'git -C "{ROOT}" status && git -C "{ROOT}" commit -m unsafe'
+        proc = subprocess.run(
+            ["python3", str(GUARD), "--command", cmd, "--cwd", str(ROOT),
+             "--projects-root", str(self.projects), "--worktrees-root", str(self.worktrees),
+             "--registry-doc", str(REGISTRY)],
+            capture_output=True, text=True, check=False, env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "WRONG_MISSION_OR_CU")
+        self.assertNotEqual(out["code"], "NOT_WORKSPACE_MUTATION_COMMAND")
+
+    def test_bound_quoted_literal_and_readonly_are_uninterrupted(self):
+        for command in (
+            "echo 'git commit -m literal'",
+            'echo "git commit; not an execution"',
+            "git status && git log -1",
+            f'git -C "{ROOT}" status && git -C "{ROOT}" log -1',
+        ):
+            with self.subTest(cmd=command):
+                out = self._bound_command_result(command)
+                self.assertEqual(out["result"], "ALLOW", command)
+
     def test_bound_compound_status_and_commit_denied(self):
         import os
         binding = self._full_binding_json(branch="main")

@@ -810,61 +810,129 @@ def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
 
 
 
-COMPOUND_SHELL_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;)\s*")
+def _unquoted_line_break(command: str) -> bool:
+    quote = ""
+    escaped = False
+    for char in command:
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\" and quote != "'":
+            escaped = True
+            continue
+        if char in ("'", '"'):
+            if not quote:
+                quote = char
+            elif quote == char:
+                quote = ""
+        elif char in ("\n", "\r") and not quote:
+            return True
+    return False
 
 
 def _compound_segments(command: str) -> list[str] | None:
-    surface = executable_scan_surface(command).strip()
-    if not surface:
-        return []
+    """Preserve quoted arguments while recognizing actual shell separators.
+
+    Complex shell operators are NOT proven safe to run under a Git binding.
+    Do not strip quoted -C paths or try to authorize only the first command.
+    """
     try:
-        shlex.split(command.strip(), posix=True)
+        lex = shlex.shlex(command.strip(), posix=True, punctuation_chars=";&|()<>")
+        lex.whitespace_split = True
+        lex.commenters = ""
+        tokens = list(lex)
     except ValueError:
         return None
-    return [part.strip() for part in COMPOUND_SHELL_SPLIT_RE.split(surface) if part.strip()]
+    segments: list[str] = []
+    words: list[str] = []
+    for token in tokens:
+        if token in ("&&", "||", ";"):
+            if not words:
+                return None
+            segments.append(shlex.join(words))
+            words = []
+        elif token and all(c in ";&|()<>" for c in token):
+            return None
+        else:
+            words.append(token)
+    if not words:
+        return None
+    segments.append(shlex.join(words))
+    return segments
 
 
 def _binding_compound_git_admission(command: str, cwd: Path) -> dict | None:
     if not os.environ.get("GACE_MUTATION_BINDING", "").strip():
         return None
+
+    # shlex does not parse the interior of shell -c as an executable command.
+    # Unknown wrappers must not turn a real Git write into a harmless string.
+    script = _extract_interpreter_c_script(command)
+    if script and re.search(r"\bgit\s", script, re.I):
+        return {
+            "result": "DENY", "code": "GIT_INTERPRETER_COMMAND_UNVERIFIED",
+            "command_class": "GIT_WRITE_BINDING",
+        }
+    surface = executable_scan_surface(command)
+    if not re.search(r"\bgit(?:\s|$)", surface, re.I):
+        return None
+    if _unquoted_line_break(command):
+        return {
+            "result": "DENY", "code": "GIT_SHELL_SYNTAX_UNVERIFIED",
+            "command_class": "GIT_WRITE_BINDING",
+        }
     segments = _compound_segments(command)
     if segments is None:
         return {
-            "result": "DENY",
-            "code": "COMPOUND_SHELL_PARSE_AMBIGUOUS",
+            "result": "DENY", "code": "COMPOUND_SHELL_PARSE_AMBIGUOUS",
             "command_class": "GIT_WRITE_BINDING",
         }
+
+    writes: list[str] = []
+    has_other_command = False
     for segment in segments:
         stripped = segment.strip()
-        if not stripped.lower().startswith("git"):
+        if not stripped.lower().startswith("git " ) and stripped.lower() != "git":
+            has_other_command = True
+            # Quoted echo literals were removed by the executable scanner
+            # above. A non-Git execution wrapper is not a verified Git target.
+            if re.search(r"\bgit(?:\s|$)", executable_scan_surface(stripped), re.I):
+                return {
+                    "result": "DENY", "code": "GIT_WRAPPED_COMMAND_UNVERIFIED",
+                    "command_class": "GIT_WRITE_BINDING",
+                }
             continue
         _, tail, parse_err, git_dir_override, work_tree_override = parse_git_invocation(
             stripped, cwd
         )
         if parse_err:
-            return {
-                "result": "DENY",
-                "code": parse_err,
-                "command_class": "GIT_WRITE_BINDING",
-            }
+            return {"result": "DENY", "code": parse_err, "command_class": "GIT_WRITE_BINDING"}
         if git_dir_override or work_tree_override:
             if _git_tail_is_write(tail or ""):
                 return {
-                    "result": "DENY",
-                    "code": "GIT_ALTERNATE_REPOSITORY_SPEC",
+                    "result": "DENY", "code": "GIT_ALTERNATE_REPOSITORY_SPEC",
                     "command_class": "GIT_WRITE_BINDING",
                 }
         if _git_tail_is_write(tail or ""):
-            sub = _rehydrate_bound_git_write(stripped, cwd)
-            if sub is not None:
-                sub.setdefault("command_class", "GIT_WRITE_BINDING")
-                return sub
-        elif tail and not _git_readonly_tail(tail):
+            writes.append(stripped)
+        elif not tail or not _git_readonly_tail(tail):
             return {
-                "result": "DENY",
-                "code": "GIT_SUBCOMMAND_UNVERIFIED_UNDER_BINDING",
+                "result": "DENY", "code": "GIT_SUBCOMMAND_UNVERIFIED_UNDER_BINDING",
                 "command_class": "GIT_WRITE_BINDING",
             }
+
+    if writes and has_other_command:
+        # cd/export/env/assignment can change the effective repo after
+        # binding preflight. Never validate Git against the *old* cwd.
+        return {
+            "result": "DENY", "code": "GIT_SHELL_CONTEXT_UNVERIFIED",
+            "command_class": "GIT_WRITE_BINDING",
+        }
+    for write in writes:
+        verdict = _rehydrate_bound_git_write(write, cwd)
+        if verdict is not None:
+            verdict.setdefault("command_class", "GIT_WRITE_BINDING")
+            return verdict
     return None
 
 
