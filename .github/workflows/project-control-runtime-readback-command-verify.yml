@@ -13,6 +13,11 @@ on:
 permissions:
   contents: read
 
+# Same exact Source SHA from push and PR must not consume duplicate CI capacity.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   windows-parser:
     runs-on: windows-latest

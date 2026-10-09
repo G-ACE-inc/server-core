@@ -13,6 +13,11 @@ on:
 permissions:
   contents: read
 
+# Same exact Source SHA from push and PR must not consume duplicate CI capacity.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -31,5 +36,7 @@ jobs:
           python3 scripts/github_project_runtime_config_test.py
       - name: Project Control container source
         run: |
-          docker build -f Dockerfile.project-control -t gace-server-core-project-control:ci .
+          docker build --build-arg GACE_PYTHON_BASE_IMAGE=public.ecr.aws/docker/library/python:3.13-alpine -f Dockerfile.project-control -t gace-server-core-project-control:ci .
+          # Explicitly check the actual built image; do not turn a missing base into PASS.
+          docker run --rm --entrypoint python3 gace-server-core-project-control:ci --version | grep -E '^Python 3\\.13\\.'
           GACE_SERVER_UID=10001 GACE_SERVER_GID=10001 GACE_PROJECT_CONTROL_GH_CONFIG_DIR=/tmp/gace-gh-config GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE=/tmp/gace-project-control-delivery-secret docker compose -f docker-compose.project-control.yml config --quiet
