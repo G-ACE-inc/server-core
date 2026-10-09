@@ -58,10 +58,12 @@
           "project.pwd",
           "project.git_status",
           "service.debug_ai_health",
+          "system.projects_inventory",
+          "system.project_file_inspect",
           "github.auth_status_scopes"
         ]
       },
-      "chat_handoff_note": "CHAT update_file on target_file only; push triggers Actions. Proven run 37801337126 — do not rebuild."
+      "chat_handoff_note": "CHAT update_file on .github/chatgpt-live-api-target.json only; push to feat/tgserver-async-log-sink-20261003 triggers chatgpt-live-api-verify.yml + chatgpt-bounded-server-read.cjs. Proven inventory E2E run 37875336749; file inspect E2E pending CHAT push on feat/host-project-file-inspect-20261009 @ aa10a4c."
     },
     {
       "id": "route_asteria_baseline_probe",
