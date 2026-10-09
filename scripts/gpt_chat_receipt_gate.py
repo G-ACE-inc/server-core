@@ -19,8 +19,13 @@ URL = re.compile(r"^https://github\.com/[^/]+/[^/]+/issues/[1-9][0-9]*$")
 HEAD = re.compile(r"(?m)^#{1,3}\s*(開発目的|作業目的|作業内容|NEXT|プロジェクト進行表)\s*$")
 
 
-def validate(receipt):
+def validate(receipt, expected=None):
     errors = []
+    if not isinstance(expected, dict):
+        return ["TRUSTED_EXPECTATIONS_MISSING"]
+    for field in ("owner_cu", "rule_revision", "project_purpose_canonical", "current_issue_url"):
+        if not isinstance(expected.get(field), str) or not expected[field].strip():
+            errors.append("EXPECTED_" + field.upper() + "_MISSING")
     if not isinstance(receipt, dict):
         return ["RECEIPT_NOT_OBJECT"]
     for key in FIELDS:
@@ -31,10 +36,14 @@ def validate(receipt):
         errors.append("CURRENT_NOT_READ_BACK")
     if not isinstance(receipt.get("current_issue_url"), str) or not URL.fullmatch(receipt["current_issue_url"]):
         errors.append("CURRENT_ISSUE_INVALID")
-    if receipt.get("owner_cu") != receipt.get("expected_owner_cu"):
+    if receipt.get("owner_cu") != expected.get("owner_cu"):
         errors.append("CU_OWNER_MISMATCH")
-    if receipt.get("rule_revision") != receipt.get("expected_rule_revision"):
+    if receipt.get("rule_revision") != expected.get("rule_revision"):
         errors.append("RULE_STALE_OR_MISMATCH")
+    if receipt.get("project_purpose_canonical") != expected.get("project_purpose_canonical"):
+        errors.append("CANONICAL_PURPOSE_MISMATCH")
+    if receipt.get("current_issue_url") != expected.get("current_issue_url"):
+        errors.append("CURRENT_SOURCE_MISMATCH")
     if receipt.get("next_action") == "NONE" and receipt.get("outstanding_in_scope_work") is True:
         errors.append("UNFINISHED_WORK_NOT_RESOLVED")
     if receipt.get("outstanding_in_scope_work") is True and receipt.get("turn_continuation") != "EXECUTED_TO_SAFE_GATE":
@@ -59,12 +68,14 @@ def validate(receipt):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("usage: gpt_chat_receipt_gate.py receipt.json", file=sys.stderr)
+    if len(sys.argv) != 3:
+        print("usage: gpt_chat_receipt_gate.py receipt.json trusted-current.json", file=sys.stderr)
         return 2
     with open(sys.argv[1], encoding="utf-8") as fh:
         receipt = json.load(fh)
-    errors = validate(receipt)
+    with open(sys.argv[2], encoding="utf-8") as fh:
+        expected = json.load(fh)
+    errors = validate(receipt, expected)
     print(json.dumps({"status": "FAIL" if errors else "PASS", "errors": errors}, ensure_ascii=False))
     return 1 if errors else 0
 
