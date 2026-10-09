@@ -434,6 +434,37 @@ def _has_executable_mutators(command: str) -> bool:
     return False
 
 
+def _persistent_vcs_checkout(command: str) -> bool:
+    """Checkout creation via git or gh. Ordinary scratch files stay allowed."""
+    surface = executable_scan_surface(command).lower()
+    patterns = (
+        r"\bgit\s+clone\b",
+        r"\bgit\s+init\b",
+        r"\bgit\s+worktree\s+add\b",
+        r"\bgh\s+repo\s+clone\b",
+    )
+    return any(re.search(p, surface) for p in patterns)
+
+
+def _inside_canonical_parent(
+    target: Path,
+    *,
+    projects_root: Path,
+    registered: set[str],
+    server_core: Path = DEFAULT_SERVER_CORE,
+) -> bool:
+    if under(target, server_core.resolve()):
+        return True
+    projects_root = projects_root.resolve()
+    if not under(target, projects_root):
+        return False
+    parts = target.relative_to(projects_root).parts
+    if not parts or parts[0] not in registered:
+        return False
+    parent = projects_root / parts[0]
+    return parent.is_dir() and under(target, parent)
+
+
 def _surface_has_git_clone_or_init(command: str) -> tuple[bool, bool]:
     surface = executable_scan_surface(command).lower()
     return (
@@ -531,6 +562,30 @@ def classify_command(
             return {
                 "result": "DENY",
                 "code": code,
+                "path": str(resolved),
+                "command_class": "WORKSPACE_CREATING",
+            }
+        if _persistent_vcs_checkout(command) and not _inside_canonical_parent(
+            resolved,
+            projects_root=projects_root,
+            registered=registered,
+        ):
+            return {
+                "result": "DENY",
+                "code": "PERSISTENT_CHECKOUT_OUTSIDE_PARENT",
+                "path": str(resolved),
+                "command_class": "WORKSPACE_CREATING",
+            }
+        server_core = DEFAULT_SERVER_CORE.resolve()
+        if (
+            (is_clone or is_init)
+            and under(resolved, server_core)
+            and resolved != server_core
+            and ".worktrees" not in resolved.parts
+        ):
+            return {
+                "result": "DENY",
+                "code": "DERIVED_REPO_INSIDE_PARENT",
                 "path": str(resolved),
                 "command_class": "WORKSPACE_CREATING",
             }

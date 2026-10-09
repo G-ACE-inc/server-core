@@ -200,6 +200,35 @@ class GuardTests(unittest.TestCase):
         )
         self.assertEqual(out["result"], "ALLOW")
 
+    def test_deny_persistent_checkout_outside_parent(self):
+        outside = "/tmp/gace-pr39-outside-parent"
+        samples = (
+            (" ".join(["git", "clone", "https://example.invalid/r.git", outside]), "PERSISTENT_CHECKOUT_OUTSIDE_PARENT"),
+            (" ".join(["git", "init", outside]), "PERSISTENT_CHECKOUT_OUTSIDE_PARENT"),
+            (" ".join(["git", "worktree", "add", outside, "HEAD"]), "PERSISTENT_CHECKOUT_OUTSIDE_PARENT"),
+        )
+        for command, code in samples:
+            out = run(command, self.projects, self.worktrees)
+            self.assertEqual(out["result"], "DENY", command)
+            self.assertEqual(out["code"], code, command)
+
+    def test_allow_tmp_scratch_mkdir(self):
+        out = run(" ".join(["mkdir", "-p", "/tmp/gace-pr39-scratch"]), self.projects, self.worktrees)
+        self.assertEqual(out["result"], "ALLOW")
+
+    def test_allow_worktree_inside_server_core(self):
+        dest = "/home/admin1/server-core/.worktrees/cu39-coverage-probe"
+        out = run(" ".join(["git", "worktree", "add", dest, "HEAD"]), self.projects, self.worktrees)
+        self.assertEqual(out["result"], "ALLOW")
+        self.assertFalse(Path(dest).exists())
+
+    def test_deny_clone_inside_server_core_outside_worktrees(self):
+        dest = "/home/admin1/server-core/nested-clone-probe"
+        out = run(" ".join(["git", "clone", "https://example.invalid/r.git", dest]), self.projects, self.worktrees)
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "DERIVED_REPO_INSIDE_PARENT")
+        self.assertFalse(Path(dest).exists())
+
     def test_concurrent_classifier_isolation(self):
         import concurrent.futures
 
@@ -275,6 +304,33 @@ class HookTests(unittest.TestCase):
         self.assertTrue(any(o.get("permission") == "deny" for o in outs))
         hook_src = (ROOT / ".cursor/hooks/before-shell-workspace-guard.sh").read_text(encoding="utf-8")
         self.assertNotIn("gace-shell-guard-last.json", hook_src)
+
+    def test_hook_denies_outside_parent_checkout_and_allows_scratch(self):
+        denied = self.run_hook(
+            json.dumps(
+                {
+                    "command": " ".join(["git", "clone", "https://example.invalid/r.git", "/tmp/gace-pr39-outside-parent"]),
+                    "cwd": "/home/admin1/server-core",
+                }
+            )
+        )
+        self.assertEqual(denied["permission"], "deny")
+        allowed = self.run_hook(
+            json.dumps({"command": " ".join(["mkdir", "-p", "/tmp/gace-pr39-scratch"]), "cwd": "/tmp"})
+        )
+        self.assertEqual(allowed["permission"], "allow")
+        nested = self.run_hook(
+            json.dumps(
+                {
+                    "command": " ".join(["git", "worktree", "add", "/home/admin1/server-core/.worktrees/cu39-coverage-probe", "HEAD"]),
+                    "cwd": "/home/admin1/server-core",
+                }
+            )
+        )
+        self.assertEqual(nested["permission"], "allow")
+        self.assertFalse(Path("/tmp/gace-pr39-outside-parent").exists())
+        self.assertFalse(Path("/tmp/gace-pr39-scratch").exists())
+        self.assertFalse(Path("/home/admin1/server-core/.worktrees/cu39-coverage-probe").exists())
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

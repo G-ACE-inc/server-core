@@ -111,6 +111,7 @@ jobs:
           python3 scripts/github_project_rule_plane_test.py
           python3 scripts/init_dev_workspace_project_gate_test.py
           bash scripts/init_dev_workspace_deny_side_effect_test.sh
+          python3 scripts/gace_shell_workspace_command_guard_test.py
 
       - name: Provider ownership boundary
         run: |
