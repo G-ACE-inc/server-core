@@ -91,6 +91,50 @@ def repair(root: Path) -> None:
     print(f"WORKSPACE_REPAIR=UPDATED FILE={workspace_file}")
 
 
+STUB_NAMES = {
+    "00_agent_runtime.mdc",
+    "01_japanese_thinking.mdc",
+    "02_master_terminal_command.mdc",
+    "cloudflare-operations.mdc",
+}
+
+
+def check_stub_rule_mode(root: Path, rules_dir: Path, canonical_rules: Path) -> list[str]:
+    """Validate the CU2 multi-root stub mode without promoting it to runtime PASS."""
+    errors: list[str] = []
+    if rules_dir.is_symlink() or rules_dir.resolve() == canonical_rules.resolve():
+        return ["stub mode may not alias canonical server-core rules"]
+    global_rule = root / ".cursor" / "rules" / "00_agent_language_router.mdc"
+    if global_rule.is_symlink() or not global_rule.is_file():
+        errors.append("G-ACE user-global router missing or is a symlink")
+    else:
+        try:
+            global_text = global_rule.read_text(encoding="utf-8")
+        except OSError:
+            errors.append("G-ACE user-global router unreadable")
+        else:
+            if not all(token in global_text for token in ("alwaysApply: true", "## G-ACE SERVER_AI", "COMPOSER")):
+                errors.append("G-ACE user-global router required profile/activation missing")
+    actual_names = {p.name for p in rules_dir.iterdir() if p.suffix == ".mdc"}
+    if actual_names != STUB_NAMES:
+        errors.append(f"projects rule stubs mismatch: {sorted(actual_names ^ STUB_NAMES)}")
+    for name in STUB_NAMES & actual_names:
+        stub = rules_dir / name
+        if stub.is_symlink() or not stub.is_file():
+            errors.append(f"projects rule stub is not a regular file: {name}")
+            continue
+        try:
+            content = stub.read_text(encoding="utf-8")
+        except OSError:
+            errors.append(f"projects rule stub unreadable: {name}")
+            continue
+        if "alwaysApply: false" not in content or "alwaysApply: true" in content:
+            errors.append(f"projects rule stub is active or lacks explicit opt-out: {name}")
+        if "server-core" not in content:
+            errors.append(f"projects rule stub missing canonical source reference: {name}")
+    return errors
+
+
 def check(root: Path) -> list[str]:
     errors: list[str] = []
     server_core, projects, workspace_file, rules_link, expected_rules = paths(root)
@@ -117,12 +161,17 @@ def check(root: Path) -> list[str]:
                 for key, value in expected["settings"][section].items():
                     if actual_section.get(key) is not value:
                         errors.append(f"workspace setting missing: {section} {key}=true")
-    if not rules_link.is_symlink():
-        errors.append(f"rules link missing or not symlink: {rules_link}")
-    else:
+    if rules_link.is_symlink():
         resolved = rules_link.resolve()
         if resolved != expected_rules.resolve():
             errors.append(f"rules link target mismatch: {resolved} != {expected_rules.resolve()}")
+    elif rules_link.is_dir():
+        # Explicit Composer CU2 compatibility: projects root contains only inactive
+        # redirect stubs, while a verified G-ACE User Global rule owns dispatch.
+        # This is a SOURCE/FILE gate, NOT proof of Cursor Active Rules injection.
+        errors.extend(check_stub_rule_mode(root, rules_link, expected_rules))
+    else:
+        errors.append(f"rules link missing or invalid stub directory: {rules_link}")
     return errors
 
 
