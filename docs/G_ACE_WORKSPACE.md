@@ -137,6 +137,14 @@ server-core command center
   -> record Source / CI / Deploy / Runtime separately
 ```
 
+### Design-alignment checks within the existing Work Routine
+
+Before implementation, identify the **owning Project's actual Design/Specification baseline** from its Current/README links and fetch the relevant section, plus Design Delta and prior decisions when applicable. Record the document ID/path/revision and the design requirements affected by this CU in the existing Current checkpoint; a title or a stale summary is not evidence of reading the design. Avoid full-document rereads when the unchanged section has already been verified.
+
+At the initial diff, before PR/merge, and whenever the work changes behavior or scope, compare changed Source/Tests with those identified design requirements and the Current CU acceptance criteria. If baseline cannot be read, report `DESIGN_BASELINE_NOT_VERIFIED`; if implementation diverges, report `DESIGN_DRIFT_REVIEW_REQUIRED` with exact design section, code paths and proposed disposition. Suspend only design-changing mutation whose authorization is unresolved. Do not rewrite design to match incidental code, override Master-owned intent or fabricate conformance. A legitimate correction must be recorded at the owning Design/Current authority before resuming.
+
+This is a **readback/review step of existing Work Routine**, not a second design authority or an automatic semantic-code equivalence assertion. Targeted CI may enforce evidence fields when actually available, but cannot prove semantic design alignment from prose alone.
+
 ## 7. Documentation Gate
 
 作業終了前に必ず判定する。
