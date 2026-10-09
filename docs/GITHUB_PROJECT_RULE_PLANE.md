@@ -121,3 +121,19 @@ NOTION_CUTOVER=after all required evidence
 ```
 
 完了まではNotionをmigration source/historyとして保持し、削除しない。
+
+## Consumer inventory — evidence and loading boundaries
+
+This register distinguishes an **entrypoint source** from an **effective runtime consumer**. It is not a new Router or an assertion that a local editor fetched the GitHub issue. Verify the specific owning repository, commit and installed client configuration before retiring a duplicate rule.
+
+| Consumer | Intended source / only owner | Current evidence boundary | Next proof required |
+|---|---|---|---|
+| GPT CHAT | Manifest -> Issue #17 -> Project/owning Issue Current; conditional server-core shared contract | GitHub connector can explicitly read manifest and #17; automatic per-turn integration is NOT_VERIFIED | Fresh issue/Current loading on a new CHAT turn, with version/readback |
+| SERVER_AI / delegated Host worker | README -> LOAD_SCOPE -> manifest -> Issue #16 -> owning Current -> conditional server-core | Source routing documented; Host-local automatic load is NOT_VERIFIED | Exact Host source/config and real session load trace, excluding #17 |
+| Cursor Composer | User Global + workspace `.cursor/rules/*.mdc`, selecting SERVER_AI #16 | PR39 validates symlink or inactive-stub source contract; Composer-reported CU2 local changes are not independent live readback | Fresh Active Rules/Global precedence and exact installed file hashes |
+| VS Code Codex | Repo `AGENTS.md`, any verified actual configuration, SERVER_AI #16 | Repository adapter source exists; effective issue fetch and applicable global config are NOT_VERIFIED | New-session loaded instruction trace for owning repo |
+| GitHub Copilot | Repo `.github/copilot-instructions.md`, SERVER_AI #16 | Repository adapter source exists; actual current-issue injection is NOT_VERIFIED | Effective client/session instruction readback |
+| GitHub Actions / Project Control | Existing `.github/workflows/*`, `operations/github-project-control.json`, owning GitHub Current | Four fields only: Wave, Gate, Change Unit, Mutation Owner; CI does not attest Mission match at Host | Exact-SHA checks plus authorized/denied dispatch tests on owner-controlled route |
+| Host / DebugAI runner | Existing bounded Host admission, registry and verified running revision | PR39 Source CI is not Host reflection; PR36/#37 are separate mutation owners | Pinned runtime rule version, wrong-CU denial and allowed nested-worktree proof |
+
+**Safe migration gate:** collect actual consumer readback first; identify a single owner for each shared invariant, preserve client-specific adapters and legacy compatibility, then remove a duplicate only after focused regression and actual-loader proof. A missing Host/client proof is `NOT_VERIFIED`, never implicit approval to rewrite another owner's Global file or Host branch. Project item registration and formal Notion cutover remain separate gates.
