@@ -7,6 +7,7 @@ DUPLICATE_SERVER_CORE="${PROJECTS_DIR}/server-core"
 SERVER_CORE_RULES="${SERVER_CORE_ROOT}/.cursor/rules"
 PROJECTS_RULES="${PROJECTS_DIR}/.cursor/rules"
 SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_GATE="${SERVER_CORE_ROOT}/scripts/init_dev_workspace_project_gate.py"
 
 if [[ "$SCRIPT_ROOT" != "$SERVER_CORE_ROOT" ]]; then
   echo "[error] server-core workspace initializer must run from canonical checkout: ${SERVER_CORE_ROOT}" >&2
@@ -23,11 +24,19 @@ if [[ -e "$DUPLICATE_SERVER_CORE" ]]; then
 fi
 
 PROJECT_NAME=""
+PROJECT_ARG_COUNT=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project)
+      PROJECT_ARG_COUNT=$((PROJECT_ARG_COUNT + 1))
+      if [[ $PROJECT_ARG_COUNT -gt 1 ]]; then
+        echo "[error] duplicate --project arguments are forbidden" >&2
+        echo "NO_CHANGES_PERFORMED" >&2
+        exit 2
+      fi
       if [[ $# -lt 2 ]]; then
         echo "Missing value for --project" >&2
+        echo "NO_CHANGES_PERFORMED" >&2
         exit 2
       fi
       PROJECT_NAME="$2"
@@ -35,6 +44,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       echo "Unknown argument: $1" >&2
+      echo "NO_CHANGES_PERFORMED" >&2
       exit 2
       ;;
   esac
@@ -46,16 +56,14 @@ if [[ ! -d "$SERVER_CORE_RULES" ]]; then
 fi
 
 if [[ -n "$PROJECT_NAME" ]]; then
-  TARGET="${PROJECTS_DIR}/${PROJECT_NAME}"
-  if [[ -d "$TARGET" ]]; then
-    echo "[skip] ${TARGET} already exists"
-  elif [[ -e "$TARGET" ]]; then
-    echo "[error] project target exists but is not a directory: ${TARGET}" >&2
+  if ! python3 "$PROJECT_GATE" --name "$PROJECT_NAME" --projects-dir "$PROJECTS_DIR"; then
+    echo "[error] project selection denied: ${PROJECT_NAME}" >&2
+    echo "TOP_LEVEL_CHILD_PROJECT_BLOCKED" >&2
+    echo "NO_CHANGES_PERFORMED" >&2
     exit 1
-  else
-    mkdir -p "$TARGET"
-    echo "[created] ${TARGET}"
   fi
+  TARGET="${PROJECTS_DIR}/${PROJECT_NAME}"
+  echo "[ok] verified existing registered project: ${TARGET}"
 fi
 
 if [[ -L "$PROJECTS_RULES" ]]; then
@@ -66,8 +74,6 @@ if [[ -L "$PROJECTS_RULES" ]]; then
     exit 1
   fi
 elif [[ -d "$PROJECTS_RULES" ]]; then
-  # CU2 compatibility: do not replace/delete inactive multi-root redirect stubs.
-  # check() requires a G-ACE user-global rule and verifies each inactive stub.
   if python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py"; then
     echo "[ok] ${PROJECTS_RULES} verified inactive multi-root stubs"
   else

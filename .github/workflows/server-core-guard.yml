@@ -36,6 +36,9 @@ jobs:
           test -f AGENTS.md
           test -f .github/copilot-instructions.md
           test -f scripts/github_project_rule_plane_test.py
+          test -f scripts/init_dev_workspace_project_gate.py
+          test -f scripts/init_dev_workspace_project_gate_test.py
+          test -x scripts/init_dev_workspace_deny_side_effect_test.sh
           test -f docs/STRUCTURE.md
           test -f docs/WORKSPACE_REGISTRY.md
           test -f docs/KB_REUSE_DESIGN.md
@@ -106,6 +109,8 @@ jobs:
           grep -q 'Command Center' docs/STRUCTURE.md
           grep -q 'GITHUB PROJECT DUAL RULE PLANE' docs/GITHUB_PROJECT_RULE_PLANE.md
           python3 scripts/github_project_rule_plane_test.py
+          python3 scripts/init_dev_workspace_project_gate_test.py
+          bash scripts/init_dev_workspace_deny_side_effect_test.sh
 
       - name: Provider ownership boundary
         run: |
@@ -238,6 +243,8 @@ jobs:
           ! grep -nE 'rm[[:space:]]+-rf.*PROJECTS_RULES|rm[[:space:]]+-rf.*projects/\.cursor/rules' scripts/init-dev-workspace.sh
           grep -q 'already exists and is not the required symlink; no deletion performed' scripts/init-dev-workspace.sh
           grep -q 'unexpected target' scripts/init-dev-workspace.sh
+          grep -q 'TOP_LEVEL_CHILD_PROJECT_BLOCKED' scripts/init-dev-workspace.sh
+          grep -q 'init_dev_workspace_project_gate.py' scripts/init-dev-workspace.sh
 
       - name: Workspace multi-root rule wiring regression
         run: |
