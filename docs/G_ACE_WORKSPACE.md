@@ -94,6 +94,27 @@ READMEから、存在する場合は次へ直接到達できる状態を標準�
 
 ## 6. Development Routine
 
+### Mission / Change Unit pre-dispatch (same Current for GPT CHAT and SERVER_AI)
+
+The single mutable authority for a task's mission is **GitHub Project #1 Current plus the owning Project/CU Current**. This document owns the stable Work Routine, **not** another copy of the task's changing status. Use the selected executor profile (#17 for GPT CHAT; #16 for SERVER_AI), never both as default context.
+
+Before each new Change Unit, delegated agent dispatch or source/Host mutation, restore from the owning Current and exact Source/Evidence:
+
+```text
+MISSION                 = approved outcome, not the newly discovered obstacle
+IN_SCOPE / OUT_OF_SCOPE = task boundary, including which other CHAT owns adjacent work
+CURRENT_CHANGE_UNIT     = exact already owned CU
+MUTATION_OWNER          = single writer responsible for that CU
+ACCEPTANCE              = observed result needed to finish the mission
+EXACT_NEXT_GATE         = earliest uncompleted gate, not a guessed new project
+TARGET_REPO / BRANCH    = verified owning checkout and revision
+CURRENT_REFERENCE       = canonical Issue/Project item and readback timestamp/revision
+```
+
+Use existing Project fields (`Wave`, `Gate`, `Change Unit`, `Mutation Owner`) and the owning canonical Issue for the other mission fields. **Do not invent GitHub Project fields** or treat another CHAT's checkpoint as this CU's authorization. Compare the **proposed action's files, owner, destination and effects** with Mission, Scope, Next Gate, permissions and existing verified capabilities. When they match, proceed through the existing Routine without further technical approval relay to Master. When they differ, **block only that mismatched mutation/delegation**, record `SCOPE_DRIFT_BLOCKED`, retain the original Mission, and continue independent read-only or in-scope work. Discovering a tool/log/Host defect is not authorization to start a new project or transport.
+
+A fresh chat or agent rehydrates the same Current before its first mutation; chat memory, old prompts, README snapshots and previous CI success are not replacement Current. After executing, compare actual changed files/effects, Source/CI/Runtime evidence and acceptance to the original Mission; record the exact next unfinished gate. The real executable dispatch path must eventually verify this comparison: a documentation instruction or CI keyword test **alone is not mechanical runtime enforcement**.
+
 ```text
 server-core command center
   -> target Project README
