@@ -19,9 +19,6 @@ concurrency:
 
 jobs:
   guard:
-    # This repository's PR SHA is already tested by its push check. For fork PRs,
-    # no trusted local push exists, so run the complete PR check as before.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
