@@ -52,29 +52,50 @@ Runtime state               -> actual runtime readback
 Notion GPT-only principles  -> migration source/history until cutover
 ```
 
-## One owner per file type — no more rule copies
+## Responsibility boundary — Current vs common operation (Master clarification 2026-10-09)
 
-This is the **existing** responsibility map, not a new control plane. On any rule change identify the *owner below* and update that owner first; entrypoint adapters only link to it. A capability config or a history report is **not** an independent Rule authority.
+**Do not create a second authority, another Work Routine, or another AI rule file.** The ownership of a question is determined by its subject, not merely by an apparent hierarchy between GitHub Project and server-core.
 
-| Place | Owns (may change here) | Must only reference / must not own |
+| Decision / fact | Sole owning authority | Other surfaces must do |
 |---|---|---|
-| **GitHub Project #1 + owning Current Issue** | Mutable Mission, priority, Scope, CU, Mutation Owner, Gate, acceptance, exact next action and progress | Shared server policy, code and runtime facts |
-| **Project control #15** | Migration/cutover state and evidence, not every project task | Common Work Routine implementation |
-| **Rule #16 SERVER_AI** | SERVER_AI-only execution/dispatch profile and minimum context | Full shared server operating rules; GPT CHAT orchestration |
-| **Rule #17 GPT_CHAT** | GPT CHAT-only orchestration, included-cost preferences, delegation, nontechnical Master decision interface | Copies of shared server/Host/Workspace rules |
-| **`SERVER_CORE_PROTOCOL.md`** | Stable common safety, permissions and operation boundaries | Live approval receipts or changing Current |
-| **`docs/G_ACE_WORKSPACE.md` §6, §4.1** | Stable shared Work Routine and canonical-parent workspace location rules | A second GPT_CHAT/SERVER_AI-specific full policy |
-| **`docs/LOAD_SCOPE.md`** | Small conditional reading / Project and tool Authority dispatch | Entire repeated rule bodies |
-| **`docs/WORKSPACE_REGISTRY.md`, `operations/*`** | Registered Project/capability identity and versioned tool/execution contracts | Historic E2E as live runtime authorization |
-| **`docs/WORKSPACE_MCP.md`** | MCP install/use contract; archived prior verification kept below active contract | Tool implementation, current Host health |
-| **`README.md`** | Index into server-core roles and required startup pointers | Duplicated live status or bulk Rule Plane |
-| **`AGENTS.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`** | Vendor-specific **short adapters** selecting profile, Current and server-core owner | Competing common Rules, Project Mission, stale hard-coded build instructions |
-| **`.cursor/agents/*.md`, User Global Cursor rules, `.cursor/mcp.json`** | Agent/model definitions, UI/session defaults, provider connection settings | A new G-ACE common safety or task authority |
-| **`.github/workflows/*` and existing bounded Host/DebugAI runner** | CI/regression and actual authorized machine action/readback | Product intention or broader self-granted permission |
-| **Owning Repository** | Product code, local constraints, design, tests, Source/CI evidence | Global shared rules; another Project's Current |
-| **TGserver, Host, deployed containers** | Logs and actual runtime evidence | Project Current, Rule source, inferred deployment from CI alone |
+| Mission, priority, current CU, mutation owner, gate, acceptance, next action | GitHub Project #1 + owning Current Issue | Resolve/read the current item, never keep a parallel current task plan |
+| GPT CHAT orchestration, tool-routing preference and reporting behavior | GPT CHAT Issue #17 | Entry adapters reference #17 only for GPT CHAT |
+| SERVER_AI / Composer / Codex executor-specific minimum behavior | SERVER_AI Issue #16 | Entry adapters reference #16; never load #17 by default |
+| Common development Work Routine and documentation/verification sequence | `docs/G_ACE_WORKSPACE.md` §6 and §7 | Project Current selects which CU; agents execute the common method without copying it |
+| Common Host, Docker/Compose, workspace location, GitOps and security/authorization contracts | `SERVER_CORE_PROTOCOL.md`, `docs/G_ACE_WORKSPACE.md`, `docs/DEPLOY_RUNBOOK.md` and registered operations contracts | Project intent cannot grant Runtime permission or override verified Host denial |
+| Capability discovery, canonical parent identity and registered connection contracts | `docs/WORKSPACE_REGISTRY.md` + authorized `operations/*` | The real Host/provider status requires independent readback |
+| Source, implementation details, tests, package/runtime integration | Owning Project repository | server-core routes; it does not absorb Product implementation |
+| Actual container state, Git deployed HEAD, logs, resource consumption | Owning Runtime/Host evidence | Historical issue notes or passing CI never substitute for live status |
 
-**Precedence by responsibility:** Master product intention and actual platform/tool authorization are not editable through an Agent instruction. For development operations, read the relevant GitHub Current, then the shared server-core owner for common invariants, then **one** executor profile (#16 or #17), then task-specific repo guidance. A genuine local product rule supplements common safety; it never promotes an old stage-specific mission over verified Current. Resolve conflicts at the owning source, **not** by adding a contradictory override in another `.mdc`/Issue. Before removing old text, confirm consumers and CI, preserve its history and validate the effective client/Host behavior.
+If two records contradict each other, **inspect what they each own**. Project Current supersedes an older server-core *task plan*, but cannot waive server-core's common safety/permission contract. A newer server-core instruction cannot silently rewrite the owning Project's active CU. Resolve actual same-owner conflicts at that owner and record the discrepancy.
+
+### Automation / mechanical enforcement policy
+
+Use the **existing** Work Routine, GitHub Project Control, CI, registries, bounded DebugAI command/GitOps and workspace/shell guards first. Do not add a new general-purpose orchestrator or duplicated rule plane.
+
+| Candidate check | Mechanism / appropriate boundary | Status and limit |
+|---|---|---|
+| Current issue / exact source branch and SHA / CU owner before mutation | Existing Project fields + exact GitHub/Host admission | Enforce in approved execution routes; issue prose alone is not admission |
+| One mutation owner and preconditioned file updates | Existing GitHub SHA compare-and-swap, PR/branch checks and Host admitted scope | Automate conflict refusal when identifiable; parallel agents are not themselves prohibited |
+| Reuse registered parent, deny new sibling project and path traversal | Registry + initializer/known shell Hook and CI negative tests | Coverage is per intercepted entrypoint; never claim Codex/SSH/global shell protection without runtime evidence |
+| Source/test/CI/merge/deploy/runtime phase separation | Existing CI and signed/bounded Runtime readback | CI can verify Source/tests; only actual Host evidence verifies Runtime |
+| Authorized Docker/Compose deployment, changed path/owner/branch/SHA/effects | Existing guarded GitOps + registry/Host admission | Deny unregistered protected effects; never turn a README assertion into credentials |
+| Required tests, basic file structure, known rule bootstrap targets | Existing repository-specific CI | Enforce deterministically where safe; choose task-specific tests rather than global expensive full suites |
+| Documentation Gate / reusable asset check | Existing Work Routine and targeted CI where machine-verifiable | Human judgment for design rationale and product suitability; do not reject merely for lack of arbitrary keywords |
+| Every AI actually loaded the correct Current Rule; actual Host health | New-session client evidence / direct runtime query | Cannot be proven by repository text or CI alone; retain NOT_VERIFIED until observed |
+| Current server CPU/RAM/Disk/OS/containers | Actual Host inventory and monitored state | Stable specs may be registered, but utilization/status must be measured fresh; do not hard-code stale values |
+
+**Automate only a deterministic invariant with an actual enforcement hook, known input contract, bounded permissions, useful negative tests and no undue interruption to normal work.** Otherwise keep it as a documented review/readback gate. Machine denial applies to the unsafe operation, not unrelated safe work. Preserve ownership, rollback paths and history; do not silently relax Master-owned approval or expand DebugAI's enrollment to other repos.
+
+### One owner per file type — adapter clarification
+
+The normative assignment remains the **Responsibility boundary — Current vs common operation** table immediately above. Project control #15 records migration evidence, not changing Project task status. `docs/LOAD_SCOPE.md` dispatches conditional reads; `docs/WORKSPACE_MCP.md` keeps connection contracts and archived verification; `README.md` is only an index. `AGENTS.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md` are short client adapters. `.cursor/agents/*.md`, User Global Cursor rules and `.cursor/mcp.json` configure clients, not common rules. `.github/workflows/*`, existing bounded Host/DebugAI and TGserver enforce or record actual effects and evidence. No second rule authority is created. Rule #16 SERVER_AI and Rule #17 GPT_CHAT own only their respective execution profiles; GitHub Project #1 + owning Current Issue owns mutable Mission/CU.
+
+## Shared Work Routine ownership and scope-drift gate
+
+The only **stable common Work Routine** is [`docs/G_ACE_WORKSPACE.md` §6](G_ACE_WORKSPACE.md#6-development-routine), including its Mission/CU pre-dispatch requirements. Do **not** copy a second full routine into Issue #16, Issue #17, per-agent `AGENTS.md`, Cursor `.mdc`, or Copilot instructions. Each executor fetches the same owning GitHub Project/Issue Current but **only its own** minimal SERVER_AI #16 or GPT CHAT #17 profile.
+
+Use existing Project Control fields `Wave / Gate / Change Unit / Mutation Owner`. `MISSION / IN_SCOPE / OUT_OF_SCOPE / ACCEPTANCE / EXACT_NEXT_GATE` stay in the **owning canonical Current Issue**, until genuine Project field registration and readback explicitly prove otherwise. Before dispatch verify actual task ownership and whether the planned diff/effect is within the current CU; deny only out-of-scope mutations. Recording a current reference or passing a source-file test is not evidence that Cursor/Codex/GPT actually loaded it or that the bounded Host runner enforced it; those require their own runtime/readback proofs.
 
 ## Shared invariants
 
@@ -90,12 +111,6 @@ Both executor profiles share the **location invariant**, but maintain their own 
 - **Enforcement procedure:** before workspace-creating commands or delegating to Codex/Composer/SERVER_AI, identify current owner Repo, canonical host parent path, resolve actual destination without symlink/`..` escape, confirm nested containment, link to branch/CU/cleanup owner, and read back the resulting path. Unknown roots deny only the creation. Prevent nested worktrees from appearing as staged parent content.
 - **Source authority:** SERVER_AI [#16](https://github.com/G-ACE-inc/server-core/issues/16), GPT CHAT [#17](https://github.com/G-ACE-inc/server-core/issues/17); Workspace details [§4.1](G_ACE_WORKSPACE.md). A Rule Plane edit proves governance/readback only, not an installed Host ACL or pre-execution interception.
 - The separate CHAT conducting existing parent/child consolidation exclusively owns that **cleanup**; this rule must not rename/remove/move its current directories.
-
-## Shared Work Routine ownership and scope-drift gate
-
-The only **stable common Work Routine** is [`docs/G_ACE_WORKSPACE.md` §6](G_ACE_WORKSPACE.md#6-development-routine), including its Mission/CU pre-dispatch requirements. Do **not** copy a second full routine into Issue #16, Issue #17, per-agent `AGENTS.md`, Cursor `.mdc`, or Copilot instructions. Each executor fetches the same owning GitHub Project/Issue Current but **only its own** minimal SERVER_AI #16 or GPT CHAT #17 profile.
-
-Use existing Project Control fields `Wave / Gate / Change Unit / Mutation Owner`. `MISSION / IN_SCOPE / OUT_OF_SCOPE / ACCEPTANCE / EXACT_NEXT_GATE` stay in the **owning canonical Current Issue**, until genuine Project field registration and readback explicitly prove otherwise. Before dispatch verify actual task ownership and whether the planned diff/effect is within the current CU; deny only out-of-scope mutations. Recording a current reference or passing a source-file test is not evidence that Cursor/Codex/GPT actually loaded it or that the bounded Host runner enforced it; those require their own runtime/readback proofs.
 
 ## Minimal-context decision routing
 

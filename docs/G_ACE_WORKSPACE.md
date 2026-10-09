@@ -79,6 +79,28 @@ For existing registered owners elsewhere (e.g. `/home/admin1/server-core`), the 
 - **CHAT -> SERVER AI -> Codex / Composer delegation:** every prompt must state both permitted nested isolation and forbidden sibling placement, plus require `OWNER_REPO`, `CANONICAL_PARENT_REALPATH`, `ACTUAL_WORKTREE_REALPATH`, `GIT_COMMON_DIR`, `BRANCH/HEAD`, `CREATED_NEW_TOP_LEVEL_SIBLING=NO` readback. Do not pass an older generic "all worktrees forbidden" instruction.
 - The other CHAT currently owns reconciliation of existing stray children. This rule is for prevention and does not authorize automatic deletion, move, rename or consolidation. Existing Project/source/Host approval and execution boundaries remain intact.
 
+## 4.2 Mandatory work location and reuse handoff gate (Master decision 2026-10-09)
+
+This is an extension of **the existing** Work Routine and GitHub Project Current, not a new registry, workflow, task tracker, or AI rule plane. The owning Current Issue is the SINGLE mutable record for the active work location and next gate.
+
+**Before any new branch/worktree/module/feature/source mutation**, GPT CHAT and delegated executors must resolve and verify:
+
+```text
+OWNER_PROJECT / OWNER_REPOSITORY / CANONICAL_PARENT_REALPATH
+CURRENT_ISSUE / MISSION / CHANGE_UNIT / MUTATION_OWNER
+REUSE_CANDIDATES: active CU + Issue/PR + branch + existing source/module
+WORK_BRANCH / WORKTREE_PATH (if any) / EXACT_HEAD / PR
+OWNED_PATHS / DIRTY_STATE (UNKNOWN if Host was not read) / EXACT_NEXT_GATE
+```
+
+1. Obtain the owning Project Current and its checkpoints, then search its existing Branch/PR/CU for matching purpose and file ownership. Compare direct GitHub HEAD/PR and, when actually accessible, Host canonical root/worktree/status. A Project Current record does not establish uncommitted Host state.
+2. If the same work exists, **resume the verified existing location** or hand off to its current owner. Do not copy sources, create a sibling Project, silently take over another CU, or call a new branch a fresh Project. A separately justified owned CU may use a new nested worktree strictly inside the verified canonical parent. Existing parent-local worktrees remain allowed.
+3. A missing/contradictory OWNER, CURRENT_ISSUE, canonical parent, active CU or competing file owner is **PREFLIGHT_LOCATION_UNVERIFIED**: deny only creation or mutation whose safe location/ownership cannot be established. Read-only discovery and other independently authorized work may continue. Do not invent HEAD, path or PR.
+4. On commit/push, update the SAME owning Current Issue/checkpoint with actual branch, exact remote HEAD, PR and changed owned paths. At pause/handoff, record Host dirty/stash/rebase status when verified (otherwise UNKNOWN), open blockers, evidence URLs and EXACT_NEXT_GATE. The next CHAT must rehydrate and cross-check this checkpoint, not restart the implementation.
+5. The existing initializer project-selection gate, shell Hook and authorized Host admission should reject provably invalid destinations or scopes; GitHub SHA compare-and-swap/CI catches stale Source. These mechanisms are **not** universal: Cursor Hook does not intercept Codex/SSH; semantic duplicate design cannot be proved by filename matching; GitHub Issue prose is not a Host credential. New universal denial claims require actual negative tests on each covered executor.
+
+Mandatory operational distinction: `PREFLIGHT=PASS` only when the checked Current and source/Host evidence support it. `HANDOFF_RECORDED` is not `NEW_SESSION_RULE_LOADED`; `SOURCE_CI_PASS` is not `HOST_GUARD_ACTIVE`. No automatic cleanup or merger of existing sibling directories owned by other CHATs.
+
 ## 5. Project Entry
 
 対象ProjectではREADMEを入口にする。
@@ -135,8 +157,11 @@ server-core command center
   -> GitHub commit as work report
   -> push / remote readback
   -> PR / CI when required
-  -> approval boundary
-  -> deploy/runtime only when authorized
+  -> approval boundary / verified Host admission
+  -> existing GitHub Actions -> authenticated DebugAI bounded Server Command / admitted GitOps (when Host work is needed)
+  -> exact Actions run/job/request ID and actual Host result readback
+  -> restore the existing health-only target after bounded requests
+  -> record Source / CI / Deploy / Runtime separately
 ```
 
 ### Rule versus System — enforcement allocation
@@ -165,6 +190,14 @@ A rule describing a **judgment** remains in its owning profile or this single sh
 ```
 
 **Implementation boundary:** prefer improving the existing guard at the owning command/dispatch point with negative tests (`WRONG_MISSION_OR_CU` deny, unrelated path/effect deny, symlink escape deny, approved nested worktree allow, separately registered new independent parent allow). Avoid a schema expansion of the four GitHub Project fields before real registration, and do not modify PR36/#37's active Host route under this governance CU. No removal of old policy copies before all identified consumers have actual loading/compatibility evidence. An unknown effective loader or Host ownership blocks that specific machine mutation, not independent documentation or CI work.
+
+### Design-alignment checks within the existing Work Routine
+
+Before implementation, identify the **owning Project's actual Design/Specification baseline** from its Current/README links and fetch the relevant section, plus Design Delta and prior decisions when applicable. Record the document ID/path/revision and the design requirements affected by this CU in the existing Current checkpoint; a title or a stale summary is not evidence of reading the design. Avoid full-document rereads when the unchanged section has already been verified.
+
+At the initial diff, before PR/merge, and whenever the work changes behavior or scope, compare changed Source/Tests with those identified design requirements and the Current CU acceptance criteria. If baseline cannot be read, report `DESIGN_BASELINE_NOT_VERIFIED`; if implementation diverges, report `DESIGN_DRIFT_REVIEW_REQUIRED` with exact design section, code paths and proposed disposition. Suspend only design-changing mutation whose authorization is unresolved. Do not rewrite design to match incidental code, override Master-owned intent or fabricate conformance. A legitimate correction must be recorded at the owning Design/Current authority before resuming.
+
+This is a **readback/review step of existing Work Routine**, not a second design authority or an automatic semantic-code equivalence assertion. Targeted CI may enforce evidence fields when actually available, but cannot prove semantic design alignment from prose alone.
 
 ## 7. Documentation Gate
 
@@ -214,6 +247,8 @@ server-coreが管理するのは接続契約・owner・permission boundary・ava
 `.cursor/mcp.json` 等の実設定とRegistry文書を分離する。文書記載だけでMCP利用可能とは扱わない。
 
 DebugAIは独立Project/runtime。Source mainへのMCP実装反映とWorkspace Live登録/Runtime verificationは別状態として扱う。
+
+**当面のGPT CHAT→Host単一実行経路:** 既存のGitHub Actions（DebugAI `ChatGPT Live Dogfood`）からCloudflare Access経由で既存のDebugAI bounded Server Command / 認可済みGitOpsを利用する。直接MCPがCHATに表示されなくてもHost操作全体を不可と判定しない。Push起動のRunをPR専用のcommit-run検索だけで判定せず、既存GitHub APIのActions Run一覧→Job→生Logから対象HEAD・Request ID・実結果を照合する。Trigger設定は元のhealth-only Blobへ復元してReadbackする。対象Repoが未登録、Host契約にないCommand、現行Runtime Source不足なら、その操作だけを正確な理由で保留し他の安全作業を継続する。新しいMCP・Workflow・Token・RunnerやRepo別Transportを作らない。実装と認可の正本はDebugAIとserver-coreの既存Registryであり、この文書には複製しない。
 
 ## 10. Project Integration
 

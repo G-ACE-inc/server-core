@@ -43,6 +43,7 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | Master Terminal Command / Copy&Paste / GACE_RESULT / Shell Safety / Syntax Validation | `docs/MASTER_TERMINAL_COMMAND.md` |
 | Workspace運用 / dispatch | `docs/G_ACE_WORKSPACE.md` |
 | Project / Repository / shared Capability / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
+| GPT CHATからの既存Actions経由Host読取・GitOps・Actions Log照合 | `docs/G_ACE_WORKSPACE.md` §6/§9 + `docs/WORKSPACE_REGISTRY.md` + 対象DebugAI Source/Host Current |
 | Project Integration（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Git / Commit / Push / work report | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
@@ -94,6 +95,10 @@ FORBIDDEN: new derivative sibling occupying a top-level Project list entry
 A nested linked Git worktree is **permitted** and must not be mistaken for a new parent Project; no additional Master approval is needed solely because an owned CU needs an isolated branch/worktree inside its parent. Another top-level independent Project requires explicit Master intent/approval. Reject sibling destinations regardless of name (including `/tmp` or other persistent alternate roots). Validate directory containment via resolved paths with a path-separator boundary, not a name prefix; reject symlink/relative escape and unknown actual parent as `TOP_LEVEL_CHILD_PROJECT_BLOCKED`. Existing registered parents like `/home/admin1/server-core` retain their own verified canonical root.
 
 Each delegated prompt must carry the **nested allowed / sibling denied** rule, check path/branch/Git-common-dir after execution, and report `CREATED_NEW_TOP_LEVEL_SIBLING=NO`. Do not ask another worker to create a denied sibling instead. Do not change/move/delete existing orphan locations during the other CHAT's parent consolidation; keep its mutation ownership exclusive. Executor Rules [#16](https://github.com/G-ACE-inc/server-core/issues/16), [#17](https://github.com/G-ACE-inc/server-core/issues/17) and detailed Workspace [§4.1](G_ACE_WORKSPACE.md#41-canonical-parent-project-and-branchworktree-isolation-master-clarification-2026-10-09) control this gate.
+
+### 3.2 Current/work-location preflight before new source or workspace (mandatory)
+
+Route every new CU, Branch, worktree, Module or same-purpose reimplementation through the **existing** `docs/G_ACE_WORKSPACE.md` §4.2 handoff gate. Read the owning GitHub Project Current/Issue and verify active CU, mutation owner, existing PR/branch, exact HEAD, canonical parent and reuse candidates **before** selecting a mutation location. Missing or conflicting ownership/location means `PREFLIGHT_LOCATION_UNVERIFIED`: suspend only the unsafe creation/mutation; continue read-only research or independent authorized tasks. Never create a top-level sibling as a substitute. Before handing work to Codex/Composer, supply the checked location, owned paths, active CU and Exact Next Gate; record and read back actual branch/HEAD, dirty/stash status (or UNKNOWN), and `EXACT_NEXT_GATE` on handoff. Do not create another tracker or duplicate the Current Issue.
 
 ## 4. Target Repository Loading
 
@@ -149,6 +154,10 @@ server-core README
   -> target Project README
   -> target Project authority / Source / Test
 ```
+
+### Design baseline / anti-drift routing
+
+For a source-changing CU, resolve the owning repository's canonical Design/Specification link from its Current/README before editing, fetch only relevant sections and prior Design Delta, and check proposed Source/Test against CU acceptance. Recheck at diff/PR and on scope changes using the existing `docs/G_ACE_WORKSPACE.md` §6 Design-alignment step. An inaccessible baseline is `DESIGN_BASELINE_NOT_VERIFIED`; a conflicting change is `DESIGN_DRIFT_REVIEW_REQUIRED`. Do not improvise a substitute design, claim compliance without reading, or create another design tracker. Continue independent read-only work while the affected mutation awaits resolution.
 
 ## 5. Reuse Search Order
 
