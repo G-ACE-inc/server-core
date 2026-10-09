@@ -1,0 +1,35 @@
+# SOURCE-ONLY template. Not deployed. Official GHCR v1.11.0 multi-arch manifest
+# pinned by its immutable published digest (provenance: official GH package).
+# Host network, per-request authorized credentials and live client still require gates.
+#
+# Network: join external bridge "gace-internal" (see operations/github-mcp-readonly-runtime.json).
+# Create with `docker network create gace-internal` — do NOT use Docker's --internal flag
+# (that blocks outbound HTTPS to api.github.com). No host ports: publish; expose 8082 only.
+# Phase B Project Control receiver is a separate compose file and admission.
+services:
+  gace-github-mcp-readonly:
+    image: ghcr.io/github/github-mcp-server@sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699
+    command: ["http", "--listen-host", "0.0.0.0", "--scope-challenge"]
+    user: "65532:65532"
+    environment:
+      GITHUB_TOOLSETS: projects
+      GITHUB_READ_ONLY: "1"
+    networks:
+      - gace-internal
+    expose:
+      - "8082"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 64
+    mem_limit: 128m
+    restart: unless-stopped
+
+networks:
+  gace-internal:
+    external: true
+    name: "${GACE_INTERNAL_NETWORK_NAME:-gace-internal}"

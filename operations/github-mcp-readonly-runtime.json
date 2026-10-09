@@ -1,0 +1,65 @@
+{
+  "schema": "gace.github-mcp-readonly-runtime/v1",
+  "phase": "A",
+  "owner_issue": "G-ACE-inc/server-core#10",
+  "compose_file": "docker-compose.github-mcp-readonly.yml",
+  "pinned_image_digest": "sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699",
+  "network": {
+    "default_name": "gace-internal",
+    "env_override": "GACE_INTERNAL_NETWORK_NAME",
+    "driver": "bridge",
+    "docker_internal_isolation_flag": false,
+    "host_port_publish": false,
+    "host_network_mode": false,
+    "inbound_policy": "no_host_port_publish_per_request_bearer_all_callers",
+    "inbound_bridge_note": "user_defined_bridge_allows_docker_host_and_attached_containers_not_internet_without_port_publish",
+    "outbound_policy": "normal_https_dns_to_github_api_required"
+  },
+  "ci_verification": {
+    "bridge_sidecar_https_egress": "github_actions_verify_job",
+    "mcp_authenticated_projects_on_bridge": "NOT_VERIFIED_ADMISSION_GATE",
+    "persistent_host_runtime": "NOT_VERIFIED"
+  },
+  "service": {
+    "dns_name": "gace-github-mcp-readonly",
+    "container_port": 8082,
+    "http_path": "/mcp"
+  },
+  "authentication": {
+    "model": "per_request_bearer_scope_challenge",
+    "shared_pat_in_compose": false,
+    "tool_surface": ["projects_get", "projects_list"]
+  },
+  "client_contract": {
+    "workspace_mcp_advertise_gate": "RUNTIME_VERIFIED_AND_AUTHENTICATED_E2E",
+    "debugai_compose_on_gace_internal": false,
+    "primary_routing_authority": "operations/github-project-debugai-routing.json",
+    "post_admission_client_options": [
+      "bounded_internal_client_container_on_gace_internal_with_per_request_bearer",
+      "future_reviewed_debugai_secondary_network_attachment"
+    ],
+    "forbidden": [
+      "remote_chatgpt_direct_mcp_tunnel",
+      "shared_pat_in_compose",
+      "host_published_mcp_port",
+      "debugai_typed_read_adapter_in_server_core"
+    ]
+  },
+  "phase_b_independent_service": {
+    "compose_file": "docker-compose.project-control.yml",
+    "requires_separate_admission": true
+  },
+  "host_admission": {
+    "available_on_host": false,
+    "legacy_debugai_one_shot_supports_phase_a": false,
+    "master_internal_enrolled_repository": "seigo-gace/debug-ai",
+    "master_internal_persistent_data_effect": false,
+    "server_core_host_executor_implemented": false,
+    "required_next_actor": "master_then_host_admin_or_new_dedicated_lane",
+    "chat_or_issue_text_is_credential": false,
+    "phase_a_plan_script": "scripts/github_mcp_phase_a_host_bootstrap.py",
+    "phase_a_bootstrap_contract": "operations/github-mcp-phase-a-host-bootstrap.json",
+    "apply_mode": "FAIL_CLOSED_NOT_IMPLEMENTED",
+    "master_impact_brief": "docs/GITHUB_MCP_PHASE_A_MASTER_IMPACT_BRIEF.md"
+  }
+}

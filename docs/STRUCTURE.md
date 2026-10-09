@@ -137,6 +137,10 @@ Secret / Token値をoperationsへ保存しない。
   - `--self-test`でSafety contract検証
 - `github_project_control.py`
   - Personal Project #1の`Wave / Gate / Change Unit / Mutation Owner`だけを固定Contractで更新しexact readbackする
+- `github_project_read_current.py`
+  - 上記既存GraphQL/Item識別処理を再利用し、許可されたProject #1 Itemの4フィールドをread-only取得する。未設定値はnull、権限不足はFAIL。Project mutationなし
+- `github_project_read_current_test.py`
+  - Project identity/対象URL拒否/4フィールド取得/未設定値/認証失敗の回帰テスト
 - `github_project_request_from_comment.py`
   - owner-only `[GACE-PROJECT]` commentをfixed requestへ変換する
 - `github_project_internal_send.py`

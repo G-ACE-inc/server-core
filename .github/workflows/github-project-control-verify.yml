@@ -23,6 +23,81 @@ jobs:
           python3 scripts/github_project_request_from_comment_test.py
           python3 scripts/github_project_internal_transport_test.py
           python3 scripts/github_project_runtime_config_test.py
+          python3 -m py_compile scripts/github_project_read_current.py scripts/github_project_read_current_test.py
+          python3 scripts/github_project_read_current_test.py
+      - name: Shared GitHub MCP source-only config
+        run: |
+          python3 scripts/github_mcp_shared_runtime_test.py
+          docker compose -f docker-compose.github-mcp-readonly.yml config --quiet
+          docker manifest inspect ghcr.io/github/github-mcp-server@sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699 >/dev/null
+          echo "GITHUB_MCP_PINNED_IMAGE_MANIFEST=PASS"
+          # Ephemeral CI, not the production Host: verify the pinned binary's
+          # actual HTTP flag contract with no network, tokens or privileged mounts.
+          docker pull ghcr.io/github/github-mcp-server@sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699 >/dev/null
+          docker run --rm --network none --read-only --user 65532:65532 --cap-drop ALL --security-opt no-new-privileges ghcr.io/github/github-mcp-server@sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699 http --help >/tmp/github-mcp-http-help.txt 2>&1
+          grep -Fq -- '--listen-host' /tmp/github-mcp-http-help.txt
+          grep -Fq -- '--scope-challenge' /tmp/github-mcp-http-help.txt
+          echo "GITHUB_MCP_PINNED_BINARY_HTTP_OPTIONS=PASS"
+          # Ephemeral GitHub-hosted runner only. Bind the test port to loopback,
+          # never use a GitHub credential, and never touch the real Host.
+          cid="$(docker run -d --rm --name gace-github-mcp-ci-unauth \
+            --user 65532:65532 --read-only \
+            --tmpfs /tmp:rw,size=16m,mode=1777 \
+            --security-opt no-new-privileges --cap-drop ALL \
+            --pids-limit 64 --memory 128m \
+            --publish 127.0.0.1:18082:8082 \
+            --env GITHUB_TOOLSETS=projects --env GITHUB_READ_ONLY=1 \
+            ghcr.io/github/github-mcp-server@sha256:fbec75de11c255213fa08d80fb166abe73d851fff631c51c0079872967720699 \
+            http --listen-host 0.0.0.0 --scope-challenge)"
+          trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          status=""
+          for i in $(seq 1 30); do
+            if ! test "$(docker inspect -f '{{.State.Running}}' "$cid")" = "true"; then
+              echo "GITHUB_MCP_EPHEMERAL_PROCESS=NOT_RUNNING"
+              docker logs "$cid" 2>&1 | tail -n 15
+              exit 1
+            fi
+            status="$(curl -sS --max-time 2 -o /tmp/mcp-unauth-body \
+              -D /tmp/mcp-unauth-headers -w '%{http_code}' \
+              -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' \
+              -X POST --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"gace-ci","version":"1"}}}' \
+              http://127.0.0.1:18082/mcp 2>/dev/null || true)"
+            if test "$status" = "401"; then break; fi
+            sleep 1
+          done
+          test "$status" = "401" || {
+            echo "GITHUB_MCP_UNAUTH_STATUS=FAIL code=$status"
+            exit 1
+          }
+          grep -iq '^www-authenticate: Bearer' /tmp/mcp-unauth-headers
+          echo "GITHUB_MCP_EPHEMERAL_HTTP_NO_TOKEN_DENIED=PASS"
+          invalid_status="$(curl -sS --max-time 3 -o /tmp/mcp-invalid-body \
+            -w '%{http_code}' \
+            -H 'Authorization: Bearer invalid-not-a-real-token' \
+            -H 'Content-Type: application/json' \
+            -H 'Accept: application/json, text/event-stream' \
+            -X POST --data '{"jsonrpc":"2.0","id":2,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"gace-ci-invalid","version":"1"}}}' \
+            http://127.0.0.1:18082/mcp 2>/dev/null || true)"
+          case "$invalid_status" in 400|401|403) ;; *)
+            echo "GITHUB_MCP_INVALID_TOKEN_REJECTED=FAIL code=$invalid_status"
+            exit 1
+            ;;
+          esac
+          echo "GITHUB_MCP_EPHEMERAL_HTTP_INVALID_TOKEN_DENIED=PASS"
+          docker rm -f "$cid" >/dev/null
+          trap - EXIT
+          python3 scripts/github_mcp_phase_a_contract_test.py
+          python3 scripts/github_mcp_ci_acceptance_matrix_test.py
+          python3 scripts/github_mcp_host_admission_feasibility_test.py
+          python3 -m py_compile scripts/github_mcp_phase_a_host_bootstrap.py scripts/github_mcp_phase_a_host_bootstrap_test.py
+          python3 scripts/github_mcp_phase_a_host_bootstrap_test.py
+          python3 scripts/github_mcp_phase_a_host_bootstrap.py plan >/tmp/gace-phase-a-plan.json
+          python3 -c "import json; p=json.load(open('/tmp/gace-phase-a-plan.json')); assert p['schema']=='gace.github-mcp-phase-a-host-plan/v1'; assert p['apply_permitted'] is False"
+          echo "GITHUB_MCP_PHASE_A_HOST_PLAN_CI=PASS"
+          bash -n scripts/github_mcp_ci_bridge_egress_verify.sh
+          bash scripts/github_mcp_ci_bridge_egress_verify.sh
+
       - name: Project Control container source
         run: |
           docker build -f Dockerfile.project-control -t gace-server-core-project-control:ci .

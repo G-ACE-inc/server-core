@@ -1,0 +1,38 @@
+{
+  "schema": "gace.github-mcp-phase-a-host-bootstrap/v1",
+  "default_mode": "plan",
+  "apply_gate": {
+    "mode": "FAIL_CLOSED_UNTIL_VERIFIED_RECEIPT",
+    "receipt_schema": "gace.github-mcp-phase-a-host-receipt/v1",
+    "receipt_env": "GACE_PHASE_A_HOST_RECEIPT_FILE",
+    "debugai_gitops_receipt_compatible": false,
+    "cli_flags_are_approval": false
+  },
+  "plan_required_fields": [
+    "repository",
+    "admitted_pr_sha",
+    "checkout_path",
+    "checkout_branch",
+    "checkout_clean",
+    "host_main_checkout_sha",
+    "network_name",
+    "network_exists",
+    "network_internal_flag",
+    "service_name_conflict",
+    "compose_host_ports_absent",
+    "compose_internal_network_flag_absent",
+    "pinned_digest_matches_runtime",
+    "debugai_services_preserved",
+    "phase_b_compose_not_started",
+    "workspace_mcp_advert_changed",
+    "egress_https_probe",
+    "rollback_network_policy",
+    "host_admission_granted",
+    "apply_permitted"
+  ],
+  "network_create_recommendation": {
+    "command_template": "docker network create ${GACE_INTERNAL_NETWORK_NAME:-gace-internal}",
+    "forbidden_flags": ["--internal"],
+    "optional_label": "gace.phase_a_owner=gace-github-mcp-readonly"
+  }
+}
