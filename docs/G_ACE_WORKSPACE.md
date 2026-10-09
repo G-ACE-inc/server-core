@@ -57,6 +57,28 @@ APPROVAL_BOUNDARY
 
 Task対象になった場合だけ必要範囲を開く。
 
+## 4.1 Canonical parent Project and branch/worktree isolation (Master clarification 2026-10-09)
+
+**The only prohibited proliferation is a derivative Project directory at the same level as a registered parent Project.** Do not mistake Git branches or an isolated worktree *inside* its parent directory for a new Project. Rule Plane [SERVER AI #16](https://github.com/G-ACE-inc/server-core/issues/16) and [GPT CHAT #17](https://github.com/G-ACE-inc/server-core/issues/17) are the authoritative executor-specific requirements.
+
+```text
+PROJECT_LIST_ROOT=/home/admin1/projects
+CANONICAL_PARENT=/home/admin1/projects/<existing-registered-project>
+ALLOWED_IN_PARENT=/home/admin1/projects/<existing-registered-project>/.worktrees/<change-unit>
+DENIED_AS_SIBLING=/home/admin1/projects/<existing-registered-project>-fix
+DENIED_AS_SIBLING=/home/admin1/projects/<existing-registered-project>-current-YYYYMMDD
+DENIED_AS_SIBLING=/home/admin1/projects/<existing-registered-project>-prNN
+NEW_TOP_LEVEL_PARENT_PROJECT=MASTER_EXPLICIT_PROJECT_APPROVAL_ONLY
+```
+
+For existing registered owners elsewhere (e.g. `/home/admin1/server-core`), the *verified actual existing canonical parent* is authoritative; do not assume every Project is under `/home/admin1/projects`. Distinct already registered repositories in the top-level list are independent parents, not derivatives.
+
+- **Allowed without per-branch Master approval:** a normal Git branch in the existing parent; an owned linked `git worktree` nested *strictly inside* the parent for an independent CU, concurrent agent or dirty-checkout isolation; routine temporary files inside that parent. Use an ignored/excluded dedicated folder such as `.worktrees/` so worktrees are not accidentally staged or packaged by the primary checkout. Record branch/CU, owner, common Git directory, path and cleanup owner. Reuse an already owned worktree first.
+- **Forbidden by default:** a sibling top-level `*-fix`, `*-current`, `*-research`, `*-forensic`, `*-evidence`, `*-prNN`, task-named `debug-ai-*` etc. checkout, worktree, clone, directory copy or `git init` next to the parent. Also forbidden: moving that same persistent duplicate to another top-level scratch folder as a workaround. Filename similarity alone is not the criterion; actual verified parent/ownership/destination determines the decision.
+- Before executing any workspace-creating command, inspect canonical parent and actual resolved destination (not string prefix alone); verify containment using real path + separator, with symlink and `..` escape rejected. On conflict, choose parent-local branch/worktree or wait for owner; NEVER silently make a sibling. An unknown parent/path blocks *only the creation*, using `TOP_LEVEL_CHILD_PROJECT_BLOCKED`.
+- **CHAT -> SERVER AI -> Codex / Composer delegation:** every prompt must state both permitted nested isolation and forbidden sibling placement, plus require `OWNER_REPO`, `CANONICAL_PARENT_REALPATH`, `ACTUAL_WORKTREE_REALPATH`, `GIT_COMMON_DIR`, `BRANCH/HEAD`, `CREATED_NEW_TOP_LEVEL_SIBLING=NO` readback. Do not pass an older generic "all worktrees forbidden" instruction.
+- The other CHAT currently owns reconciliation of existing stray children. This rule is for prevention and does not authorize automatic deletion, move, rename or consolidation. Existing Project/source/Host approval and execution boundaries remain intact.
+
 ## 5. Project Entry
 
 対象ProjectではREADMEを入口にする。

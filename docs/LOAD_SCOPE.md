@@ -79,6 +79,22 @@ APPROVAL_BOUNDARY
 
 既存owner / reusable assetを確認する前に新規Project / Module / Tool / Documentを作らない。
 
+### 3.1 Project-list containment gate (mandatory for GPT CHAT / SERVER_AI / Codex / Composer)
+
+Before authoring, approving, or executing any server workspace creation (`git worktree add`, `git clone`, copy, task-named `mkdir`, checkout, agent workspace bootstrap), first establish `OWNER_REPO`, the Registry/Host-verified `CANONICAL_PARENT_REALPATH`, the resolved `PROPOSED_DESTINATION_REALPATH`, existing CU/Branch/PR and the action's ownership.
+
+```text
+ALLOWED: existing canonical parent branch and owned nested isolation
+  /home/admin1/projects/debug-ai/.worktrees/<owned-cu>/
+FORBIDDEN: new derivative sibling occupying a top-level Project list entry
+  /home/admin1/projects/debug-ai-<cu>/
+  /home/admin1/projects/tgserver-current-<date>/
+```
+
+A nested linked Git worktree is **permitted** and must not be mistaken for a new parent Project; no additional Master approval is needed solely because an owned CU needs an isolated branch/worktree inside its parent. Another top-level independent Project requires explicit Master intent/approval. Reject sibling destinations regardless of name (including `/tmp` or other persistent alternate roots). Validate directory containment via resolved paths with a path-separator boundary, not a name prefix; reject symlink/relative escape and unknown actual parent as `TOP_LEVEL_CHILD_PROJECT_BLOCKED`. Existing registered parents like `/home/admin1/server-core` retain their own verified canonical root.
+
+Each delegated prompt must carry the **nested allowed / sibling denied** rule, check path/branch/Git-common-dir after execution, and report `CREATED_NEW_TOP_LEVEL_SIBLING=NO`. Do not ask another worker to create a denied sibling instead. Do not change/move/delete existing orphan locations during the other CHAT's parent consolidation; keep its mutation ownership exclusive. Executor Rules [#16](https://github.com/G-ACE-inc/server-core/issues/16), [#17](https://github.com/G-ACE-inc/server-core/issues/17) and detailed Workspace [§4.1](G_ACE_WORKSPACE.md#41-canonical-parent-project-and-branchworktree-isolation-master-clarification-2026-10-09) control this gate.
+
 ## 4. Target Repository Loading
 
 対象Projectへ入った後はREADMEを入口とする。
