@@ -52,6 +52,30 @@ Runtime state               -> actual runtime readback
 Notion GPT-only principles  -> migration source/history until cutover
 ```
 
+## One owner per file type — no more rule copies
+
+This is the **existing** responsibility map, not a new control plane. On any rule change identify the *owner below* and update that owner first; entrypoint adapters only link to it. A capability config or a history report is **not** an independent Rule authority.
+
+| Place | Owns (may change here) | Must only reference / must not own |
+|---|---|---|
+| **GitHub Project #1 + owning Current Issue** | Mutable Mission, priority, Scope, CU, Mutation Owner, Gate, acceptance, exact next action and progress | Shared server policy, code and runtime facts |
+| **Project control #15** | Migration/cutover state and evidence, not every project task | Common Work Routine implementation |
+| **Rule #16 SERVER_AI** | SERVER_AI-only execution/dispatch profile and minimum context | Full shared server operating rules; GPT CHAT orchestration |
+| **Rule #17 GPT_CHAT** | GPT CHAT-only orchestration, included-cost preferences, delegation, nontechnical Master decision interface | Copies of shared server/Host/Workspace rules |
+| **`SERVER_CORE_PROTOCOL.md`** | Stable common safety, permissions and operation boundaries | Live approval receipts or changing Current |
+| **`docs/G_ACE_WORKSPACE.md` §6, §4.1** | Stable shared Work Routine and canonical-parent workspace location rules | A second GPT_CHAT/SERVER_AI-specific full policy |
+| **`docs/LOAD_SCOPE.md`** | Small conditional reading / Project and tool Authority dispatch | Entire repeated rule bodies |
+| **`docs/WORKSPACE_REGISTRY.md`, `operations/*`** | Registered Project/capability identity and versioned tool/execution contracts | Historic E2E as live runtime authorization |
+| **`docs/WORKSPACE_MCP.md`** | MCP install/use contract; archived prior verification kept below active contract | Tool implementation, current Host health |
+| **`README.md`** | Index into server-core roles and required startup pointers | Duplicated live status or bulk Rule Plane |
+| **`AGENTS.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`** | Vendor-specific **short adapters** selecting profile, Current and server-core owner | Competing common Rules, Project Mission, stale hard-coded build instructions |
+| **`.cursor/agents/*.md`, User Global Cursor rules, `.cursor/mcp.json`** | Agent/model definitions, UI/session defaults, provider connection settings | A new G-ACE common safety or task authority |
+| **`.github/workflows/*` and existing bounded Host/DebugAI runner** | CI/regression and actual authorized machine action/readback | Product intention or broader self-granted permission |
+| **Owning Repository** | Product code, local constraints, design, tests, Source/CI evidence | Global shared rules; another Project's Current |
+| **TGserver, Host, deployed containers** | Logs and actual runtime evidence | Project Current, Rule source, inferred deployment from CI alone |
+
+**Precedence by responsibility:** Master product intention and actual platform/tool authorization are not editable through an Agent instruction. For development operations, read the relevant GitHub Current, then the shared server-core owner for common invariants, then **one** executor profile (#16 or #17), then task-specific repo guidance. A genuine local product rule supplements common safety; it never promotes an old stage-specific mission over verified Current. Resolve conflicts at the owning source, **not** by adding a contradictory override in another `.mdc`/Issue. Before removing old text, confirm consumers and CI, preserve its history and validate the effective client/Host behavior.
+
 ## Shared invariants
 
 両Planeで共有するのはFresh Current、reuse-first、minimum context、状態分離、Approval Boundary、Secret安全、Docker Compose production residency、GitHub Work Reportなどの最小Invariantだけ。
