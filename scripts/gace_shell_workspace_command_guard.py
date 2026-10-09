@@ -410,6 +410,23 @@ def classify_git(command: str, *, cwd: Path) -> dict | None:
     stripped = command.strip()
     if not stripped.lower().startswith("git"):
         return None
+    if os.environ.get("GACE_MUTATION_BINDING", "").strip():
+        segments = _compound_segments(command)
+        if segments is None:
+            return None
+        if len(segments) > 1:
+            for segment in segments:
+                seg = segment.strip()
+                if not seg.lower().startswith("git"):
+                    continue
+                _, tail, parse_err, _, _ = parse_git_invocation(seg, cwd)
+                if parse_err:
+                    return None
+                if not _git_readonly_tail(tail or ""):
+                    return None
+            if not mutators_in_executable(command):
+                return {"result": "ALLOW", "code": "GIT_READONLY_INVOCATION"}
+            return None
     tail = _git_command_tail(stripped, cwd)
     if _git_readonly_tail(tail):
         if not mutators_in_executable(command):
@@ -792,6 +809,65 @@ def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
     return None
 
 
+
+COMPOUND_SHELL_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;)\s*")
+
+
+def _compound_segments(command: str) -> list[str] | None:
+    surface = executable_scan_surface(command).strip()
+    if not surface:
+        return []
+    try:
+        shlex.split(command.strip(), posix=True)
+    except ValueError:
+        return None
+    return [part.strip() for part in COMPOUND_SHELL_SPLIT_RE.split(surface) if part.strip()]
+
+
+def _binding_compound_git_admission(command: str, cwd: Path) -> dict | None:
+    if not os.environ.get("GACE_MUTATION_BINDING", "").strip():
+        return None
+    segments = _compound_segments(command)
+    if segments is None:
+        return {
+            "result": "DENY",
+            "code": "COMPOUND_SHELL_PARSE_AMBIGUOUS",
+            "command_class": "GIT_WRITE_BINDING",
+        }
+    for segment in segments:
+        stripped = segment.strip()
+        if not stripped.lower().startswith("git"):
+            continue
+        _, tail, parse_err, git_dir_override, work_tree_override = parse_git_invocation(
+            stripped, cwd
+        )
+        if parse_err:
+            return {
+                "result": "DENY",
+                "code": parse_err,
+                "command_class": "GIT_WRITE_BINDING",
+            }
+        if git_dir_override or work_tree_override:
+            if _git_tail_is_write(tail or ""):
+                return {
+                    "result": "DENY",
+                    "code": "GIT_ALTERNATE_REPOSITORY_SPEC",
+                    "command_class": "GIT_WRITE_BINDING",
+                }
+        if _git_tail_is_write(tail or ""):
+            sub = _rehydrate_bound_git_write(stripped, cwd)
+            if sub is not None:
+                sub.setdefault("command_class", "GIT_WRITE_BINDING")
+                return sub
+        elif tail and not _git_readonly_tail(tail):
+            return {
+                "result": "DENY",
+                "code": "GIT_SUBCOMMAND_UNVERIFIED_UNDER_BINDING",
+                "command_class": "GIT_WRITE_BINDING",
+            }
+    return None
+
+
 def classify_command(
     command: str,
     *,
@@ -800,6 +876,10 @@ def classify_command(
     worktrees_root: Path,
     registry_doc: Path,
 ) -> dict:
+    bound_compound = _binding_compound_git_admission(command, cwd)
+    if bound_compound is not None:
+        return bound_compound
+
     rehydrate = _rehydrate_bound_git_write(command, cwd=cwd)
     if rehydrate is not None:
         return rehydrate

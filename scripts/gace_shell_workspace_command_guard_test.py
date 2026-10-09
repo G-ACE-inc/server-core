@@ -613,5 +613,115 @@ class HookTests(unittest.TestCase):
         self.assertEqual(out["result"], "DENY")
         self.assertEqual(out["code"], "GIT_ALTERNATE_REPOSITORY_SPEC")
 
+    def test_bound_compound_status_and_commit_denied(self):
+        import os
+        binding = self._full_binding_json(branch="main")
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        for cmd in (
+            "git status && git commit -m test",
+            "git status; git commit -m test",
+            f"git -C {ROOT} status && git -C {ROOT} commit -m test",
+        ):
+            proc = subprocess.run(
+                [
+                    "python3",
+                    str(GUARD),
+                    "--command",
+                    cmd,
+                    "--cwd",
+                    str(ROOT),
+                    "--projects-root",
+                    str(self.projects),
+                    "--worktrees-root",
+                    str(self.worktrees),
+                    "--registry-doc",
+                    str(REGISTRY),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+            )
+            out = json.loads(proc.stdout.strip())
+            self.assertEqual(out["result"], "DENY", cmd)
+            self.assertNotEqual(out["code"], "NOT_WORKSPACE_MUTATION_COMMAND", cmd)
+            self.assertNotEqual(out["code"], "GIT_READONLY_INVOCATION", cmd)
+
+    def test_bound_compound_readonly_git_chain_allow(self):
+        import os
+        binding = self._full_binding_json(branch="wrong-branch")
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        proc = subprocess.run(
+            [
+                "python3",
+                str(GUARD),
+                "--command",
+                "git status && git log -1 --oneline",
+                "--cwd",
+                str(ROOT),
+                "--projects-root",
+                str(self.projects),
+                "--worktrees-root",
+                str(self.worktrees),
+                "--registry-doc",
+                str(REGISTRY),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["result"], "ALLOW")
+        self.assertEqual(out["code"], "GIT_READONLY_INVOCATION")
+
+    def test_bound_compound_hook_stdin_denies_commit_chain(self):
+        import os
+        binding = self._full_binding_json(branch="main")
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        payload = json.dumps({"command": "git status && git commit -m hook", "cwd": str(ROOT)})
+        proc = subprocess.run(
+            ["bash", str(HOOK)],
+            input=payload,
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["permission"], "deny")
+
+    def test_echo_quoted_git_commit_not_compound_blocked(self):
+        import os
+        binding = self._full_binding_json()
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        proc = subprocess.run(
+            [
+                "python3",
+                str(GUARD),
+                "--command",
+                "echo 'git commit -m fake'",
+                "--cwd",
+                str(ROOT),
+                "--projects-root",
+                str(self.projects),
+                "--worktrees-root",
+                str(self.worktrees),
+                "--registry-doc",
+                str(REGISTRY),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["result"], "ALLOW")
+        self.assertEqual(out["code"], "NOT_WORKSPACE_MUTATION_COMMAND")
+
 if __name__ == "__main__":
     unittest.main()
