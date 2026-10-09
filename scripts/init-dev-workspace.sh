@@ -65,6 +65,15 @@ if [[ -L "$PROJECTS_RULES" ]]; then
     echo "[error] ${PROJECTS_RULES} is a symlink to an unexpected target: $(readlink -f "$PROJECTS_RULES")" >&2
     exit 1
   fi
+elif [[ -d "$PROJECTS_RULES" ]]; then
+  # CU2 compatibility: do not replace/delete inactive multi-root redirect stubs.
+  # check() requires a G-ACE user-global rule and verifies each inactive stub.
+  if python3 "${SERVER_CORE_ROOT}/scripts/workspace_command_center_check.py"; then
+    echo "[ok] ${PROJECTS_RULES} verified inactive multi-root stubs"
+  else
+    echo "[error] ${PROJECTS_RULES} already exists and is not the required symlink; no deletion performed" >&2
+    exit 1
+  fi
 elif [[ -e "$PROJECTS_RULES" ]]; then
   echo "[error] ${PROJECTS_RULES} already exists and is not the required symlink; no deletion performed" >&2
   exit 1
