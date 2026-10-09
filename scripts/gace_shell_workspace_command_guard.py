@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
+import os
 import re
 import shlex
 from pathlib import Path
@@ -603,6 +605,53 @@ def _extract_relative_mkdir_paths(command: str) -> list[str]:
     return paths
 
 
+
+
+def _rehydrate_module():
+    spec = importlib.util.spec_from_file_location(
+        "gace_mutation_rehydrate_check",
+        Path(__file__).resolve().with_name("gace_mutation_rehydrate_check.py"),
+    )
+    if spec is None or spec.loader is None:
+        return None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
+    if not os.environ.get("GACE_MUTATION_BINDING", "").strip():
+        return None
+    mod = _rehydrate_module()
+    if mod is None or not mod.is_git_write_command(command):
+        return None
+    try:
+        proc = __import__("subprocess").run(
+            [
+                __import__("sys").executable,
+                str(Path(__file__).resolve().with_name("gace_mutation_rehydrate_check.py")),
+                "--mode",
+                "mutate",
+                "--repo-root",
+                str(cwd),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+    except (OSError, __import__("subprocess").TimeoutExpired):
+        return {"result": "DENY", "code": "REHYDRATE_CHECK_UNAVAILABLE", "command_class": "GIT_WRITE"}
+    try:
+        out = json.loads(proc.stdout.strip() or "{}")
+    except json.JSONDecodeError:
+        return {"result": "DENY", "code": "REHYDRATE_CHECK_INVALID", "command_class": "GIT_WRITE"}
+    if out.get("result") == "DENY":
+        out.setdefault("command_class", "GIT_WRITE")
+        return out
+    return None
+
+
 def classify_command(
     command: str,
     *,
@@ -611,6 +660,10 @@ def classify_command(
     worktrees_root: Path,
     registry_doc: Path,
 ) -> dict:
+    rehydrate = _rehydrate_bound_git_write(command, cwd=cwd)
+    if rehydrate is not None:
+        return rehydrate
+
     gh_verdict = classify_gh(command)
     if gh_verdict is not None and gh_verdict.get("result") in ("ALLOW", "DENY"):
         return gh_verdict

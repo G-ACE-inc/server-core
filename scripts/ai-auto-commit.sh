@@ -90,6 +90,19 @@ if [[ ${#scan_files[@]} -gt 0 ]]; then
   fi
 fi
 
+rehydrate_script="${repo_root}/scripts/gace_mutation_rehydrate_check.py"
+if [[ -f "$rehydrate_script" ]]; then
+  paths_file="$(mktemp)"
+  printf '%s
+' $changed_files >"$paths_file"
+  if ! python3 "$rehydrate_script" --mode mutate --repo-root "$repo_root" --paths-file "$paths_file"; then
+    rm -f "$paths_file"
+    echo "ERROR: mutation rehydrate preflight denied (WRONG_MISSION_OR_CU / SCOPE_DRIFT / repo identity)." >&2
+    exit 1
+  fi
+  rm -f "$paths_file"
+fi
+
 git diff --check
 git add -A
 git diff --cached --check

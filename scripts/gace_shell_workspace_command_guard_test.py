@@ -359,5 +359,62 @@ class HookTests(unittest.TestCase):
         self.assertFalse(Path("/tmp/gace-pr39-scratch").exists())
         self.assertFalse(Path("/home/admin1/server-core/.worktrees/cu39-coverage-probe").exists())
 
+    def test_deny_bound_git_commit_wrong_branch(self):
+        import os
+        binding = '{"repository":"G-ACE-inc/server-core","branch":"main"}'
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        proc = subprocess.run(
+            [
+                "python3",
+                str(GUARD),
+                "--command",
+                "git commit -m test",
+                "--cwd",
+                str(ROOT),
+                "--projects-root",
+                str(self.projects),
+                "--worktrees-root",
+                str(self.worktrees),
+                "--registry-doc",
+                str(REGISTRY),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "WRONG_MISSION_OR_CU")
+
+    def test_allow_bound_git_status_readonly(self):
+        import os
+        binding = '{"repository":"G-ACE-inc/server-core","branch":"wrong-on-purpose"}'
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        proc = subprocess.run(
+            [
+                "python3",
+                str(GUARD),
+                "--command",
+                "git status",
+                "--cwd",
+                str(ROOT),
+                "--projects-root",
+                str(self.projects),
+                "--worktrees-root",
+                str(self.worktrees),
+                "--registry-doc",
+                str(REGISTRY),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["result"], "ALLOW")
+
 if __name__ == "__main__":
-    unittest.main(verbosity=2)
+    unittest.main()
