@@ -620,11 +620,12 @@ def _rehydrate_module():
 
 
 def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
-    if not os.environ.get("GACE_MUTATION_BINDING", "").strip():
-        return None
     mod = _rehydrate_module()
-    if mod is None or not mod.is_git_write_command(command):
+    if mod is None or not mod.binding_raw_present():
         return None
+    if not mod.is_git_write_command(command):
+        return None
+    repo_root = mod.git_repo_root_for_command(command, cwd)
     try:
         proc = __import__("subprocess").run(
             [
@@ -633,7 +634,7 @@ def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
                 "--mode",
                 "mutate",
                 "--repo-root",
-                str(cwd),
+                str(repo_root),
             ],
             capture_output=True,
             text=True,

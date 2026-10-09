@@ -63,21 +63,34 @@ if [[ -z "$(git status --porcelain)" ]]; then
   exit 0
 fi
 
-changed_files="$(git status --porcelain=v1 | sed -E 's/^...//' | sed -E 's/^.* -> //' | sort -u)"
+changed_paths=()
+while IFS= read -r -d '' record; do
+  [[ ${#record} -lt 4 ]] && continue
+  path="${record:3}"
+  case "$path" in
+    *" -> "*) path="${path#* -> }" ;;
+  esac
+  changed_paths+=("$path")
+done < <(git status --porcelain=v1 -z)
 
-blocked_env="$(printf '%s\n' "$changed_files" | grep -E '(^|/)\.env($|\.)' | grep -Ev '(^|/)\.env\.example$' || true)"
+blocked_env=""
+for path in "${changed_paths[@]}"; do
+  if [[ "$path" =~ (^|/)\.env($|\.) ]] && [[ ! "$path" =~ (^|/)\.env\.example$ ]]; then
+    blocked_env+="${path}"$'\n'
+  fi
+done
 if [[ -n "$blocked_env" ]]; then
   echo "ERROR: refusing to commit environment/secret files:" >&2
-  printf '%s\n' "$blocked_env" >&2
+  printf '%s' "$blocked_env" >&2
   exit 1
 fi
 
 scan_files=()
-while IFS= read -r path; do
+for path in "${changed_paths[@]}"; do
   [[ -z "$path" ]] && continue
   [[ -f "$path" ]] || continue
   scan_files+=("$path")
-done <<< "$changed_files"
+done
 
 if [[ ${#scan_files[@]} -gt 0 ]]; then
   secret_hits="$(
@@ -93,8 +106,11 @@ fi
 rehydrate_script="${repo_root}/scripts/gace_mutation_rehydrate_check.py"
 if [[ -f "$rehydrate_script" ]]; then
   paths_file="$(mktemp)"
-  printf '%s
-' $changed_files >"$paths_file"
+  if ((${#changed_paths[@]})); then
+    printf '%s\n' "${changed_paths[@]}" >"$paths_file"
+  else
+    : >"$paths_file"
+  fi
   if ! python3 "$rehydrate_script" --mode mutate --repo-root "$repo_root" --paths-file "$paths_file"; then
     rm -f "$paths_file"
     echo "ERROR: mutation rehydrate preflight denied (WRONG_MISSION_OR_CU / SCOPE_DRIFT / repo identity)." >&2

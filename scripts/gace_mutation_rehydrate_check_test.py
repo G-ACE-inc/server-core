@@ -33,6 +33,26 @@ def run(mode: str, repo: Path, env: dict | None = None, paths: list[str] | None 
     return json.loads(proc.stdout.strip())
 
 
+def full_binding(repo: Path, **overrides: object) -> str:
+    head = subprocess.check_output(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
+    ).strip()
+    branch = subprocess.check_output(
+        ["git", "-C", str(repo), "branch", "--show-current"], text=True
+    ).strip()
+    doc = {
+        "repository": "G-ACE-inc/server-core",
+        "branch": branch,
+        "head": head,
+        "change_unit": "CU39",
+        "mutation_owner": "composer",
+        "exact_next_gate": "CI",
+        "in_scope_path_prefixes": ["scripts/", "f.txt"],
+    }
+    doc.update(overrides)
+    return json.dumps(doc)
+
+
 class RehydrateTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -57,43 +77,45 @@ class RehydrateTests(unittest.TestCase):
         out = run("mutate", self.repo)
         self.assertEqual(out["result"], "ALLOW")
         self.assertEqual(out["code"], "BASELINE_REPOSITORY_VERIFIED")
+        self.assertEqual(out.get("current_mission_verified"), "NO")
+
+    def test_deny_malformed_binding_json(self):
+        out = run("mutate", self.repo, env={"GACE_MUTATION_BINDING": "{invalid"})
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "BINDING_INVALID")
+
+    def test_deny_empty_binding_object(self):
+        out = run("mutate", self.repo, env={"GACE_MUTATION_BINDING": "{}"})
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "BINDING_INCOMPLETE")
+
+    def test_deny_partial_binding_missing_head(self):
+        binding = json.dumps({"repository": "G-ACE-inc/server-core", "branch": "fix/cu"})
+        out = run("mutate", self.repo, env={"GACE_MUTATION_BINDING": binding})
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "BINDING_INCOMPLETE")
 
     def test_deny_wrong_repository_binding(self):
-        binding = json.dumps({"repository": "G-ACE-inc/other", "branch": "fix/cu"})
+        binding = full_binding(self.repo, repository="G-ACE-inc/other")
         out = run("mutate", self.repo, env={"GACE_MUTATION_BINDING": binding})
         self.assertEqual(out["result"], "DENY")
         self.assertEqual(out["code"], "WRONG_MISSION_OR_CU")
 
     def test_deny_wrong_branch_binding(self):
-        binding = json.dumps({"repository": "G-ACE-inc/server-core", "branch": "main"})
+        binding = full_binding(self.repo, branch="main")
         out = run("mutate", self.repo, env={"GACE_MUTATION_BINDING": binding})
         self.assertEqual(out["result"], "DENY")
         self.assertEqual(out["code"], "WRONG_MISSION_OR_CU")
 
-    def test_allow_matching_binding(self):
-        head = subprocess.check_output(
-            ["git", "-C", str(self.repo), "rev-parse", "HEAD"], text=True
-        ).strip()
-        binding = json.dumps(
-            {
-                "repository": "G-ACE-inc/server-core",
-                "branch": "fix/cu",
-                "head": head,
-                "change_unit": "CU39",
-                "mutation_owner": "composer",
-            }
-        )
+    def test_allow_matching_binding_identity_bound(self):
+        binding = full_binding(self.repo)
         out = run("mutate", self.repo, env={"GACE_MUTATION_BINDING": binding})
         self.assertEqual(out["result"], "ALLOW")
-        self.assertEqual(out["code"], "MUTATION_REHYDRATE_VERIFIED")
+        self.assertEqual(out["code"], "IDENTITY_BOUND")
+        self.assertEqual(out.get("current_mission_verified"), "NO")
 
     def test_deny_scope_drift(self):
-        binding = json.dumps(
-            {
-                "repository": "G-ACE-inc/server-core",
-                "in_scope_path_prefixes": ["scripts/"],
-            }
-        )
+        binding = full_binding(self.repo, in_scope_path_prefixes=["scripts/"])
         out = run(
             "mutate",
             self.repo,
@@ -103,8 +125,53 @@ class RehydrateTests(unittest.TestCase):
         self.assertEqual(out["result"], "DENY")
         self.assertEqual(out["code"], "SCOPE_DRIFT_BLOCKED")
 
+    def test_deny_traversal_path_normalized_as_in_scope(self):
+        binding = full_binding(self.repo, in_scope_path_prefixes=["scripts/"])
+        out = run(
+            "mutate",
+            self.repo,
+            env={"GACE_MUTATION_BINDING": binding},
+            paths=["../scripts/x.py"],
+        )
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "SCOPE_PATH_TRAVERSAL")
+
+    def test_deny_sibling_prefix_not_boundary(self):
+        binding = full_binding(self.repo, in_scope_path_prefixes=["src"])
+        out = run(
+            "mutate",
+            self.repo,
+            env={"GACE_MUTATION_BINDING": binding},
+            paths=["src-unauthorized/x.py"],
+        )
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "SCOPE_DRIFT_BLOCKED")
+
+    def test_deny_empty_paths_file_when_scope_required(self):
+        binding = full_binding(self.repo)
+        out = run("mutate", self.repo, env={"GACE_MUTATION_BINDING": binding}, paths=[])
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "SCOPE_PATHS_REQUIRED")
+
+    def _load_mod(self):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location("rh", SCRIPT)
+        assert spec and spec.loader
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_git_c_commit_is_write(self):
+        mod = self._load_mod()
+        self.assertTrue(mod.is_git_write_command("git -C /tmp/repo commit -m x"))
+
+    def test_git_c_status_is_not_write(self):
+        mod = self._load_mod()
+        self.assertFalse(mod.is_git_write_command("git -C /tmp/repo status"))
+
     def test_emit_checkpoint(self):
-        binding = json.dumps({"change_unit": "CU39", "exact_next_gate": "CI readback"})
+        binding = full_binding(self.repo)
         env = os.environ.copy()
         env["GACE_MUTATION_BINDING"] = binding
         proc = subprocess.run(
@@ -115,7 +182,7 @@ class RehydrateTests(unittest.TestCase):
             env=env,
         )
         self.assertIn("gace-current-checkpoint:v1", proc.stdout)
-        self.assertIn("CU39", proc.stdout)
+        self.assertIn("CURRENT_MISSION_VERIFIED: NO", proc.stdout)
 
 
 if __name__ == "__main__":

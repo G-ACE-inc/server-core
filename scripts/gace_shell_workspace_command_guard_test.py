@@ -359,9 +359,26 @@ class HookTests(unittest.TestCase):
         self.assertFalse(Path("/tmp/gace-pr39-scratch").exists())
         self.assertFalse(Path("/home/admin1/server-core/.worktrees/cu39-coverage-probe").exists())
 
+
+    def _full_binding_json(self, **overrides):
+        head = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+        branch = subprocess.check_output(["git", "-C", str(ROOT), "branch", "--show-current"], text=True).strip()
+        doc = {
+            "repository": "G-ACE-inc/server-core",
+            "branch": branch,
+            "head": head,
+            "change_unit": "CU39",
+            "mutation_owner": "composer",
+            "exact_next_gate": "CI",
+            "in_scope_path_prefixes": ["scripts/"],
+        }
+        doc.update(overrides)
+        import json as _json
+        return _json.dumps(doc)
+
     def test_deny_bound_git_commit_wrong_branch(self):
         import os
-        binding = '{"repository":"G-ACE-inc/server-core","branch":"main"}'
+        binding = self._full_binding_json(branch="main")
         env = os.environ.copy()
         env["GACE_MUTATION_BINDING"] = binding
         proc = subprocess.run(
@@ -390,7 +407,7 @@ class HookTests(unittest.TestCase):
 
     def test_allow_bound_git_status_readonly(self):
         import os
-        binding = '{"repository":"G-ACE-inc/server-core","branch":"wrong-on-purpose"}'
+        binding = self._full_binding_json(branch="wrong-on-purpose")
         env = os.environ.copy()
         env["GACE_MUTATION_BINDING"] = binding
         proc = subprocess.run(
@@ -415,6 +432,64 @@ class HookTests(unittest.TestCase):
         )
         out = json.loads(proc.stdout.strip())
         self.assertEqual(out["result"], "ALLOW")
+
+    def test_deny_bound_git_dash_c_commit_wrong_branch(self):
+        import os
+        binding = self._full_binding_json(branch="main")
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        proc = subprocess.run(
+            [
+                "python3",
+                str(GUARD),
+                "--command",
+                f"git -C {ROOT} commit -m test",
+                "--cwd",
+                str(ROOT),
+                "--projects-root",
+                str(self.projects),
+                "--worktrees-root",
+                str(self.worktrees),
+                "--registry-doc",
+                str(REGISTRY),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "WRONG_MISSION_OR_CU")
+
+    def test_allow_bound_git_dash_c_status_readonly(self):
+        import os
+        binding = self._full_binding_json(branch="wrong-on-purpose")
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        proc = subprocess.run(
+            [
+                "python3",
+                str(GUARD),
+                "--command",
+                f"git -C {ROOT} status",
+                "--cwd",
+                str(ROOT),
+                "--projects-root",
+                str(self.projects),
+                "--worktrees-root",
+                str(self.worktrees),
+                "--registry-doc",
+                str(REGISTRY),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["result"], "ALLOW")
+
 
 if __name__ == "__main__":
     unittest.main()
