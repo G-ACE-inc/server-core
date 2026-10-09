@@ -96,6 +96,10 @@ A nested linked Git worktree is **permitted** and must not be mistaken for a new
 
 Each delegated prompt must carry the **nested allowed / sibling denied** rule, check path/branch/Git-common-dir after execution, and report `CREATED_NEW_TOP_LEVEL_SIBLING=NO`. Do not ask another worker to create a denied sibling instead. Do not change/move/delete existing orphan locations during the other CHAT's parent consolidation; keep its mutation ownership exclusive. Executor Rules [#16](https://github.com/G-ACE-inc/server-core/issues/16), [#17](https://github.com/G-ACE-inc/server-core/issues/17) and detailed Workspace [§4.1](G_ACE_WORKSPACE.md#41-canonical-parent-project-and-branchworktree-isolation-master-clarification-2026-10-09) control this gate.
 
+### 3.2 Current/work-location preflight before new source or workspace (mandatory)
+
+Route every new CU, Branch, worktree, Module or same-purpose reimplementation through the **existing** `docs/G_ACE_WORKSPACE.md` §4.2 handoff gate. Read the owning GitHub Project Current/Issue and verify active CU, mutation owner, existing PR/branch, exact HEAD, canonical parent and reuse candidates **before** selecting a mutation location. Missing or conflicting ownership/location means `PREFLIGHT_LOCATION_UNVERIFIED`: suspend only the unsafe creation/mutation; continue read-only research or independent authorized tasks. Never create a top-level sibling as a substitute. Before handing work to Codex/Composer, supply the checked location, owned paths, active CU and Exact Next Gate; record and read back actual branch/HEAD, dirty/stash status (or UNKNOWN) on handoff. Do not create another tracker or duplicate the Current Issue.
+
 ## 4. Target Repository Loading
 
 対象Projectへ入った後はREADMEを入口とする。
