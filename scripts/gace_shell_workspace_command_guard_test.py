@@ -633,7 +633,7 @@ class HookTests(unittest.TestCase):
     def test_bound_complex_shell_and_interpreter_denied_as_one_gate(self):
         for cmd, expected in (
             ("git status | git commit -m unsafe", "COMPOUND_SHELL_PARSE_AMBIGUOUS"),
-            ("git status\\ngit commit -m unsafe".replace("\\\\n", "\\n"), "GIT_SHELL_SYNTAX_UNVERIFIED"),
+            ("git status" + chr(10) + "git commit -m unsafe", "GIT_SHELL_SYNTAX_UNVERIFIED"),
             ("git status $(git commit -m unsafe)", "COMPOUND_SHELL_PARSE_AMBIGUOUS"),
             ("bash -c 'git commit -m unsafe'", "GIT_INTERPRETER_COMMAND_UNVERIFIED"),
             ("sh -c 'git status && git commit -m unsafe'", "GIT_INTERPRETER_COMMAND_UNVERIFIED"),

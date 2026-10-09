@@ -78,7 +78,7 @@ GIT_READONLY_TAIL_PATTERNS = (
     re.compile(r"^grep\b", re.I),
     re.compile(r"^blame\b", re.I),
     re.compile(r"^describe\b", re.I),
-    re.compile(r"^fetch\b", re.I),
+    # fetch updates FETCH_HEAD/refs; it is not a readonly command.
     re.compile(r"^stash\s+list\b", re.I),
     re.compile(r"^config\s+--get\b", re.I),
     re.compile(r"^config\s+--list\b", re.I),
