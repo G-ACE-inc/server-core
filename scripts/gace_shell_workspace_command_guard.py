@@ -62,24 +62,34 @@ GH_READONLY_SUBCOMMAND_PREFIXES = (
     "workflow list",
 )
 
-READONLY_GIT_PREFIXES = (
-    "git status",
-    "git diff",
-    "git log",
-    "git show",
-    "git branch",
-    "git rev-parse",
-    "git remote",
-    "git fetch",
-    "git ls-files",
-    "git ls-remote",
-    "git grep",
-    "git blame",
-    "git describe",
-    "git tag",
-    "git stash list",
-    "git config --get",
-    "git config --list",
+GIT_READONLY_TAIL_PATTERNS = (
+    re.compile(r"^status\b", re.I),
+    re.compile(r"^diff\b", re.I),
+    re.compile(r"^log\b", re.I),
+    re.compile(r"^show\b", re.I),
+    re.compile(r"^rev-parse\b", re.I),
+    re.compile(r"^ls-files\b", re.I),
+    re.compile(r"^ls-remote\b", re.I),
+    re.compile(r"^grep\b", re.I),
+    re.compile(r"^blame\b", re.I),
+    re.compile(r"^describe\b", re.I),
+    re.compile(r"^fetch\b", re.I),
+    re.compile(r"^stash\s+list\b", re.I),
+    re.compile(r"^config\s+--get\b", re.I),
+    re.compile(r"^config\s+--list\b", re.I),
+    re.compile(r"^branch\s*$", re.I),
+    re.compile(r"^branch\s+-[aAvv]", re.I),
+    re.compile(r"^branch\s+--list\b", re.I),
+    re.compile(r"^branch\s+--show-current\b", re.I),
+    re.compile(r"^branch\s+--contains\b", re.I),
+    re.compile(r"^branch\s+--merged\b", re.I),
+    re.compile(r"^branch\s+--no-merged\b", re.I),
+    re.compile(r"^remote\s*$", re.I),
+    re.compile(r"^remote\s+-v\b", re.I),
+    re.compile(r"^remote\s+show\b", re.I),
+    re.compile(r"^tag\s*$", re.I),
+    re.compile(r"^tag\s+-l\b", re.I),
+    re.compile(r"^tag\s+--list\b", re.I),
 )
 
 INTERPRETER_C = re.compile(
@@ -270,54 +280,36 @@ def classify_gh(command: str) -> dict | None:
             return None
     if mutators_in_executable(command):
         return {"result": "DENY", "code": "GH_UNKNOWN_WITH_EXECUTABLE_MUTATOR"}
-    return {"result": "ALLOW", "code": "GH_NO_EXECUTABLE_MUTATOR"}
+    return {"result": "DENY", "code": "GH_UNKNOWN_SUBCOMMAND"}
+
+
+def _git_tail(stripped: str) -> str:
+    tail = stripped
+    while True:
+        m = re.match(r"^git\s+(?:-C\s+\S+\s+|-c\s+\S+\s+)+", tail, re.I)
+        if not m:
+            break
+        tail = tail[m.end() :]
+    if tail.lower().startswith("git "):
+        tail = tail[4:]
+    return tail.strip()
 
 
 def _git_readonly_tail(tail: str) -> bool:
-    t = tail.strip().lower()
-    for prefix in READONLY_GIT_PREFIXES:
-        p = prefix[4:].strip() if prefix.startswith("git ") else prefix
-        if t == p or t.startswith(p + " "):
+    for pattern in GIT_READONLY_TAIL_PATTERNS:
+        if pattern.match(tail):
             return True
-    readonly_ops = (
-        "status",
-        "diff",
-        "log",
-        "show",
-        "branch",
-        "rev-parse",
-        "remote",
-        "fetch",
-        "ls-files",
-        "ls-remote",
-        "grep",
-        "blame",
-        "describe",
-        "tag",
-        "stash list",
-        "config --get",
-        "config --list",
-    )
-    first = t.split()[0] if t.split() else ""
-    if first in readonly_ops:
-        return True
-    if t.startswith("status") or t.startswith("diff") or t.startswith("log"):
-        return True
     return False
 
 
 def classify_git(command: str) -> dict | None:
     stripped = command.strip()
-    lowered = stripped.lower()
-    if lowered.startswith("git -c ") or lowered.startswith("git -C "):
-        m = re.match(r"^git\s+-[Cc]\s+\S+\s+(.*)$", stripped, re.I | re.DOTALL)
-        if m and _git_readonly_tail(m.group(1)):
-            if not mutators_in_executable(command):
-                return {"result": "ALLOW", "code": "GIT_READONLY_INVOCATION"}
-    for prefix in READONLY_GIT_PREFIXES:
-        if lowered.startswith(prefix) or lowered == prefix.strip():
-            if not mutators_in_executable(command):
-                return {"result": "ALLOW", "code": "GIT_READONLY_INVOCATION"}
+    if not stripped.lower().startswith("git"):
+        return None
+    tail = _git_tail(stripped)
+    if _git_readonly_tail(tail):
+        if not mutators_in_executable(command):
+            return {"result": "ALLOW", "code": "GIT_READONLY_INVOCATION"}
     return None
 
 
@@ -398,6 +390,11 @@ def under(child: Path, parent: Path) -> bool:
         return False
 
 
+def _is_nested_full_git_dir(target: Path) -> bool:
+    git_entry = target / ".git"
+    return git_entry.is_dir()
+
+
 def classify_path(
     target: Path,
     *,
@@ -415,11 +412,13 @@ def classify_path(
     if not parts:
         return "ALLOW", None
     top = parts[0]
-    if top in registered:
+    if top in registered and len(parts) == 1:
         return "ALLOW", None
     for name in registered:
         parent = projects_root / name
         if parent.is_dir() and under(target, parent):
+            if len(parts) >= 2 and parts[0] == name and _is_nested_full_git_dir(target):
+                return "DENY", "DERIVED_REPO_INSIDE_PARENT"
             return "ALLOW", None
     if target.exists() and target.is_dir():
         return "DENY", "UNREGISTERED_TOP_LEVEL_PROJECT_PATH"
@@ -433,6 +432,35 @@ def _has_executable_mutators(command: str) -> bool:
     if script and mutators_in_executable(script):
         return True
     return False
+
+
+def _surface_has_git_clone_or_init(command: str) -> tuple[bool, bool]:
+    surface = executable_scan_surface(command).lower()
+    return (
+        bool(re.search(r"\bgit\s+clone\b", surface)),
+        bool(re.search(r"\bgit\s+init\b", surface)),
+    )
+
+
+def _extract_relative_mkdir_paths(command: str) -> list[str]:
+    surface = executable_scan_surface(command)
+    paths: list[str] = []
+    try:
+        tokens = shlex.split(surface)
+    except ValueError:
+        tokens = surface.split()
+    for idx, token in enumerate(tokens):
+        if token == "mkdir" and idx + 1 < len(tokens):
+            nxt = tokens[idx + 1]
+            if nxt in ("-p", "-m", "-v") and idx + 2 < len(tokens):
+                nxt = tokens[idx + 2]
+            if not nxt.startswith("-") and ".." not in nxt:
+                paths.append(nxt)
+        if token == "mkdir" and idx + 2 < len(tokens) and tokens[idx + 1] == "-p":
+            nxt = tokens[idx + 2]
+            if not nxt.startswith("-") and ".." not in nxt:
+                paths.append(nxt)
+    return paths
 
 
 def classify_command(
@@ -468,15 +496,31 @@ def classify_command(
         registry_doc,
         Path(__file__).resolve().parents[1] / "operations" / "master-internal-repositories.json",
     )
+    is_clone, is_init = _surface_has_git_clone_or_init(command)
     paths = extract_paths(command)
+    paths.extend(_extract_relative_mkdir_paths(command))
+    seen: set[str] = set()
+    paths = [p for p in paths if not (p in seen or seen.add(p))]
     if not paths:
         return {"result": "DENY", "code": "WORKSPACE_MUTATION_WITHOUT_RESOLVED_PATH"}
+    projects_root_resolved = projects_root.resolve()
     for raw in paths:
-        if ".." in raw or raw.startswith("./") and ".." in raw:
+        if ".." in raw:
             return {"result": "DENY", "code": "PATH_TRAVERSAL", "path": raw, "command_class": "WORKSPACE_CREATING"}
         resolved = resolve_path(raw, cwd)
         if resolved is None:
             return {"result": "DENY", "code": "PATH_UNRESOLVED"}
+        if under(resolved, projects_root_resolved):
+            rel = resolved.relative_to(projects_root_resolved)
+            if len(rel.parts) >= 2 and (is_clone or is_init):
+                parent_name = rel.parts[0]
+                if parent_name in registered and ".worktrees" not in resolved.parts:
+                    return {
+                        "result": "DENY",
+                        "code": "DERIVED_REPO_INSIDE_PARENT",
+                        "path": str(resolved),
+                        "command_class": "WORKSPACE_CREATING",
+                    }
         verdict, code = classify_path(
             resolved,
             projects_root=projects_root,
@@ -493,9 +537,33 @@ def classify_command(
     return {"result": "ALLOW", "code": "WORKSPACE_PATHS_VERIFIED"}
 
 
+def parse_hook_payload(raw: str) -> tuple[str | None, Path | None, str | None]:
+    if not raw.strip():
+        return None, None, "HOOK_INPUT_EMPTY"
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return None, None, "HOOK_INPUT_INVALID_JSON"
+    if not isinstance(data, dict):
+        return None, None, "HOOK_INPUT_INVALID_SHAPE"
+    command = data.get("command")
+    if not isinstance(command, str) or not command.strip():
+        return None, None, "HOOK_INPUT_MISSING_COMMAND"
+    cwd_raw = (
+        data.get("cwd")
+        or data.get("workingDirectory")
+        or data.get("working_directory")
+        or data.get("workspaceFolder")
+        or "/home/admin1"
+    )
+    if not isinstance(cwd_raw, str) or not cwd_raw.strip():
+        return None, None, "HOOK_INPUT_INVALID_CWD"
+    return command.strip(), Path(cwd_raw).expanduser(), None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--command", required=True)
+    parser.add_argument("--command")
     parser.add_argument("--cwd", default="/home/admin1")
     parser.add_argument("--projects-root", type=Path, default=DEFAULT_PROJECTS)
     parser.add_argument("--worktrees-root", type=Path, default=DEFAULT_WORKTREES)
@@ -505,10 +573,29 @@ def main() -> int:
         default=Path(__file__).resolve().parents[1] / "docs" / "WORKSPACE_REGISTRY.md",
     )
     parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--hook-stdin",
+        action="store_true",
+        help="Read Cursor beforeShellExecution JSON from stdin and classify once.",
+    )
     args = parser.parse_args()
+
+    if args.hook_stdin:
+        command, cwd, err = parse_hook_payload(__import__("sys").stdin.read())
+        if err:
+            out = {"result": "DENY", "code": err, "command_class": "HOOK_INPUT"}
+            print(json.dumps(out, sort_keys=True))
+            return 1
+        assert command is not None and cwd is not None
+    else:
+        if not args.command:
+            parser.error("--command is required unless --hook-stdin is set")
+        command = args.command
+        cwd = Path(args.cwd)
+
     out = classify_command(
-        args.command,
-        cwd=Path(args.cwd),
+        command,
+        cwd=cwd,
         projects_root=args.projects_root,
         worktrees_root=args.worktrees_root,
         registry_doc=args.registry_doc,

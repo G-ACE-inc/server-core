@@ -153,5 +153,128 @@ class GuardTests(unittest.TestCase):
         self.assertEqual(out["result"], "DENY")
         self.assertEqual(out["code"], "PATH_TRAVERSAL")
 
+
+    def test_deny_git_branch_rename_as_non_readonly(self):
+        out = run("git branch -M evil-main", self.projects, self.worktrees)
+        self.assertEqual(out["result"], "ALLOW")
+        self.assertEqual(out["code"], "NOT_WORKSPACE_MUTATION_COMMAND")
+
+    def test_deny_git_remote_add_as_non_readonly(self):
+        out = run("git remote add origin https://example.com/r.git", self.projects, self.worktrees)
+        self.assertEqual(out["result"], "ALLOW")
+        self.assertEqual(out["code"], "NOT_WORKSPACE_MUTATION_COMMAND")
+
+    def test_deny_gh_unknown_subcommand(self):
+        out = run("gh mystery-do-thing", self.projects, self.worktrees)
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "GH_UNKNOWN_SUBCOMMAND")
+
+    def test_deny_git_clone_inside_registered_parent(self):
+        parent = self.projects / "TGserver"
+        dest = parent / "nested-clone"
+        out = run(
+            f"git clone https://example.com/r.git {dest}",
+            self.projects,
+            self.worktrees,
+            cwd=str(parent),
+        )
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "DERIVED_REPO_INSIDE_PARENT")
+
+    def test_deny_relative_mkdir_unregistered_from_projects_cwd(self):
+        out = run(
+            "mkdir -p sibling-evil",
+            self.projects,
+            self.worktrees,
+            cwd=str(self.projects),
+        )
+        self.assertEqual(out["result"], "DENY")
+
+    def test_allow_relative_mkdir_inside_registered_parent(self):
+        parent = self.projects / "TGserver"
+        out = run(
+            "mkdir -p .worktrees/cu9",
+            self.projects,
+            self.worktrees,
+            cwd=str(parent),
+        )
+        self.assertEqual(out["result"], "ALLOW")
+
+    def test_concurrent_classifier_isolation(self):
+        import concurrent.futures
+
+        cmds = ["git status"] + [f"mkdir -p {self.projects}/evil-{i}" for i in range(6)]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            results = list(
+                pool.map(
+                    lambda c: run(c, self.projects, self.worktrees),
+                    cmds,
+                )
+            )
+        self.assertEqual(results[0]["result"], "ALLOW")
+        for r in results[1:]:
+            self.assertEqual(r["result"], "DENY")
+
+
+HOOK = ROOT / ".cursor/hooks/before-shell-workspace-guard.sh"
+
+
+class HookTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.projects = Path(self.temp.name) / "projects"
+        self.worktrees = Path(self.temp.name) / "worktrees"
+        self.projects.mkdir()
+        self.worktrees.mkdir()
+        (self.projects / "TGserver").mkdir()
+
+    def run_hook(self, payload: str) -> dict:
+        proc = subprocess.run(
+            ["bash", str(HOOK)],
+            input=payload,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0 if json.loads(proc.stdout).get("permission") == "allow" else 2)
+        return json.loads(proc.stdout.strip())
+
+    def test_hook_deny_empty_command(self):
+        out = self.run_hook('{"command":""}')
+        self.assertEqual(out["permission"], "deny")
+
+    def test_hook_deny_invalid_json(self):
+        out = self.run_hook('not-json')
+        self.assertEqual(out["permission"], "deny")
+
+    def test_hook_allow_git_status(self):
+        out = self.run_hook('{"command":"git status","cwd":"/home/admin1/server-core"}')
+        self.assertEqual(out["permission"], "allow")
+
+    def test_hook_uses_cwd_for_relative_path(self):
+        payload = json.dumps(
+            {
+                "command": "mkdir -p sibling-evil-cu8-test",
+                "cwd": "/home/admin1/projects",
+            }
+        )
+        out = self.run_hook(payload)
+        self.assertEqual(out["permission"], "deny")
+
+    def test_hook_concurrent_no_shared_tmp(self):
+        import concurrent.futures
+
+        payloads = [
+            json.dumps({"command": "git status", "cwd": "/home/admin1/server-core"}),
+            json.dumps({"command": "mkdir -p /home/admin1/projects/evil-concurrent-cu8", "cwd": "/home/admin1/projects"}),
+        ] * 4
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            outs = list(pool.map(self.run_hook, payloads))
+        self.assertTrue(any(o.get("permission") == "allow" for o in outs))
+        self.assertTrue(any(o.get("permission") == "deny" for o in outs))
+        hook_src = (ROOT / ".cursor/hooks/before-shell-workspace-guard.sh").read_text(encoding="utf-8")
+        self.assertNotIn("gace-shell-guard-last.json", hook_src)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
