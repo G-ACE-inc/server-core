@@ -38,6 +38,9 @@ for token in ("Issue #16", "Issue #17", "GitHub Project #1", "server-core"):
     assert token in doc
 
 
+workspace = (ROOT / "docs/G_ACE_WORKSPACE.md").read_text(encoding="utf-8")
+router = (ROOT / "docs/LOAD_SCOPE.md").read_text(encoding="utf-8")
+
 # The one canonical Current/work-location gate must be routed before source creation.
 for required in (
     "## 4.2 Mandatory work location and reuse handoff gate",
