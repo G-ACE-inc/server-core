@@ -239,6 +239,11 @@ jobs:
           grep -q 'already exists and is not the required symlink; no deletion performed' scripts/init-dev-workspace.sh
           grep -q 'unexpected target' scripts/init-dev-workspace.sh
 
+      - name: Workspace multi-root rule wiring regression
+        run: |
+          set -euo pipefail
+          python3 scripts/workspace_command_center_check_test.py
+
       - name: Workspace MCP manifest schema
         run: |
           set -euo pipefail
