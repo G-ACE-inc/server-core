@@ -37,4 +37,42 @@ doc = (ROOT / "docs/GITHUB_PROJECT_RULE_PLANE.md").read_text(encoding="utf-8")
 for token in ("Issue #16", "Issue #17", "GitHub Project #1", "server-core"):
     assert token in doc
 
+# Static source regression checks only: effective client loading and Host enforcement
+# need separate live E2E evidence. Keep the routine canonical in the Workspace doc.
+workspace = (ROOT / "docs/G_ACE_WORKSPACE.md").read_text(encoding="utf-8")
+router = (ROOT / "docs/LOAD_SCOPE.md").read_text(encoding="utf-8")
+for token in (
+    "## 6. Development Routine",
+    "### Mission / Change Unit pre-dispatch",
+    "MISSION",
+    "IN_SCOPE / OUT_OF_SCOPE",
+    "CURRENT_CHANGE_UNIT",
+    "MUTATION_OWNER",
+    "ACCEPTANCE",
+    "EXACT_NEXT_GATE",
+    "CURRENT_REFERENCE",
+    "SCOPE_DRIFT_BLOCKED",
+    "block only that mismatched mutation/delegation",
+):
+    assert token in workspace, ("missing routine/mission preflight", token)
+
+for token in (
+    "## Shared Work Routine ownership and scope-drift gate",
+    "G_ACE_WORKSPACE.md",
+    "Wave / Gate / Change Unit / Mutation Owner",
+    "owning canonical Current Issue",
+    "only its own",
+):
+    assert token in doc, ("missing shared routine routing", token)
+
+assert "Project-list containment gate" in router
+assert "TOP_LEVEL_CHILD_PROJECT_BLOCKED" in router
+assert "ALLOWED_IN_PARENT=" in workspace
+assert "DENIED_AS_SIBLING=" in workspace
+assert "worktree" in workspace.lower()
+assert "RULE_PLANE_CURRENT=NOT_VERIFIED" in (ROOT / ".cursor/rules/00_agent_runtime.mdc").read_text(encoding="utf-8")
+assert set(json.loads((ROOT / "operations/github-project-control.json").read_text(encoding="utf-8"))["allowed_fields"]) == {
+    "Wave", "Gate", "Change Unit", "Mutation Owner"
+}
+
 print("GITHUB_PROJECT_RULE_PLANE=PASS")
