@@ -17,7 +17,8 @@ Do **not** treat Actions green alone as Runtime PASS. Do **not** rerun completed
 | `route_debugai_live_read` | [debug-ai #41](https://github.com/seigo-gace/debug-ai/issues/41) | `seigo-gace/debug-ai` | `.github/chatgpt-live-api-target.json` |
 | `route_asteria_baseline_probe` | [asteria #6](https://github.com/seigo-gace/asteria/issues/6) | `seigo-gace/debug-ai` | `.github/asteria-baseline-probe-target.json` |
 
-Branch (both): `feat/tgserver-async-log-sink-20261003`
+`route_debugai_live_read` branches: `feat/tgserver-async-log-sink-20261003` and `feat/chat-gitops-request-20261009`.  
+`route_asteria_baseline_probe` branch: `feat/tgserver-async-log-sink-20261003`.
 
 ## CHAT final E2E handoff (Composer does not execute CHAT)
 
@@ -82,5 +83,13 @@ does not import the server-core route JSON, so **PR36 dynamic route-enforcement
 E2E is still NOT VERIFIED**. Integration with actual Project-item/Host admission
 is a separate approval/scope gate; no new infrastructure, Shell, credential or
 permission is authorized by these Source edits.
+
+### Retained across the PR #36 / #37 integration
+
+- `system.projects_inventory` remains in the catalog and in `workflow_supported_command_ids` with effect `read_only`. Historical inventory E2E run `37875336749` is not a new runtime acceptance.
+- `system.project_file_inspect` remains in the catalog. Its file-inspect E2E is still pending (`feat/host-project-file-inspect-20261009` @ `aa10a4c`), so static dispatch fail-closes with `COMMAND_UNSUPPORTED_BY_TRIGGER`.
+- `project.git_recent_commits` remains trigger-supported and `read_only` on `feat/chat-gitops-request-20261009`.
+- Master-internal `allowed_paths` still includes the host inspect/inventory scripts and runner paths added on PR #36.
+- Host authorization stays separate from this static preflight (`host_authorization_verified=false`).
 
 **No merge/Host mutation** is performed by this documentation or parser CU.

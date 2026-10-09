@@ -69,12 +69,44 @@ def test_real_workflow_command_support():
         assert dispatch(command_id=command)["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
 
 
-
 def test_existing_current_live_branch_and_git_history():
     assert dispatch(branch="feat/chat-gitops-request-20261009")["result"] == "PASS"
     assert dispatch(command_id="project.git_recent_commits", branch="feat/chat-gitops-request-20261009")["result"] == "PASS"
     assert dispatch(command_id="project.git_recent_commits", branch="feat/chat-gitops-request-20261009")["read_only"] is True
     assert dispatch(command_id="project.git_recent_commits", branch="main")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
+
+
+def test_pr36_registry_and_host_paths_retained():
+    doc = json.loads((ROOT / "operations/github-project-chat-host-routes.json").read_text(encoding="utf-8"))
+    route = next(item for item in doc["routes"] if item["id"] == "route_debugai_live_read")
+    allowed = route["server_command"]["allowed_command_ids"]
+    supported = route["workflow_supported_command_ids"]
+    for command_id in (
+        "system.projects_inventory",
+        "system.project_file_inspect",
+        "project.git_recent_commits",
+    ):
+        assert command_id in allowed
+    assert "system.projects_inventory" in supported
+    assert route["command_effects"]["system.projects_inventory"] == "read_only"
+    inventory = dispatch(command_id="system.projects_inventory", branch="feat/chat-gitops-request-20261009")
+    assert inventory["result"] == "PASS"
+    assert inventory["static_preflight_only"] is True
+    assert inventory["host_authorization_verified"] is False
+    assert inventory["read_only"] is True
+    assert dispatch(command_id="system.project_file_inspect")["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
+    registry = json.loads((ROOT / "operations/master-internal-repositories.json").read_text(encoding="utf-8"))
+    paths = registry["repositories"][0]["allowed_paths"]
+    for path in (
+        "server/control/server-command-request.js",
+        "scripts/host-workspace-file-inspect.py",
+        "scripts/host-workspace-inventory.py",
+        "scripts/host-server-command-runner.sh",
+        "scripts/chatgpt-bounded-server-read.cjs",
+        "operations/host-admitted-workspace-entries.json",
+    ):
+        assert path in paths
+
 
 def test_asteria_effect_not_readonly():
     a = dict(

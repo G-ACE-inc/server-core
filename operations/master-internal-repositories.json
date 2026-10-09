@@ -75,10 +75,16 @@
         "ops/tests/",
         "server/tests/",
         "server/control/gitops-request.js",
+        "server/control/server-command-request.js",
         "scripts/host-gitops-runner.sh",
         "scripts/host-gitops-delegation.sh",
         "scripts/host-gitops-master-internal.sh",
         "scripts/host-gitops-register-master.sh",
+        "scripts/host-workspace-file-inspect.py",
+        "scripts/host-workspace-inventory.py",
+        "scripts/host-server-command-runner.sh",
+        "scripts/chatgpt-bounded-server-read.cjs",
+        "operations/host-admitted-workspace-entries.json",
         ".github/workflows/ci.yml",
         "scripts/host-asteria-baseline-probe.sh"
       ]
