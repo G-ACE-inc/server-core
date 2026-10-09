@@ -58,6 +58,22 @@ for required in (
 ):
     assert required in router, required
 
+# Keep the existing design authority attached to the execution route.
+# These are contract presence checks, not proof that an agent read a specific design.
+for marker in (
+    "### Design-alignment checks within the existing Work Routine",
+    "DESIGN_BASELINE_NOT_VERIFIED",
+    "DESIGN_DRIFT_REVIEW_REQUIRED",
+    "initial diff, before PR/merge",
+):
+    assert marker in workspace, ("WORK_ROUTINE_DESIGN_GATE_MISSING", marker)
+for marker in (
+    "### Design baseline / anti-drift routing",
+    "DESIGN_BASELINE_NOT_VERIFIED",
+    "DESIGN_DRIFT_REVIEW_REQUIRED",
+):
+    assert marker in router, ("DESIGN_ROUTER_GATE_MISSING", marker)
+
 # PREFLIGHT_OWNER_AND_REUSE_CONTRACT: existing owners, no duplicate rules or sibling projects.
 workspace = (ROOT / "docs/G_ACE_WORKSPACE.md").read_text(encoding="utf-8")
 router = (ROOT / "docs/LOAD_SCOPE.md").read_text(encoding="utf-8")
