@@ -155,6 +155,10 @@ server-core README
   -> target Project authority / Source / Test
 ```
 
+### Design baseline / anti-drift routing
+
+For a source-changing CU, resolve the owning repository's canonical Design/Specification link from its Current/README before editing, fetch only relevant sections and prior Design Delta, and check proposed Source/Test against CU acceptance. Recheck at diff/PR and on scope changes using the existing `docs/G_ACE_WORKSPACE.md` §6 Design-alignment step. An inaccessible baseline is `DESIGN_BASELINE_NOT_VERIFIED`; a conflicting change is `DESIGN_DRIFT_REVIEW_REQUIRED`. Do not improvise a substitute design, claim compliance without reading, or create another design tracker. Continue independent read-only work while the affected mutation awaits resolution.
+
 ## 5. Reuse Search Order
 
 新規Code / Module / Tool / Document作成前に必要範囲で確認する。
