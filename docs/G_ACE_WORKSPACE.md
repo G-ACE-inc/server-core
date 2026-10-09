@@ -139,6 +139,33 @@ server-core command center
   -> deploy/runtime only when authorized
 ```
 
+### Rule versus System — enforcement allocation
+
+A rule describing a **judgment** remains in its owning profile or this single shared routine. A rule describing an **objective machine predicate** must be enforced at the existing component that owns the corresponding effect. Do not create a parallel router, workflow, MCP or control-plane schema merely to relocate prose.
+
+| Required outcome | Policy/decision owner | Existing machine enforcement location | Current verification boundary |
+|---|---|---|---|
+| Preserve Master Mission, Scope and acceptance across CHAT/agents | Project #1 + owning Current Issue; #17 orchestration | Existing pre-dispatch admission of the owning executor/Host, after an exact Current read | **NOT_VERIFIED** for a real Mission/CU mismatch denial across all routes; static routine test is not admission |
+| One CU, one mutation writer; exact Repository/Branch/HEAD/effect | Owning Current + shared Work Routine | Existing bounded Host/DebugAI admission and existing GitHub Project Control transport | The latter validates only Wave, Gate, Change Unit and Mutation Owner; it does **not** validate the full Mission |
+| Protect actual GitHub/Host/Runtime authorization and approval | `SERVER_CORE_PROTOCOL.md` and canonical registry | Existing approved execution/receipt guards and CI; never trust user-supplied `human_approved` | Enrollment and real runtime evidence are repository-specific, not universal |
+| Reject unregistered derivative sibling while allowing nested worktrees and registered independent parents | Shared §4.1 and `LOAD_SCOPE.md` | Existing workspace initializer and owning Host filesystem admission | Existing `init-dev-workspace.sh --project` still creates an unverified top-level directory; mechanical coverage **NOT_VERIFIED** |
+| Verify adapter/profile version and prevent stale duplicate rule injection | #16/#17 + Rule Plane owner | Existing `server-core-guard` static checks, then actual Cursor/Codex/Copilot session loader | Source checks cannot prove live active rules; per-consumer runtime readback required |
+| Report Source/CI/Deploy/Runtime truthfully and avoid premature DONE | Owning Current + shared completion contract | Existing exact SHA CI/readback and Host runtime status; persist evidence in canonical Issue | Any missing layer remains UNKNOWN/NOT_VERIFIED, never inferred from a green CI |
+| Prevent unsafe file/Secret/destructive operations | `SERVER_CORE_PROTOCOL.md`, shared Secret/Registry contracts | Existing effect/path/permission admission at the operation boundary | Never reduce the current protected operation set or expand permanent delegation |
+
+**Revised shared routine (retains all necessary gates, removes duplicated decision loops):**
+
+```text
+1. REHYDRATE: manifest/profile -> owning GitHub Current -> exact repo/branch/HEAD/owner.
+2. DISPATCH PREFLIGHT: Mission, In/Out Scope, CU, writer, acceptance, next gate; check real effect admission.
+3. EXECUTE: reuse first; GPT CHAT handles accessible work, bounded Server AI/Composer/Codex only for a needed owned action.
+4. VERIFY: diff/effects -> focused tests -> exact-SHA CI -> Host/Runtime only when applicable and authorized.
+5. RECORD: commit/PR and canonical Current evidence, outstanding gates, readback; never convert UNKNOWN to PASS.
+6. ITERATE: correct the same CU until its acceptance or an actual protected/ownership blocker; avoid a second work routine.
+```
+
+**Implementation boundary:** prefer improving the existing guard at the owning command/dispatch point with negative tests (`WRONG_MISSION_OR_CU` deny, unrelated path/effect deny, symlink escape deny, approved nested worktree allow, separately registered new independent parent allow). Avoid a schema expansion of the four GitHub Project fields before real registration, and do not modify PR36/#37's active Host route under this governance CU. No removal of old policy copies before all identified consumers have actual loading/compatibility evidence. An unknown effective loader or Host ownership blocks that specific machine mutation, not independent documentation or CI work.
+
 ## 7. Documentation Gate
 
 作業終了前に必ず判定する。
