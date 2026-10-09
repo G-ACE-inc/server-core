@@ -69,6 +69,13 @@ def test_real_workflow_command_support():
         assert dispatch(command_id=command)["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
 
 
+
+def test_existing_current_live_branch_and_git_history():
+    assert dispatch(branch="feat/chat-gitops-request-20261009")["result"] == "PASS"
+    assert dispatch(command_id="project.git_recent_commits", branch="feat/chat-gitops-request-20261009")["result"] == "PASS"
+    assert dispatch(command_id="project.git_recent_commits", branch="feat/chat-gitops-request-20261009")["read_only"] is True
+    assert dispatch(command_id="project.git_recent_commits", branch="main")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
+
 def test_asteria_effect_not_readonly():
     a = dict(
         route_id="route_asteria_baseline_probe",
