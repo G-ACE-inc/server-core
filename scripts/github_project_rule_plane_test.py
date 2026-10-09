@@ -38,6 +38,23 @@ for token in ("Issue #16", "Issue #17", "GitHub Project #1", "server-core"):
     assert token in doc
 
 
+# The one canonical Current/work-location gate must be routed before source creation.
+for required in (
+    "## 4.2 Mandatory work location and reuse handoff gate",
+    "OWNER_PROJECT / OWNER_REPOSITORY / CANONICAL_PARENT_REALPATH",
+    "CURRENT_ISSUE / MISSION / CHANGE_UNIT / MUTATION_OWNER",
+    "REUSE_CANDIDATES:",
+    "PREFLIGHT_LOCATION_UNVERIFIED",
+    "HANDOFF_RECORDED",
+):
+    assert required in workspace, required
+for required in (
+    "### 3.2 Current/work-location preflight",
+    "PREFLIGHT_LOCATION_UNVERIFIED",
+    "EXACT_NEXT_GATE",
+):
+    assert required in router, required
+
 # PREFLIGHT_OWNER_AND_REUSE_CONTRACT: existing owners, no duplicate rules or sibling projects.
 workspace = (ROOT / "docs/G_ACE_WORKSPACE.md").read_text(encoding="utf-8")
 router = (ROOT / "docs/LOAD_SCOPE.md").read_text(encoding="utf-8")
