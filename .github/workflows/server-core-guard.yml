@@ -38,7 +38,7 @@ jobs:
           test -f scripts/github_project_rule_plane_test.py
           test -f scripts/init_dev_workspace_project_gate.py
           test -f scripts/init_dev_workspace_project_gate_test.py
-          test -x scripts/init_dev_workspace_deny_side_effect_test.sh
+          test -f scripts/init_dev_workspace_deny_side_effect_test.sh
           test -f docs/STRUCTURE.md
           test -f docs/WORKSPACE_REGISTRY.md
           test -f docs/KB_REUSE_DESIGN.md
