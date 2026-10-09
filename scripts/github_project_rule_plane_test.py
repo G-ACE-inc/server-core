@@ -65,6 +65,17 @@ for token in (
 ):
     assert token in doc, ("missing shared routine routing", token)
 
+# Keep rules-to-system allocation grounded in existing effect owners.
+for token in (
+    "### Rule versus System — enforcement allocation",
+    "Existing bounded Host/DebugAI admission",
+    "Existing workspace initializer",
+    "WRONG_MISSION_OR_CU",
+    "Source checks cannot prove live active rules",
+    "No removal of old policy copies",
+):
+    assert token in workspace, ("missing system allocation/verification boundary", token)
+
 assert "Project-list containment gate" in router
 assert "TOP_LEVEL_CHILD_PROJECT_BLOCKED" in router
 assert "ALLOWED_IN_PARENT=" in workspace
