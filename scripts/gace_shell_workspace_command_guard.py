@@ -446,18 +446,18 @@ def _extract_relative_mkdir_paths(command: str) -> list[str]:
     surface = executable_scan_surface(command)
     paths: list[str] = []
     try:
-        tokens = shlex.split(surface)
+        argv_parts = shlex.split(surface)
     except ValueError:
-        tokens = surface.split()
-    for idx, token in enumerate(tokens):
-        if token == "mkdir" and idx + 1 < len(tokens):
-            nxt = tokens[idx + 1]
-            if nxt in ("-p", "-m", "-v") and idx + 2 < len(tokens):
-                nxt = tokens[idx + 2]
+        argv_parts = surface.split()
+    for idx, token in enumerate(argv_parts):
+        if token == "mkdir" and idx + 1 < len(argv_parts):
+            nxt = argv_parts[idx + 1]
+            if nxt in ("-p", "-m", "-v") and idx + 2 < len(argv_parts):
+                nxt = argv_parts[idx + 2]
             if not nxt.startswith("-") and ".." not in nxt:
                 paths.append(nxt)
-        if token == "mkdir" and idx + 2 < len(tokens) and tokens[idx + 1] == "-p":
-            nxt = tokens[idx + 2]
+        if token == "mkdir" and idx + 2 < len(argv_parts) and argv_parts[idx + 1] == "-p":
+            nxt = argv_parts[idx + 2]
             if not nxt.startswith("-") and ".." not in nxt:
                 paths.append(nxt)
     return paths
