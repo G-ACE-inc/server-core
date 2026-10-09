@@ -15,8 +15,8 @@ FIELDS = (
     "must_preserve", "must_not_happen", "blocker", "rule_revision",
     "owner_cu", "current_issue_url", "readback_verified",
 )
-URL = re.compile(r"^https://github\\.com/[^/]+/[^/]+/issues/[1-9][0-9]*$")
-HEAD = re.compile(r"(?m)^#{1,3}\\s*(開発目的|作業目的|作業内容|NEXT|プロジェクト進行表)\\s*$")
+URL = re.compile(r"^https://github\.com/[^/]+/[^/]+/issues/[1-9][0-9]*$")
+HEAD = re.compile(r"(?m)^#{1,3}\s*(開発目的|作業目的|作業内容|NEXT|プロジェクト進行表)\s*$")
 
 
 def validate(receipt):
@@ -50,7 +50,7 @@ def validate(receipt):
             purpose = report.splitlines()
             first = next((i for i, ln in enumerate(purpose) if HEAD.fullmatch(ln)), -1)
             second = next((i for i in range(first + 1, len(purpose)) if HEAD.fullmatch(purpose[i])), len(purpose))
-            actual = "\\n".join(purpose[first + 1:second]).strip()
+            actual = "\n".join(purpose[first + 1:second]).strip()
             if actual != receipt.get("project_purpose_canonical"):
                 errors.append("PROJECT_PURPOSE_CHANGED")
         if "➔今ここ" not in report:
