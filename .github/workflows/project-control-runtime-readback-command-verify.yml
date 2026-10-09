@@ -2,6 +2,12 @@ name: project-control-runtime-readback-command-verify
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+      - 'feat/**'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:

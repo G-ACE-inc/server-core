@@ -465,6 +465,115 @@ def _inside_canonical_parent(
     return parent.is_dir() and under(target, parent)
 
 
+def _copy_like_command(command: str) -> bool:
+    return bool(re.search(r"\b(?:cp|rsync|mv)\b", executable_scan_surface(command), re.I))
+
+
+def _copy_argv_parts(command: str) -> list[str]:
+    surface = executable_scan_surface(command)
+    try:
+        return shlex.split(surface)
+    except ValueError:
+        return surface.split()
+
+
+def _copy_endpoints(command: str) -> tuple[list[str], str | None]:
+    parts = _copy_argv_parts(command)
+    if len(parts) < 2:
+        return [], None
+    head = parts[0].lower()
+    if head not in {"cp", "rsync", "mv"}:
+        return [], None
+    path_tokens: list[str] = []
+    for token in parts[1:]:
+        if token.startswith("-"):
+            continue
+        if token.startswith("/") or token.startswith("~") or token.startswith("."):
+            path_tokens.append(token)
+    if len(path_tokens) < 2:
+        return [], None
+    return path_tokens[:-1], path_tokens[-1]
+
+
+def _registered_project_root(path: Path, projects_root: Path, registered: set[str]) -> Path | None:
+    projects_root = projects_root.resolve()
+    if not under(path, projects_root):
+        return None
+    parts = path.relative_to(projects_root).parts
+    if not parts or parts[0] not in registered:
+        return None
+    return projects_root / parts[0]
+
+
+def _tree_export_source(command: str, source: Path, *, projects_root: Path) -> bool:
+    surface = executable_scan_surface(command).lower()
+    if re.search(r"\brsync\b", surface):
+        return True
+    if ".git" in source.parts or source.name == ".git":
+        return True
+    if re.search(r"\bcp\b", surface) and (
+        re.search(r"(?:^|\s)(?:-[a-zA-Z]*[rR]|--recursive|--archive)\b", surface)
+        or " -r " in f" {surface} "
+        or " -R " in f" {surface} "
+        or " -a " in f" {surface} "
+    ):
+        return True
+    if re.search(r"\bmv\b", surface):
+        root = projects_root.resolve()
+        if under(source, root):
+            rel = source.relative_to(root)
+            if len(rel.parts) == 1:
+                return True
+        if under(source, DEFAULT_SERVER_CORE.resolve()):
+            if source.name == ".git" or ".git" in source.parts or ".worktrees" in source.parts:
+                return True
+            if source.resolve() == DEFAULT_SERVER_CORE.resolve():
+                return True
+        return False
+    return False
+
+
+def _deny_parent_export_copy(
+    command: str,
+    *,
+    cwd: Path,
+    projects_root: Path,
+    registered: set[str],
+) -> dict | None:
+    if not _copy_like_command(command):
+        return None
+    sources, dest_raw = _copy_endpoints(command)
+    if not dest_raw:
+        return None
+    dest = resolve_path(dest_raw, cwd)
+    if dest is None:
+        return None
+    if _inside_canonical_parent(dest, projects_root=projects_root, registered=registered):
+        return None
+    for src_raw in sources:
+        src = resolve_path(src_raw, cwd)
+        if src is None:
+            continue
+        if not _inside_canonical_parent(src, projects_root=projects_root, registered=registered):
+            continue
+        src_root = _registered_project_root(src, projects_root, registered)
+        dest_root = _registered_project_root(dest, projects_root, registered)
+        if src_root is not None and dest_root is not None and src_root == dest_root:
+            continue
+        if under(src, DEFAULT_SERVER_CORE.resolve()) and under(dest, DEFAULT_SERVER_CORE.resolve()):
+            continue
+        if not _tree_export_source(command, src, projects_root=projects_root):
+            continue
+        return {
+            "result": "DENY",
+            "code": "PERSISTENT_COPY_OUTSIDE_PARENT",
+            "path": str(dest),
+            "source": str(src),
+            "command_class": "WORKSPACE_CREATING",
+        }
+    return None
+
+
 def _surface_has_git_clone_or_init(command: str) -> tuple[bool, bool]:
     surface = executable_scan_surface(command).lower()
     return (
@@ -509,6 +618,19 @@ def classify_command(
     git_verdict = classify_git(command)
     if git_verdict is not None:
         return git_verdict
+
+    registered_early = load_registered(
+        registry_doc,
+        Path(__file__).resolve().parents[1] / "operations" / "master-internal-repositories.json",
+    )
+    export_verdict = _deny_parent_export_copy(
+        command,
+        cwd=cwd,
+        projects_root=projects_root,
+        registered=registered_early,
+    )
+    if export_verdict is not None:
+        return export_verdict
 
     interp = classify_interpreter_c(command)
     if interp is not None and interp.get("result") == "ALLOW":

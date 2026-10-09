@@ -200,6 +200,33 @@ class GuardTests(unittest.TestCase):
         )
         self.assertEqual(out["result"], "ALLOW")
 
+    def test_deny_tree_copy_outside_parent(self):
+        outside = "/tmp/gace-pr39-tree-copy"
+        parent = self.projects / "TGserver"
+        samples = (
+            (" ".join(["cp", "-r", str(parent), outside]), "PERSISTENT_COPY_OUTSIDE_PARENT"),
+            (" ".join(["rsync", "-a", f"{parent}/", f"{outside}/"]), "PERSISTENT_COPY_OUTSIDE_PARENT"),
+            (" ".join(["mv", str(parent), outside]), "PERSISTENT_COPY_OUTSIDE_PARENT"),
+        )
+        for command, code in samples:
+            out = run(command, self.projects, self.worktrees)
+            self.assertEqual(out["result"], "DENY", command)
+            self.assertEqual(out["code"], code, command)
+
+    def test_allow_single_file_copy_to_tmp(self):
+        src = self.projects / "TGserver" / "README.md"
+        src.parent.mkdir(parents=True, exist_ok=True)
+        src.write_text("probe", encoding="utf-8")
+        out = run(f"cp {src} /tmp/gace-pr39-readme-copy.md", self.projects, self.worktrees)
+        self.assertEqual(out["result"], "ALLOW")
+        Path("/tmp/gace-pr39-readme-copy.md").unlink(missing_ok=True)
+
+    def test_allow_copy_within_registered_parent(self):
+        parent = self.projects / "TGserver"
+        parent.mkdir(parents=True, exist_ok=True)
+        out = run(f"cp -r {parent}/.worktrees {parent}/backup-copy", self.projects, self.worktrees)
+        self.assertEqual(out["result"], "ALLOW")
+
     def test_deny_persistent_checkout_outside_parent(self):
         outside = "/tmp/gace-pr39-outside-parent"
         samples = (
