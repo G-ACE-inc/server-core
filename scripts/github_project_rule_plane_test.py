@@ -75,4 +75,33 @@ assert set(json.loads((ROOT / "operations/github-project-control.json").read_tex
     "Wave", "Gate", "Change Unit", "Mutation Owner"
 }
 
+# Rule/file ownership has one normative source. Keep obsolete runtime evidence
+# in one historical location, never in multiple bootstrap/registry entries.
+readme = (ROOT / "README.md").read_text(encoding="utf-8")
+registry = (ROOT / "docs/WORKSPACE_REGISTRY.md").read_text(encoding="utf-8")
+mcp_doc = (ROOT / "docs/WORKSPACE_MCP.md").read_text(encoding="utf-8")
+history_marker = "## Master Internal Persistent Delegation — Runtime verified (2026-10-08)"
+assert history_marker not in readme, "stale live-runtime report copied into README"
+assert history_marker not in registry, "stale live-runtime report copied into Registry"
+assert mcp_doc.count(history_marker) == 1, "historical runtime evidence must have one copy"
+assert mcp_doc.index("## Purpose") < mcp_doc.index(history_marker)
+assert "DebugAI #41" in readme
+assert "WORKSPACE_MCP.md" in registry
+assert "## One owner per file type" in doc
+for name in (
+    "GitHub Project #1 + owning Current Issue",
+    "Rule #16 SERVER_AI",
+    "Rule #17 GPT_CHAT",
+    "SERVER_CORE_PROTOCOL.md",
+    "docs/G_ACE_WORKSPACE.md",
+    "AGENTS.md",
+    "copilot-instructions.md",
+    ".cursor/mcp.json",
+):
+    assert name in doc, ("missing responsibility owner", name)
+assert "### Execution responsibility" in workspace
+assert "### Master-specific operating roles" not in workspace, (
+    "do not duplicate detailed GPT_CHAT-only execution profile in shared routine"
+)
+
 print("GITHUB_PROJECT_RULE_PLANE=PASS")
