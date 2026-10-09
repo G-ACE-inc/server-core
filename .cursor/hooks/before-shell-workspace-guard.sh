@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT="/home/admin1/server-core"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 GUARD="${ROOT}/scripts/gace_shell_workspace_command_guard.py"
 input="$(cat)"
 result="$(
