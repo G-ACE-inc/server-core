@@ -73,6 +73,10 @@ jobs:
           test -f scripts/github_project_internal_transport_test.py
           test -f scripts/github_project_runtime_config_test.py
 
+      - name: GPT CHAT receipt evidence gate tests
+        run: |
+          python3 -m unittest discover -s scripts -p 'gpt_chat_receipt_gate_test.py' -v
+
       - name: No redundant retired authorities
         run: |
           set -euo pipefail
