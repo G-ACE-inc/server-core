@@ -73,7 +73,7 @@
           "project.git_recent_commits"
         ]
       },
-      "chat_handoff_note": "CHAT existing GitHub Actions push target update: current proven trigger branch feat/chat-gitops-request-20261009; also retains legacy feature branch feat/tgserver-async-log-sink-20261003. Run/job logs prove Host outcome; static preflight is not Host admission. Catalog retains system.projects_inventory (proven inventory E2E run 37875336749) and system.project_file_inspect (file inspect E2E pending on feat/host-project-file-inspect-20261009 @ aa10a4c).",
+      "chat_handoff_note": "CHAT update_file on .github/chatgpt-live-api-target.json only; push to an allowed branch triggers chatgpt-live-api-verify.yml + chatgpt-bounded-server-read.cjs. Current proven trigger branch feat/chat-gitops-request-20261009; also retains legacy feature branch feat/tgserver-async-log-sink-20261003. Run/job logs prove Host outcome; static preflight is not Host admission. Proven inventory E2E run 37875336749. File inspect E2E pending CHAT push on feat/host-project-file-inspect-20261009 @ aa10a4c.",
       "workflow_supported_command_ids": [
         "project.git_head",
         "service.debug_ai_health",
