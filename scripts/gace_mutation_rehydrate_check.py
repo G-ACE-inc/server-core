@@ -463,6 +463,19 @@ def parse_git_invocation(command: str, cwd: Path) -> tuple[Path | None, str | No
     effective = cwd.resolve()
     while idx < len(parts):
         tok = parts[idx]
+        if tok.startswith("--git-dir="):
+            idx += 1
+            continue
+        if tok.startswith("--work-tree="):
+            val = tok.split("=", 1)[1]
+            idx += 1
+            candidate = Path(val)
+            if not candidate.is_absolute():
+                candidate = (effective / candidate).resolve()
+            else:
+                candidate = candidate.resolve()
+            effective = candidate
+            continue
         if tok in ("-C", "--work-tree"):
             if idx + 1 >= len(parts):
                 return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS"

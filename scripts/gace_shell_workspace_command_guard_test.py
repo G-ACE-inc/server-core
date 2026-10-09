@@ -491,5 +491,127 @@ class HookTests(unittest.TestCase):
         self.assertEqual(out["result"], "ALLOW")
 
 
+    def test_bound_quoted_c_commit_denied_not_allowed_fallthrough(self):
+        import os
+        import tempfile
+        space_repo = Path(tempfile.mkdtemp(prefix="repo space ", dir=str(self.temp.name)))
+        binding = self._full_binding_json(branch="main")
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        cmd = f'git -C "{space_repo}" commit -m test'
+        proc = subprocess.run(
+            [
+                "python3",
+                str(GUARD),
+                "--command",
+                cmd,
+                "--cwd",
+                str(ROOT),
+                "--projects-root",
+                str(self.projects),
+                "--worktrees-root",
+                str(self.worktrees),
+                "--registry-doc",
+                str(REGISTRY),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["result"], "DENY")
+        self.assertNotEqual(out["code"], "NOT_WORKSPACE_MUTATION_COMMAND")
+
+    def test_bound_quoted_c_status_readonly_allow(self):
+        import os
+        import tempfile
+        space_repo = Path(tempfile.mkdtemp(prefix="repo space ", dir=str(self.temp.name)))
+        binding = self._full_binding_json(branch="wrong-branch")
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        cmd = f'git -C "{space_repo}" status'
+        proc = subprocess.run(
+            [
+                "python3",
+                str(GUARD),
+                "--command",
+                cmd,
+                "--cwd",
+                str(ROOT),
+                "--projects-root",
+                str(self.projects),
+                "--worktrees-root",
+                str(self.worktrees),
+                "--registry-doc",
+                str(REGISTRY),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["result"], "ALLOW")
+        self.assertEqual(out["code"], "GIT_READONLY_INVOCATION")
+
+    def test_bound_git_dir_equals_commit_denied(self):
+        import os
+        binding = self._full_binding_json()
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        proc = subprocess.run(
+            [
+                "python3",
+                str(GUARD),
+                "--command",
+                "git --git-dir=/tmp/other.git commit -m x",
+                "--cwd",
+                str(ROOT),
+                "--projects-root",
+                str(self.projects),
+                "--worktrees-root",
+                str(self.worktrees),
+                "--registry-doc",
+                str(REGISTRY),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "GIT_ALTERNATE_REPOSITORY_SPEC")
+
+    def test_bound_work_tree_equals_commit_denied(self):
+        import os
+        binding = self._full_binding_json()
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = binding
+        proc = subprocess.run(
+            [
+                "python3",
+                str(GUARD),
+                "--command",
+                "git --work-tree=/tmp/other commit -m x",
+                "--cwd",
+                str(ROOT),
+                "--projects-root",
+                str(self.projects),
+                "--worktrees-root",
+                str(self.worktrees),
+                "--registry-doc",
+                str(REGISTRY),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "GIT_ALTERNATE_REPOSITORY_SPEC")
+
 if __name__ == "__main__":
     unittest.main()

@@ -97,6 +97,117 @@ GIT_READONLY_TAIL_PATTERNS = (
     re.compile(r"^tag\s+--list\b", re.I),
 )
 
+
+GIT_WRITE_TAIL_PATTERNS = (
+    re.compile(r"^commit\b", re.I),
+    re.compile(r"^push\b", re.I),
+    re.compile(r"^merge\b", re.I),
+    re.compile(r"^rebase\b", re.I),
+    re.compile(r"^reset\b", re.I),
+    re.compile(r"^cherry-pick\b", re.I),
+    re.compile(r"^revert\b", re.I),
+    re.compile(r"^checkout\b", re.I),
+    re.compile(r"^switch\b", re.I),
+    re.compile(r"^restore\b", re.I),
+    re.compile(r"^clean\b", re.I),
+    re.compile(r"^stash\s+push\b", re.I),
+    re.compile(r"^stash\s+drop\b", re.I),
+    re.compile(r"^add\b", re.I),
+    re.compile(r"^rm\b", re.I),
+    re.compile(r"^mv\b", re.I),
+)
+
+GIT_GLOBAL_SKIP_ONE = frozenset(
+    {
+        "--no-pager",
+        "--no-replace-objects",
+        "--bare",
+        "--literal-pathspecs",
+        "--glob-pathspecs",
+        "--icase-pathspecs",
+        "--noglob-pathspecs",
+    }
+)
+
+
+def _resolve_git_path(val: str, effective: Path) -> Path:
+    candidate = Path(val)
+    if not candidate.is_absolute():
+        candidate = (effective / candidate).resolve()
+    else:
+        candidate = candidate.resolve()
+    return candidate
+
+
+def parse_git_invocation(
+    command: str, cwd: Path
+) -> tuple[Path | None, str | None, str | None, bool, bool]:
+    """Return (effective_root, tail, error_code, git_dir_override, work_tree_override)."""
+    try:
+        parts = shlex.split(command.strip(), posix=True)
+    except ValueError:
+        return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS", False, False
+    if not parts or parts[0].lower() != "git":
+        return cwd.resolve(), "", None, False, False
+    idx = 1
+    effective = cwd.resolve()
+    git_dir_override = False
+    work_tree_override = False
+    while idx < len(parts):
+        tok = parts[idx]
+        if tok.startswith("--git-dir="):
+            git_dir_override = True
+            idx += 1
+            continue
+        if tok.startswith("--work-tree="):
+            work_tree_override = True
+            effective = _resolve_git_path(tok.split("=", 1)[1], effective)
+            idx += 1
+            continue
+        if tok in ("-C", "--work-tree"):
+            if idx + 1 >= len(parts):
+                return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS", False, False
+            val = parts[idx + 1]
+            idx += 2
+            if tok == "--work-tree":
+                work_tree_override = True
+            effective = _resolve_git_path(val, effective)
+            continue
+        if tok == "--git-dir":
+            if idx + 1 >= len(parts):
+                return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS", False, False
+            git_dir_override = True
+            idx += 2
+            continue
+        if tok == "-c":
+            if idx + 1 >= len(parts):
+                return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS", False, False
+            idx += 2
+            continue
+        if tok in GIT_GLOBAL_SKIP_ONE:
+            idx += 1
+            continue
+        if tok.startswith("-") and tok not in ("-C", "-c"):
+            idx += 1
+            continue
+        break
+    tail = " ".join(parts[idx:]).strip() if idx < len(parts) else ""
+    return effective, tail, None, git_dir_override, work_tree_override
+
+
+def _git_command_tail(command: str, cwd: Path) -> str:
+    _, tail, err, _, _ = parse_git_invocation(command, cwd)
+    if err:
+        return ""
+    return tail
+
+
+def _git_tail_is_write(tail: str) -> bool:
+    if not tail:
+        return False
+    return any(p.search(tail) for p in GIT_WRITE_TAIL_PATTERNS)
+
+
 INTERPRETER_C = re.compile(
     r"^(?:/usr/bin/)?(?:bash|sh|dash|zsh)\s+(?:-[^\s]+\s+)*-c\s+",
     re.I,
@@ -288,18 +399,6 @@ def classify_gh(command: str) -> dict | None:
     return {"result": "DENY", "code": "GH_UNKNOWN_SUBCOMMAND"}
 
 
-def _git_tail(stripped: str) -> str:
-    tail = stripped
-    while True:
-        m = re.match(r"^git\s+(?:-C\s+\S+\s+|-c\s+\S+\s+)+", tail, re.I)
-        if not m:
-            break
-        tail = tail[m.end() :]
-    if tail.lower().startswith("git "):
-        tail = tail[4:]
-    return tail.strip()
-
-
 def _git_readonly_tail(tail: str) -> bool:
     for pattern in GIT_READONLY_TAIL_PATTERNS:
         if pattern.match(tail):
@@ -307,11 +406,11 @@ def _git_readonly_tail(tail: str) -> bool:
     return False
 
 
-def classify_git(command: str) -> dict | None:
+def classify_git(command: str, *, cwd: Path) -> dict | None:
     stripped = command.strip()
     if not stripped.lower().startswith("git"):
         return None
-    tail = _git_tail(stripped)
+    tail = _git_command_tail(stripped, cwd)
     if _git_readonly_tail(tail):
         if not mutators_in_executable(command):
             return {"result": "ALLOW", "code": "GIT_READONLY_INVOCATION"}
@@ -622,25 +721,35 @@ def _rehydrate_module():
     return mod
 
 
-def _is_git_write_surface(command: str) -> bool:
-    stripped = command.strip()
-    if not stripped.lower().startswith("git"):
-        return False
-    tail = _git_tail(stripped)
-    write_patterns = (
-        r"^commit\b", r"^push\b", r"^merge\b", r"^rebase\b", r"^reset\b",
-        r"^cherry-pick\b", r"^revert\b", r"^checkout\b", r"^switch\b",
-        r"^restore\b", r"^clean\b", r"^stash\s+push\b", r"^stash\s+drop\b",
-        r"^add\b", r"^rm\b", r"^mv\b",
-    )
-    return any(re.search(p, tail, re.I) for p in write_patterns)
-
-
 def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
     if not os.environ.get("GACE_MUTATION_BINDING", "").strip():
         return None
-    if not _is_git_write_surface(command):
+    stripped = command.strip()
+    if not stripped.lower().startswith("git"):
         return None
+    repo_root, tail, parse_err, git_dir_override, work_tree_override = parse_git_invocation(
+        stripped, cwd
+    )
+    if parse_err:
+        return {
+            "result": "DENY",
+            "code": parse_err,
+            "command_class": "GIT_WRITE",
+        }
+    if not _git_tail_is_write(tail or ""):
+        return None
+    if git_dir_override or work_tree_override:
+        return {
+            "result": "DENY",
+            "code": "GIT_ALTERNATE_REPOSITORY_SPEC",
+            "command_class": "GIT_WRITE",
+        }
+    if repo_root is None:
+        return {
+            "result": "DENY",
+            "code": "GIT_REPOSITORY_TARGET_UNKNOWN",
+            "command_class": "GIT_WRITE",
+        }
     try:
         mod = _rehydrate_module()
     except Exception as exc:
@@ -656,13 +765,6 @@ def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
             "code": "REHYDRATE_MODULE_UNAVAILABLE",
             "command_class": "GIT_WRITE",
         }
-    repo_root, parse_err = mod.git_repo_root_for_command(command, cwd)
-    if parse_err:
-        return {
-            "result": "DENY",
-            "code": parse_err,
-            "command_class": "GIT_WRITE",
-        }
     try:
         proc = subprocess.run(
             [
@@ -671,7 +773,7 @@ def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
                 "--mode",
                 "mutate",
                 "--repo-root",
-                str(repo_root),
+                str(repo_root.resolve()),
             ],
             capture_output=True,
             text=True,
@@ -706,7 +808,7 @@ def classify_command(
     if gh_verdict is not None and gh_verdict.get("result") in ("ALLOW", "DENY"):
         return gh_verdict
 
-    git_verdict = classify_git(command)
+    git_verdict = classify_git(command, cwd=cwd)
     if git_verdict is not None:
         return git_verdict
 
