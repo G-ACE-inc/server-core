@@ -108,8 +108,11 @@ server-core command center
   -> GitHub commit as work report
   -> push / remote readback
   -> PR / CI when required
-  -> approval boundary
-  -> deploy/runtime only when authorized
+  -> approval boundary / verified Host admission
+  -> existing GitHub Actions -> authenticated DebugAI bounded Server Command / admitted GitOps (when Host work is needed)
+  -> exact Actions run/job/request ID and actual Host result readback
+  -> restore the existing health-only target after bounded requests
+  -> record Source / CI / Deploy / Runtime separately
 ```
 
 ## 7. Documentation Gate
@@ -160,6 +163,8 @@ server-coreが管理するのは接続契約・owner・permission boundary・ava
 `.cursor/mcp.json` 等の実設定とRegistry文書を分離する。文書記載だけでMCP利用可能とは扱わない。
 
 DebugAIは独立Project/runtime。Source mainへのMCP実装反映とWorkspace Live登録/Runtime verificationは別状態として扱う。
+
+**当面のGPT CHAT→Host単一実行経路:** 既存のGitHub Actions（DebugAI `ChatGPT Live Dogfood`）からCloudflare Access経由で既存のDebugAI bounded Server Command / 認可済みGitOpsを利用する。直接MCPがCHATに表示されなくてもHost操作全体を不可と判定しない。Push起動のRunをPR専用のcommit-run検索だけで判定せず、既存GitHub APIのActions Run一覧→Job→生Logから対象HEAD・Request ID・実結果を照合する。Trigger設定は元のhealth-only Blobへ復元してReadbackする。対象Repoが未登録、Host契約にないCommand、現行Runtime Source不足なら、その操作だけを正確な理由で保留し他の安全作業を継続する。新しいMCP・Workflow・Token・RunnerやRepo別Transportを作らない。実装と認可の正本はDebugAIとserver-coreの既存Registryであり、この文書には複製しない。
 
 ## 10. Project Integration
 
