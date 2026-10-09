@@ -79,8 +79,8 @@ for required in (
 assert "Docker / Runtime" in core_protocol
 for owner in (
     "GitHub Project #1 + owning Current Issue",
-    "Rule #16",
-    "Rule #17",
+    "SERVER_AI Issue #16",
+    "GPT CHAT Issue #17",
     "docs/G_ACE_WORKSPACE.md",
 ):
     assert owner in doc, owner
