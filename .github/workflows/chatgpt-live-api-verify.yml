@@ -61,6 +61,26 @@ jobs:
             echo "EOF_REQUEST"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Verify server-core route migration remains non-activated
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const assert = require('node:assert/strict');
+          const route = JSON.parse(fs.readFileSync('operations/github-project-chat-host-routes.json', 'utf8'));
+          const current = route.routes.find(item => item.id === 'route_debugai_live_read');
+          assert.ok(current, 'COMMON_ROUTE_MISSING');
+          assert.equal(current.workflow_repository, 'seigo-gace/debug-ai', 'LEGACY_ROUTE_CHANGED_BEFORE_E2E');
+          const target = JSON.parse(fs.readFileSync('.github/chatgpt-live-api-target.json', 'utf8'));
+          assert.equal(target.mode, 'readonly');
+          assert.equal(target.gitops_request?.enabled, false);
+          assert.equal(target.source_reflect_request?.enabled, false);
+          assert.equal(target.server_command_id ?? '', '');
+          console.log('SERVER_CORE_COPY_ROUTE_PREFLIGHT=PASS');
+          console.log('LEGACY_ACTIONS_ROUTE_PRESERVED=TRUE');
+          NODE
+
       - name: Require Cloudflare Access credentials
         shell: bash
         run: |
