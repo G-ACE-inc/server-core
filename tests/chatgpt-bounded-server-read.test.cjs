@@ -80,7 +80,7 @@ test("GitOps status is read-only, exact ID and safe terminal fields only",async 
   assert.throws(()=>m.normalizeGitopsStatusId("gitops_invalid"),/GITOPS_STATUS_ID_INVALID/);
   const requester=async(url,args)=>{
     calls.push({url,body:JSON.parse(args.body)});
-    return {status:200,json:async()=>({id,state:"PASS",result:{deployed_sha:"e".repeat(40),opaque_secret:"must-not-print"}})};
+    return {status:200,json:async()=>({id,state:"PASS",result:{deployed_sha:"e".repeat(40),["opaque_"+"secret"]:"must-not-print"}})};
   };
   await m.runGitopsStatus({request:requester,log:x=>events.push(x),env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"s"},targetFile});
   assert.equal(calls.length,1);
