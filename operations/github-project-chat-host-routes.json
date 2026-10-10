@@ -54,7 +54,8 @@
         "allowed_branches": [
           "feat/tgserver-async-log-sink-20261003",
           "feat/chat-gitops-request-20261009",
-          "fix/gace-registered-repo-source-reflect-20261010"
+          "fix/gace-registered-repo-source-reflect-20261010",
+          "fix/p1c-refix-no-new-evidence-20261010"
         ]
       },
       "server_command": {
@@ -69,6 +70,7 @@
           "project.git_status",
           "service.debug_ai_health",
           "service.debug_ai_logs",
+          "service.registered_container_logs",
           "service.debug_ai_state",
           "service.sandbox_state",
           "system.projects_inventory",
@@ -77,11 +79,12 @@
           "project.git_recent_commits"
         ]
       },
-      "chat_handoff_note": "CHAT update_file on .github/chatgpt-live-api-target.json only; push to an allowed branch triggers chatgpt-live-api-verify.yml + chatgpt-bounded-server-read.cjs. Proven trigger branches feat/chat-gitops-request-20261009 and fix/gace-registered-repo-source-reflect-20261010 (source_reflect dev); legacy feat/tgserver-async-log-sink-20261003 retained. Run/job logs prove Host outcome; static preflight is not Host admission. service.debug_ai_logs, service.debug_ai_state, service.sandbox_state admitted read_only via chatgpt-bounded-server-read.cjs ALLOWED set.",
+      "chat_handoff_note": "CHAT update_file on .github/chatgpt-live-api-target.json only; push to an allowed branch triggers chatgpt-live-api-verify.yml + chatgpt-bounded-server-read.cjs. Proven trigger branches feat/chat-gitops-request-20261009, fix/gace-registered-repo-source-reflect-20261010, and fix/p1c-refix-no-new-evidence-20261010; legacy feat/tgserver-async-log-sink-20261003 retained. Run/job logs prove Host outcome; static preflight is not Host admission. service.debug_ai_logs, service.registered_container_logs, service.debug_ai_state, service.sandbox_state admitted read_only via chatgpt-bounded-server-read.cjs ALLOWED set.",
       "workflow_supported_command_ids": [
         "project.git_head",
         "service.debug_ai_health",
         "service.debug_ai_logs",
+        "service.registered_container_logs",
         "service.debug_ai_state",
         "service.sandbox_state",
         "project.git_recent_commits",
@@ -92,6 +95,7 @@
         "project.git_head": "read_only",
         "service.debug_ai_health": "read_only",
         "service.debug_ai_logs": "read_only",
+        "service.registered_container_logs": "read_only",
         "service.debug_ai_state": "read_only",
         "service.sandbox_state": "read_only",
         "project.git_recent_commits": "read_only",
