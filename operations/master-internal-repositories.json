@@ -36,7 +36,8 @@
       "allowed_branches": [
         "feat/tgserver-async-log-sink-20261003",
         "master-internal-runtime-20261008",
-        "fix/free-review-host-forward-20261010"
+        "fix/free-review-host-forward-20261010",
+        "fix/scout-observation-reuse-20261010"
       ],
       "allowed_operations": [
         "deploy"
@@ -93,7 +94,20 @@
         "AGENTS.md",
         "server/workflow.js",
         "server/control/completion-gate.js",
-        "server/adapters/external-review.js"
+        "server/adapters/external-review.js",
+        "server/adapters/ai-core.js",
+        "server/control/causal-scout-skill-effect-benchmark.js",
+        "server/control/durable-workflow-stage.js",
+        "server/control/invocation-compiler.js",
+        "server/control/read-only-tool-runtime-base.js",
+        "server/control/researcher-skill-effect-benchmark.js",
+        "server/control/role-output-validator.js",
+        "server/control/run-observation-context.js",
+        "server/control/run-observation-provider.js",
+        "server/control/runtime-packets.js",
+        "server/control/sandbox-queue-selftest.js",
+        "server/control/sandbox-runtime.js",
+        "server/control/sandbox-verification.js"
       ]
     }
   ]
