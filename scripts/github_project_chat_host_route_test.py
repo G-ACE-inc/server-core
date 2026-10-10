@@ -94,7 +94,18 @@ def test_pr36_registry_and_host_paths_retained():
     assert inventory["static_preflight_only"] is True
     assert inventory["host_authorization_verified"] is False
     assert inventory["read_only"] is True
-    assert dispatch(command_id="system.project_file_inspect")["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
+    # Live evidence: real existing Actions/DebugAI registered-file read PASS,
+    # but this static preflight is not canonical server-core Host root admission.
+    assert "system.project_file_inspect" in supported
+    assert route["command_effects"]["system.project_file_inspect"] == "read_only"
+    for branch in ("feat/chat-gitops-request-20261009", "feat/tgserver-async-log-sink-20261003"):
+        inspected = dispatch(command_id="system.project_file_inspect", branch=branch)
+        assert inspected["result"] == "PASS"
+        assert inspected["read_only"] is True
+        assert inspected["static_preflight_only"] is True
+        assert inspected["host_authorization_verified"] is False
+    assert dispatch(command_id="system.project_file_inspect", branch="main")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
+    assert dispatch(command_id="system.project_file_inspect", execution_repo="/home/admin1/server-core")["error"] == "EXECUTION_REPO_FORBIDDEN"
     registry = json.loads((ROOT / "operations/master-internal-repositories.json").read_text(encoding="utf-8"))
     paths = registry["repositories"][0]["allowed_paths"]
     for path in (
@@ -196,6 +207,27 @@ def test_host_head_readback_is_not_asteria_probe_completion():
     out = load_mod().parse_evidence(lines)
     assert out["runtime_terminal_pass"] is True
     assert out["runtime_route_enforcement_verified"] is False
+
+
+def test_failed_command_cannot_be_masked_by_unrelated_host_head():
+    lines = emitted_lines(state="FAIL") + [
+        "2026-10-08T15:47:47Z LIVE_HEALTH=PASS",
+        "2026-10-08T15:47:48Z LIVE_HOST_HEAD=" + "a" * 40,
+    ]
+    out = load_mod().parse_evidence(lines)
+    assert out["required_group_satisfied"] is True
+    assert out["runtime_terminal_pass"] is False
+    assert out["evidence_usable_for_chat"] is False
+
+
+def test_partial_command_cannot_be_masked_by_unrelated_host_head():
+    lines = [line for line in emitted_lines() if "SERVER_COMMAND_STATE=" not in line] + [
+        "2026-10-08T15:47:47Z LIVE_HEALTH=PASS",
+        "2026-10-08T15:47:48Z LIVE_HOST_HEAD=" + "a" * 40,
+    ]
+    out = load_mod().parse_evidence(lines)
+    assert out["runtime_terminal_pass"] is False
+    assert out["evidence_usable_for_chat"] is False
 
 
 def test_routing_link():
