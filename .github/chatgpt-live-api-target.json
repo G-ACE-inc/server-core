@@ -3,7 +3,7 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "2026-10-11 server-core main Source reflect retry after docs delta 576b42d",
+  "request": "2026-10-11 server-core main Source reflect live E2E docs-only commit",
   "gitops_request": {
     "enabled": false
   },
@@ -11,7 +11,7 @@
     "enabled": true,
     "repository": "G-ACE-inc/server-core",
     "branch": "main",
-    "sha": "GITHUB_WORKFLOW_SHA",
+    "sha": "2867c4b8e7df43ac4c98b6617afc92bc6a80e526",
     "delegation_id": "dlg_master_servercore_reflect_v1",
     "runtime_target": "servercore.source"
   }
