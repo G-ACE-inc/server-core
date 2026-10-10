@@ -92,7 +92,8 @@
         "operations/host-admitted-workspace-entries.json",
         "AGENTS.md",
         "server/workflow.js",
-        "server/control/completion-gate.js"
+        "server/control/completion-gate.js",
+        "server/adapters/external-review.js"
       ]
     }
   ]
