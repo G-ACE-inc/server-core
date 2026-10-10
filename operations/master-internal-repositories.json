@@ -95,6 +95,7 @@
         "scripts/host-server-command-runner.sh",
         "scripts/chatgpt-bounded-server-read.cjs",
         "operations/host-admitted-workspace-entries.json",
+        "operations/host-managed-container-entries.json",
         "server/adapters/external-review-quota.js",
         "scripts/external-review-volume-probe.cjs",
         "AGENTS.md",
