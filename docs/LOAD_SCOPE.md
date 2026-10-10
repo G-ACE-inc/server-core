@@ -18,14 +18,17 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 6. 今回必要なserver-core / Project Authority・Source・Testだけ
 ```
 
-### GPT_CHAT
+### GPT_CHAT / ChatGPT Work (Master-facing orchestrator)
 
 ```text
-1. canonical Rule Plane #17
-2. GitHub Project #1 Current
-3. Workspace/server controlが必要なTaskだけserver-coreを読む
-4. target Project Current / Repository Evidence
+1. Manifest profile GPT_CHAT -> canonical Rule Plane #17 (including coordinator use from ChatGPT Work)
+2. GitHub Project #1 / target Project owning Current, find literal PROJECT_PURPOSE_CANONICAL
+3. Target repository README-linked active Design Authority + Definition of Complete (verify the fixed whole-project goal against the Design; Current Task is NOT the goal)
+4. Workspace/server controlが必要なTaskだけserver-coreを読む
+5. Target Repository/CU Source/Test/CI/Runtime Evidence, then execute actual NEXT to the safe gate
 ```
+
+**Work routing is a selection of the existing GPT_CHAT profile, not a third rule plane or automatic Work-session injection.** When ChatGPT Work leads planning, coding, research or reports on Master's behalf, it must actually load #17 and the target product Design/Current first and distinguish `PROJECT_PURPOSE_CANONICAL` from `CURRENT_WORK_PURPOSE`; no rewrite of the whole product purpose as the active PR/module/Host issue. A delegated Work-run terminal/server Codex/Composer executor uses the existing SERVER_AI #16 and only the task-specific purpose/acceptance excerpt. Fresh readback of the active Work session and its actual actions is required to say the rule was applied.
 
 GPT_CHAT拡張RuleをSERVER_AIへdefault loadしない。
 
