@@ -3,14 +3,11 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "server-core migration negative E2E: reject unregistered container",
+  "request": "server-core shared Actions: idle after positive git-head and registered-container-log E2E plus expected denial; no Host command",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
     "enabled": false
-  },
-  "server_command_id": "service.registered_container_logs",
-  "registered_container_entry": "unknown-entry-deny",
-  "log_lines": 5
+  }
 }
