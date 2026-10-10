@@ -564,3 +564,31 @@ Preserve existing gace.development.event.v1, ZERO owner-only relay, Generic Inte
 ### Verification state
 A0/B0 Source/document consistency to be validated by exact PR head checks and main readback. A1–A4 real collection/durable search/recovery and B1–B5 authentic Host read/reflection/Runtime NOT_VERIFIED until their separate real tests. Presence of a design, successful CI or some indexed historical results does not establish end-to-end completion.
 
+## 2026-10-10 — Execute CHAT-to-Server before remaining Log work
+
+### Baseline design
+server-core design §16 Tool B and §17 Tool A are both required for the fixed G-ACE platform purpose. The preceding §17 used "co-primary" to direct parallel execution, despite Master's original instruction that CHAT→Server is the unfinished operational enabler and existing CHAT/Log features already have substantial Source, Reader and historical runtime proof.
+
+### Actual change
+Prioritize **Tool B (ordinary CHAT→Server inspection/authorized Source reflection/active Runtime readback)** as the first active implementation track, with Tool A's existing TGserver ZERO producer/relay/Gateway/Reader Source and completed proofs maintained without repeated implementation. Preserve Tool A's independent completion gates and return to its evidence-proven remaining failures after Tool B's usable operating path. This changes scheduling, not product scope, event schema or technical trust policy.
+
+### Reason / root cause
+Master explicitly corrected the premature parallel Log implementation instruction. Diverging into Log when the normal CHAT still cannot reflect server-core's canonical checkout risks perpetuating GitHub-only progress without actual Server application.
+
+### Evidence
+- Design+current: https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6096906247
+- Log existing partial work: https://github.com/seigo-gace/TGserver/issues/50
+- Live bounded Host reads, not Source reflection: https://github.com/seigo-gace/debug-ai/actions/runs/38045018446
+- Existing PR36 static routing (separate owner): https://github.com/G-ACE-inc/server-core/pull/36
+
+### Affected scope
+docs/SERVER_CORE_DESIGN.md §17 implementation ordering, README entry, this Design Delta, and Control #10 Current only. No modification to GitOps registry/admission, PR36/PR39, TGserver, DebugAI product, Host, credentials or runtime.
+
+### Applied commit
+Recorded by this isolated server-core design-priority PR; exact final PR HEAD, CI and main SHA are authoritative in its GitHub evidence.
+
+### Compatibility / migration / rollback
+Keep A0–A4 and B0–B5 acceptance, all existing Log Source and Owner claims, policy/Secret boundary and vendor-free testing intact. This is an execution-order correction, not another Rule Plane or design owner.
+
+### Verification state
+Design entry/Delta/Source and same-head CI to be verified independently. Tool B Host canonical-path read and source reflection remain NOT_VERIFIED until live server evidence exists.
