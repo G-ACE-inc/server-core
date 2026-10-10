@@ -48,7 +48,8 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | Master Terminal Command / Copy&Paste / GACE_RESULT / Shell Safety / Syntax Validation | `docs/MASTER_TERMINAL_COMMAND.md` |
 | Workspace運用 / dispatch | `docs/G_ACE_WORKSPACE.md` |
 | Project / Repository / shared Capability / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
-| GPT CHATからの既存Actions経由Host読取・GitOps・Actions Log照合、canonical parent / active checkout / Source反映 | `docs/SERVER_CORE_DESIGN.md` §16 (共通設計・D0–D5) + `docs/G_ACE_WORKSPACE.md` §6/§9 + `docs/WORKSPACE_REGISTRY.md` + 対象DebugAI Source/Host Current |
+| Tool B: GPT CHATからの既存Actions経由Host読取・GitOps・canonical parent / active checkout / Source反映 | `docs/SERVER_CORE_DESIGN.md` §16（B0–B5）+ `docs/G_ACE_WORKSPACE.md` §6/§9 + `docs/WORKSPACE_REGISTRY.md` + DebugAI認可済Source/Host Current |
+| Tool A: 統合Development Logの収集・送信・TGserver ZERO保存・検索・CHAT間復元 | `docs/SERVER_CORE_DESIGN.md` §17（A0–A4）+ `docs/PROJECT_INTEGRATION_RULES.md` + TGserver `README_ZERO.md` / `docs/TGSERVER_ZERO_PROJECT_INTEGRATION.md` / #44/#50 + 関連Gateway Producer/Runtime Evidence |
 | Project Integration（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Git / Commit / Push / work report | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
