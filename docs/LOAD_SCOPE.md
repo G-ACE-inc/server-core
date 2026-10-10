@@ -244,3 +244,5 @@ Task owner、Authority、Runtime state、Secret contract等が不明な場合は
 
 `UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` を維持し、必要なAuthority/readbackだけ追加取得する。
 <!-- Tool-B source_reflect E2E evidence line 2026-10-10T17:25:00+09:00 -->
+
+<!-- Tool-B source_reflect E2E evidence line 2026-10-10T17:30:00+09:00 round-2 -->
