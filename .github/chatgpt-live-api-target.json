@@ -3,7 +3,7 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "2026-10-11 server-core main Source reflect E2E dlg_master_servercore_reflect_v1 workflow head",
+  "request": "2026-10-11 server-core main Source reflect retry after docs delta 576b42d",
   "gitops_request": {
     "enabled": false
   },
