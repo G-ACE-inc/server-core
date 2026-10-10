@@ -86,6 +86,7 @@
         "server/control/completion-gate.js",
         "server/adapters/tgserver.js",
         "server/control/durable-run-archive.js",
+        "server/control/storage-retention.js",
         "server/control/server-command-request.js",
         "scripts/host-workspace-file-inspect.py",
         "scripts/host-workspace-inventory.py",
