@@ -3,6 +3,10 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const m=require("../scripts/chatgpt-bounded-server-read.cjs");
 const wf=fs.readFileSync(path.resolve(__dirname,"../.github/workflows/chatgpt-live-api-verify.yml"),"utf8");
 const target=JSON.parse(fs.readFileSync(path.resolve(__dirname,"../.github/chatgpt-live-api-target.json"),"utf8"));
+const d=require("../scripts/chatgpt-source-reflect-dispatch.cjs");
+const route=JSON.parse(fs.readFileSync(path.resolve(__dirname,"../operations/github-project-chat-host-routes.json"),"utf8"));
+const registry=JSON.parse(fs.readFileSync(path.resolve(__dirname,"../operations/master-internal-repositories.json"),"utf8"));
+
 function targetFixture(t,overrides={}){
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),"debugai-chat-target-"));
   t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
@@ -237,9 +241,102 @@ test("CHAT registered host container logs stay scoped, short, sanitized and read
 });
 
 
-test("server-core copied workflow owns Source reflect trigger; legacy deploy remains fail-closed",()=>{
-  assert.match(wf,/feat\/chat-actions-client-migration-20261011\) ;;[\s\S]*?CHAT_SOURCE_REFLECT_TRIGGER_BRANCH_DENIED/);
+test("server-core workflow allows main Source reflect and keeps legacy DebugAI deploy fail-closed",()=>{
+  assert.match(wf,/main\|feat\/chat-actions-client-migration-20261011\) ;;/);
+  assert.match(wf,/CHAT_SOURCE_REFLECT_TRIGGER_BRANCH_DENIED/);
+  assert.match(wf,/node scripts\/chatgpt-source-reflect-dispatch\.cjs verify-dispatch/);
+  assert.match(wf,/dlg_master_servercore_reflect_v1/);
+  assert.match(wf,/CHAT_SOURCE_REFLECT_REMOTE_SHA_MISMATCH/);
   assert.match(wf,/\[\[ "\$GITHUB_REF_NAME" == "feat\/chat-gitops-request-20261009" \]\]/);
   assert.match(wf,/CHAT_GITOPS_TRIGGER_BRANCH_DENIED/);
-  assert.match(wf,/MIGRATED_ROUTE_OWNER_MISMATCH/);
+});
+
+test("main idle target passes dispatch preflight without Source reflect",()=>{
+  const result=d.validateDispatch({target,route,registry,gitRefName:"main"});
+  assert.equal(result.mode,"idle");
+});
+
+test("main registered Source reflect dispatch matches dlg_master_servercore_reflect_v1",()=>{
+  const sha="a".repeat(40);
+  const reflectTarget={
+    ...target,
+    source_reflect_request:{
+      enabled:true,
+      repository:d.REGISTERED_REPOSITORY,
+      branch:d.REGISTERED_BRANCH,
+      sha,
+      delegation_id:d.DELEGATION_ID,
+      runtime_target:d.REGISTERED_RUNTIME,
+    },
+  };
+  const result=d.validateDispatch({target:reflectTarget,route,registry,gitRefName:"main"});
+  assert.equal(result.mode,"source_reflect");
+  assert.equal(result.delegationId,d.DELEGATION_ID);
+});
+
+test("unregistered repository and delegation mismatch fail before Host call",()=>{
+  const base={
+    ...target,
+    source_reflect_request:{
+      enabled:true,
+      repository:"seigo-gace/not-registered",
+      branch:"main",
+      sha:"b".repeat(40),
+      delegation_id:d.DELEGATION_ID,
+      runtime_target:d.REGISTERED_RUNTIME,
+    },
+  };
+  assert.throws(()=>d.validateDispatch({target:base,route,registry,gitRefName:"main"}),/SOURCE_REFLECT_REPOSITORY_UNREGISTERED/);
+  const wrongDelegation={...base,source_reflect_request:{...base.source_reflect_request,delegation_id:"dlg_master_tgserver_reflect_v1"}};
+  assert.throws(()=>d.validateDispatch({target:wrongDelegation,route,registry,gitRefName:"main"}),/SOURCE_REFLECT_DELEGATION_MISMATCH/);
+});
+
+test("branch and SHA registry mismatch and concurrent deploy are rejected",()=>{
+  const sha="c".repeat(40);
+  const reflect={
+    enabled:true,
+    repository:d.REGISTERED_REPOSITORY,
+    branch:"feat/not-allowed",
+    sha,
+    delegation_id:d.DELEGATION_ID,
+    runtime_target:d.REGISTERED_RUNTIME,
+  };
+  assert.throws(()=>d.validateDispatch({target:{...target,source_reflect_request:reflect},route,registry,gitRefName:"main"}),/SOURCE_REFLECT_BRANCH_REGISTRY_MISMATCH/);
+  const badSha={...reflect,branch:"main",sha:"not-a-sha"};
+  assert.throws(()=>d.validateRegisteredDelegation(badSha,registry.repositories.find(x=>x.id===d.DELEGATION_ID)),/SOURCE_REFLECT_SHA_INVALID/);
+  assert.throws(()=>d.validateDispatch({
+    target:{
+      ...target,
+      gitops_request:{enabled:true,branch:"feat/tgserver-async-log-sink-20261003",sha:"d".repeat(40)},
+      source_reflect_request:{...reflect,branch:"main",sha:"d".repeat(40)},
+    },
+    route,registry,gitRefName:"main",
+  }),/CHAT_REFLECT_CONCURRENT_DEPLOY_DENIED/);
+});
+
+test("reflect dispatch forbids server command and non-main trigger branch",()=>{
+  const sha="e".repeat(40);
+  const reflectTarget={
+    ...target,
+    server_command_id:"project.git_head",
+    source_reflect_request:{
+      enabled:true,
+      repository:d.REGISTERED_REPOSITORY,
+      branch:d.REGISTERED_BRANCH,
+      sha,
+      delegation_id:d.DELEGATION_ID,
+      runtime_target:d.REGISTERED_RUNTIME,
+    },
+  };
+  assert.throws(()=>d.validateDispatch({target:reflectTarget,route,registry,gitRefName:"main"}),/SOURCE_REFLECT_SERVER_COMMAND_FORBIDDEN/);
+  const okTarget={...reflectTarget,server_command_id:undefined};
+  assert.throws(()=>d.validateDispatch({target:okTarget,route,registry,gitRefName:"feat/wrong-branch"}),/CHAT_SOURCE_REFLECT_TRIGGER_BRANCH_DENIED/);
+});
+
+test("bounded server read skips Host when no server_command_id (reflect idle guard)",async t=>{
+  const targetFile=targetFixture(t,{});
+  const calls=[];
+  const request=async()=>{calls.push("host");return{status:200,json:async()=>({})};};
+  await m.run({request,sleep:async()=>{},log:()=>{},env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
+  assert.equal(calls.length,0);
 });

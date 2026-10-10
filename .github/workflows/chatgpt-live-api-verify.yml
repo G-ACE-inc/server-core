@@ -10,6 +10,7 @@ on:
       - .github/workflows/chatgpt-live-api-verify.yml
       - scripts/chatgpt-bounded-server-read.cjs
       - tests/chatgpt-bounded-server-read.test.cjs
+      - scripts/chatgpt-source-reflect-dispatch.cjs
 
 permissions:
   contents: read
@@ -64,25 +65,11 @@ jobs:
             echo "EOF_REQUEST"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Verify server-core route migration remains non-activated
+      - name: Verify server-core Actions dispatch contract
         shell: bash
         run: |
           set -euo pipefail
-          node - <<'NODE'
-          const fs = require('node:fs');
-          const assert = require('node:assert/strict');
-          const route = JSON.parse(fs.readFileSync('operations/github-project-chat-host-routes.json', 'utf8'));
-          const current = route.routes.find(item => item.id === 'route_debugai_live_read');
-          assert.ok(current, 'COMMON_ROUTE_MISSING');
-          assert.equal(current.workflow_repository, 'G-ACE-inc/server-core', 'MIGRATED_ROUTE_OWNER_MISMATCH');
-          const target = JSON.parse(fs.readFileSync('.github/chatgpt-live-api-target.json', 'utf8'));
-          assert.equal(target.mode, 'readonly');
-          assert.equal(target.gitops_request?.enabled, false);
-          assert.equal(target.source_reflect_request?.enabled, false);
-          assert.ok(['', 'project.git_head', 'service.debug_ai_health', 'system.project_file_inspect', 'service.registered_container_logs'].includes(target.server_command_id ?? ''), 'MIGRATION_READ_COMMAND_DENIED');
-          console.log('SERVER_CORE_COPY_ROUTE_PREFLIGHT=PASS');
-          console.log('MIGRATED_ACTIONS_ROUTE=SERVER_CORE');
-          NODE
+          node scripts/chatgpt-source-reflect-dispatch.cjs verify-dispatch --git-ref "$GITHUB_REF_NAME"
 
       - name: Require Cloudflare Access credentials
         shell: bash
@@ -244,9 +231,10 @@ jobs:
         run: |
           set -euo pipefail
           case "$GITHUB_REF_NAME" in
-            feat/chat-actions-client-migration-20261011) ;;
+            main|feat/chat-actions-client-migration-20261011) ;;
             *) echo "CHAT_SOURCE_REFLECT_TRIGGER_BRANCH_DENIED"; exit 46 ;;
           esac
+          node scripts/chatgpt-source-reflect-dispatch.cjs verify-dispatch --git-ref "$GITHUB_REF_NAME"
           file=".github/chatgpt-live-api-target.json"
           jq -e '.source_reflect_request | type=="object" and .enabled==true and
             ((keys|sort)==(["enabled","repository","branch","sha","delegation_id","runtime_target"]|sort))' "$file" >/dev/null
@@ -260,6 +248,12 @@ jobs:
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "CHAT_SOURCE_REFLECT_SHA_INVALID"; exit 49; }
           [[ "$delegation" =~ ^dlg_[a-z0-9_-]{1,64}$ ]] || { echo "CHAT_SOURCE_REFLECT_DELEGATION_INVALID"; exit 50; }
           [[ "$runtime" =~ ^[a-z][a-z0-9_.-]{1,80}$ ]] || { echo "CHAT_SOURCE_REFLECT_RUNTIME_INVALID"; exit 51; }
+          [[ "$delegation" == "dlg_master_servercore_reflect_v1" ]] || { echo "CHAT_SOURCE_REFLECT_DELEGATION_REGISTRY_DENIED"; exit 58; }
+          [[ "$repo" == "G-ACE-inc/server-core" ]] || { echo "CHAT_SOURCE_REFLECT_REPOSITORY_UNREGISTERED"; exit 59; }
+          [[ "$branch" == "main" ]] || { echo "CHAT_SOURCE_REFLECT_BRANCH_REGISTRY_MISMATCH"; exit 60; }
+          [[ "$runtime" == "servercore.source" ]] || { echo "CHAT_SOURCE_REFLECT_RUNTIME_REGISTRY_MISMATCH"; exit 61; }
+          remote="$(git ls-remote origin "refs/heads/$branch" | awk 'NR==1{print $1}')"
+          [[ "$remote" == "$sha" ]] || { echo "CHAT_SOURCE_REFLECT_REMOTE_SHA_MISMATCH"; exit 62; }
           jq -nc --arg repository "$repo" --arg branch "$branch" --arg sha "$sha" --arg delegation "$delegation" --arg runtime "$runtime"             '{action:"reflect",repo:"/workspace/debug-ai",branch:$branch,sha:$sha,expected_head:$sha,human_approved:true,
               delegation:{id:$delegation,mode:"MASTER_INTERNAL_PERSISTENT",repository:$repository,scope:"gace.source.reflect",runtime_target:$runtime}}' > /tmp/chat-reflect-request.json
           http="$(curl -sS --max-time 35 -o /tmp/chat-reflect-response.json -w '%{http_code}'             -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"             -H "content-type: application/json" --data-binary @/tmp/chat-reflect-request.json             "https://debugai.asterav8.jp/v1/gitops/request")"
