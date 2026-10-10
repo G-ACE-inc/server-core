@@ -29,6 +29,8 @@ jobs:
       CF_ACCESS_CLIENT_SECRET: ${{ secrets.DEBUGAI_CF_ACCESS_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Verify copied bounded Actions client regression
         run: node --test tests/chatgpt-bounded-server-read.test.cjs
@@ -233,9 +235,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t files < <(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA")
+          mapfile -t files < <(git show --name-only --pretty=format: "${GITHUB_SHA}")
           if [[ ${#files[@]} -eq 0 ]]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "auto_docs_reflect=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           for f in "${files[@]}"; do
@@ -243,16 +245,16 @@ jobs:
               docs/*|README.md|operations/github-project-chat-host-routes.json|operations/master-internal-repositories.json) ;;
               *)
                 echo "SOURCE_REFLECT_AUTO_PATH_DENIED=$f"
-                echo "enabled=false" >> "$GITHUB_OUTPUT"
+                echo "auto_docs_reflect=false" >> "$GITHUB_OUTPUT"
                 exit 0
                 ;;
             esac
           done
-          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          echo "auto_docs_reflect=true" >> "$GITHUB_OUTPUT"
           echo "SOURCE_REFLECT_AUTO_DOCS_HEAD=YES"
 
       - name: Registered Project Source reflection (docs-only HEAD auto)
-        if: ${{ steps.docs_reflect.outputs.enabled == 'true' }}
+        if: ${{ steps.docs_reflect.outputs.auto_docs_reflect == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
