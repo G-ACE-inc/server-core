@@ -35,7 +35,8 @@
       "default_branch": "main",
       "allowed_branches": [
         "feat/tgserver-async-log-sink-20261003",
-        "master-internal-runtime-20261008"
+        "master-internal-runtime-20261008",
+        "fix/p1c-refix-no-new-evidence-20261010"
       ],
       "allowed_operations": [
         "deploy"
@@ -75,18 +76,22 @@
         "ops/tests/",
         "server/tests/",
         "server/control/gitops-request.js",
-        "server/control/server-command-request.js",
         "scripts/host-gitops-runner.sh",
         "scripts/host-gitops-delegation.sh",
         "scripts/host-gitops-master-internal.sh",
         "scripts/host-gitops-register-master.sh",
+        ".github/workflows/ci.yml",
+        "scripts/host-asteria-baseline-probe.sh",
+        "server/workflow.js",
+        "server/control/completion-gate.js",
+        "server/adapters/tgserver.js",
+        "server/control/durable-run-archive.js",
+        "server/control/server-command-request.js",
         "scripts/host-workspace-file-inspect.py",
         "scripts/host-workspace-inventory.py",
         "scripts/host-server-command-runner.sh",
         "scripts/chatgpt-bounded-server-read.cjs",
-        "operations/host-admitted-workspace-entries.json",
-        ".github/workflows/ci.yml",
-        "scripts/host-asteria-baseline-probe.sh"
+        "operations/host-admitted-workspace-entries.json"
       ]
     }
   ]
