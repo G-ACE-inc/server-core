@@ -30,6 +30,8 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 
 **Work routing is a selection of the existing GPT_CHAT profile, not a third rule plane or automatic Work-session injection.** When ChatGPT Work leads planning, coding, research or reports on Master's behalf, it must actually load #17 and the target product Design/Current first and distinguish `PROJECT_PURPOSE_CANONICAL` from `CURRENT_WORK_PURPOSE`; no rewrite of the whole product purpose as the active PR/module/Host issue. A delegated Work-run terminal/server Codex/Composer executor uses the existing SERVER_AI #16 and only the task-specific purpose/acceptance excerpt. Fresh readback of the active Work session and its actual actions is required to say the rule was applied.
 
+**Ongoing explanations are not Master reports (#17 §5/§7):** For both GPT CHAT and ChatGPT Work, concise progress/analysis/CI/PR notices are nonterminal; after explaining, execute the next safe owned-CU action. Reserve the **formal five-part report** for Master-requested pause/report, genuinely required Master-only operation/decision, major design/product-impact choice, proven Mission completion, or a verified full same-CU stop after independent work is exhausted. **NEXT is mandatory visibility for Master inside a legitimate report, never permission to end the turn or defer a runnable CHAT action.** If Master must act, supply the complete directly executable instruction. An Issue comment, CI result or progress explanation is not a reporting trigger. Do not claim this repository text can intercept live CHAT/Work responses.
+
 GPT_CHAT拡張RuleをSERVER_AIへdefault loadしない。
 
 README以外のserver-core Authorityを新Task開始時に一括読込しない。
