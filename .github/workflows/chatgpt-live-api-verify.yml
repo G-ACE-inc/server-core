@@ -241,6 +241,7 @@ jobs:
           repo="$(jq -r '.source_reflect_request.repository' "$file")"
           branch="$(jq -r '.source_reflect_request.branch' "$file")"
           sha="$(jq -r '.source_reflect_request.sha' "$file")"
+          if [[ "$sha" == "GITHUB_WORKFLOW_SHA" ]]; then sha="${{ github.sha }}"; fi
           delegation="$(jq -r '.source_reflect_request.delegation_id' "$file")"
           runtime="$(jq -r '.source_reflect_request.runtime_target' "$file")"
           [[ "$repo" =~ ^[A-Za-z0-9_-]+/[A-Za-z0-9._-]+$ ]] || { echo "CHAT_SOURCE_REFLECT_REPOSITORY_INVALID"; exit 47; }

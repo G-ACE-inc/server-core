@@ -252,7 +252,13 @@ test("server-core workflow allows main Source reflect and keeps legacy DebugAI d
 });
 
 test("main idle target passes dispatch preflight without Source reflect",()=>{
-  const result=d.validateDispatch({target,route,registry,gitRefName:"main"});
+  const idleTarget={
+    ...target,
+    gitops_request:{enabled:false},
+    source_reflect_request:{enabled:false},
+    server_command_id:undefined,
+  };
+  const result=d.validateDispatch({target:idleTarget,route,registry,gitRefName:"main"});
   assert.equal(result.mode,"idle");
 });
 

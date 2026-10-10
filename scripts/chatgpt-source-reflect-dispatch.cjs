@@ -36,7 +36,8 @@ function assertReflectShape(reflect) {
   const keys = Object.keys(reflect).sort();
   const expected = ["branch", "delegation_id", "enabled", "repository", "runtime_target", "sha"].sort();
   if (keys.join("|") !== expected.join("|")) throw new Error("SOURCE_REFLECT_KEYS_INVALID");
-  if (!/^[0-9a-f]{40}$/.test(String(reflect.sha || ""))) throw new Error("SOURCE_REFLECT_SHA_INVALID");
+  const shaVal=String(reflect.sha||"");
+  if (shaVal!=="GITHUB_WORKFLOW_SHA"&&!/^[0-9a-f]{40}$/.test(shaVal)) throw new Error("SOURCE_REFLECT_SHA_INVALID");
   if (!/^[A-Za-z0-9._/-]{1,160}$/.test(String(reflect.branch || "")) || reflect.branch.startsWith("-") || reflect.branch.includes("..")) {
     throw new Error("SOURCE_REFLECT_BRANCH_INVALID");
   }

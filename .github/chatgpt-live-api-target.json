@@ -3,7 +3,7 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "2026-10-11 server-core main Source reflect E2E for dlg_master_servercore_reflect_v1 exact SHA c0a35ac",
+  "request": "2026-10-11 server-core main Source reflect E2E dlg_master_servercore_reflect_v1 workflow head",
   "gitops_request": {
     "enabled": false
   },
@@ -11,7 +11,7 @@
     "enabled": true,
     "repository": "G-ACE-inc/server-core",
     "branch": "main",
-    "sha": "c0a35ac0c9a292975d03c715e27bffdc88d821e9",
+    "sha": "GITHUB_WORKFLOW_SHA",
     "delegation_id": "dlg_master_servercore_reflect_v1",
     "runtime_target": "servercore.source"
   }
