@@ -503,3 +503,33 @@ licensing, Customer authentication, new executor/queue/transport/service or shel
 endpoint. Source/CI and real Runtime qualification remain separate; this source
 checkpoint does not claim live persistent-mode PASS. Protected product/spec/public/
 provider/model/Secret/destructive persistent decisions remain Master-owned.
+
+## 2026-10-10 — Fix the canonical CHAT-to-Host source reflection design under server-core #10
+
+### Baseline design
+The server-core command-center baseline (§§2.4, 2.5, 2.6, 3, 12) already assigned shared capability discovery, Project routing, approval and Source-to-Runtime state separation to server-core. Control #10 verified actual ordinary CHAT -> existing GitHub Actions -> Cloudflare Access -> DebugAI bounded Host reads. However the baseline did not specify how an exact registered Repo/Host parent, active consuming checkout, source-only reflection versus Docker Compose deployment, and subsequent evidence must be bound for **all** owned Projects. PR #36 contains a useful unmerged partial static routing catalog, not an activated host-wide implementation.
+
+### Actual change
+Extend the **existing** docs/SERVER_CORE_DESIGN.md with §16, Common CHAT-to-Host controlled reflection. Fix server-core / Control #10 as the **sole common design and current tool owner**; GitHub Project owns changing CU/Project purpose, DebugAI retains the existing authenticated transport/Host executor implementation, product repositories own their source/runtime, and TGserver owns durable log delivery. Introduce a logical request/evidence contract and D0–D5 acceptance gates; this is design authority, not a new runtime credential, transport, Rule Plane or separate development routine.
+
+### Reason / root cause
+Master-directed failure mode: GPT CHAT can progress GitHub Source/CI without changing the actual Server consumer. During the live 2026-10-10 audit, server-core local main was synced to remote main but active parent checkout remained on a divergent dirty feature branch. Existing Host read registry incorrectly declares server-core under /home/admin1/projects, whereas the actual canonical parent is /home/admin1/server-core. The existing Master Internal GitOps runner assumes DebugAI-specific Compose runtime and projects-root. Thus neither a Git ref move nor generic registry entry can prove safe cross-Repo reflection. Without a design, CHAT/Work might invent the next architecture/acceptance gate ad hoc.
+
+### Evidence
+- server-core #10 live execution checkpoint: https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6096580570
+- Actual CHAT Host inventory (3 pages/18 entries): https://github.com/seigo-gace/debug-ai/actions/runs/38044895527
+- Actual installed 512-byte admission registry readback, matched to GitHub Source: https://github.com/seigo-gace/debug-ai/actions/runs/38045018446
+- Existing static route Source, still unmerged: https://github.com/G-ACE-inc/server-core/pull/36; its stacked evidence correction merged into that PR branch: https://github.com/G-ACE-inc/server-core/pull/37
+- Previously demonstrated 502 then recovery; no proof of new Server source reflection: https://github.com/seigo-gace/debug-ai/actions/runs/38044824474 and https://github.com/seigo-gace/debug-ai/actions/runs/38044856370
+
+### Affected scope
+Only server-core architecture/docs/dispatch reference on this design-only branch. No modification of DebugAI products, its live Host runner/admission, PR39 parent checkout/dirty paths, control plane Rules #16/#17, GitHub Project fields, credentials, Docker/Compose or TGserver Runtime.
+
+### Applied commit
+First design-source commit: 724a6c3e68d884e20f00a5a5069b7b254ad4d9a0. Track the final PR head/CI separately in the owning #10 Current; this history reference does not claim merge or runtime application.
+
+### Compatibility / migration / rollback
+Keep existing DebugAI-specific enrolled deployment semantics, external-customer approvals and secret boundaries unchanged. Reuse established Actions/DebugAI transport, route preflight from PR36/37 only after its owner integrates it, and require explicit limited realpath/root and per-Repo issuer/branch/path/effect admission before extending capabilities. Unmerging/reverting this design commit restores the earlier generic baseline but **must not** be interpreted as revoking an independently installed Host policy. No Host state changes are introduced here.
+
+### Verification state
+DESIGN_SOURCE_WRITTEN=YES on the isolated server-core design branch. REVIEW/CI/MAIN_MERGE=NOT_VERIFIED until actual checks and readback. D1–D5 real Host read, approved source-only reflection, target Runtime and full Development Log recovery are NOT_VERIFIED, regardless of this design commit.
