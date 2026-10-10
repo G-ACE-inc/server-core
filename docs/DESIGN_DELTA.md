@@ -503,3 +503,92 @@ licensing, Customer authentication, new executor/queue/transport/service or shel
 endpoint. Source/CI and real Runtime qualification remain separate; this source
 checkpoint does not claim live persistent-mode PASS. Protected product/spec/public/
 provider/model/Secret/destructive persistent decisions remain Master-owned.
+
+## 2026-10-10 — Fix the canonical CHAT-to-Host source reflection design under server-core #10
+
+### Baseline design
+The server-core command-center baseline (§§2.4, 2.5, 2.6, 3, 12) already assigned shared capability discovery, Project routing, approval and Source-to-Runtime state separation to server-core. Control #10 verified actual ordinary CHAT -> existing GitHub Actions -> Cloudflare Access -> DebugAI bounded Host reads. However the baseline did not specify how an exact registered Repo/Host parent, active consuming checkout, source-only reflection versus Docker Compose deployment, and subsequent evidence must be bound for **all** owned Projects. PR #36 contains a useful unmerged partial static routing catalog, not an activated host-wide implementation.
+
+### Actual change
+Extend the **existing** docs/SERVER_CORE_DESIGN.md with §16, Common CHAT-to-Host controlled reflection. Fix server-core / Control #10 as the **sole common design and current tool owner**; GitHub Project owns changing CU/Project purpose, DebugAI retains the existing authenticated transport/Host executor implementation, product repositories own their source/runtime, and TGserver owns durable log delivery. Introduce a logical request/evidence contract and D0–D5 acceptance gates; this is design authority, not a new runtime credential, transport, Rule Plane or separate development routine.
+
+### Reason / root cause
+Master-directed failure mode: GPT CHAT can progress GitHub Source/CI without changing the actual Server consumer. During the live 2026-10-10 audit, server-core local main was synced to remote main but active parent checkout remained on a divergent dirty feature branch. Existing Host read registry incorrectly declares server-core under /home/admin1/projects, whereas the actual canonical parent is /home/admin1/server-core. The existing Master Internal GitOps runner assumes DebugAI-specific Compose runtime and projects-root. Thus neither a Git ref move nor generic registry entry can prove safe cross-Repo reflection. Without a design, CHAT/Work might invent the next architecture/acceptance gate ad hoc.
+
+### Evidence
+- server-core #10 live execution checkpoint: https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6096580570
+- Actual CHAT Host inventory (3 pages/18 entries): https://github.com/seigo-gace/debug-ai/actions/runs/38044895527
+- Actual installed 512-byte admission registry readback, matched to GitHub Source: https://github.com/seigo-gace/debug-ai/actions/runs/38045018446
+- Existing static route Source, still unmerged: https://github.com/G-ACE-inc/server-core/pull/36; its stacked evidence correction merged into that PR branch: https://github.com/G-ACE-inc/server-core/pull/37
+- Previously demonstrated 502 then recovery; no proof of new Server source reflection: https://github.com/seigo-gace/debug-ai/actions/runs/38044824474 and https://github.com/seigo-gace/debug-ai/actions/runs/38044856370
+
+### Affected scope
+Only server-core architecture/docs/dispatch reference on this design-only branch. No modification of DebugAI products, its live Host runner/admission, PR39 parent checkout/dirty paths, control plane Rules #16/#17, GitHub Project fields, credentials, Docker/Compose or TGserver Runtime.
+
+### Applied commit
+First design-source commit: 724a6c3e68d884e20f00a5a5069b7b254ad4d9a0. Track the final PR head/CI separately in the owning #10 Current; this history reference does not claim merge or runtime application.
+
+### Compatibility / migration / rollback
+Keep existing DebugAI-specific enrolled deployment semantics, external-customer approvals and secret boundaries unchanged. Reuse established Actions/DebugAI transport, route preflight from PR36/37 only after its owner integrates it, and require explicit limited realpath/root and per-Repo issuer/branch/path/effect admission before extending capabilities. Unmerging/reverting this design commit restores the earlier generic baseline but **must not** be interpreted as revoking an independently installed Host policy. No Host state changes are introduced here.
+
+### Verification state
+DESIGN_SOURCE_WRITTEN=YES on the isolated server-core design branch. REVIEW/CI/MAIN_MERGE=NOT_VERIFIED until actual checks and readback. D1–D5 real Host read, approved source-only reflection, target Runtime and full Development Log recovery are NOT_VERIFIED, regardless of this design commit.
+
+## 2026-10-10 — Restore two co-primary tool capabilities under Control #10
+
+### Baseline design
+server-core main §16 (merged PR46, 1b55c904a947e11f177d618ff9b1dfd2579421b0) defined the CHAT→Host tool with a narrow Development Event mention and relegated TGserver ZERO delivery/search/recovery to a separate later lane. This misrepresented Master's actual tool priorities, which are **(A) unified development Log** and **(B) ordinary CHAT control of the Server**, both required for completing G-ACE Development Platform. Existing TGserver #44/#50 Source already has canonical event ingress, owner-only [DEVLOG] relay, mapping, central Reader and observable delivery gaps; it must not be reimplemented as another server-core transport.
+
+### Actual change
+Retain existing server-core baseline and §16 operations (retitled capability B), explicitly specify two **co-primary** tool capabilities and add §17 as capability A's complete **common integration/acceptance design**, including owner/reuse map, all registered Repo/execution-surface coverage, same-event-id receipt stages, raw Telegram/indexed Meilisearch/recovery distinctions, no new transport/token/service, observed Gateway configuration blocker and A0–A4 acceptance gates. Link §17 from README and task router. Common design/current/acceptance owner remains server-core #10; TGserver ZERO, webhook-gateway, DebugAI and product Repos retain implementation and trusted runtime authority. GitHub Project's fixed product purpose is unchanged.
+
+### Reason/root cause
+Master correction: an implementation-only Host design leaves the other required Tool capability undesigned, encouraging CHAT/Work to make arbitrary assumptions or treat a log success as a Host deploy and vice versa. In real TGserver #50 evidence, owner-only CHAT [DEVLOG] relay Actions run 37992536124 parsed the event and mapped P008 but failed on missing DEVLOG_GATEWAY_URL and shared URL config prior to send; no Gateway/Telegram raw/Meili same-event durability was verified. Existing ZERO searches cover some events but cannot prove this missing event was delivered.
+
+### Evidence
+- Tool B design merged: https://github.com/G-ACE-inc/server-core/pull/46
+- Tool A Source/owner: https://github.com/seigo-gace/TGserver/issues/44 and https://github.com/seigo-gace/TGserver/issues/50
+- Failed same-event CHAT relay: https://github.com/seigo-gace/TGserver/actions/runs/37992536124
+- Existing TGserver ZERO Source: https://github.com/seigo-gace/TGserver/blob/main/README_ZERO.md and https://github.com/seigo-gace/TGserver/blob/main/docs/TGSERVER_ZERO_PROJECT_INTEGRATION.md
+- Actual Host bounded read evidence: https://github.com/seigo-gace/debug-ai/actions/runs/38045018446
+
+### Affected scope
+Only server-core existing docs/SERVER_CORE_DESIGN.md, docs/DESIGN_DELTA.md, README.md and docs/LOAD_SCOPE.md. No changes to TGserver/DebugAI/Host/Secrets/GitHub Rules, existing PR36/PR39 ownership or runtime.
+
+### Applied commit
+The introducing design-correction commit/PR on branch design/dual-tool-log-and-chat-host-20261010, exact final SHA/CI to be recorded in owning Control #10. This entry does not itself claim main merge or runtime activation.
+
+### Compatibility / migration / rollback
+Preserve existing gace.development.event.v1, ZERO owner-only relay, Generic Internal Event API/Gateway, Telegram raw authority, Meilisearch rebuildable index and existing trust boundaries; product vNext and Catalog Knowledge Promotion remain independent. This extends the *same* baseline/Current contract rather than creating a third rule plane, another service or duplicated Tool design. Revert only the corrected design/entry references if the owners decide to withdraw it; no runtime data/policy was changed here.
+
+### Verification state
+A0/B0 Source/document consistency to be validated by exact PR head checks and main readback. A1–A4 real collection/durable search/recovery and B1–B5 authentic Host read/reflection/Runtime NOT_VERIFIED until their separate real tests. Presence of a design, successful CI or some indexed historical results does not establish end-to-end completion.
+
+## 2026-10-10 — Execute CHAT-to-Server before remaining Log work
+
+### Baseline design
+server-core design §16 Tool B and §17 Tool A are both required for the fixed G-ACE platform purpose. The preceding §17 used "co-primary" to direct parallel execution, despite Master's original instruction that CHAT→Server is the unfinished operational enabler and existing CHAT/Log features already have substantial Source, Reader and historical runtime proof.
+
+### Actual change
+Prioritize **Tool B (ordinary CHAT→Server inspection/authorized Source reflection/active Runtime readback)** as the first active implementation track, with Tool A's existing TGserver ZERO producer/relay/Gateway/Reader Source and completed proofs maintained without repeated implementation. Preserve Tool A's independent completion gates and return to its evidence-proven remaining failures after Tool B's usable operating path. This changes scheduling, not product scope, event schema or technical trust policy.
+
+### Reason / root cause
+Master explicitly corrected the premature parallel Log implementation instruction. Diverging into Log when the normal CHAT still cannot reflect server-core's canonical checkout risks perpetuating GitHub-only progress without actual Server application.
+
+### Evidence
+- Design+current: https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6096906247
+- Log existing partial work: https://github.com/seigo-gace/TGserver/issues/50
+- Live bounded Host reads, not Source reflection: https://github.com/seigo-gace/debug-ai/actions/runs/38045018446
+- Existing PR36 static routing (separate owner): https://github.com/G-ACE-inc/server-core/pull/36
+
+### Affected scope
+docs/SERVER_CORE_DESIGN.md §17 implementation ordering, README entry, this Design Delta, and Control #10 Current only. No modification to GitOps registry/admission, PR36/PR39, TGserver, DebugAI product, Host, credentials or runtime.
+
+### Applied commit
+Recorded by this isolated server-core design-priority PR; exact final PR HEAD, CI and main SHA are authoritative in its GitHub evidence.
+
+### Compatibility / migration / rollback
+Keep A0–A4 and B0–B5 acceptance, all existing Log Source and Owner claims, policy/Secret boundary and vendor-free testing intact. This is an execution-order correction, not another Rule Plane or design owner.
+
+### Verification state
+Design entry/Delta/Source and same-head CI to be verified independently. Tool B Host canonical-path read and source reflection remain NOT_VERIFIED until live server evidence exists.

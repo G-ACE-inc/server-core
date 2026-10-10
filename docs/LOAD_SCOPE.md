@@ -18,14 +18,19 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 6. 今回必要なserver-core / Project Authority・Source・Testだけ
 ```
 
-### GPT_CHAT
+### GPT_CHAT / ChatGPT Work (Master-facing orchestrator)
 
 ```text
-1. canonical Rule Plane #17
-2. GitHub Project #1 Current
-3. Workspace/server controlが必要なTaskだけserver-coreを読む
-4. target Project Current / Repository Evidence
+1. Manifest profile GPT_CHAT -> canonical Rule Plane #17 (including coordinator use from ChatGPT Work)
+2. GitHub Project #1 / target Project owning Current, find literal PROJECT_PURPOSE_CANONICAL
+3. Target repository README-linked active Design Authority + Definition of Complete (verify the fixed whole-project goal against the Design; Current Task is NOT the goal)
+4. Workspace/server controlが必要なTaskだけserver-coreを読む
+5. Target Repository/CU Source/Test/CI/Runtime Evidence, then execute actual NEXT to the safe gate
 ```
+
+**Work routing is a selection of the existing GPT_CHAT profile, not a third rule plane or automatic Work-session injection.** When ChatGPT Work leads planning, coding, research or reports on Master's behalf, it must actually load #17 and the target product Design/Current first and distinguish `PROJECT_PURPOSE_CANONICAL` from `CURRENT_WORK_PURPOSE`; no rewrite of the whole product purpose as the active PR/module/Host issue. A delegated Work-run terminal/server Codex/Composer executor uses the existing SERVER_AI #16 and only the task-specific purpose/acceptance excerpt. Fresh readback of the active Work session and its actual actions is required to say the rule was applied.
+
+**Ongoing explanations are not Master reports (#17 §5/§7):** For both GPT CHAT and ChatGPT Work, concise progress/analysis/CI/PR notices are nonterminal; after explaining, execute the next safe owned-CU action. Reserve the **formal five-part report** for Master-requested pause/report, genuinely required Master-only operation/decision, major design/product-impact choice, proven Mission completion, or a verified full same-CU stop after independent work is exhausted. **NEXT is mandatory visibility for Master inside a legitimate report, never permission to end the turn or defer a runnable CHAT action.** If Master must act, supply the complete directly executable instruction. An Issue comment, CI result or progress explanation is not a reporting trigger. Do not claim this repository text can intercept live CHAT/Work responses.
 
 GPT_CHAT拡張RuleをSERVER_AIへdefault loadしない。
 
@@ -43,6 +48,8 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | Master Terminal Command / Copy&Paste / GACE_RESULT / Shell Safety / Syntax Validation | `docs/MASTER_TERMINAL_COMMAND.md` |
 | Workspace運用 / dispatch | `docs/G_ACE_WORKSPACE.md` |
 | Project / Repository / shared Capability / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
+| Tool B: GPT CHATからの既存Actions経由Host読取・GitOps・canonical parent / active checkout / Source反映 | `docs/SERVER_CORE_DESIGN.md` §16（B0–B5）+ `docs/G_ACE_WORKSPACE.md` §6/§9 + `docs/WORKSPACE_REGISTRY.md` + DebugAI認可済Source/Host Current |
+| Tool A: 統合Development Logの収集・送信・TGserver ZERO保存・検索・CHAT間復元 | `docs/SERVER_CORE_DESIGN.md` §17（A0–A4）+ `docs/PROJECT_INTEGRATION_RULES.md` + TGserver `README_ZERO.md` / `docs/TGSERVER_ZERO_PROJECT_INTEGRATION.md` / #44/#50 + 関連Gateway Producer/Runtime Evidence |
 | Project Integration（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Git / Commit / Push / work report | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
@@ -78,6 +85,26 @@ APPROVAL_BOUNDARY
 対象Project / ownerが不明なら `docs/WORKSPACE_REGISTRY.md` を読む。
 
 既存owner / reusable assetを確認する前に新規Project / Module / Tool / Documentを作らない。
+
+### 3.1 Project-list containment gate (mandatory for GPT CHAT / SERVER_AI / Codex / Composer)
+
+Before authoring, approving, or executing any server workspace creation (`git worktree add`, `git clone`, copy, task-named `mkdir`, checkout, agent workspace bootstrap), first establish `OWNER_REPO`, the Registry/Host-verified `CANONICAL_PARENT_REALPATH`, the resolved `PROPOSED_DESTINATION_REALPATH`, existing CU/Branch/PR and the action's ownership.
+
+```text
+ALLOWED: existing canonical parent branch and owned nested isolation
+  /home/admin1/projects/debug-ai/.worktrees/<owned-cu>/
+FORBIDDEN: new derivative sibling occupying a top-level Project list entry
+  /home/admin1/projects/debug-ai-<cu>/
+  /home/admin1/projects/tgserver-current-<date>/
+```
+
+A nested linked Git worktree is **permitted** and must not be mistaken for a new parent Project; no additional Master approval is needed solely because an owned CU needs an isolated branch/worktree inside its parent. Another top-level independent Project requires explicit Master intent/approval. Reject sibling destinations regardless of name (including `/tmp` or other persistent alternate roots). Validate directory containment via resolved paths with a path-separator boundary, not a name prefix; reject symlink/relative escape and unknown actual parent as `TOP_LEVEL_CHILD_PROJECT_BLOCKED`. Existing registered parents like `/home/admin1/server-core` retain their own verified canonical root.
+
+Each delegated prompt must carry the **nested allowed / sibling denied** rule, check path/branch/Git-common-dir after execution, and report `CREATED_NEW_TOP_LEVEL_SIBLING=NO`. Do not ask another worker to create a denied sibling instead. Do not change/move/delete existing orphan locations during the other CHAT's parent consolidation; keep its mutation ownership exclusive. Executor Rules [#16](https://github.com/G-ACE-inc/server-core/issues/16), [#17](https://github.com/G-ACE-inc/server-core/issues/17) and detailed Workspace [§4.1](G_ACE_WORKSPACE.md#41-canonical-parent-project-and-branchworktree-isolation-master-clarification-2026-10-09) control this gate.
+
+### 3.2 Current/work-location preflight before new source or workspace (mandatory)
+
+Route every new CU, Branch, worktree, Module or same-purpose reimplementation through the **existing** `docs/G_ACE_WORKSPACE.md` §4.2 handoff gate. Read the owning GitHub Project Current/Issue and verify active CU, mutation owner, existing PR/branch, exact HEAD, canonical parent and reuse candidates **before** selecting a mutation location. Missing or conflicting ownership/location means `PREFLIGHT_LOCATION_UNVERIFIED`: suspend only the unsafe creation/mutation; continue read-only research or independent authorized tasks. Never create a top-level sibling as a substitute. Before handing work to Codex/Composer, supply the checked location, owned paths, active CU and Exact Next Gate; record and read back actual branch/HEAD, dirty/stash status (or UNKNOWN), and `EXACT_NEXT_GATE` on handoff. Do not create another tracker or duplicate the Current Issue.
 
 ## 4. Target Repository Loading
 
@@ -133,6 +160,10 @@ server-core README
   -> target Project README
   -> target Project authority / Source / Test
 ```
+
+### Design baseline / anti-drift routing
+
+For a source-changing CU, resolve the owning repository's canonical Design/Specification link from its Current/README before editing, fetch only relevant sections and prior Design Delta, and check proposed Source/Test against CU acceptance. Recheck at diff/PR and on scope changes using the existing `docs/G_ACE_WORKSPACE.md` §6 Design-alignment step. An inaccessible baseline is `DESIGN_BASELINE_NOT_VERIFIED`; a conflicting change is `DESIGN_DRIFT_REVIEW_REQUIRED`. Do not improvise a substitute design, claim compliance without reading, or create another design tracker. Continue independent read-only work while the affected mutation awaits resolution.
 
 ## 5. Reuse Search Order
 
