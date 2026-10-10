@@ -533,3 +533,34 @@ Keep existing DebugAI-specific enrolled deployment semantics, external-customer 
 
 ### Verification state
 DESIGN_SOURCE_WRITTEN=YES on the isolated server-core design branch. REVIEW/CI/MAIN_MERGE=NOT_VERIFIED until actual checks and readback. D1–D5 real Host read, approved source-only reflection, target Runtime and full Development Log recovery are NOT_VERIFIED, regardless of this design commit.
+
+## 2026-10-10 — Restore two co-primary tool capabilities under Control #10
+
+### Baseline design
+server-core main §16 (merged PR46, 1b55c904a947e11f177d618ff9b1dfd2579421b0) defined the CHAT→Host tool with a narrow Development Event mention and relegated TGserver ZERO delivery/search/recovery to a separate later lane. This misrepresented Master's actual tool priorities, which are **(A) unified development Log** and **(B) ordinary CHAT control of the Server**, both required for completing G-ACE Development Platform. Existing TGserver #44/#50 Source already has canonical event ingress, owner-only [DEVLOG] relay, mapping, central Reader and observable delivery gaps; it must not be reimplemented as another server-core transport.
+
+### Actual change
+Retain existing server-core baseline and §16 operations (retitled capability B), explicitly specify two **co-primary** tool capabilities and add §17 as capability A's complete **common integration/acceptance design**, including owner/reuse map, all registered Repo/execution-surface coverage, same-event-id receipt stages, raw Telegram/indexed Meilisearch/recovery distinctions, no new transport/token/service, observed Gateway configuration blocker and A0–A4 acceptance gates. Link §17 from README and task router. Common design/current/acceptance owner remains server-core #10; TGserver ZERO, webhook-gateway, DebugAI and product Repos retain implementation and trusted runtime authority. GitHub Project's fixed product purpose is unchanged.
+
+### Reason/root cause
+Master correction: an implementation-only Host design leaves the other required Tool capability undesigned, encouraging CHAT/Work to make arbitrary assumptions or treat a log success as a Host deploy and vice versa. In real TGserver #50 evidence, owner-only CHAT [DEVLOG] relay Actions run 37992536124 parsed the event and mapped P008 but failed on missing DEVLOG_GATEWAY_URL and shared URL config prior to send; no Gateway/Telegram raw/Meili same-event durability was verified. Existing ZERO searches cover some events but cannot prove this missing event was delivered.
+
+### Evidence
+- Tool B design merged: https://github.com/G-ACE-inc/server-core/pull/46
+- Tool A Source/owner: https://github.com/seigo-gace/TGserver/issues/44 and https://github.com/seigo-gace/TGserver/issues/50
+- Failed same-event CHAT relay: https://github.com/seigo-gace/TGserver/actions/runs/37992536124
+- Existing TGserver ZERO Source: https://github.com/seigo-gace/TGserver/blob/main/README_ZERO.md and https://github.com/seigo-gace/TGserver/blob/main/docs/TGSERVER_ZERO_PROJECT_INTEGRATION.md
+- Actual Host bounded read evidence: https://github.com/seigo-gace/debug-ai/actions/runs/38045018446
+
+### Affected scope
+Only server-core existing docs/SERVER_CORE_DESIGN.md, docs/DESIGN_DELTA.md, README.md and docs/LOAD_SCOPE.md. No changes to TGserver/DebugAI/Host/Secrets/GitHub Rules, existing PR36/PR39 ownership or runtime.
+
+### Applied commit
+The introducing design-correction commit/PR on branch design/dual-tool-log-and-chat-host-20261010, exact final SHA/CI to be recorded in owning Control #10. This entry does not itself claim main merge or runtime activation.
+
+### Compatibility / migration / rollback
+Preserve existing gace.development.event.v1, ZERO owner-only relay, Generic Internal Event API/Gateway, Telegram raw authority, Meilisearch rebuildable index and existing trust boundaries; product vNext and Catalog Knowledge Promotion remain independent. This extends the *same* baseline/Current contract rather than creating a third rule plane, another service or duplicated Tool design. Revert only the corrected design/entry references if the owners decide to withdraw it; no runtime data/policy was changed here.
+
+### Verification state
+A0/B0 Source/document consistency to be validated by exact PR head checks and main readback. A1–A4 real collection/durable search/recovery and B1–B5 authentic Host read/reflection/Runtime NOT_VERIFIED until their separate real tests. Presence of a design, successful CI or some indexed historical results does not establish end-to-end completion.
+
