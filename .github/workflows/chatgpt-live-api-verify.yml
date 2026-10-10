@@ -7,6 +7,8 @@ on:
     paths:
       - .github/chatgpt-live-api-target.json
       - .github/workflows/chatgpt-live-api-verify.yml
+      - scripts/chatgpt-bounded-server-read.cjs
+      - tests/chatgpt-bounded-server-read.test.cjs
 
 permissions:
   contents: read
