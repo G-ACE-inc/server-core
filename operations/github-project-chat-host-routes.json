@@ -47,15 +47,13 @@
       "id": "route_debugai_live_read",
       "project_control_url": "https://github.com/seigo-gace/debug-ai/issues/41",
       "subject_repository": "seigo-gace/debug-ai",
-      "workflow_repository": "seigo-gace/debug-ai",
+      "workflow_repository": "G-ACE-inc/server-core",
       "github_trigger": {
         "workflow_file": ".github/workflows/chatgpt-live-api-verify.yml",
         "target_file": ".github/chatgpt-live-api-target.json",
         "allowed_branches": [
-          "feat/tgserver-async-log-sink-20261003",
-          "feat/chat-gitops-request-20261009",
-          "fix/gace-registered-repo-source-reflect-20261010",
-          "fix/p1c-refix-no-new-evidence-20261010"
+          "main",
+          "feat/chat-actions-client-migration-20261011"
         ]
       },
       "server_command": {
@@ -79,7 +77,7 @@
           "project.git_recent_commits"
         ]
       },
-      "chat_handoff_note": "CHAT update_file on .github/chatgpt-live-api-target.json only; push to an allowed branch triggers chatgpt-live-api-verify.yml + chatgpt-bounded-server-read.cjs. Proven trigger branches feat/chat-gitops-request-20261009, fix/gace-registered-repo-source-reflect-20261010, and fix/p1c-refix-no-new-evidence-20261010; legacy feat/tgserver-async-log-sink-20261003 retained. Run/job logs prove Host outcome; static preflight is not Host admission. service.debug_ai_logs, service.registered_container_logs, service.debug_ai_state, service.sandbox_state admitted read_only via chatgpt-bounded-server-read.cjs ALLOWED set.",
+      "chat_handoff_note": "Common CHAT Actions owned by server-core: .github/chatgpt-live-api-target.json on main or migration branch triggers .github/workflows/chatgpt-live-api-verify.yml, then existing authenticated DebugAI API and Host. Verified positive run 38071718990 project.git_head and 38071760084 registered-container logs; expected denial run 38071788487. Legacy DebugAI workflow remains available independently as rollback; do not mutate DebugAI product. Match exact push run HEAD and Host receipt; Actions success alone is insufficient.",
       "workflow_supported_command_ids": [
         "project.git_head",
         "service.debug_ai_health",
