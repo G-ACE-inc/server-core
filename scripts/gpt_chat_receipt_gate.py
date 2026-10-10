@@ -17,6 +17,7 @@ FIELDS = (
 )
 URL = re.compile(r"^https://github\.com/[^/]+/[^/]+/issues/[1-9][0-9]*$")
 HEAD = re.compile(r"(?m)^#{1,3}\s*(開発目的|作業目的|作業内容|NEXT|プロジェクト進行表)\s*$")
+ACTION_REF = re.compile(r"^https://github\.com/[^/]+/[^/]+/(?:actions/runs/[1-9][0-9]*|commit/[0-9a-f]{40})$")
 
 
 def validate(receipt, expected=None):
@@ -46,8 +47,32 @@ def validate(receipt, expected=None):
         errors.append("CURRENT_SOURCE_MISMATCH")
     if receipt.get("next_action") == "NONE" and receipt.get("outstanding_in_scope_work") is True:
         errors.append("UNFINISHED_WORK_NOT_RESOLVED")
-    if receipt.get("outstanding_in_scope_work") is True and receipt.get("turn_continuation") != "EXECUTED_TO_SAFE_GATE":
-        errors.append("TURN_PREMATURELY_STOPPED")
+    # These refs must originate from an independently checked trusted Current,
+    # not a report self-assertion. This is structural, not an API/runtime hook.
+    if receipt.get("outstanding_in_scope_work") is True:
+        status = receipt.get("turn_continuation")
+        if status == "MASTER_PAUSED" and expected.get("master_pause_authorized") is True:
+            pass
+        elif status != "EXECUTED_TO_SAFE_GATE":
+            errors.append("TURN_PREMATURELY_STOPPED")
+        else:
+            refs = receipt.get("executed_action_refs")
+            verified = expected.get("verified_action_refs")
+            if not isinstance(refs, list) or not refs:
+                errors.append("EXECUTED_ACTION_EVIDENCE_MISSING")
+            elif not isinstance(verified, list) or not verified or any(
+                not isinstance(ref, str) or not ACTION_REF.fullmatch(ref)
+                or ref not in verified for ref in refs
+            ):
+                errors.append("EXECUTED_ACTION_EVIDENCE_NOT_TRUSTED")
+            if receipt.get("failed_step"):
+                after_refs = receipt.get("post_failure_action_refs")
+                if not isinstance(after_refs, list) or not after_refs:
+                    errors.append("POST_FAILURE_ACTION_MISSING")
+                elif (not isinstance(refs, list) or
+                      any(ref not in refs for ref in after_refs) or
+                      receipt.get("failed_step_evidence_ref") in after_refs):
+                    errors.append("POST_FAILURE_ACTION_NOT_DISTINCT")
     report = receipt.get("report")
     if not isinstance(report, str):
         errors.append("REPORT_MISSING")
