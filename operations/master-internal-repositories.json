@@ -89,7 +89,10 @@
         "scripts/host-workspace-inventory.py",
         "scripts/host-server-command-runner.sh",
         "scripts/chatgpt-bounded-server-read.cjs",
-        "operations/host-admitted-workspace-entries.json"
+        "operations/host-admitted-workspace-entries.json",
+        "AGENTS.md",
+        "server/workflow.js",
+        "server/control/completion-gate.js"
       ]
     }
   ]
