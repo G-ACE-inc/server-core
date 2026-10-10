@@ -65,6 +65,14 @@ def test_branch_mismatch():
 
 def test_real_workflow_command_support():
     assert dispatch(command_id="service.debug_ai_health")["result"] == "PASS"
+    for command in (
+        "service.debug_ai_logs",
+        "service.debug_ai_state",
+        "service.sandbox_state",
+    ):
+        out = dispatch(command_id=command, branch="feat/chat-gitops-request-20261009")
+        assert out["result"] == "PASS"
+        assert out["read_only"] is True
     for command in ("project.pwd", "project.git_status", "github.auth_status_scopes"):
         assert dispatch(command_id=command)["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
 
@@ -76,6 +84,13 @@ def test_existing_current_live_branch_and_git_history():
     assert dispatch(command_id="project.git_recent_commits", branch="main")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
 
 
+def test_pr96_source_reflect_dev_branch():
+    branch = "fix/gace-registered-repo-source-reflect-20261010"
+    assert dispatch(branch=branch)["result"] == "PASS"
+    assert dispatch(command_id="service.debug_ai_state", branch=branch)["result"] == "PASS"
+    assert dispatch(branch="main")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
+
+
 def test_pr36_registry_and_host_paths_retained():
     doc = json.loads((ROOT / "operations/github-project-chat-host-routes.json").read_text(encoding="utf-8"))
     route = next(item for item in doc["routes"] if item["id"] == "route_debugai_live_read")
@@ -85,8 +100,15 @@ def test_pr36_registry_and_host_paths_retained():
         "system.projects_inventory",
         "system.project_file_inspect",
         "project.git_recent_commits",
+        "service.debug_ai_logs",
+        "service.debug_ai_state",
+        "service.sandbox_state",
     ):
         assert command_id in allowed
+    for command_id in ("service.debug_ai_logs", "service.debug_ai_state", "service.sandbox_state"):
+        assert command_id in supported
+        assert route["command_effects"][command_id] == "read_only"
+    assert "fix/gace-registered-repo-source-reflect-20261010" in route["github_trigger"]["allowed_branches"]
     assert "system.projects_inventory" in supported
     assert route["command_effects"]["system.projects_inventory"] == "read_only"
     inventory = dispatch(command_id="system.projects_inventory", branch="feat/chat-gitops-request-20261009")
