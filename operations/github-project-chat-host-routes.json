@@ -1,0 +1,129 @@
+{
+  "schema": "gace.github-project-chat-host-routes/v1",
+  "project": {
+    "owner": "seigo-gace",
+    "number": 1,
+    "node_id": "PVT_kwHODOQFoM4BEJII"
+  },
+  "routing_authority": "operations/github-project-debugai-routing.json",
+  "transport": {
+    "kind": "github_actions_push_trigger",
+    "debugai_api_base_url": "https://debugai.asterav8.jp",
+    "cloudflare_access_secret_names": [
+      "DEBUGAI_CF_ACCESS_CLIENT_ID",
+      "DEBUGAI_CF_ACCESS_CLIENT_SECRET"
+    ],
+    "server_command_request_path": "/v1/server-command/request",
+    "server_command_status_path": "/v1/server-command/status",
+    "implementation_owner": "seigo-gace/debug-ai",
+    "workflow_dispatch_available": false
+  },
+  "evidence_contract": {
+    "action_green_is_not_runtime_pass": true,
+    "required_markers_any_of_groups": [
+      [
+        "SERVER_COMMAND_REQUEST_ID",
+        "SERVER_COMMAND_STATE"
+      ],
+      [
+        "LIVE_HOST_HEAD",
+        "LIVE_HEALTH"
+      ]
+    ],
+    "recommended_markers": [
+      "LIVE_API_AUTH=CONFIGURED",
+      "HEALTH_HTTP=200",
+      "SERVER_COMMAND_READ_ONLY=TRUE",
+      "GITOPS_HOST_STATE=PASS"
+    ],
+    "forbidden_markers": [
+      "PRODUCTION_DEPLOY_CALLED=YES",
+      "APPROVE_APPLY_VERIFY_CALLED=YES"
+    ],
+    "command_id_pattern": "^cmd_[0-9a-f]{24}$"
+  },
+  "routes": [
+    {
+      "id": "route_debugai_live_read",
+      "project_control_url": "https://github.com/seigo-gace/debug-ai/issues/41",
+      "subject_repository": "seigo-gace/debug-ai",
+      "workflow_repository": "seigo-gace/debug-ai",
+      "github_trigger": {
+        "workflow_file": ".github/workflows/chatgpt-live-api-verify.yml",
+        "target_file": ".github/chatgpt-live-api-target.json",
+        "allowed_branches": [
+          "feat/tgserver-async-log-sink-20261003",
+          "feat/chat-gitops-request-20261009"
+        ]
+      },
+      "server_command": {
+        "execution_repo": "/workspace/debug-ai",
+        "allowed_execution_repo_prefixes": [
+          "/workspace/debug-ai"
+        ],
+        "read_only": true,
+        "allowed_command_ids": [
+          "project.git_head",
+          "project.pwd",
+          "project.git_status",
+          "service.debug_ai_health",
+          "system.projects_inventory",
+          "system.project_file_inspect",
+          "github.auth_status_scopes",
+          "project.git_recent_commits"
+        ]
+      },
+      "chat_handoff_note": "CHAT update_file on .github/chatgpt-live-api-target.json only; push to an allowed branch triggers chatgpt-live-api-verify.yml + chatgpt-bounded-server-read.cjs. Current proven trigger branch feat/chat-gitops-request-20261009; also retains legacy feature branch feat/tgserver-async-log-sink-20261003. Run/job logs prove Host outcome; static preflight is not Host admission. Proven inventory E2E run 37875336749. Registered file inspect READ_ONLY E2E PASS via existing Actions run 38045018446 on feat/chat-gitops-request-20261009; canonical server-core parent /home/admin1/server-core admission and readback remain NOT_VERIFIED.",
+      "workflow_supported_command_ids": [
+        "project.git_head",
+        "service.debug_ai_health",
+        "project.git_recent_commits",
+        "system.projects_inventory",
+        "system.project_file_inspect"
+      ],
+      "command_effects": {
+        "project.git_head": "read_only",
+        "service.debug_ai_health": "read_only",
+        "project.git_recent_commits": "read_only",
+        "system.projects_inventory": "read_only",
+        "system.project_file_inspect": "read_only"
+      }
+    },
+    {
+      "id": "route_asteria_baseline_probe",
+      "project_control_url": "https://github.com/seigo-gace/asteria/issues/6",
+      "subject_repository": "seigo-gace/asteria",
+      "workflow_repository": "seigo-gace/debug-ai",
+      "github_trigger": {
+        "workflow_file": ".github/workflows/chatgpt-asteria-baseline-probe.yml",
+        "target_file": ".github/asteria-baseline-probe-target.json",
+        "allowed_branches": [
+          "feat/tgserver-async-log-sink-20261003"
+        ]
+      },
+      "server_command": {
+        "execution_repo": "/workspace/debug-ai",
+        "allowed_execution_repo_prefixes": [
+          "/workspace/debug-ai"
+        ],
+        "read_only": true,
+        "allowed_command_ids": [
+          "project.git_head",
+          "asteria.baseline_probe_start",
+          "asteria.baseline_probe_status"
+        ]
+      },
+      "chat_handoff_note": "Cross-project probe; workflow file lives in debug-ai repo. Evidence on asteria #6.",
+      "workflow_supported_command_ids": [
+        "project.git_head",
+        "asteria.baseline_probe_start",
+        "asteria.baseline_probe_status"
+      ],
+      "command_effects": {
+        "project.git_head": "read_only",
+        "asteria.baseline_probe_start": "bounded_probe_start",
+        "asteria.baseline_probe_status": "read_only"
+      }
+    }
+  ]
+}
