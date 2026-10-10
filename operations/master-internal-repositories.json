@@ -114,7 +114,13 @@
         "server/control/sandbox-verification.js",
         "server/control/production-skill-procedures.js",
         "server/control/skill-procedures.js",
-        "server/control/skill-registry.js"
+        "server/control/skill-registry.js",
+        "scripts/actions-artifact-evidence.cjs",
+        "server/control/actions-artifact-evidence.js",
+        "server/control/actions-artifact-github.js",
+        "server/control/actions-artifact-zip.js",
+        ".github/chatgpt-live-api-target.json",
+        ".github/workflows/chatgpt-live-api-verify.yml"
       ]
     },
     {
