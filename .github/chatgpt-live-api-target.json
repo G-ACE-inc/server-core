@@ -3,12 +3,14 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "server-core migrated Actions E2E: read-only Host git-head",
+  "request": "server-core migration E2E: bounded registered container logs",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
     "enabled": false
   },
-  "server_command_id": "project.git_head"
+  "server_command_id": "service.registered_container_logs",
+  "registered_container_entry": "webhook-gateway-api",
+  "log_lines": 5
 }
