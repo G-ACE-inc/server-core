@@ -151,7 +151,16 @@ def parse_evidence(lines: list[str]) -> dict[str, Any]:
         found.get("LIVE_HEALTH") == "PASS"
         and bool(re.fullmatch(r"[a-f0-9]{40}", found.get("LIVE_HOST_HEAD", "")))
     )
-    terminal_pass = (server_pass or host_head_pass) and found.get("PROBE_RESULT") != "FAIL"
+    # A failing or incomplete explicit command may not be masked by unrelated
+    # LIVE_HEALTH/LIVE_HOST_HEAD success markers from the same Actions log.
+    command_evidence_present = any(
+        key in found for key in
+        ("SERVER_COMMAND_REQUEST_ID", "SERVER_COMMAND_STATE", "SERVER_COMMAND_READ_ONLY")
+    )
+    terminal_pass = (
+        (server_pass if command_evidence_present else host_head_pass)
+        and found.get("PROBE_RESULT") != "FAIL"
+    )
     usable = (
         group_ok and terminal_pass and not forbidden and not invalid_safety
         and not duplicate_conflicts
