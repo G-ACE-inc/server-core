@@ -254,7 +254,10 @@ jobs:
           [[ "$branch" == "main" ]] || { echo "CHAT_SOURCE_REFLECT_BRANCH_REGISTRY_MISMATCH"; exit 60; }
           [[ "$runtime" == "servercore.source" ]] || { echo "CHAT_SOURCE_REFLECT_RUNTIME_REGISTRY_MISMATCH"; exit 61; }
           remote="$(git ls-remote origin "refs/heads/$branch" | awk 'NR==1{print $1}')"
-          [[ "$remote" == "$sha" ]] || { echo "CHAT_SOURCE_REFLECT_REMOTE_SHA_MISMATCH"; exit 62; }
+          [[ "$remote" == "${{ github.sha }}" ]] || { echo "CHAT_SOURCE_REFLECT_TRIGGER_HEAD_MISMATCH"; exit 62; }
+          git fetch --no-tags --depth=64 origin "$branch"
+          git cat-file -e "$sha^{commit}" || { echo "CHAT_SOURCE_REFLECT_SHA_MISSING"; exit 63; }
+          git merge-base --is-ancestor "$sha" "$remote" || { echo "CHAT_SOURCE_REFLECT_SHA_NOT_ON_BRANCH"; exit 64; }
           jq -nc --arg repository "$repo" --arg branch "$branch" --arg sha "$sha" --arg delegation "$delegation" --arg runtime "$runtime"             '{action:"reflect",repo:"/workspace/debug-ai",branch:$branch,sha:$sha,expected_head:$sha,human_approved:true,
               delegation:{id:$delegation,mode:"MASTER_INTERNAL_PERSISTENT",repository:$repository,scope:"gace.source.reflect",runtime_target:$runtime}}' > /tmp/chat-reflect-request.json
           http="$(curl -sS --max-time 35 -o /tmp/chat-reflect-response.json -w '%{http_code}'             -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"             -H "content-type: application/json" --data-binary @/tmp/chat-reflect-request.json             "https://debugai.asterav8.jp/v1/gitops/request")"
