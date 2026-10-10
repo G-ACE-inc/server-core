@@ -3,12 +3,11 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "server-core main post-cutover real Host read-only HEAD verification",
+  "request": "server-core main common Actions idle after verified Host read-only E2E; no command, deploy or reflect",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
     "enabled": false
-  },
-  "server_command_id": "project.git_head"
+  }
 }
