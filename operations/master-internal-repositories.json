@@ -94,6 +94,61 @@
         "scripts/chatgpt-bounded-server-read.cjs",
         "operations/host-admitted-workspace-entries.json"
       ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_master_servercore_reflect_v1",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "G-ACE-inc/server-core",
+      "repository_id": 1270949815,
+      "repository_node_id": "R_kgDOS8Entw",
+      "repository_owner": "G-ACE-inc",
+      "master_principal": "seigo-gace",
+      "project": {
+        "owner": "seigo-gace",
+        "number": 1,
+        "node_id": "PVT_kwHODOQFoM4BEJII",
+        "item_id": "PVTI_lAHODOQFoM4BEJIIzg_ZS0Y",
+        "control_url": "https://github.com/G-ACE-inc/server-core/issues/15"
+      },
+      "server_project_id": "server-core",
+      "server_project_path": "/home/admin1/server-core",
+      "repo": "/workspace/debug-ai",
+      "remote": "https://github.com/G-ACE-inc/server-core.git",
+      "default_branch": "main",
+      "allowed_branches": [
+        "main"
+      ],
+      "allowed_operations": [
+        "reflect"
+      ],
+      "allowed_scopes": [
+        "gace.source.reflect"
+      ],
+      "runtime_target": {
+        "id": "servercore.source",
+        "kind": "source_only"
+      },
+      "issuer": "master:seigo-gace",
+      "authority": "gace-master",
+      "audit_identity": "master:seigo-gace/internal:server-core",
+      "request_identity": "debugai.authenticated-control",
+      "allow_production": true,
+      "effects": {
+        "destructive": false,
+        "persistent_data": false,
+        "secrets": false,
+        "provider_model": false,
+        "public_exposure": false
+      },
+      "enabled": true,
+      "revoked": false,
+      "allowed_paths": [
+        "README.md",
+        "docs/",
+        "operations/github-project-chat-host-routes.json",
+        "operations/master-internal-repositories.json"
+      ]
     }
   ]
 }
