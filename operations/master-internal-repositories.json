@@ -107,7 +107,10 @@
         "server/control/runtime-packets.js",
         "server/control/sandbox-queue-selftest.js",
         "server/control/sandbox-runtime.js",
-        "server/control/sandbox-verification.js"
+        "server/control/sandbox-verification.js",
+        "server/control/production-skill-procedures.js",
+        "server/control/skill-procedures.js",
+        "server/control/skill-registry.js"
       ]
     }
   ]
