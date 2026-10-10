@@ -78,13 +78,15 @@
         "project.git_head",
         "service.debug_ai_health",
         "project.git_recent_commits",
-        "system.projects_inventory"
+        "system.projects_inventory",
+        "system.project_file_inspect"
       ],
       "command_effects": {
         "project.git_head": "read_only",
         "service.debug_ai_health": "read_only",
         "project.git_recent_commits": "read_only",
-        "system.projects_inventory": "read_only"
+        "system.projects_inventory": "read_only",
+        "system.project_file_inspect": "read_only"
       }
     },
     {
