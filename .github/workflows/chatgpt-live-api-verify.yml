@@ -3,6 +3,7 @@ name: G-ACE Common Chat Host Actions
 on:
   push:
     branches:
+      - main
       - feat/chat-actions-client-migration-20261011
     paths:
       - .github/chatgpt-live-api-target.json
@@ -73,14 +74,14 @@ jobs:
           const route = JSON.parse(fs.readFileSync('operations/github-project-chat-host-routes.json', 'utf8'));
           const current = route.routes.find(item => item.id === 'route_debugai_live_read');
           assert.ok(current, 'COMMON_ROUTE_MISSING');
-          assert.equal(current.workflow_repository, 'seigo-gace/debug-ai', 'LEGACY_ROUTE_CHANGED_BEFORE_E2E');
+          assert.equal(current.workflow_repository, 'G-ACE-inc/server-core', 'MIGRATED_ROUTE_OWNER_MISMATCH');
           const target = JSON.parse(fs.readFileSync('.github/chatgpt-live-api-target.json', 'utf8'));
           assert.equal(target.mode, 'readonly');
           assert.equal(target.gitops_request?.enabled, false);
           assert.equal(target.source_reflect_request?.enabled, false);
           assert.ok(['', 'project.git_head', 'service.debug_ai_health', 'system.project_file_inspect', 'service.registered_container_logs'].includes(target.server_command_id ?? ''), 'MIGRATION_READ_COMMAND_DENIED');
           console.log('SERVER_CORE_COPY_ROUTE_PREFLIGHT=PASS');
-          console.log('LEGACY_ACTIONS_ROUTE_PRESERVED=TRUE');
+          console.log('MIGRATED_ACTIONS_ROUTE=SERVER_CORE');
           NODE
 
       - name: Require Cloudflare Access credentials
