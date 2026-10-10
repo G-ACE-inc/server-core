@@ -84,7 +84,7 @@ GPT_CHAT
 server-coreの全正本を一括読込しない。
 
 設計基準線: [`docs/SERVER_CORE_DESIGN.md`](docs/SERVER_CORE_DESIGN.md)  
-ツール開発の**２つの優先機能**（共通設計・Current責任＝[server-core Control #10](https://github.com/G-ACE-inc/server-core/issues/10)）：**① 統合Development Log（収集→TGserver ZERO保存→検索→CHAT間復元）**は [`SERVER_CORE_DESIGN` §17](docs/SERVER_CORE_DESIGN.md#17-tool-capability-a--unified-development-log-collect-persist-search-and-restore-2026-10-10)、**② CHAT→Serverの調査・操作・安全なSource反映・Runtime証拠**は [`SERVER_CORE_DESIGN` §16](docs/SERVER_CORE_DESIGN.md#16-tool-capability-b--common-chat-to-host-controlled-reflection-design-contract-2026-10-10)。いずれもGitHub Project #1の固定目的に従う。**設計のmain反映やCIのみではLog保存・Server反映の実E2Eは未完**。
+ツール開発の**２つの必須機能／実行順：先に② CHAT→Server、既存Log成果を維持して後に①残課題**（共通設計・Current責任＝[server-core Control #10](https://github.com/G-ACE-inc/server-core/issues/10)）：**① 統合Development Log（収集→TGserver ZERO保存→検索→CHAT間復元）**は [`SERVER_CORE_DESIGN` §17](docs/SERVER_CORE_DESIGN.md#17-tool-capability-a--unified-development-log-collect-persist-search-and-restore-2026-10-10)、**② CHAT→Serverの調査・操作・安全なSource反映・Runtime証拠**は [`SERVER_CORE_DESIGN` §16](docs/SERVER_CORE_DESIGN.md#16-tool-capability-b--common-chat-to-host-controlled-reflection-design-contract-2026-10-10)。いずれもGitHub Project #1の固定目的に従う。**設計のmain反映やCIのみではLog保存・Server反映の実E2Eは未完**。
 設計差分: [`docs/DESIGN_DELTA.md`](docs/DESIGN_DELTA.md)
 
 ## 司令室としての役割
