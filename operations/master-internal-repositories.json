@@ -177,6 +177,59 @@
         "operations/github-project-chat-host-routes.json",
         "operations/master-internal-repositories.json"
       ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_master_tgserver_reflect_v1",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "seigo-gace/TGserver",
+      "repository_id": 1272649791,
+      "repository_node_id": "R_kgDOS9sYPw",
+      "repository_owner": "seigo-gace",
+      "master_principal": "seigo-gace",
+      "project": {
+        "owner": "seigo-gace",
+        "number": 1,
+        "node_id": "PVT_kwHODOQFoM4BEJII",
+        "item_id": "PVTI_lAHODOQFoM4BEJIIzg-lZHw",
+        "control_url": "https://github.com/seigo-gace/TGserver/issues/44"
+      },
+      "server_project_id": "TGserver",
+      "server_project_path": "/home/admin1/projects/TGserver",
+      "repo": "/workspace/debug-ai",
+      "remote": "https://github.com/seigo-gace/TGserver.git",
+      "default_branch": "main",
+      "allowed_branches": [
+        "main"
+      ],
+      "allowed_operations": [
+        "reflect"
+      ],
+      "allowed_scopes": [
+        "gace.source.reflect"
+      ],
+      "runtime_target": {
+        "id": "tgserver.source",
+        "kind": "source_only"
+      },
+      "issuer": "master:seigo-gace",
+      "authority": "gace-master",
+      "audit_identity": "master:seigo-gace/internal:TGserver",
+      "request_identity": "debugai.authenticated-control",
+      "allow_production": true,
+      "effects": {
+        "destructive": false,
+        "persistent_data": false,
+        "secrets": false,
+        "provider_model": false,
+        "public_exposure": false
+      },
+      "enabled": true,
+      "revoked": false,
+      "allowed_paths": [
+        "README.md",
+        "docs/"
+      ]
     }
   ]
 }
