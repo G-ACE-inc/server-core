@@ -87,9 +87,9 @@ permission is authorized by these Source edits.
 ### Retained across the PR #36 / #37 integration
 
 - `system.projects_inventory` remains in the catalog and in `workflow_supported_command_ids` with effect `read_only`. Historical inventory E2E run `37875336749` is not a new runtime acceptance.
-- `system.project_file_inspect` remains in the catalog. Its file-inspect E2E is still pending a CHAT push on `feat/host-project-file-inspect-20261009` @ `aa10a4c`, so static dispatch fail-closes with `COMMAND_UNSUPPORTED_BY_TRIGGER`. The live-read handoff still names `.github/chatgpt-live-api-target.json`, `chatgpt-live-api-verify.yml`, and `chatgpt-bounded-server-read.cjs`.
+- `system.project_file_inspect` is in the catalog and the trigger-supported allowlist. [Existing live run 38045018446](https://github.com/seigo-gace/debug-ai/actions/runs/38045018446) returned a registered-file READ_ONLY PASS. Static preflight now permits that bounded command, but stays `static_preflight_only=true` and `host_authorization_verified=false`; canonical `/home/admin1/server-core` read and dynamic route enforcement remain NOT_VERIFIED. The live-read handoff still uses `.github/chatgpt-live-api-target.json`, `chatgpt-live-api-verify.yml`, and `chatgpt-bounded-server-read.cjs`.
 - `project.git_recent_commits` remains trigger-supported and `read_only` on `feat/chat-gitops-request-20261009`.
 - Master-internal `allowed_paths` still includes the host inspect/inventory scripts and runner paths added on PR #36.
 - Host authorization stays separate from this static preflight (`host_authorization_verified=false`).
 
-**No merge/Host mutation** is performed by this documentation or parser CU.
+Stacked PR #49 merged into PR #36's **source branch only**; PR #36 remains DRAFT and unmerged into main. This source/doc correction does not modify installed Host admission or Runtime.
