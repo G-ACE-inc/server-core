@@ -3,16 +3,11 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "2026-10-11 live Source reflect E2E docs-only e5edb16",
+  "request": "server-core main common Actions idle; optional target source_reflect or docs-only auto reflect",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
-    "enabled": true,
-    "repository": "G-ACE-inc/server-core",
-    "branch": "main",
-    "sha": "e5edb16741d00867779690767a732e642b60452f",
-    "delegation_id": "dlg_master_servercore_reflect_v1",
-    "runtime_target": "servercore.source"
+    "enabled": false
   }
 }

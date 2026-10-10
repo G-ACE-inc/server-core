@@ -11,6 +11,7 @@ on:
       - scripts/chatgpt-bounded-server-read.cjs
       - tests/chatgpt-bounded-server-read.test.cjs
       - scripts/chatgpt-source-reflect-dispatch.cjs
+      - docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md
 
 permissions:
   contents: read
@@ -225,6 +226,86 @@ jobs:
       # This is the existing authenticated CHAT→Host GitOps transport, not a
       # second Workflow. Host private policy independently checks Project
       # enrollment, exact Repo/path/SHA/branch/issuer/effects/receipt.
+
+      - name: Detect docs-only allowed Source reflect HEAD
+        id: docs_reflect
+        if: ${{ github.ref_name == 'main' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA")
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            case "$f" in
+              docs/*|README.md|operations/github-project-chat-host-routes.json|operations/master-internal-repositories.json) ;;
+              *)
+                echo "SOURCE_REFLECT_AUTO_PATH_DENIED=$f"
+                echo "enabled=false" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+            esac
+          done
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          echo "SOURCE_REFLECT_AUTO_DOCS_HEAD=YES"
+
+      - name: Registered Project Source reflection (docs-only HEAD auto)
+        if: ${{ steps.docs_reflect.outputs.enabled == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=".github/chatgpt-live-api-target.json"
+          sha="$GITHUB_SHA"
+          repo="G-ACE-inc/server-core"
+          branch="main"
+          delegation="dlg_master_servercore_reflect_v1"
+          runtime="servercore.source"
+          node scripts/chatgpt-source-reflect-dispatch.cjs verify-dispatch --git-ref "$GITHUB_REF_NAME"
+          remote="$(git ls-remote origin "refs/heads/$branch" | awk 'NR==1{print $1}')"
+          [[ "$remote" == "$sha" ]] || { echo "CHAT_SOURCE_REFLECT_TRIGGER_HEAD_MISMATCH"; exit 62; }
+          jq -nc --arg repository "$repo" --arg branch "$branch" --arg sha "$sha" --arg delegation "$delegation" --arg runtime "$runtime"             '{action:"reflect",repo:"/workspace/debug-ai",branch:$branch,sha:$sha,expected_head:$sha,human_approved:true,
+              delegation:{id:$delegation,mode:"MASTER_INTERNAL_PERSISTENT",repository:$repository,scope:"gace.source.reflect",runtime_target:$runtime}}' > /tmp/chat-reflect-request.json
+          http="$(curl -sS --max-time 35 -o /tmp/chat-reflect-response.json -w '%{http_code}'             -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID"             -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"             -H "content-type: application/json" --data-binary @/tmp/chat-reflect-request.json             "https://debugai.asterav8.jp/v1/gitops/request")"
+          echo "CHAT_REFLECT_REQUEST_HTTP=$http"
+          [[ "$http" == "202" ]] || { echo "CHAT_REFLECT_REQUEST_REJECTED"; exit 52; }
+          touch /tmp/chat-source-reflect-request-sent
+          id="$(jq -r '.id // ""' /tmp/chat-reflect-response.json)"
+          [[ "$id" =~ ^gitops_[0-9a-f]{24}$ ]] || { echo "CHAT_REFLECT_REQUEST_ID_INVALID"; exit 53; }
+          echo "CHAT_REFLECT_REQUEST_ID=$id"
+          state=""
+          deadline=$((SECONDS+900))
+          while ((SECONDS < deadline)); do
+            jq -nc --arg id "$id" '{repo:"/workspace/debug-ai",id:$id}' > /tmp/chat-reflect-status-request.json
+            code="$(curl -sS --max-time 35 -o /tmp/chat-reflect-status.json -w '%{http_code}'               -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID"               -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"               -H "content-type: application/json" --data-binary @/tmp/chat-reflect-status-request.json               "https://debugai.asterav8.jp/v1/gitops/status")"
+            if [[ "$code" != "200" ]]; then sleep 10; continue; fi
+            [[ "$(jq -r '.id // ""' /tmp/chat-reflect-status.json)" == "$id" ]] || exit 54
+            state="$(jq -r '.state // ""' /tmp/chat-reflect-status.json)"
+            if [[ "$state" == "PASS" ]]; then
+              jq -e --arg sha "$sha" '.action=="reflect" and
+                .result.reflected_sha==$sha and .result.active_checkout_verified==true and
+                .result.runtime_restarted==false and (.result.before_head|test("^[0-9a-f]{40}$")) and
+                (.result.changed_paths|type=="array" and length>0)' /tmp/chat-reflect-status.json >/dev/null
+              echo "CHAT_REFLECT_TERMINAL=PASS"
+              echo "CHAT_REFLECTED_SHA=$sha"
+              echo "CHAT_REFLECT_ACTIVE_CHECKOUT_MATCH=TRUE"
+              echo "CHAT_REFLECT_RUNTIME_RESTARTED=NO"
+              break
+            fi
+            if [[ "$state" == "FAIL" ]]; then
+              failure="$(jq -r '.error // "UNKNOWN"' /tmp/chat-reflect-status.json)"
+              [[ "$failure" =~ ^[A-Z][A-Z0-9_]{0,79}$ ]] || failure="UNKNOWN"
+              echo "CHAT_REFLECT_TERMINAL=FAIL"
+              echo "CHAT_REFLECT_FAILURE_CLASS=$failure"
+              exit 55
+            fi
+            [[ "$state" == "QUEUED" || "$state" == "RUNNING" ]] || exit 56
+            sleep 10
+          done
+          [[ "$state" == "PASS" ]] || { echo "CHAT_REFLECT_TERMINAL=TIMEOUT"; exit 57; }
+          echo "CHAT_REFLECT_RUNTIME_GATE=NOT_EXECUTED"
+
       - name: Registered Project Source reflection through existing GitOps
         if: ${{ steps.target.outputs.source_reflect_enabled == 'true' }}
         shell: bash

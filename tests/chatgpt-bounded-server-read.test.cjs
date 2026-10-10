@@ -248,6 +248,7 @@ test("server-core workflow allows main Source reflect and keeps legacy DebugAI d
   assert.match(wf,/dlg_master_servercore_reflect_v1/);
   assert.match(wf,/CHAT_SOURCE_REFLECT_TRIGGER_HEAD_MISMATCH/);
   assert.match(wf,/CHAT_SOURCE_REFLECT_SHA_NOT_ON_BRANCH/);
+  assert.match(wf,/SOURCE_REFLECT_AUTO_DOCS_HEAD=YES/);
   assert.match(wf,/\[\[ "\$GITHUB_REF_NAME" == "feat\/chat-gitops-request-20261009" \]\]/);
   assert.match(wf,/CHAT_GITOPS_TRIGGER_BRANCH_DENIED/);
 });
