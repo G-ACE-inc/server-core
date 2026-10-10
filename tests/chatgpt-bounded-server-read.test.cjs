@@ -235,3 +235,11 @@ test("CHAT registered host container logs stay scoped, short, sanitized and read
   const base=JSON.parse(fs.readFileSync(targetFile,"utf8"));
   for(const entry of ["","../x","webhook;rm"])assert.throws(()=>m.validateTarget({...base,server_command_id:"service.registered_container_logs",registered_container_entry:entry,log_lines:5}),/REGISTERED_CONTAINER|SERVER_LOG/);
 });
+
+
+test("server-core copied workflow owns Source reflect trigger; legacy deploy remains fail-closed",()=>{
+  assert.match(wf,/feat\/chat-actions-client-migration-20261011\) ;;[\s\S]*?CHAT_SOURCE_REFLECT_TRIGGER_BRANCH_DENIED/);
+  assert.match(wf,/\[\[ "\$GITHUB_REF_NAME" == "feat\/chat-gitops-request-20261009" \]\]/);
+  assert.match(wf,/CHAT_GITOPS_TRIGGER_BRANCH_DENIED/);
+  assert.match(wf,/LEGACY_ROUTE_CHANGED_BEFORE_E2E/);
+});
