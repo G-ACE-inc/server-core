@@ -83,7 +83,13 @@
         ".github/workflows/ci.yml",
         "scripts/host-asteria-baseline-probe.sh",
         "server/adapters/external-review-quota.js",
-        "scripts/external-review-volume-probe.cjs"
+        "scripts/external-review-volume-probe.cjs",
+        "server/control/server-command-request.js",
+        "scripts/host-workspace-file-inspect.py",
+        "scripts/host-workspace-inventory.py",
+        "scripts/host-server-command-runner.sh",
+        "scripts/chatgpt-bounded-server-read.cjs",
+        "operations/host-admitted-workspace-entries.json"
       ]
     }
   ]
