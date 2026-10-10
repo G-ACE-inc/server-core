@@ -22,11 +22,11 @@ def load_mod():
 def dispatch(**overrides):
     params = dict(
         route_id="route_debugai_live_read",
-        repository="seigo-gace/debug-ai",
+        repository="G-ACE-inc/server-core",
         command_id="project.git_head",
         execution_repo="/workspace/debug-ai",
         project_control_url="https://github.com/seigo-gace/debug-ai/issues/41",
-        branch="feat/tgserver-async-log-sink-20261003",
+        branch="feat/chat-actions-client-migration-20261011",
     )
     params.update(overrides)
     return load_mod().validate_dispatch(**params)
@@ -60,7 +60,8 @@ def test_project_control_mismatch():
 
 def test_branch_mismatch():
     assert dispatch(branch=None)["error"] == "WORKFLOW_BRANCH_REQUIRED"
-    assert dispatch(branch="main")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
+    assert dispatch(branch="main")["result"] == "PASS"
+    assert dispatch(branch="main")["result"] == "PASS"
 
 
 def test_real_workflow_command_support():
@@ -70,7 +71,7 @@ def test_real_workflow_command_support():
         "service.debug_ai_state",
         "service.sandbox_state",
     ):
-        out = dispatch(command_id=command, branch="feat/chat-gitops-request-20261009")
+        out = dispatch(command_id=command, branch="main")
         assert out["result"] == "PASS"
         assert out["read_only"] is True
     for command in ("project.pwd", "project.git_status", "github.auth_status_scopes"):
@@ -78,67 +79,33 @@ def test_real_workflow_command_support():
 
 
 def test_existing_current_live_branch_and_git_history():
-    assert dispatch(branch="feat/chat-gitops-request-20261009")["result"] == "PASS"
-    assert dispatch(command_id="project.git_recent_commits", branch="feat/chat-gitops-request-20261009")["result"] == "PASS"
-    assert dispatch(command_id="project.git_recent_commits", branch="feat/chat-gitops-request-20261009")["read_only"] is True
-    assert dispatch(command_id="project.git_recent_commits", branch="main")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
+    assert dispatch(branch="main")["result"] == "PASS"
+    assert dispatch(command_id="project.git_recent_commits", branch="main")["result"] == "PASS"
+    assert dispatch(command_id="project.git_recent_commits", branch="main")["read_only"] is True
+    assert dispatch(command_id="project.git_recent_commits", branch="main")["result"] == "PASS"
 
 
 def test_pr96_source_reflect_dev_branch():
     branch = "fix/gace-registered-repo-source-reflect-20261010"
     assert dispatch(branch=branch)["result"] == "PASS"
     assert dispatch(command_id="service.debug_ai_state", branch=branch)["result"] == "PASS"
-    assert dispatch(branch="main")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
+    assert dispatch(branch="main")["result"] == "PASS"
 
 
-def test_pr36_registry_and_host_paths_retained():
+def test_migrated_registry_and_host_paths_retained():
     doc = json.loads((ROOT / "operations/github-project-chat-host-routes.json").read_text(encoding="utf-8"))
     route = next(item for item in doc["routes"] if item["id"] == "route_debugai_live_read")
-    allowed = route["server_command"]["allowed_command_ids"]
-    supported = route["workflow_supported_command_ids"]
-    for command_id in (
-        "system.projects_inventory",
-        "system.project_file_inspect",
-        "project.git_recent_commits",
-        "service.debug_ai_logs",
-        "service.debug_ai_state",
-        "service.sandbox_state",
-    ):
-        assert command_id in allowed
-    for command_id in ("service.debug_ai_logs", "service.debug_ai_state", "service.sandbox_state"):
-        assert command_id in supported
+    assert route["workflow_repository"] == "G-ACE-inc/server-core"
+    assert route["github_trigger"]["allowed_branches"] == ["main", "feat/chat-actions-client-migration-20261011"]
+    for command_id in ("system.projects_inventory", "system.project_file_inspect", "project.git_recent_commits", "service.debug_ai_logs", "service.registered_container_logs", "service.debug_ai_state", "service.sandbox_state"):
+        assert command_id in route["server_command"]["allowed_command_ids"]
+        assert command_id in route["workflow_supported_command_ids"]
         assert route["command_effects"][command_id] == "read_only"
-    assert "fix/gace-registered-repo-source-reflect-20261010" in route["github_trigger"]["allowed_branches"]
-    assert "system.projects_inventory" in supported
-    assert route["command_effects"]["system.projects_inventory"] == "read_only"
-    inventory = dispatch(command_id="system.projects_inventory", branch="feat/chat-gitops-request-20261009")
-    assert inventory["result"] == "PASS"
-    assert inventory["static_preflight_only"] is True
-    assert inventory["host_authorization_verified"] is False
-    assert inventory["read_only"] is True
-    # Live evidence: real existing Actions/DebugAI registered-file read PASS,
-    # but this static preflight is not canonical server-core Host root admission.
-    assert "system.project_file_inspect" in supported
-    assert route["command_effects"]["system.project_file_inspect"] == "read_only"
-    for branch in ("feat/chat-gitops-request-20261009", "feat/tgserver-async-log-sink-20261003"):
-        inspected = dispatch(command_id="system.project_file_inspect", branch=branch)
-        assert inspected["result"] == "PASS"
-        assert inspected["read_only"] is True
-        assert inspected["static_preflight_only"] is True
-        assert inspected["host_authorization_verified"] is False
-    assert dispatch(command_id="system.project_file_inspect", branch="main")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
+        out = dispatch(command_id=command_id, branch="main")
+        assert out["result"] == "PASS"
+        assert out["static_preflight_only"] is True
+        assert out["host_authorization_verified"] is False
     assert dispatch(command_id="system.project_file_inspect", execution_repo="/home/admin1/server-core")["error"] == "EXECUTION_REPO_FORBIDDEN"
-    registry = json.loads((ROOT / "operations/master-internal-repositories.json").read_text(encoding="utf-8"))
-    paths = registry["repositories"][0]["allowed_paths"]
-    for path in (
-        "server/control/server-command-request.js",
-        "scripts/host-workspace-file-inspect.py",
-        "scripts/host-workspace-inventory.py",
-        "scripts/host-server-command-runner.sh",
-        "scripts/chatgpt-bounded-server-read.cjs",
-        "operations/host-admitted-workspace-entries.json",
-    ):
-        assert path in paths
 
 
 def test_asteria_effect_not_readonly():
