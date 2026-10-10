@@ -25,6 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify copied bounded Actions client regression
+        run: node --test tests/chatgpt-bounded-server-read.test.cjs
+
       - name: Read bounded target
         id: target
         shell: bash
