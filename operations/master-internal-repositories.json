@@ -83,7 +83,9 @@
         ".github/workflows/ci.yml",
         "scripts/host-asteria-baseline-probe.sh",
         "server/workflow.js",
-        "server/control/completion-gate.js"
+        "server/control/completion-gate.js",
+        "server/adapters/tgserver.js",
+        "server/control/durable-run-archive.js"
       ]
     }
   ]
