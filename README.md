@@ -84,6 +84,7 @@ GPT_CHAT
 server-coreの全正本を一括読込しない。
 
 設計基準線: [`docs/SERVER_CORE_DESIGN.md`](docs/SERVER_CORE_DESIGN.md)  
+CHAT→Host共通ツール（読取・安全なSource反映・Runtime証拠）の設計正本: [`docs/SERVER_CORE_DESIGN.md` §16](docs/SERVER_CORE_DESIGN.md#16-common-chat-to-host-controlled-reflection-design-contract-2026-10-10) ／ Work Current: [Control #10](https://github.com/G-ACE-inc/server-core/issues/10)（設計記載≠Host認可・Runtime反映）。
 設計差分: [`docs/DESIGN_DELTA.md`](docs/DESIGN_DELTA.md)
 
 ## 司令室としての役割
