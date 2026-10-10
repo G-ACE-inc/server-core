@@ -36,6 +36,7 @@
       "allowed_branches": [
         "feat/tgserver-async-log-sink-20261003",
         "master-internal-runtime-20261008",
+        "fix/p1c-refix-no-new-evidence-20261010",
         "fix/free-review-host-forward-20261010",
         "fix/scout-observation-reuse-20261010"
       ],
@@ -83,17 +84,20 @@
         "scripts/host-gitops-register-master.sh",
         ".github/workflows/ci.yml",
         "scripts/host-asteria-baseline-probe.sh",
-        "server/adapters/external-review-quota.js",
-        "scripts/external-review-volume-probe.cjs",
+        "server/workflow.js",
+        "server/control/completion-gate.js",
+        "server/adapters/tgserver.js",
+        "server/control/durable-run-archive.js",
+        "server/control/storage-retention.js",
         "server/control/server-command-request.js",
         "scripts/host-workspace-file-inspect.py",
         "scripts/host-workspace-inventory.py",
         "scripts/host-server-command-runner.sh",
         "scripts/chatgpt-bounded-server-read.cjs",
         "operations/host-admitted-workspace-entries.json",
+        "server/adapters/external-review-quota.js",
+        "scripts/external-review-volume-probe.cjs",
         "AGENTS.md",
-        "server/workflow.js",
-        "server/control/completion-gate.js",
         "server/adapters/external-review.js",
         "server/adapters/ai-core.js",
         "server/control/causal-scout-skill-effect-benchmark.js",
@@ -111,6 +115,61 @@
         "server/control/production-skill-procedures.js",
         "server/control/skill-procedures.js",
         "server/control/skill-registry.js"
+      ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_master_servercore_reflect_v1",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "G-ACE-inc/server-core",
+      "repository_id": 1270949815,
+      "repository_node_id": "R_kgDOS8Entw",
+      "repository_owner": "G-ACE-inc",
+      "master_principal": "seigo-gace",
+      "project": {
+        "owner": "seigo-gace",
+        "number": 1,
+        "node_id": "PVT_kwHODOQFoM4BEJII",
+        "item_id": "PVTI_lAHODOQFoM4BEJIIzg_ZS0Y",
+        "control_url": "https://github.com/G-ACE-inc/server-core/issues/15"
+      },
+      "server_project_id": "server-core",
+      "server_project_path": "/home/admin1/server-core",
+      "repo": "/workspace/debug-ai",
+      "remote": "https://github.com/G-ACE-inc/server-core.git",
+      "default_branch": "main",
+      "allowed_branches": [
+        "main"
+      ],
+      "allowed_operations": [
+        "reflect"
+      ],
+      "allowed_scopes": [
+        "gace.source.reflect"
+      ],
+      "runtime_target": {
+        "id": "servercore.source",
+        "kind": "source_only"
+      },
+      "issuer": "master:seigo-gace",
+      "authority": "gace-master",
+      "audit_identity": "master:seigo-gace/internal:server-core",
+      "request_identity": "debugai.authenticated-control",
+      "allow_production": true,
+      "effects": {
+        "destructive": false,
+        "persistent_data": false,
+        "secrets": false,
+        "provider_model": false,
+        "public_exposure": false
+      },
+      "enabled": true,
+      "revoked": false,
+      "allowed_paths": [
+        "README.md",
+        "docs/",
+        "operations/github-project-chat-host-routes.json",
+        "operations/master-internal-repositories.json"
       ]
     }
   ]

@@ -60,6 +60,8 @@ jobs:
           test -x scripts/github-skill-path.sh
           test -f operations/github-project-control.json
           test -f operations/github-project-debugai-routing.json
+          test -f operations/github-project-chat-host-routes.json
+          test -f scripts/github_project_chat_host_route.py
           test -f Dockerfile.project-control
           test -f Dockerfile.project-control.dockerignore
           test -f docker-compose.project-control.yml
@@ -106,6 +108,8 @@ jobs:
           grep -q 'Command Center' docs/STRUCTURE.md
           grep -q 'GITHUB PROJECT DUAL RULE PLANE' docs/GITHUB_PROJECT_RULE_PLANE.md
           python3 scripts/github_project_rule_plane_test.py
+          python3 -m py_compile scripts/github_project_chat_host_route.py
+          python3 scripts/github_project_chat_host_route_test.py
 
       - name: Provider ownership boundary
         run: |

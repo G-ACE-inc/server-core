@@ -18,14 +18,19 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 6. 今回必要なserver-core / Project Authority・Source・Testだけ
 ```
 
-### GPT_CHAT
+### GPT_CHAT / ChatGPT Work (Master-facing orchestrator)
 
 ```text
-1. canonical Rule Plane #17
-2. GitHub Project #1 Current
-3. Workspace/server controlが必要なTaskだけserver-coreを読む
-4. target Project Current / Repository Evidence
+1. Manifest profile GPT_CHAT -> canonical Rule Plane #17 (including coordinator use from ChatGPT Work)
+2. GitHub Project #1 / target Project owning Current, find literal PROJECT_PURPOSE_CANONICAL
+3. Target repository README-linked active Design Authority + Definition of Complete (verify the fixed whole-project goal against the Design; Current Task is NOT the goal)
+4. Workspace/server controlが必要なTaskだけserver-coreを読む
+5. Target Repository/CU Source/Test/CI/Runtime Evidence, then execute actual NEXT to the safe gate
 ```
+
+**Work routing is a selection of the existing GPT_CHAT profile, not a third rule plane or automatic Work-session injection.** When ChatGPT Work leads planning, coding, research or reports on Master's behalf, it must actually load #17 and the target product Design/Current first and distinguish `PROJECT_PURPOSE_CANONICAL` from `CURRENT_WORK_PURPOSE`; no rewrite of the whole product purpose as the active PR/module/Host issue. A delegated Work-run terminal/server Codex/Composer executor uses the existing SERVER_AI #16 and only the task-specific purpose/acceptance excerpt. Fresh readback of the active Work session and its actual actions is required to say the rule was applied.
+
+**Ongoing explanations are not Master reports (#17 §5/§7):** For both GPT CHAT and ChatGPT Work, concise progress/analysis/CI/PR notices are nonterminal; after explaining, execute the next safe owned-CU action. Reserve the **formal five-part report** for Master-requested pause/report, genuinely required Master-only operation/decision, major design/product-impact choice, proven Mission completion, or a verified full same-CU stop after independent work is exhausted. **NEXT is mandatory visibility for Master inside a legitimate report, never permission to end the turn or defer a runnable CHAT action.** If Master must act, supply the complete directly executable instruction. An Issue comment, CI result or progress explanation is not a reporting trigger. Do not claim this repository text can intercept live CHAT/Work responses.
 
 GPT_CHAT拡張RuleをSERVER_AIへdefault loadしない。
 
@@ -43,7 +48,8 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | Master Terminal Command / Copy&Paste / GACE_RESULT / Shell Safety / Syntax Validation | `docs/MASTER_TERMINAL_COMMAND.md` |
 | Workspace運用 / dispatch | `docs/G_ACE_WORKSPACE.md` |
 | Project / Repository / shared Capability / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
-| GPT CHATからの既存Actions経由Host読取・GitOps・Actions Log照合 | `docs/G_ACE_WORKSPACE.md` §6/§9 + `docs/WORKSPACE_REGISTRY.md` + 対象DebugAI Source/Host Current |
+| Tool B: GPT CHATからの既存Actions経由Host読取・GitOps・canonical parent / active checkout / Source反映 | `docs/SERVER_CORE_DESIGN.md` §16（B0–B5）+ `docs/G_ACE_WORKSPACE.md` §6/§9 + `docs/WORKSPACE_REGISTRY.md` + DebugAI認可済Source/Host Current |
+| Tool A: 統合Development Logの収集・送信・TGserver ZERO保存・検索・CHAT間復元 | `docs/SERVER_CORE_DESIGN.md` §17（A0–A4）+ `docs/PROJECT_INTEGRATION_RULES.md` + TGserver `README_ZERO.md` / `docs/TGSERVER_ZERO_PROJECT_INTEGRATION.md` / #44/#50 + 関連Gateway Producer/Runtime Evidence |
 | Project Integration（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Git / Commit / Push / work report | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
@@ -237,3 +243,6 @@ Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / Gi
 Task owner、Authority、Runtime state、Secret contract等が不明な場合は推測で補完しない。
 
 `UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` を維持し、必要なAuthority/readbackだけ追加取得する。
+<!-- Tool-B source_reflect E2E evidence line 2026-10-10T17:25:00+09:00 -->
+
+<!-- Tool-B source_reflect E2E evidence line 2026-10-10T17:30:00+09:00 round-2 -->
