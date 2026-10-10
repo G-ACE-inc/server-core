@@ -209,6 +209,27 @@ def test_host_head_readback_is_not_asteria_probe_completion():
     assert out["runtime_route_enforcement_verified"] is False
 
 
+def test_failed_command_cannot_be_masked_by_unrelated_host_head():
+    lines = emitted_lines(state="FAIL") + [
+        "2026-10-08T15:47:47Z LIVE_HEALTH=PASS",
+        "2026-10-08T15:47:48Z LIVE_HOST_HEAD=" + "a" * 40,
+    ]
+    out = load_mod().parse_evidence(lines)
+    assert out["required_group_satisfied"] is True
+    assert out["runtime_terminal_pass"] is False
+    assert out["evidence_usable_for_chat"] is False
+
+
+def test_partial_command_cannot_be_masked_by_unrelated_host_head():
+    lines = [line for line in emitted_lines() if "SERVER_COMMAND_STATE=" not in line] + [
+        "2026-10-08T15:47:47Z LIVE_HEALTH=PASS",
+        "2026-10-08T15:47:48Z LIVE_HOST_HEAD=" + "a" * 40,
+    ]
+    out = load_mod().parse_evidence(lines)
+    assert out["runtime_terminal_pass"] is False
+    assert out["evidence_usable_for_chat"] is False
+
+
 def test_routing_link():
     routing = json.loads((ROOT / "operations/github-project-debugai-routing.json").read_text(encoding="utf-8"))
     assert routing["chat_github_host_routes"].endswith("github-project-chat-host-routes.json")
