@@ -61,7 +61,7 @@ def test_project_control_mismatch():
 def test_branch_mismatch():
     assert dispatch(branch=None)["error"] == "WORKFLOW_BRANCH_REQUIRED"
     assert dispatch(branch="main")["result"] == "PASS"
-    assert dispatch(branch="main")["result"] == "PASS"
+    assert dispatch(branch="feat/chat-gitops-request-20261009")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
 
 
 def test_real_workflow_command_support():
@@ -114,6 +114,7 @@ def test_asteria_effect_not_readonly():
         repository="seigo-gace/debug-ai",
         command_id="asteria.baseline_probe_start",
         project_control_url="https://github.com/seigo-gace/asteria/issues/6",
+        branch="feat/tgserver-async-log-sink-20261003",
     )
     out = dispatch(**a)
     assert out["result"] == "PASS"
