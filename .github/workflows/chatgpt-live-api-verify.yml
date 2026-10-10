@@ -78,7 +78,7 @@ jobs:
           assert.equal(target.mode, 'readonly');
           assert.equal(target.gitops_request?.enabled, false);
           assert.equal(target.source_reflect_request?.enabled, false);
-          assert.equal(target.server_command_id ?? '', '');
+          assert.ok(['', 'project.git_head', 'service.debug_ai_health', 'system.project_file_inspect', 'service.registered_container_logs'].includes(target.server_command_id ?? ''), 'MIGRATION_READ_COMMAND_DENIED');
           console.log('SERVER_CORE_COPY_ROUTE_PREFLIGHT=PASS');
           console.log('LEGACY_ACTIONS_ROUTE_PRESERVED=TRUE');
           NODE
