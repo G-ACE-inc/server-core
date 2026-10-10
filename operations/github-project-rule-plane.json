@@ -21,7 +21,15 @@
       "server_core_bootstrap_required": true,
       "default_for_server_agents": true,
       "max_bootstrap_lines": 70,
-      "forbidden_default_load": ["GPT_CHAT"]
+      "forbidden_default_load": [
+        "GPT_CHAT"
+      ],
+      "consumer_surfaces": [
+        "SERVER_AI",
+        "CODEX",
+        "COMPOSER",
+        "CHATGPT_WORK_DELEGATED_SERVER_EXECUTOR"
+      ]
     },
     "gpt_chat": {
       "profile": "GPT_CHAT",
@@ -29,7 +37,11 @@
       "issue_url": "https://github.com/G-ACE-inc/server-core/issues/17",
       "payload_class": "EXTENDED",
       "server_ai_default_load": false,
-      "server_core_load_mode": "WHEN_WORKSPACE_OR_SERVER_CAPABILITY_REQUIRED"
+      "server_core_load_mode": "WHEN_WORKSPACE_OR_SERVER_CAPABILITY_REQUIRED",
+      "consumer_surfaces": [
+        "GPT_CHAT",
+        "CHATGPT_WORK_ORCHESTRATOR"
+      ]
     }
   },
   "authority_model": {
