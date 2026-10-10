@@ -241,5 +241,5 @@ test("server-core copied workflow owns Source reflect trigger; legacy deploy rem
   assert.match(wf,/feat\/chat-actions-client-migration-20261011\) ;;[\s\S]*?CHAT_SOURCE_REFLECT_TRIGGER_BRANCH_DENIED/);
   assert.match(wf,/\[\[ "\$GITHUB_REF_NAME" == "feat\/chat-gitops-request-20261009" \]\]/);
   assert.match(wf,/CHAT_GITOPS_TRIGGER_BRANCH_DENIED/);
-  assert.match(wf,/LEGACY_ROUTE_CHANGED_BEFORE_E2E/);
+  assert.match(wf,/MIGRATED_ROUTE_OWNER_MISMATCH/);
 });
