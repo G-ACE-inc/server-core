@@ -243,3 +243,4 @@ Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / Gi
 Task owner、Authority、Runtime state、Secret contract等が不明な場合は推測で補完しない。
 
 `UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` を維持し、必要なAuthority/readbackだけ追加取得する。
+<!-- Tool-B source_reflect E2E evidence line 2026-10-10T17:25:00+09:00 -->
