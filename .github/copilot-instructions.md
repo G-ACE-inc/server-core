@@ -1,6 +1,6 @@
 # G-ACE Copilot: scoped, low-overhead SERVER_AI adapter
 
-**Profile: SERVER_AI (#16), never GPT_CHAT (#17).** This is a Copilot adapter, not a second rule authority. For substantive development: `README.md` → `docs/LOAD_SCOPE.md` → `operations/github-project-rule-plane.json` → fresh [SERVER_AI #16](https://github.com/G-ACE-inc/server-core/issues/16) → owning Project Current/target README-linked Design/Definition of Complete → relevant Source/tests. Don't bulk-read Notion, other Projects or full server-core. An instruction file by itself does not grant tools/Host access or attest a real rule load.
+**Profile: SERVER_AI (#16), never GPT_CHAT (#17).** This is a Copilot adapter, not a second rule authority. For substantive development: `README.md` → `docs/LOAD_SCOPE.md` → `operations/github-project-rule-plane.json` → fresh [SERVER_AI #16](https://github.com/G-ACE-inc/server-core/issues/16) → owning Project Current/target README-linked Design/Definition of Complete → relevant Source/tests. Do not default-load GPT_CHAT #17, bulk-read Notion, other Projects or full server-core. An instruction file by itself does not grant tools/Host access or attest a real rule load.
 
 ## Match each Copilot surface to actual capabilities
 
