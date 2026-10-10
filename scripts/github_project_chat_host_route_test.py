@@ -85,11 +85,11 @@ def test_existing_current_live_branch_and_git_history():
     assert dispatch(command_id="project.git_recent_commits", branch="main")["result"] == "PASS"
 
 
-def test_pr96_source_reflect_dev_branch():
-    branch = "fix/gace-registered-repo-source-reflect-20261010"
+def test_migration_branch_and_legacy_reflect_branch_isolation():
+    branch = "feat/chat-actions-client-migration-20261011"
     assert dispatch(branch=branch)["result"] == "PASS"
     assert dispatch(command_id="service.debug_ai_state", branch=branch)["result"] == "PASS"
-    assert dispatch(branch="main")["result"] == "PASS"
+    assert dispatch(branch="fix/gace-registered-repo-source-reflect-20261010")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
 
 
 def test_migrated_registry_and_host_paths_retained():
