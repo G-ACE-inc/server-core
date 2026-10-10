@@ -11,7 +11,7 @@
     "enabled": true,
     "repository": "G-ACE-inc/server-core",
     "branch": "main",
-    "sha": "2867c4b8e7df43ac4c98b6617afc92bc6a80e526",
+    "sha": "e5edb16741d00867779690767a732e642b60452f",
     "delegation_id": "dlg_master_servercore_reflect_v1",
     "runtime_target": "servercore.source"
   }
