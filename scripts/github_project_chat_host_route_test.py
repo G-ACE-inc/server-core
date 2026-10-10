@@ -94,7 +94,18 @@ def test_pr36_registry_and_host_paths_retained():
     assert inventory["static_preflight_only"] is True
     assert inventory["host_authorization_verified"] is False
     assert inventory["read_only"] is True
-    assert dispatch(command_id="system.project_file_inspect")["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
+    # Live evidence: real existing Actions/DebugAI registered-file read PASS,
+    # but this static preflight is not canonical server-core Host root admission.
+    assert "system.project_file_inspect" in supported
+    assert route["command_effects"]["system.project_file_inspect"] == "read_only"
+    for branch in ("feat/chat-gitops-request-20261009", "feat/tgserver-async-log-sink-20261003"):
+        inspected = dispatch(command_id="system.project_file_inspect", branch=branch)
+        assert inspected["result"] == "PASS"
+        assert inspected["read_only"] is True
+        assert inspected["static_preflight_only"] is True
+        assert inspected["host_authorization_verified"] is False
+    assert dispatch(command_id="system.project_file_inspect", branch="main")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
+    assert dispatch(command_id="system.project_file_inspect", execution_repo="/home/admin1/server-core")["error"] == "EXECUTION_REPO_FORBIDDEN"
     registry = json.loads((ROOT / "operations/master-internal-repositories.json").read_text(encoding="utf-8"))
     paths = registry["repositories"][0]["allowed_paths"]
     for path in (
