@@ -282,3 +282,97 @@ server-core does not own:
 This file is the server-core architecture baseline.
 
 Do not silently rewrite it to follow implementation drift. Formal changes require rationale, evidence and an entry in `docs/DESIGN_DELTA.md`, plus a traceable commit.
+## 16. Common CHAT-to-Host controlled reflection (design contract, 2026-10-10)
+
+### 16.1 Ownership, scope, and purpose
+
+**Canonical owner: G-ACE-inc/server-core, Control Issue #10, under Control #15 and GitHub Project #1.** This section is the stable *cross-repository tool design*; #10 records changing Change Units, owner, evidence and next gate. It is not another AI rule plane, a separate Current tracker, an authorization credential, or a new executor.
+
+The complete G-ACE Development Platform purpose remains GitHub Development Control **and** Unified Development Log with cross-CHAT/Work/Codex/Cursor/Server/Actions/Runtime traceability and TGserver search/recovery. This tool is an enabling capability: **ordinary GPT CHAT must be able to take an authorized, verified GitHub revision through an existing bounded Host route to actual Server files/services and return independent Host evidence**. A GitHub commit, PR, CI success, updated local main ref, or green Actions job alone is not completion.
+
+Responsibility separation:
+
+| Owner | Owns | Does not acquire |
+|---|---|---|
+| server-core / #10 | Common dispatch/authorization interface, Project–Repo–canonical Host path and consumer mapping, branch/checkout governance, acceptance states, cross-Repo evidence schema | Product-specific code or permanent Secret values |
+| GitHub Project #1 / owning Current | Master intent, canonical Project purpose, Change Unit, mutation owner, authorized scope, next gate | Host credential or runtime truth |
+| GPT CHAT / Work coordinator (#17) | Design/Current rehydrate, technical decisions, GitHub Source/CI, request dispatch and exact evidence reconciliation | Right to bypass trusted Host admission |
+| SERVER_AI / Composer / Codex (#16) | Bounded delegated implementation/Host work, minimal evidence receipt | GPT CHAT full rule payload or independent authority expansion |
+| Existing DebugAI implementation owner | Existing Actions-triggered Cloudflare Access, bounded Server Command and guarded GitOps API/Host executor code | Whole-project Source/Design authority or arbitrary new target admission |
+| Target Repository / Host | Product Source/Tests and actual active checkout, containers, health, operation status | Permission inferred from a GitHub Issue comment |
+| TGserver ZERO owner | Durable Development Event transport, indexing/search/recovery | Authorization for Host writes or Source/Deploy PASS |
+
+**Reuse first:** Existing prior partial cross-Project route work in server-core PR #36 (docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md, route registry and validator) and merged stacked PR #37 provides static dispatch/evidence parsing only. PR #36 remains outside main and must not be misrepresented as installed/live routing. Reuse its validated constraints and logic when its owner reconciles it; do not create competing workflow, MCP, token, queue or adapter. The authenticated live transport is the existing DebugAI ChatGPT Live Dogfood Actions lane.
+
+### 16.2 Mandatory design-before-mutation preflight
+
+Before any source/Host/registry/reflection mutation, resolve and record:
+
+1. Project #1 and target owning Current, fixed Project purpose and target active Design/Definition of Complete, Master latest intent, exact Change Unit and single mutation owner.
+2. Exact requested operation class, effect, target repository and verified GitHub remote identity, branch, expected full 40-character SHA, changed paths and required tests/CI.
+3. Canonical parent realpath, Git common directory, intended consumer checkout/path, active HEAD/branch, index + working-tree dirty paths, existing linked worktrees and PR owners, and observed Host-installed admission revision. Unknown is NOT_VERIFIED.
+4. Existing transport/runner/route applicability, separately from Host-authorized Repo/Project item/actor/branch/path/effect scope. Static config and prior PASS do not establish active Host authorization.
+5. Required operation-specific rollback/prestate and independent evidence for Source, CI, Host, Deploy, Runtime and Development Log.
+
+If the baseline Design cannot be resolved, mark DESIGN_BASELINE_NOT_VERIFIED; if an intended operation conflicts with the Design, mark DESIGN_DRIFT_REVIEW_REQUIRED and resolve at the owning Design before design-changing implementation. A gate failure blocks only the affected operation; other independently safe read-only/evidence work continues.
+
+### 16.3 Canonical Host location and Branch/consumer invariants
+
+A repository is mapped by **exact verified identity**, not a matching folder name or a Project membership claim. The mapping must bind GitHub repository ID/owner, Project item and Control Issue, permitted canonical Host parent realpath, permitted logical root, Git common directory, expected remote, allowed branch/SHA/paths, permitted command/effects, and (only if relevant) explicit Compose runtime target. Host admission is a separate trusted write/readback.
+
+The current actual server-core parent is /home/admin1/server-core, **not** /home/admin1/projects/server-core. The existing DebugAI host-workspace reader supports only projects and worktrees roots and its installed registry maps server-core to projects; that mapping is **incorrect for the canonical parent**. A future precisely named root/entry for this canonical path must be implemented only through the existing owner-authorized allowlist, with exact realpath containment, no symlink/parent traversal, no broad /home/admin1 scanning and no free-form path or shell input. Reject unknown, stale, mismatched and ambiguous roots. Never create a duplicate server-core sibling or relocate the parent as a shortcut.
+
+Allowed isolation: a branch or owned linked worktree *inside the existing canonical parent* if useful and verified. Forbidden: a derivative sibling at /home/admin1/projects, an unregistered top-level clone, automatic cleanup of another owner's work, or inferring that moving refs changes the active consumer. Existing PR #39 branch and its uncommitted operations/master-internal-repositories.json remain owned and protected. **Moving local main to origin/main is REF_UPDATED only, not ACTIVE_FILES_UPDATED.** A worktree carrying new Source is STAGED, not ACTIVATED until the actual loader/consumer path selects it and reads back the exact content. On divergent or dirty active checkouts: stop that write, preserve them, determine same-CU owner integration strategy, and never use hard reset/forced checkout or blind merge/rebase.
+
+### 16.4 Existing execution path and logical request contract
+
+Transport remains: ordinary CHAT authorized GitHub file update on existing bounded trigger branch and exact JSON target → existing GitHub Actions run/job → Cloudflare Access → existing DebugAI authenticated bounded command/GitOps API → admitted Host executor → final request status and source/health evidence → owning GitHub Current and (in its separately approved lane) TGserver ZERO.
+
+The common dispatch decision is **logical**, not a claim that this JSON schema is already implemented. An implementation must bind these fields without inventing a second trigger:
+
+| Field | Required validation |
+|---|---|
+| request identity | Unique request/operation ID; operation class and idempotency/replay policy |
+| actor + authority | Verified Master development owner, target Project item/Control Issue, installed issuer/policy digest and enable/revoke state |
+| exact target | GitHub repository owner/ID, remote, canonical Host parent identity and explicit consumer target |
+| immutable Source | Branch, exact remote 40-character SHA, expected active HEAD/precondition, changed-path allowlist and CI gate |
+| bounded effect | READ_FILE / READ_STATUS / SOURCE_REFLECT / COMPOSE_REFLECT, allowed scope, effects, timeouts and rollback |
+| result correlation | Trigger SHA, Actions run/job ID, Host command/GitOps request ID, installed policy digest, before/after active revision and observed file/health state |
+
+**No direct generic shell API.** Existing Host admission must authenticate each request and recheck after queueing, prior to effect, and at readback. An editor/CHAT instruction or a checked true flag is never a token. Production exposure, destructive/persistent data/Secret/provider/cost effects keep their existing protected approval gates.
+
+### 16.5 Distinct operations and their evidence
+
+- **READ_FILE / READ_STATUS:** inspect only admitted exact registered entries and filtered safe file paths, bounded offset/page limits, SHA-256 and size consistency, positive result plus negative path/traversal/redaction tests. GitHub Source blobs are not a substitute for installed Host file identity.
+- **SOURCE_REFLECT:** only for a repository with an admitted *source-only* operation contract, a verified exact remote SHA, clean/compatible target or isolated owned staging, admitted paths/effects and a proven active consumer switch/integration. Preserve existing active checkout ownership and modifications. No automatic Docker rebuild if runtime inputs are unchanged. Output must include before ref + active HEAD, after ref + active HEAD, read files' hashes and actual consumer path. If the current DebugAI master-internal verifier requires a projects-root compose.yaml/app runtime, it **cannot be reused unmodified** for a server-core source-only parent; a narrower legitimate source-reflection policy/type and approved Host implementation are required before write.
+- **COMPOSE_REFLECT:** distinct project-specific runtime contract with actual compose path, services, health, config/secret injection and rollback. Current DebugAI compose-oriented runner applies only to its enrolled repository and validated scope; no automatic cross-project entitlement. Only an authorized installed target may build/recreate services. Do not infer server-core project-control is running merely from Source.
+- **Development Event:** correlate attempted and completed operations, branch/SHA, actor, CI, request/status, failure/rollback and Runtime readback with the existing TGserver ZERO producer where separately configured; missing event delivery is LOG_NOT_VERIFIED, not a fabricated PASS or automatic permission to deploy.
+
+### 16.6 Deterministic states and fail-closed failures
+
+Separate states explicitly: DESIGN_APPROVED, SOURCE_READY, CI_PASS, TRIGGER_ACCEPTED, HOST_ADMITTED, STAGED_SOURCE, ACTIVE_FILES_REFLECTED, DEPLOY_PASS, RUNTIME_PASS, LOG_DURABLE. A stage is NOT_VERIFIED until its own real evidence exists; no later status retroactively supplies an earlier gate. COMPOSE_REFLECT is NOT_APPLICABLE only for verified source-only changes without runtime effect.
+
+A 502/5xx from the API entrance is TRANSPORT_UNAVAILABLE; preserve the run/result ID and distinguish it from Host denial or Source failure. Retry once only after observed recovery, with idempotency checked. A denied root/branch/path/policy is AUTHORIZATION_BLOCKED and must not be bypassed by a different path. A dirty/divergent consumer checkout is CHECKOUT_CONFLICT and must not be overwritten. A passed request with unchanged active files is REF_ONLY_NO_ACTIVATION, not reflection PASS. Partial Host action must retain prestate, operation ID, failure details and tested rollback plan.
+
+### 16.7 Acceptance and verification gates
+
+| Gate | Required directly read evidence |
+|---|---|
+| D0 Design | This baseline and Design Delta linked from server-core #10, explicit ownership, exact supported operations, approved non-goals, concrete test matrix |
+| D1 Existing route/source | Reuse inventory, reviewed Source/changed paths, deterministic positive and negative tests, same-head CI; PR #36 and #37 integration state verified rather than assumed |
+| D2 Host read | Live ordinary CHAT-origin Actions run/job and command ID; exact canonical /home/admin1/server-core file positive SHA-256 read; wrong entry, root alias, path escape/symlink, secret and unregistered Repo negative checks |
+| D3 Source reflection | Per-Repo installed delegated authorization, prestate and dirty/PR ownership checks, confirmed remote SHA, exact active target after authorized switch, real readback of changed files, no unrelated services touched |
+| D4 Runtime | Only for applicable runtime change: exact service revision/compose, running+healthy or defined endpoint behavior, logs, rollback/negative evidence. No Runtime PASS from GitHub checks |
+| D5 Cross-surface proof | CHAT can request→track Actions run/job/Host operation→verify exact Source and applicable Runtime and record in owning Current; ZERO event durable/search/restore is its separately owned acceptance gate |
+
+Minimum negative cases include: unregistered repository/Project item, forged or revoked issuer, stale branch/SHA, changed-path overflow, root-key pointing at wrong realpath, symlink or ../ traversal, dirty/other-owner PR39 checkout, divergent ancestry, incomplete paged file/changed hash, retry/replay, secret redaction, API 502 and failed Host job, false-green Actions, false PASS when only local main moved, and unadmitted Compose recreate. Execute deterministic/offline checks before any real Host mutation. Do not spend free Groq/Gemini provider quotas on transport/design tests.
+
+### 16.8 Implementation ordering and handoff
+
+1. **Design commit first in server-core #10** with Design Delta and a single owner; existing PR #36 documents/static validator are partial reuse input, not second Authority.
+2. Reconcile confirmed consumer mapping and exact Host admission for READ_FILE; modify only the owning admitted reader/registry and bounded Actions target validation as separate qualified CUs, preserving current DebugAI product work and all existing negative guards. Actual installed Host source and policy readback required.
+3. Prove positive canonical-parent Host read + negative denial through a real CHAT-triggered run.
+4. Define/qualify a source-only reflection path distinct from Compose deployment under existing trusted authorization (with exact Branch/HEAD/dirty checkout gate), then real same-request before/after evidence.
+5. Extend additional registered repositories only after per-target Project+Host enrollment and independent Runtime acceptance; expand ZERO event delivery under its owning integration contract.
+
+**No activation by design publication.** D0 is a documented contract, D1–D5 require implementation/Host/Runtime evidence. Completion of the whole G-ACE platform additionally requires its fixed Unified Development Log acceptance; this section does not silently make that product complete.
