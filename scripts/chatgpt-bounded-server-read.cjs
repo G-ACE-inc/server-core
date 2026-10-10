@@ -123,9 +123,9 @@ async function run({request=fetch,sleep=delay,log=console.log,env=process.env,ta
   const target=JSON.parse(fs.readFileSync(targetFile,"utf8"));
   const command=validateTarget(target);
   if(!command){log("BOUNDED_SERVER_COMMAND=SKIPPED");return;}
-  const id=env.CF_ACCESS_CLIENT_ID,secret=env.CF_ACCESS_CLIENT_SECRET;
-  if(!id||!secret)throw Error("CF_ACCESS_NOT_CONFIGURED");
-  const headers={"CF-Access-Client-Id":id,"CF-Access-Client-Secret":secret};
+  const id=env.CF_ACCESS_CLIENT_ID,accessValue=env.CF_ACCESS_CLIENT_SECRET;
+  if(!id||!accessValue)throw Error("CF_ACCESS_NOT_CONFIGURED");
+  const headers={"CF-Access-Client-Id":id,"CF-Access-Client-Secret":accessValue};
   const allPages=command==="system.projects_inventory"&&target.inventory_all===true;
   const allFilePages=command==="system.project_file_inspect"&&target.file_inspect_all_pages===true;
   let page=Number(target.inventory_page??0);
