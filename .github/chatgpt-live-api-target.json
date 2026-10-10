@@ -3,7 +3,7 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "2026-10-11 server-core main Source reflect live E2E docs-only commit",
+  "request": "2026-10-11 live Source reflect E2E docs-only e5edb16",
   "gitops_request": {
     "enabled": false
   },
