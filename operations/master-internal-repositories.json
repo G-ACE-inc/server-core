@@ -35,7 +35,8 @@
       "default_branch": "main",
       "allowed_branches": [
         "feat/tgserver-async-log-sink-20261003",
-        "master-internal-runtime-20261008"
+        "master-internal-runtime-20261008",
+        "fix/p1c-refix-no-new-evidence-20261010"
       ],
       "allowed_operations": [
         "deploy"
@@ -80,7 +81,9 @@
         "scripts/host-gitops-master-internal.sh",
         "scripts/host-gitops-register-master.sh",
         ".github/workflows/ci.yml",
-        "scripts/host-asteria-baseline-probe.sh"
+        "scripts/host-asteria-baseline-probe.sh",
+        "server/workflow.js",
+        "server/control/completion-gate.js"
       ]
     }
   ]
