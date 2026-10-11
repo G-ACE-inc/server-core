@@ -79,17 +79,18 @@
           "project.git_changed_paths"
         ]
       },
-      "chat_handoff_note": "Common CHAT Actions owned by server-core: .github/chatgpt-live-api-target.json on main or migration branch triggers .github/workflows/chatgpt-live-api-verify.yml, then existing authenticated DebugAI API and Host. Verified positive run 38071718990 project.git_head and 38071760084 registered-container logs; expected denial run 38071788487. Legacy DebugAI workflow remains available independently as rollback; do not mutate DebugAI product. Match exact push run HEAD and Host receipt; Actions success alone is insufficient. Current main/migration idle dispatch supports only IDLE_READ_COMMANDS (see scripts/chatgpt-source-reflect-dispatch.cjs); legacy broader command catalog is not per-branch executable authority. Inventory is now included in Source dispatch for bounded read-only E2E qualification; Host runtime inventory proof remains required. Disk usage and Git changed-path commands are Source-dispatch eligible but Host live E2E remains unverified; debug-ai logs, sandbox state and recent commits remain unavailable until separately admitted and tested.",
+      "chat_handoff_note": "Common CHAT Actions owned by server-core: .github/chatgpt-live-api-target.json on main or migration branch triggers .github/workflows/chatgpt-live-api-verify.yml, then existing authenticated DebugAI API and Host. Verified positive run 38071718990 project.git_head and 38071760084 registered-container logs; expected denial run 38071788487. Legacy DebugAI workflow remains available independently as rollback; do not mutate DebugAI product. Match exact push run HEAD and Host receipt; Actions success alone is insufficient. Current main/migration idle dispatch supports only IDLE_READ_COMMANDS (see scripts/chatgpt-source-reflect-dispatch.cjs); legacy broader command catalog is not per-branch executable authority. Inventory is now included in Source dispatch for bounded read-only E2E qualification; Host runtime inventory proof remains required. Disk usage and Git changed-path commands are Source-dispatch eligible but Host live E2E remains unverified; service.debug_ai_logs is now in Source idle dispatch and workflow_supported (bounded debug-ai/sandbox-runner tail via Host runner); Host runtime log E2E for this CU is still required separately. sandbox state and recent commits remain catalog-only until separately admitted and tested.",
       "workflow_supported_command_ids": [
-        "system.projects_inventory",
+        "project.git_changed_paths",
         "project.git_head",
-        "service.debug_ai_health",
-        "service.registered_container_logs",
-        "service.debug_ai_state",
-        "system.project_file_inspect",
         "project.git_status",
+        "service.debug_ai_health",
+        "service.debug_ai_logs",
+        "service.debug_ai_state",
+        "service.registered_container_logs",
         "system.disk_usage",
-        "project.git_changed_paths"
+        "system.project_file_inspect",
+        "system.projects_inventory"
       ],
       "command_effects": {
         "project.git_head": "read_only",

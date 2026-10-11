@@ -687,3 +687,12 @@ Design baseline: `docs/SERVER_CORE_DESIGN.md` §16.9–16.10 and existing Tool B
 Scoped Source change: reuse the existing `chatgpt-live-api-verify.yml` workflow and `chatgpt-bounded-server-read.cjs` to add these two bounded read-only command IDs to source dispatch, common route catalog/workflow-supported intersection and test fixtures. Emit only disk percentage/blocks and Git changed-path COUNT, never raw private path names or files. Keep request arguments empty, target repository fixed to the existing bounded /workspace/debug-ai execution identity; no general shell, new Workflow, token, host registry or new sibling worktree. The Host source/actual installed admission is separate and must be checked with real CHAT-origin run.
 
 Acceptance: targeted positive/negative client+dispatch tests, same-head GitHub CI/PR readback; an explicit START checkpoint on live trigger; Host command ID, read-only PASS, safe result markers and no deploy; restore exact prior idle blob. Do not imply canonical server-core parent read, source reflect, Docker lifecycle or Tool A delivery is solved. Rollback is source-only removal of these bounded IDs, client parsers and tests.
+
+## 2026-10-11 — Tool B: align service.debug_ai_logs with existing Host read-only runner
+
+Baseline: `docs/SERVER_CORE_DESIGN.md` §16.9–16.10; existing DebugAI Host `service.debug_ai_logs` read-only admission (bounded service name + tail lines, sensitive-line redaction). Prior branch commit added `service.debug_ai_logs` to `IDLE_READ_COMMANDS` in `scripts/chatgpt-source-reflect-dispatch.cjs` and bounded client wiring, but `operations/github-project-chat-host-routes.json` `workflow_supported_command_ids` lagged, leaving `COMMAND_UNSUPPORTED_BY_TRIGGER` at Source preflight despite Host catalog allowance.
+
+Bounded correction: set `workflow_supported_command_ids` to the exact non-empty `IDLE_READ_COMMANDS` intersection; extend `scripts/github_project_chat_host_route_test.py` pass/deny cases. No DebugAI product/Host runner/MCP/Workflow/token change.
+
+Verification: deterministic `github_project_chat_host_route_test.py` PASS on branch HEAD; live CHAT Actions + Host command receipt for `service.debug_ai_logs` remains a separate step (NOT claimed here). Rollback: remove `service.debug_ai_logs` from workflow_supported and IDLE dispatch together.
+

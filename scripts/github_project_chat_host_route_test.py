@@ -66,17 +66,44 @@ def test_branch_mismatch():
 
 
 def test_real_workflow_command_support():
-    for command in ("project.git_head", "project.git_status", "system.disk_usage", "project.git_changed_paths", "service.debug_ai_state",
-                    "service.debug_ai_health", "system.projects_inventory", "system.project_file_inspect",
-                    "service.registered_container_logs"):
+    for command in (
+        "project.git_head",
+        "project.git_status",
+        "system.disk_usage",
+        "project.git_changed_paths",
+        "service.debug_ai_state",
+        "service.debug_ai_health",
+        "service.debug_ai_logs",
+        "system.projects_inventory",
+        "system.project_file_inspect",
+        "service.registered_container_logs",
+    ):
         out = dispatch(command_id=command, branch="main")
         assert out["result"] == "PASS"
         assert out["read_only"] is True
-    for command in ("service.debug_ai_logs",
-                    "service.sandbox_state", "project.git_recent_commits",
-                    "project.pwd", "github.auth_status_scopes"):
+    for command in (
+        "service.sandbox_state",
+        "project.git_recent_commits",
+        "project.pwd",
+        "github.auth_status_scopes",
+    ):
         assert dispatch(command_id=command, branch="main")["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
 
+
+
+
+def test_debug_ai_logs_dispatch_matches_host_readonly_catalog():
+    """Static server-core contract only; Host runner admits service.debug_ai_logs read-only in debug-ai."""
+    doc = json.loads((ROOT / "operations/github-project-chat-host-routes.json").read_text(encoding="utf-8"))
+    route = next(item for item in doc["routes"] if item["id"] == "route_debugai_live_read")
+    assert "service.debug_ai_logs" in route["server_command"]["allowed_command_ids"]
+    assert "service.debug_ai_logs" in route["workflow_supported_command_ids"]
+    assert route["command_effects"]["service.debug_ai_logs"] == "read_only"
+    out = dispatch(command_id="service.debug_ai_logs", branch="main")
+    assert out["result"] == "PASS"
+    assert out["static_preflight_only"] is True
+    assert out["host_authorization_verified"] is False
+    assert dispatch(command_id="service.debug_ai_logs", branch="feat/chat-gitops-request-20261009")["error"] == "WORKFLOW_BRANCH_FORBIDDEN"
 
 def test_current_main_and_legacy_reflect_branch_isolation():
     assert dispatch(branch="main")["result"] == "PASS"
