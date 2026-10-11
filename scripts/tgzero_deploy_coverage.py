@@ -6,6 +6,10 @@ TGserver registration, issue commands, or mutate runtime.
 """
 import argparse
 import json
+
+# Master-confirmed workspace component, not a second independent deployment.
+# Do not rewrite TGserver's repository-to-log-project registry.
+COMPONENT_PARENT = {"seigo-gace/gace-dev-kb": "seigo-gace/modular-catalog"}
 from pathlib import Path
 
 
@@ -40,13 +44,17 @@ def coverage(storage, repo_map, collector, deploy_registry):
     for repo, streams in sorted(mappings.items()):
         mapped = [row for row in rows if any(m["repository"] == repo for m in row["repository_mappings"])]
         authorized = any(repo in row["registered_deploy_repositories"] for row in mapped)
-        repo_rows.append({"repository": repo, "streams": dict(streams),
+        parent = COMPONENT_PARENT.get(repo)
+        repo_rows.append({"repository": repo, "deployment_unit": parent or repo,
+                          "component_of": parent, "independent_deploy": parent is None,
+                          "streams": dict(streams),
                           "project_ids": sorted({pid for pid in streams.values()}),
                           "runtime_containers": sorted({c for row in mapped for c in row["runtime_container_mappings"]}),
                           "deploy_coverage": "AUTHORITY_MAPPED_NOT_HOST_VERIFIED" if authorized else "DEPLOY_BINDING_MISSING"})
     return {"schema": "gace.tool-b.tgzero-deploy-coverage/v2",
             "total_registered_log_project_ids": len(rows),
             "total_repository_mappings": len(repo_rows),
+            "total_deployment_units": len({r["deployment_unit"] for r in repo_rows}),
             "repositories": repo_rows, "total_registered": len(rows),
             "deploy_authority_mapped": sum(bool(row["registered_deploy_repositories"]) for row in rows),
             "rows": rows}
