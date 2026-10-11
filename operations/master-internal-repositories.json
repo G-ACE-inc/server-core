@@ -39,7 +39,8 @@
         "fix/p1c-refix-no-new-evidence-20261010",
         "fix/free-review-host-forward-20261010",
         "fix/scout-observation-reuse-20261010",
-        "fix/researcher-e-continuation-20261011"
+        "fix/researcher-e-continuation-20261011",
+        "feat/ai-core-input-token-shadow-20261011"
       ],
       "allowed_operations": [
         "deploy"
@@ -124,7 +125,9 @@
         "server/run-authority.js",
         "server/control/role-work-item/durable-store.js",
         ".github/chatgpt-live-api-target.json",
-        ".github/workflows/chatgpt-live-api-verify.yml"
+        ".github/workflows/chatgpt-live-api-verify.yml",
+        "server/main.js",
+        "server/control/input-token-shadow.js"
       ]
     },
     {
