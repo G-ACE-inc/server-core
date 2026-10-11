@@ -27,7 +27,7 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 4. Target repository README-linked active Design Authority + Definition of Complete (Current Task is NOT the whole-project goal)
 5. Workspace/server controlが必要なTaskだけserver-coreを読む; do not pass #17 to SERVER_AI/Composer/Codex (they load #16)
 6. Target Repository/CU Source/Test/CI/Runtime Evidence, check #17 pre-action gate and execute NEXT to the safe gate
-7. Later meaningful turns: fresh Current/HEAD delta and rule revision; re-fetch full Issue body only when changed or incomplete; progress messages do not end work
+7. Every development turn: fetch fresh Manifest, full applicable GPT CHAT #17 body, and owning Current before action when Master explicitly requires per-turn full readback (Current #40); otherwise revision/delta optimization applies. Progress explanations and Current comments are never stop conditions.
 ```
 
 **Work routing is a selection of the existing GPT_CHAT profile, not a third rule plane or automatic Work-session injection.** When ChatGPT Work leads planning, coding, research or reports on Master's behalf, it must actually load #17 and the target product Design/Current first and distinguish `PROJECT_PURPOSE_CANONICAL` from `CURRENT_WORK_PURPOSE`; no rewrite of the whole product purpose as the active PR/module/Host issue. A delegated Work-run terminal/server Codex/Composer executor uses the existing SERVER_AI #16 and only the task-specific purpose/acceptance excerpt. Fresh readback of the active Work session and its actual actions is required to say the rule was applied.
@@ -38,7 +38,7 @@ GPT_CHAT拡張RuleをSERVER_AIへdefault loadしない。
 
 README以外のserver-core Authorityを新Task開始時に一括読込しない。
 
-同一Taskで一度確認済みの安定Authority全文は、変更・矛盾・情報不足が無い限り毎ターン再読込しない。ただし開発の各ターンでは関連するGitHub Project/IssueのCurrentと対象HEAD/PR/CI等の変化を軽量に再同期し、対象変更・新規Gate・競合時だけ必要なAuthority/Source範囲を再取得する。古い履歴・別Project・GPT CHAT拡張RuleをSERVER_AIへまとめて渡さない。
+同一Taskで一度確認済みの安定Authority全文は通常、変更・矛盾・情報不足が無い限り毎ターン再読込しない。ただしMasterが現在のCHATに毎ターンのManifest・適用Rule Plane全文・owning CurrentのFresh取得を明示している場合は、その要求を優先して実際に再取得する。読み込んだ事実だけで適用PASSにせず、選択したAction・継続・終了判断へ照合する。ただし開発の各ターンでは関連するGitHub Project/IssueのCurrentと対象HEAD/PR/CI等の変化を軽量に再同期し、対象変更・新規Gate・競合時だけ必要なAuthority/Source範囲を再取得する。古い履歴・別Project・GPT CHAT拡張RuleをSERVER_AIへまとめて渡さない。
 
 ## 2. Command Routing
 
