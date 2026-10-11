@@ -114,3 +114,13 @@ for path, required in {
             assert marker in source, (path, marker)
 
 print("GITHUB_PROJECT_RULE_PLANE=PASS")
+
+# Both entrypoints must route CHAT through Manifest and complete #17, not a snippet.
+readme = (ROOT / "README.md").read_text(encoding="utf-8")
+assert "operations/github-project-rule-plane.json (Fresh main Manifest; confirm GPT_CHAT profile)" in readme
+assert "fetch complete Rule Plane #17 body" in readme
+assert "apply #17 pre-action and continuation/report gates" in readme
+assert "Fetch the COMPLETE canonical Issue #17 body" in router
+assert "recover truncated/missing content" in router
+assert "progress messages do not end work" in router
+assert "do not pass #17 to SERVER_AI/Composer/Codex" in router
