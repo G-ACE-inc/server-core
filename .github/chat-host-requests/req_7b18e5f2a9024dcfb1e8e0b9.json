@@ -1,0 +1,28 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "CHAT Tool B same-CU Host current Git SHA readback before authorized reflect; legacy fields retained",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_head",
+    "expected_sha": "214a36d69083438a3eca8d30ab174108e4f85337"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Master public-run directive, Manifest/#17/#10 and design 16.9-16.10 fresh, Source PR133 merged 69b20d6301327432a3aafe7031029dfbe89eb42c; prior Host 214a36d from #10, read-only check before mutation"
+  }
+}
