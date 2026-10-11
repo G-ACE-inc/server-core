@@ -9,6 +9,5 @@
   },
   "source_reflect_request": {
     "enabled": false
-  },
-  "server_command_id": "project.git_head"
+  }
 }
