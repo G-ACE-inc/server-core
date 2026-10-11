@@ -36,6 +36,8 @@ jobs:
           test -f AGENTS.md
           test -f .github/copilot-instructions.md
           test -f scripts/github_project_rule_plane_test.py
+          test -f scripts/github_project_chat_turn_gate.py
+          test -f scripts/github_project_chat_turn_gate_test.py
           test -f docs/STRUCTURE.md
           test -f docs/WORKSPACE_REGISTRY.md
           test -f docs/KB_REUSE_DESIGN.md
@@ -108,6 +110,7 @@ jobs:
           grep -q 'Command Center' docs/STRUCTURE.md
           grep -q 'GITHUB PROJECT DUAL RULE PLANE' docs/GITHUB_PROJECT_RULE_PLANE.md
           python3 scripts/github_project_rule_plane_test.py
+          python3 -m unittest scripts/github_project_chat_turn_gate_test.py -v
           python3 -m py_compile scripts/github_project_chat_host_route.py
           python3 scripts/github_project_chat_host_route_test.py
 

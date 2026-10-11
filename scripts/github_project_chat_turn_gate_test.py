@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+import importlib.util
+import unittest
+from pathlib import Path
+
+module_path = Path(__file__).with_name("github_project_chat_turn_gate.py")
+spec = importlib.util.spec_from_file_location("gate", module_path)
+gate = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(gate)
+
+class DecisionTests(unittest.TestCase):
+    def test_start(self):
+        good = dict(phase="START", profile="GPT_CHAT",
+                    manifest_verified=True, rule_full_read=True,
+                    current_verified=True, purpose_verified=True,
+                    cu_verified=True, source_evidence="github://run/1")
+        self.assertEqual(gate.evaluate(good), "PASS")
+        for key in ("manifest_verified", "rule_full_read", "current_verified", "purpose_verified", "cu_verified"):
+            self.assertNotEqual(gate.evaluate({**good, key: False}), "PASS")
+        self.assertEqual(gate.evaluate({**good, "profile": "SERVER_AI"}), "START_PROFILE_MISMATCH")
+
+    def test_failure_replan(self):
+        good = dict(phase="FAILURE", failed_step="Host read", failure_evidence="run/42",
+                    independent_actions=["Inspect registry"], next_action="Inspect registry")
+        self.assertEqual(gate.evaluate(good), "PASS")
+        self.assertEqual(gate.evaluate({**good, "next_action": ""}), "FAILURE_REPLAN_REQUIRED")
+        self.assertEqual(gate.evaluate({**good, "next_action": "deploy"}), "FAILURE_NEXT_NOT_IN_AVAILABLE_ACTIONS")
+
+    def test_stop_rejects_unfinished(self):
+        base = dict(phase="STOP", stop_reason="ALL_ACTIONS_BLOCKED",
+                    stop_evidence="run/42", remaining_actions=[])
+        self.assertEqual(gate.evaluate(base), "PASS")
+        self.assertEqual(gate.evaluate({**base, "remaining_actions": ["Inspect logs"]}), "STOP_RUNNABLE_ACTIONS_REMAIN")
+        self.assertEqual(gate.evaluate({**base, "stop_reason": "VERIFIED_COMPLETE"}), "STOP_COMPLETION_UNVERIFIED")
+        self.assertEqual(gate.evaluate({**base, "stop_reason": "VERIFIED_COMPLETE",
+                                        "completion_verified": True}), "PASS")
+        self.assertEqual(gate.evaluate({**base, "stop_reason": "NO_RESPONSE"}), "STOP_REASON_UNVERIFIED")
+        self.assertEqual(gate.evaluate({**base, "remaining_actions": None}), "STOP_REMAINING_ACTIONS_UNVERIFIED")
+
+if __name__ == "__main__":
+    unittest.main()
