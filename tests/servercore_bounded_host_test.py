@@ -105,6 +105,37 @@ class BoundedHostTests(unittest.TestCase):
         with self.assertRaisesRegex(host.BoundaryError, "REGISTERED_TEST_MISSING"):
             self.run_with("project.registered_tests")
 
+    def test_file_inspect_pagination_exact_byte_offsets(self):
+        target = self.root / "docs" / "LOAD_SCOPE.md"
+        target.parent.mkdir()
+        content = b"A" * host.FILE_CHUNK_BYTES + b"B" * 31
+        target.write_bytes(content)
+        with patch.object(host, "_run", return_value=SHA + "\n"):
+            first = host.file_inspect(self.root, SHA, "docs/LOAD_SCOPE.md", 0, ["docs/LOAD_SCOPE.md"])
+            second = host.file_inspect(self.root, SHA, "docs/LOAD_SCOPE.md", first["next_offset"], ["docs/LOAD_SCOPE.md"])
+        self.assertEqual(first["offset"], 0)
+        self.assertEqual(first["next_offset"], host.FILE_CHUNK_BYTES)
+        self.assertEqual(len(first["content"]), host.FILE_CHUNK_BYTES)
+        self.assertEqual(second["offset"], host.FILE_CHUNK_BYTES)
+        self.assertEqual(second["content"], "B" * 31)
+        self.assertIsNone(second["next_offset"])
+        self.assertEqual(first["size"], len(content))
+        self.assertEqual(second["size"], len(content))
+
+    def test_file_inspect_rejects_unregistered_target(self):
+        target = self.root / "README.md"
+        target.write_text("safe")
+        with patch.object(host, "_run", return_value=SHA + "\n"):
+            with self.assertRaisesRegex(host.BoundaryError, "FILE_NOT_REGISTERED"):
+                host.file_inspect(self.root, SHA, "README.md", 0, ["docs/LOAD_SCOPE.md"])
+
+    def test_file_inspect_rejects_invalid_offset(self):
+        target = self.root / "README.md"
+        target.write_text("safe")
+        with patch.object(host, "_run", return_value=SHA + "\n"):
+            with self.assertRaisesRegex(host.BoundaryError, "FILE_OFFSET_INVALID"):
+                host.file_inspect(self.root, SHA, "README.md", -1, ["README.md"])
+
     def test_root_symlink_denied(self):
         link = self.root.parent / (self.root.name + "-symlink")
         link.symlink_to(self.root)
