@@ -371,3 +371,17 @@ test("bounded disk and git changed-path readbacks reject unsafe output",()=>{
   assert.deepEqual(m.safeResult("project.git_changed_paths",""),["SERVER_GIT_CHANGED_PATH_COUNT=0"]);
   assert.throws(()=>m.safeResult("project.git_changed_paths","evil\u0000path"),/SERVER_CHANGED_PATHS_INVALID/);
 });
+
+
+test("permanent Host status HTTP 404 stops polling without an unsafe retry loop",async t=>{
+ const targetFile=targetFixture(t,{server_command_id:"project.git_head"});
+ const requests=[],logs=[];
+ const request=async(url)=>{
+   requests.push(url);
+   if(url.endsWith("/request"))return {status:202,json:async()=>({id:"cmd_"+"a".repeat(24)})};
+   return {status:404,json:async()=>({error:"NOT_FOUND"})};
+ };
+ await assert.rejects(m.run({request,sleep:async()=>{},log:x=>logs.push(x),env:{CF_ACCESS_CLIENT_ID:"test-id",CF_ACCESS_CLIENT_SECRET:"test-secret"},targetFile}),/STATUS_HTTP_NOT_200/);
+ assert.equal(requests.filter(x=>x.endsWith("/status")).length,1);
+ assert.ok(logs.includes("SERVER_COMMAND_STATUS_HTTP=404"));
+});
