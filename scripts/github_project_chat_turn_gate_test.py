@@ -66,3 +66,4 @@ class DecisionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+# ISOLATED_NEGATIVE_ONLY: required system doc intentionally unchanged.
