@@ -26,7 +26,8 @@ APPROVED_ORIGINS = frozenset((
     "git@github.com:G-ACE-inc/server-core.git",
 ))
 
-UNIT_TEXT = """[Unit]
+LEGACY_UNIT_TEXTS = (
+"""[Unit]
 Description=G-ACE server-core registered container log reader (UNIX only)
 
 [Service]
@@ -36,6 +37,27 @@ ExecStartPre=/usr/bin/test -d /run/gace
 ExecStart=/usr/bin/python3 /home/admin1/server-core/scripts/servercore_docker_logs_socket.py
 UMask=0117
 NoNewPrivileges=yes
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+""",
+)
+
+# The long-lived user systemd manager can start without the docker supplementary group (membership added
+# later) and an unprivileged unit cannot setgroups, so the Docker-admitted writer starts through `sg docker`
+# (setuid, hence NoNewPrivileges=no). It stays a user-level admin1 unit with a UNIX-only fixed-schema socket.
+UNIT_TEXT = """[Unit]
+Description=G-ACE server-core registered container log reader (UNIX only)
+
+[Service]
+Type=simple
+WorkingDirectory=/home/admin1/server-core
+ExecStartPre=/usr/bin/test -d /run/gace
+ExecStart=/usr/bin/sg docker -c "/usr/bin/python3 /home/admin1/server-core/scripts/servercore_docker_logs_socket.py"
+UMask=0117
+NoNewPrivileges=no
 Restart=always
 RestartSec=5
 
@@ -98,7 +120,14 @@ def systemctl_user(*args):
 def install(expected_head):
     preflight(expected_head)
     if UNIT.exists():
-        if UNIT.read_text() != UNIT_TEXT:
+        existing = UNIT.read_text()
+        if existing in LEGACY_UNIT_TEXTS:
+            tmp = UNIT.with_suffix(".service.new")
+            fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o644)
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                stream.write(UNIT_TEXT)
+            os.replace(tmp, UNIT)
+        elif existing != UNIT_TEXT:
             raise AdmissionError("EXISTING_UNIT_CONFLICT")
     else:
         UNIT.parent.mkdir(parents=True, exist_ok=True)
