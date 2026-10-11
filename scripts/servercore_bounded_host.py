@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 CANONICAL_ROOT = Path("/home/admin1/server-core")
-COMMANDS = frozenset(("project.git_head", "project.git_status", "project.git_recent_commits", "project.registered_tests"))
+COMMANDS = frozenset(("project.git_head", "project.git_status", "project.git_recent_commits", "project.git_diff_stat", "project.registered_tests"))
 TESTS = (
     "scripts/github_project_rule_plane_test.py",
     "scripts/github_project_chat_host_route_test.py",
@@ -72,6 +72,14 @@ def execute(command_id, root=CANONICAL_ROOT, expected_sha=None):
         if not commits or len(commits) > 5 or any(len(x) != 40 or any(c not in "0123456789abcdef" for c in x) for x in commits):
             raise BoundaryError("GIT_HISTORY_INVALID")
         result["commits"] = commits
+        return result
+    if command_id == "project.git_diff_stat":
+        # Report bounded aggregate tracked changes without disclosing private paths or contents.
+        raw = _run(["git", "diff", "--shortstat", "HEAD", "--"], root).strip()
+        if len(raw) > 200 or "\n" in raw:
+            raise BoundaryError("GIT_DIFF_STAT_INVALID")
+        result["changed"] = bool(raw)
+        result["summary"] = raw or "clean"
         return result
     if _run(["git", "status", "--porcelain"], root).strip():
         raise BoundaryError("TEST_CHECKOUT_DIRTY")
