@@ -104,6 +104,16 @@ class SinkTests(unittest.TestCase):
 
         self.assertEqual(sink.publish_record(RID, result_dir=self.dir, runner=runner)["comment_id"], 55)
 
+    def test_gh_binary_uses_fixed_absolute_candidates_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fake = Path(tmp) / "gh"
+            fake.write_text("#!/bin/sh\n")
+            fake.chmod(0o755)
+            self.assertEqual(sink.gh_binary((str(Path(tmp) / "missing"), str(fake))), str(fake))
+            with self.assertRaises(sink.SinkError):
+                sink.gh_binary((str(Path(tmp) / "missing"),))
+        self.assertTrue(all(c.startswith("/") for c in sink.GH_CANDIDATES))
+
     def test_retryable_never_published(self):
         sink.accept_record(rec(state="RETRYABLE", exit_code=1, host_sha=""), result_dir=self.dir)
         self.assertEqual(sink.pending_ids(self.dir), [])
