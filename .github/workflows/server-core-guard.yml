@@ -148,6 +148,7 @@ jobs:
               print("CU40_MAIN_PUSH_ADMISSION=SKIP_NO_BEFORE")
               raise SystemExit(0)
 
+          subprocess.check_call(["git", "fetch", "--no-tags", "--depth=1", "origin", before])
           changed = set(subprocess.check_output(
               ["git", "diff", "--name-only", before, after],
               text=True,
