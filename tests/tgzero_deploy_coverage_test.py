@@ -38,16 +38,17 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(result["repositories"][0]["project_ids"],["P004","P005"])
 
 
-    def test_catalog_kb_component_not_second_deployment(self):
+    def test_catalog_kb_component_has_separate_pc_runtime(self):
         storage={"projects":{"P012":{"name":"catalog"},"P014":{"name":"kb"}}}
         mapping={"repos":{"seigo-gace/modular-catalog":{"default":"P012"},
                           "seigo-gace/gace-dev-kb":{"default":"P014"}}}
         result=m.coverage(storage,mapping,{},{"repositories":[]})
         self.assertEqual(result["total_repository_mappings"],2)
-        self.assertEqual(result["total_deployment_units"],1)
+        self.assertEqual(result["total_deployment_units"],2)
         component=next(x for x in result["repositories"] if x["repository"]=="seigo-gace/gace-dev-kb")
         self.assertEqual(component["component_of"],"seigo-gace/modular-catalog")
-        self.assertFalse(component["independent_deploy"])
+        self.assertTrue(component["independent_deploy"])
+        self.assertEqual(component["runtime_location"],"PC")
 
 if __name__=="__main__":
     unittest.main()
