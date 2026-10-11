@@ -3,11 +3,22 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "server-core common Actions idle after Docker service state and bounded Git status E2E",
+  "request": "Tool B registered sandbox state readonly live E2E",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
     "enabled": false
+  },
+  "server_command_id": "service.sandbox_state",
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/78; https://github.com/G-ACE-inc/server-core/issues/10"
   }
 }
