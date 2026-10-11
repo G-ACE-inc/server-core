@@ -10,6 +10,5 @@
   "source_reflect_request": {
     "enabled": false
   },
-  "server_command_id": "system.projects_inventory",
-  "inventory_page": 0
+  "server_command_id": "project.git_head"
 }
