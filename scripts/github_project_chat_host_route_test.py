@@ -96,7 +96,7 @@ def test_migrated_registry_and_host_paths_retained():
     assert route["workflow_repository"] == "G-ACE-inc/server-core"
     assert route["github_trigger"]["allowed_branches"] == ["main", "feat/chat-actions-client-migration-20261011"]
     dispatch_js = (ROOT / "scripts/chatgpt-source-reflect-dispatch.cjs").read_text(encoding="utf-8")
-    match = re.search(r"const IDLE_READ_COMMANDS = new Set\\(\\[([\\s\\S]*?)\\]\\);", dispatch_js)
+    match = re.search(r"const IDLE_READ_COMMANDS = new Set\(\[([\s\S]*?)\]\);", dispatch_js)
     assert match is not None
     actual_idle = set(re.findall(r'"([^"]*)"', match.group(1))) - {""}
     assert set(route["workflow_supported_command_ids"]) == actual_idle
