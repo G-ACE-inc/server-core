@@ -173,11 +173,22 @@ def comment_body(record):
     return "\n".join(lines)
 
 
+GH_CANDIDATES = ("/home/admin1/bin/gh", "/usr/local/bin/gh", "/usr/bin/gh")
+
+
+def gh_binary(candidates=GH_CANDIDATES):
+    """The user systemd PATH does not include ~/bin; use only fixed absolute candidates."""
+    for candidate in candidates:
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    raise SinkError("GH_BINARY_MISSING")
+
+
 def _gh(args, stdin=None, timeout=40):
     env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": os.environ.get("HOME", "/home/admin1"),
            "GH_PROMPT_DISABLED": "1", "GH_NO_UPDATE_NOTIFIER": "1"}
     try:
-        result = subprocess.run(["gh", *args], input=stdin, capture_output=True, text=True,
+        result = subprocess.run([gh_binary(), *args], input=stdin, capture_output=True, text=True,
                                 timeout=timeout, check=False, env=env)
     except (OSError, subprocess.TimeoutExpired):
         raise SinkError("GH_EXECUTION_FAILED") from None
@@ -242,8 +253,10 @@ def publisher_loop(result_dir=None, runner=_gh, interval=15):
             try:
                 publish_record(request_id, result_dir=result_dir, runner=runner)
                 failures.pop(request_id, None)
-            except (SinkError, ValueError, KeyError, OSError):
+            except (SinkError, ValueError, KeyError, OSError) as exc:
                 failures[request_id] = failures.get(request_id, 0) + 1
+                print(f"RESULT_PUBLISH_FAILED request_id={request_id} class={type(exc).__name__}:{str(exc)[:60]}",
+                      flush=True)
 
 
 class Handler(socketserver.StreamRequestHandler):
