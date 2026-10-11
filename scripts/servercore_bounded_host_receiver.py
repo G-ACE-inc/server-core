@@ -75,7 +75,7 @@ def dispatch_reflect(request, socket_path="/run/gace/servercore-source-reflect.s
         "expected_before": request["expected_before"],
         "target_sha": request["expected_sha"],
     }
-    data = (json.dumps(payload, separators=(",", ":")) + "\\n").encode("utf-8")
+    data = (json.dumps(payload, separators=(",", ":")) + "\n").encode("utf-8")
     try:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
             client.settimeout(120)
