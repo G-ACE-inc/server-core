@@ -82,5 +82,15 @@ class ReflectTests(TestCase):
             source.reflect(self.root, "HEAD", B)
 
 
+class GitUmaskTests(TestCase):
+    def test_git_subprocess_uses_checkout_safe_umask(self):
+        class Done:
+            returncode = 0
+            stdout = ""
+        with patch.object(source.subprocess, "run", return_value=Done()) as run:
+            source.git(Path("/x"), "status")
+        self.assertEqual(run.call_args.kwargs.get("umask"), 0o022)
+
+
 if __name__ == "__main__":
     main()
