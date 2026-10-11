@@ -3,24 +3,11 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "Tool B bounded service logs live E2E",
+  "request": "server-core common Actions idle after Docker service state and bounded Git status E2E",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
     "enabled": false
-  },
-  "server_command_id": "service.debug_ai_logs",
-  "log_service": "debug-ai",
-  "log_lines": 3,
-  "chat_decision_checkpoint": {
-    "phase": "START",
-    "profile": "GPT_CHAT",
-    "manifest_verified": true,
-    "rule_full_read": true,
-    "current_verified": true,
-    "purpose_verified": true,
-    "cu_verified": true,
-    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/77 and https://github.com/G-ACE-inc/server-core/issues/10"
   }
 }
