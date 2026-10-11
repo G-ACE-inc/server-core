@@ -1,0 +1,29 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "GPT CHAT G3 read-only runtime state for persisted resume timeout investigation; no model calls or deploy",
+  "server_command_id": "service.debug_ai_state",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": false,
+    "command_id": "project.git_head",
+    "expected_sha": "GITHUB_WORKFLOW_SHA"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Fresh server-core main Manifest + full Issue17 + DebugAI Issue41 + recent G3 Host PASS and existing allowed route DebugAI service.debug_ai_state; independent request read-only."
+  }
+}
