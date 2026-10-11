@@ -748,6 +748,20 @@ Master observed repeated GPT CHAT #17 adherence failures despite read receipts a
 
 Per-turn full read becomes mandatory when explicitly directed by Master; normal optimized rereads remain the default otherwise. Reading alone does not demonstrate application or intercept ChatGPT final send. An observed premature stop remains failure. No native hook, new workflow/MCP, guard script, secret or Tool B functionality is claimed or introduced. Rollback by reverting this router delta; existing architectural Design and historical Delta retained.
 
+## 2026-10-11 — Tool B Host consumer topology and admission reconciliation (post #89/#90)
+
+Baseline: Control #10 comment 6107344970, SERVER_CORE_DESIGN §16.9–16.10, merged PR #89/#90, main SHA `7c3b289`. SERVER_AI read-only Host investigation via existing DebugAI MCP (no DebugAI Source/Runtime mutation).
+
+**Host measured:** `system.projects_inventory` PASS (`cmd_cc6b9146b31ad20b7cb5c8a6`, pages 0–2; 18 entries under `/home/admin1/projects` and `/home/admin1/worktrees`; no `server-core` listing). `project.git_head` on default `/workspace/debug-ai` ACTIVE_REPO PASS → `0124bc4b44d58a1e2b0d563428965e739ab47b60` (debug-ai, not server-core). `project.pwd` on `/workspace/debug-ai/.debugai-input/test-repos/server-core` → `REPO_NOT_FOUND`. Local execution of DebugAI `host-workspace-file-inspect.py server-core README.md 0` → `ENTRY_NOT_FOUND` (expected path `/home/admin1/worktrees/server-core` missing; canonical consumer `/home/admin1/server-core` exists at main `7c3b289`).
+
+**Tests (server-core Source):** `github_project_chat_host_route_test.py` PASS (24); `github_project_rule_plane_test.py` PASS; `github_project_chat_turn_gate_test.py` OK; Actions run 38125987709 SUCCESS on main `7c3b289` (registered static tests at exact Actions SHA, idle bounded read).
+
+**Source reflect:** `dlg_master_servercore_reflect_v1` `allowed_paths` remain README.md, docs/, and two operations JSON files — **scripts/ NOT_ADMITTED**. No reflect attempted. Host policy owner must admit least privilege before scripts consumer parity.
+
+**Runtime / consumer:** CHAT Actions executes against GitHub checkout SHA; canonical Host consumer path for persistent server-core Source is `/home/admin1/server-core` per delegation `server_project_path`; Host bounded read registry still binds `server-core` entry to missing worktrees subdirectory — **canonical-parent Host file read for server-core remains NOT_VERIFIED**.
+
+**Incomplete gates (owned separately):** (1) DebugAI Host owner: fix admitted workspace entry vs `/home/admin1/server-core` **or** provision `/home/admin1/worktrees/server-core` symlink/worktree alias without widening shell; (2) provision `/workspace/debug-ai/.debugai-input/test-repos/server-core` for manifest `project.python_unittest` E2E; (3) Master-internal policy expansion if scripts/ must be source-reflected. This server-core CU records evidence in route handoff + Delta only; no workflow/MCP/token/Host entitlement change.
+
 ## 2026-10-11 — Classify registered Host test request HTTP rejection without response disclosure
 
 Owner: server-core #10, Tool B §16.9–16.10. Existing registered-test Actions E2E run 38125411897 aborted before Host request receipt with REQUEST_HTTP_NOT_202. This cannot establish a missing Host test checkout, Host authorization failure, or a missing project. Update the existing bounded CHAT client request handler to retain only numeric HTTP status for unsuccessful request responses, without reading or exposing the HTTP body. The executable CLI emits SERVER_COMMAND_REQUEST_HTTP=NNN followed by existing bounded class marker. A negative test covers 400 with a deliberately unreadable response body. No new workflow/MCP/token or any DebugAI repo/runtime change. Retest only after validating admission and known registered target prestate; no Runtime PASS claim.
