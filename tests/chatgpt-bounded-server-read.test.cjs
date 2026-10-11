@@ -28,7 +28,7 @@ test("Bounded CHAT read uses existing workflow/API and validates the configured 
   }
 });
 test("No mutating, arbitrary, paid AI, or unscoped command is permitted",()=>{
-  for(const id of ["canonical.devlog_activate_start","asteria.baseline_probe_start","github.gh_write","github.gh_read","project.python_unittest","debugai_start","bash"]){
+  for(const id of ["canonical.devlog_activate_start","asteria.baseline_probe_start","github.gh_write","github.gh_read","debugai_start","bash"]){
     assert.ok(!m.ALLOWED.has(id));
     assert.throws(()=>m.validateTarget({...target,server_command_id:id}),/SERVER_COMMAND_DENIED/);
   }
@@ -386,6 +386,21 @@ test("permanent Host status HTTP 404 stops polling without an unsafe retry loop"
  assert.ok(logs.includes("SERVER_COMMAND_STATUS_HTTP=404"));
 });
 
+
+
+test("registered python unittest resolves manifest and rejects unknown test id",()=>{
+  const repo="/workspace/debug-ai/.debugai-input/test-repos/server-core";
+  const ok={...target,mode:"readonly",base_url:"https://debugai.asterav8.jp",server_command_id:"project.python_unittest",repo,registered_test_target:"server_core_baseline",registered_test_id:"rule_plane_static"};
+  assert.equal(m.validateTarget(ok),"project.python_unittest");
+  assert.throws(()=>m.validateTarget({...ok,registered_test_id:"missing"}),/REGISTERED_TEST_ID_DENIED/);
+  assert.throws(()=>m.validateTarget({...ok,repo:"/workspace/debug-ai"}),/REGISTERED_TEST_REPO_MISMATCH/);
+});
+
+test("python unittest safe result redacts sensitive lines and preserves exit code marker",()=>{
+  const lines=m.safeResult("project.python_unittest","ok line\nBearer SECRET=bad",0);
+  assert.ok(lines[0].startsWith("SERVER_TEST_EXIT_CODE=0"));
+  assert.ok(lines[2].includes("REDACTED_SENSITIVE_LINE"));
+});
 
 test("idle dispatch requires catalog, workflow support, and read-only effect together",()=>{
   const targetIdle={...target,server_command_id:"project.git_head"};

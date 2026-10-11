@@ -734,6 +734,10 @@ Baseline: Control #10, `operations/github-project-chat-host-routes.json` route_d
 
 Post-#79 retest via merged PR #81 triggered Actions run 38123852985 on main: Host request cmd_25935adb02776b64d6c1e46b, SERVER_COMMAND_STATE=PASS, SERVER_COMMAND_READ_ONLY=TRUE, bounded SERVER_GIT_LOG emitted. Follow-up chore PR restores idle target. Registry handoff updated to bind this run ID. No DebugAI Repository/Host mutation.
 
+## 2026-10-11 — Tool B registered server-core Host test execution (manifest + existing python_unittest)
+
+Baseline: SERVER_CORE_DESIGN §16.9–16.10, Control #10. Existing DebugAI Host already implements bounded `project.python_unittest` in isolated `.debugai-input/test-repos/*` checkouts; server-core had no manifest, Actions dispatch intersection, or client wiring to select approved tests and bind repo/SHA/exit-code evidence. This CU adds `operations/github-project-chat-host-test-manifest.json`, extends the existing bounded client and idle dispatch/route registry for manifest-selected `project.python_unittest` only, and adds deterministic tests. It does **not** modify DebugAI Repository/Host runner, expand `dlg_master_servercore_reflect_v1` allowed_paths into `scripts/`, add Workflow/MCP/token, or claim Host test-repo provisioning. Live E2E requires an existing Host test checkout at the manifest path; missing checkout remains `HOST_TEST_REPO_NOT_VERIFIED`.
+
 ## 2026-10-11 — Tool B existing Actions pre-Host route contract test
 
 Owner server-core Control #10, design baseline §16.9–16.10. The active existing `chatgpt-live-api-verify.yml` job had run the CHAT turn gate and bounded Node client tests but not the already-existing Python route admission contract test in that very execution context. Reuse `scripts/github_project_chat_host_route_test.py` in the same pre-Host verification step to reject route/allowlist/effect drift before real requests. No new workflow, backend, token, route admission, or DebugAI mutation. The current Host test/build execution contract remains unimplemented separately; this test guards the existing Actions route and does not qualify as Host build/test support.

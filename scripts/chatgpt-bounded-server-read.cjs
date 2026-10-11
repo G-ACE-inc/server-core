@@ -3,11 +3,36 @@ const fs=require("node:fs");
 const {setTimeout:delay}=require("node:timers/promises");
 const API="https://debugai.asterav8.jp";
 const DEFAULT_REPO="/workspace/debug-ai";
-const ALLOWED=new Set(["project.git_head","project.git_status","project.git_recent_commits","github.actions_recent","service.debug_ai_logs","service.registered_container_logs","service.debug_ai_state","service.sandbox_state","service.debug_ai_health","canonical.devlog_activate_status","system.projects_inventory","system.project_file_inspect","system.disk_usage","project.git_changed_paths"]);
+const ALLOWED=new Set(["project.python_unittest","project.git_head","project.git_status","project.git_recent_commits","github.actions_recent","service.debug_ai_logs","service.registered_container_logs","service.debug_ai_state","service.sandbox_state","service.debug_ai_health","canonical.devlog_activate_status","system.projects_inventory","system.project_file_inspect","system.disk_usage","project.git_changed_paths"]);
 const REGISTERED_CONTAINER_ENTRY_RE=/^[A-Za-z0-9._-]{1,120}$/;
 const ENTRY_NAME_RE=/^[A-Za-z0-9._-]{1,120}$/;
 const REL_PATH_RE=/^[A-Za-z0-9_./-]{1,180}$/;
 const FILE_INSPECT_MAX_PAGES=32;
+const TEST_MANIFEST_PATH="operations/github-project-chat-host-test-manifest.json";
+const TEST_REPO_RE=/^\/workspace\/debug-ai\/\.debugai-input\/test-repos\/[A-Za-z0-9._-]+$/;
+function loadTestManifest(){
+  const doc=JSON.parse(fs.readFileSync(TEST_MANIFEST_PATH,"utf8"));
+  if(doc?.schema!=="gace.github-project-chat-host-test-manifest/v1"||!Array.isArray(doc.targets))throw Error("TEST_MANIFEST_INVALID");
+  return doc;
+}
+function resolveRegisteredTest(t){
+  const targetId=String(t.registered_test_target||"");
+  const testId=String(t.registered_test_id||"");
+  if(!targetId||!testId)throw Error("REGISTERED_TEST_SELECTION_INVALID");
+  const doc=loadTestManifest();
+  const target=doc.targets.find(x=>x?.id===targetId);
+  if(!target||target.repository!=="G-ACE-inc/server-core")throw Error("REGISTERED_TEST_TARGET_DENIED");
+  const hostRepo=String(target.host_test_repo||"");
+  if(!TEST_REPO_RE.test(hostRepo))throw Error("REGISTERED_TEST_REPO_INVALID");
+  const entry=(target.tests||[]).find(x=>x?.id===testId);
+  if(!entry||entry.kind!=="python_script")throw Error("REGISTERED_TEST_ID_DENIED");
+  const rel=String(entry.relative_path||"");
+  if(!/^[A-Za-z0-9_./-]+\.py$/.test(rel)||rel.includes("..")||rel.startsWith("/"))throw Error("REGISTERED_TEST_PATH_INVALID");
+  const repo=String(t.repo||"");
+  if(repo!==hostRepo)throw Error("REGISTERED_TEST_REPO_MISMATCH");
+  return{executionRepo:hostRepo,relativePath:rel,targetId,testId};
+}
+
 function validateTarget(t){
   if(!t||typeof t!=="object")throw Error("INVALID_TARGET");
   if(t.mode!=="readonly"||t.base_url!==API)throw Error("SERVER_COMMAND_SCOPE_DENIED");
@@ -23,6 +48,11 @@ function validateTarget(t){
   if(command==="service.registered_container_logs"){
     if(!REGISTERED_CONTAINER_ENTRY_RE.test(String(t.registered_container_entry||"")))throw Error("REGISTERED_CONTAINER_ENTRY_INVALID");
     if(!/^(?:[1-9]|1[0-9]|20)$/.test(String(t.log_lines??10)))throw Error("SERVER_LOG_LINES_INVALID");
+  }
+  if(command==="project.python_unittest"){
+    resolveRegisteredTest(t);
+    const sha=String(t.expected_git_sha||"");
+    if(sha&&(!/^[a-f0-9]{40}$/.test(sha)))throw Error("REGISTERED_TEST_SHA_INVALID");
   }
   if(command==="system.project_file_inspect"){
     const entry=String(t.file_inspect_entry||"");
@@ -40,8 +70,19 @@ function validateInspectPayload(d,stdout){
   if(d.complete&&d.next_offset!==null)throw Error("PROJECT_FILE_INSPECT_RESULT_INVALID");
   if(!d.complete&&(typeof d.next_offset!=="number"||d.next_offset<=d.content_offset))throw Error("PROJECT_FILE_INSPECT_RESULT_INVALID");
 }
-function safeResult(command,raw){
+function safeResult(command,raw,extraExitCode=0){
   const stdout=String(raw||"").trim();
+  if(command==="project.python_unittest"){
+    const exitCode=Number(extraExitCode);
+    if(!Number.isInteger(exitCode)||exitCode<0||exitCode>255)throw Error("SERVER_TEST_EXIT_CODE_INVALID");
+    if(stdout.length>3500||/[\u0000\r]/.test(stdout))throw Error("SERVER_TEST_OUTPUT_INVALID");
+    const lines=stdout.split("\n").filter(Boolean).slice(-40).map(s=>{
+      const plain=s.replace(/\x1b\[[0-9;]*[A-Za-z]/g,"");
+      if(/token|secret|bearer|password|credential|authorization|cookie|private.key|api.key/i.test(plain))return "[REDACTED_SENSITIVE_LINE]";
+      return plain.slice(0,240);
+    });
+    return["SERVER_TEST_EXIT_CODE="+String(exitCode),"SERVER_TEST_OUTPUT_LINES="+String(lines.length),"SERVER_TEST_OUTPUT="+JSON.stringify(lines)];
+  }
   if(command==="system.projects_inventory"){
     let d;try{d=JSON.parse(stdout);}catch{throw Error("PROJECT_INVENTORY_RESULT_INVALID");}
     if(d?.schema!=="debugai.host-workspace-inventory/v1"||!Number.isInteger(d.page)||!Number.isInteger(d.total)||!Array.isArray(d.entries)||!Array.isArray(d.missing_roots)||stdout.length>4096)throw Error("PROJECT_INVENTORY_RESULT_INVALID");
@@ -161,19 +202,45 @@ async function run({request=fetch,sleep=delay,log=console.log,env=process.env,ta
       if(seenFileOffsets.has(fileOffset)||seenFileOffsets.size>=FILE_INSPECT_MAX_PAGES)throw Error("PROJECT_FILE_INSPECT_PAGINATION_INVALID");
       seenFileOffsets.add(fileOffset);
     }
-    const args=command==="system.projects_inventory"?[String(page)]:command==="system.project_file_inspect"?fileInspectArguments(target,fileOffset):command==="service.debug_ai_logs"?[String(target.log_service??"debug-ai"),String(target.log_lines??10)]:command==="service.registered_container_logs"?[String(target.registered_container_entry),String(target.log_lines??10)]:[];
-    const q=await post("/v1/server-command/request",{repo:DEFAULT_REPO,command_id:command,arguments:args},headers,request);
+    const registered=command==="project.python_unittest"?resolveRegisteredTest(target):null;
+    const executionRepo=registered?registered.executionRepo:DEFAULT_REPO;
+    if(command==="project.python_unittest"&&target.expected_git_sha){
+      const headReq=await post("/v1/server-command/request",{repo:executionRepo,command_id:"project.git_head",arguments:[]},headers,request);
+      if(!/^cmd_[0-9a-f]{24}$/.test(headReq.id||""))throw Error("SERVER_COMMAND_ID_INVALID");
+      let headState=null;
+      for(let h=0;h<30;h++){
+        try{headState=await post("/v1/server-command/status",{repo:executionRepo,id:headReq.id},headers,request);}
+        catch(err){if(err.permanent||h===29)throw err;await sleep(2000);continue;}
+        if(headState.state==="PASS")break;
+        if(headState.state==="FAIL")throw Error("SERVER_TEST_SHA_PREFLIGHT_FAIL");
+        await sleep(2000);
+      }
+      if(!headState||headState.state!=="PASS")throw Error("SERVER_TEST_SHA_PREFLIGHT_TIMEOUT");
+      const head=String(headState.result?.stdout||"").trim();
+      if(head!==target.expected_git_sha)throw Error("REGISTERED_TEST_SHA_MISMATCH");
+      log("SERVER_TEST_TARGET_SHA="+head);
+    }
+    const args=command==="project.python_unittest"?[registered.relativePath]:command==="system.projects_inventory"?[String(page)]:command==="system.project_file_inspect"?fileInspectArguments(target,fileOffset):command==="service.debug_ai_logs"?[String(target.log_service??"debug-ai"),String(target.log_lines??10)]:command==="service.registered_container_logs"?[String(target.registered_container_entry),String(target.log_lines??10)]:[];
+    const q=await post("/v1/server-command/request",{repo:executionRepo,command_id:command,arguments:args},headers,request);
     if(!/^cmd_[0-9a-f]{24}$/.test(q.id||""))throw Error("SERVER_COMMAND_ID_INVALID");
     log("SERVER_COMMAND_REQUEST_ID="+q.id);
     let finished=false,nextPage=null,nextFileOffset=null;
     for(let i=0;i<60;i++){
       let state;
-      try{state=await post("/v1/server-command/status",{repo:DEFAULT_REPO,id:q.id},headers,request);}
+      try{state=await post("/v1/server-command/status",{repo:executionRepo,id:q.id},headers,request);}
       catch(err){if(err.permanent||i===59){if(err.status)log("SERVER_COMMAND_STATUS_HTTP="+err.status);throw err;}await sleep(2000);continue;}
       if(state.id!==q.id)throw Error("SERVER_COMMAND_ID_MISMATCH");
       if(state.state==="PASS"){
-        if(state.result?.read_only!==true||state.result?.command_id!==command||state.result?.exit_code!==0)throw Error("SERVER_COMMAND_RESULT_CONTRACT");
-        for(const line of safeResult(command,state.result.stdout))log(line);
+        if(state.result?.read_only!==true||state.result?.command_id!==command)throw Error("SERVER_COMMAND_RESULT_CONTRACT");
+        if(command==="project.python_unittest"){
+          const exitCode=state.result?.exit_code;
+          if(typeof exitCode!=="number"||!Number.isInteger(exitCode))throw Error("SERVER_COMMAND_RESULT_CONTRACT");
+          for(const line of safeResult(command,state.result.stdout,exitCode))log(line);
+          if(exitCode!==0)throw Error("SERVER_TEST_EXIT_NONZERO");
+        }else{
+          if(state.result?.exit_code!==0)throw Error("SERVER_COMMAND_RESULT_CONTRACT");
+          for(const line of safeResult(command,state.result.stdout))log(line);
+        }
         if(command==="system.projects_inventory"){
           const data=JSON.parse(state.result.stdout);
           nextPage=data.next_page;
@@ -238,4 +305,4 @@ async function runGitopsStatus({request=fetch,log=console.log,env=process.env,ta
   }
 }
 if(require.main===module)(async()=>{await run();await runGitopsStatus();})().catch(e=>{console.error("BOUNDED_CHAT_READ_ERROR="+String(e.code||e.message||"UNKNOWN").replace(/[^A-Z0-9_]/g,"").slice(0,80));process.exitCode=1;});
-module.exports={ALLOWED,validateTarget,safeResult,run,normalizeGitopsStatusId,runGitopsStatus,validateInspectPayload,fileInspectArguments,FILE_INSPECT_MAX_PAGES};
+module.exports={ALLOWED,validateTarget,safeResult,run,normalizeGitopsStatusId,runGitopsStatus,validateInspectPayload,fileInspectArguments,FILE_INSPECT_MAX_PAGES,loadTestManifest,resolveRegisteredTest,TEST_MANIFEST_PATH};
