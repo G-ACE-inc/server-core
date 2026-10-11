@@ -29,6 +29,12 @@ jobs:
         run: |
           python3 -m py_compile scripts/servercore_bounded_host.py tests/servercore_bounded_host_test.py
           python3 -m unittest discover -s tests -p servercore_bounded_host_test.py -v
+      - name: Bounded Host transport and runtime config
+        run: |
+          python3 -m py_compile scripts/gace_internal_delivery_auth.py scripts/servercore_bounded_host_receiver.py scripts/servercore_bounded_host_gateway_send.py scripts/github_project_bounded_host_transport_test.py scripts/github_project_bounded_host_runtime_config_test.py
+          python3 scripts/github_project_bounded_host_transport_test.py
+          python3 scripts/github_project_bounded_host_runtime_config_test.py
+          docker build -f Dockerfile.bounded-host -t gace-server-core-bounded-host:ci .
       - name: Project Control container source
         run: |
           docker build -f Dockerfile.project-control -t gace-server-core-project-control:ci .

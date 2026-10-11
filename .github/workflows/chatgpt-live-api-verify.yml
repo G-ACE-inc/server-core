@@ -99,6 +99,32 @@ jobs:
           set -euo pipefail
           node scripts/chatgpt-source-reflect-dispatch.cjs verify-dispatch --git-ref "$GITHUB_REF_NAME"
 
+      - name: Optional independent bounded Host gateway dispatch
+        if: ${{ hashFiles('.github/chatgpt-live-api-target.json') != '' }}
+        shell: bash
+        env:
+          GACE_EVENT_GATEWAY_URL: ${{ vars.GACE_EVENT_GATEWAY_URL }}
+          GACE_EVENT_GATEWAY_TOKEN: ${{ secrets.GACE_EVENT_GATEWAY_TOKEN }}
+        run: |
+          set -euo pipefail
+          target=.github/chatgpt-live-api-target.json
+          enabled="$(jq -r '.bounded_host_request.enabled // false' "$target")"
+          if [[ "$enabled" != "true" ]]; then
+            echo "SERVERCORE_BOUNDED_HOST_DISPATCH=SKIPPED"
+            exit 0
+          fi
+          command_id="$(jq -r '.bounded_host_request.command_id' "$target")"
+          expected_sha="$(jq -r '.bounded_host_request.expected_sha' "$target")"
+          if [[ "$expected_sha" == "GITHUB_WORKFLOW_SHA" ]]; then
+            expected_sha="$GITHUB_SHA"
+          fi
+          test -n "${GACE_EVENT_GATEWAY_URL:-}" && test -n "${GACE_EVENT_GATEWAY_TOKEN:-}" || {
+            echo "SERVERCORE_BOUNDED_HOST_GATEWAY=NOT_CONFIGURED"
+            exit 46
+          }
+          python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha"
+          echo "SERVERCORE_BOUNDED_HOST_DISPATCH=QUEUED"
+
       - name: Require Cloudflare Access credentials
         shell: bash
         run: |

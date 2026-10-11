@@ -1,0 +1,39 @@
+{
+  "schema": "gace.github-project-bounded-host/v1",
+  "name": "gace-servercore-bounded-host",
+  "request_schema": "gace.servercore-bounded-host.request/v1",
+  "owner_repository": "G-ACE-inc/server-core",
+  "project_control_url": "https://github.com/G-ACE-inc/server-core/issues/10",
+  "canonical_host_root": "/home/admin1/server-core",
+  "allowed_command_ids": [
+    "project.git_head",
+    "project.git_status",
+    "project.registered_tests"
+  ],
+  "command_effects": {
+    "project.git_head": "read_only",
+    "project.git_status": "read_only",
+    "project.registered_tests": "read_only"
+  },
+  "transport": {
+    "kind": "webhook_gateway_internal_event",
+    "event_type": "gace.servercore-bounded-host.requested",
+    "destination_id": "server-core-bounded-host",
+    "source_id": "server-core-github",
+    "receiver_endpoint": "/internal/servercore-bounded-host",
+    "delivery_secret_env": "OUTBOUND_SERVER_CORE_BOUNDED_HOST_SECRET",
+    "delivery_secret_file_env": "GACE_BOUNDED_HOST_DELIVERY_SECRET_FILE",
+    "gateway_url_env": "GACE_EVENT_GATEWAY_URL",
+    "gateway_token_env": "GACE_EVENT_GATEWAY_TOKEN",
+    "signature_tolerance_seconds_env": "GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS"
+  },
+  "result_markers": [
+    "SERVERCORE_BOUNDED_HOST_STATE",
+    "SERVERCORE_BOUNDED_HOST_SHA",
+    "SERVERCORE_BOUNDED_HOST_COMMAND"
+  ],
+  "notes": {
+    "project_control_receiver_isolation": "Do not route bounded Host execution through github_project_control.py or Project field mutation authority.",
+    "gateway_destination_registration": "webhook-gateway must register destination server-core-bounded-host separately; Source contract only."
+  }
+}

@@ -46,6 +46,50 @@ services:
       start_period: 5s
     restart: unless-stopped
 
+  server-core-bounded-host:
+    build:
+      context: .
+      dockerfile: Dockerfile.bounded-host
+    init: true
+    user: "${GACE_SERVER_UID:?GACE_SERVER_UID is required}:${GACE_SERVER_GID:?GACE_SERVER_GID is required}"
+    environment:
+      GACE_BOUNDED_HOST_DELIVERY_SECRET_FILE: /run/secrets/bounded-host-delivery
+      GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS: "${GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS:-300}"
+    volumes:
+      - type: bind
+        source: "${GACE_BOUNDED_HOST_CANONICAL_ROOT:?GACE_BOUNDED_HOST_CANONICAL_ROOT is required}"
+        target: /home/admin1/server-core
+        read_only: true
+      - type: bind
+        source: "${GACE_BOUNDED_HOST_DELIVERY_SECRET_FILE:?GACE_BOUNDED_HOST_DELIVERY_SECRET_FILE is required}"
+        target: /run/secrets/bounded-host-delivery
+        read_only: true
+    networks:
+      - default
+      - gace-internal
+    expose:
+      - "8789"
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 64
+    mem_limit: 192m
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8789/healthz', timeout=2); raise SystemExit(0 if r.status == 200 else 1)"
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    restart: unless-stopped
+
 networks:
   default: {}
   gace-internal:
