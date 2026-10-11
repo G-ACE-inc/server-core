@@ -29,7 +29,13 @@ jobs:
         run: |
           python3 -m py_compile scripts/servercore_bounded_host.py tests/servercore_bounded_host_test.py
           python3 -m unittest discover -s tests -p servercore_bounded_host_test.py -v
+      - name: Bounded Host transport and runtime config
+        run: |
+          python3 -m py_compile scripts/gace_internal_delivery_auth.py scripts/servercore_bounded_host_receiver.py scripts/servercore_bounded_host_gateway_send.py scripts/github_project_bounded_host_transport_test.py scripts/github_project_bounded_host_runtime_config_test.py
+          python3 scripts/github_project_bounded_host_transport_test.py
+          python3 scripts/github_project_bounded_host_runtime_config_test.py
+          docker build -f Dockerfile.bounded-host -t gace-server-core-bounded-host:ci .
       - name: Project Control container source
         run: |
           docker build -f Dockerfile.project-control -t gace-server-core-project-control:ci .
-          GACE_SERVER_UID=10001 GACE_SERVER_GID=10001 GACE_PROJECT_CONTROL_GH_CONFIG_DIR=/tmp/gace-gh-config GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE=/tmp/gace-project-control-delivery-secret docker compose -f docker-compose.project-control.yml config --quiet
+          GACE_SERVER_UID=10001 GACE_SERVER_GID=10001 GACE_PROJECT_CONTROL_GH_CONFIG_DIR=/tmp/gace-gh-config GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE=/tmp/gace-pc-hmac-key GACE_BOUNDED_HOST_CANONICAL_ROOT=/tmp/gace-server-core-canonical GACE_BOUNDED_HOST_HMAC_KEY_FILE=/tmp/gace-bh-hmac-key docker compose -f docker-compose.project-control.yml config --quiet

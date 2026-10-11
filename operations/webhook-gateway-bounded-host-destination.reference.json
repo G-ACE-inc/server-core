@@ -1,0 +1,36 @@
+{
+  "schema": "gace.webhook-gateway-destination-reference/v1",
+  "purpose": "Reference-only snippet for webhook-gateway config owner. Not loaded by server-core runtime.",
+  "destination": {
+    "id": "server-core-bounded-host",
+    "appId": "server-core",
+    "name": "server-core-bounded-host",
+    "urlEnv": "DEST_SERVER_CORE_BOUNDED_HOST_URL",
+    "method": "POST",
+    "payloadMode": "json",
+    "dataMode": "json_object",
+    "successMode": "status_and_header",
+    "acceptedHeader": "x-gace-accepted",
+    "acceptedHeaderValue": "true",
+    "signingSecretEnv": "OUTBOUND_SERVER_CORE_BOUNDED_HOST_SECRET",
+    "timeoutMs": 30000,
+    "maxAttempts": 8,
+    "unknownPolicy": "retry_then_dead",
+    "allowPrivateNetwork": true,
+    "enabled": true,
+    "headers": {
+      "x-gace-destination": "server-core-bounded-host"
+    }
+  },
+  "route": {
+    "id": "server-core-bounded-host-events",
+    "sourceId": "server-core-github",
+    "destinationId": "server-core-bounded-host",
+    "eventTypePattern": "gace.servercore-bounded-host.requested",
+    "enabled": true
+  },
+  "activation_notes": {
+    "reuse_delivery_secret_pattern": "May reuse OUTBOUND_SERVER_CORE_PROJECT_CONTROL_SECRET only if policy owner explicitly maps the same HMAC key to both destinations; do not create a new token without approval.",
+    "receiver_url_example": "http://server-core-bounded-host:8789/internal/servercore-bounded-host"
+  }
+}

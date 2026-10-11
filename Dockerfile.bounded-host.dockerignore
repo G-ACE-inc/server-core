@@ -1,0 +1,7 @@
+**
+!operations/
+!operations/github-project-bounded-host.json
+!scripts/
+!scripts/servercore_bounded_host.py
+!scripts/gace_internal_delivery_auth.py
+!scripts/servercore_bounded_host_receiver.py

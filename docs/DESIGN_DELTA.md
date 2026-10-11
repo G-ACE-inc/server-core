@@ -795,3 +795,17 @@ Evidence: PR source tests, exact-head CI and Host readback are separately requir
 Compatibility and rollback: Does not alter existing DebugAI product runner or working temporary DebugAI route. No new secret, token, workflow, MCP, listening service or Host policy. Remove candidate module/CI test to revert.
 
 Verification at creation: SOURCE_ONLY; HOST_INSTALL=NOT_VERIFIED; NETWORK_AUTHENTICATION=NOT_IMPLEMENTED; HOST_E2E=NOT_VERIFIED; SOURCE_REFLECTION=NOT_EXECUTED; RUNTIME_PARITY=NOT_VERIFIED.
+
+## 2026-10-11 — Wire server-core bounded Host primitive to existing Gateway delivery auth
+
+Baseline: SERVER_CORE_DESIGN §16.9.1, merged PR #93 (`scripts/servercore_bounded_host.py`), Control #10. PR #93 isolated the local primitive; this CU connects it to the **same authenticated Generic Internal Event API pattern** as Project Control without extending `github_project_control.py` or Project field mutation authority.
+
+Change: `operations/github-project-bounded-host.json` registers allowlisted commands and transport metadata (`server-core-bounded-host` destination). `scripts/gace_internal_delivery_auth.py`, `servercore_bounded_host_receiver.py`, and `servercore_bounded_host_gateway_send.py` implement HMAC-verified receiver + Gateway enqueue using existing `GACE_EVENT_GATEWAY_URL` / `GACE_EVENT_GATEWAY_TOKEN` contract names. `Dockerfile.bounded-host` and `docker-compose.project-control.yml` service `server-core-bounded-host` package the receiver on `gace-internal` with read-only canonical root bind. `chatgpt-source-reflect-dispatch.cjs` and existing `chatgpt-live-api-verify.yml` accept optional `bounded_host_request` (mutually exclusive with DebugAI server_command, gitops, and source_reflect). `project_control_runtime_readback.sh` emits local consumer `project.git_head` parity markers. Reference-only `operations/webhook-gateway-bounded-host-destination.reference.json` documents the webhook-gateway destination/route registration; **not** an activation.
+
+Evidence: focused Python transport/runtime tests; Docker build `gace-server-core-bounded-host:ci`; VPS readback `SERVERCORE_BOUNDED_HOST_LOCAL=PASS` at consumer SHA `d454f7021c74ffb095297178b2af46fe57720a2a`. Gateway/receiver container deploy and CHAT-origin Gateway→Host terminal PASS remain gated on webhook-gateway destination registration and Host delivery secret provisioning (Host Policy; no new token assumed).
+
+Compatibility: DebugAI transitional route unchanged. No DebugAI Repository/Runtime mutation, no Project Control receiver behavior change, no arbitrary shell API.
+
+### Security adjustment — remote registered-test exclusion (2026-10-11)
+
+During source integration review, `project.registered_tests` was found to execute repository Python code in the same receiver container as the mounted outbound HMAC delivery key and the internal network. This does not establish safe test isolation even if the checkout mount is read-only. Until a credential-free, network-isolated test worker is independently reviewed and admitted, the **Gateway/receiver command allowlist** permits only `project.git_head` and `project.git_status`. The local fixed-test capability and CI verification remain separate. Added explicit negative test for denied remote registered-tests request. No Host deployment or credential permission expansion. Completion remains SOURCE/CI only pending live gateway registration/Host admission and terminal readback.

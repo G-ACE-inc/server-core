@@ -29,6 +29,32 @@ const REFLECT_TRIGGER_BRANCHES = new Set([
   "feat/chat-actions-client-migration-20261011",
 ]);
 
+const BOUNDED_HOST_CONTRACT_PATH = "operations/github-project-bounded-host.json";
+
+function assertBoundedHostShape(request) {
+  if (!request || typeof request !== "object" || request.enabled !== true) {
+    throw new Error("BOUNDED_HOST_SHAPE_INVALID");
+  }
+  const keys = Object.keys(request).sort();
+  const expected = ["command_id", "enabled", "expected_sha"].sort();
+  if (keys.join("|") !== expected.join("|")) throw new Error("BOUNDED_HOST_KEYS_INVALID");
+  const shaVal = String(request.expected_sha || "");
+  if (shaVal !== "GITHUB_WORKFLOW_SHA" && !/^[0-9a-f]{40}$/.test(shaVal)) {
+    throw new Error("BOUNDED_HOST_SHA_INVALID");
+  }
+  if (!/^[a-z][a-z0-9_.-]{1,80}$/.test(String(request.command_id || ""))) {
+    throw new Error("BOUNDED_HOST_COMMAND_INVALID");
+  }
+}
+
+function validateBoundedHostRequest(request, contract) {
+  assertBoundedHostShape(request);
+  const allowed = new Set(contract.allowed_command_ids || []);
+  if (!allowed.has(request.command_id)) throw new Error("BOUNDED_HOST_COMMAND_DENIED");
+  const effects = contract.command_effects || {};
+  if (effects[request.command_id] !== "read_only") throw new Error("BOUNDED_HOST_EFFECT_DENIED");
+}
+
 function loadJson(path) {
   return JSON.parse(fs.readFileSync(path, "utf8"));
 }
@@ -103,8 +129,23 @@ function validateDispatch({ target, route, registry, gitRefName }) {
   }
   const gitopsEnabled = target.gitops_request?.enabled === true;
   const reflectEnabled = target.source_reflect_request?.enabled === true;
+  const boundedHostEnabled = target.bounded_host_request?.enabled === true;
   if (reflectEnabled && gitopsEnabled) throw new Error("CHAT_REFLECT_CONCURRENT_DEPLOY_DENIED");
   if (reflectEnabled && target.mode !== "readonly") throw new Error("CHAT_REFLECT_MODE_DENIED");
+  if (boundedHostEnabled && (reflectEnabled || gitopsEnabled)) {
+    throw new Error("BOUNDED_HOST_CONCURRENT_OPERATION_DENIED");
+  }
+  if (boundedHostEnabled && (target.server_command_id ?? "") !== "") {
+    throw new Error("BOUNDED_HOST_DEBUGAI_COMMAND_FORBIDDEN");
+  }
+
+  if (boundedHostEnabled) {
+    if (target.mode !== "readonly") throw new Error("BOUNDED_HOST_MODE_DENIED");
+    if (!REFLECT_TRIGGER_BRANCHES.has(gitRefName)) throw new Error("BOUNDED_HOST_TRIGGER_BRANCH_DENIED");
+    const hostContract = loadJson(BOUNDED_HOST_CONTRACT_PATH);
+    validateBoundedHostRequest(target.bounded_host_request, hostContract);
+    return { mode: "bounded_host", commandId: target.bounded_host_request.command_id };
+  }
 
   if (reflectEnabled) {
     if (!REFLECT_TRIGGER_BRANCHES.has(gitRefName)) throw new Error("CHAT_SOURCE_REFLECT_TRIGGER_BRANCH_DENIED");
@@ -147,6 +188,7 @@ function verifyDispatchCli(argv) {
   console.log("MIGRATED_ACTIONS_ROUTE=SERVER_CORE");
   console.log("SOURCE_REFLECT_DISPATCH_MODE=" + result.mode);
   if (result.delegationId) console.log("SOURCE_REFLECT_DELEGATION_ID=" + result.delegationId);
+  if (result.commandId) console.log("BOUNDED_HOST_DISPATCH_COMMAND=" + result.commandId);
 }
 
 if (require.main === module) {
@@ -172,8 +214,11 @@ module.exports = {
   REGISTERED_RUNTIME,
   REGISTERED_SCOPE,
   REFLECT_TRIGGER_BRANCHES,
+  BOUNDED_HOST_CONTRACT_PATH,
   validateDispatch,
   validateRegisteredDelegation,
   validateIdleTarget,
+  validateBoundedHostRequest,
   assertReflectShape,
+  assertBoundedHostShape,
 };

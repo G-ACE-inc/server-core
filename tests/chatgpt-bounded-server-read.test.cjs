@@ -423,3 +423,10 @@ test("registered test API rejection preserves HTTP class without echoing respons
   await assert.rejects(m.run({request,sleep:async()=>{},log:()=>{},env:{CF_ACCESS_CLIENT_ID:"a",CF_ACCESS_CLIENT_SECRET:"b"},targetFile}),e=>e.message==="REQUEST_HTTP_NOT_202"&&e.httpStatus===400);
   assert.equal(requests.length,1);
 });
+
+test("bounded host dispatch rejects DebugAI command overlap and unregistered commands",()=>{
+  const hostTarget={...target,mode:"readonly",bounded_host_request:{enabled:true,command_id:"project.git_head",expected_sha:"GITHUB_WORKFLOW_SHA"},server_command_id:""};
+  assert.equal(d.validateDispatch({target:hostTarget,route,registry,gitRefName:"main"}).mode,"bounded_host");
+  assert.throws(()=>d.validateDispatch({target:{...hostTarget,server_command_id:"project.git_head"},route,registry,gitRefName:"main"}),/BOUNDED_HOST_DEBUGAI_COMMAND_FORBIDDEN/);
+  assert.throws(()=>d.validateDispatch({target:{...hostTarget,bounded_host_request:{enabled:true,command_id:"system.shell",expected_sha:"a".repeat(40)}},route,registry,gitRefName:"main"}),/BOUNDED_HOST_COMMAND_DENIED/);
+});
