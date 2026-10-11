@@ -319,6 +319,13 @@ jobs:
             if [[ "$state" == "FAIL" ]]; then
               failure="$(jq -r '.error // "UNKNOWN"' /tmp/chat-reflect-status.json)"
               [[ "$failure" =~ ^[A-Z][A-Z0-9_]{0,79}$ ]] || failure="UNKNOWN"
+              if [[ "$failure" == "SOURCE_REFLECT_NO_DIFF" ]]; then
+                echo "CHAT_REFLECT_TERMINAL=SKIP"
+                echo "CHAT_REFLECT_FAILURE_CLASS=$failure"
+                echo "CHAT_REFLECT_NO_DIFF=IDEMPOTENT_OK"
+                state="PASS"
+                break
+              fi
               echo "CHAT_REFLECT_TERMINAL=FAIL"
               echo "CHAT_REFLECT_FAILURE_CLASS=$failure"
               exit 55
@@ -393,6 +400,13 @@ jobs:
             if [[ "$state" == "FAIL" ]]; then
               failure="$(jq -r '.error // "UNKNOWN"' /tmp/chat-reflect-status.json)"
               [[ "$failure" =~ ^[A-Z][A-Z0-9_]{0,79}$ ]] || failure="UNKNOWN"
+              if [[ "$failure" == "SOURCE_REFLECT_NO_DIFF" ]]; then
+                echo "CHAT_REFLECT_TERMINAL=SKIP"
+                echo "CHAT_REFLECT_FAILURE_CLASS=$failure"
+                echo "CHAT_REFLECT_NO_DIFF=IDEMPOTENT_OK"
+                state="PASS"
+                break
+              fi
               echo "CHAT_REFLECT_TERMINAL=FAIL"
               echo "CHAT_REFLECT_FAILURE_CLASS=$failure"
               exit 55

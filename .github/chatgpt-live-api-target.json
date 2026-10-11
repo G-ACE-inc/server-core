@@ -2,25 +2,12 @@
   "base_url": "https://debugai.asterav8.jp",
   "mode": "readonly",
   "run_id": "",
-  "repo": "/workspace/debug-ai/.debugai-input/test-repos/server-core",
-  "request": "Tool B registered server-core rule_plane_static via Host python_unittest",
+  "repo": "/workspace/debug-ai",
+  "request": "server-core common Actions idle after registered-test E2E attempt (Host admission pending test-repos checkout)",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
     "enabled": false
-  },
-  "server_command_id": "project.python_unittest",
-  "registered_test_target": "server_core_baseline",
-  "registered_test_id": "rule_plane_static",
-  "chat_decision_checkpoint": {
-    "phase": "START",
-    "profile": "GPT_CHAT",
-    "manifest_verified": true,
-    "rule_full_read": true,
-    "current_verified": true,
-    "purpose_verified": true,
-    "cu_verified": true,
-    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/86; Control #10"
   }
 }
