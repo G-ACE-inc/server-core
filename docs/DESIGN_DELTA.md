@@ -633,3 +633,14 @@ In the existing `.github/workflows/server-core-guard.yml`, pull requests changin
 The gate verifies declared process evidence is **present**, not independently that a GPT CHAT model actually read the Design or did not terminate early. An honest implementation still requires human/source/evidence review and native CHAT turn observability. Do not label this a real reply-send STOP interceptor. This is a focused Work Routine enforcement on the already-owned CU, not a new Workflow, token, rule plane or broad authorization. No existing Design Baseline text is rewritten.
 
 Compatibility/rollback: remove only the added scoped existing-workflow PR check and corresponding README/Tree indexing to restore previous permissive PR behavior. Tests and Host operational routing stay unchanged; deployed workflows are not altered beyond the existing CI contract.
+
+## 2026-10-11 — Verify declared Documentation Gate against actual Source diff
+
+### Existing design and observed defect
+`docs/G_ACE_WORKSPACE.md` §6 and §7 require design-first implementation and concrete README/Project Tree/Design Delta/System Document decisions. The first scoped CI implementation [PR #64](https://github.com/G-ACE-inc/server-core/pull/64) checked that decisions were nonblank in a PR body, but did not prove a `YES` declaration caused any required file to change. Thus the process could remain documentation-incomplete while CI passed.
+
+### Bounded correction and acceptance
+The **existing** `server-core-guard` CU #40 PR preflight now checks actual changed paths: `README_UPDATE_REQUIRED=YES` needs `README.md`, `PROJECT_TREE_UPDATE_REQUIRED=YES` needs `docs/STRUCTURE.md`, and `DESIGN_DELTA_REQUIRED=YES` needs `docs/DESIGN_DELTA.md`; invalid decisions fail. When the Design Delta changes, the original file must remain as an intact prefix, with only appended content. This is intentionally scoped to PRs touching CU #40 Gate implementation files; it does not silently impose a new approval model on other repositories or work owned by other CHATs.
+
+### Limits and rollback
+The scope does not independently prove model Design comprehension, quality or native CHAT final-answer interception. The `SYSTEM_DOCUMENT_REQUIRED=YES/UPDATE_EXISTING` declaration is not yet mapped to a definite system-document file; do not mislabel that gap as verified. Direct writes to main can evade PR-time checks if branch protection is absent (protection API readback was denied). No permanent Host authorization, runtime or product-source changes. Rollback can remove the bounded guard additions and corresponding navigation changes; prior architectural Design and historical entries remain unchanged.
