@@ -145,6 +145,8 @@ jobs:
             send+=(--path "$(jq -r '.bounded_host_request.path' "$target")" --offset "$(jq -r '.bounded_host_request.offset' "$target")")
           elif [[ "$command_id" == "docker.logs" ]]; then
             send+=(--container "$(jq -r '.bounded_host_request.container' "$target")" --tail "$(jq -r '.bounded_host_request.tail' "$target")")
+          elif [[ "$command_id" == "dev.job" ]]; then
+            send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --session "$(jq -r '.bounded_host_request.session' "$target")" --job-argv-json "$(jq -c '.bounded_host_request.argv' "$target")" --timeout-s "$(jq -r '.bounded_host_request.timeout_s' "$target")" --fresh "$(jq -r '.bounded_host_request.fresh' "$target")")
           fi
           "${send[@]}" | tee /tmp/bounded-host-send.out
           request_id="$(grep -m1 '^{' /tmp/bounded-host-send.out | jq -r '.request_id // empty')"
