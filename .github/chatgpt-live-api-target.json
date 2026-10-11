@@ -12,5 +12,15 @@
   },
   "server_command_id": "system.projects_inventory",
   "inventory_page": 0,
-  "inventory_all": false
+  "inventory_all": false,
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/69; https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6106090000; current main 874cf4029014cdeaba145bb519eac63d50587b66"
+  }
 }
