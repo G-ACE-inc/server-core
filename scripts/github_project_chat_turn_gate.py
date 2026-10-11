@@ -44,6 +44,13 @@ def evaluate(state):
             return "FAILURE_REPLAN_REQUIRED"
         if next_action and next_action not in independent:
             return "FAILURE_NEXT_NOT_IN_AVAILABLE_ACTIONS"
+        completed = state.get("completed_actions")
+        if not isinstance(completed, list) or any(not isinstance(a, str) or not a.strip() for a in completed):
+            return "FAILURE_COMPLETED_ACTIONS_INVALID"
+        if any(a not in independent for a in completed):
+            return "FAILURE_COMPLETED_NOT_IN_AVAILABLE_ACTIONS"
+        if independent and next_action not in completed:
+            return "FAILURE_NEXT_ACTION_NOT_COMPLETED"
         if independent and (not isinstance(state.get("next_action_evidence"), str) or not state["next_action_evidence"].strip()):
             return "FAILURE_NEXT_ACTION_NOT_EXECUTED"
         return "PASS"
