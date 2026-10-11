@@ -5,6 +5,6 @@ services:
   server-core-bounded-host:
     volumes:
       - type: bind
-        source: "${GACE_HOST_SOURCE_REFLECT_SOCKET:?approved Host UNIX socket path required}"
-        target: /run/gace/servercore-source-reflect.sock
-        read_only: false
+        source: "${GACE_HOST_SOURCE_REFLECT_SOCKET_DIR:?approved Host UNIX socket directory required}"
+        target: /run/gace
+        read_only: true
