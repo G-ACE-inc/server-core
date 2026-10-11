@@ -31,6 +31,23 @@ class BoundedHostTests(unittest.TestCase):
         with patch.object(host, "_run", side_effect=fake_run):
             return host.execute(command, self.root, sha)
 
+    def test_git_invocation_scoped_to_canonical_directory(self):
+        calls = []
+        class Result:
+            returncode = 0
+            stdout = SHA + "\\n"
+        def capture(argv, **kwargs):
+            calls.append((argv, kwargs))
+            return Result()
+        with patch.object(host.subprocess, "run", side_effect=capture):
+            host._run(["git", "rev-parse", "HEAD"], self.root)
+        args, kwargs = calls[0]
+        self.assertEqual(args[0:3], ["git", "-c", "safe.directory=" + str(self.root.resolve())])
+        self.assertIn("core.fsmonitor=false", args)
+        self.assertIn("core.hooksPath=/dev/null", args)
+        self.assertNotIn("--global", args)
+        self.assertEqual(kwargs["cwd"], self.root)
+
     def test_exact_head(self):
         self.assertEqual(self.run_with("project.git_head")["source_sha"], SHA)
 
