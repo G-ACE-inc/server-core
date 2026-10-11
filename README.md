@@ -128,6 +128,12 @@ REQUEST
 
 Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
 
+## GPT CHAT decision Gate — verified scope (2026-10-11)
+
+The existing bounded CHAT checkpoint evaluator is `scripts/github_project_chat_turn_gate.py`; deterministic tests are in `scripts/github_project_chat_turn_gate_test.py`. The existing `server-core-guard` runs these tests, and the existing `chatgpt-live-api-verify` Workflow validates an explicitly supplied START checkpoint before an admitted Host operation. **This is Host request admission, not interception of ordinary ChatGPT answer submission**. FAILURE/STOP are evaluator contracts, not verified native send-time enforcement. Operational START positive/negative evidence and intended boundary are preserved in [Design Delta](docs/DESIGN_DELTA.md) and [CU #40](https://github.com/G-ACE-inc/server-core/issues/40). A green CI alone is never proof that CHAT followed the Work Routine or continued until a legitimate stopping point.
+
+The mandatory Work Routine (design baseline → change assessment → source/test → focused verification → Documentation Gate → GitHub Current/Evidence → actual continuation decision) remains in [G_ACE_WORKSPACE](docs/G_ACE_WORKSPACE.md) §6–§7. README is only a verified entry and status index; the architecture baseline remains [SERVER_CORE_DESIGN](docs/SERVER_CORE_DESIGN.md) and intentional changes are append-only in [DESIGN_DELTA](docs/DESIGN_DELTA.md).
+
 ## Current Documentation State
 
 司令室MDとして現在の正本セットは以下。
