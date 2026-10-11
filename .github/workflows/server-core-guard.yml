@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: server-core-guard-${{ github.ref }}
@@ -121,6 +122,81 @@ jobs:
               print("CU40_DESIGN_PREFLIGHT=DECLARED_ONLY")
               print("CU40_CHANGED_PATHS=" + ",".join(affected))
               print("NOTE=PR receipt is not independent proof of actual design review")
+          PY
+
+      - name: CU40 main push admission (merged PR required for gate paths)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          import sys
+          import urllib.error
+          import urllib.request
+
+          before = os.environ.get("BEFORE_SHA", "")
+          after = os.environ["AFTER_SHA"]
+          if not before or before == "0" * 40:
+              print("CU40_MAIN_PUSH_ADMISSION=SKIP_NO_BEFORE")
+              raise SystemExit(0)
+
+          subprocess.check_call(["git", "fetch", "--no-tags", "--depth=1", "origin", before])
+          changed = set(subprocess.check_output(
+              ["git", "diff", "--name-only", before, after],
+              text=True,
+          ).splitlines())
+          cu40_source = {
+              ".github/workflows/server-core-guard.yml",
+              "scripts/github_project_chat_turn_gate.py",
+              "scripts/github_project_chat_turn_gate_test.py",
+              ".github/workflows/chatgpt-live-api-verify.yml",
+          }
+          affected = sorted(changed & cu40_source)
+          if not affected:
+              print("CU40_MAIN_PUSH_ADMISSION=NOT_APPLICABLE")
+              raise SystemExit(0)
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GITHUB_TOKEN"]
+          url = f"https://api.github.com/repos/{repo}/commits/{after}/pulls"
+          req = urllib.request.Request(
+              url,
+              headers={
+                  "Authorization": f"Bearer {token}",
+                  "Accept": "application/vnd.github+json",
+              },
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  pulls = json.load(response)
+          except urllib.error.HTTPError as error:
+              print("CU40_MAIN_PUSH_PR_LOOKUP=FAIL")
+              print("HTTP_STATUS=" + str(error.code))
+              raise SystemExit(1) from error
+
+          merged = [
+              item["number"]
+              for item in pulls
+              if item.get("merged_at")
+          ]
+          if not merged:
+              print("CU40_MAIN_DIRECT_PUSH_BLOCKED")
+              print("CU40_CHANGED_PATHS=" + ",".join(affected))
+              print("NOTE=Native branch protection unavailable on private GitHub Free; use PR merge for CU40 gate paths")
+              raise SystemExit(1)
+
+          print("CU40_MAIN_PUSH_ADMISSION=MERGED_PR")
+          print("CU40_MERGED_PULLS=" + ",".join(str(number) for number in merged))
+          print("CU40_CHANGED_PATHS=" + ",".join(affected))
+          print("NOTE=Post-push CI does not revert commits; upgrade branch protection for hard block")
           PY
 
       - name: Required authority files

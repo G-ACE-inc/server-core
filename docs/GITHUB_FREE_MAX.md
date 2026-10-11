@@ -32,6 +32,23 @@ private repositoryで無料枠の制約がある場合:
 - 軽量CIと自動commitを優先する。
 - main直pushは、管理者が許可した正本更新または小規模文書更新に限定する。
 
+### Private repository — verified platform limit (2026-10-11)
+
+GitHub API readback on `G-ACE-inc/server-core` (private, org plan `free`):
+
+- `GET /repos/G-ACE-inc/server-core/branches/main/protection` → **403** — "Upgrade to GitHub Pro or make this repository public to enable this feature."
+- `POST /repos/G-ACE-inc/server-core/rulesets` → **403** (same message).
+- GraphQL `branchProtectionRules` and `rulesets` on `main` → **empty**.
+
+Therefore native `protected=true` branch protection and required-status-check merge gates are **not available** on the current plan while the repository stays private. Work Routine CU #40 PR guards (`server-core-guard` pull_request steps) do not run on a direct `main` push; only the generic push job runs unless the scoped main-push admission step is present.
+
+Mitigations within existing tooling (no new Workflow file):
+
+1. Prefer PR merge for CU #40 gate Source paths; keep `scripts/ai-auto-commit.sh` on feature branches when practical.
+2. Existing `server-core-guard` **push** admission fails CI when CU #40 gate paths land on `main` without an associated merged PR (post-push signal; does not revert Git).
+3. Hard block before push requires GitHub Pro/Team (private rulesets/protection) or making the repository public under the documented ruleset path above.
+
+
 ### Security
 - Dependency graphを有効化する。
 - Dependabot alertsを有効化する。

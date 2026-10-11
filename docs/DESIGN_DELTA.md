@@ -687,3 +687,14 @@ Design baseline: `docs/SERVER_CORE_DESIGN.md` §16.9–16.10 and existing Tool B
 Scoped Source change: reuse the existing `chatgpt-live-api-verify.yml` workflow and `chatgpt-bounded-server-read.cjs` to add these two bounded read-only command IDs to source dispatch, common route catalog/workflow-supported intersection and test fixtures. Emit only disk percentage/blocks and Git changed-path COUNT, never raw private path names or files. Keep request arguments empty, target repository fixed to the existing bounded /workspace/debug-ai execution identity; no general shell, new Workflow, token, host registry or new sibling worktree. The Host source/actual installed admission is separate and must be checked with real CHAT-origin run.
 
 Acceptance: targeted positive/negative client+dispatch tests, same-head GitHub CI/PR readback; an explicit START checkpoint on live trigger; Host command ID, read-only PASS, safe result markers and no deploy; restore exact prior idle blob. Do not imply canonical server-core parent read, source reflect, Docker lifecycle or Tool A delivery is solved. Rollback is source-only removal of these bounded IDs, client parsers and tests.
+
+## 2026-10-11 — Main admission: GitHub Free private cannot enforce native protection
+
+### Baseline and observed gap
+CU #40 Work Routine enforcement in `server-core-guard` was scoped to `pull_request` events ([PR #64–#70](https://github.com/G-ACE-inc/server-core/pull/64)). Anyone with `push`/`admin` on `main` could bypass Design/Documentation Gate declarations by pushing directly. GitHub API readback: org `G-ACE-inc` plan `free`, repository private; branch protection and rulesets endpoints return **403**; GraphQL protection/ruleset lists are empty (`protected=false` at platform layer).
+
+### Bounded correction (existing workflow only)
+Append a `push`/`main`-scoped step to the existing `server-core-guard` (no new Workflow file): when a push changes CU #40 gate Source paths, require an associated **merged** pull request for the commit SHA via `GET /commits/{sha}/pulls`. Otherwise emit `CU40_MAIN_DIRECT_PUSH_BLOCKED` and fail the guard run. Merged PR paths continue to pass. This preserves other workflows, Actions permissions model, and non-gate main documentation hotfixes.
+
+### Limits, evidence, rollback
+Post-push CI failure does **not** revert Git history and is not equivalent to required status checks under branch protection. Hard pre-push block still needs GitHub Pro/Team private protection or a public-repository ruleset. Evidence: API 403 on protection/ruleset create; [Issue #40](https://github.com/G-ACE-inc/server-core/issues/40) CU scope. Rollback: remove the push admission step and restore prior README/`GITHUB_FREE_MAX` wording; PR-scoped guards from #64–#70 remain.
