@@ -414,3 +414,12 @@ test("idle dispatch requires catalog, workflow support, and read-only effect tog
   const c=copy();c.routes[0].command_effects["project.git_head"]="write";
   assert.throws(()=>d.validateDispatch({...args,route:c}),/IDLE_EFFECTIVE_ROUTE_ADMISSION_DENIED/);
 });
+
+
+test("registered test API rejection preserves HTTP class without echoing response",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:"project.python_unittest",registered_test_target:"server_core_baseline",registered_test_id:"rule_plane_static",repo:"/workspace/debug-ai/.debugai-input/test-repos/server-core"});
+  const requests=[];
+  const request=async(url)=>{requests.push(url);return{status:400,json:async()=>{throw Error("response-body-should-not-be-read");}};};
+  await assert.rejects(m.run({request,sleep:async()=>{},log:()=>{},env:{CF_ACCESS_CLIENT_ID:"a",CF_ACCESS_CLIENT_SECRET:"b"},targetFile}),e=>e.message==="REQUEST_HTTP_NOT_202"&&e.httpStatus===400);
+  assert.equal(requests.length,1);
+});
