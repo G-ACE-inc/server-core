@@ -795,3 +795,29 @@ Evidence: PR source tests, exact-head CI and Host readback are separately requir
 Compatibility and rollback: Does not alter existing DebugAI product runner or working temporary DebugAI route. No new secret, token, workflow, MCP, listening service or Host policy. Remove candidate module/CI test to revert.
 
 Verification at creation: SOURCE_ONLY; HOST_INSTALL=NOT_VERIFIED; NETWORK_AUTHENTICATION=NOT_IMPLEMENTED; HOST_E2E=NOT_VERIFIED; SOURCE_REFLECTION=NOT_EXECUTED; RUNTIME_PARITY=NOT_VERIFIED.
+
+## 2026-10-11 — CU #40 failure-action locator syntactic validation
+
+### Baseline design
+`docs/SERVER_CORE_DESIGN.md` command-center evidence boundary and existing `scripts/github_project_chat_turn_gate.py` bounded START/FAILURE/STOP contract. The prior FAILURE branch accepted any nonempty `next_action_evidence` free text as PASS.
+
+### Actual change
+Within the existing FAIL receipt evaluator only, reject free-text/malformed next-action evidence and require a GitHub issue/comment, Actions run, commit or PR locator. Positive and negative fixtures in the existing focused test updated. START and STOP paths unchanged.
+
+### Reason / root cause
+A synthetic or caller-asserted phrase such as `readback obtained` previously passed `FAILURE_NEXT_ACTION_NOT_EXECUTED`; this is not traceable evidence.
+
+### Evidence
+CU `G-ACE-inc/server-core#40`, canonical Rule #17 sections 5–7, existing gate and test source. Actual CI result is held by the PR and exact SHA after run, not fabricated here.
+
+### Affected scope
+One existing evaluator and one existing test only, plus this append-only design delta. No new workflow, MCP, Host route, Secret or shared Work Routine edits; active PR #39 owner unchanged.
+
+### Applied commit
+PR branch `fix/chat-cu40-evidence-claim-validation-20261011` (final exact HEAD and CI must be fetched independently).
+
+### Compatibility / migration / rollback
+This deliberately changes FAILURE fixtures accepting unsupported free-text locators to failure. Consumers must supply a traceable GitHub locator; revert the narrow evaluator/test change if an owned consumer contract requires another trusted locator format. `evidence_locator` proves URL syntax only: it **does not GET the URL, verify action ownership or prove execution**, and it does not intercept normal CHAT final-answer submission. `HARD_INTERCEPT=NOT_VERIFIED`.
+
+### Verification state
+SOURCE=CHANGED; CI=NOT_VERIFIED until exact SHA run; REAL_CHAT_BEHAVIOR=NOT_VERIFIED. This does not satisfy full CU #40 completion.
