@@ -23,7 +23,7 @@ class DecisionTests(unittest.TestCase):
         good = dict(phase="FAILURE", failed_step="Host read", failure_evidence="run/42",
                     independent_actions=["Inspect registry"], next_action="Inspect registry",
                     completed_actions=["Inspect registry"],
-                    next_action_evidence="github://issue/40#action-readback")
+                    next_action_evidence="https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6107486587")
         self.assertEqual(gate.evaluate(good), "PASS")
         self.assertEqual(gate.evaluate({**good, "next_action": ""}), "FAILURE_REPLAN_REQUIRED")
         self.assertEqual(gate.evaluate({**good, "next_action": "deploy"}), "FAILURE_NEXT_NOT_IN_AVAILABLE_ACTIONS")
