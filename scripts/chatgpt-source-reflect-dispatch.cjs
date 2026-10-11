@@ -128,11 +128,6 @@ function validateIdleTarget(target) {
 }
 
 function validateDispatch({ target, route, registry, gitRefName }) {
-  const current = (route.routes || []).find((item) => item.id === "route_debugai_live_read");
-  if (!current) throw new Error("COMMON_ROUTE_MISSING");
-  if (current.workflow_repository !== "G-ACE-inc/server-core") {
-    throw new Error("MIGRATED_ROUTE_OWNER_MISMATCH");
-  }
   const gitopsEnabled = target.gitops_request?.enabled === true;
   const reflectEnabled = target.source_reflect_request?.enabled === true;
   const boundedHostEnabled = target.bounded_host_request?.enabled === true;
@@ -151,6 +146,13 @@ function validateDispatch({ target, route, registry, gitRefName }) {
     const hostContract = loadJson(BOUNDED_HOST_CONTRACT_PATH);
     validateBoundedHostRequest(target.bounded_host_request, hostContract);
     return { mode: "bounded_host", commandId: target.bounded_host_request.command_id };
+  }
+
+  // Independent bounded Host does not require the DebugAI product route.
+  const current = (route.routes || []).find((item) => item.id === "route_debugai_live_read");
+  if (!current) throw new Error("COMMON_ROUTE_MISSING");
+  if (current.workflow_repository !== "G-ACE-inc/server-core") {
+    throw new Error("MIGRATED_ROUTE_OWNER_MISMATCH");
   }
 
   if (reflectEnabled) {
