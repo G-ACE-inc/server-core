@@ -349,3 +349,9 @@ test("bounded server read skips Host when no server_command_id (reflect idle gua
   await m.run({request,sleep:async()=>{},log:()=>{},env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
   assert.equal(calls.length,0);
 });
+
+test("existing Host git status emits bounded counts without filenames",()=>{
+  assert.equal(m.ALLOWED.has("project.git_status"),true);
+  assert.deepEqual(m.safeResult("project.git_status",""),["SERVER_GIT_WORKTREE_CLEAN=true","SERVER_GIT_CHANGED_ENTRIES=0"]);
+  assert.deepEqual(m.safeResult("project.git_status"," M sensitive.env\\n?? notes.txt"),["SERVER_GIT_WORKTREE_CLEAN=false","SERVER_GIT_CHANGED_ENTRIES=2"]);
+});
