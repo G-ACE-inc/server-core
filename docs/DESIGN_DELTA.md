@@ -733,3 +733,9 @@ Baseline: Control #10, `operations/github-project-chat-host-routes.json` route_d
 ## 2026-10-11 — Tool B git_recent_commits Host E2E PASS after #79
 
 Post-#79 retest via merged PR #81 triggered Actions run 38123852985 on main: Host request cmd_25935adb02776b64d6c1e46b, SERVER_COMMAND_STATE=PASS, SERVER_COMMAND_READ_ONLY=TRUE, bounded SERVER_GIT_LOG emitted. Follow-up chore PR restores idle target. Registry handoff updated to bind this run ID. No DebugAI Repository/Host mutation.
+
+## 2026-10-11 — Explicit Master per-turn Rule read takes precedence over delta optimization
+
+Master observed repeated GPT CHAT #17 adherence failures despite read receipts and CI. Existing `docs/LOAD_SCOPE.md` GPT CHAT item 7 said full rule issue bodies need fetching only on revision/incomplete read, and a generic context paragraph exempted unchanged authority from rereads. This conflicted with Master's current explicit instruction, held in owning Issue #40, to re-fetch Manifest, #17 **full body**, and Current every development turn, then apply them before action and STOP. This change narrows the reconciliation to the **existing read router** rather than changing #17 or the shared Work Routine owner Draft PR #39.
+
+Per-turn full read becomes mandatory when explicitly directed by Master; normal optimized rereads remain the default otherwise. Reading alone does not demonstrate application or intercept ChatGPT final send. An observed premature stop remains failure. No native hook, new workflow/MCP, guard script, secret or Tool B functionality is claimed or introduced. Rollback by reverting this router delta; existing architectural Design and historical Delta retained.
