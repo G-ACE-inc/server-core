@@ -66,7 +66,7 @@ def test_branch_mismatch():
 
 
 def test_real_workflow_command_support():
-    for command in ("project.git_head", "project.git_status", "service.debug_ai_state",
+    for command in ("project.git_head", "project.git_status", "system.disk_usage", "project.git_changed_paths", "service.debug_ai_state",
                     "service.debug_ai_health", "system.projects_inventory", "system.project_file_inspect",
                     "service.registered_container_logs"):
         out = dispatch(command_id=command, branch="main")
