@@ -781,3 +781,17 @@ Owner: server-core #10, Tool B §16.9–16.10. Existing registered-test Actions 
 ## 2026-10-11 — Execute two server-core registered static tests on existing Actions runner
 
 Owner: server-core #10, Tool B §16.9–16.10. Host registered-test request E2E 38125411897 was rejected before receipt; its cause remains UNKNOWN and it is not evidence that an isolated checkout exists or can be created safely. Independently reuse the existing `chatgpt-live-api-verify.yml` checkout (exact workflow GITHUB_SHA) to run the two preexisting static Python test scripts from the registered server-core manifest (`scripts/github_project_rule_plane_test.py` and `scripts/github_project_chat_host_route_test.py`), without DebugAI test-repo staging. Their successful completion emits SERVERCORE_REGISTERED_TEST_SHA and SERVERCORE_REGISTERED_TESTS=PASS, scoped to the Actions runner only. This is a SOURCE/CI execution proof, not Host test Runner admission or live consumer parity. The registered Host target manifest remains separately gated; no new workflow, MCP, token, or backend mutation.
+
+## 2026-10-11 — Tool B independent server-core local bounded Host primitive (Source candidate)
+
+Baseline: SERVER_CORE_DESIGN §16.9.1, §16.10, Control #10 and Rule #16/#17. DebugAI product also uses Cloudflare, but its product Repository/runtime must not be the common Host executor.
+
+Change: server-core-owned Python-only `scripts/servercore_bounded_host.py` provides a *local*, no-listener, no-credential bounded execution primitive for canonical `/home/admin1/server-core`: exact Git HEAD, clean-status summary, two fixed registered Python tests; rejects non-registered commands, mismatched SHA, invalid root/symlink, missing tests, dirty test checkout. `tests/servercore_bounded_host_test.py` exercises negative boundaries and existing `github-project-control-verify.yml` runs it in CI. No generic shell API or DebugAI-specific path.
+
+Reason: Actions/route copy is not independent Host execution. This isolates the core primitive under server-core ownership for later authorized entry/transport wiring and real Host verification.
+
+Evidence: PR source tests, exact-head CI and Host readback are separately required. No claim of active canonical Host deployment, authorization, consumer, Cloudflare Account API Token runtime, production Source reflect, or end-to-end operation from this source addition.
+
+Compatibility and rollback: Does not alter existing DebugAI product runner or working temporary DebugAI route. No new secret, token, workflow, MCP, listening service or Host policy. Remove candidate module/CI test to revert.
+
+Verification at creation: SOURCE_ONLY; HOST_INSTALL=NOT_VERIFIED; NETWORK_AUTHENTICATION=NOT_IMPLEMENTED; HOST_E2E=NOT_VERIFIED; SOURCE_REFLECTION=NOT_EXECUTED; RUNTIME_PARITY=NOT_VERIFIED.
