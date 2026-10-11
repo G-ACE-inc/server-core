@@ -69,7 +69,7 @@ def emit(record, comment, verdict):
     print(f"SERVERCORE_BOUNDED_HOST_EXPECTED_SHA={record.get('expected_sha') or 'NONE'}")
     print(f"SERVERCORE_BOUNDED_HOST_RESULT_URL={comment.get('html_url')}")
     for stream in ("stdout", "stderr"):
-        text = str(record.get(stream) or "")[:2000]
+        text = str(record.get(stream) or "")[:4000]
         print(f"SERVERCORE_BOUNDED_HOST_{stream.upper()}_BEGIN")
         print(text)
         print(f"SERVERCORE_BOUNDED_HOST_{stream.upper()}_END")

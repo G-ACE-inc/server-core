@@ -16,6 +16,8 @@ SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$")
 SERVICE_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
 REQUEST_ID_PATTERN = re.compile(r"^req_[0-9a-f]{24}$")
+FILE_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_.][A-Za-z0-9_./-]{0,159}$")
+CONTAINER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 
 
 class SendError(RuntimeError):
@@ -57,7 +59,7 @@ def build_event(request, contract):
 
 
 def validate_cli(command_id, expected_sha, contract, expected_before=None, repository=None,
-                 service=None, deploy_request_id=None):
+                 service=None, deploy_request_id=None, path=None, offset=None, container=None, tail=None):
     allowed = contract.get("allowed_command_ids") or []
     if command_id not in allowed:
         raise SendError("COMMAND_NOT_REGISTERED")
@@ -89,6 +91,22 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
         request["deploy_request_id"] = deploy_request_id
     elif deploy_request_id is not None:
         raise SendError("UNEXPECTED_DEPLOY_REQUEST_ID")
+    if command_id == "project.file_inspect":
+        if not isinstance(path, str) or not FILE_PATH_PATTERN.fullmatch(path) or ".." in path \
+                or type(offset) is not int or not 0 <= offset <= 4_000_000:
+            raise SendError("FILE_INSPECT_TARGET_INVALID")
+        request["path"] = path
+        request["offset"] = offset
+    elif path is not None or offset is not None:
+        raise SendError("UNEXPECTED_FILE_TARGET")
+    if command_id == "docker.logs":
+        if not isinstance(container, str) or not CONTAINER_PATTERN.fullmatch(container) \
+                or type(tail) is not int or not 1 <= tail <= 200:
+            raise SendError("DOCKER_LOGS_TARGET_INVALID")
+        request["container"] = container
+        request["tail"] = tail
+    elif container is not None or tail is not None:
+        raise SendError("UNEXPECTED_LOG_TARGET")
     return request
 
 
@@ -139,11 +157,16 @@ def main():
     parser.add_argument("--repository")
     parser.add_argument("--service")
     parser.add_argument("--deploy-request-id")
+    parser.add_argument("--path")
+    parser.add_argument("--offset", type=int)
+    parser.add_argument("--container")
+    parser.add_argument("--tail", type=int)
     parser.add_argument("--contract", default=str(DEFAULT_CONTRACT))
     args = parser.parse_args()
     contract = load_contract(args.contract)
     request = validate_cli(args.command_id, args.expected_sha, contract, args.expected_before,
-                           args.repository, args.service, args.deploy_request_id)
+                           args.repository, args.service, args.deploy_request_id,
+                           args.path, args.offset, args.container, args.tail)
     try:
         receipt = send(request, contract)
         print(json.dumps({"state": "QUEUED", "request_id": request["id"], "gateway": receipt}, sort_keys=True))

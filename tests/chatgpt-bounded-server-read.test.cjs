@@ -475,3 +475,20 @@ test("every enabled bounded Host command is START-gated and its result is return
   assert.match(wf,/servercore_bounded_result_poll\.py[\s\S]*--request-id "\$BOUNDED_HOST_REQUEST_ID"[\s\S]*--expected-sha "\$BOUNDED_HOST_EXPECTED_SHA"/);
   assert.ok(wf.indexOf("START Gate for explicit CHAT Host requests")<wf.indexOf("Optional independent bounded Host gateway dispatch"));
 });
+
+test("registered file inspect and docker logs dispatch carry only exact bounded targets",()=>{
+  const args=(r)=>({target:{...targetNoBoundedHost,bounded_host_request:r,server_command_id:""},route,registry,gitRefName:"main"});
+  const file={enabled:true,command_id:"project.file_inspect",expected_sha:"a".repeat(40),path:"README.md",offset:0};
+  assert.equal(d.validateDispatch(args(file)).commandId,"project.file_inspect");
+  assert.throws(()=>d.validateDispatch(args({...file,path:"../etc/passwd"})),/BOUNDED_HOST_FILE_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...file,offset:-1})),/BOUNDED_HOST_FILE_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...file,offset:"0"})),/BOUNDED_HOST_FILE_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({enabled:true,command_id:"project.file_inspect",expected_sha:"a".repeat(40)})),/BOUNDED_HOST_KEYS_INVALID/);
+  const logs={enabled:true,command_id:"docker.logs",expected_sha:"a".repeat(40),container:"server-core-bounded-host",tail:20};
+  assert.equal(d.validateDispatch(args(logs)).commandId,"docker.logs");
+  assert.throws(()=>d.validateDispatch(args({...logs,tail:201})),/BOUNDED_HOST_LOG_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...logs,container:"a;b"})),/BOUNDED_HOST_LOG_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...logs,shell:"ls"})),/BOUNDED_HOST_KEYS_INVALID/);
+  assert.match(wf,/--container "\$\(jq -r '\.bounded_host_request\.container'/);
+  assert.match(wf,/--path "\$\(jq -r '\.bounded_host_request\.path'/);
+});

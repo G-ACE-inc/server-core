@@ -133,6 +133,10 @@ jobs:
             send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --service "$(jq -r '.bounded_host_request.service' "$target")")
           elif [[ "$command_id" == "service.deploy_status" ]]; then
             send+=(--deploy-request-id "$(jq -r '.bounded_host_request.deploy_request_id' "$target")")
+          elif [[ "$command_id" == "project.file_inspect" ]]; then
+            send+=(--path "$(jq -r '.bounded_host_request.path' "$target")" --offset "$(jq -r '.bounded_host_request.offset' "$target")")
+          elif [[ "$command_id" == "docker.logs" ]]; then
+            send+=(--container "$(jq -r '.bounded_host_request.container' "$target")" --tail "$(jq -r '.bounded_host_request.tail' "$target")")
           fi
           "${send[@]}" | tee /tmp/bounded-host-send.out
           request_id="$(grep -m1 '^{' /tmp/bounded-host-send.out | jq -r '.request_id // empty')"
