@@ -42,5 +42,16 @@
     "remote_tests_blocked_pending_isolation": "Registered Python tests execute repository code; not admitted through the HMAC-bearing receiver until isolated from delivery key and internal network. Local/CI tests remain supported.",
     "source_reflect_admission": "Requires separately ACL-admitted Host-local UNIX socket executor; existing read-only receiver must not have checkout write access. Dedicated Host runtime authorization must be proven before activation.",
     "service_deploy_admission": "Fixed registered repository/service only via separately Host-admitted UNIX socket writer (/run/gace/servercore-service-deploy.sock); Receiver has no Docker authority. Authority comes from operations/master-internal-repositories.json deploy entries, never from docker ps or log registration."
+  },
+  "result_return": {
+    "kind": "github_issue_comment",
+    "repository": "G-ACE-inc/server-core",
+    "issue_number": 10,
+    "marker": "GACE_BOUNDED_HOST_RESULT",
+    "result_socket": "/run/gace/servercore-result.sock",
+    "stream_limit_chars": 2000,
+    "redaction": "secret-like keys, bearer/GitHub tokens, private keys and 48+ char opaque strings (sha256 digests kept)",
+    "first_terminal_result_wins": true,
+    "retryable_results_not_published": true
   }
 }

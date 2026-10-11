@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  issues: read
 
 concurrency:
   group: chatgpt-live-dogfood
@@ -85,7 +86,7 @@ jobs:
         run: |
           set -euo pipefail
           target=.github/chatgpt-live-api-target.json
-          active="$(jq -r '((.server_command_id // "") != "") or ((.run_id // "") != "") or (.mode == "dogfood") or (.gitops_request.enabled == true) or (.source_reflect_request.enabled == true) or ((.bounded_host_request.enabled == true) and ((.bounded_host_request.command_id == "project.source_reflect") or (.bounded_host_request.command_id == "service.deploy")))' "$target")"
+          active="$(jq -r '((.server_command_id // "") != "") or ((.run_id // "") != "") or (.mode == "dogfood") or (.gitops_request.enabled == true) or (.source_reflect_request.enabled == true) or (.bounded_host_request.enabled == true)' "$target")"
           if [[ "$active" == "true" ]]; then
             jq -e '.chat_decision_checkpoint | type == "object"' "$target" >/dev/null || { echo "CHAT_START_GATE_RECEIPT_MISSING"; exit 81; }
             jq -e '.chat_decision_checkpoint.phase == "START"' "$target" >/dev/null || { echo "CHAT_START_GATE_PHASE_DENIED"; exit 82; }
@@ -125,20 +126,37 @@ jobs:
             echo "SERVERCORE_BOUNDED_HOST_GATEWAY=NOT_CONFIGURED"
             exit 46
           }
+          send=(python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha")
           if [[ "$command_id" == "project.source_reflect" ]]; then
-            expected_before="$(jq -r '.bounded_host_request.expected_before' "$target")"
-            python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha" --expected-before "$expected_before"
+            send+=(--expected-before "$(jq -r '.bounded_host_request.expected_before' "$target")")
           elif [[ "$command_id" == "service.deploy" ]]; then
-            repository="$(jq -r '.bounded_host_request.repository' "$target")"
-            service="$(jq -r '.bounded_host_request.service' "$target")"
-            python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha" --repository "$repository" --service "$service"
+            send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --service "$(jq -r '.bounded_host_request.service' "$target")")
           elif [[ "$command_id" == "service.deploy_status" ]]; then
-            deploy_request_id="$(jq -r '.bounded_host_request.deploy_request_id' "$target")"
-            python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha" --deploy-request-id "$deploy_request_id"
-          else
-            python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha"
+            send+=(--deploy-request-id "$(jq -r '.bounded_host_request.deploy_request_id' "$target")")
           fi
+          "${send[@]}" | tee /tmp/bounded-host-send.out
+          request_id="$(grep -m1 '^{' /tmp/bounded-host-send.out | jq -r '.request_id // empty')"
+          test -n "$request_id"
+          echo "SERVERCORE_BOUNDED_HOST_REQUEST_ID=$request_id"
+          {
+            echo "BOUNDED_HOST_REQUEST_ID=$request_id"
+            echo "BOUNDED_HOST_COMMAND_ID=$command_id"
+            echo "BOUNDED_HOST_EXPECTED_SHA=$expected_sha"
+          } >> "$GITHUB_ENV"
           echo "SERVERCORE_BOUNDED_HOST_DISPATCH=QUEUED"
+
+      - name: Bounded Host result return (request id correlated)
+        if: ${{ hashFiles('.github/chatgpt-live-api-target.json') != '' && env.BOUNDED_HOST_REQUEST_ID != '' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/servercore_bounded_result_poll.py \
+            --repository "$GITHUB_REPOSITORY" --issue 10 \
+            --request-id "$BOUNDED_HOST_REQUEST_ID" \
+            --command-id "$BOUNDED_HOST_COMMAND_ID" \
+            --expected-sha "$BOUNDED_HOST_EXPECTED_SHA"
 
       - name: Require Cloudflare Access credentials
         if: ${{ steps.target.outputs.bounded_host_enabled != 'true' }}

@@ -4,6 +4,7 @@ import json
 import os
 import re
 import socket
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -27,6 +28,9 @@ SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$")
 SERVICE_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
 DEPLOY_SOCKET = "/run/gace/servercore-service-deploy.sock"
+RESULT_SOCKET = "/run/gace/servercore-result.sock"
+RESULT_SCHEMA = "gace.servercore-bounded-result.record/v1"
+COMMAND_PATTERN = re.compile(r"^[a-z][a-z0-9_.]{2,63}$")
 
 
 class ReceiverError(RuntimeError):
@@ -179,6 +183,36 @@ def dispatch_deploy_status(request, socket_path=DEPLOY_SOCKET):
             "read_only": True}
 
 
+def report_result(record, socket_path=None):
+    """Hand the terminal result to the Host result sink (durable + GitHub publish)."""
+    data = (json.dumps({"schema": RESULT_SCHEMA, **record}, separators=(",", ":")) + "\n").encode("utf-8")
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(15)
+            client.connect(socket_path or RESULT_SOCKET)
+            client.sendall(data)
+            with client.makefile("rb") as stream:
+                reply = json.loads(stream.readline(4096))
+    except (OSError, ValueError, TypeError):
+        return False
+    return isinstance(reply, dict) and reply.get("ok") is True
+
+
+def result_record(request_id, command_id, expected_sha, state, exit_code, host_sha, stdout, stderr, started):
+    return {
+        "request_id": request_id,
+        "command_id": command_id if isinstance(command_id, str) and COMMAND_PATTERN.fullmatch(command_id)
+        else "invalid.request",
+        "state": state,
+        "exit_code": exit_code,
+        "host_sha": host_sha if isinstance(host_sha, str) and SHA_PATTERN.fullmatch(host_sha) else "",
+        "expected_sha": expected_sha if isinstance(expected_sha, str) and SHA_PATTERN.fullmatch(expected_sha) else "",
+        "stdout": stdout,
+        "stderr": stderr,
+        "duration_ms": max(0, min(int((time.monotonic() - started) * 1000), 3_600_000)),
+    }
+
+
 def make_handler(contract, *, delivery_key=None, now_fn=None):
     root = Path(contract.get("canonical_host_root") or bounded_host.CANONICAL_ROOT)
 
@@ -220,6 +254,14 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                 return
             body = self.rfile.read(length)
             headers = {key.lower(): value for key, value in self.headers.items()}
+            started = time.monotonic()
+            hint_id = hint_command = hint_sha = None
+            authenticated = False
+
+            def record_failure(code, state):
+                # Only authenticated deliveries with a well-formed request id are recorded.
+                if authenticated and hint_id:
+                    report_result(result_record(hint_id, hint_command, hint_sha, state, 1, "", "", code, started))
             try:
                 tolerance = int(os.environ.get("GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS", "300"))
                 verify_delivery(
@@ -230,7 +272,13 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                     now=now_fn() if now_fn else None,
                     tolerance_seconds=tolerance,
                 )
-                request = validate_request(json.loads(body.decode("utf-8")), contract)
+                authenticated = True
+                parsed = json.loads(body.decode("utf-8"))
+                if isinstance(parsed, dict):
+                    hint_id = parsed.get("id") if isinstance(parsed.get("id"), str) \
+                        and REQUEST_ID_PATTERN.fullmatch(parsed.get("id")) else None
+                    hint_command, hint_sha = parsed.get("command_id"), parsed.get("expected_sha")
+                request = validate_request(parsed, contract)
                 if request["command_id"] == "project.source_reflect":
                     result = dispatch_reflect(request)
                 elif request["command_id"] == "service.deploy":
@@ -243,6 +291,12 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                         root=root,
                         expected_sha=request["expected_sha"],
                     )
+                read_only = bool(result.get("read_only", True))
+                recorded = report_result(result_record(
+                    request["id"], request["command_id"], request["expected_sha"], "PASS", 0,
+                    result.get("source_sha"), json.dumps(result, sort_keys=True, separators=(",", ":")), "", started))
+                if not recorded and read_only:
+                    fail("RESULT_SINK_UNAVAILABLE", 503)  # idempotent read-only command: Gateway retries
                 self.send_json(
                     200,
                     {
@@ -251,7 +305,8 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                         "state": "PASS",
                         "command_id": request["command_id"],
                         "source_sha": result.get("source_sha"),
-                        "read_only": bool(result.get("read_only", True)),
+                        "read_only": read_only,
+                        "result_recorded": recorded,
                         "result": result,
                     },
                     accepted=True,
@@ -259,10 +314,14 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
             except DeliveryAuthError as exc:
                 self.send_json(exc.status, {"ok": False, "error": exc.code})
             except ReceiverError as exc:
+                if exc.code != "RESULT_SINK_UNAVAILABLE":
+                    record_failure(exc.code, "FAIL" if exc.status < 500 else "RETRYABLE")
                 self.send_json(exc.status, {"ok": False, "error": exc.code})
             except bounded_host.BoundaryError as exc:
+                record_failure(str(exc), "FAIL")
                 self.send_json(422, {"ok": False, "error": str(exc), "state": "FAIL"})
             except Exception:
+                record_failure("INTERNAL_ERROR", "RETRYABLE")
                 self.send_json(500, {"ok": False, "error": "INTERNAL_ERROR"})
 
     return Handler
