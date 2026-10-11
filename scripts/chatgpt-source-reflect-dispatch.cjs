@@ -13,6 +13,7 @@ const IDLE_READ_COMMANDS = new Set([
   "project.git_status",
   "service.debug_ai_state",
   "service.debug_ai_health",
+  "system.projects_inventory",
   "system.project_file_inspect",
   "service.registered_container_logs",
 ]);
