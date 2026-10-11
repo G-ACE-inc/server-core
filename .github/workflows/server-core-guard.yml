@@ -40,6 +40,7 @@ jobs:
               text=True,
           ).splitlines())
           cu40_source = {
+              ".github/workflows/server-core-guard.yml",
               "scripts/github_project_chat_turn_gate.py",
               "scripts/github_project_chat_turn_gate_test.py",
               ".github/workflows/chatgpt-live-api-verify.yml",
