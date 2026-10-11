@@ -71,6 +71,21 @@ jobs:
             echo "EOF_REQUEST"
           } >> "$GITHUB_OUTPUT"
 
+      - name: START Gate for explicit CHAT Host requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          target=.github/chatgpt-live-api-target.json
+          active="$(jq -r '((.server_command_id // "") != "") or ((.run_id // "") != "") or (.mode == "dogfood") or (.gitops_request.enabled == true) or (.source_reflect_request.enabled == true)' "$target")"
+          if [[ "$active" == "true" ]]; then
+            jq -e '.chat_decision_checkpoint | type == "object"' "$target" >/dev/null || { echo "CHAT_START_GATE_RECEIPT_MISSING"; exit 81; }
+            jq -c '.chat_decision_checkpoint' "$target" > /tmp/gace-chat-start-checkpoint.json
+            python3 scripts/github_project_chat_turn_gate.py --state /tmp/gace-chat-start-checkpoint.json
+            echo "CHAT_START_GATE=PASS"
+          else
+            echo "CHAT_START_GATE=IDLE"
+          fi
+
       - name: Verify server-core Actions dispatch contract
         shell: bash
         run: |
