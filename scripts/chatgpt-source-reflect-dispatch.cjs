@@ -14,6 +14,8 @@ const IDLE_READ_COMMANDS = new Set([
   "service.debug_ai_state",
   "service.debug_ai_health",
   "system.projects_inventory",
+  "system.disk_usage",
+  "project.git_changed_paths",
   "system.project_file_inspect",
   "service.registered_container_logs",
 ]);
