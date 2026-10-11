@@ -21,10 +21,14 @@ class DecisionTests(unittest.TestCase):
 
     def test_failure_replan(self):
         good = dict(phase="FAILURE", failed_step="Host read", failure_evidence="run/42",
-                    independent_actions=["Inspect registry"], next_action="Inspect registry")
+                    independent_actions=["Inspect registry"], next_action="Inspect registry",
+                    next_action_evidence="github://issue/40#action-readback")
         self.assertEqual(gate.evaluate(good), "PASS")
         self.assertEqual(gate.evaluate({**good, "next_action": ""}), "FAILURE_REPLAN_REQUIRED")
         self.assertEqual(gate.evaluate({**good, "next_action": "deploy"}), "FAILURE_NEXT_NOT_IN_AVAILABLE_ACTIONS")
+        self.assertEqual(gate.evaluate({**good, "next_action_evidence": ""}), "FAILURE_NEXT_ACTION_NOT_EXECUTED")
+        self.assertEqual(gate.evaluate({**good, "next_action_evidence": None}), "FAILURE_NEXT_ACTION_NOT_EXECUTED")
+        self.assertEqual(gate.evaluate({**good, "next_action_evidence": "readback obtained"}), "PASS")
 
     def test_live_workflow_has_request_gate_before_host_access(self):
         workflow = (module_path.parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text(encoding="utf-8")
