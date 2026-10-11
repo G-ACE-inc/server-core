@@ -3,7 +3,7 @@ const fs=require("node:fs");
 const {setTimeout:delay}=require("node:timers/promises");
 const API="https://debugai.asterav8.jp";
 const DEFAULT_REPO="/workspace/debug-ai";
-const ALLOWED=new Set(["project.git_head","project.git_recent_commits","github.actions_recent","service.debug_ai_logs","service.registered_container_logs","service.debug_ai_state","service.sandbox_state","service.debug_ai_health","canonical.devlog_activate_status","system.projects_inventory","system.project_file_inspect"]);
+const ALLOWED=new Set(["project.git_head","project.git_status","project.git_recent_commits","github.actions_recent","service.debug_ai_logs","service.registered_container_logs","service.debug_ai_state","service.sandbox_state","service.debug_ai_health","canonical.devlog_activate_status","system.projects_inventory","system.project_file_inspect"]);
 const REGISTERED_CONTAINER_ENTRY_RE=/^[A-Za-z0-9._-]{1,120}$/;
 const ENTRY_NAME_RE=/^[A-Za-z0-9._-]{1,120}$/;
 const REL_PATH_RE=/^[A-Za-z0-9_./-]{1,180}$/;
@@ -81,6 +81,12 @@ function safeResult(command,raw){
       return plain.slice(0,400);
     });
     return["SERVER_RUNTIME_LOG_LINES="+JSON.stringify(lines)];
+  }
+  if(command==="project.git_status"){
+    if(stdout.length>4096||/\x00|\r/.test(stdout))throw Error("SERVER_GIT_STATUS_INVALID");
+    const lines=stdout?stdout.split("\n"):[];
+    if(lines.length>150||lines.some(line=>line.length>300))throw Error("SERVER_GIT_STATUS_INVALID");
+    return ["SERVER_GIT_WORKTREE_CLEAN="+(lines.length===0),"SERVER_GIT_CHANGED_ENTRIES="+lines.length];
   }
   if(command==="project.git_head"){
     if(!/^[a-f0-9]{40}$/.test(stdout))throw Error("SERVER_HEAD_INVALID");
