@@ -87,7 +87,8 @@
         "service.sandbox_state",
         "project.git_recent_commits",
         "system.projects_inventory",
-        "system.project_file_inspect"
+        "system.project_file_inspect",
+        "project.git_status"
       ],
       "command_effects": {
         "project.git_head": "read_only",
