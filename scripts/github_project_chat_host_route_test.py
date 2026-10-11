@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,25 +66,21 @@ def test_branch_mismatch():
 
 
 def test_real_workflow_command_support():
-    assert dispatch(command_id="service.debug_ai_health")["result"] == "PASS"
-    for command in (
-        "service.debug_ai_logs",
-        "service.debug_ai_state",
-        "service.sandbox_state",
-    ):
+    for command in ("project.git_head", "project.git_status", "service.debug_ai_state",
+                    "service.debug_ai_health", "system.project_file_inspect",
+                    "service.registered_container_logs"):
         out = dispatch(command_id=command, branch="main")
         assert out["result"] == "PASS"
         assert out["read_only"] is True
-    assert dispatch(command_id="project.git_status")["result"] == "PASS"
-    for command in ("project.pwd", "github.auth_status_scopes"):
-        assert dispatch(command_id=command)["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
+    for command in ("system.projects_inventory", "service.debug_ai_logs",
+                    "service.sandbox_state", "project.git_recent_commits",
+                    "project.pwd", "github.auth_status_scopes"):
+        assert dispatch(command_id=command, branch="main")["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
 
 
-def test_existing_current_live_branch_and_git_history():
+def test_current_main_and_legacy_reflect_branch_isolation():
     assert dispatch(branch="main")["result"] == "PASS"
-    assert dispatch(command_id="project.git_recent_commits", branch="main")["result"] == "PASS"
-    assert dispatch(command_id="project.git_recent_commits", branch="main")["read_only"] is True
-    assert dispatch(command_id="project.git_recent_commits", branch="main")["result"] == "PASS"
+
 
 
 def test_migration_branch_and_legacy_reflect_branch_isolation():
@@ -98,15 +95,24 @@ def test_migrated_registry_and_host_paths_retained():
     route = next(item for item in doc["routes"] if item["id"] == "route_debugai_live_read")
     assert route["workflow_repository"] == "G-ACE-inc/server-core"
     assert route["github_trigger"]["allowed_branches"] == ["main", "feat/chat-actions-client-migration-20261011"]
-    for command_id in ("system.projects_inventory", "system.project_file_inspect", "project.git_recent_commits", "service.debug_ai_logs", "service.registered_container_logs", "service.debug_ai_state", "service.sandbox_state"):
-        assert command_id in route["server_command"]["allowed_command_ids"]
-        assert command_id in route["workflow_supported_command_ids"]
-        assert route["command_effects"][command_id] == "read_only"
+    dispatch_js = (ROOT / "scripts/chatgpt-source-reflect-dispatch.cjs").read_text(encoding="utf-8")
+    match = re.search(r"const IDLE_READ_COMMANDS = new Set\(\[([\s\S]*?)\]\);", dispatch_js)
+    assert match is not None
+    actual_idle = set(re.findall(r'"([^"]*)"', match.group(1))) - {""}
+    assert set(route["workflow_supported_command_ids"]) == actual_idle
+    for command_id in route["server_command"]["allowed_command_ids"]:
+        assert route["command_effects"].get(command_id) == "read_only" or command_id in (
+            "project.pwd", "github.auth_status_scopes"
+        )
         out = dispatch(command_id=command_id, branch="main")
-        assert out["result"] == "PASS"
-        assert out["static_preflight_only"] is True
-        assert out["host_authorization_verified"] is False
+        if command_id in actual_idle:
+            assert out["result"] == "PASS"
+            assert out["static_preflight_only"] is True
+            assert out["host_authorization_verified"] is False
+        else:
+            assert out["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
     assert dispatch(command_id="system.project_file_inspect", execution_repo="/home/admin1/server-core")["error"] == "EXECUTION_REPO_FORBIDDEN"
+
 
 
 def test_asteria_effect_not_readonly():
