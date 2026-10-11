@@ -492,3 +492,17 @@ test("registered file inspect and docker logs dispatch carry only exact bounded 
   assert.match(wf,/--container "\$\(jq -r '\.bounded_host_request\.container'/);
   assert.match(wf,/--path "\$\(jq -r '\.bounded_host_request\.path'/);
 });
+
+test("generic dev.job dispatch carries only an exact bounded job manifest",()=>{
+  const args=(r)=>({target:{...targetNoBoundedHost,bounded_host_request:r,server_command_id:""},route,registry,gitRefName:"main"});
+  const jobReq={enabled:true,command_id:"dev.job",expected_sha:"a".repeat(40),repository:"G-ACE-inc/server-core",session:"req_"+"2".repeat(24),argv:["git","status"],timeout_s:5,fresh:false};
+  assert.equal(d.validateDispatch(args(jobReq)).commandId,"dev.job");
+  for (const bad of [{timeout_s:16},{timeout_s:0},{argv:[]},{argv:Array(9).fill("x")},{argv:[1]},{argv:["x".repeat(1201)]},{fresh:"no"},{session:"x"},{repository:"no-slash"}]) {
+    assert.throws(()=>d.validateDispatch(args({...jobReq,...bad})),/BOUNDED_HOST_JOB_TARGET_INVALID/);
+  }
+  assert.throws(()=>d.validateDispatch(args({...jobReq,mounts:["/var/run/docker.sock"]})),/BOUNDED_HOST_KEYS_INVALID/);
+  const {fresh,...missing}=jobReq;
+  assert.throws(()=>d.validateDispatch(args(missing)),/BOUNDED_HOST_KEYS_INVALID/);
+  assert.match(wf,/"\$command_id" == "dev\.job"/);
+  assert.match(wf,/--job-argv-json "\$\(jq -c '\.bounded_host_request\.argv'/);
+});

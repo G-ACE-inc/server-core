@@ -29,6 +29,8 @@ REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z
 SERVICE_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
 DEPLOY_SOCKET = "/run/gace/servercore-service-deploy.sock"
 DOCKER_LOGS_SOCKET = "/run/gace/servercore-docker-logs.sock"
+DEV_JOB_SOCKET = "/run/gace/servercore-dev-job.sock"
+DEV_JOB_RETRYABLE = frozenset({"DOCKER_BINARY_MISSING", "INTERNAL_ERROR", "DEV_JOB_BUSY", "WORKSPACE_CREATE_FAILED", "HOST_GIT_FAILED"})
 FILE_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_.][A-Za-z0-9_./-]{0,159}$")
 CONTAINER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 RESULT_SOCKET = "/run/gace/servercore-result.sock"
@@ -111,6 +113,19 @@ def validate_request(value, contract):
             fail("DOCKER_LOGS_TARGET_INVALID", 422)
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
                 "container": container, "tail": tail}
+    if command_id == "dev.job":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "repository", "session", "argv", "timeout_s", "fresh"}:
+            fail("DEV_JOB_KEYS_INVALID", 422)
+        repository, session, argv = value["repository"], value["session"], value["argv"]
+        timeout_s, fresh = value["timeout_s"], value["fresh"]
+        if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
+                or not isinstance(session, str) or not REQUEST_ID_PATTERN.fullmatch(session) \
+                or not isinstance(argv, list) or not 1 <= len(argv) <= 8 \
+                or any(not isinstance(a, str) or not 1 <= len(a) <= 1200 for a in argv) \
+                or type(timeout_s) is not int or not 1 <= timeout_s <= 15 or type(fresh) is not bool:
+            fail("DEV_JOB_TARGET_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha, "repository": repository,
+                "session": session, "argv": argv, "timeout_s": timeout_s, "fresh": fresh}
     if set(value) != {"schema", "id", "command_id", "expected_sha"}:
         fail("REQUEST_KEYS_INVALID", 422)
     return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha}
@@ -232,6 +247,53 @@ def dispatch_docker_logs(request, root, socket_path=None):
             "logs": str(reply.get("logs", ""))}
 
 
+def dispatch_dev_job(request, root, socket_path=None):
+    """Generic isolated development job: admission + Docker authority live only in the Host provisioner."""
+    sha = bounded_host.head_sha(bounded_host.checked_root(root), request["expected_sha"])
+    data = (json.dumps({"schema": "gace.servercore-dev-job.request/v1", "id": request["id"],
+                        "repository": request["repository"], "expected_sha": request["expected_sha"],
+                        "session": request["session"], "argv": request["argv"],
+                        "timeout_s": request["timeout_s"], "fresh": request["fresh"]},
+                       separators=(",", ":")) + "\n").encode("utf-8")
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(60)
+            client.connect(socket_path or DEV_JOB_SOCKET)
+            client.sendall(data)
+            with client.makefile("rb") as stream:
+                reply = json.loads(stream.readline(262144))
+    except (OSError, ValueError, TypeError):
+        fail("DEV_JOB_EXECUTOR_UNAVAILABLE", 503)
+    if not isinstance(reply, dict):
+        fail("DEV_JOB_RESULT_INVALID", 503)
+    if reply.get("ok") is not True:
+        error = str(reply.get("error", ""))
+        if error in DEV_JOB_RETRYABLE:
+            fail("DEV_JOB_EXECUTION_FAILED", 503)
+        fail("DEV_JOB_DENIED_" + (error if re.fullmatch(r"[A-Z_]{3,60}", error) else "UNKNOWN"), 422)
+    if reply.get("request_id") != request["id"] or reply.get("session") != request["session"]:
+        fail("DEV_JOB_RESULT_MISMATCH", 503)
+    keep = ("session", "repository", "project_item", "base_sha", "workspace_head", "job_exit", "timed_out",
+            "output_limit_exceeded", "workspace_budget_exceeded", "stdout", "stderr", "changed", "diff_stat",
+            "duration_ms", "replayed")
+    return {**{k: reply.get(k) for k in keep}, "command_id": request["command_id"], "source_sha": sha,
+            "read_only": False}
+
+
+def dev_job_record_fields(result):
+    """Bounded sink fields: first stdout line is a compact metadata record, then job stdout."""
+    meta = {k: result.get(k) for k in ("session", "base_sha", "workspace_head", "job_exit", "timed_out",
+                                       "output_limit_exceeded", "workspace_budget_exceeded", "diff_stat",
+                                       "duration_ms", "replayed")}
+    meta["changed"] = list(result.get("changed") or [])[:10]
+    job_exit = result.get("job_exit")
+    ok = job_exit == 0 and not result.get("timed_out") and not result.get("output_limit_exceeded")
+    code = 0 if ok else (job_exit if type(job_exit) is int and 1 <= job_exit <= 255 else 1)
+    stdout = "GACE_DEV_JOB " + json.dumps(meta, sort_keys=True, separators=(",", ":"), ensure_ascii=False) \
+        + "\n" + str(result.get("stdout") or "")
+    return ("PASS" if ok else "FAIL"), code, stdout, str(result.get("stderr") or "")
+
+
 def report_result(record, socket_path=None):
     """Hand the terminal result to the Host result sink (durable + GitHub publish)."""
     data = (json.dumps({"schema": RESULT_SCHEMA, **record}, separators=(",", ":")) + "\n").encode("utf-8")
@@ -339,6 +401,8 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                                                        request["offset"], contract.get("registered_files"))
                 elif request["command_id"] == "docker.logs":
                     result = dispatch_docker_logs(request, root)
+                elif request["command_id"] == "dev.job":
+                    result = dispatch_dev_job(request, root)
                 else:
                     result = bounded_host.execute(
                         request["command_id"],
@@ -346,17 +410,21 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                         expected_sha=request["expected_sha"],
                     )
                 read_only = bool(result.get("read_only", True))
+                state, exit_code, out, err = "PASS", 0, json.dumps(result, sort_keys=True, separators=(",", ":")), ""
+                if request["command_id"] == "dev.job":
+                    state, exit_code, out, err = dev_job_record_fields(result)
                 recorded = report_result(result_record(
-                    request["id"], request["command_id"], request["expected_sha"], "PASS", 0,
-                    result.get("source_sha"), json.dumps(result, sort_keys=True, separators=(",", ":")), "", started))
-                if not recorded and read_only:
-                    fail("RESULT_SINK_UNAVAILABLE", 503)  # idempotent read-only command: Gateway retries
+                    request["id"], request["command_id"], request["expected_sha"], state, exit_code,
+                    result.get("source_sha"), out, err, started))
+                # read-only commands and dev.job (the provisioner replays its stored result) are retry-safe
+                if not recorded and (read_only or request["command_id"] == "dev.job"):
+                    fail("RESULT_SINK_UNAVAILABLE", 503)
                 self.send_json(
                     200,
                     {
                         "ok": True,
                         "request_id": request["id"],
-                        "state": "PASS",
+                        "state": state,
                         "command_id": request["command_id"],
                         "source_sha": result.get("source_sha"),
                         "read_only": read_only,
