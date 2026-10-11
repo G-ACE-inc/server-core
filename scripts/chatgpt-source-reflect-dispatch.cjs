@@ -10,6 +10,7 @@ const REGISTERED_RUNTIME = "servercore.source";
 const IDLE_READ_COMMANDS = new Set([
   "",
   "project.git_head",
+  "project.git_status",
   "service.debug_ai_state",
   "service.debug_ai_health",
   "system.project_file_inspect",
