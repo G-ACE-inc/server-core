@@ -403,7 +403,7 @@ test("python unittest safe result redacts sensitive lines and preserves exit cod
 });
 
 test("idle dispatch requires catalog, workflow support, and read-only effect together",()=>{
-  const targetIdle={...target,server_command_id:"project.git_head"};
+  const targetIdle={...target,server_command_id:"project.git_head",bounded_host_request:{enabled:false}};
   const args={target:targetIdle,route,registry,gitRefName:"main"};
   assert.equal(d.validateDispatch(args).mode,"idle");
   const copy=()=>JSON.parse(JSON.stringify(route));
