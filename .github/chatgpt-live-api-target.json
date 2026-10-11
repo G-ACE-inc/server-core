@@ -14,5 +14,16 @@
     "enabled": false,
     "command_id": "project.git_head",
     "expected_sha": "GITHUB_WORKFLOW_SHA"
+  },
+  "server_command_id": "service.sandbox_state",
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Fresh server-core Manifest+full #17+DebugAI #41, stable G3 PR107 bb70d06 CI green and Host reflect PASS; service.sandbox_state is listed workflow-supported read-only, shared target idle."
   }
 }
