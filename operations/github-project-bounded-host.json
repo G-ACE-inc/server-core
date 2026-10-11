@@ -7,13 +7,11 @@
   "canonical_host_root": "/home/admin1/server-core",
   "allowed_command_ids": [
     "project.git_head",
-    "project.git_status",
-    "project.registered_tests"
+    "project.git_status"
   ],
   "command_effects": {
     "project.git_head": "read_only",
-    "project.git_status": "read_only",
-    "project.registered_tests": "read_only"
+    "project.git_status": "read_only"
   },
   "transport": {
     "kind": "webhook_gateway_internal_event",
@@ -34,6 +32,7 @@
   ],
   "notes": {
     "project_control_receiver_isolation": "Do not route bounded Host execution through github_project_control.py or Project field mutation authority.",
-    "gateway_destination_registration": "webhook-gateway must register destination server-core-bounded-host separately; Source contract only."
+    "gateway_destination_registration": "webhook-gateway must register destination server-core-bounded-host separately; Source contract only.",
+    "remote_tests_blocked_pending_isolation": "Registered Python tests execute repository code; not admitted through the HMAC-bearing receiver until isolated from delivery key and internal network. Local/CI tests remain supported."
   }
 }
