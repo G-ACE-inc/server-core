@@ -268,6 +268,7 @@ test("main registered Source reflect dispatch matches dlg_master_servercore_refl
   const sha="a".repeat(40);
   const reflectTarget={
     ...target,
+    server_command_id:"",
     source_reflect_request:{
       enabled:true,
       repository:d.REGISTERED_REPOSITORY,
@@ -342,7 +343,7 @@ test("reflect dispatch forbids server command and non-main trigger branch",()=>{
 });
 
 test("bounded server read skips Host when no server_command_id (reflect idle guard)",async t=>{
-  const targetFile=targetFixture(t,{});
+  const targetFile=targetFixture(t,{server_command_id:""});
   const calls=[];
   const request=async()=>{calls.push("host");return{status:200,json:async()=>({})};};
   await m.run({request,sleep:async()=>{},log:()=>{},env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
