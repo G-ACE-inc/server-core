@@ -74,10 +74,12 @@
           "system.projects_inventory",
           "system.project_file_inspect",
           "github.auth_status_scopes",
-          "project.git_recent_commits"
+          "project.git_recent_commits",
+          "system.disk_usage",
+          "project.git_changed_paths"
         ]
       },
-      "chat_handoff_note": "Common CHAT Actions owned by server-core: .github/chatgpt-live-api-target.json on main or migration branch triggers .github/workflows/chatgpt-live-api-verify.yml, then existing authenticated DebugAI API and Host. Verified positive run 38071718990 project.git_head and 38071760084 registered-container logs; expected denial run 38071788487. Legacy DebugAI workflow remains available independently as rollback; do not mutate DebugAI product. Match exact push run HEAD and Host receipt; Actions success alone is insufficient. Current main/migration idle dispatch supports only IDLE_READ_COMMANDS (see scripts/chatgpt-source-reflect-dispatch.cjs); legacy broader command catalog is not per-branch executable authority. Inventory is now included in Source dispatch for bounded read-only E2E qualification; Host runtime inventory proof remains required. debug-ai logs, sandbox state and recent commits remain unavailable until separately admitted and tested.",
+      "chat_handoff_note": "Common CHAT Actions owned by server-core: .github/chatgpt-live-api-target.json on main or migration branch triggers .github/workflows/chatgpt-live-api-verify.yml, then existing authenticated DebugAI API and Host. Verified positive run 38071718990 project.git_head and 38071760084 registered-container logs; expected denial run 38071788487. Legacy DebugAI workflow remains available independently as rollback; do not mutate DebugAI product. Match exact push run HEAD and Host receipt; Actions success alone is insufficient. Current main/migration idle dispatch supports only IDLE_READ_COMMANDS (see scripts/chatgpt-source-reflect-dispatch.cjs); legacy broader command catalog is not per-branch executable authority. Inventory is now included in Source dispatch for bounded read-only E2E qualification; Host runtime inventory proof remains required. Disk usage and Git changed-path commands are Source-dispatch eligible but Host live E2E remains unverified; debug-ai logs, sandbox state and recent commits remain unavailable until separately admitted and tested.",
       "workflow_supported_command_ids": [
         "system.projects_inventory",
         "project.git_head",
@@ -85,7 +87,9 @@
         "service.registered_container_logs",
         "service.debug_ai_state",
         "system.project_file_inspect",
-        "project.git_status"
+        "project.git_status",
+        "system.disk_usage",
+        "project.git_changed_paths"
       ],
       "command_effects": {
         "project.git_head": "read_only",
@@ -97,7 +101,9 @@
         "project.git_recent_commits": "read_only",
         "system.projects_inventory": "read_only",
         "system.project_file_inspect": "read_only",
-        "project.git_status": "read_only"
+        "project.git_status": "read_only",
+        "system.disk_usage": "read_only",
+        "project.git_changed_paths": "read_only"
       }
     },
     {
