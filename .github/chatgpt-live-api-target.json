@@ -9,9 +9,5 @@
   },
   "source_reflect_request": {
     "enabled": false
-  },
-  "server_command_id": "system.project_file_inspect",
-  "file_inspect_entry": "server-core",
-  "file_inspect_path": "README.md",
-  "file_inspect_root_key": "projects"
+  }
 }
