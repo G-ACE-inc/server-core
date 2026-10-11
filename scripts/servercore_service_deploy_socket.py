@@ -77,6 +77,7 @@ def result_path(request_id, result_dir=None):
 def write_result(request_id, payload, result_dir=None):
     path = result_path(request_id, result_dir)
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(path.parent, 0o700)  # mkdir mode is masked by the service UMask=0117 (no x bit)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(payload, sort_keys=True, separators=(",", ":")), encoding="utf-8")
     os.chmod(tmp, 0o600)

@@ -886,3 +886,7 @@ Transport previously returned only the Gateway 202 receipt; Receiver HTTP respon
 ### 2026-10-12 — Result sink resolves the GitHub CLI by fixed absolute path
 
 The Host user systemd PATH has no `~/bin`, where the existing authenticated `gh` lives. The result sink now selects the first executable of fixed absolute candidates (`/home/admin1/bin/gh`, `/usr/local/bin/gh`, `/usr/bin/gh`) instead of PATH lookup, and logs a bounded failure class (never the body or credentials) when a publish attempt fails. No new credential.
+
+### 2026-10-12 — Writer result directories stay traversable under UMask=0117
+
+`mkdir(mode=0o700)` is masked by the writers' `UMask=0117`, producing a `0600` directory without the execute bit; the first live result write failed (`RESULT_SINK_UNAVAILABLE`, read-only command correctly returned 503 for Gateway retry). Both the result sink and the service-deploy writer now `chmod 0700` their result directory after creating it. Host directory was repaired in place (`chmod 0700`, no data change).
