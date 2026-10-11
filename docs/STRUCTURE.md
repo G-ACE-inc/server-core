@@ -150,7 +150,7 @@ Secret / Token値をoperationsへ保存しない。
 
 - `scripts/github_project_chat_turn_gate.py`: bounded START/FAILURE/STOP **supplied-receipt** evaluator; not native ChatGPT send interception
 - `scripts/github_project_chat_turn_gate_test.py`: positive/negative receipt regression; does not prove an actual CHAT turn continued
-- `.github/workflows/server-core-guard.yml`: existing deterministic test invocation; scoped CU #40 design/documentation PR preflight; on `main` push, rejects CU #40 gate-path changes without an associated merged PR when native branch protection is unavailable (private GitHub Free)
+- `.github/workflows/server-core-guard.yml`: existing deterministic test invocation; scoped CU #40 design/documentation PR preflight; on `main` push, rejects CU #40 gate-path changes without an exact main-target merged PR SHA when native branch protection is unavailable (private GitHub Free)
 - `.github/workflows/chatgpt-live-api-verify.yml`: existing live bounded Host lane, explicit START admission before Host credentials and commands
 - `.github/chatgpt-live-api-target.json`: existing bounded trigger; keep idle configuration after tests
 - `docs/DESIGN_DELTA.md`: recorded decision/limit of CU #40 Gate implementation and real operational evidence
