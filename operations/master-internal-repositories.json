@@ -126,7 +126,6 @@
         "server/control/role-work-item/durable-store.js",
         ".github/chatgpt-live-api-target.json",
         ".github/workflows/chatgpt-live-api-verify.yml",
-        "compose.yaml",
         "server/main.js",
         "server/control/input-token-shadow.js"
       ]
