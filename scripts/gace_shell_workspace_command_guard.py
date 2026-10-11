@@ -806,7 +806,17 @@ def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
     if out.get("result") == "DENY":
         out.setdefault("command_class", "GIT_WRITE")
         return out
-    return None
+    if out.get("result") == "ALLOW":
+        allow = {
+            "result": "ALLOW",
+            "code": out.get("code", "IDENTITY_BOUND"),
+            "command_class": "GIT_WRITE",
+        }
+        for key in ("repository", "branch", "head", "change_unit", "mutation_owner"):
+            if key in out:
+                allow[key] = out[key]
+        return allow
+    return {"result": "DENY", "code": "REHYDRATE_CHECK_UNEXPECTED", "command_class": "GIT_WRITE"}
 
 
 
@@ -928,11 +938,26 @@ def _binding_compound_git_admission(command: str, cwd: Path) -> dict | None:
             "result": "DENY", "code": "GIT_SHELL_CONTEXT_UNVERIFIED",
             "command_class": "GIT_WRITE_BINDING",
         }
+    allow_verdict: dict | None = None
     for write in writes:
         verdict = _rehydrate_bound_git_write(write, cwd)
-        if verdict is not None:
+        if verdict is None:
+            continue
+        if verdict.get("result") == "DENY":
             verdict.setdefault("command_class", "GIT_WRITE_BINDING")
             return verdict
+        allow_verdict = verdict
+    if not writes:
+        return None
+    if len(segments) > 1:
+        return {
+            "result": "DENY",
+            "code": "GIT_COMPOUND_WRITE_FORBIDDEN",
+            "command_class": "GIT_WRITE_BINDING",
+        }
+    if allow_verdict is not None:
+        allow_verdict.setdefault("command_class", "GIT_WRITE_BINDING")
+        return allow_verdict
     return None
 
 
