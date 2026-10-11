@@ -116,6 +116,33 @@ READMEから、存在する場合は次へ直接到達できる状態を標準�
 
 ## 6. Development Routine
 
+### Execution responsibility (common boundary; profile detail stays in its owner)
+
+This G-ACE workspace serves one **nontechnical Master**, not a generic team approval workflow. **Master owns product purpose, priority, user-visible behavior and genuine protected-impact decisions; routine technical implementation choices are AI-owned.** GPT CHAT's complete orchestration, included-capacity/cost routing and delegation instructions have one owner: [GPT CHAT Rule #17](https://github.com/G-ACE-inc/server-core/issues/17). SERVER_AI's minimal executor and tool-routing profile has one owner: [SERVER_AI Rule #16](https://github.com/G-ACE-inc/server-core/issues/16). Shared safety and exact authorization remain in `SERVER_CORE_PROTOCOL.md`; GitHub Project Current owns each changing Mission/CU.
+
+GPT CHAT leads technical work it can actually perform, delegates only a bounded missing step, and independently verifies results. SERVER_AI / Composer / Codex execute only their assigned CU; DebugAI, TGserver, Actions and Host remain bounded tools. Do not ask Master to select commands, SHAs, debugging or routine CI fixes. An approved reversible technical operation must use existing Host admission without invented additional human gates; never fake an approval receipt or bypass protected effects. Finding a missing tool/log/Host route does not authorize starting another Project or platform.
+
+### Mission / Change Unit pre-dispatch (same Current for GPT CHAT and SERVER_AI)
+
+The single mutable authority for a task's mission is **GitHub Project #1 Current plus the owning Project/CU Current**. This document owns the stable Work Routine, **not** another copy of the task's changing status. Use the selected executor profile (#17 for GPT CHAT; #16 for SERVER_AI), never both as default context.
+
+Before each new Change Unit, delegated agent dispatch or source/Host mutation, restore from the owning Current and exact Source/Evidence:
+
+```text
+MISSION                 = approved outcome, not the newly discovered obstacle
+IN_SCOPE / OUT_OF_SCOPE = task boundary, including which other CHAT owns adjacent work
+CURRENT_CHANGE_UNIT     = exact already owned CU
+MUTATION_OWNER          = single writer responsible for that CU
+ACCEPTANCE              = observed result needed to finish the mission
+EXACT_NEXT_GATE         = earliest uncompleted gate, not a guessed new project
+TARGET_REPO / BRANCH    = verified owning checkout and revision
+CURRENT_REFERENCE       = canonical Issue/Project item and readback timestamp/revision
+```
+
+Use existing Project fields (`Wave`, `Gate`, `Change Unit`, `Mutation Owner`) and the owning canonical Issue for the other mission fields. **Do not invent GitHub Project fields** or treat another CHAT's checkpoint as this CU's authorization. Compare the **proposed action's files, owner, destination and effects** with Mission, Scope, Next Gate, permissions and existing verified capabilities. When they match, proceed through the existing Routine without further technical approval relay to Master. When they differ, **block only that mismatched mutation/delegation**, record `SCOPE_DRIFT_BLOCKED`, retain the original Mission, and continue independent read-only or in-scope work. Discovering a tool/log/Host defect is not authorization to start a new project or transport.
+
+A fresh chat or agent rehydrates the same Current before its first mutation; chat memory, old prompts, README snapshots and previous CI success are not replacement Current. After executing, compare actual changed files/effects, Source/CI/Runtime evidence and acceptance to the original Mission; record the exact next unfinished gate. The real executable dispatch path must eventually verify this comparison: a documentation instruction or CI keyword test **alone is not mechanical runtime enforcement**.
+
 ```text
 server-core command center
   -> target Project README
@@ -137,11 +164,46 @@ server-core command center
   -> record Source / CI / Deploy / Runtime separately
 ```
 
+### Rule versus System — enforcement allocation
+
+A rule describing a **judgment** remains in its owning profile or this single shared routine. A rule describing an **objective machine predicate** must be enforced at the existing component that owns the corresponding effect. Do not create a parallel router, workflow, MCP or control-plane schema merely to relocate prose.
+
+| Required outcome | Policy/decision owner | Existing machine enforcement location | Current verification boundary |
+|---|---|---|---|
+| Preserve Master Mission, Scope and acceptance across CHAT/agents | Project #1 + owning Current Issue; #17 orchestration | Existing pre-dispatch admission of the owning executor/Host, after an exact Current read | **NOT_VERIFIED** for a real Mission/CU mismatch denial across all routes; static routine test is not admission |
+| One CU, one mutation writer; exact Repository/Branch/HEAD/effect | Owning Current + shared Work Routine | Existing bounded Host/DebugAI admission and existing GitHub Project Control transport | The latter validates only Wave, Gate, Change Unit and Mutation Owner; it does **not** validate the full Mission |
+| Protect actual GitHub/Host/Runtime authorization and approval | `SERVER_CORE_PROTOCOL.md` and canonical registry | Existing approved execution/receipt guards and CI; never trust user-supplied `human_approved` | Enrollment and real runtime evidence are repository-specific, not universal |
+| Reject unregistered derivative sibling while allowing nested worktrees and registered independent parents | Shared §4.1 and `LOAD_SCOPE.md` | Existing workspace initializer and owning Host filesystem admission | Existing `init-dev-workspace.sh --project` still creates an unverified top-level directory; mechanical coverage **NOT_VERIFIED** |
+| Verify adapter/profile version and prevent stale duplicate rule injection | #16/#17 + Rule Plane owner | Existing `server-core-guard` static checks, then actual Cursor/Codex/Copilot session loader | Source checks cannot prove live active rules; per-consumer runtime readback required |
+| Report Source/CI/Deploy/Runtime truthfully and avoid premature DONE | Owning Current + shared completion contract | Existing exact SHA CI/readback and Host runtime status; persist evidence in canonical Issue | Any missing layer remains UNKNOWN/NOT_VERIFIED, never inferred from a green CI |
+| Prevent unsafe file/Secret/destructive operations | `SERVER_CORE_PROTOCOL.md`, shared Secret/Registry contracts | Existing effect/path/permission admission at the operation boundary | Never reduce the current protected operation set or expand permanent delegation |
+
+**Revised shared routine (retains all necessary gates, removes duplicated decision loops):**
+
+```text
+1. REHYDRATE: manifest/profile -> owning GitHub Current -> exact repo/branch/HEAD/owner.
+2. DISPATCH PREFLIGHT: Mission, In/Out Scope, CU, writer, acceptance, next gate; check real effect admission.
+3. EXECUTE: reuse first; GPT CHAT handles accessible work, bounded Server AI/Composer/Codex only for a needed owned action.
+4. VERIFY: diff/effects -> focused tests -> exact-SHA CI -> Host/Runtime only when applicable and authorized.
+5. RECORD: commit/PR and canonical Current evidence, outstanding gates, readback; never convert UNKNOWN to PASS.
+6. ITERATE: correct the same CU until its acceptance or an actual protected/ownership blocker; avoid a second work routine.
+```
+
+**Implementation boundary:** prefer improving the existing guard at the owning command/dispatch point with negative tests (`WRONG_MISSION_OR_CU` deny, unrelated path/effect deny, symlink escape deny, approved nested worktree allow, separately registered new independent parent allow). Avoid a schema expansion of the four GitHub Project fields before real registration, and do not modify PR36/#37's active Host route under this governance CU. No removal of old policy copies before all identified consumers have actual loading/compatibility evidence. An unknown effective loader or Host ownership blocks that specific machine mutation, not independent documentation or CI work.
+
 ### Design-alignment checks within the existing Work Routine
 
 Before implementation, identify the **owning Project's actual Design/Specification baseline** from its Current/README links and fetch the relevant section, plus Design Delta and prior decisions when applicable. Record the document ID/path/revision and the design requirements affected by this CU in the existing Current checkpoint; a title or a stale summary is not evidence of reading the design. Avoid full-document rereads when the unchanged section has already been verified.
 
 At the initial diff, before PR/merge, and whenever the work changes behavior or scope, compare changed Source/Tests with those identified design requirements and the Current CU acceptance criteria. If baseline cannot be read, report `DESIGN_BASELINE_NOT_VERIFIED`; if implementation diverges, report `DESIGN_DRIFT_REVIEW_REQUIRED` with exact design section, code paths and proposed disposition. Suspend only design-changing mutation whose authorization is unresolved. Do not rewrite design to match incidental code, override Master-owned intent or fabricate conformance. A legitimate correction must be recorded at the owning Design/Current authority before resuming.
+
+
+
+#### Per-turn rule entry and design-first classification (existing Work Routine §6)
+
+At **every development turn** (including consecutive turns in the same CU), re-fetch the fresh main `operations/github-project-rule-plane.json`, read the applicable canonical Rule Plane (#17 for GPT CHAT / Work orchestrator; #16 for SERVER_AI / Composer / Codex), and retrieve owning Project Current before choosing an action. Compare fixed `PROJECT_PURPOSE_CANONICAL`, adopted Design, owning CU acceptance and the intended diff. Classify design state as `DESIGN_VERIFIED`, `DESIGN_NOT_FOUND`, `DESIGN_NOT_VERIFIED`, `DESIGN_DRIFT`, or `DESIGN_NOT_APPLICABLE`; distinguish `ADOPTED_MAIN` from `PROPOSED_PR` using existing README/Current/PR evidence only (no new Project fields). Block only the affected design-changing mutation when design is absent; report concrete missing decisions to Master without inventing design. Treat inaccessible readback as `DESIGN_NOT_VERIFIED` (UNKNOWN), never as proven absence. Do not treat an unmerged design PR as adopted baseline for product-intent changes. Routine fixes fully inside an adopted design may proceed without a new design PR or per-turn branch when scope stays aligned.
+
+Mechanical receipts for supported entry points use `scripts/work_routine_design_entry_gate.py` (deterministic JSON evidence) and the existing START checkpoint gate; this does **not** intercept ordinary live CHAT answer submission.
 
 This is a **readback/review step of existing Work Routine**, not a second design authority or an automatic semantic-code equivalence assertion. Targeted CI may enforce evidence fields when actually available, but cannot prove semantic design alignment from prose alone.
 

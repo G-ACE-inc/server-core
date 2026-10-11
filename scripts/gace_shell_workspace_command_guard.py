@@ -1,0 +1,1137 @@
+#!/usr/bin/env python3
+"""Read-only shell command classifier for G-ACE workspace proliferation gates."""
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import json
+import os
+import re
+import shlex
+import subprocess
+import sys
+import traceback
+from pathlib import Path
+
+DEFAULT_PROJECTS = Path("/home/admin1/projects")
+DEFAULT_WORKTREES = Path("/home/admin1/worktrees")
+DEFAULT_SERVER_CORE = Path("/home/admin1/server-core")
+TABLE_ROW = re.compile(
+    r"^\|\s*[^|]+\|\s*`([^`]+)`\s*\|\s*`(/home/admin1/projects/[^`]+)`",
+    re.MULTILINE,
+)
+
+WORKSPACE_MUTATORS = (
+    re.compile(r"\bgit\s+clone\b", re.I),
+    re.compile(r"\bgit\s+worktree\s+add\b", re.I),
+    re.compile(r"\bgit\s+init\b", re.I),
+    re.compile(r"\bgh\s+repo\s+(?:clone|create|fork)\b", re.I),
+    re.compile(r"\bmkdir\b", re.I),
+    re.compile(r"\bos\.makedirs\b", re.I),
+    re.compile(r"\brsync\b", re.I),
+    re.compile(r"\bcp\b", re.I),
+    re.compile(r"\bmv\b", re.I),
+)
+
+HEREDOC_PATTERN = re.compile(
+    r"<<-?\s*(?:\'([^\']+)\'|\"([^\"]+)\"|(\w+))\s*(?:\r?\n|\s)([\s\S]*?)\r?\n\s*(?:\1|\2|\3)\s*(?:\)|;|$|\s)",
+    re.MULTILINE,
+)
+
+SINGLE_QUOTED = re.compile(r"'([^'\\]|\\.)*'")
+
+GH_MUTATING_SUBCOMMANDS = (
+    "repo clone",
+    "repo create",
+    "repo fork",
+    "repo sync",
+    "project create",
+    "gist create",
+)
+
+GH_READONLY_SUBCOMMAND_PREFIXES = (
+    "issue comment",
+    "issue view",
+    "issue list",
+    "issue status",
+    "pr comment",
+    "pr view",
+    "pr list",
+    "pr status",
+    "pr checks",
+    "run view",
+    "run list",
+    "release view",
+    "release list",
+    "workflow view",
+    "workflow list",
+)
+
+GIT_READONLY_TAIL_PATTERNS = (
+    re.compile(r"^status\b", re.I),
+    re.compile(r"^diff\b", re.I),
+    re.compile(r"^log\b", re.I),
+    re.compile(r"^show\b", re.I),
+    re.compile(r"^rev-parse\b", re.I),
+    re.compile(r"^ls-files\b", re.I),
+    re.compile(r"^ls-remote\b", re.I),
+    re.compile(r"^grep\b", re.I),
+    re.compile(r"^blame\b", re.I),
+    re.compile(r"^describe\b", re.I),
+    # fetch updates FETCH_HEAD/refs; it is not a readonly command.
+    re.compile(r"^stash\s+list\b", re.I),
+    re.compile(r"^config\s+--get\b", re.I),
+    re.compile(r"^config\s+--list\b", re.I),
+    re.compile(r"^branch\s*$", re.I),
+    re.compile(r"^branch\s+-[aAvv]", re.I),
+    re.compile(r"^branch\s+--list\b", re.I),
+    re.compile(r"^branch\s+--show-current\b", re.I),
+    re.compile(r"^branch\s+--contains\b", re.I),
+    re.compile(r"^branch\s+--merged\b", re.I),
+    re.compile(r"^branch\s+--no-merged\b", re.I),
+    re.compile(r"^remote\s*$", re.I),
+    re.compile(r"^remote\s+-v\b", re.I),
+    re.compile(r"^remote\s+show\b", re.I),
+    re.compile(r"^tag\s*$", re.I),
+    re.compile(r"^tag\s+-l\b", re.I),
+    re.compile(r"^tag\s+--list\b", re.I),
+)
+
+
+GIT_WRITE_TAIL_PATTERNS = (
+    re.compile(r"^commit\b", re.I),
+    re.compile(r"^push\b", re.I),
+    re.compile(r"^merge\b", re.I),
+    re.compile(r"^rebase\b", re.I),
+    re.compile(r"^reset\b", re.I),
+    re.compile(r"^cherry-pick\b", re.I),
+    re.compile(r"^revert\b", re.I),
+    re.compile(r"^checkout\b", re.I),
+    re.compile(r"^switch\b", re.I),
+    re.compile(r"^restore\b", re.I),
+    re.compile(r"^clean\b", re.I),
+    re.compile(r"^stash\s+push\b", re.I),
+    re.compile(r"^stash\s+drop\b", re.I),
+    re.compile(r"^add\b", re.I),
+    re.compile(r"^rm\b", re.I),
+    re.compile(r"^mv\b", re.I),
+)
+
+GIT_GLOBAL_SKIP_ONE = frozenset(
+    {
+        "--no-pager",
+        "--no-replace-objects",
+        "--bare",
+        "--literal-pathspecs",
+        "--glob-pathspecs",
+        "--icase-pathspecs",
+        "--noglob-pathspecs",
+    }
+)
+
+
+def _resolve_git_path(val: str, effective: Path) -> Path:
+    candidate = Path(val)
+    if not candidate.is_absolute():
+        candidate = (effective / candidate).resolve()
+    else:
+        candidate = candidate.resolve()
+    return candidate
+
+
+def parse_git_invocation(
+    command: str, cwd: Path
+) -> tuple[Path | None, str | None, str | None, bool, bool]:
+    """Return (effective_root, tail, error_code, git_dir_override, work_tree_override)."""
+    try:
+        parts = shlex.split(command.strip(), posix=True)
+    except ValueError:
+        return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS", False, False
+    if not parts or parts[0].lower() != "git":
+        return cwd.resolve(), "", None, False, False
+    idx = 1
+    effective = cwd.resolve()
+    git_dir_override = False
+    work_tree_override = False
+    while idx < len(parts):
+        tok = parts[idx]
+        if tok.startswith("--git-dir="):
+            git_dir_override = True
+            idx += 1
+            continue
+        if tok.startswith("--work-tree="):
+            work_tree_override = True
+            effective = _resolve_git_path(tok.split("=", 1)[1], effective)
+            idx += 1
+            continue
+        if tok in ("-C", "--work-tree"):
+            if idx + 1 >= len(parts):
+                return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS", False, False
+            val = parts[idx + 1]
+            idx += 2
+            if tok == "--work-tree":
+                work_tree_override = True
+            effective = _resolve_git_path(val, effective)
+            continue
+        if tok == "--git-dir":
+            if idx + 1 >= len(parts):
+                return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS", False, False
+            git_dir_override = True
+            idx += 2
+            continue
+        if tok == "-c":
+            if idx + 1 >= len(parts):
+                return None, None, "GIT_COMMAND_PARSE_AMBIGUOUS", False, False
+            idx += 2
+            continue
+        if tok in GIT_GLOBAL_SKIP_ONE:
+            idx += 1
+            continue
+        if tok.startswith("-") and tok not in ("-C", "-c"):
+            idx += 1
+            continue
+        break
+    tail = " ".join(parts[idx:]).strip() if idx < len(parts) else ""
+    return effective, tail, None, git_dir_override, work_tree_override
+
+
+def _git_command_tail(command: str, cwd: Path) -> str:
+    _, tail, err, _, _ = parse_git_invocation(command, cwd)
+    if err:
+        return ""
+    return tail
+
+
+def _git_tail_is_write(tail: str) -> bool:
+    if not tail:
+        return False
+    return any(p.search(tail) for p in GIT_WRITE_TAIL_PATTERNS)
+
+
+INTERPRETER_C = re.compile(
+    r"^(?:/usr/bin/)?(?:bash|sh|dash|zsh)\s+(?:-[^\s]+\s+)*-c\s+",
+    re.I,
+)
+
+PYTHON_C = re.compile(
+    r"^(?:/usr/bin/)?(?:python3?|python)\s+(?:-[^\s]+\s+)*-c\s+",
+    re.I,
+)
+
+
+def strip_heredocs(command: str) -> str:
+    out = command
+    while True:
+        m = HEREDOC_PATTERN.search(out)
+        if not m:
+            break
+        out = out[: m.start()] + " '' " + out[m.end() :]
+    return out
+
+
+def strip_single_quoted(command: str) -> str:
+    return SINGLE_QUOTED.sub("''", command)
+
+
+def _substitutions_from_double_quoted(segment: str) -> str:
+    """Keep $(...) and `...` from inside double quotes; drop literal text."""
+    parts: list[str] = []
+    i = 0
+    n = len(segment)
+    while i < n:
+        if segment[i : i + 2] == "$(":
+            depth = 1
+            j = i + 2
+            while j < n and depth:
+                if segment[j : j + 2] == "$(":
+                    depth += 1
+                    j += 2
+                    continue
+                if segment[j] == ")":
+                    depth -= 1
+                    j += 1
+                    continue
+                if segment[j] == "\\" and j + 1 < n:
+                    j += 2
+                    continue
+                j += 1
+            parts.append(segment[i:j])
+            i = j
+            continue
+        if segment[i] == "`":
+            j = i + 1
+            while j < n and segment[j] != "`":
+                if segment[j] == "\\" and j + 1 < n:
+                    j += 2
+                    continue
+                j += 1
+            if j < n:
+                j += 1
+            parts.append(segment[i:j])
+            i = j
+            continue
+        i += 1
+    return " ".join(parts)
+
+
+def extract_double_quote_executable(command: str) -> str:
+    """Remove double-quoted literals but preserve command substitutions."""
+    out: list[str] = []
+    i = 0
+    n = len(command)
+    while i < n:
+        if command[i] == '"':
+            j = i + 1
+            inner: list[str] = []
+            while j < n:
+                if command[j] == "\\" and j + 1 < n:
+                    inner.append(command[j : j + 2])
+                    j += 2
+                    continue
+                if command[j] == '"':
+                    break
+                inner.append(command[j])
+                j += 1
+            if j < n:
+                j += 1
+            subst = _substitutions_from_double_quoted("".join(inner))
+            if subst:
+                out.append(subst)
+            i = j
+            continue
+        out.append(command[i])
+        i += 1
+    return "".join(out)
+
+
+def strip_gh_body_arguments(command: str) -> str:
+    """Remove gh --body/-b values including heredocs from scanning surface."""
+    stripped = command.strip()
+    if not stripped.lower().startswith("gh "):
+        return command
+    s = re.sub(r"(?i)--body=\S+", " ", command)
+    s = re.sub(r"(?i)(?:--body|-b)\b\s+[\s\S]*$", " ", s)
+    try:
+        parts = shlex.split(s, posix=True)
+    except ValueError:
+        return strip_heredocs(s)
+    if not parts or parts[0].lower() != "gh":
+        return strip_heredocs(s)
+    out_parts: list[str] = [parts[0]]
+    i = 1
+    while i < len(parts):
+        tok = parts[i]
+        low = tok.lower()
+        if low in ("--body", "-b"):
+            i += 1
+            if i < len(parts):
+                i += 1
+            continue
+        if low.startswith("--body="):
+            i += 1
+            continue
+        out_parts.append(tok)
+        i += 1
+    rebuilt = " ".join(shlex.quote(p) for p in out_parts)
+    return strip_heredocs(rebuilt)
+
+
+def executable_scan_surface(command: str) -> str:
+    s = strip_gh_body_arguments(command)
+    s = strip_heredocs(s)
+    s = strip_single_quoted(s)
+    s = extract_double_quote_executable(s)
+    return s
+
+
+def mutators_in_executable(command: str) -> list[re.Pattern[str]]:
+    surface = executable_scan_surface(command)
+    return [rx for rx in WORKSPACE_MUTATORS if rx.search(surface)]
+
+
+def _gh_subcommand(parts: list[str]) -> str:
+    if len(parts) < 2:
+        return ""
+    rest = parts[1:]
+    if rest[0].lower() == "api":
+        return "api"
+    if len(rest) >= 2:
+        return f"{rest[0].lower()} {rest[1].lower()}"
+    return rest[0].lower()
+
+
+def classify_gh(command: str) -> dict | None:
+    try:
+        parts = shlex.split(command.strip(), posix=True)
+    except ValueError:
+        return None
+    if not parts or parts[0].lower() != "gh":
+        return None
+    sub = _gh_subcommand(parts)
+    lowered = command.lower()
+    if sub == "api":
+        for tok in parts[2:]:
+            if tok.upper() in ("GET", "HEAD", "VIEW") or tok.startswith("-"):
+                continue
+            break
+        else:
+            pass
+        method = None
+        for tok in parts[2:]:
+            u = tok.upper()
+            if u in ("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"):
+                method = u
+                break
+        if method in (None, "GET", "HEAD"):
+            if not mutators_in_executable(command):
+                return {"result": "ALLOW", "code": "GH_READONLY_API"}
+        return None
+    for prefix in GH_READONLY_SUBCOMMAND_PREFIXES:
+        if sub == prefix or sub.startswith(prefix + " "):
+            if not mutators_in_executable(command):
+                return {"result": "ALLOW", "code": "GH_READONLY_SUBCOMMAND"}
+            return {"result": "DENY", "code": "GH_READONLY_SUBCOMMAND_EXECUTABLE_MUTATOR"}
+    for mut in GH_MUTATING_SUBCOMMANDS:
+        if sub == mut or sub.startswith(mut + " "):
+            return None
+    if mutators_in_executable(command):
+        return {"result": "DENY", "code": "GH_UNKNOWN_WITH_EXECUTABLE_MUTATOR"}
+    return {"result": "DENY", "code": "GH_UNKNOWN_SUBCOMMAND"}
+
+
+def _git_readonly_tail(tail: str) -> bool:
+    for pattern in GIT_READONLY_TAIL_PATTERNS:
+        if pattern.match(tail):
+            return True
+    return False
+
+
+def classify_git(command: str, *, cwd: Path) -> dict | None:
+    stripped = command.strip()
+    if not stripped.lower().startswith("git"):
+        return None
+    if os.environ.get("GACE_MUTATION_BINDING", "").strip():
+        segments = _compound_segments(command)
+        if segments is None:
+            return None
+        if len(segments) > 1:
+            for segment in segments:
+                seg = segment.strip()
+                if not seg.lower().startswith("git"):
+                    continue
+                _, tail, parse_err, _, _ = parse_git_invocation(seg, cwd)
+                if parse_err:
+                    return None
+                if not _git_readonly_tail(tail or ""):
+                    return None
+            if not mutators_in_executable(command):
+                return {"result": "ALLOW", "code": "GIT_READONLY_INVOCATION"}
+            return None
+    tail = _git_command_tail(stripped, cwd)
+    if _git_readonly_tail(tail):
+        if not mutators_in_executable(command):
+            return {"result": "ALLOW", "code": "GIT_READONLY_INVOCATION"}
+    return None
+
+
+def _extract_interpreter_c_script(command: str) -> str | None:
+    stripped = command.strip()
+    for pattern in (INTERPRETER_C, PYTHON_C):
+        m = pattern.match(stripped)
+        if not m:
+            continue
+        rest = stripped[m.end() :]
+        try:
+            parts = shlex.split(rest, posix=True)
+        except ValueError:
+            return None
+        if not parts:
+            return None
+        return parts[0]
+    return None
+
+
+def classify_interpreter_c(command: str) -> dict | None:
+    script = _extract_interpreter_c_script(command)
+    if script is None:
+        return None
+    if not mutators_in_executable(script):
+        return {"result": "ALLOW", "code": "INTERPRETER_C_NO_MUTATOR"}
+    return None
+
+
+def load_registered(registry_doc: Path, master_internal: Path | None = None) -> set[str]:
+    names: set[str] = set()
+    if registry_doc.is_file():
+        text = registry_doc.read_text(encoding="utf-8")
+        for _repo, path in TABLE_ROW.findall(text):
+            names.add(Path(path).name)
+    if master_internal and master_internal.is_file():
+        doc = json.loads(master_internal.read_text(encoding="utf-8"))
+        for repo in doc.get("repositories", []):
+            path = repo.get("server_project_path")
+            if isinstance(path, str) and path.startswith("/home/admin1/projects/"):
+                names.add(Path(path).name)
+    return names
+
+
+def extract_paths(command: str) -> list[str]:
+    surface = executable_scan_surface(command)
+    script = _extract_interpreter_c_script(command)
+    if script is not None:
+        surface = surface + " " + script
+    paths: list[str] = []
+    try:
+        parts = shlex.split(surface)
+    except ValueError:
+        parts = surface.split()
+    for token in parts:
+        if token.startswith("/") or token.startswith("~"):
+            paths.append(token)
+    return paths
+
+
+def resolve_path(raw: str, cwd: Path) -> Path | None:
+    p = Path(raw.replace("~", str(Path.home())))
+    try:
+        if not p.is_absolute():
+            p = (cwd / p).resolve()
+        else:
+            p = p.resolve()
+    except OSError:
+        return None
+    return p
+
+
+def under(child: Path, parent: Path) -> bool:
+    try:
+        child.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
+def _is_nested_full_git_dir(target: Path) -> bool:
+    git_entry = target / ".git"
+    return git_entry.is_dir()
+
+
+def classify_path(
+    target: Path,
+    *,
+    projects_root: Path,
+    worktrees_root: Path,
+    registered: set[str],
+) -> tuple[str, str | None]:
+    projects_root = projects_root.resolve()
+    if under(target, worktrees_root.resolve()):
+        return "DENY", "WORKTREES_ROOT_PERSISTENT_CHECKOUT_FORBIDDEN"
+    if not under(target, projects_root):
+        return "ALLOW", None
+    rel = target.relative_to(projects_root)
+    parts = rel.parts
+    if not parts:
+        return "ALLOW", None
+    top = parts[0]
+    if top in registered and len(parts) == 1:
+        return "ALLOW", None
+    for name in registered:
+        parent = projects_root / name
+        if parent.is_dir() and under(target, parent):
+            if len(parts) >= 2 and parts[0] == name and _is_nested_full_git_dir(target):
+                return "DENY", "DERIVED_REPO_INSIDE_PARENT"
+            return "ALLOW", None
+    if target.exists() and target.is_dir():
+        return "DENY", "UNREGISTERED_TOP_LEVEL_PROJECT_PATH"
+    return "DENY", "TOP_LEVEL_CHILD_PROJECT_BLOCKED"
+
+
+def _has_executable_mutators(command: str) -> bool:
+    if mutators_in_executable(command):
+        return True
+    script = _extract_interpreter_c_script(command)
+    if script and mutators_in_executable(script):
+        return True
+    return False
+
+
+def _persistent_vcs_checkout(command: str) -> bool:
+    """Checkout creation via git or gh. Ordinary scratch files stay allowed."""
+    surface = executable_scan_surface(command).lower()
+    patterns = (
+        r"\bgit\s+clone\b",
+        r"\bgit\s+init\b",
+        r"\bgit\s+worktree\s+add\b",
+        r"\bgh\s+repo\s+clone\b",
+    )
+    return any(re.search(p, surface) for p in patterns)
+
+
+def _inside_canonical_parent(
+    target: Path,
+    *,
+    projects_root: Path,
+    registered: set[str],
+    server_core: Path = DEFAULT_SERVER_CORE,
+) -> bool:
+    if under(target, server_core.resolve()):
+        return True
+    projects_root = projects_root.resolve()
+    if not under(target, projects_root):
+        return False
+    parts = target.relative_to(projects_root).parts
+    if not parts or parts[0] not in registered:
+        return False
+    parent = projects_root / parts[0]
+    return parent.is_dir() and under(target, parent)
+
+
+def _copy_like_command(command: str) -> bool:
+    return bool(re.search(r"\b(?:cp|rsync|mv)\b", executable_scan_surface(command), re.I))
+
+
+def _copy_argv_parts(command: str) -> list[str]:
+    surface = executable_scan_surface(command)
+    try:
+        return shlex.split(surface)
+    except ValueError:
+        return surface.split()
+
+
+def _copy_endpoints(command: str) -> tuple[list[str], str | None]:
+    parts = _copy_argv_parts(command)
+    if len(parts) < 2:
+        return [], None
+    head = parts[0].lower()
+    if head not in {"cp", "rsync", "mv"}:
+        return [], None
+    path_tokens: list[str] = []
+    for token in parts[1:]:
+        if token.startswith("-"):
+            continue
+        if token.startswith("/") or token.startswith("~") or token.startswith("."):
+            path_tokens.append(token)
+    if len(path_tokens) < 2:
+        return [], None
+    return path_tokens[:-1], path_tokens[-1]
+
+
+def _registered_project_root(path: Path, projects_root: Path, registered: set[str]) -> Path | None:
+    projects_root = projects_root.resolve()
+    if not under(path, projects_root):
+        return None
+    parts = path.relative_to(projects_root).parts
+    if not parts or parts[0] not in registered:
+        return None
+    return projects_root / parts[0]
+
+
+def _tree_export_source(command: str, source: Path, *, projects_root: Path) -> bool:
+    surface = executable_scan_surface(command).lower()
+    if re.search(r"\brsync\b", surface):
+        return True
+    if ".git" in source.parts or source.name == ".git":
+        return True
+    if re.search(r"\bcp\b", surface) and (
+        re.search(r"(?:^|\s)(?:-[a-zA-Z]*[rR]|--recursive|--archive)\b", surface)
+        or " -r " in f" {surface} "
+        or " -R " in f" {surface} "
+        or " -a " in f" {surface} "
+    ):
+        return True
+    if re.search(r"\bmv\b", surface):
+        root = projects_root.resolve()
+        if under(source, root):
+            rel = source.relative_to(root)
+            if len(rel.parts) == 1:
+                return True
+        if under(source, DEFAULT_SERVER_CORE.resolve()):
+            if source.name == ".git" or ".git" in source.parts or ".worktrees" in source.parts:
+                return True
+            if source.resolve() == DEFAULT_SERVER_CORE.resolve():
+                return True
+        return False
+    return False
+
+
+def _deny_parent_export_copy(
+    command: str,
+    *,
+    cwd: Path,
+    projects_root: Path,
+    registered: set[str],
+) -> dict | None:
+    if not _copy_like_command(command):
+        return None
+    sources, dest_raw = _copy_endpoints(command)
+    if not dest_raw:
+        return None
+    dest = resolve_path(dest_raw, cwd)
+    if dest is None:
+        return None
+    if _inside_canonical_parent(dest, projects_root=projects_root, registered=registered):
+        return None
+    for src_raw in sources:
+        src = resolve_path(src_raw, cwd)
+        if src is None:
+            continue
+        if not _inside_canonical_parent(src, projects_root=projects_root, registered=registered):
+            continue
+        src_root = _registered_project_root(src, projects_root, registered)
+        dest_root = _registered_project_root(dest, projects_root, registered)
+        if src_root is not None and dest_root is not None and src_root == dest_root:
+            continue
+        if under(src, DEFAULT_SERVER_CORE.resolve()) and under(dest, DEFAULT_SERVER_CORE.resolve()):
+            continue
+        if not _tree_export_source(command, src, projects_root=projects_root):
+            continue
+        return {
+            "result": "DENY",
+            "code": "PERSISTENT_COPY_OUTSIDE_PARENT",
+            "path": str(dest),
+            "source": str(src),
+            "command_class": "WORKSPACE_CREATING",
+        }
+    return None
+
+
+def _surface_has_git_clone_or_init(command: str) -> tuple[bool, bool]:
+    surface = executable_scan_surface(command).lower()
+    return (
+        bool(re.search(r"\bgit\s+clone\b", surface)),
+        bool(re.search(r"\bgit\s+init\b", surface)),
+    )
+
+
+def _extract_relative_mkdir_paths(command: str) -> list[str]:
+    surface = executable_scan_surface(command)
+    paths: list[str] = []
+    try:
+        argv_parts = shlex.split(surface)
+    except ValueError:
+        argv_parts = surface.split()
+    for idx, token in enumerate(argv_parts):
+        if token == "mkdir" and idx + 1 < len(argv_parts):
+            nxt = argv_parts[idx + 1]
+            if nxt in ("-p", "-m", "-v") and idx + 2 < len(argv_parts):
+                nxt = argv_parts[idx + 2]
+            if not nxt.startswith("-") and ".." not in nxt:
+                paths.append(nxt)
+        if token == "mkdir" and idx + 2 < len(argv_parts) and argv_parts[idx + 1] == "-p":
+            nxt = argv_parts[idx + 2]
+            if not nxt.startswith("-") and ".." not in nxt:
+                paths.append(nxt)
+    return paths
+
+
+
+
+def _rehydrate_module():
+    spec = importlib.util.spec_from_file_location(
+        "gace_mutation_rehydrate_check",
+        Path(__file__).resolve().with_name("gace_mutation_rehydrate_check.py"),
+    )
+    if spec is None or spec.loader is None:
+        return None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _rehydrate_bound_git_write(command: str, cwd: Path) -> dict | None:
+    if not os.environ.get("GACE_MUTATION_BINDING", "").strip():
+        return None
+    stripped = command.strip()
+    if not stripped.lower().startswith("git"):
+        return None
+    repo_root, tail, parse_err, git_dir_override, work_tree_override = parse_git_invocation(
+        stripped, cwd
+    )
+    if parse_err:
+        return {
+            "result": "DENY",
+            "code": parse_err,
+            "command_class": "GIT_WRITE",
+        }
+    if not _git_tail_is_write(tail or ""):
+        return None
+    if git_dir_override or work_tree_override:
+        return {
+            "result": "DENY",
+            "code": "GIT_ALTERNATE_REPOSITORY_SPEC",
+            "command_class": "GIT_WRITE",
+        }
+    if repo_root is None:
+        return {
+            "result": "DENY",
+            "code": "GIT_REPOSITORY_TARGET_UNKNOWN",
+            "command_class": "GIT_WRITE",
+        }
+    try:
+        mod = _rehydrate_module()
+    except Exception as exc:
+        return {
+            "result": "DENY",
+            "code": "REHYDRATE_MODULE_LOAD_FAILED",
+            "reason": type(exc).__name__,
+            "command_class": "GIT_WRITE",
+        }
+    if mod is None:
+        return {
+            "result": "DENY",
+            "code": "REHYDRATE_MODULE_UNAVAILABLE",
+            "command_class": "GIT_WRITE",
+        }
+    try:
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(Path(__file__).resolve().with_name("gace_mutation_rehydrate_check.py")),
+                "--mode",
+                "mutate",
+                "--repo-root",
+                str(repo_root.resolve()),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return {"result": "DENY", "code": "REHYDRATE_CHECK_UNAVAILABLE", "command_class": "GIT_WRITE"}
+    try:
+        out = json.loads(proc.stdout.strip() or "{}")
+    except json.JSONDecodeError:
+        return {"result": "DENY", "code": "REHYDRATE_CHECK_INVALID", "command_class": "GIT_WRITE"}
+    if out.get("result") == "DENY":
+        out.setdefault("command_class", "GIT_WRITE")
+        return out
+    return None
+
+
+
+def _unquoted_line_break(command: str) -> bool:
+    quote = ""
+    escaped = False
+    for char in command:
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\" and quote != "'":
+            escaped = True
+            continue
+        if char in ("'", '"'):
+            if not quote:
+                quote = char
+            elif quote == char:
+                quote = ""
+        elif char in ("\n", "\r") and not quote:
+            return True
+    return False
+
+
+def _compound_segments(command: str) -> list[str] | None:
+    """Preserve quoted arguments while recognizing actual shell separators.
+
+    Complex shell operators are NOT proven safe to run under a Git binding.
+    Do not strip quoted -C paths or try to authorize only the first command.
+    """
+    try:
+        lex = shlex.shlex(command.strip(), posix=True, punctuation_chars=";&|()<>")
+        lex.whitespace_split = True
+        lex.commenters = ""
+        tokens = list(lex)
+    except ValueError:
+        return None
+    segments: list[str] = []
+    words: list[str] = []
+    for token in tokens:
+        if token in ("&&", "||", ";"):
+            if not words:
+                return None
+            segments.append(shlex.join(words))
+            words = []
+        elif token and all(c in ";&|()<>" for c in token):
+            return None
+        else:
+            words.append(token)
+    if not words:
+        return None
+    segments.append(shlex.join(words))
+    return segments
+
+
+def _binding_compound_git_admission(command: str, cwd: Path) -> dict | None:
+    if not os.environ.get("GACE_MUTATION_BINDING", "").strip():
+        return None
+
+    # shlex does not parse the interior of shell -c as an executable command.
+    # Unknown wrappers must not turn a real Git write into a harmless string.
+    script = _extract_interpreter_c_script(command)
+    if script and re.search(r"\bgit\s", script, re.I):
+        return {
+            "result": "DENY", "code": "GIT_INTERPRETER_COMMAND_UNVERIFIED",
+            "command_class": "GIT_WRITE_BINDING",
+        }
+    surface = executable_scan_surface(command)
+    if not re.search(r"\bgit(?:\s|$)", surface, re.I):
+        return None
+    if _unquoted_line_break(command):
+        return {
+            "result": "DENY", "code": "GIT_SHELL_SYNTAX_UNVERIFIED",
+            "command_class": "GIT_WRITE_BINDING",
+        }
+    segments = _compound_segments(command)
+    if segments is None:
+        return {
+            "result": "DENY", "code": "COMPOUND_SHELL_PARSE_AMBIGUOUS",
+            "command_class": "GIT_WRITE_BINDING",
+        }
+
+    writes: list[str] = []
+    has_other_command = False
+    for segment in segments:
+        stripped = segment.strip()
+        if not stripped.lower().startswith("git " ) and stripped.lower() != "git":
+            has_other_command = True
+            # Quoted echo literals were removed by the executable scanner
+            # above. A non-Git execution wrapper is not a verified Git target.
+            if re.search(r"\bgit(?:\s|$)", executable_scan_surface(stripped), re.I):
+                return {
+                    "result": "DENY", "code": "GIT_WRAPPED_COMMAND_UNVERIFIED",
+                    "command_class": "GIT_WRITE_BINDING",
+                }
+            continue
+        _, tail, parse_err, git_dir_override, work_tree_override = parse_git_invocation(
+            stripped, cwd
+        )
+        if parse_err:
+            return {"result": "DENY", "code": parse_err, "command_class": "GIT_WRITE_BINDING"}
+        if git_dir_override or work_tree_override:
+            if _git_tail_is_write(tail or ""):
+                return {
+                    "result": "DENY", "code": "GIT_ALTERNATE_REPOSITORY_SPEC",
+                    "command_class": "GIT_WRITE_BINDING",
+                }
+        if _git_tail_is_write(tail or ""):
+            writes.append(stripped)
+        elif not tail or not _git_readonly_tail(tail):
+            return {
+                "result": "DENY", "code": "GIT_SUBCOMMAND_UNVERIFIED_UNDER_BINDING",
+                "command_class": "GIT_WRITE_BINDING",
+            }
+
+    if writes and has_other_command:
+        # cd/export/env/assignment can change the effective repo after
+        # binding preflight. Never validate Git against the *old* cwd.
+        return {
+            "result": "DENY", "code": "GIT_SHELL_CONTEXT_UNVERIFIED",
+            "command_class": "GIT_WRITE_BINDING",
+        }
+    for write in writes:
+        verdict = _rehydrate_bound_git_write(write, cwd)
+        if verdict is not None:
+            verdict.setdefault("command_class", "GIT_WRITE_BINDING")
+            return verdict
+    return None
+
+
+def classify_command(
+    command: str,
+    *,
+    cwd: Path,
+    projects_root: Path,
+    worktrees_root: Path,
+    registry_doc: Path,
+) -> dict:
+    bound_compound = _binding_compound_git_admission(command, cwd)
+    if bound_compound is not None:
+        return bound_compound
+
+    rehydrate = _rehydrate_bound_git_write(command, cwd=cwd)
+    if rehydrate is not None:
+        return rehydrate
+
+    gh_verdict = classify_gh(command)
+    if gh_verdict is not None and gh_verdict.get("result") in ("ALLOW", "DENY"):
+        return gh_verdict
+
+    git_verdict = classify_git(command, cwd=cwd)
+    if git_verdict is not None:
+        return git_verdict
+
+    registered_early = load_registered(
+        registry_doc,
+        Path(__file__).resolve().parents[1] / "operations" / "master-internal-repositories.json",
+    )
+    export_verdict = _deny_parent_export_copy(
+        command,
+        cwd=cwd,
+        projects_root=projects_root,
+        registered=registered_early,
+    )
+    if export_verdict is not None:
+        return export_verdict
+
+    interp = classify_interpreter_c(command)
+    if interp is not None and interp.get("result") == "ALLOW":
+        return interp
+
+    if not _has_executable_mutators(command):
+        return {"result": "ALLOW", "code": "NOT_WORKSPACE_MUTATION_COMMAND"}
+
+    try:
+        shlex.split(command)
+    except ValueError:
+        if command.strip().lower().startswith(("gh ", "git ", "bash ", "sh ")):
+            return {"result": "DENY", "code": "UNPARSEABLE_DANGEROUS_COMMAND"}
+
+    registered = load_registered(
+        registry_doc,
+        Path(__file__).resolve().parents[1] / "operations" / "master-internal-repositories.json",
+    )
+    is_clone, is_init = _surface_has_git_clone_or_init(command)
+    paths = extract_paths(command)
+    paths.extend(_extract_relative_mkdir_paths(command))
+    seen: set[str] = set()
+    paths = [p for p in paths if not (p in seen or seen.add(p))]
+    if not paths:
+        return {"result": "DENY", "code": "WORKSPACE_MUTATION_WITHOUT_RESOLVED_PATH"}
+    projects_root_resolved = projects_root.resolve()
+    for raw in paths:
+        if ".." in raw:
+            return {"result": "DENY", "code": "PATH_TRAVERSAL", "path": raw, "command_class": "WORKSPACE_CREATING"}
+        resolved = resolve_path(raw, cwd)
+        if resolved is None:
+            return {"result": "DENY", "code": "PATH_UNRESOLVED"}
+        if under(resolved, projects_root_resolved):
+            rel = resolved.relative_to(projects_root_resolved)
+            if len(rel.parts) >= 2 and (is_clone or is_init):
+                parent_name = rel.parts[0]
+                if parent_name in registered and ".worktrees" not in resolved.parts:
+                    return {
+                        "result": "DENY",
+                        "code": "DERIVED_REPO_INSIDE_PARENT",
+                        "path": str(resolved),
+                        "command_class": "WORKSPACE_CREATING",
+                    }
+        verdict, code = classify_path(
+            resolved,
+            projects_root=projects_root,
+            worktrees_root=worktrees_root,
+            registered=registered,
+        )
+        if verdict == "DENY":
+            return {
+                "result": "DENY",
+                "code": code,
+                "path": str(resolved),
+                "command_class": "WORKSPACE_CREATING",
+            }
+        if _persistent_vcs_checkout(command) and not _inside_canonical_parent(
+            resolved,
+            projects_root=projects_root,
+            registered=registered,
+        ):
+            return {
+                "result": "DENY",
+                "code": "PERSISTENT_CHECKOUT_OUTSIDE_PARENT",
+                "path": str(resolved),
+                "command_class": "WORKSPACE_CREATING",
+            }
+        server_core = DEFAULT_SERVER_CORE.resolve()
+        if (
+            (is_clone or is_init)
+            and under(resolved, server_core)
+            and resolved != server_core
+            and ".worktrees" not in resolved.parts
+        ):
+            return {
+                "result": "DENY",
+                "code": "DERIVED_REPO_INSIDE_PARENT",
+                "path": str(resolved),
+                "command_class": "WORKSPACE_CREATING",
+            }
+    return {"result": "ALLOW", "code": "WORKSPACE_PATHS_VERIFIED"}
+
+
+def parse_hook_payload(raw: str) -> tuple[str | None, Path | None, str | None]:
+    if not raw.strip():
+        return None, None, "HOOK_INPUT_EMPTY"
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return None, None, "HOOK_INPUT_INVALID_JSON"
+    if not isinstance(data, dict):
+        return None, None, "HOOK_INPUT_INVALID_SHAPE"
+    command = data.get("command")
+    if not isinstance(command, str) or not command.strip():
+        return None, None, "HOOK_INPUT_MISSING_COMMAND"
+    cwd_raw = (
+        data.get("cwd")
+        or data.get("workingDirectory")
+        or data.get("working_directory")
+        or data.get("workspaceFolder")
+        or "/home/admin1"
+    )
+    if not isinstance(cwd_raw, str) or not cwd_raw.strip():
+        return None, None, "HOOK_INPUT_INVALID_CWD"
+    return command.strip(), Path(cwd_raw).expanduser(), None
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--command")
+    parser.add_argument("--cwd", default="/home/admin1")
+    parser.add_argument("--projects-root", type=Path, default=DEFAULT_PROJECTS)
+    parser.add_argument("--worktrees-root", type=Path, default=DEFAULT_WORKTREES)
+    parser.add_argument(
+        "--registry-doc",
+        type=Path,
+        default=Path(__file__).resolve().parents[1] / "docs" / "WORKSPACE_REGISTRY.md",
+    )
+    parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--hook-stdin",
+        action="store_true",
+        help="Read Cursor beforeShellExecution JSON from stdin and classify once.",
+    )
+    args = parser.parse_args()
+
+    try:
+        if args.hook_stdin:
+            command, cwd, err = parse_hook_payload(sys.stdin.read())
+            if err:
+                out = {"result": "DENY", "code": err, "command_class": "HOOK_INPUT"}
+                print(json.dumps(out, sort_keys=True))
+                return 1
+            assert command is not None and cwd is not None
+        else:
+            if not args.command:
+                parser.error("--command is required unless --hook-stdin is set")
+            command = args.command
+            cwd = Path(args.cwd)
+
+        out = classify_command(
+            command,
+            cwd=cwd,
+            projects_root=args.projects_root,
+            worktrees_root=args.worktrees_root,
+            registry_doc=args.registry_doc,
+        )
+        print(json.dumps(out, sort_keys=True))
+        return 0 if out.get("result") == "ALLOW" else 1
+    except Exception as exc:
+        out = {
+            "result": "DENY",
+            "code": "GUARD_RUNTIME_EXCEPTION",
+            "reason": type(exc).__name__,
+            "command_class": "HOOK_RUNTIME",
+        }
+        print(json.dumps(out, sort_keys=True))
+        traceback.print_exc(file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

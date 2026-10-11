@@ -4,20 +4,65 @@
 This checks supplied evidence. It cannot intercept a normal ChatGPT reply.
 """
 import argparse
+import importlib.util
 import json
+import re
 import sys
+from pathlib import Path
 
 PHASES = {"START", "FAILURE", "STOP"}
 STOP_REASONS = {"MASTER_INTERRUPT", "MASTER_ONLY_ACTION", "VERIFIED_COMPLETE", "ALL_ACTIONS_BLOCKED"}
 
+# A locator is only a syntax check: no network readback or provenance claim.
+EVIDENCE_LOCATOR = re.compile(
+    r"^https://github\.com/[^/\s]+/[^/\s]+/(?:issues/[1-9][0-9]*(?:#issuecomment-[1-9][0-9]*)?|actions/runs/[1-9][0-9]*|commit/[0-9a-f]{40}|pull/[1-9][0-9]*)$"
+)
+
+
+def evidence_locator(value):
+    return isinstance(value, str) and bool(EVIDENCE_LOCATOR.fullmatch(value))
+
+ALLOWED_KEYS = {
+    "phase", "profile", "manifest_verified", "rule_full_read", "rule_plane_read",
+    "rule_plane_profile", "current_verified", "purpose_verified", "cu_verified",
+    "purpose_cu_aligned", "mutation_scope", "design_status", "design_adoption",
+    "implementation_context", "source_design_aligned", "claimed_adopted_without_merge",
+    "source_evidence", "failed_step", "failure_evidence", "next_action",
+    "independent_actions", "completed_actions", "next_action_evidence", "stop_reason",
+    "stop_evidence", "remaining_actions", "completion_verified",
+}
+
+
+def _design_gate():
+    module_path = Path(__file__).with_name("work_routine_design_entry_gate.py")
+    spec = importlib.util.spec_from_file_location("work_routine_design_entry_gate", module_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def evaluate_design_turn(state: dict) -> str:
+    module = _design_gate()
+    mapped = {
+        "manifest_verified": state.get("manifest_verified"),
+        "rule_plane_profile": state.get("rule_plane_profile") or state.get("profile"),
+        "rule_plane_read": state.get("rule_plane_read", state.get("rule_full_read")),
+        "current_verified": state.get("current_verified"),
+        "purpose_verified": state.get("purpose_verified"),
+        "cu_verified": state.get("cu_verified"),
+        "purpose_cu_aligned": state.get("purpose_cu_aligned", True),
+        "mutation_scope": state.get("mutation_scope", "routine_fix"),
+        "design_status": state.get("design_status", "DESIGN_NOT_APPLICABLE"),
+        "design_adoption": state.get("design_adoption", "ADOPTED_MAIN"),
+        "implementation_context": state.get("implementation_context", "not_applicable"),
+        "source_design_aligned": state.get("source_design_aligned", True),
+        "claimed_adopted_without_merge": state.get("claimed_adopted_without_merge", False),
+    }
+    return module.evaluate_turn(mapped)
+
+
 def evaluate(state):
-    if not isinstance(state, dict) or set(state) - {
-        "phase", "profile", "manifest_verified", "rule_full_read",
-        "current_verified", "purpose_verified", "cu_verified",
-        "source_evidence", "failed_step", "failure_evidence", "next_action",
-        "independent_actions", "completed_actions", "next_action_evidence", "stop_reason",
-        "stop_evidence", "remaining_actions", "completion_verified",
-    }:
+    if not isinstance(state, dict) or set(state) - ALLOWED_KEYS:
         return "GATE_STATE_INVALID"
     phase = state.get("phase")
     if phase not in PHASES:
@@ -31,6 +76,10 @@ def evaluate(state):
             return "START_PROFILE_MISMATCH"
         if not isinstance(state.get("source_evidence"), str) or not state["source_evidence"].strip():
             return "START_EVIDENCE_MISSING"
+        if "mutation_scope" in state or state.get("design_status"):
+            design_out = evaluate_design_turn(state)
+            if design_out != "PASS":
+                return "START_" + design_out
         return "PASS"
     if phase == "FAILURE":
         if not all(isinstance(state.get(k), str) and state[k].strip()
@@ -51,7 +100,7 @@ def evaluate(state):
             return "FAILURE_COMPLETED_NOT_IN_AVAILABLE_ACTIONS"
         if independent and next_action not in completed:
             return "FAILURE_NEXT_ACTION_NOT_COMPLETED"
-        if independent and (not isinstance(state.get("next_action_evidence"), str) or not state["next_action_evidence"].strip()):
+        if independent and not evidence_locator(state.get("next_action_evidence")):
             return "FAILURE_NEXT_ACTION_NOT_EXECUTED"
         return "PASS"
     reason = state.get("stop_reason")

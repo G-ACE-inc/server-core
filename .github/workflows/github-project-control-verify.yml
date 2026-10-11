@@ -2,10 +2,21 @@ name: github-project-control-verify
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+      - 'feat/**'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# Bound superseded runs per Git ref; PR and Push each execute the actual required checks.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
@@ -85,5 +96,6 @@ jobs:
           python3 -m unittest discover -s tests -p tgzero_deploy_coverage_test.py -v
       - name: Project Control container source
         run: |
-          docker build -f Dockerfile.project-control -t gace-server-core-project-control:ci .
+          docker build --build-arg GACE_PYTHON_BASE_IMAGE=public.ecr.aws/docker/library/python:3.13-alpine -f Dockerfile.project-control -t gace-server-core-project-control:ci .
+          docker run --rm --entrypoint python3 gace-server-core-project-control:ci -c 'import sys; assert sys.version_info[:2] == (3, 13), sys.version'
           GACE_SERVER_UID=10001 GACE_SERVER_GID=10001 GACE_PROJECT_CONTROL_GH_CONFIG_DIR=/tmp/gace-gh-config GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE=/tmp/gace-pc-hmac-key GACE_BOUNDED_HOST_CANONICAL_ROOT=/tmp/gace-server-core-canonical GACE_BOUNDED_HOST_HMAC_KEY_FILE=/tmp/gace-bh-hmac-key docker compose -f docker-compose.project-control.yml config --quiet

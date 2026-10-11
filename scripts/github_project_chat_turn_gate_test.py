@@ -23,7 +23,7 @@ class DecisionTests(unittest.TestCase):
         good = dict(phase="FAILURE", failed_step="Host read", failure_evidence="run/42",
                     independent_actions=["Inspect registry"], next_action="Inspect registry",
                     completed_actions=["Inspect registry"],
-                    next_action_evidence="github://issue/40#action-readback")
+                    next_action_evidence="https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6107486587")
         self.assertEqual(gate.evaluate(good), "PASS")
         self.assertEqual(gate.evaluate({**good, "next_action": ""}), "FAILURE_REPLAN_REQUIRED")
         self.assertEqual(gate.evaluate({**good, "next_action": "deploy"}), "FAILURE_NEXT_NOT_IN_AVAILABLE_ACTIONS")
@@ -32,7 +32,9 @@ class DecisionTests(unittest.TestCase):
         self.assertEqual(gate.evaluate({**good, "completed_actions": None}), "FAILURE_COMPLETED_ACTIONS_INVALID")
         self.assertEqual(gate.evaluate({**good, "next_action_evidence": ""}), "FAILURE_NEXT_ACTION_NOT_EXECUTED")
         self.assertEqual(gate.evaluate({**good, "next_action_evidence": None}), "FAILURE_NEXT_ACTION_NOT_EXECUTED")
-        self.assertEqual(gate.evaluate({**good, "next_action_evidence": "readback obtained"}), "PASS")
+        self.assertEqual(gate.evaluate({**good, "next_action_evidence": "readback obtained"}), "FAILURE_NEXT_ACTION_NOT_EXECUTED")
+        self.assertEqual(gate.evaluate({**good, "next_action_evidence": "https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6107486587"}), "PASS")
+        self.assertEqual(gate.evaluate({**good, "next_action_evidence": "https://github.com/attacker/other/anything"}), "FAILURE_NEXT_ACTION_NOT_EXECUTED")
 
     def test_live_workflow_has_request_gate_before_host_access(self):
         workflow = (module_path.parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text(encoding="utf-8")
@@ -63,6 +65,34 @@ class DecisionTests(unittest.TestCase):
                                         "completion_verified": True}), "PASS")
         self.assertEqual(gate.evaluate({**base, "stop_reason": "NO_RESPONSE"}), "STOP_REASON_UNVERIFIED")
         self.assertEqual(gate.evaluate({**base, "remaining_actions": None}), "STOP_REMAINING_ACTIONS_UNVERIFIED")
+
+    def test_start_design_gate_blocks_missing_design(self):
+        good = dict(
+            phase="START", profile="GPT_CHAT",
+            manifest_verified=True, rule_full_read=True,
+            current_verified=True, purpose_verified=True,
+            cu_verified=True, source_evidence="github://run/1",
+            mutation_scope="design_changing",
+            design_status="DESIGN_NOT_FOUND",
+            design_adoption="ADOPTED_MAIN",
+            implementation_context="adopted_main_implementation",
+            source_design_aligned=True,
+        )
+        self.assertEqual(gate.evaluate(good), "START_DESIGN_NOT_FOUND_BLOCK")
+
+    def test_start_design_gate_pass_routine_fix(self):
+        good = dict(
+            phase="START", profile="GPT_CHAT",
+            manifest_verified=True, rule_full_read=True,
+            current_verified=True, purpose_verified=True,
+            cu_verified=True, source_evidence="github://run/1",
+            mutation_scope="routine_fix",
+            design_status="DESIGN_VERIFIED",
+            design_adoption="ADOPTED_MAIN",
+            implementation_context="adopted_main_implementation",
+            source_design_aligned=True,
+        )
+        self.assertEqual(gate.evaluate(good), "PASS")
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,10 +2,21 @@ name: project-control-runtime-readback-command-verify
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+      - 'feat/**'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# Bound superseded runs per Git ref; PR and Push each execute the actual required checks.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   windows-parser:

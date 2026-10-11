@@ -87,6 +87,16 @@ Use the **existing** Work Routine, GitHub Project Control, CI, registries, bound
 
 **Automate only a deterministic invariant with an actual enforcement hook, known input contract, bounded permissions, useful negative tests and no undue interruption to normal work.** Otherwise keep it as a documented review/readback gate. Machine denial applies to the unsafe operation, not unrelated safe work. Preserve ownership, rollback paths and history; do not silently relax Master-owned approval or expand DebugAI's enrollment to other repos.
 
+### One owner per file type — adapter clarification
+
+The normative assignment remains the **Responsibility boundary — Current vs common operation** table immediately above. Project control #15 records migration evidence, not changing Project task status. `docs/LOAD_SCOPE.md` dispatches conditional reads; `docs/WORKSPACE_MCP.md` keeps connection contracts and archived verification; `README.md` is only an index. `AGENTS.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md` are short client adapters. `.cursor/agents/*.md`, User Global Cursor rules and `.cursor/mcp.json` configure clients, not common rules. `.github/workflows/*`, existing bounded Host/DebugAI and TGserver enforce or record actual effects and evidence. No second rule authority is created. Rule #16 SERVER_AI and Rule #17 GPT_CHAT own only their respective execution profiles; GitHub Project #1 + owning Current Issue owns mutable Mission/CU.
+
+## Shared Work Routine ownership and scope-drift gate
+
+The only **stable common Work Routine** is [`docs/G_ACE_WORKSPACE.md` §6](G_ACE_WORKSPACE.md#6-development-routine), including its Mission/CU pre-dispatch requirements. Do **not** copy a second full routine into Issue #16, Issue #17, per-agent `AGENTS.md`, Cursor `.mdc`, or Copilot instructions. Each executor fetches the same owning GitHub Project/Issue Current but **only its own** minimal SERVER_AI #16 or GPT CHAT #17 profile.
+
+Use existing Project Control fields `Wave / Gate / Change Unit / Mutation Owner`. `MISSION / IN_SCOPE / OUT_OF_SCOPE / ACCEPTANCE / EXACT_NEXT_GATE` stay in the **owning canonical Current Issue**, until genuine Project field registration and readback explicitly prove otherwise. Before dispatch verify actual task ownership and whether the planned diff/effect is within the current CU; deny only out-of-scope mutations. Recording a current reference or passing a source-file test is not evidence that Cursor/Codex/GPT actually loaded it or that the bounded Host runner enforced it; those require their own runtime/readback proofs.
+
 ## Shared invariants
 
 両Planeで共有するのはFresh Current、reuse-first、minimum context、状態分離、Approval Boundary、Secret安全、Docker Compose production residency、GitHub Work Reportなどの最小Invariantだけ。
@@ -126,3 +136,19 @@ NOTION_CUTOVER=after all required evidence
 ```
 
 完了まではNotionをmigration source/historyとして保持し、削除しない。
+
+## Consumer inventory — evidence and loading boundaries
+
+This register distinguishes an **entrypoint source** from an **effective runtime consumer**. It is not a new Router or an assertion that a local editor fetched the GitHub issue. Verify the specific owning repository, commit and installed client configuration before retiring a duplicate rule.
+
+| Consumer | Intended source / only owner | Current evidence boundary | Next proof required |
+|---|---|---|---|
+| GPT CHAT | Manifest -> Issue #17 -> Project/owning Issue Current; conditional server-core shared contract | GitHub connector can explicitly read manifest and #17; automatic per-turn integration is NOT_VERIFIED | Fresh issue/Current loading on a new CHAT turn, with version/readback |
+| SERVER_AI / delegated Host worker | README -> LOAD_SCOPE -> manifest -> Issue #16 -> owning Current -> conditional server-core | Source routing documented; Host-local automatic load is NOT_VERIFIED | Exact Host source/config and real session load trace, excluding #17 |
+| Cursor Composer | User Global + workspace `.cursor/rules/*.mdc`, selecting SERVER_AI #16 | PR39 validates symlink or inactive-stub source contract; Composer-reported CU2 local changes are not independent live readback | Fresh Active Rules/Global precedence and exact installed file hashes |
+| VS Code Codex | Repo `AGENTS.md`, any verified actual configuration, SERVER_AI #16 | Repository adapter source exists; effective issue fetch and applicable global config are NOT_VERIFIED | New-session loaded instruction trace for owning repo |
+| GitHub Copilot | Repo `.github/copilot-instructions.md`, SERVER_AI #16 | Repository adapter source exists; actual current-issue injection is NOT_VERIFIED | Effective client/session instruction readback |
+| GitHub Actions / Project Control | Existing `.github/workflows/*`, `operations/github-project-control.json`, owning GitHub Current | Four fields only: Wave, Gate, Change Unit, Mutation Owner; CI does not attest Mission match at Host | Exact-SHA checks plus authorized/denied dispatch tests on owner-controlled route |
+| Host / DebugAI runner | Existing bounded Host admission, registry and verified running revision | PR39 Source CI is not Host reflection; PR36/#37 are separate mutation owners | Pinned runtime rule version, wrong-CU denial and allowed nested-worktree proof |
+
+**Safe migration gate:** collect actual consumer readback first; identify a single owner for each shared invariant, preserve client-specific adapters and legacy compatibility, then remove a duplicate only after focused regression and actual-loader proof. A missing Host/client proof is `NOT_VERIFIED`, never implicit approval to rewrite another owner's Global file or Host branch. Project item registration and formal Notion cutover remain separate gates.
