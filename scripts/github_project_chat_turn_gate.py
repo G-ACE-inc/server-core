@@ -11,7 +11,7 @@ import sys
 PHASES = {"START", "FAILURE", "STOP"}
 STOP_REASONS = {"MASTER_INTERRUPT", "MASTER_ONLY_ACTION", "VERIFIED_COMPLETE", "ALL_ACTIONS_BLOCKED"}
 # A locator is only a syntax check: no network readback or provenance claim.
-EVIDENCE_LOCATOR = re.compile(r"^https://github\\.com/[^/\\s]+/[^/\\s]+/(?:issues/[1-9][0-9]*(?:#issuecomment-[1-9][0-9]*)?|actions/runs/[1-9][0-9]*|commit/[0-9a-f]{40}|pull/[1-9][0-9]*)$")
+EVIDENCE_LOCATOR = re.compile(r"^https://github\.com/[^/\s]+/[^/\s]+/(?:issues/[1-9][0-9]*(?:#issuecomment-[1-9][0-9]*)?|actions/runs/[1-9][0-9]*|commit/[0-9a-f]{40}|pull/[1-9][0-9]*)$")
 
 
 def evidence_locator(value):
