@@ -26,6 +26,13 @@ class DecisionTests(unittest.TestCase):
         self.assertEqual(gate.evaluate({**good, "next_action": ""}), "FAILURE_REPLAN_REQUIRED")
         self.assertEqual(gate.evaluate({**good, "next_action": "deploy"}), "FAILURE_NEXT_NOT_IN_AVAILABLE_ACTIONS")
 
+    def test_live_workflow_has_request_gate_before_host_access(self):
+        workflow = (module_path.parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text(encoding="utf-8")
+        assert "CHAT_START_GATE_RECEIPT_MISSING" in workflow
+        assert "python3 scripts/github_project_chat_turn_gate.py --state" in workflow
+        assert workflow.index("START Gate for explicit CHAT Host requests") < workflow.index("Require Cloudflare Access credentials")
+        assert "CHAT_START_GATE=IDLE" in workflow
+
     def test_stop_rejects_unfinished(self):
         base = dict(phase="STOP", stop_reason="ALL_ACTIONS_BLOCKED",
                     stop_evidence="run/42", remaining_actions=[])
