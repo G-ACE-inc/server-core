@@ -19,7 +19,8 @@ permissions:
   issues: read
 
 concurrency:
-  group: chatgpt-live-dogfood
+  # Preserve the legacy singleton lane while keeping independent request commits distinct.
+  group: chatgpt-live-dogfood-${{ contains(join(github.event.head_commit.added, ','), '.github/chat-host-requests/req_') && github.sha || 'legacy' }}
   cancel-in-progress: false
 
 jobs:
