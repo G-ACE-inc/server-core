@@ -14,5 +14,16 @@
     "enabled": false,
     "command_id": "project.git_head",
     "expected_sha": "GITHUB_WORKFLOW_SHA"
+  },
+  "server_command_id": "service.debug_ai_state",
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Fresh main Manifest, full #17 body, DebugAI #41 Current, existing registered legacy read-only command service.debug_ai_state, G3 incident; independent Request lane leaves shared target idle."
   }
 }
