@@ -51,6 +51,16 @@ class BoundedHostTests(unittest.TestCase):
     def test_exact_head(self):
         self.assertEqual(self.run_with("project.git_head")["source_sha"], SHA)
 
+    def test_git_recent_commits_fixed_sha_only(self):
+        with patch.object(host, "_run", side_effect=[SHA + chr(10), SHA + chr(10) + "b" * 40 + chr(10)]):
+            result = host.execute("project.git_recent_commits", self.root, SHA)
+        self.assertEqual(result["commits"], [SHA, "b" * 40])
+
+    def test_git_recent_commits_rejects_invalid_output(self):
+        with patch.object(host, "_run", side_effect=[SHA + chr(10), "a commit subject" + chr(10)]):
+            with self.assertRaisesRegex(host.BoundaryError, "GIT_HISTORY_INVALID"):
+                host.execute("project.git_recent_commits", self.root, SHA)
+
     def test_unregistered_fails_closed(self):
         with self.assertRaisesRegex(host.BoundaryError, "COMMAND_NOT_REGISTERED"):
             self.run_with("system.shell")
