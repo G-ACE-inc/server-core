@@ -66,4 +66,3 @@ class DecisionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-# WIP_INTEGRATION_NEGATIVE: System Document path missing, never merge.
