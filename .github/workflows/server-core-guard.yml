@@ -22,6 +22,58 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: CU40 design-before-source preflight
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$PR_BASE_SHA"
+          python3 - <<'PY'
+          import os
+          import subprocess
+
+          changed = set(subprocess.check_output(
+              ["git", "diff", "--name-only", os.environ["PR_BASE_SHA"], "HEAD"],
+              text=True,
+          ).splitlines())
+          cu40_source = {
+              "scripts/github_project_chat_turn_gate.py",
+              "scripts/github_project_chat_turn_gate_test.py",
+              ".github/workflows/chatgpt-live-api-verify.yml",
+          }
+          affected = sorted(changed & cu40_source)
+          if not affected:
+              print("CU40_DESIGN_PREFLIGHT=NOT_APPLICABLE")
+          else:
+              body = os.environ.get("PR_BODY", "")
+              required = (
+                  "DESIGN_BASELINE_REF=",
+                  "DESIGN_REQUIREMENT=",
+                  "DESIGN_ALIGNMENT_EVIDENCE=",
+                  "README_UPDATE_REQUIRED=",
+                  "PROJECT_TREE_UPDATE_REQUIRED=",
+                  "DESIGN_DELTA_REQUIRED=",
+                  "SYSTEM_DOCUMENT_REQUIRED=",
+              )
+              missing = [key for key in required if not any(
+                  line.startswith(key) and line[len(key):].strip()
+                  for line in body.splitlines()
+              )]
+              if missing:
+                  print("CU40_DESIGN_PREFLIGHT=FAIL")
+                  print("MISSING_FIELDS=" + ",".join(missing))
+                  raise SystemExit(1)
+              if not ("docs/SERVER_CORE_DESIGN.md" in body or "docs/G_ACE_WORKSPACE.md" in body):
+                  print("CU40_DESIGN_BASELINE_NOT_REFERENCED")
+                  raise SystemExit(1)
+              print("CU40_DESIGN_PREFLIGHT=DECLARED_ONLY")
+              print("CU40_CHANGED_PATHS=" + ",".join(affected))
+              print("NOTE=PR receipt is not independent proof of actual design review")
+          PY
+
       - name: Required authority files
         run: |
           set -euo pipefail

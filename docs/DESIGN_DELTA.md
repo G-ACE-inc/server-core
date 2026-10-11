@@ -620,3 +620,16 @@ Operational START positive: [Actions 38112125417](https://github.com/G-ACE-inc/s
 Behavioral counterexamples: [CU #40 observation 6105707417](https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6105707417), [audit 6105722443](https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6105722443).
 
 This is a **documentation correction** to design/application claims, not a change to existing Host permissions, credential flow, Code execution, native CHAT response handling, or the project purpose. Revert only this bounded Delta if design owner rejects it; historical Source and actual runtime boundaries are unaffected.
+
+## 2026-10-11 — Catch missing CU #40 design reviews at existing PR execution boundary
+
+### Baseline and motivation
+The existing `docs/G_ACE_WORKSPACE.md` §6 design-alignment and §7 Documentation Gate are mandatory **before implementation**. The existing server-core guard previously checked only presence of documents and rule text, so a CU #40 Gate implementation could pass CI even if its PR omitted the Design baseline, affected requirements, diff review and four Documentation Gate decisions. This was observed retrospectively for the earlier CHAT Gate PR chain; it is not cured by formatting a final response.
+
+### Intentional bounded enforcement change
+In the existing `.github/workflows/server-core-guard.yml`, pull requests changing the CU #40 CHAT decision evaluator, its tests or the live Host request Workflow now require nonblank PR-body declarations for DESIGN_BASELINE_REF, DESIGN_REQUIREMENT, DESIGN_ALIGNMENT_EVIDENCE and all four standard Documentation Gate decisions. Missing declarations fail the existing Guard before PR merge. Unrelated owner CUs and direct push to main are not blocked by this PR-scoped step; old PRs are not retroactively reclassified. The contract still separates Master-visible continuation, final report format and command presentation from machine-verifiable Host/CI scope.
+
+### Limits and evidence
+The gate verifies declared process evidence is **present**, not independently that a GPT CHAT model actually read the Design or did not terminate early. An honest implementation still requires human/source/evidence review and native CHAT turn observability. Do not label this a real reply-send STOP interceptor. This is a focused Work Routine enforcement on the already-owned CU, not a new Workflow, token, rule plane or broad authorization. No existing Design Baseline text is rewritten.
+
+Compatibility/rollback: remove only the added scoped existing-workflow PR check and corresponding README/Tree indexing to restore previous permissive PR behavior. Tests and Host operational routing stay unchanged; deployed workflows are not altered beyond the existing CI contract.

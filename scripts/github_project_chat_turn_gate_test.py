@@ -43,6 +43,16 @@ class DecisionTests(unittest.TestCase):
         assert workflow.index("START Gate for explicit CHAT Host requests") < workflow.index("Require Cloudflare Access credentials")
         assert "CHAT_START_GATE=IDLE" in workflow
 
+    def test_existing_guard_requires_design_preflight_for_cu40(self):
+        guard = (module_path.parents[1] / ".github/workflows/server-core-guard.yml").read_text(encoding="utf-8")
+        self.assertIn("CU40 design-before-source preflight", guard)
+        self.assertIn("DESIGN_BASELINE_REF=", guard)
+        self.assertIn("DESIGN_ALIGNMENT_EVIDENCE=", guard)
+        self.assertIn("README_UPDATE_REQUIRED=", guard)
+        self.assertIn("PROJECT_TREE_UPDATE_REQUIRED=", guard)
+        self.assertIn("DESIGN_DELTA_REQUIRED=", guard)
+        self.assertIn("SYSTEM_DOCUMENT_REQUIRED=", guard)
+
     def test_stop_rejects_unfinished(self):
         base = dict(phase="STOP", stop_reason="ALL_ACTIONS_BLOCKED",
                     stop_evidence="run/42", remaining_actions=[])
