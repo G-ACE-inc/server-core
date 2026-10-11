@@ -64,6 +64,9 @@ jobs:
           [[ "$source_reflect_enabled" != "true" || "$gitops_enabled" != "true" ]] || { echo "CHAT_REFLECT_CONCURRENT_DEPLOY_DENIED"; exit 44; }
           [[ "$source_reflect_enabled" != "true" || "$mode" == "readonly" ]] || { echo "CHAT_REFLECT_MODE_DENIED"; exit 45; }
           echo "source_reflect_enabled=$source_reflect_enabled" >> "$GITHUB_OUTPUT"
+          bounded_host_enabled="$(jq -r '.bounded_host_request.enabled // false' .github/chatgpt-live-api-target.json)"
+          [[ "$bounded_host_enabled" == "true" || "$bounded_host_enabled" == "false" ]]
+          echo "bounded_host_enabled=$bounded_host_enabled" >> "$GITHUB_OUTPUT"
           [[ "$repo" == "/workspace/debug-ai" || "$repo" =~ ^/workspace/debug-ai/\.debugai-input/test-repos/[A-Za-z0-9._-]+$ ]]
           [[ ${#request} -le 2000 ]]
           [[ -z "$run_id" || "$run_id" =~ ^run_[A-Za-z0-9_]+$ ]]
@@ -131,6 +134,7 @@ jobs:
           echo "SERVERCORE_BOUNDED_HOST_DISPATCH=QUEUED"
 
       - name: Require Cloudflare Access credentials
+        if: ${{ steps.target.outputs.bounded_host_enabled != 'true' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -139,6 +143,7 @@ jobs:
           echo "LIVE_API_AUTH=CONFIGURED"
 
       - name: Live health
+        if: ${{ steps.target.outputs.bounded_host_enabled != 'true' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -149,7 +154,7 @@ jobs:
           echo "HEALTH_CONTRACT=PASS"
 
       - name: Existing run status
-        if: ${{ steps.target.outputs.run_id != '' }}
+        if: ${{ steps.target.outputs.run_id != '' && steps.target.outputs.bounded_host_enabled != 'true' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -169,6 +174,7 @@ jobs:
           jq -r '"ANALYSIS_PRESENT="+((.artifacts.analysis!=null)|tostring), "PATCH_CANDIDATE_PRESENT="+((.artifacts.patch_candidate!=null)|tostring), "DIAGNOSIS_PRESENT="+((.artifacts.analysis.payload.diagnosis!=null)|tostring)' /tmp/inspect.json
 
       - name: Bounded existing Server Command readback
+        if: ${{ steps.target.outputs.bounded_host_enabled != 'true' }}
         shell: bash
         run: node scripts/chatgpt-bounded-server-read.cjs
 
@@ -287,7 +293,7 @@ jobs:
 
       - name: Detect docs-only allowed Source reflect HEAD
         id: docs_reflect
-        if: ${{ github.ref_name == 'main' }}
+        if: ${{ github.ref_name == 'main' && steps.target.outputs.bounded_host_enabled != 'true' }}
         shell: bash
         run: |
           set -euo pipefail
