@@ -9,5 +9,7 @@
   },
   "source_reflect_request": {
     "enabled": false
-  }
+  },
+  "server_command_id": "system.projects_inventory",
+  "inventory_page": 0
 }
