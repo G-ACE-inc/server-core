@@ -1,0 +1,28 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "CHAT acceptance: gateway routed git diff stat on freshly rolled out receiver",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_diff_stat",
+    "expected_sha": "6d97298ffc07dbff34187defb16be5c5c5506526"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Fresh Manifest, full #17, #10 latest Server AI cutover report #6112226672: Host 6d97298, gateway route to new receiver healthy, staging signed local PASS; gateway real E2E pending. New independent immutable Request after cutover."
+  }
+}
