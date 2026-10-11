@@ -12,7 +12,7 @@ from gace_internal_delivery_auth import verify_delivery
 
 CONTRACT = {
     "request_schema": "gace.servercore-bounded-host.request/v1",
-    "allowed_command_ids": ["project.git_head", "project.git_status", "project.registered_tests"],
+    "allowed_command_ids": ["project.git_head", "project.git_status"],
     "transport": {
         "event_type": "gace.servercore-bounded-host.requested",
         "destination_id": "server-core-bounded-host",
@@ -39,6 +39,13 @@ class GatewaySendTests(unittest.TestCase):
     def test_rejects_unregistered_command(self):
         with self.assertRaises(sender.SendError):
             sender.validate_cli("system.shell", "a" * 40, CONTRACT)
+
+    def test_remote_registered_tests_denied(self):
+        from pathlib import Path
+        contract = json.loads((Path(__file__).resolve().parents[1] / "operations" / "github-project-bounded-host.json").read_text())
+        self.assertNotIn("project.registered_tests", contract["allowed_command_ids"])
+        with self.assertRaisesRegex(sender.SendError, "COMMAND_NOT_REGISTERED"):
+            sender.validate_cli("project.registered_tests", "a" * 40, contract)
 
     def test_gateway_send_accepts_202(self):
         req = sender.validate_cli("project.git_head", "c" * 40, CONTRACT)
