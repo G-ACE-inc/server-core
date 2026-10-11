@@ -15,7 +15,7 @@ def evaluate(state):
         "phase", "profile", "manifest_verified", "rule_full_read",
         "current_verified", "purpose_verified", "cu_verified",
         "source_evidence", "failed_step", "failure_evidence", "next_action",
-        "independent_actions", "completed_actions", "stop_reason",
+        "independent_actions", "completed_actions", "next_action_evidence", "stop_reason",
         "stop_evidence", "remaining_actions", "completion_verified",
     }:
         return "GATE_STATE_INVALID"
@@ -44,6 +44,8 @@ def evaluate(state):
             return "FAILURE_REPLAN_REQUIRED"
         if next_action and next_action not in independent:
             return "FAILURE_NEXT_NOT_IN_AVAILABLE_ACTIONS"
+        if independent and (not isinstance(state.get("next_action_evidence"), str) or not state["next_action_evidence"].strip()):
+            return "FAILURE_NEXT_ACTION_NOT_EXECUTED"
         return "PASS"
     reason = state.get("stop_reason")
     if reason not in STOP_REASONS:
