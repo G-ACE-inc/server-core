@@ -85,7 +85,7 @@ jobs:
         run: |
           set -euo pipefail
           target=.github/chatgpt-live-api-target.json
-          active="$(jq -r '((.server_command_id // "") != "") or ((.run_id // "") != "") or (.mode == "dogfood") or (.gitops_request.enabled == true) or (.source_reflect_request.enabled == true) or ((.bounded_host_request.enabled == true) and (.bounded_host_request.command_id == "project.source_reflect"))' "$target")"
+          active="$(jq -r '((.server_command_id // "") != "") or ((.run_id // "") != "") or (.mode == "dogfood") or (.gitops_request.enabled == true) or (.source_reflect_request.enabled == true) or ((.bounded_host_request.enabled == true) and ((.bounded_host_request.command_id == "project.source_reflect") or (.bounded_host_request.command_id == "service.deploy")))' "$target")"
           if [[ "$active" == "true" ]]; then
             jq -e '.chat_decision_checkpoint | type == "object"' "$target" >/dev/null || { echo "CHAT_START_GATE_RECEIPT_MISSING"; exit 81; }
             jq -e '.chat_decision_checkpoint.phase == "START"' "$target" >/dev/null || { echo "CHAT_START_GATE_PHASE_DENIED"; exit 82; }
@@ -128,6 +128,13 @@ jobs:
           if [[ "$command_id" == "project.source_reflect" ]]; then
             expected_before="$(jq -r '.bounded_host_request.expected_before' "$target")"
             python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha" --expected-before "$expected_before"
+          elif [[ "$command_id" == "service.deploy" ]]; then
+            repository="$(jq -r '.bounded_host_request.repository' "$target")"
+            service="$(jq -r '.bounded_host_request.service' "$target")"
+            python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha" --repository "$repository" --service "$service"
+          elif [[ "$command_id" == "service.deploy_status" ]]; then
+            deploy_request_id="$(jq -r '.bounded_host_request.deploy_request_id' "$target")"
+            python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha" --deploy-request-id "$deploy_request_id"
           else
             python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha"
           fi
