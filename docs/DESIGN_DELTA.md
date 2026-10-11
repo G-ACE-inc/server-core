@@ -592,3 +592,31 @@ Keep A0–A4 and B0–B5 acceptance, all existing Log Source and Owner claims, p
 
 ### Verification state
 Design entry/Delta/Source and same-head CI to be verified independently. Tool B Host canonical-path read and source reflection remain NOT_VERIFIED until live server evidence exists.
+
+## 2026-10-11 — Align CHAT turn-decision checkpoints with actual execution surfaces
+
+### Baseline and reason
+
+The mandatory design-change routine in `docs/G_ACE_WORKSPACE.md` §6 requires comparing Source and Tests to the owning Design before each implementation, diff and PR, and recording intentional departures in this Design Delta. During CU #40 the existing `scripts/github_project_chat_turn_gate.py` and its tests were changed repeatedly after PRs #58–#61, while user-observed ordinary CHAT responses still ended prematurely following CI or Issue updates. Master uses ongoing work, formal report order, and command presentation as **behavioral symptoms**, not as the objective of a format-only validator.
+
+### Architecture and implementation boundary
+
+- Authority: GitHub Project #1, Rule Plane #17, CU #40. Common shared routine: `docs/G_ACE_WORKSPACE.md` §6–§7. The five-item formal-report contract is in Rule #17 §7 and is applicable only when its **actual** formal-report trigger occurs; a normal interim explanation is not a formal report.
+- Existing operational adapter: `.github/workflows/chatgpt-live-api-verify.yml` rejects **explicit Host requests** without a `START` checkpoint (PRs #60–#61), and `server-core-guard.yml` executes deterministic Gate tests. The shared Python Gate also evaluates supplied `FAILURE`/`STOP` data, but that is **not** a native GPT CHAT turn-send/response-termination interception.
+- No existing ordinary-CHAT native response-send hook is shown in the server-core repository or available GitHub/Host entrypoints reviewed in CU #40. Therefore `STOP`/report gates that run **only** inside CI are not evidence that the user-facing assistant applied them before sending its reply.
+- `manifest_verified`, `rule_full_read`, `next_action_evidence` and `completed_actions` are asserted fields supplied to a validator. Their passing does not independently establish real rule-reading, action execution, or truth of the final ChatGPT response. Keep normal user-observed behavior and source/CI/runtime evidence separate.
+
+### Correction / required development decision
+
+1. Do not create more stand-alone STOP/REPORT validators and present green CI as ordinary CHAT behavior remediation.
+2. Identify and exercise an actual **supported** ordinary CHAT turn-response observation/interposition surface, if one is available. Only then bind the existing Rule #17 legitimate stop conditions and five-item report contract to that surface; explicitly prove an early termination would be rejected and a legitimate completion accepted.
+3. Without such a surface, retain `NATIVE_CHAT_STOP_INTERCEPTION=NOT_VERIFIED`, preserve safe Host admission and continue independently executable authorized CU work. Do not fabricate a pre-send hook, add new MCP/workflows/tokens, or take another CHAT's Source ownership.
+4. For future source-changing CU #40 commits, record exact Design baseline + affected clause, acceptance condition, actual caller path and execution observation **before implementation**, compare at diff/PR and require the usual Documentation Gate (README/Tree/Design Delta/System Doc) evidence. A static code test cannot replace this design review.
+
+### Evidence, compatibility and rollback
+
+Historical implementation: [PR #58](https://github.com/G-ACE-inc/server-core/pull/58), [PR #59](https://github.com/G-ACE-inc/server-core/pull/59), [PR #60](https://github.com/G-ACE-inc/server-core/pull/60), [PR #61](https://github.com/G-ACE-inc/server-core/pull/61).
+Operational START positive: [Actions 38112125417](https://github.com/G-ACE-inc/server-core/actions/runs/38112125417). Missing checkpoint rejection: [Actions 38112102820](https://github.com/G-ACE-inc/server-core/actions/runs/38112102820). Incorrect-phase rejection: [Actions 38112242386](https://github.com/G-ACE-inc/server-core/actions/runs/38112242386).
+Behavioral counterexamples: [CU #40 observation 6105707417](https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6105707417), [audit 6105722443](https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6105722443).
+
+This is a **documentation correction** to design/application claims, not a change to existing Host permissions, credential flow, Code execution, native CHAT response handling, or the project purpose. Revert only this bounded Delta if design owner rejects it; historical Source and actual runtime boundaries are unaffected.
