@@ -27,7 +27,7 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 4. Target repository README-linked active Design Authority + Definition of Complete (Current Task is NOT the whole-project goal)
 5. Workspace/server controlが必要なTaskだけserver-coreを読む; do not pass #17 to SERVER_AI/Composer/Codex (they load #16)
 6. Target Repository/CU Source/Test/CI/Runtime Evidence, check #17 pre-action gate and execute NEXT to the safe gate
-7. Every development turn: fetch fresh Manifest, full applicable GPT CHAT #17 body, and owning Current before action when Master explicitly requires per-turn full readback (Current #40); otherwise revision/delta optimization applies. Progress explanations and Current comments are never stop conditions.
+7. Every development turn: fetch fresh Manifest, full applicable GPT CHAT #17 body, and owning Current before action when Master explicitly requires per-turn full readback (Current #40); otherwise revision/delta optimization applies. progress messages do not end work; Current comments also do not end work.
 ```
 
 **Work routing is a selection of the existing GPT_CHAT profile, not a third rule plane or automatic Work-session injection.** When ChatGPT Work leads planning, coding, research or reports on Master's behalf, it must actually load #17 and the target product Design/Current first and distinguish `PROJECT_PURPOSE_CANONICAL` from `CURRENT_WORK_PURPOSE`; no rewrite of the whole product purpose as the active PR/module/Host issue. A delegated Work-run terminal/server Codex/Composer executor uses the existing SERVER_AI #16 and only the task-specific purpose/acceptance excerpt. Fresh readback of the active Work session and its actual actions is required to say the rule was applied.
