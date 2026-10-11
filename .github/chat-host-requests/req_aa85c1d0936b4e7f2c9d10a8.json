@@ -1,0 +1,28 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Tool B CHAT read-only confirm reported prior canonical Host branch SHA before Server AI cutover; exact output differentiates original checkout from current main; no Host mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_head",
+    "expected_sha": "29f3b5e2587257de62e4b0a6fa4acfd5a263f659"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Fresh existing main manifest/#17/#10 Current from recent turns; owner handoff #6115088917; previous live request #6115158840 SOURCE_SHA_MISMATCH for desired main; this requests read-only equality with PR39 saved Host HEAD 29f3b5e."
+  }
+}
