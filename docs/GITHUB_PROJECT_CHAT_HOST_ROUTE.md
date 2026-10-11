@@ -1,3 +1,5 @@
+> **Current architecture correction (2026-10-11, server-core #10 / Tool B):** This page documents an **existing transitional DebugAI-specific authenticated route**, not the finished independent server-core common Host executor. The final common CHAT/Work→GitHub Project→Actions→Host system must have server-core-owned execution/consumer and Host test/reflect/readback independent from DebugAI's product Repository/runtime. Existing `debugai.asterav8.jp`, `/workspace/debug-ai` and DebugAI-managed test-repos paths are migration dependencies, not permanent acceptance. Preserve the working DebugAI-specific path for DebugAI until the server-core-owned alternative is verified. See `docs/SERVER_CORE_DESIGN.md` §16.9.1 for ownership and acceptance. No unadmitted Host permission change or replacement transport is authorized merely by this note.
+
 # CHAT → GitHub → bounded Host — common Project routes
 
 **Owner:** `G-ACE-inc/server-core#10` / control `#15`  

@@ -20,6 +20,32 @@ Each accepted delta records:
 - Compatibility / migration / rollback considerations
 - Verification state
 
+## 2026-10-11 — Fix Tool B independent common execution ownership
+
+### Baseline design
+The §16.9–16.10 implementation wording assigned common route/dispatch to server-core but the Host runner/admission to DebugAI, and the CHAT Host route guide described the already-working DebugAI API as the reused path.
+
+### Actual change
+The final common CHAT/Work → GitHub Project → existing Actions → Host execution system is server-core-owned and independent of DebugAI product Repository and runtime. Existing DebugAI-specific route remains transitional and dedicated to DebugAI until common runtime verification passes. §16.9.1 defines required Host test, consumer, reflection, exact SHA and negative authorization evidence.
+
+### Reason / root cause
+Merely copying Actions/dispatch while retaining DebugAI product execution checkout was incorrectly accepted as shared execution separation despite Master's explicit instruction.
+
+### Evidence
+Master clarification 2026-10-11; Control #10; Rule #17/#16 corrected; PR #89/#90 and Run 38125987709 prove Actions tests only, not independent Host runtime. Current target/manifest still refer to DebugAI-owned execution paths.
+
+### Affected scope
+server-core common execution design and CHAT Host route interpretation only; no DebugAI product/source/runtime or deployed Host permission changes.
+
+### Applied commit
+Documentation branch `docs/tool-b-independent-common-runtime-20261011`; exact PR/merge SHA tracked at PR #92. Design readback confirmed on branch; runtime unmodified.
+
+### Compatibility / migration / rollback considerations
+Keep working DebugAI product route while constructing the independent common consumer. Continue to enforce existing Host admission, credentials and least privilege. Rollback reverts these documentation-only clarifications without touching runtime.
+
+### Verification state
+SOURCE_DOC=UPDATED; GITHUB_READBACK=PASS; CI=PENDING; HOST_INDEPENDENCE=NOT_VERIFIED; RUNTIME_PARITY=NOT_VERIFIED; COMPLETE=NO.
+
 ## 2026-09-30 — Formalize server-core as the G-ACE Workspace command center
 
 ### Baseline design
