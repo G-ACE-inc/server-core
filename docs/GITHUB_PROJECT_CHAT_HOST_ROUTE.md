@@ -92,6 +92,6 @@ permission is authorized by these Source edits.
 - Master-internal `allowed_paths` still includes the host inspect/inventory scripts and runner paths added on PR #36.
 - Host authorization stays separate from this static preflight (`host_authorization_verified=false`).
 
-Stacked PR #49 merged into PR #36's **source branch only**; PR #36 remains DRAFT and unmerged into main. This source/doc correction does not modify installed Host admission or Runtime.
+Stacked PR #49 was integrated into PR #36's source branch; PR #36 itself was merged to `main` on 2026-10-10 (GitHub PR #36 direct readback). The common route registry and dispatch checks are therefore present on `main`, but repository Source availability alone does not prove canonical-parent Host admission or Runtime acceptance.
 
 **server-core main Source reflect (2026-10-11):** `G-ACE Common Chat Host Actions` on `main` may set `source_reflect_request` for registered `dlg_master_servercore_reflect_v1` (`G-ACE-inc/server-core`, branch `main`, runtime `servercore.source`) using existing `/v1/gitops/request` → `/v1/gitops/status`. When the trigger commit only updates `.github/chatgpt-live-api-target.json`, set an explicit 40-char `sha` for a reachable docs-only commit on `main`; restore idle target after terminal evidence. Docs-only pushes to this file on `main` auto-invoke Source reflect when the job emits `SOURCE_REFLECT_AUTO_DOCS_HEAD=YES` and `CHAT_REFLECT_TERMINAL=PASS`.
