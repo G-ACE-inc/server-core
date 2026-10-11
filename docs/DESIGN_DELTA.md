@@ -644,3 +644,17 @@ The **existing** `server-core-guard` CU #40 PR preflight now checks actual chang
 
 ### Limits and rollback
 The scope does not independently prove model Design comprehension, quality or native CHAT final-answer interception. The `SYSTEM_DOCUMENT_REQUIRED=YES/UPDATE_EXISTING` declaration is not yet mapped to a definite system-document file; do not mislabel that gap as verified. Direct writes to main can evade PR-time checks if branch protection is absent (protection API readback was denied). No permanent Host authorization, runtime or product-source changes. Rollback can remove the bounded guard additions and corresponding navigation changes; prior architectural Design and historical entries remain unchanged.
+
+## 2026-10-11 — Tool B autonomous development coverage (design-first extension; implementation pending)
+
+### Existing baseline and gap
+Baseline: `docs/SERVER_CORE_DESIGN.md` §16.1–16.8, §17, `docs/G_ACE_WORKSPACE.md` §6–7, GPT CHAT Rule #17 and server-core owner Control #10. Existing Tool B strongly specifies bounded READ_FILE/READ_STATUS, SOURCE_REFLECT and COMPOSE_REFLECT; §17 specifies durable Development Event recovery. Current registry and Actions dispatch expose fewer commands than the broader Host catalog. These do not constitute a complete ordinary-CHAT development loop: bounded Git diagnosis/recovery, registered test/build execution, per-service Compose lifecycle/rollback, cross-step failure→replan, and exact evidence-based cycle acceptance were not specified together.
+
+### Intentional design extension
+Appended `SERVER_CORE_DESIGN.md` §16.9 without rewriting or superseding §16.1–16.8/§17. It defines seven capability families; a common per-action capability/admission/evidence field contract; a continuous CU state machine and failure/replan branch; explicit test/negative/security/runtime acceptance. The distinction between listed, Actions-supported, Host-admitted and live-verified capabilities is mandatory. Final acceptance is a real ordinary CHAT-origin fault→diagnosis→Repository fix→test/CI→authorized Host reflection→runtime verification→GitHub Current plus independent Tool A correlation, not a green Workflow alone.
+
+### Scope, responsibilities and safeguards
+Owner: server-core Issue #10 / Project #1 for shared design and routing. Existing DebugAI owns Host runner and trusted authorization; target Repositories own project tests/Source; TGserver owns Event delivery and search. No additional tool plane, MCP, workflow, token, generic shell endpoint or top-level sibling Project. No granted host access, Source reflect, deployment, CI rerun, product change or protected admission alteration follows from a design change. Permission expansion remains separately reviewed and verified; commercial separation and existing negative tests are preserved.
+
+### Verification status and next design gate
+DESIGN_SOURCE=BRANCH_ONLY; DESIGN_REVIEW=NOT_YET_COMPLETED; IMPLEMENTATION=NOT_STARTED_THIS_CU; HOST_RUNTIME=NOT_CHANGED. Review §16.9 against the active #10 owner and existing capability/Host-source inventory, check no contradiction with §§16–17 and Rule #17, then establish an approved Design Gate before any runner/dispatcher implementation. Acceptance remains NOT_VERIFIED until implementation/test/CI/Host/Log evidence at each corresponding gate. Rollback is this append-only design addition and its §16.9 insertion only; preserve older design/history.
