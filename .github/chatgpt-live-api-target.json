@@ -3,7 +3,7 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "server-core common Actions idle after registered-test E2E attempt (Host admission pending test-repos checkout)",
+  "request": "Tool B independent Host source-reflect exact-SHA acceptance; run ONLY after Host-owned UNIX writer install and canonical checkout at expected_before",
   "gitops_request": {
     "enabled": false
   },
@@ -11,8 +11,19 @@
     "enabled": false
   },
   "bounded_host_request": {
-    "enabled": false,
-    "command_id": "project.git_head",
-    "expected_sha": "GITHUB_WORKFLOW_SHA"
+    "enabled": true,
+    "command_id": "project.source_reflect",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "expected_before": "7f28b8c5247ec33b4cc7fa78212bc4f54666d04c"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "G-ACE-inc/server-core #10 Deploy P0, PR #100/#101/#102 merged, Host exact-source-reflect E2E draft after approved socket installation"
   }
 }

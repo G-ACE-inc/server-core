@@ -12,6 +12,7 @@ import re
 import subprocess
 import sys
 
+# SOURCE_REFLECT_LIVE_E2E_MARKER=tool-b-independent-host-source-20261011
 CANONICAL_ROOT = Path("/home/admin1/server-core")
 LOCK_PATH = Path("/tmp/gace-servercore-source-reflect.lock")
 SHA = re.compile(r"^[0-9a-f]{40}$")
