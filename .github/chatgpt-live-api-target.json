@@ -9,13 +9,5 @@
   },
   "source_reflect_request": {
     "enabled": false
-  },
-  "server_command_id": "project.git_head",
-  "chat_decision_checkpoint": {
-    "phase": "STOP",
-    "stop_reason": "VERIFIED_COMPLETE",
-    "stop_evidence": "test: STOP cannot admit host read",
-    "remaining_actions": [],
-    "completion_verified": true
   }
 }
