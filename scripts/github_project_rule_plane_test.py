@@ -124,3 +124,9 @@ assert "Fetch the COMPLETE canonical Issue #17 body" in router
 assert "recover truncated/missing content" in router
 assert "progress messages do not end work" in router
 assert "do not pass #17 to SERVER_AI/Composer/Codex" in router
+
+# Ordering regression: CHAT Manifest must precede FULL #17, and #17 precede Current.
+chat_entry = readme.split("GPT_CHAT / ChatGPT Work coordinator", 1)[1].split("```", 1)[0]
+assert chat_entry.index("operations/github-project-rule-plane.json") < chat_entry.index("fetch complete Rule Plane #17 body") < chat_entry.index("GitHub Project #1 / Control #15")
+chat_route = router.split("### GPT_CHAT / ChatGPT Work", 1)[1].split("```", 2)[1]
+assert chat_route.index("operations/github-project-rule-plane.json") < chat_route.index("Fetch the COMPLETE canonical Issue #17 body") < chat_route.index("GitHub Project #1 / Control #15")
