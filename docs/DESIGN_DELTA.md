@@ -907,3 +907,10 @@ The legacy singleton `.github/chatgpt-live-api-target.json` caused conflicting G
 ### 2026-10-12 — Independent CHAT request concurrency groups
 
 Following isolated CHAT request E2E success on existing Actions→Gateway→Host, a fixed workflow-level `concurrency.group` still allowed at most one running and one pending run per group, risking loss of intermediate independent requests when multiple callers submit close together. Use the triggering SHA as the concurrency group suffix for commits that add a per-request file; retain the singleton `legacy` group for all other triggers, including the existing shared target. `cancel-in-progress: false` remains. Per-commit request admission and result idempotency are unchanged. Legacy mutating requests remain serialized; independent request submissions can have distinct waiting/running slots without replacing one another. No new workflow, gateway endpoint, token or Host authority is added.
+
+### 2026-10-12 — Tool B: bounded tracked Git diff summary (Control #10)
+
+- **Purpose:** normal GPT CHAT needs a bounded Host-side change indicator while diagnosing Source/Runtime drift without exposing arbitrary Git diff paths or contents.
+- **Design authority:** `docs/SERVER_CORE_DESIGN.md` §16.9.1, §16.9, §16.10. Reuse `servercore_bounded_host.py`, its existing Receiver and `operations/github-project-bounded-host.json`; no new transport, workflow, token or privilege.
+- **Contract:** `project.git_diff_stat` takes the existing exact `expected_sha` and returns `changed` boolean plus a maximum 200-character tracked-diff aggregate (`git diff --shortstat HEAD --`). Unknown command, SHA mismatch and malformed/multiline output fail closed. It does **not** report untracked files; use existing `project.git_status` for checkout cleanliness. No repository paths, contents, or free-form shell arguments are returned.
+- **Owner/rollout:** server-core Source; actual Host runtime remains independently gated on reviewed Source/CI, exact Host SHA reflection and same-SHA CHAT→Actions→Host→result E2E. This delta is not a runtime PASS claim. DebugAI legacy product route and PR #117 Draft are unchanged.

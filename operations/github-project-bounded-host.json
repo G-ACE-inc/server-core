@@ -9,6 +9,7 @@
     "project.git_head",
     "project.git_status",
     "project.git_recent_commits",
+    "project.git_diff_stat",
     "project.source_reflect",
     "service.deploy",
     "service.deploy_status",
@@ -23,7 +24,8 @@
     "service.deploy_status": "read_only",
     "project.git_recent_commits": "read_only",
     "project.file_inspect": "read_only",
-    "docker.logs": "read_only"
+    "docker.logs": "read_only",
+    "project.git_diff_stat": "read_only"
   },
   "transport": {
     "kind": "webhook_gateway_internal_event",
