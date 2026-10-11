@@ -698,3 +698,14 @@ Append a `push`/`main`-scoped step to the existing `server-core-guard` (no new W
 
 ### Limits, evidence, rollback
 Post-push CI failure does **not** revert Git history and is not equivalent to required status checks under branch protection. Hard pre-push block still needs GitHub Pro/Team private protection or a public-repository ruleset. Evidence: API 403 on protection/ruleset create; [Issue #40](https://github.com/G-ACE-inc/server-core/issues/40) CU scope. Rollback: remove the push admission step and restore prior README/`GITHUB_FREE_MAX` wording; PR-scoped guards from #64–#70 remain.
+
+## 2026-10-11 — Main-push PR association must match exact main merge SHA
+
+### Observed gap and baseline
+Prior CU #40 main-push admission (PR #74) checked whether the pushed commit's `GET /commits/{sha}/pulls` response included **any** merged PR. That broad predicate did not explicitly bind the PR's base to `main` or the PR's `merge_commit_sha` to the actual pushed HEAD. The shared Work Routine in `docs/G_ACE_WORKSPACE.md` §6 requires immutable revision/branch evidence rather than an ambiguous association.
+
+### Bounded implementation
+Tighten the **existing** `server-core-guard` main push check for CU #40 gate-owned paths so a qualifying PR must have `merged_at`, `base.ref == main`, and `merge_commit_sha == pushed HEAD`. This does not add a workflow, transport, token or branch protection. README and Project Tree entries reflect the stricter implemented condition.
+
+### Limits and rollback
+The check runs **after** main has already been updated. It is a CI warning/failure signal, not native private GitHub Free branch protection. An associated merged PR alone no longer qualifies without exact SHA and target branch. A true direct-main negative push is not exercised because it would contaminate unprotected main. Rollback: revert only the stricter predicate and accompanying README/Tree description. Actual per-PR/source correctness and ordinary CHAT reply termination are separate.

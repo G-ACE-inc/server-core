@@ -186,6 +186,8 @@ jobs:
               item["number"]
               for item in pulls
               if item.get("merged_at")
+              and item.get("base", {}).get("ref") == "main"
+              and item.get("merge_commit_sha") == after
           ]
           if not merged:
               print("CU40_MAIN_DIRECT_PUSH_BLOCKED")
