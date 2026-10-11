@@ -3,14 +3,14 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "Tool B registered sandbox state readonly live E2E",
+  "request": "Tool B read-only bounded Git recent commit history live E2E",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
     "enabled": false
   },
-  "server_command_id": "service.sandbox_state",
+  "server_command_id": "project.git_recent_commits",
   "chat_decision_checkpoint": {
     "phase": "START",
     "profile": "GPT_CHAT",
@@ -19,6 +19,6 @@
     "current_verified": true,
     "purpose_verified": true,
     "cu_verified": true,
-    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/78; https://github.com/G-ACE-inc/server-core/issues/10"
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/78; https://github.com/G-ACE-inc/server-core/actions/runs/38121944210"
   }
 }
