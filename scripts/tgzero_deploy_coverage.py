@@ -7,9 +7,10 @@ TGserver registration, issue commands, or mutate runtime.
 import argparse
 import json
 
-# Master-confirmed workspace component, not a second independent deployment.
+# Master-confirmed Catalog component with independent PC implementation/runtime.
 # Do not rewrite TGserver's repository-to-log-project registry.
 COMPONENT_PARENT = {"seigo-gace/gace-dev-kb": "seigo-gace/modular-catalog"}
+RUNTIME_LOCATION = {"seigo-gace/gace-dev-kb": "PC"}
 from pathlib import Path
 
 
@@ -45,8 +46,9 @@ def coverage(storage, repo_map, collector, deploy_registry):
         mapped = [row for row in rows if any(m["repository"] == repo for m in row["repository_mappings"])]
         authorized = any(repo in row["registered_deploy_repositories"] for row in mapped)
         parent = COMPONENT_PARENT.get(repo)
-        repo_rows.append({"repository": repo, "deployment_unit": parent or repo,
-                          "component_of": parent, "independent_deploy": parent is None,
+        repo_rows.append({"repository": repo, "deployment_unit": repo,
+                          "component_of": parent, "runtime_location": RUNTIME_LOCATION.get(repo, "UNVERIFIED"),
+                          "independent_deploy": True,
                           "streams": dict(streams),
                           "project_ids": sorted({pid for pid in streams.values()}),
                           "runtime_containers": sorted({c for row in mapped for c in row["runtime_container_mappings"]}),
