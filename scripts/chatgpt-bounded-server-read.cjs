@@ -130,7 +130,7 @@ function safeResult(command,raw){
 async function post(endpoint,payload,headers,request=fetch){
   const res=await request(API+endpoint,{method:"POST",headers:{"content-type":"application/json",...headers},body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)});
   if(res.status!==202&&endpoint.endsWith("/request"))throw Error("REQUEST_HTTP_NOT_202");
-  if(res.status!==200&&endpoint.endsWith("/status"))throw Error("STATUS_HTTP_NOT_200");
+  if(res.status!==200&&endpoint.endsWith("/status")){const err=Error("STATUS_HTTP_NOT_200");err.status=res.status;err.permanent=res.status>=400&&res.status<500&&res.status!==408&&res.status!==429;throw err;}
   return res.json();
 }
 function fileInspectArguments(target,offset){
@@ -169,7 +169,7 @@ async function run({request=fetch,sleep=delay,log=console.log,env=process.env,ta
     for(let i=0;i<60;i++){
       let state;
       try{state=await post("/v1/server-command/status",{repo:DEFAULT_REPO,id:q.id},headers,request);}
-      catch(err){if(i===59)throw err;await sleep(2000);continue;}
+      catch(err){if(err.permanent||i===59){if(err.status)log("SERVER_COMMAND_STATUS_HTTP="+err.status);throw err;}await sleep(2000);continue;}
       if(state.id!==q.id)throw Error("SERVER_COMMAND_ID_MISMATCH");
       if(state.state==="PASS"){
         if(state.result?.read_only!==true||state.result?.command_id!==command||state.result?.exit_code!==0)throw Error("SERVER_COMMAND_RESULT_CONTRACT");
