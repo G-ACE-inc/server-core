@@ -3,7 +3,7 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "Tool B Host source synchronization request already dispatched; idle/no repeat",
+  "request": "CHAT-originated project.git_head result-return E2E (one-shot; restore idle after terminal result)",
   "gitops_request": {
     "enabled": false
   },
@@ -11,8 +11,18 @@
     "enabled": false
   },
   "bounded_host_request": {
-    "enabled": false,
+    "enabled": true,
     "command_id": "project.git_head",
-    "expected_sha": "GITHUB_WORKFLOW_SHA"
+    "expected_sha": "ce30d479adefb8751140867fc9c5b417ab82c38d"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "GPT CHAT refreshed server-core manifest, #17, #16, Control #15/#10 and #10 Host current; main/Host target ce30d479adefb8751140867fc9c5b417ab82c38d"
   }
 }
