@@ -385,3 +385,17 @@ test("permanent Host status HTTP 404 stops polling without an unsafe retry loop"
  assert.equal(requests.filter(x=>x.endsWith("/status")).length,1);
  assert.ok(logs.includes("SERVER_COMMAND_STATUS_HTTP=404"));
 });
+
+
+test("idle dispatch requires catalog, workflow support, and read-only effect together",()=>{
+  const targetIdle={...target,server_command_id:"project.git_head"};
+  const args={target:targetIdle,route,registry,gitRefName:"main"};
+  assert.equal(d.validateDispatch(args).mode,"idle");
+  const copy=()=>JSON.parse(JSON.stringify(route));
+  const a=copy();a.routes[0].workflow_supported_command_ids=a.routes[0].workflow_supported_command_ids.filter(x=>x!=="project.git_head");
+  assert.throws(()=>d.validateDispatch({...args,route:a}),/IDLE_EFFECTIVE_ROUTE_ADMISSION_DENIED/);
+  const b=copy();b.routes[0].server_command.allowed_command_ids=b.routes[0].server_command.allowed_command_ids.filter(x=>x!=="project.git_head");
+  assert.throws(()=>d.validateDispatch({...args,route:b}),/IDLE_EFFECTIVE_ROUTE_ADMISSION_DENIED/);
+  const c=copy();c.routes[0].command_effects["project.git_head"]="write";
+  assert.throws(()=>d.validateDispatch({...args,route:c}),/IDLE_EFFECTIVE_ROUTE_ADMISSION_DENIED/);
+});
