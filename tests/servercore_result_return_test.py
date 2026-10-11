@@ -114,6 +114,16 @@ class SinkTests(unittest.TestCase):
                 sink.gh_binary((str(Path(tmp) / "missing"),))
         self.assertTrue(all(c.startswith("/") for c in sink.GH_CANDIDATES))
 
+    def test_record_dir_is_traversable_under_service_umask(self):
+        import os
+        old = os.umask(0o117)
+        try:
+            sink.accept_record(rec(), result_dir=self.dir)
+        finally:
+            os.umask(old)
+        self.assertEqual(oct(self.dir.stat().st_mode & 0o777), "0o700")
+        self.assertEqual(sink.read_record(RID, self.dir)["state"], "PASS")
+
     def test_retryable_never_published(self):
         sink.accept_record(rec(state="RETRYABLE", exit_code=1, host_sha=""), result_dir=self.dir)
         self.assertEqual(sink.pending_ids(self.dir), [])
