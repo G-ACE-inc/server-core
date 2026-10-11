@@ -85,6 +85,11 @@ jobs:
           python3 -m py_compile scripts/servercore_docker_logs_socket.py scripts/servercore_docker_logs_host_bootstrap.py tests/servercore_bounded_extension_test.py tests/servercore_docker_logs_host_bootstrap_test.py
           python3 -m unittest discover -s tests -p servercore_bounded_extension_test.py -v
           python3 -m unittest discover -s tests -p servercore_docker_logs_host_bootstrap_test.py -v
+      - name: Isolated development job provisioner tests
+        run: |
+          python3 -m py_compile scripts/servercore_dev_job_socket.py scripts/servercore_dev_job_host_bootstrap.py tests/servercore_dev_job_test.py tests/servercore_dev_job_host_bootstrap_test.py
+          python3 -m unittest discover -s tests -p servercore_dev_job_test.py -v
+          python3 -m unittest discover -s tests -p servercore_dev_job_host_bootstrap_test.py -v
       - name: TGserver ZERO full deploy coverage audit tests
         run: |
           python3 -m py_compile scripts/tgzero_deploy_coverage.py tests/tgzero_deploy_coverage_test.py

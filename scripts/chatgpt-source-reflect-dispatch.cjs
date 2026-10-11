@@ -46,7 +46,9 @@ function assertBoundedHostShape(request) {
           ? ["command_id", "enabled", "expected_sha", "offset", "path"].sort()
           : request.command_id === "docker.logs"
             ? ["command_id", "container", "enabled", "expected_sha", "tail"].sort()
-            : ["command_id", "enabled", "expected_sha"].sort();
+            : request.command_id === "dev.job"
+              ? ["argv", "command_id", "enabled", "expected_sha", "fresh", "repository", "session", "timeout_s"].sort()
+              : ["command_id", "enabled", "expected_sha"].sort();
   if (keys.join("|") !== expected.join("|")) throw new Error("BOUNDED_HOST_KEYS_INVALID");
   if (request.command_id === "project.source_reflect" &&
       !/^[0-9a-f]{40}$/.test(String(request.expected_before || ""))) {
@@ -72,6 +74,15 @@ function assertBoundedHostShape(request) {
        !Number.isInteger(request.tail) || request.tail < 1 || request.tail > 200)) {
     throw new Error("BOUNDED_HOST_LOG_TARGET_INVALID");
   }
+  if (request.command_id === "dev.job" &&
+      (!/^[A-Za-z0-9][A-Za-z0-9_.-]*\/[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(String(request.repository || "")) ||
+       !/^req_[0-9a-f]{24}$/.test(String(request.session || "")) ||
+       !Array.isArray(request.argv) || request.argv.length < 1 || request.argv.length > 8 ||
+       request.argv.some((a) => typeof a !== "string" || a.length < 1 || a.length > 1200) ||
+       !Number.isInteger(request.timeout_s) || request.timeout_s < 1 || request.timeout_s > 15 ||
+       typeof request.fresh !== "boolean")) {
+    throw new Error("BOUNDED_HOST_JOB_TARGET_INVALID");
+  }
   const shaVal = String(request.expected_sha || "");
   // Service deploy targets another repository: never the workflow SHA alias.
   if (shaVal === "GITHUB_WORKFLOW_SHA" && String(request.command_id || "").startsWith("service.deploy")) {
@@ -90,7 +101,7 @@ function validateBoundedHostRequest(request, contract) {
   const allowed = new Set(contract.allowed_command_ids || []);
   if (!allowed.has(request.command_id)) throw new Error("BOUNDED_HOST_COMMAND_DENIED");
   const effects = contract.command_effects || {};
-  if (!["read_only", "source_reflect", "service_deploy"].includes(effects[request.command_id])) throw new Error("BOUNDED_HOST_EFFECT_DENIED");
+  if (!["read_only", "source_reflect", "service_deploy", "dev_job"].includes(effects[request.command_id])) throw new Error("BOUNDED_HOST_EFFECT_DENIED");
 }
 
 function loadJson(path) {

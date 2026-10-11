@@ -6,11 +6,22 @@ This checks supplied evidence. It cannot intercept a normal ChatGPT reply.
 import argparse
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
 PHASES = {"START", "FAILURE", "STOP"}
 STOP_REASONS = {"MASTER_INTERRUPT", "MASTER_ONLY_ACTION", "VERIFIED_COMPLETE", "ALL_ACTIONS_BLOCKED"}
+
+# A locator is only a syntax check: no network readback or provenance claim.
+EVIDENCE_LOCATOR = re.compile(
+    r"^https://github\.com/[^/\s]+/[^/\s]+/(?:issues/[1-9][0-9]*(?:#issuecomment-[1-9][0-9]*)?|actions/runs/[1-9][0-9]*|commit/[0-9a-f]{40}|pull/[1-9][0-9]*)$"
+)
+
+
+def evidence_locator(value):
+    return isinstance(value, str) and bool(EVIDENCE_LOCATOR.fullmatch(value))
+
 ALLOWED_KEYS = {
     "phase", "profile", "manifest_verified", "rule_full_read", "rule_plane_read",
     "rule_plane_profile", "current_verified", "purpose_verified", "cu_verified",
@@ -89,7 +100,7 @@ def evaluate(state):
             return "FAILURE_COMPLETED_NOT_IN_AVAILABLE_ACTIONS"
         if independent and next_action not in completed:
             return "FAILURE_NEXT_ACTION_NOT_COMPLETED"
-        if independent and (not isinstance(state.get("next_action_evidence"), str) or not state["next_action_evidence"].strip()):
+        if independent and not evidence_locator(state.get("next_action_evidence")):
             return "FAILURE_NEXT_ACTION_NOT_EXECUTED"
         return "PASS"
     reason = state.get("stop_reason")

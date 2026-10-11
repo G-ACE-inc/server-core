@@ -14,7 +14,8 @@
     "service.deploy",
     "service.deploy_status",
     "project.file_inspect",
-    "docker.logs"
+    "docker.logs",
+    "dev.job"
   ],
   "command_effects": {
     "project.git_head": "read_only",
@@ -25,7 +26,8 @@
     "project.git_recent_commits": "read_only",
     "project.file_inspect": "read_only",
     "docker.logs": "read_only",
-    "project.git_diff_stat": "read_only"
+    "project.git_diff_stat": "read_only",
+    "dev.job": "dev_job"
   },
   "transport": {
     "kind": "webhook_gateway_internal_event",
@@ -80,5 +82,37 @@
   ],
   "registered_log_containers": [
     "server-core-bounded-host"
-  ]
+  ],
+  "dev_job": {
+    "schema": "gace.servercore-dev-job.policy/v1",
+    "socket": "/run/gace/servercore-dev-job.sock",
+    "image": "gace-server-core-bounded-host:gitdiff-20261012",
+    "design_ref": "docs/SERVER_CORE_DESIGN.md#16.11",
+    "design_section_sha256": "8856bd4d63312b6b9c21ad37cd0171a4561a6375575968f2dd19f2abe1976b05",
+    "allowed_executables": [
+      "git",
+      "python3",
+      "sh"
+    ],
+    "registered_repositories": {
+      "G-ACE-inc/server-core": {
+        "owner": "G-ACE-inc",
+        "root": "/home/admin1/server-core",
+        "branch": "main",
+        "project_item": "G-ACE-inc Project #1 / Control #10"
+      }
+    },
+    "limits": {
+      "timeout_s_max": 15,
+      "argv_max": 8,
+      "memory": "512m",
+      "cpus": 1,
+      "pids": 128,
+      "network": "none",
+      "capture_cap_bytes": 262144,
+      "workspace_bytes": 209715200,
+      "max_sessions": 8,
+      "session_ttl_seconds": 86400
+    }
+  }
 }
