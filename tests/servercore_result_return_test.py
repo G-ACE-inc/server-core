@@ -45,6 +45,12 @@ class RedactionTests(unittest.TestCase):
         text, cut = sink.bound("line 1\n" * 1000)
         self.assertEqual((len(text), cut), (sink.STREAM_LIMIT, True))
 
+    def test_json_escaped_keyed_values_are_redacted_without_eating_next_line(self):
+        text, _ = sink.bound(json.dumps({"content": 'password = "hunter2"\nAPI_KEY: abcdef\nname: ok', "password": "p4ss"}))
+        for leaked in ("hunter2", "abcdef", "p4ss"):
+            self.assertNotIn(leaked, text)
+        self.assertIn("name: ok", text)
+
     def test_digest_and_control_characters(self):
         digest = "d" * 64
         text, _ = sink.bound("\x1b[31m" + digest + "\x00")

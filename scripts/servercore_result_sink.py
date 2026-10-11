@@ -28,7 +28,7 @@ MARKER = "GACE_BOUNDED_HOST_RESULT"
 RECORD_SCHEMA = "gace.servercore-bounded-result.record/v1"
 QUERY_SCHEMA = "gace.servercore-bounded-result.query/v1"
 MAX_REQUEST = 24576
-STREAM_LIMIT = 2000
+STREAM_LIMIT = 4000
 REQ_ID = re.compile(r"^req_[0-9a-f]{24}$")
 SHA = re.compile(r"^[0-9a-f]{40}$")
 COMMAND = re.compile(r"^[a-z][a-z0-9_.]{2,63}$")
@@ -45,7 +45,7 @@ _SECRET_PATTERNS = (
     re.compile(r"\bgithub_pat_[A-Za-z0-9_]{16,}\b"),
     re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{8,}"),
 )
-_KEYED = re.compile(r"(?i)\b([A-Za-z0-9_.-]*(?:secret|token|password|passwd|api[_-]?key|authorization|hmac|private[_-]?key)[A-Za-z0-9_.-]*)(\s*[:=]\s*)(\"[^\"]*\"|'[^']*'|\S+)")
+_KEYED = re.compile(r"(?i)\b([A-Za-z0-9_.-]*(?:secret|token|password|passwd|api[_-]?key|authorization|hmac|private[_-]?key)[A-Za-z0-9_.-]*)(\\?[\"']?\s*[:=]\s*)(\\?\"[^\"]*\"|'[^']*'|(?:(?!\\n)\S)+)")
 _LONG = re.compile(r"[A-Za-z0-9+/=_-]{48,}")
 _CTRL = re.compile(r"\x1b\[[0-9;]*[A-Za-z]|[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 

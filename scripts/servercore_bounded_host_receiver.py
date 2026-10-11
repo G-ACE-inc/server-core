@@ -28,6 +28,9 @@ SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$")
 SERVICE_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
 DEPLOY_SOCKET = "/run/gace/servercore-service-deploy.sock"
+DOCKER_LOGS_SOCKET = "/run/gace/servercore-docker-logs.sock"
+FILE_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_.][A-Za-z0-9_./-]{0,159}$")
+CONTAINER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 RESULT_SOCKET = "/run/gace/servercore-result.sock"
 RESULT_SCHEMA = "gace.servercore-bounded-result.record/v1"
 COMMAND_PATTERN = re.compile(r"^[a-z][a-z0-9_.]{2,63}$")
@@ -91,6 +94,23 @@ def validate_request(value, contract):
             fail("DEPLOY_STATUS_ID_INVALID", 422)
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
                 "deploy_request_id": deploy_id}
+    if command_id == "project.file_inspect":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "path", "offset"}:
+            fail("FILE_INSPECT_KEYS_INVALID", 422)
+        path, offset = value["path"], value["offset"]
+        if not isinstance(path, str) or not FILE_PATH_PATTERN.fullmatch(path) or ".." in path \
+                or type(offset) is not int or not 0 <= offset <= 4_000_000:
+            fail("FILE_INSPECT_TARGET_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha, "path": path, "offset": offset}
+    if command_id == "docker.logs":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "container", "tail"}:
+            fail("DOCKER_LOGS_KEYS_INVALID", 422)
+        container, tail = value["container"], value["tail"]
+        if not isinstance(container, str) or not CONTAINER_PATTERN.fullmatch(container) \
+                or type(tail) is not int or not 1 <= tail <= 200:
+            fail("DOCKER_LOGS_TARGET_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
+                "container": container, "tail": tail}
     if set(value) != {"schema", "id", "command_id", "expected_sha"}:
         fail("REQUEST_KEYS_INVALID", 422)
     return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha}
@@ -181,6 +201,35 @@ def dispatch_deploy_status(request, socket_path=DEPLOY_SOCKET):
             "compose_digest", "recreated", "state")
     return {**{k: result[k] for k in keep if k in result}, "command_id": request["command_id"],
             "read_only": True}
+
+
+
+def dispatch_docker_logs(request, root, socket_path=None):
+    sha = bounded_host.head_sha(bounded_host.checked_root(root), request["expected_sha"])
+    data = (json.dumps({"schema": "gace.servercore-docker-logs.request/v1", "id": request["id"],
+                        "container": request["container"], "tail": request["tail"]},
+                       separators=(",", ":")) + "\n").encode("utf-8")
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(45)
+            client.connect(socket_path or DOCKER_LOGS_SOCKET)
+            client.sendall(data)
+            with client.makefile("rb") as stream:
+                reply = json.loads(stream.readline(32768))
+    except (OSError, ValueError, TypeError):
+        fail("DOCKER_LOGS_EXECUTOR_UNAVAILABLE", 503)
+    if not isinstance(reply, dict):
+        fail("DOCKER_LOGS_RESULT_INVALID", 503)
+    if reply.get("ok") is not True:
+        error = str(reply.get("error", ""))
+        if error in {"DOCKER_LOGS_FAILED", "DOCKER_LOGS_EXECUTION_FAILED", "INTERNAL_ERROR", "DOCKER_BINARY_MISSING"}:
+            fail("DOCKER_LOGS_EXECUTION_FAILED", 503)
+        fail("DOCKER_LOGS_DENIED_" + (error if re.fullmatch(r"[A-Z_]{3,60}", error) else "UNKNOWN"), 422)
+    if reply.get("request_id") != request["id"] or reply.get("container") != request["container"]:
+        fail("DOCKER_LOGS_RESULT_MISMATCH", 503)
+    return {"command_id": request["command_id"], "source_sha": sha, "read_only": True,
+            "container": reply["container"], "tail": reply["tail"], "truncated": bool(reply.get("truncated")),
+            "logs": str(reply.get("logs", ""))}
 
 
 def report_result(record, socket_path=None):
@@ -285,6 +334,11 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                     result = dispatch_deploy(request)
                 elif request["command_id"] == "service.deploy_status":
                     result = dispatch_deploy_status(request)
+                elif request["command_id"] == "project.file_inspect":
+                    result = bounded_host.file_inspect(root, request["expected_sha"], request["path"],
+                                                       request["offset"], contract.get("registered_files"))
+                elif request["command_id"] == "docker.logs":
+                    result = dispatch_docker_logs(request, root)
                 else:
                     result = bounded_host.execute(
                         request["command_id"],

@@ -42,7 +42,11 @@ function assertBoundedHostShape(request) {
       ? ["command_id", "enabled", "expected_sha", "repository", "service"].sort()
       : request.command_id === "service.deploy_status"
         ? ["command_id", "deploy_request_id", "enabled", "expected_sha"].sort()
-        : ["command_id", "enabled", "expected_sha"].sort();
+        : request.command_id === "project.file_inspect"
+          ? ["command_id", "enabled", "expected_sha", "offset", "path"].sort()
+          : request.command_id === "docker.logs"
+            ? ["command_id", "container", "enabled", "expected_sha", "tail"].sort()
+            : ["command_id", "enabled", "expected_sha"].sort();
   if (keys.join("|") !== expected.join("|")) throw new Error("BOUNDED_HOST_KEYS_INVALID");
   if (request.command_id === "project.source_reflect" &&
       !/^[0-9a-f]{40}$/.test(String(request.expected_before || ""))) {
@@ -57,6 +61,16 @@ function assertBoundedHostShape(request) {
   if (request.command_id === "service.deploy_status" &&
       !/^req_[0-9a-f]{24}$/.test(String(request.deploy_request_id || ""))) {
     throw new Error("BOUNDED_HOST_DEPLOY_REQUEST_ID_INVALID");
+  }
+  if (request.command_id === "project.file_inspect" &&
+      (!/^[A-Za-z0-9_.][A-Za-z0-9_./-]{0,159}$/.test(String(request.path || "")) || String(request.path).includes("..") ||
+       !Number.isInteger(request.offset) || request.offset < 0 || request.offset > 4000000)) {
+    throw new Error("BOUNDED_HOST_FILE_TARGET_INVALID");
+  }
+  if (request.command_id === "docker.logs" &&
+      (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.test(String(request.container || "")) ||
+       !Number.isInteger(request.tail) || request.tail < 1 || request.tail > 200)) {
+    throw new Error("BOUNDED_HOST_LOG_TARGET_INVALID");
   }
   const shaVal = String(request.expected_sha || "");
   // Service deploy targets another repository: never the workflow SHA alias.

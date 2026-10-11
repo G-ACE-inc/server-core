@@ -85,6 +85,49 @@ def execute(command_id, root=CANONICAL_ROOT, expected_sha=None):
     return result
 
 
+FILE_CHUNK_BYTES = 2400
+FILE_MAX_OFFSET = 4_000_000
+
+
+def head_sha(root, expected_sha=None):
+    sha = _run(["git", "rev-parse", "HEAD"], root).strip()
+    if len(sha) != 40 or any(c not in "0123456789abcdef" for c in sha):
+        raise BoundaryError("GIT_HEAD_INVALID")
+    if expected_sha is not None and sha != expected_sha:
+        raise BoundaryError("SOURCE_SHA_MISMATCH")
+    return sha
+
+
+def file_inspect(root, expected_sha, relative, offset, registered_files):
+    """Read one bounded chunk of an exactly registered canonical-checkout file."""
+    root = checked_root(root)
+    sha = head_sha(root, expected_sha)
+    if not isinstance(relative, str) or relative not in set(registered_files or ()):
+        raise BoundaryError("FILE_NOT_REGISTERED")
+    if type(offset) is not int or not 0 <= offset <= FILE_MAX_OFFSET:
+        raise BoundaryError("FILE_OFFSET_INVALID")
+    path = root / relative
+    if path.is_symlink() or not path.is_file():
+        raise BoundaryError("FILE_MISSING")
+    try:
+        real = path.resolve(strict=True)
+        real.relative_to(root)
+        for parent in path.relative_to(root).parents:
+            if (root / parent).is_symlink():
+                raise BoundaryError("FILE_SYMLINK_DENIED")
+        size = real.stat().st_size
+        with real.open("rb") as stream:
+            stream.seek(offset)
+            data = stream.read(FILE_CHUNK_BYTES)
+    except (OSError, ValueError):
+        raise BoundaryError("FILE_READ_FAILED") from None
+    end = offset + len(data)
+    return {"command_id": "project.file_inspect", "source_sha": sha, "read_only": True,
+            "path": relative, "offset": offset, "size": size,
+            "next_offset": end if end < size else None,
+            "content": data.decode("utf-8", errors="replace")}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--command-id", required=True)
