@@ -359,3 +359,15 @@ test("existing Host git status emits bounded counts without filenames",()=>{
   assert.deepEqual(m.safeResult("project.git_status",""),["SERVER_GIT_WORKTREE_CLEAN=true","SERVER_GIT_CHANGED_ENTRIES=0"]);
   assert.deepEqual(m.safeResult("project.git_status"," M sensitive.env\n?? notes.txt"),["SERVER_GIT_WORKTREE_CLEAN=false","SERVER_GIT_CHANGED_ENTRIES=2"]);
 });
+
+
+test("bounded disk and git changed-path readbacks reject unsafe output",()=>{
+  assert.equal(m.ALLOWED.has("system.disk_usage"),true);
+  assert.equal(m.ALLOWED.has("project.git_changed_paths"),true);
+  assert.deepEqual(m.safeResult("system.disk_usage","blocks_kb=252838256\nused_percent=44%"),["SERVER_DISK_USED_PERCENT=44","SERVER_DISK_BLOCKS_KB=252838256"]);
+  assert.throws(()=>m.safeResult("system.disk_usage","used_percent=150%\nblocks_kb=100"),/SERVER_DISK_RESULT_INVALID/);
+  assert.throws(()=>m.safeResult("system.disk_usage","not-an-observation"),/SERVER_DISK_RESULT_INVALID/);
+  assert.deepEqual(m.safeResult("project.git_changed_paths","package-lock.json\nserver/tests/example.test.cjs"),["SERVER_GIT_CHANGED_PATH_COUNT=2"]);
+  assert.deepEqual(m.safeResult("project.git_changed_paths",""),["SERVER_GIT_CHANGED_PATH_COUNT=0"]);
+  assert.throws(()=>m.safeResult("project.git_changed_paths","evil\u0000path"),/SERVER_CHANGED_PATHS_INVALID/);
+});
