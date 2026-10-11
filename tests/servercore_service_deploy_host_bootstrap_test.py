@@ -61,7 +61,7 @@ class BootstrapTests(unittest.TestCase):
 
     def test_unit_is_user_level_without_root_or_network(self):
         self.assertNotIn("User=root", m.UNIT_TEXT)
-        self.assertIn("NoNewPrivileges=yes", m.UNIT_TEXT)
+        self.assertIn("NoNewPrivileges=no", m.UNIT_TEXT)  # sg is setuid; see UNIT_TEXT note
         self.assertIn("UMask=0117", m.UNIT_TEXT)
         self.assertNotIn("0.0.0.0", m.UNIT_TEXT)
         self.assertIn("WantedBy=default.target", m.UNIT_TEXT)
@@ -82,6 +82,49 @@ class BootstrapTests(unittest.TestCase):
             with self.assertRaises(m.AdmissionError):
                 m.install(HEAD)
         ctl.assert_not_called()
+
+
+class UnitUpgradeTests(unittest.TestCase):
+    def test_unit_starts_through_sg_docker_without_root(self):
+        self.assertIn('ExecStart=/usr/bin/sg docker -c "/usr/bin/python3 /home/admin1/server-core/scripts/', m.UNIT_TEXT)
+        self.assertIn("NoNewPrivileges=no", m.UNIT_TEXT)
+        self.assertIn("UMask=0117", m.UNIT_TEXT)
+        self.assertNotIn("sudo", m.UNIT_TEXT)
+        self.assertEqual(len(m.LEGACY_UNIT_TEXTS), 1)
+        self.assertNotIn("sg docker", m.LEGACY_UNIT_TEXTS[0])
+
+    def run_install(self, existing):
+        import tempfile, os, stat
+        with tempfile.TemporaryDirectory() as tmp:
+            unit = Path(tmp) / "x.service"
+            if existing is not None:
+                unit.write_text(existing)
+
+            class FakeSocket:
+                def is_socket(self):
+                    return True
+
+                def stat(self):
+                    class S:
+                        st_uid = os.getuid()
+                        st_mode = stat.S_IFSOCK | 0o660
+                    return S()
+            with patch.object(m, "UNIT", unit), patch.object(m, "preflight"), \
+                    patch.object(m, "systemctl_user"), patch.object(m, "SOCKET", FakeSocket()):
+                try:
+                    return m.install(HEAD), unit.read_text()
+                except m.AdmissionError as exc:
+                    return str(exc), unit.read_text()
+
+    def test_legacy_unit_is_upgraded_atomically_and_unknown_unit_is_not_overwritten(self):
+        result, text = self.run_install(m.LEGACY_UNIT_TEXTS[0])
+        self.assertEqual(text, m.UNIT_TEXT)
+        self.assertIsInstance(result, dict)
+        self.assertEqual(self.run_install(m.UNIT_TEXT)[1], m.UNIT_TEXT)
+        result, text = self.run_install("[Service]\nExecStart=/bin/true\n")
+        self.assertEqual(result, "EXISTING_UNIT_CONFLICT")
+        self.assertIn("/bin/true", text)
+        self.assertEqual(self.run_install(None)[1], m.UNIT_TEXT)
 
 
 if __name__ == "__main__":
