@@ -18,6 +18,7 @@ const IDLE_READ_COMMANDS = new Set([
   "project.git_changed_paths",
   "system.project_file_inspect",
   "service.registered_container_logs",
+  "service.debug_ai_logs",
 ]);
 
 const REFLECT_TRIGGER_BRANCHES = new Set([
