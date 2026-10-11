@@ -197,6 +197,14 @@ Before implementation, identify the **owning Project's actual Design/Specificati
 
 At the initial diff, before PR/merge, and whenever the work changes behavior or scope, compare changed Source/Tests with those identified design requirements and the Current CU acceptance criteria. If baseline cannot be read, report `DESIGN_BASELINE_NOT_VERIFIED`; if implementation diverges, report `DESIGN_DRIFT_REVIEW_REQUIRED` with exact design section, code paths and proposed disposition. Suspend only design-changing mutation whose authorization is unresolved. Do not rewrite design to match incidental code, override Master-owned intent or fabricate conformance. A legitimate correction must be recorded at the owning Design/Current authority before resuming.
 
+
+
+#### Per-turn rule entry and design-first classification (existing Work Routine §6)
+
+At **every development turn** (including consecutive turns in the same CU), re-fetch the fresh main `operations/github-project-rule-plane.json`, read the applicable canonical Rule Plane (#17 for GPT CHAT / Work orchestrator; #16 for SERVER_AI / Composer / Codex), and retrieve owning Project Current before choosing an action. Compare fixed `PROJECT_PURPOSE_CANONICAL`, adopted Design, owning CU acceptance and the intended diff. Classify design state as `DESIGN_VERIFIED`, `DESIGN_NOT_FOUND`, `DESIGN_NOT_VERIFIED`, `DESIGN_DRIFT`, or `DESIGN_NOT_APPLICABLE`; distinguish `ADOPTED_MAIN` from `PROPOSED_PR` using existing README/Current/PR evidence only (no new Project fields). Block only the affected design-changing mutation when design is absent; report concrete missing decisions to Master without inventing design. Treat inaccessible readback as `DESIGN_NOT_VERIFIED` (UNKNOWN), never as proven absence. Do not treat an unmerged design PR as adopted baseline for product-intent changes. Routine fixes fully inside an adopted design may proceed without a new design PR or per-turn branch when scope stays aligned.
+
+Mechanical receipts for supported entry points use `scripts/work_routine_design_entry_gate.py` (deterministic JSON evidence) and the existing START checkpoint gate; this does **not** intercept ordinary live CHAT answer submission.
+
 This is a **readback/review step of existing Work Routine**, not a second design authority or an automatic semantic-code equivalence assertion. Targeted CI may enforce evidence fields when actually available, but cannot prove semantic design alignment from prose alone.
 
 ## 7. Documentation Gate

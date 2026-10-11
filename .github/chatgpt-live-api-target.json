@@ -1,0 +1,18 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "CHAT-originated project.git_status E2E returned PASS (run 38153497069, req_9937d85539805c920c0f2658); idle/no repeat",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": false,
+    "command_id": "project.git_head",
+    "expected_sha": "GITHUB_WORKFLOW_SHA"
+  }
+}

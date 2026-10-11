@@ -65,6 +65,7 @@
       "initial_runtime_branch": "master-internal-runtime-20261008"
     }
   },
+  "chat_github_host_routes": "operations/github-project-chat-host-routes.json",
   "boundaries": {
     "debugai_implementation_copied_into_server_core": false,
     "debugai_repository_mutation_required_for_registration": false,

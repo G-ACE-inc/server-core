@@ -108,6 +108,18 @@ if has_repo_variable GACE_EVENT_GATEWAY_URL; then var_state='CONFIGURED'; else s
 printf 'ACTIONS_GATEWAY_TOKEN=%s\n' "$secret_state"
 printf 'ACTIONS_GATEWAY_URL=%s\n' "$var_state"
 printf 'SECRET_VALUE_EXPOSED=NO\n'
+printf 'BOUNDED_HOST_RECEIVER_RUNTIME=%s\n' "$(docker ps -q --filter "name=server-core-bounded-host" 2>/dev/null | head -n1 | grep -q . && echo PRESENT || echo ABSENT)"
+if [ -f "$SERVER_CORE_ROOT/scripts/servercore_bounded_host.py" ]; then
+  head_sha="$(git_value "$SERVER_CORE_ROOT" head)"
+  if bounded_out="$(python3 "$SERVER_CORE_ROOT/scripts/servercore_bounded_host.py" --command-id project.git_head --expected-sha "$head_sha" 2>/dev/null)"; then
+    printf 'SERVERCORE_BOUNDED_HOST_LOCAL=PASS\n'
+    printf 'SERVERCORE_BOUNDED_HOST_SHA=%s\n' "$head_sha"
+  else
+    printf 'SERVERCORE_BOUNDED_HOST_LOCAL=FAIL\n'
+  fi
+else
+  printf 'SERVERCORE_BOUNDED_HOST_LOCAL=NOT_INSTALLED\n'
+fi
 printf 'MUTATION_PERFORMED=NO\n'
 printf 'VERIFY=PROJECT_CONTROL_RUNTIME_READBACK_COMPLETE\n'
 printf 'EXIT_CODE=%s\n' "$rc"

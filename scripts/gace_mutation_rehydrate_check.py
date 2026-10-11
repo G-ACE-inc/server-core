@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import re
@@ -357,6 +358,10 @@ def check(
                 current_mission_verified="NO",
             )
 
+    routine_deny = evaluate_work_routine_turn_receipt()
+    if routine_deny is not None:
+        return routine_deny
+
     return emit(
         "ALLOW",
         "IDENTITY_BOUND",
@@ -368,6 +373,47 @@ def check(
         exact_next_gate=binding["exact_next_gate"].strip(),
         current_mission_verified="NO",
     )
+
+
+def evaluate_work_routine_turn_receipt() -> dict | None:
+    """Optional mechanical Work Routine turn receipt (JSON path in env)."""
+    raw = os.environ.get("GACE_WORK_ROUTINE_TURN", "").strip()
+    if not raw:
+        return None
+    turn_path = Path(raw)
+    if not turn_path.is_file():
+        return emit(
+            "DENY",
+            "WORK_ROUTINE_TURN_RECEIPT_MISSING",
+            current_mission_verified="NO",
+        )
+    try:
+        state = json.loads(turn_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, TypeError):
+        return emit(
+            "DENY",
+            "WORK_ROUTINE_TURN_RECEIPT_UNREADABLE",
+            current_mission_verified="NO",
+        )
+    gate_path = Path(__file__).resolve().with_name("work_routine_design_entry_gate.py")
+    spec = importlib.util.spec_from_file_location("work_routine_design_entry_gate", gate_path)
+    if spec is None or spec.loader is None:
+        return emit(
+            "DENY",
+            "WORK_ROUTINE_GATE_UNAVAILABLE",
+            current_mission_verified="NO",
+        )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    outcome = module.evaluate_turn(state)
+    if outcome == "PASS":
+        return None
+    return emit(
+        "DENY",
+        outcome,
+        current_mission_verified="NO",
+    )
+
 
 
 def checkpoint_comment_body(repo_root: Path) -> str:

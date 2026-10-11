@@ -1,0 +1,28 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "GPT CHAT independent verified project.git_recent_commits E2E #10",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "expected_sha": "214a36d69083438a3eca8d30ab174108e4f85337",
+    "command_id": "project.git_recent_commits"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "GPT CHAT fresh manifest, GPT_CHAT Rule #17 full, SERVER_AI #16, Control #10/#15 and serverAI Host runtime evidence #6111295678; actual Host SHA 214a36d69083438a3eca8d30ab174108e4f85337; existing bounded command authorized"
+  }
+}

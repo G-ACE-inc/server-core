@@ -1,0 +1,30 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "GPT CHAT isolated continuation: verify registered file-inspect page offset 2400 on server-core Host",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.file_inspect",
+    "expected_sha": "214a36d69083438a3eca8d30ab174108e4f85337",
+    "path": "docs/LOAD_SCOPE.md",
+    "offset": 2400
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Manifest #17 and #10 fresh, canonical server-core design 16.9-16.10; earlier file inspect req_5f42c1425f74c06ed67d3aab returned next_offset=2400 at Host 214a36d; Actions pre-run failure 38156967716 had steps=[] runner_id=0, no Host dispatch"
+  }
+}

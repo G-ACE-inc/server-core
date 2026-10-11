@@ -1,0 +1,152 @@
+{
+  "schema": "gace.github-project-chat-host-routes/v1",
+  "project": {
+    "owner": "seigo-gace",
+    "number": 1,
+    "node_id": "PVT_kwHODOQFoM4BEJII"
+  },
+  "routing_authority": "operations/github-project-debugai-routing.json",
+  "transport": {
+    "kind": "github_actions_push_trigger",
+    "debugai_api_base_url": "https://debugai.asterav8.jp",
+    "cloudflare_access_secret_names": [
+      "DEBUGAI_CF_ACCESS_CLIENT_ID",
+      "DEBUGAI_CF_ACCESS_CLIENT_SECRET"
+    ],
+    "server_command_request_path": "/v1/server-command/request",
+    "server_command_status_path": "/v1/server-command/status",
+    "implementation_owner": "seigo-gace/debug-ai",
+    "workflow_dispatch_available": false
+  },
+  "evidence_contract": {
+    "action_green_is_not_runtime_pass": true,
+    "required_markers_any_of_groups": [
+      [
+        "SERVER_COMMAND_REQUEST_ID",
+        "SERVER_COMMAND_STATE"
+      ],
+      [
+        "LIVE_HOST_HEAD",
+        "LIVE_HEALTH"
+      ]
+    ],
+    "recommended_markers": [
+      "LIVE_API_AUTH=CONFIGURED",
+      "HEALTH_HTTP=200",
+      "SERVER_COMMAND_READ_ONLY=TRUE",
+      "GITOPS_HOST_STATE=PASS"
+    ],
+    "forbidden_markers": [
+      "PRODUCTION_DEPLOY_CALLED=YES",
+      "APPROVE_APPLY_VERIFY_CALLED=YES"
+    ],
+    "command_id_pattern": "^cmd_[0-9a-f]{24}$"
+  },
+  "routes": [
+    {
+      "id": "route_debugai_live_read",
+      "project_control_url": "https://github.com/seigo-gace/debug-ai/issues/41",
+      "subject_repository": "seigo-gace/debug-ai",
+      "workflow_repository": "G-ACE-inc/server-core",
+      "github_trigger": {
+        "workflow_file": ".github/workflows/chatgpt-live-api-verify.yml",
+        "target_file": ".github/chatgpt-live-api-target.json",
+        "allowed_branches": [
+          "main",
+          "feat/chat-actions-client-migration-20261011"
+        ]
+      },
+      "server_command": {
+        "execution_repo": "/workspace/debug-ai",
+        "allowed_execution_repo_prefixes": [
+          "/workspace/debug-ai"
+        ],
+        "read_only": true,
+        "allowed_command_ids": [
+          "project.git_head",
+          "project.pwd",
+          "project.git_status",
+          "service.debug_ai_health",
+          "service.debug_ai_logs",
+          "service.registered_container_logs",
+          "service.debug_ai_state",
+          "service.sandbox_state",
+          "system.projects_inventory",
+          "system.project_file_inspect",
+          "github.auth_status_scopes",
+          "project.git_recent_commits",
+          "system.disk_usage",
+          "project.git_changed_paths",
+          "project.python_unittest"
+        ]
+      },
+      "chat_handoff_note": "Common CHAT Actions owned by server-core: .github/chatgpt-live-api-target.json on main or migration branch triggers .github/workflows/chatgpt-live-api-verify.yml, then existing authenticated DebugAI API and Host. Verified positive runs include 38071718990 project.git_head, 38071760084 registered-container logs, 38117859559 system.projects_inventory, 38119011721 system.disk_usage, 38119034738 project.git_changed_paths, 38121803165 service.debug_ai_logs, 38121944210 service.sandbox_state; expected denial 38071788487. project.git_recent_commits verified 38123852985 (cmd_25935adb02776b64d6c1e46b SERVER_COMMAND_STATE=PASS) after client status classification fix (#79); prior failed run 38121975277 reached cmd_74cbbc22fa758c52d2d31eaf then STATUS_HTTP_NOT_200 before #79. Runtime idle read admission requires catalog, workflow_supported_command_ids, and read_only effect intersection (#80). Legacy DebugAI workflow remains rollback-only; do not mutate DebugAI product. Match exact push run HEAD and Host receipt; Actions success alone is insufficient. Current main/migration idle dispatch supports only IDLE_READ_COMMANDS (see scripts/chatgpt-source-reflect-dispatch.cjs); catalog-only Host commands such as project.pwd and github.auth_status_scopes are not Actions-dispatch eligible. Registered server-core tests use operations/github-project-chat-host-test-manifest.json with existing Host project.python_unittest in an isolated test-repos checkout; Host E2E for that path is pending until checkout exists. Independent server-core bounded Host: optional `.github/chatgpt-live-api-target.json` `bounded_host_request` (enabled, command_id, expected_sha) dispatches via existing Gateway credentials to destination `server-core-bounded-host` (see operations/github-project-bounded-host.json); mutually exclusive with DebugAI server_command/gitops/source_reflect. VPS local consumer verify: `project_control_runtime_readback.sh` → SERVERCORE_BOUNDED_HOST_LOCAL. Receiver compose service `server-core-bounded-host`; gateway registration reference in operations/webhook-gateway-bounded-host-destination.reference.json.",
+      "workflow_supported_command_ids": [
+        "system.projects_inventory",
+        "project.git_head",
+        "service.debug_ai_health",
+        "service.registered_container_logs",
+        "service.debug_ai_state",
+        "system.project_file_inspect",
+        "project.git_status",
+        "system.disk_usage",
+        "project.git_changed_paths",
+        "service.debug_ai_logs",
+        "service.sandbox_state",
+        "project.git_recent_commits",
+        "project.python_unittest"
+      ],
+      "command_effects": {
+        "project.git_head": "read_only",
+        "service.debug_ai_health": "read_only",
+        "service.debug_ai_logs": "read_only",
+        "service.registered_container_logs": "read_only",
+        "service.debug_ai_state": "read_only",
+        "service.sandbox_state": "read_only",
+        "project.git_recent_commits": "read_only",
+        "system.projects_inventory": "read_only",
+        "system.project_file_inspect": "read_only",
+        "project.git_status": "read_only",
+        "system.disk_usage": "read_only",
+        "project.git_changed_paths": "read_only",
+        "project.python_unittest": "read_only"
+      }
+    },
+    {
+      "id": "route_asteria_baseline_probe",
+      "project_control_url": "https://github.com/seigo-gace/asteria/issues/6",
+      "subject_repository": "seigo-gace/asteria",
+      "workflow_repository": "seigo-gace/debug-ai",
+      "github_trigger": {
+        "workflow_file": ".github/workflows/chatgpt-asteria-baseline-probe.yml",
+        "target_file": ".github/asteria-baseline-probe-target.json",
+        "allowed_branches": [
+          "feat/tgserver-async-log-sink-20261003"
+        ]
+      },
+      "server_command": {
+        "execution_repo": "/workspace/debug-ai",
+        "allowed_execution_repo_prefixes": [
+          "/workspace/debug-ai"
+        ],
+        "read_only": true,
+        "allowed_command_ids": [
+          "project.git_head",
+          "asteria.baseline_probe_start",
+          "asteria.baseline_probe_status"
+        ]
+      },
+      "chat_handoff_note": "Cross-project probe; workflow file lives in debug-ai repo. Evidence on asteria #6.",
+      "workflow_supported_command_ids": [
+        "project.git_head",
+        "asteria.baseline_probe_start",
+        "asteria.baseline_probe_status"
+      ],
+      "command_effects": {
+        "project.git_head": "read_only",
+        "asteria.baseline_probe_start": "bounded_probe_start",
+        "asteria.baseline_probe_status": "read_only"
+      }
+    }
+  ]
+}

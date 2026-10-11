@@ -1,0 +1,10 @@
+# Explicit Host admission overlay. Keep default bounded Host checkout READ-ONLY.
+# The Host-owned UNIX socket is provisioned only by the separately approved
+# source-reflect executor and is NOT exposed on TCP.
+services:
+  server-core-bounded-host:
+    volumes:
+      - type: bind
+        source: "${GACE_HOST_SOURCE_REFLECT_SOCKET_DIR:?approved Host UNIX socket directory required}"
+        target: /run/gace
+        read_only: true

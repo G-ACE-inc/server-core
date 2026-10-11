@@ -1,0 +1,28 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Independent CHAT commit-scoped Host git_head E2E, no singleton mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_head",
+    "expected_sha": "e3d8374ed7b6b532f24859b92270c0a2e935fd04"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Normal GPT CHAT refreshed Manifest #17 Control #10 #15, verified main a799ea79 and Host runtime evidence request req_3a32fca2dc6fd52963dd36d0 SHA e3d8374ed7b6b532f24859b92270c0a2e935fd04; isolated-request CU PR130"
+  }
+}

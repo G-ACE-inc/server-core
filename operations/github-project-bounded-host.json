@@ -1,0 +1,84 @@
+{
+  "schema": "gace.github-project-bounded-host/v1",
+  "name": "gace-servercore-bounded-host",
+  "request_schema": "gace.servercore-bounded-host.request/v1",
+  "owner_repository": "G-ACE-inc/server-core",
+  "project_control_url": "https://github.com/G-ACE-inc/server-core/issues/10",
+  "canonical_host_root": "/home/admin1/server-core",
+  "allowed_command_ids": [
+    "project.git_head",
+    "project.git_status",
+    "project.git_recent_commits",
+    "project.git_diff_stat",
+    "project.source_reflect",
+    "service.deploy",
+    "service.deploy_status",
+    "project.file_inspect",
+    "docker.logs"
+  ],
+  "command_effects": {
+    "project.git_head": "read_only",
+    "project.git_status": "read_only",
+    "project.source_reflect": "source_reflect",
+    "service.deploy": "service_deploy",
+    "service.deploy_status": "read_only",
+    "project.git_recent_commits": "read_only",
+    "project.file_inspect": "read_only",
+    "docker.logs": "read_only",
+    "project.git_diff_stat": "read_only"
+  },
+  "transport": {
+    "kind": "webhook_gateway_internal_event",
+    "event_type": "gace.servercore-bounded-host.requested",
+    "destination_id": "server-core-bounded-host",
+    "source_id": "server-core-github",
+    "receiver_endpoint": "/internal/servercore-bounded-host",
+    "delivery_secret_env": "OUTBOUND_SERVER_CORE_BOUNDED_HOST_SECRET",
+    "delivery_secret_file_env": "GACE_BOUNDED_HOST_HMAC_KEY_FILE",
+    "gateway_url_env": "GACE_EVENT_GATEWAY_URL",
+    "gateway_token_env": "GACE_EVENT_GATEWAY_TOKEN",
+    "signature_tolerance_seconds_env": "GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS"
+  },
+  "result_markers": [
+    "SERVERCORE_BOUNDED_HOST_STATE",
+    "SERVERCORE_BOUNDED_HOST_SHA",
+    "SERVERCORE_BOUNDED_HOST_COMMAND"
+  ],
+  "notes": {
+    "project_control_receiver_isolation": "Do not route bounded Host execution through github_project_control.py or Project field mutation authority.",
+    "gateway_destination_registration": "webhook-gateway must register destination server-core-bounded-host separately; Source contract only.",
+    "remote_tests_blocked_pending_isolation": "Registered Python tests execute repository code; not admitted through the HMAC-bearing receiver until isolated from delivery key and internal network. Local/CI tests remain supported.",
+    "source_reflect_admission": "Requires separately ACL-admitted Host-local UNIX socket executor; existing read-only receiver must not have checkout write access. Dedicated Host runtime authorization must be proven before activation.",
+    "service_deploy_admission": "Fixed registered repository/service only via separately Host-admitted UNIX socket writer (/run/gace/servercore-service-deploy.sock); Receiver has no Docker authority. Authority comes from operations/master-internal-repositories.json deploy entries, never from docker ps or log registration.",
+    "file_inspect_admission": "Exact registered_files only (no globs/traversal/symlinks), one 2400-byte chunk per request via offset; canonical master-internal registry is intentionally NOT registered.",
+    "docker_logs_admission": "Only containers in registered_log_containers via separately admitted Host UNIX socket /run/gace/servercore-docker-logs.sock (fixed `docker logs --tail N --timestamps`, tail<=200); Receiver has no Docker authority; authority is the committed contract only. Adding another project's container requires an explicit reviewed contract change."
+  },
+  "result_return": {
+    "kind": "github_issue_comment",
+    "repository": "G-ACE-inc/server-core",
+    "issue_number": 10,
+    "marker": "GACE_BOUNDED_HOST_RESULT",
+    "result_socket": "/run/gace/servercore-result.sock",
+    "stream_limit_chars": 4000,
+    "redaction": "secret-like keys, bearer/GitHub tokens, private keys and 48+ char opaque strings (sha256 digests kept)",
+    "first_terminal_result_wins": true,
+    "retryable_results_not_published": true
+  },
+  "registered_files": [
+    "README.md",
+    "docs/LOAD_SCOPE.md",
+    "docs/DESIGN_DELTA.md",
+    "docs/SERVER_CORE_DESIGN.md",
+    "docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md",
+    "operations/github-project-bounded-host.json",
+    "operations/github-project-rule-plane.json",
+    ".github/chatgpt-live-api-target.json",
+    ".github/workflows/chatgpt-live-api-verify.yml",
+    "scripts/servercore_bounded_host.py",
+    "scripts/servercore_bounded_host_receiver.py",
+    "scripts/servercore_result_sink.py"
+  ],
+  "registered_log_containers": [
+    "server-core-bounded-host"
+  ]
+}

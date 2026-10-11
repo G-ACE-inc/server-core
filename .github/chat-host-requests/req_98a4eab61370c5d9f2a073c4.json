@@ -1,0 +1,28 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "CHAT verified receiver restart: registered project.git_diff_stat live retest",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_diff_stat",
+    "expected_sha": "6d97298ffc07dbff34187defb16be5c5c5506526"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Fresh manifest #17 #10; Host exact FF 6d97298 registry preserved; Master Receiver-only restart GACE_RESULT PASS; new isolated read-only test after prior COMMAND_NOT_REGISTERED"
+  }
+}

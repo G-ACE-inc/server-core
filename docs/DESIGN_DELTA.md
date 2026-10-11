@@ -20,6 +20,32 @@ Each accepted delta records:
 - Compatibility / migration / rollback considerations
 - Verification state
 
+## 2026-10-11 — Fix Tool B independent common execution ownership
+
+### Baseline design
+The §16.9–16.10 implementation wording assigned common route/dispatch to server-core but the Host runner/admission to DebugAI, and the CHAT Host route guide described the already-working DebugAI API as the reused path.
+
+### Actual change
+The final common CHAT/Work → GitHub Project → existing Actions → Host execution system is server-core-owned and independent of DebugAI product Repository and runtime. Existing DebugAI-specific route remains transitional and dedicated to DebugAI until common runtime verification passes. §16.9.1 defines required Host test, consumer, reflection, exact SHA and negative authorization evidence.
+
+### Reason / root cause
+Merely copying Actions/dispatch while retaining DebugAI product execution checkout was incorrectly accepted as shared execution separation despite Master's explicit instruction.
+
+### Evidence
+Master clarification 2026-10-11; Control #10; Rule #17/#16 corrected; PR #89/#90 and Run 38125987709 prove Actions tests only, not independent Host runtime. Current target/manifest still refer to DebugAI-owned execution paths.
+
+### Affected scope
+server-core common execution design and CHAT Host route interpretation only; no DebugAI product/source/runtime or deployed Host permission changes.
+
+### Applied commit
+Documentation branch `docs/tool-b-independent-common-runtime-20261011`; exact PR/merge SHA tracked at PR #92. Design readback confirmed on branch; runtime unmodified.
+
+### Compatibility / migration / rollback considerations
+Keep working DebugAI product route while constructing the independent common consumer. Continue to enforce existing Host admission, credentials and least privilege. Rollback reverts these documentation-only clarifications without touching runtime.
+
+### Verification state
+SOURCE_DOC=UPDATED; GITHUB_READBACK=PASS; CI=PENDING; HOST_INDEPENDENCE=NOT_VERIFIED; RUNTIME_PARITY=NOT_VERIFIED; COMPLETE=NO.
+
 ## 2026-09-30 — Formalize server-core as the G-ACE Workspace command center
 
 ### Baseline design
@@ -503,3 +529,394 @@ licensing, Customer authentication, new executor/queue/transport/service or shel
 endpoint. Source/CI and real Runtime qualification remain separate; this source
 checkpoint does not claim live persistent-mode PASS. Protected product/spec/public/
 provider/model/Secret/destructive persistent decisions remain Master-owned.
+
+## 2026-10-10 — Fix the canonical CHAT-to-Host source reflection design under server-core #10
+
+### Baseline design
+The server-core command-center baseline (§§2.4, 2.5, 2.6, 3, 12) already assigned shared capability discovery, Project routing, approval and Source-to-Runtime state separation to server-core. Control #10 verified actual ordinary CHAT -> existing GitHub Actions -> Cloudflare Access -> DebugAI bounded Host reads. However the baseline did not specify how an exact registered Repo/Host parent, active consuming checkout, source-only reflection versus Docker Compose deployment, and subsequent evidence must be bound for **all** owned Projects. PR #36 contains a useful unmerged partial static routing catalog, not an activated host-wide implementation.
+
+### Actual change
+Extend the **existing** docs/SERVER_CORE_DESIGN.md with §16, Common CHAT-to-Host controlled reflection. Fix server-core / Control #10 as the **sole common design and current tool owner**; GitHub Project owns changing CU/Project purpose, DebugAI retains the existing authenticated transport/Host executor implementation, product repositories own their source/runtime, and TGserver owns durable log delivery. Introduce a logical request/evidence contract and D0–D5 acceptance gates; this is design authority, not a new runtime credential, transport, Rule Plane or separate development routine.
+
+### Reason / root cause
+Master-directed failure mode: GPT CHAT can progress GitHub Source/CI without changing the actual Server consumer. During the live 2026-10-10 audit, server-core local main was synced to remote main but active parent checkout remained on a divergent dirty feature branch. Existing Host read registry incorrectly declares server-core under /home/admin1/projects, whereas the actual canonical parent is /home/admin1/server-core. The existing Master Internal GitOps runner assumes DebugAI-specific Compose runtime and projects-root. Thus neither a Git ref move nor generic registry entry can prove safe cross-Repo reflection. Without a design, CHAT/Work might invent the next architecture/acceptance gate ad hoc.
+
+### Evidence
+- server-core #10 live execution checkpoint: https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6096580570
+- Actual CHAT Host inventory (3 pages/18 entries): https://github.com/seigo-gace/debug-ai/actions/runs/38044895527
+- Actual installed 512-byte admission registry readback, matched to GitHub Source: https://github.com/seigo-gace/debug-ai/actions/runs/38045018446
+- Existing static route Source, still unmerged: https://github.com/G-ACE-inc/server-core/pull/36; its stacked evidence correction merged into that PR branch: https://github.com/G-ACE-inc/server-core/pull/37
+- Previously demonstrated 502 then recovery; no proof of new Server source reflection: https://github.com/seigo-gace/debug-ai/actions/runs/38044824474 and https://github.com/seigo-gace/debug-ai/actions/runs/38044856370
+
+### Affected scope
+Only server-core architecture/docs/dispatch reference on this design-only branch. No modification of DebugAI products, its live Host runner/admission, PR39 parent checkout/dirty paths, control plane Rules #16/#17, GitHub Project fields, credentials, Docker/Compose or TGserver Runtime.
+
+### Applied commit
+First design-source commit: 724a6c3e68d884e20f00a5a5069b7b254ad4d9a0. Track the final PR head/CI separately in the owning #10 Current; this history reference does not claim merge or runtime application.
+
+### Compatibility / migration / rollback
+Keep existing DebugAI-specific enrolled deployment semantics, external-customer approvals and secret boundaries unchanged. Reuse established Actions/DebugAI transport, route preflight from PR36/37 only after its owner integrates it, and require explicit limited realpath/root and per-Repo issuer/branch/path/effect admission before extending capabilities. Unmerging/reverting this design commit restores the earlier generic baseline but **must not** be interpreted as revoking an independently installed Host policy. No Host state changes are introduced here.
+
+### Verification state
+DESIGN_SOURCE_WRITTEN=YES on the isolated server-core design branch. REVIEW/CI/MAIN_MERGE=NOT_VERIFIED until actual checks and readback. D1–D5 real Host read, approved source-only reflection, target Runtime and full Development Log recovery are NOT_VERIFIED, regardless of this design commit.
+
+## 2026-10-10 — Restore two co-primary tool capabilities under Control #10
+
+### Baseline design
+server-core main §16 (merged PR46, 1b55c904a947e11f177d618ff9b1dfd2579421b0) defined the CHAT→Host tool with a narrow Development Event mention and relegated TGserver ZERO delivery/search/recovery to a separate later lane. This misrepresented Master's actual tool priorities, which are **(A) unified development Log** and **(B) ordinary CHAT control of the Server**, both required for completing G-ACE Development Platform. Existing TGserver #44/#50 Source already has canonical event ingress, owner-only [DEVLOG] relay, mapping, central Reader and observable delivery gaps; it must not be reimplemented as another server-core transport.
+
+### Actual change
+Retain existing server-core baseline and §16 operations (retitled capability B), explicitly specify two **co-primary** tool capabilities and add §17 as capability A's complete **common integration/acceptance design**, including owner/reuse map, all registered Repo/execution-surface coverage, same-event-id receipt stages, raw Telegram/indexed Meilisearch/recovery distinctions, no new transport/token/service, observed Gateway configuration blocker and A0–A4 acceptance gates. Link §17 from README and task router. Common design/current/acceptance owner remains server-core #10; TGserver ZERO, webhook-gateway, DebugAI and product Repos retain implementation and trusted runtime authority. GitHub Project's fixed product purpose is unchanged.
+
+### Reason/root cause
+Master correction: an implementation-only Host design leaves the other required Tool capability undesigned, encouraging CHAT/Work to make arbitrary assumptions or treat a log success as a Host deploy and vice versa. In real TGserver #50 evidence, owner-only CHAT [DEVLOG] relay Actions run 37992536124 parsed the event and mapped P008 but failed on missing DEVLOG_GATEWAY_URL and shared URL config prior to send; no Gateway/Telegram raw/Meili same-event durability was verified. Existing ZERO searches cover some events but cannot prove this missing event was delivered.
+
+### Evidence
+- Tool B design merged: https://github.com/G-ACE-inc/server-core/pull/46
+- Tool A Source/owner: https://github.com/seigo-gace/TGserver/issues/44 and https://github.com/seigo-gace/TGserver/issues/50
+- Failed same-event CHAT relay: https://github.com/seigo-gace/TGserver/actions/runs/37992536124
+- Existing TGserver ZERO Source: https://github.com/seigo-gace/TGserver/blob/main/README_ZERO.md and https://github.com/seigo-gace/TGserver/blob/main/docs/TGSERVER_ZERO_PROJECT_INTEGRATION.md
+- Actual Host bounded read evidence: https://github.com/seigo-gace/debug-ai/actions/runs/38045018446
+
+### Affected scope
+Only server-core existing docs/SERVER_CORE_DESIGN.md, docs/DESIGN_DELTA.md, README.md and docs/LOAD_SCOPE.md. No changes to TGserver/DebugAI/Host/Secrets/GitHub Rules, existing PR36/PR39 ownership or runtime.
+
+### Applied commit
+The introducing design-correction commit/PR on branch design/dual-tool-log-and-chat-host-20261010, exact final SHA/CI to be recorded in owning Control #10. This entry does not itself claim main merge or runtime activation.
+
+### Compatibility / migration / rollback
+Preserve existing gace.development.event.v1, ZERO owner-only relay, Generic Internal Event API/Gateway, Telegram raw authority, Meilisearch rebuildable index and existing trust boundaries; product vNext and Catalog Knowledge Promotion remain independent. This extends the *same* baseline/Current contract rather than creating a third rule plane, another service or duplicated Tool design. Revert only the corrected design/entry references if the owners decide to withdraw it; no runtime data/policy was changed here.
+
+### Verification state
+A0/B0 Source/document consistency to be validated by exact PR head checks and main readback. A1–A4 real collection/durable search/recovery and B1–B5 authentic Host read/reflection/Runtime NOT_VERIFIED until their separate real tests. Presence of a design, successful CI or some indexed historical results does not establish end-to-end completion.
+
+## 2026-10-10 — Execute CHAT-to-Server before remaining Log work
+
+### Baseline design
+server-core design §16 Tool B and §17 Tool A are both required for the fixed G-ACE platform purpose. The preceding §17 used "co-primary" to direct parallel execution, despite Master's original instruction that CHAT→Server is the unfinished operational enabler and existing CHAT/Log features already have substantial Source, Reader and historical runtime proof.
+
+### Actual change
+Prioritize **Tool B (ordinary CHAT→Server inspection/authorized Source reflection/active Runtime readback)** as the first active implementation track, with Tool A's existing TGserver ZERO producer/relay/Gateway/Reader Source and completed proofs maintained without repeated implementation. Preserve Tool A's independent completion gates and return to its evidence-proven remaining failures after Tool B's usable operating path. This changes scheduling, not product scope, event schema or technical trust policy.
+
+### Reason / root cause
+Master explicitly corrected the premature parallel Log implementation instruction. Diverging into Log when the normal CHAT still cannot reflect server-core's canonical checkout risks perpetuating GitHub-only progress without actual Server application.
+
+### Evidence
+- Design+current: https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6096906247
+- Log existing partial work: https://github.com/seigo-gace/TGserver/issues/50
+- Live bounded Host reads, not Source reflection: https://github.com/seigo-gace/debug-ai/actions/runs/38045018446
+- Existing PR36 static routing (separate owner): https://github.com/G-ACE-inc/server-core/pull/36
+
+### Affected scope
+docs/SERVER_CORE_DESIGN.md §17 implementation ordering, README entry, this Design Delta, and Control #10 Current only. No modification to GitOps registry/admission, PR36/PR39, TGserver, DebugAI product, Host, credentials or runtime.
+
+### Applied commit
+Recorded by this isolated server-core design-priority PR; exact final PR HEAD, CI and main SHA are authoritative in its GitHub evidence.
+
+### Compatibility / migration / rollback
+Keep A0–A4 and B0–B5 acceptance, all existing Log Source and Owner claims, policy/Secret boundary and vendor-free testing intact. This is an execution-order correction, not another Rule Plane or design owner.
+
+### Verification state
+Design entry/Delta/Source and same-head CI to be verified independently. Tool B Host canonical-path read and source reflection remain NOT_VERIFIED until live server evidence exists.
+
+## 2026-10-11 — Align CHAT turn-decision checkpoints with actual execution surfaces
+
+### Baseline and reason
+
+The mandatory design-change routine in `docs/G_ACE_WORKSPACE.md` §6 requires comparing Source and Tests to the owning Design before each implementation, diff and PR, and recording intentional departures in this Design Delta. During CU #40 the existing `scripts/github_project_chat_turn_gate.py` and its tests were changed repeatedly after PRs #58–#61, while user-observed ordinary CHAT responses still ended prematurely following CI or Issue updates. Master uses ongoing work, formal report order, and command presentation as **behavioral symptoms**, not as the objective of a format-only validator.
+
+### Architecture and implementation boundary
+
+- Authority: GitHub Project #1, Rule Plane #17, CU #40. Common shared routine: `docs/G_ACE_WORKSPACE.md` §6–§7. The five-item formal-report contract is in Rule #17 §7 and is applicable only when its **actual** formal-report trigger occurs; a normal interim explanation is not a formal report.
+- Existing operational adapter: `.github/workflows/chatgpt-live-api-verify.yml` rejects **explicit Host requests** without a `START` checkpoint (PRs #60–#61), and `server-core-guard.yml` executes deterministic Gate tests. The shared Python Gate also evaluates supplied `FAILURE`/`STOP` data, but that is **not** a native GPT CHAT turn-send/response-termination interception.
+- No existing ordinary-CHAT native response-send hook is shown in the server-core repository or available GitHub/Host entrypoints reviewed in CU #40. Therefore `STOP`/report gates that run **only** inside CI are not evidence that the user-facing assistant applied them before sending its reply.
+- `manifest_verified`, `rule_full_read`, `next_action_evidence` and `completed_actions` are asserted fields supplied to a validator. Their passing does not independently establish real rule-reading, action execution, or truth of the final ChatGPT response. Keep normal user-observed behavior and source/CI/runtime evidence separate.
+
+### Correction / required development decision
+
+1. Do not create more stand-alone STOP/REPORT validators and present green CI as ordinary CHAT behavior remediation.
+2. Identify and exercise an actual **supported** ordinary CHAT turn-response observation/interposition surface, if one is available. Only then bind the existing Rule #17 legitimate stop conditions and five-item report contract to that surface; explicitly prove an early termination would be rejected and a legitimate completion accepted.
+3. Without such a surface, retain `NATIVE_CHAT_STOP_INTERCEPTION=NOT_VERIFIED`, preserve safe Host admission and continue independently executable authorized CU work. Do not fabricate a pre-send hook, add new MCP/workflows/tokens, or take another CHAT's Source ownership.
+4. For future source-changing CU #40 commits, record exact Design baseline + affected clause, acceptance condition, actual caller path and execution observation **before implementation**, compare at diff/PR and require the usual Documentation Gate (README/Tree/Design Delta/System Doc) evidence. A static code test cannot replace this design review.
+
+### Evidence, compatibility and rollback
+
+Historical implementation: [PR #58](https://github.com/G-ACE-inc/server-core/pull/58), [PR #59](https://github.com/G-ACE-inc/server-core/pull/59), [PR #60](https://github.com/G-ACE-inc/server-core/pull/60), [PR #61](https://github.com/G-ACE-inc/server-core/pull/61).
+Operational START positive: [Actions 38112125417](https://github.com/G-ACE-inc/server-core/actions/runs/38112125417). Missing checkpoint rejection: [Actions 38112102820](https://github.com/G-ACE-inc/server-core/actions/runs/38112102820). Incorrect-phase rejection: [Actions 38112242386](https://github.com/G-ACE-inc/server-core/actions/runs/38112242386).
+Behavioral counterexamples: [CU #40 observation 6105707417](https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6105707417), [audit 6105722443](https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6105722443).
+
+This is a **documentation correction** to design/application claims, not a change to existing Host permissions, credential flow, Code execution, native CHAT response handling, or the project purpose. Revert only this bounded Delta if design owner rejects it; historical Source and actual runtime boundaries are unaffected.
+
+## 2026-10-11 — Catch missing CU #40 design reviews at existing PR execution boundary
+
+### Baseline and motivation
+The existing `docs/G_ACE_WORKSPACE.md` §6 design-alignment and §7 Documentation Gate are mandatory **before implementation**. The existing server-core guard previously checked only presence of documents and rule text, so a CU #40 Gate implementation could pass CI even if its PR omitted the Design baseline, affected requirements, diff review and four Documentation Gate decisions. This was observed retrospectively for the earlier CHAT Gate PR chain; it is not cured by formatting a final response.
+
+### Intentional bounded enforcement change
+In the existing `.github/workflows/server-core-guard.yml`, pull requests changing the CU #40 CHAT decision evaluator, its tests or the live Host request Workflow now require nonblank PR-body declarations for DESIGN_BASELINE_REF, DESIGN_REQUIREMENT, DESIGN_ALIGNMENT_EVIDENCE and all four standard Documentation Gate decisions. Missing declarations fail the existing Guard before PR merge. Unrelated owner CUs and direct push to main are not blocked by this PR-scoped step; old PRs are not retroactively reclassified. The contract still separates Master-visible continuation, final report format and command presentation from machine-verifiable Host/CI scope.
+
+### Limits and evidence
+The gate verifies declared process evidence is **present**, not independently that a GPT CHAT model actually read the Design or did not terminate early. An honest implementation still requires human/source/evidence review and native CHAT turn observability. Do not label this a real reply-send STOP interceptor. This is a focused Work Routine enforcement on the already-owned CU, not a new Workflow, token, rule plane or broad authorization. No existing Design Baseline text is rewritten.
+
+Compatibility/rollback: remove only the added scoped existing-workflow PR check and corresponding README/Tree indexing to restore previous permissive PR behavior. Tests and Host operational routing stay unchanged; deployed workflows are not altered beyond the existing CI contract.
+
+## 2026-10-11 — Verify declared Documentation Gate against actual Source diff
+
+### Existing design and observed defect
+`docs/G_ACE_WORKSPACE.md` §6 and §7 require design-first implementation and concrete README/Project Tree/Design Delta/System Document decisions. The first scoped CI implementation [PR #64](https://github.com/G-ACE-inc/server-core/pull/64) checked that decisions were nonblank in a PR body, but did not prove a `YES` declaration caused any required file to change. Thus the process could remain documentation-incomplete while CI passed.
+
+### Bounded correction and acceptance
+The **existing** `server-core-guard` CU #40 PR preflight now checks actual changed paths: `README_UPDATE_REQUIRED=YES` needs `README.md`, `PROJECT_TREE_UPDATE_REQUIRED=YES` needs `docs/STRUCTURE.md`, and `DESIGN_DELTA_REQUIRED=YES` needs `docs/DESIGN_DELTA.md`; invalid decisions fail. When the Design Delta changes, the original file must remain as an intact prefix, with only appended content. This is intentionally scoped to PRs touching CU #40 Gate implementation files; it does not silently impose a new approval model on other repositories or work owned by other CHATs.
+
+### Limits and rollback
+The scope does not independently prove model Design comprehension, quality or native CHAT final-answer interception. The `SYSTEM_DOCUMENT_REQUIRED=YES/UPDATE_EXISTING` declaration is not yet mapped to a definite system-document file; do not mislabel that gap as verified. Direct writes to main can evade PR-time checks if branch protection is absent (protection API readback was denied). No permanent Host authorization, runtime or product-source changes. Rollback can remove the bounded guard additions and corresponding navigation changes; prior architectural Design and historical entries remain unchanged.
+
+## 2026-10-11 — Tool B autonomous development coverage (design-first extension; implementation pending)
+
+### Existing baseline and gap
+Baseline: `docs/SERVER_CORE_DESIGN.md` §16.1–16.8, §17, `docs/G_ACE_WORKSPACE.md` §6–7, GPT CHAT Rule #17 and server-core owner Control #10. Existing Tool B strongly specifies bounded READ_FILE/READ_STATUS, SOURCE_REFLECT and COMPOSE_REFLECT; §17 specifies durable Development Event recovery. Current registry and Actions dispatch expose fewer commands than the broader Host catalog. These do not constitute a complete ordinary-CHAT development loop: bounded Git diagnosis/recovery, registered test/build execution, per-service Compose lifecycle/rollback, cross-step failure→replan, and exact evidence-based cycle acceptance were not specified together.
+
+### Intentional design extension
+Appended `SERVER_CORE_DESIGN.md` §16.9 without rewriting or superseding §16.1–16.8/§17. It defines seven capability families; a common per-action capability/admission/evidence field contract; a continuous CU state machine and failure/replan branch; explicit test/negative/security/runtime acceptance. The distinction between listed, Actions-supported, Host-admitted and live-verified capabilities is mandatory. Final acceptance is a real ordinary CHAT-origin fault→diagnosis→Repository fix→test/CI→authorized Host reflection→runtime verification→GitHub Current plus independent Tool A correlation, not a green Workflow alone.
+
+### Scope, responsibilities and safeguards
+Owner: server-core Issue #10 / Project #1 for shared design and routing. Existing DebugAI owns Host runner and trusted authorization; target Repositories own project tests/Source; TGserver owns Event delivery and search. No additional tool plane, MCP, workflow, token, generic shell endpoint or top-level sibling Project. No granted host access, Source reflect, deployment, CI rerun, product change or protected admission alteration follows from a design change. Permission expansion remains separately reviewed and verified; commercial separation and existing negative tests are preserved.
+
+### Verification status and next design gate
+DESIGN_SOURCE=BRANCH_ONLY; DESIGN_REVIEW=NOT_YET_COMPLETED; IMPLEMENTATION=NOT_STARTED_THIS_CU; HOST_RUNTIME=NOT_CHANGED. Review §16.9 against the active #10 owner and existing capability/Host-source inventory, check no contradiction with §§16–17 and Rule #17, then establish an approved Design Gate before any runner/dispatcher implementation. Acceptance remains NOT_VERIFIED until implementation/test/CI/Host/Log evidence at each corresponding gate. Rollback is this append-only design addition and its §16.9 insertion only; preserve older design/history.
+
+### 2026-10-11 review correction — Host gh CLI is optional, not generic CHAT GitHub access
+The previously observed Host `github.actions_recent` result `GH_CLI_UNAVAILABLE` (Actions run 38021882940) does not imply GPT CHAT cannot use its connected GitHub API. Updated §16.9 Git contract to prefer native connected API for remote repository/PR/CI operations; Host-local git and `gh` are separate registered capabilities. If Host `gh` is indispensable, executable/auth/scope/admission preflight and actual E2E are mandatory; distinguish absent binary vs auth/scope/allowlist errors, reuse available equivalent API routes, do not introduce an unapproved token or treat a design statement as installation. DESIGN_ONLY; implementation/runtime unchanged.
+
+### 2026-10-11 review addition — retained GitHub Actions Artifacts
+Tool B §16.9 now explicitly requires existing GitHub API/connector-based Actions artifact list/download, safe bounded ZIP content inspection and original run/job/SHA/hash evidence linkage, with NO_ARTIFACT / EXPIRED / DOWNLOAD_DENIED / ZIP_UNSAFE / CONTENT_UNVERIFIED distinctions. Host `gh` CLI is unnecessary for these connector operations. Source verification: runs 38116946531 and 38110641849 returned empty artifact inventories; this confirms accessible listing but does not verify ZIP download or contents. No workflow change, artifact upload, Host install or mutation is authorized by this design. Real nonempty ZIP E2E is pending.
+
+### 2026-10-11 — Final server development coverage audit before implementation
+Appended SERVER_CORE_DESIGN §16.10 to cover registered workspace/disk/Git conflict inspection, bounded tests, Docker/Compose dependencies/resources/lifecycle/rollback, transport failure and artifact safety, Source-to-active-consumer parity and fresh-CHAT recovery. Each capability must distinguish catalog/source listing, Actions support, trusted Host admission and live proof. This is a design change only; Cursor agent delegation is expressly deferred by Master. Reuse existing DebugAI implementation/Actions without new Workflow, token, shell or MCP. Review and merge this design before owned implementation CUs; no Host entitlement is conferred.
+
+## 2026-10-11 — Tool B first implementation CU: existing inventory command dispatch admission
+
+Baseline: SERVER_CORE_DESIGN §16.9–16.10, Tool B §16.4–16.7 and common route registry. Prior live run 38109918095 rejected `system.projects_inventory` at the server-core idle preflight even though the existing bounded client and DebugAI Host runner include a read-only inventory command. This CU modifies only existing server-core dispatch allowlist, corresponding workflow-supported command registry and parity test to remove the identified SOURCE-level mismatch. It does **not** change Host runner, Host private admission, credentials, Workflow topology, Project registration or application product. Negative unsupported-command checks remain. The existing target remains idle; CI alone does not prove Host inventory runtime acceptance.
+
+Verification required: same-HEAD CI test and guard, then a separate admitted CHAT-origin Actions inventory positive run + Host command request ID and safe page output; restore exact idle trigger. Do not claim full Tool B capability coverage from this single bounded addition. Rollback: revert the three CU source/test edits while preserving prior Design and this historical Delta.
+
+## 2026-10-11 — Complete scoped System Document update verification
+
+Baseline: `docs/G_ACE_WORKSPACE.md` §6/§7 and `docs/PROJECT_TEMPLATE.md` System / Feature-bundle Document contract. Existing CU #40 PR admission could accept `SYSTEM_DOCUMENT_REQUIRED=YES` or `UPDATE_EXISTING` without any named changed System Document. The existing `server-core-guard` now requires exactly one `SYSTEM_DOCUMENT_PATH=docs/*.md` in the PR body for these decisions, excludes the Workspace Rule/Tree/Design Delta authorities as substitutes, and verifies that exact path occurs in the PR Git diff. This adds no workflow, permission, authorization, or separate design authority.
+
+Operational rejection evidence: [PR #68](https://github.com/G-ACE-inc/server-core/pull/68) [run 38117514290](https://github.com/G-ACE-inc/server-core/actions/runs/38117514290) failed with `CU40_SYSTEM_DOCUMENT_PATH_MISSING_OR_AMBIGUOUS`. The guard still does not prove document quality, actual GPT CHAT model reading, or native final response interception. System documents remain required only when the template criteria are actually met; avoid creating documentation without a system need. Existing baseline and prior Delta history are retained as a prefix. Rollback: revert the scoped existing Guard check and the README/Tree entries; no Host/runtime effects.
+
+## 2026-10-11 — server-core Tool B bounded Host disk/Git diagnostics
+
+Design baseline: `docs/SERVER_CORE_DESIGN.md` §16.9–16.10 and existing Tool B §16.1–16.8. Master confirmed common CHAT Actions execution entry must stay in `G-ACE-inc/server-core`; DebugAI is the reused backend, not this CU's development target. The Composer report of Host live evidence for `system.disk_usage` and `project.git_changed_paths` is prior adjacent-owner evidence only; this CU has not independently verified these through server-core Actions yet.
+
+Scoped Source change: reuse the existing `chatgpt-live-api-verify.yml` workflow and `chatgpt-bounded-server-read.cjs` to add these two bounded read-only command IDs to source dispatch, common route catalog/workflow-supported intersection and test fixtures. Emit only disk percentage/blocks and Git changed-path COUNT, never raw private path names or files. Keep request arguments empty, target repository fixed to the existing bounded /workspace/debug-ai execution identity; no general shell, new Workflow, token, host registry or new sibling worktree. The Host source/actual installed admission is separate and must be checked with real CHAT-origin run.
+
+Acceptance: targeted positive/negative client+dispatch tests, same-head GitHub CI/PR readback; an explicit START checkpoint on live trigger; Host command ID, read-only PASS, safe result markers and no deploy; restore exact prior idle blob. Do not imply canonical server-core parent read, source reflect, Docker lifecycle or Tool A delivery is solved. Rollback is source-only removal of these bounded IDs, client parsers and tests.
+
+## 2026-10-11 — Main admission: GitHub Free private cannot enforce native protection
+
+### Baseline and observed gap
+CU #40 Work Routine enforcement in `server-core-guard` was scoped to `pull_request` events ([PR #64–#70](https://github.com/G-ACE-inc/server-core/pull/64)). Anyone with `push`/`admin` on `main` could bypass Design/Documentation Gate declarations by pushing directly. GitHub API readback: org `G-ACE-inc` plan `free`, repository private; branch protection and rulesets endpoints return **403**; GraphQL protection/ruleset lists are empty (`protected=false` at platform layer).
+
+### Bounded correction (existing workflow only)
+Append a `push`/`main`-scoped step to the existing `server-core-guard` (no new Workflow file): when a push changes CU #40 gate Source paths, require an associated **merged** pull request for the commit SHA via `GET /commits/{sha}/pulls`. Otherwise emit `CU40_MAIN_DIRECT_PUSH_BLOCKED` and fail the guard run. Merged PR paths continue to pass. This preserves other workflows, Actions permissions model, and non-gate main documentation hotfixes.
+
+### Limits, evidence, rollback
+Post-push CI failure does **not** revert Git history and is not equivalent to required status checks under branch protection. Hard pre-push block still needs GitHub Pro/Team private protection or a public-repository ruleset. Evidence: API 403 on protection/ruleset create; [Issue #40](https://github.com/G-ACE-inc/server-core/issues/40) CU scope. Rollback: remove the push admission step and restore prior README/`GITHUB_FREE_MAX` wording; PR-scoped guards from #64–#70 remain.
+
+## 2026-10-11 — Main-push PR association must match exact main merge SHA
+
+### Observed gap and baseline
+Prior CU #40 main-push admission (PR #74) checked whether the pushed commit's `GET /commits/{sha}/pulls` response included **any** merged PR. That broad predicate did not explicitly bind the PR's base to `main` or the PR's `merge_commit_sha` to the actual pushed HEAD. The shared Work Routine in `docs/G_ACE_WORKSPACE.md` §6 requires immutable revision/branch evidence rather than an ambiguous association.
+
+### Bounded implementation
+Tighten the **existing** `server-core-guard` main push check for CU #40 gate-owned paths so a qualifying PR must have `merged_at`, `base.ref == main`, and `merge_commit_sha == pushed HEAD`. This does not add a workflow, transport, token or branch protection. README and Project Tree entries reflect the stricter implemented condition.
+
+### Limits and rollback
+The check runs **after** main has already been updated. It is a CI warning/failure signal, not native private GitHub Free branch protection. An associated merged PR alone no longer qualifies without exact SHA and target branch. A true direct-main negative push is not exercised because it would contaminate unprotected main. Rollback: revert only the stricter predicate and accompanying README/Tree description. Actual per-PR/source correctness and ordinary CHAT reply termination are separate.
+
+## 2026-10-11 — Reconcile bounded Host logs dispatch on current main
+
+Baseline: SERVER_CORE_DESIGN §16.9–16.10 and existing Tool B Control #10. PR #75 implemented service.debug_ai_logs on a stale branch, causing merge conflict with concurrent main changes. This CU reuses its bounded Source-only intent on current main: add service.debug_ai_logs to existing idle dispatch and registered workflow_supported intersection, retain allowed_command_ids/effects, and extend existing deterministic route test; do not copy stale route registry wholesale. The bounded client already validates log_service and log_lines, redacts output, and invokes the registered Host command. No new Workflow, MCP, token or Host entitlement. Real CHAT-origin Host log read is required after same-HEAD CI; only registered service and 1–20 lines are allowed. Preserve other denied commands and revert idle target after E2E. Historical PR #75 remains separately traceable; do not double-merge.
+
+## 2026-10-11 — Tool B existing sandbox health and bounded Git recent commits
+
+Design baseline: SERVER_CORE_DESIGN §16.9–16.10, Control #10. Reuse the existing Host `service.sandbox_state` and `project.git_recent_commits` commands, existing CHAT client ALLOWED set and bounded state/commit-subject validation. Add only these IDs to the existing common idle dispatch and route workflow-supported intersection; retain exact registered route policy and negative denial assertions. Git commit subjects are redacted for secret-looking/control-character text; command arguments stay empty. No new workflow/MCP/Token/Host permission or DebugAI product change. Same-head CI followed by independent CHAT-origin Actions host requests, receipt, read-only status, and exact idle restoration are required. Source/CI success alone is not Runtime success.
+
+## 2026-10-11 — Tool B Host status HTTP failure classification
+
+Evidence: exact ordinary CHAT Actions Run 38121975277 for bounded project.git_recent_commits reached Host request cmd_74cbbc22fa758c52d2d31eaf, then failed in server-core client after repeated status API non-200 responses (`STATUS_HTTP_NOT_200`); actual Host command terminal result UNKNOWN, not a Git history failure. The previous client retried permanent 4xx errors for the full polling horizon. This scoped CU classifies permanent 4xx (excluding retryable 408/429) and terminates the current Host status read immediately with an HTTP status code (no body or secret output), preserving bounded retries for 5xx/408/429 and existing source read-only admission. New focused test asserts 404 incurs one status request and safe classification. No change to Host runner, workflow, permissions, command list or runtime product. Retest must use an existing admitted read and distinguish readback faults from Host command faults. Design baseline §16.9–16.10; existing error recovery expectation; no E2E PASS claimed for recent Git history.
+
+## 2026-10-11 — Enforce effective idle read admission on server-core
+
+Design baseline: SERVER_CORE_DESIGN §16.9–16.10. Existing server-core dispatch independently checked an IDLE_READ_COMMANDS set but did not evaluate the actual route's catalog, workflow_supported_command_ids and read_only effect intersection at execution time. Static route parity tests are not a substitute for a fail-closed runtime preflight after registry changes. This bounded server-core-owned CU adds the effective three-way read-only admission check for any nonempty idle command. Focused tests reject a removed catalog command, removed workflow support or non-read effect while preserving registered positive and no-command idle modes. This is a Source preflight guard, not a claim of installed Host support or Runtime PASS. No DebugAI Repository/Host mutation, workflow, new token, MCP or protected delegation change. Rollback by reverting this narrowly scoped dispatch condition and its test.
+
+## 2026-10-11 — Tool B common route registry evidence sync
+
+Baseline: Control #10, `operations/github-project-chat-host-routes.json` route_debugai_live_read handoff note. Prior note still marked inventory, disk, Git changed-path, logs, and sandbox Host E2E as pending although ordinary CHAT Actions runs 38117859559, 38119011721, 38119034738, 38121803165, and 38121944210 already recorded PASS with Host receipts on main. This bounded CU updates only the registry handoff text to bind verified run IDs, records project.git_recent_commits as still pending post-#79 retest (38121975277 failure), and states the #80 three-way idle admission rule plus non-dispatch catalog-only commands. No workflow, Host, DebugAI product, token, or dispatch code change. Rollback: revert the handoff note and this Delta append only.
+
+## 2026-10-11 — Tool B git_recent_commits Host E2E PASS after #79
+
+Post-#79 retest via merged PR #81 triggered Actions run 38123852985 on main: Host request cmd_25935adb02776b64d6c1e46b, SERVER_COMMAND_STATE=PASS, SERVER_COMMAND_READ_ONLY=TRUE, bounded SERVER_GIT_LOG emitted. Follow-up chore PR restores idle target. Registry handoff updated to bind this run ID. No DebugAI Repository/Host mutation.
+
+## 2026-10-11 — Tool B registered server-core Host test execution (manifest + existing python_unittest)
+
+Baseline: SERVER_CORE_DESIGN §16.9–16.10, Control #10. Existing DebugAI Host already implements bounded `project.python_unittest` in isolated `.debugai-input/test-repos/*` checkouts; server-core had no manifest, Actions dispatch intersection, or client wiring to select approved tests and bind repo/SHA/exit-code evidence. This CU adds `operations/github-project-chat-host-test-manifest.json`, extends the existing bounded client and idle dispatch/route registry for manifest-selected `project.python_unittest` only, and adds deterministic tests. It does **not** modify DebugAI Repository/Host runner, expand `dlg_master_servercore_reflect_v1` allowed_paths into `scripts/`, add Workflow/MCP/token, or claim Host test-repo provisioning. Live E2E requires an existing Host test checkout at the manifest path; missing checkout remains `HOST_TEST_REPO_NOT_VERIFIED`. Actions run 38125411897 returned `REQUEST_HTTP_NOT_202` (Host/API rejected unittest request; test-repos checkout not verified). Auto docs-only source reflect on main now treats Host `SOURCE_REFLECT_NO_DIFF` as idempotent skip in the existing workflow (no new Workflow file).
+
+## 2026-10-11 — Tool B existing Actions pre-Host route contract test
+
+Owner server-core Control #10, design baseline §16.9–16.10. The active existing `chatgpt-live-api-verify.yml` job had run the CHAT turn gate and bounded Node client tests but not the already-existing Python route admission contract test in that very execution context. Reuse `scripts/github_project_chat_host_route_test.py` in the same pre-Host verification step to reject route/allowlist/effect drift before real requests. No new workflow, backend, token, route admission, or DebugAI mutation. The current Host test/build execution contract remains unimplemented separately; this test guards the existing Actions route and does not qualify as Host build/test support.
+
+## 2026-10-11 — Explicit Master per-turn Rule read takes precedence over delta optimization
+
+Master observed repeated GPT CHAT #17 adherence failures despite read receipts and CI. Existing `docs/LOAD_SCOPE.md` GPT CHAT item 7 said full rule issue bodies need fetching only on revision/incomplete read, and a generic context paragraph exempted unchanged authority from rereads. This conflicted with Master's current explicit instruction, held in owning Issue #40, to re-fetch Manifest, #17 **full body**, and Current every development turn, then apply them before action and STOP. This change narrows the reconciliation to the **existing read router** rather than changing #17 or the shared Work Routine owner Draft PR #39.
+
+Per-turn full read becomes mandatory when explicitly directed by Master; normal optimized rereads remain the default otherwise. Reading alone does not demonstrate application or intercept ChatGPT final send. An observed premature stop remains failure. No native hook, new workflow/MCP, guard script, secret or Tool B functionality is claimed or introduced. Rollback by reverting this router delta; existing architectural Design and historical Delta retained.
+
+## 2026-10-11 — Classify registered Host test request HTTP rejection without response disclosure
+
+Owner: server-core #10, Tool B §16.9–16.10. Existing registered-test Actions E2E run 38125411897 aborted before Host request receipt with REQUEST_HTTP_NOT_202. This cannot establish a missing Host test checkout, Host authorization failure, or a missing project. Update the existing bounded CHAT client request handler to retain only numeric HTTP status for unsuccessful request responses, without reading or exposing the HTTP body. The executable CLI emits SERVER_COMMAND_REQUEST_HTTP=NNN followed by existing bounded class marker. A negative test covers 400 with a deliberately unreadable response body. No new workflow/MCP/token or any DebugAI repo/runtime change. Retest only after validating admission and known registered target prestate; no Runtime PASS claim.
+
+## 2026-10-11 — Execute two server-core registered static tests on existing Actions runner
+
+Owner: server-core #10, Tool B §16.9–16.10. Host registered-test request E2E 38125411897 was rejected before receipt; its cause remains UNKNOWN and it is not evidence that an isolated checkout exists or can be created safely. Independently reuse the existing `chatgpt-live-api-verify.yml` checkout (exact workflow GITHUB_SHA) to run the two preexisting static Python test scripts from the registered server-core manifest (`scripts/github_project_rule_plane_test.py` and `scripts/github_project_chat_host_route_test.py`), without DebugAI test-repo staging. Their successful completion emits SERVERCORE_REGISTERED_TEST_SHA and SERVERCORE_REGISTERED_TESTS=PASS, scoped to the Actions runner only. This is a SOURCE/CI execution proof, not Host test Runner admission or live consumer parity. The registered Host target manifest remains separately gated; no new workflow, MCP, token, or backend mutation.
+
+## 2026-10-11 — Tool B independent server-core local bounded Host primitive (Source candidate)
+
+Baseline: SERVER_CORE_DESIGN §16.9.1, §16.10, Control #10 and Rule #16/#17. DebugAI product also uses Cloudflare, but its product Repository/runtime must not be the common Host executor.
+
+Change: server-core-owned Python-only `scripts/servercore_bounded_host.py` provides a *local*, no-listener, no-credential bounded execution primitive for canonical `/home/admin1/server-core`: exact Git HEAD, clean-status summary, two fixed registered Python tests; rejects non-registered commands, mismatched SHA, invalid root/symlink, missing tests, dirty test checkout. `tests/servercore_bounded_host_test.py` exercises negative boundaries and existing `github-project-control-verify.yml` runs it in CI. No generic shell API or DebugAI-specific path.
+
+Reason: Actions/route copy is not independent Host execution. This isolates the core primitive under server-core ownership for later authorized entry/transport wiring and real Host verification.
+
+Evidence: PR source tests, exact-head CI and Host readback are separately required. No claim of active canonical Host deployment, authorization, consumer, Cloudflare Account API Token runtime, production Source reflect, or end-to-end operation from this source addition.
+
+Compatibility and rollback: Does not alter existing DebugAI product runner or working temporary DebugAI route. No new secret, token, workflow, MCP, listening service or Host policy. Remove candidate module/CI test to revert.
+
+Verification at creation: SOURCE_ONLY; HOST_INSTALL=NOT_VERIFIED; NETWORK_AUTHENTICATION=NOT_IMPLEMENTED; HOST_E2E=NOT_VERIFIED; SOURCE_REFLECTION=NOT_EXECUTED; RUNTIME_PARITY=NOT_VERIFIED.
+
+## 2026-10-11 — Wire server-core bounded Host primitive to existing Gateway delivery auth
+
+Baseline: SERVER_CORE_DESIGN §16.9.1, merged PR #93 (`scripts/servercore_bounded_host.py`), Control #10. PR #93 isolated the local primitive; this CU connects it to the **same authenticated Generic Internal Event API pattern** as Project Control without extending `github_project_control.py` or Project field mutation authority.
+
+Change: `operations/github-project-bounded-host.json` registers allowlisted commands and transport metadata (`server-core-bounded-host` destination). `scripts/gace_internal_delivery_auth.py`, `servercore_bounded_host_receiver.py`, and `servercore_bounded_host_gateway_send.py` implement HMAC-verified receiver + Gateway enqueue using existing `GACE_EVENT_GATEWAY_URL` / `GACE_EVENT_GATEWAY_TOKEN` contract names. `Dockerfile.bounded-host` and `docker-compose.project-control.yml` service `server-core-bounded-host` package the receiver on `gace-internal` with read-only canonical root bind. `chatgpt-source-reflect-dispatch.cjs` and existing `chatgpt-live-api-verify.yml` accept optional `bounded_host_request` (mutually exclusive with DebugAI server_command, gitops, and source_reflect). `project_control_runtime_readback.sh` emits local consumer `project.git_head` parity markers. Reference-only `operations/webhook-gateway-bounded-host-destination.reference.json` documents the webhook-gateway destination/route registration; **not** an activation.
+
+Evidence: focused Python transport/runtime tests; Docker build `gace-server-core-bounded-host:ci`; VPS readback `SERVERCORE_BOUNDED_HOST_LOCAL=PASS` at consumer SHA `d454f7021c74ffb095297178b2af46fe57720a2a`. Gateway/receiver container deploy and CHAT-origin Gateway→Host terminal PASS remain gated on webhook-gateway destination registration and Host delivery secret provisioning (Host Policy; no new token assumed).
+
+Compatibility: DebugAI transitional route unchanged. No DebugAI Repository/Runtime mutation, no Project Control receiver behavior change, no arbitrary shell API.
+
+### Security adjustment — remote registered-test exclusion (2026-10-11)
+
+During source integration review, `project.registered_tests` was found to execute repository Python code in the same receiver container as the mounted outbound HMAC delivery key and the internal network. This does not establish safe test isolation even if the checkout mount is read-only. Until a credential-free, network-isolated test worker is independently reviewed and admitted, the **Gateway/receiver command allowlist** permits only `project.git_head` and `project.git_status`. The local fixed-test capability and CI verification remain separate. Added explicit negative test for denied remote registered-tests request. No Host deployment or credential permission expansion. Completion remains SOURCE/CI only pending live gateway registration/Host admission and terminal readback.
+
+## 2026-10-11 — Bounded Host container Git ownership compatibility
+
+Baseline: §16.9.1 independent common executor, merged PR #94. The receiver runs unprivileged with canonical checkout mounted read-only. Git may reject different UID ownership as unsafe, even when host-local git tests passed. Change: fixed git read commands now set process-local `safe.directory` to the validated canonical root, disable fsmonitor and hooks per invocation. No global Git trust, no arbitrary shell, no Host policy or credential changes; unit test asserts exact scoped invocation. Verification: same-HEAD CI pending; container/Host parity remains NOT_VERIFIED until approved runtime deployment.
+
+## 2026-10-11 — Deploy P0: exact-SHA canonical Source reflection, independent Host local primitive
+
+Master acceptance is CHAT-authored GitHub Source → real VPS Source reflection/Deploy → runtime health/exact SHA readback. Historical READ E2E (Actions 38135212887) and repo checkout matching main do not qualify as generalized deploy.
+
+First concrete Source unit: `scripts/servercore_source_reflect.py` pins canonical `/home/admin1/server-core`, branch `main`, explicit expected-before/target 40-hex SHA, clean tracked/untracked status, fetch of `origin/main`, remote SHA equality, ancestor fast-forward check, OS file lock, ff-only merge and exact post-reflect SHA. No arbitrary shell, no branch/repo supplied by caller, no reset/stash, no arbitrary hooks; rejects dirty files including outstanding `operations/master-internal-repositories.json` edits rather than overwriting them. Existing CI exercises positive/negative and dry-run cases.
+
+**Deliberate separation:** this Source unit is NOT wired into the credential-bearing read-only bounded receiver or deployed as a privileged service. It needs an independently authorized write-capable Host executor/transport binding and safe runtime installation, followed by an actual target Source reflect and separate service deploy/health verification. `SOURCE_REFLECT_PASS` is not service `DEPLOY_PASS`. Do not bypass Host ownership checks or claim running instance parity from GitHub CI success. No new workflow, Token, MCP, DebugAI modification, sibling project/worktree.
+
+### 2026-10-11 — Deploy P0 origin admission correction
+
+Source-reflect candidate must reject a substituted `origin` before executing fetch: canonical Host pathname and branch alone do not establish repository identity. The local runner now permits only the literal official G-ACE-inc/server-core GitHub HTTPS or SSH remote URLs; missing or other origin fails closed, including local file URLs. Negative test added. This does not grant write authority to the existing read-only Host container, nor claim runtime Deploy. Host must inspect its configured origin and admit an alternate form by reviewed policy only if needed.
+
+## 2026-10-11 — Deploy P0: independently authorized UNIX Host source reflection (Source candidate)
+
+Reuses the verified CHAT→existing Actions→Gateway→bounded Receiver transport. Adds registered effect `project.source_reflect` with exact `expected_before` + target SHA; the sender, dispatch contract and existing Workflow refuse missing before-SHA and require explicit START receipt before mutation. The Gateway receiver remains with a read-only canonical checkout and no Docker socket or generic shell. For this one effect it forwards a fixed schema/repo/branch request through a local UNIX socket to `servercore_source_reflect_socket.py`, a separately Host-admitted writer which reuses `servercore_source_reflect.py`. Host socket uses strict local path, filesystem ACL and single-writer lock. Existing read requests stay local. Default Compose unchanged; optional `docker-compose.source-reflect.yml` only binds an explicitly approved Host UNIX socket, and should NOT be activated before installing the corresponding Host-local writer and ACL policy. No new token, MCP, Workflow, public port or DebugAI product mutation.
+
+**Security and acceptance boundaries:** The existing Gateway Internal API token can submit bounded events; accepting `project.source_reflect` expands potential effects. Production activation requires explicit Master/Host policy authorization, protected source-of-request, and proof that only the intended receiver UID can access the UNIX socket. The Host-local service must not be run as an unrestricted root process. Validate current Host checkout dirty changes before any apply. Cloud Action 202 is not deployment success: terminal worker delivery, exact Host Source SHA and separately required running service/health readback must PASS. This PR contains SOURCE/CI only; HOST_SOCKET_INSTALL=NOT_VERIFIED, SOURCE_REFLECT_E2E=NOT_VERIFIED, SERVICE_DEPLOY=NOT_VERIFIED.
+
+## 2026-10-11 — Deploy P0 Host-local executor installation contract
+
+PR #100 merged the Source-only independent `project.source_reflect` adapter and optional UNIX-socket overlay. To minimize manual VPS commands without bypassing Host authority, `scripts/servercore_source_reflect_host_bootstrap.py` now supplies dry-run preflight (default) and explicit `--install` systemd admission. It verifies canonical checkout path, registered official Git origin, main branch, exact requested SHA, fully clean tree including untracked files, admin1 identity and existing receiver group. Installation is root-gated and refuses overwriting a pre-existing differently configured service unit. The generated service runs as admin1 and the approved receiver group with an AF_UNIX-only endpoint, no network listener, no Docker socket, no new token/workflow/MCP, and group-only UNIX socket permissions. Existing Compose read-only checkout remains unchanged; optional socket overlay requires separate authorized activation and exact Host E2E.
+
+Blocked preconditions must not be silently 'fixed': Composer observed non-owned uncommitted edits in `operations/master-internal-repositories.json`, so preflight must reject until their owner reconciles them. Source-only CI success does not establish installation, GitOps/Deploy or running service evidence. Do not claim completion until exact Host SHA, gateway delivery terminal receipt, and target service health/readback PASS.
+
+### 2026-10-11 — UNIX socket reconnect on Host executor restart
+
+The optional Compose admission overlay now mounts the approved Host UNIX **directory** read-only instead of bind-mounting one socket inode. A file-level bind mount could retain a stale socket after systemd restarts and recreates the endpoint. The receiver still has no write mount for its canonical Source checkout and no Docker socket. The Host owner must set `GACE_HOST_SOURCE_REFLECT_SOCKET_DIR=/run/gace` or an equivalent explicitly admitted existing directory and verify group traversal/socket permissions; activation remains a separate Host gate. Static CI rejects reverting to a socket-file mount.
+
+## 2026-10-11 — Tool B registered service Deploy admission baseline
+
+Runtime evidence confirms independent exact-SHA server-core Source reflection but not Docker service deployment. `scripts/servercore_service_deploy_admission.py` therefore introduces a nonmutating deny-by-default authorization/preflight based on the existing `operations/master-internal-repositories.json`: exact registered repo/service, persistent active delegation, explicit deploy operation, fixed Host checkout path, pinned Compose SHA256, and exact Host Source SHA. The current registry authorizes only DebugAI's `debug-ai` and `sandbox-runner` deploy operation via its existing product executor; server-core and TGserver entries are **source-only** and must not be silently upgraded to Deploy. `docker ps` visibility is never used as authorization. No new MCP, Workflow, Token, Host command, Docker socket, generic command executor, or service restart is introduced. This is a Source+CI authorization component **only**. Next gate requires independent Host write authority for a fixed registered service, scoped Compose execution and runtime health/image readback, with the consumer/delivery policy expressly reviewed before any live service changes.
+
+### 2026-10-11 — Tool B registered service Host-local executor (not remotely admitted)
+
+`scripts/servercore_registered_service_deploy.py` consumes the fail-closed registry + exact source/Compose checks established above. The default invocation is read-only preflight. An explicit Host-local `--apply` can execute Docker Compose **only for the already-registered service** via fixed argv (`up --detach --no-deps --build SERVICE`) and inspects the resulting Compose service label, container running state and optional Docker health. An absent healthcheck is reported as `NONE` and is not evidence of application health. This module is **not wired** to the Gateway, HMAC Receiver or Host UNIX socket and grants no Docker socket to the Receiver. Current Registry has service deploy only for DebugAI's existing product-owned route; server-core and TGserver remain source-only. Independent common service deploy authorization/Host policy, actual runtime installation and live E2E are still NOT_VERIFIED. Preserve external app and other unrelated running containers.
+
+## 2026-10-11 — Master scope correction: ALL actively developed Project #1 items
+
+**Master decision (authoritative for Tool B):** All development projects registered in TGserver ZERO (using its existing project registration mechanism) are intended to be deployable from ordinary CHAT through the common server-core-owned GitHub→Actions→Host route. This means the common capability must ultimately support **every actively developed registered Project**, not only DebugAI, TGserver and server-core, and not only current `deploy` entries in a partial historical `master-internal-repositories.json`.
+
+**Keep scope separate from permission:** TGserver ZERO registration determines **target coverage**, not unreviewed permission to restart every container. Per-project canonical repository, Host path, registered branch/SHA, runtime type (Compose, source-only, service, worker, non-container), permitted operation, component ownership, deploy/run command, dependencies, health evidence and rollback must be checked and registered. An UNKNOWN mapping is a coverage gap to close, not a reason to permanently exclude the Project or fabricate a runtime. Existing product-owned deploy logic should be reused where appropriate but the common route must not depend on the DebugAI product executor.
+
+**Acceptance:** Use TGserver ZERO `storage-registry.json` for Project IDs and `.github/tgserver-zero-project-map.json` for repository/stream correspondence; reconcile these with live Host inventory and canonical per-Project operational mapping. P003 and P009 have incomplete/exceptional GitHub mappings, so mark mapping UNKNOWN rather than silently exclude. Do not treat registry enrollment alone as runtime authority. Produce a coverage matrix for **all TGserver ZERO registered Project IDs** showing `IMPLEMENTED`, `HOST_VERIFIED`, or `UNKNOWN/BLOCKED` and the missing next gate for each; implement and validate each missing bounded deploy binding; prove CHAT→GitHub→Host exact SHA, service/relevant runtime health and terminal delivery. Do not claim success from listing `docker ps`, SOURCE-only reflection, CI, or an isolated successful service deploy. Do not create new Workflow, Token, MCP, parent-sibling project/worktree. Previous PR #106/#107 only implement fixed-registration admission/execution baseline and **do not close this project-wide requirement**.
+
+### 2026-10-11 — Repo vs TGserver log project/stream correction
+
+Master clarified that **deployable units are actual development repositories, not 14 distinct TGserver ZERO log Project IDs**. For example DebugAI has P004 runtime and P005 KB streams but remains **one** repository; P003 is a personal log namespace; P009 ai-core has no verified GitHub repository mapping, and P014 is a KB namespace whose repo/deploy nature must be checked. Current TGserver reader mapping has 11 distinct GitHub repository keys, while the Master's visible local workspace shows 11 entries including GPG-Core (explicitly excluded), giving 10 required local repo entries. The sets **are not yet reconciled**: Catalog↔modular-catalog alias, ai-core repository identity, GPG-Core exclusion, server-core/gace-dev-kb registered but not pictured, and any others must be verified. Do not auto-deploy log modules or inflate repo count. `tgzero_deploy_coverage.py` now emits both log IDs and distinct mapped repositories; final deploy coverage must be audited by verified repository identities, modules/streams preserved beneath them, and GPG-Core excluded per Master.
+
+### 2026-10-11 — Catalog contains gace-dev-kb
+
+Master confirmed `gace-dev-kb` resides inside the `Catalog` development unit. Preserve TGserver's `P012` modular-catalog and `P014` gace-dev-kb log namespaces and distinct GitHub mapping; KB implementation/runtime is on PC, not a Catalog VPS container. They share workspace component ownership but **remain distinct execution/deployment locations**. The source audit preserves gace-dev-kb component_of Catalog and runtime_location=PC; its separate deployment unit must not be dispatched to the VPS Docker route. PC machine path and remote deploy route are UNKNOWN until separately verified. No cross-repository checkout, Docker restart, or authorization expansion is implied.
+
+### 2026-10-11 — Common registered service Deploy pre-admission correction
+
+Before connecting existing Host-local registered Compose deploy source to the shared Receiver/Host executor, require Host origin exactly matches the registered repository, Host branch is on the delegated branch allowlist, Host HEAD equals the requested exact SHA, and checkout is clean. Reject wrong remote/branch, dirty tree, wrong source SHA and mismatched Compose digest. This is an in-place correction to Tool B Host admission, **not** a new Deploy Workflow, registry, token, MCP or project-specific development task. CI validates registration fields; live Host validation and protected common dispatch remain separate pending gates.
+
+### 2026-10-11 — Common Gateway to Host registered service Deploy route (separate writer)
+
+Reuses the merged registry admission (#106/#112) and fixed Compose executor (#107) unchanged. New bounded commands `service.deploy` (effect `service_deploy`, fixed `repository`+`service`+explicit target SHA, never the workflow SHA alias) and `service.deploy_status` (read-only) travel the existing Actions -> Gateway -> HMAC Receiver path. The Receiver holds no Docker authority: it only forwards to the separately admitted Host UNIX socket `/run/gace/servercore-service-deploy.sock` served by `scripts/servercore_service_deploy_socket.py` (admin1 user-level systemd unit installed by `scripts/servercore_service_deploy_host_bootstrap.py`, no root, no new token/workflow/MCP). Gateway delivery timeout (30 s) is shorter than image builds, so the writer runs a dry-run admission synchronously, replies `SERVICE_DEPLOY_ACCEPTED`, deploys asynchronously, and persists a request-id keyed result (`QUEUED/RUNNING/SERVICE_DEPLOY_PASS/FAIL`) with before/after Compose container identity, `recreated`, Compose digest and registered loopback HTTP health. A duplicate request id never redeploys. Authority comes only from `operations/master-internal-repositories.json` deploy entries; this change adds none (no deploy delegation is self-granted by the executor). `SOURCE_PASS` here is not `DEPLOY_PASS`: DEPLOY_PASS requires a live registered service readback.
+
+### 2026-10-11 — Source reflect keeps checkout file modes (service umask 0117 correction)
+
+The Host source-reflect writer runs with `UMask=0117` for its socket. Its `git merge --ff-only` inherited that umask, so reflected files lost the exec bit and group/other read (dirty tree on the next clean-gated reflect, unreadable Receiver image contract). The git subprocess now runs with `umask=0o022`; the socket umask is unchanged. Fail-closed gates are unchanged.
+
+### 2026-10-12 — Bounded Host command result return (request-id correlated, redacted, GitHub-readable)
+
+Transport previously returned only the Gateway 202 receipt; Receiver HTTP responses never left the Gateway worker. Now **every** enabled `bounded_host_request` requires the CHAT START receipt (START Gate no longer limited to reflect/deploy). The low-privilege Receiver reports each authenticated terminal result (PASS / FAIL with exit code 0/1, Host SHA, stdout = bounded command result JSON, stderr = failure class) to the Host-local `servercore_result_sink.py` over UNIX socket `/run/gace/servercore-result.sock`. The sink redacts (secret-like keys, bearer/GitHub tokens, private keys, 48+ char opaque strings; sha256 digests kept) and bounds streams to 2000 chars, persists one 0600 record per request id (first terminal result wins; transient/5xx results are RETRYABLE, never published, and replaced by the later terminal result), and posts exactly one marker comment (`<!-- GACE_BOUNDED_HOST_RESULT request_id=... -->`) on the fixed control Issue #10 using the Host's existing GitHub CLI connection (crash-safe: it looks for an existing marker before posting). The existing Actions job then reads that comment with its own `GITHUB_TOKEN` (`issues: read`) and prints `SERVERCORE_BOUNDED_HOST_*` markers correlated to the request id, failing on Host FAIL, correlation mismatch or no result (`NOT_RETURNED`), so GPT CHAT reads the run log or the Issue through its existing GitHub connection. Read-only commands return 503 (Gateway retry) if the sink is down; mutating commands still execute exactly as before. No new MCP, workflow, token, listener, or deploy authority; registry and DebugAI untouched. `service.deploy` PASS means accepted; terminal deploy readback stays `service.deploy_status`.
+
+
+### 2026-10-12 — Result sink resolves the GitHub CLI by fixed absolute path
+
+The Host user systemd PATH has no `~/bin`, where the existing authenticated `gh` lives. The result sink now selects the first executable of fixed absolute candidates (`/home/admin1/bin/gh`, `/usr/local/bin/gh`, `/usr/bin/gh`) instead of PATH lookup, and logs a bounded failure class (never the body or credentials) when a publish attempt fails. No new credential.
+
+### 2026-10-12 — Writer result directories stay traversable under UMask=0117
+
+`mkdir(mode=0o700)` is masked by the writers' `UMask=0117`, producing a `0600` directory without the execute bit; the first live result write failed (`RESULT_SINK_UNAVAILABLE`, read-only command correctly returned 503 for Gateway retry). Both the result sink and the service-deploy writer now `chmod 0700` their result directory after creating it. Host directory was repaired in place (`chmod 0700`, no data change).
+
+### 2026-10-12 — Registered file inspection and Docker log reading through the same START-gated, result-returning route
+
+Two read-only bounded commands reuse the proven Actions -> Gateway -> Receiver -> result-sink -> GitHub path (no new MCP, workflow, token, listener or deploy authority). `project.file_inspect` reads ONE 2400-byte chunk (`offset`, `next_offset`) of an exactly registered canonical-checkout file (`registered_files` in the committed contract; no globs, traversal or symlinks; expected_sha must equal Host HEAD; the DebugAI-owned master-internal registry is deliberately not registered). `docker.logs` is served by a separate admin1 user-level UNIX-socket reader (`servercore_docker_logs_socket.py`, fixed `docker logs --tail N --timestamps <container>`, tail<=200, 16000-char cap) so the Receiver keeps no Docker authority; authority is the committed `registered_log_containers` (initially only `server-core-bounded-host`; a dirty or locally edited contract is denied). Adding another project's container needs an explicit reviewed contract change. Output is redacted (now also JSON-escaped `key: value` secrets) and bounded to 4000 chars by the result sink; stdout/stderr are returned by request id as before. `service.deploy` stays gated by registry delegation (PR #117 draft).
+
+
+### 2026-10-12 — Docker-admitted user writers start through `sg docker`
+
+Live rollout of the registered Docker log reader returned `DOCKER_LOGS_EXECUTION_FAILED`: the long-lived admin1 user systemd manager runs with groups `27 100 1000` (docker membership was added later), so its units cannot reach `/var/run/docker.sock`; an unprivileged unit cannot `setgroups`. The same latent defect applies to the registered service deploy writer. Both installers now emit a user-level unit that starts the fixed script through `/usr/bin/sg docker -c` (membership already granted to admin1; `sg` is setuid so `NoNewPrivileges=no`; still no root, no network listener, same UNIX socket and fixed-schema request). Existing installed legacy units are replaced atomically only if byte-identical to the previously shipped text; any other unit is an `EXISTING_UNIT_CONFLICT`. Alternative (root restart of `user@1000`) needs sudo and was not available.
+
+### 2026-10-12 — Per-commit isolated CHAT Host request ownership
+
+The legacy singleton `.github/chatgpt-live-api-target.json` caused conflicting GitHub updates between distinct CHAT and Server AI units, and risks re-dispatch on unrelated main changes. Retain compatibility while supporting one new immutable `.github/chat-host-requests/req_<24hex>.json` per triggering commit. The existing Actions workflow selects only a newly added request and materializes it only in the runner workspace before current START Gate/dispatch/result-return checks. Later commits cannot replay earlier request files. Reject mutation of a prior request, multiple request files per commit and combined legacy target mutation. Existing Gateway, server-core Host receiver, result sink, workflow and credentials are reused; no new MCP, token or workflow. The existing Actions concurrency group serializes runners, while distinct request files permit separate callers to submit without shared target write conflicts. Runtime E2E remains a separate gate.
+
+### 2026-10-12 — Independent CHAT request concurrency groups
+
+Following isolated CHAT request E2E success on existing Actions→Gateway→Host, a fixed workflow-level `concurrency.group` still allowed at most one running and one pending run per group, risking loss of intermediate independent requests when multiple callers submit close together. Use the triggering SHA as the concurrency group suffix for commits that add a per-request file; retain the singleton `legacy` group for all other triggers, including the existing shared target. `cancel-in-progress: false` remains. Per-commit request admission and result idempotency are unchanged. Legacy mutating requests remain serialized; independent request submissions can have distinct waiting/running slots without replacing one another. No new workflow, gateway endpoint, token or Host authority is added.
+
+### 2026-10-12 — Tool B: bounded tracked Git diff summary (Control #10)
+
+- **Purpose:** normal GPT CHAT needs a bounded Host-side change indicator while diagnosing Source/Runtime drift without exposing arbitrary Git diff paths or contents.
+- **Design authority:** `docs/SERVER_CORE_DESIGN.md` §16.9.1, §16.9, §16.10. Reuse `servercore_bounded_host.py`, its existing Receiver and `operations/github-project-bounded-host.json`; no new transport, workflow, token or privilege.
+- **Contract:** `project.git_diff_stat` takes the existing exact `expected_sha` and returns `changed` boolean plus a maximum 200-character tracked-diff aggregate (`git diff --shortstat HEAD --`). Unknown command, SHA mismatch and malformed/multiline output fail closed. It does **not** report untracked files; use existing `project.git_status` for checkout cleanliness. No repository paths, contents, or free-form shell arguments are returned.
+- **Owner/rollout:** server-core Source; actual Host runtime remains independently gated on reviewed Source/CI, exact Host SHA reflection and same-SHA CHAT→Actions→Host→result E2E. This delta is not a runtime PASS claim. DebugAI legacy product route and PR #117 Draft are unchanged.
+
+
+### 2026-10-12 — Work Routine design-first gate implementation (PR #39 owner branch)
+
+Integrated PR #135 design contract into the existing Work Routine §6 without a new rule plane, Project field or workflow. Added `scripts/work_routine_design_entry_gate.py` plus tests; wired optional `GACE_WORK_ROUTINE_TURN` receipt checking into `gace_mutation_rehydrate_check.py` and extended `github_project_chat_turn_gate.py` START receipts when `mutation_scope` / design evidence is supplied. CI runs the new unit tests via existing `server-core-guard`. Native ordinary-CHAT interception remains **NOT_IMPLEMENTED**; bounded mutation/START paths are the verified enforcement surface.
+

@@ -1,0 +1,28 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Second valid independent CHAT status E2E; first request must not replay",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_status",
+    "expected_sha": "e3d8374ed7b6b532f24859b92270c0a2e935fd04"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "GPT CHAT Manifest #17 Control #10 verified, first isolated E2E #38155508031 PASS, previous 23-hex filename rejected before dispatch, canonical Host SHA e3d8374ed7b6b532f24859b92270c0a2e935fd04"
+  }
+}

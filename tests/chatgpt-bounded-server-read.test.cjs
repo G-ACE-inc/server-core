@@ -1,0 +1,494 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),os=require("node:os"),path=require("node:path");
+const m=require("../scripts/chatgpt-bounded-server-read.cjs");
+const wf=fs.readFileSync(path.resolve(__dirname,"../.github/workflows/chatgpt-live-api-verify.yml"),"utf8");
+const target=JSON.parse(fs.readFileSync(path.resolve(__dirname,"../.github/chatgpt-live-api-target.json"),"utf8"));
+const targetNoBoundedHost={...target,bounded_host_request:{enabled:false}};
+const d=require("../scripts/chatgpt-source-reflect-dispatch.cjs");
+const route=JSON.parse(fs.readFileSync(path.resolve(__dirname,"../operations/github-project-chat-host-routes.json"),"utf8"));
+const registry=JSON.parse(fs.readFileSync(path.resolve(__dirname,"../operations/master-internal-repositories.json"),"utf8"));
+
+function targetFixture(t,overrides={}){
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"debugai-chat-target-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const targetFile=path.join(dir,"target.json");
+  // Runtime target fields vary across real CHAT invocations; mocks must not inherit them.
+  // Keep the known idle transport identity, then apply only this test's explicit inputs.
+  const base={base_url:target.base_url,mode:"readonly",run_id:"",repo:target.repo,
+    request:"",gitops_request:{enabled:false},source_reflect_request:{enabled:false}};
+  fs.writeFileSync(targetFile,JSON.stringify({...base,...overrides}));
+  return targetFile;
+}
+test("Independent bounded Host dispatch does not require DebugAI product route",()=>{
+  const independent={...target,bounded_host_request:{enabled:true,command_id:"project.source_reflect",
+    expected_sha:"GITHUB_WORKFLOW_SHA",expected_before:"a".repeat(40)},server_command_id:""};
+  assert.deepEqual(d.validateDispatch({target:independent,route:{routes:[]},registry:{repositories:[]},gitRefName:"main"}),
+    {mode:"bounded_host",commandId:"project.source_reflect"});
+  assert.match(wf,/steps\.target\.outputs\.bounded_host_enabled != 'true'/);
+});
+test("Independent deploy effect needs exact before SHA and rejects extra request fields",()=>{
+  const x={enabled:true,command_id:"project.source_reflect",expected_sha:"GITHUB_WORKFLOW_SHA",expected_before:"a".repeat(40)};
+  const contract=JSON.parse(fs.readFileSync(path.resolve(__dirname,"../operations/github-project-bounded-host.json"),"utf8"));
+  assert.doesNotThrow(()=>d.validateBoundedHostRequest(x,contract));
+  assert.throws(()=>d.validateBoundedHostRequest({...x,expected_before:"HEAD"},contract),/BOUNDED_HOST_BEFORE_SHA_INVALID/);
+  assert.throws(()=>d.validateBoundedHostRequest({...x,arbitrary_shell:"bash"},contract),/BOUNDED_HOST_KEYS_INVALID/);
+  assert.throws(()=>d.validateBoundedHostRequest({...x,command_id:"project.registered_tests"},contract),/BOUNDED_HOST_COMMAND_DENIED|BOUNDED_HOST_KEYS_INVALID/);
+  assert.match(wf,/\.bounded_host_request\.expected_before/);
+  assert.match(wf,/CHAT_START_GATE_RECEIPT_MISSING/);
+});
+test("Bounded CHAT read uses existing workflow/API and validates the configured read-only command",()=>{
+  assert.match(wf,/node scripts\/chatgpt-bounded-server-read\.cjs/);
+  assert.equal(target.mode,"readonly");
+  assert.equal(target.base_url,"https://debugai.asterav8.jp");
+  assert.equal(m.validateTarget(target),target.server_command_id||null);
+  for(const command of ["project.git_head","service.debug_ai_health"]){
+    assert.equal(m.validateTarget({...target,server_command_id:command}),command);
+  }
+});
+test("No mutating, arbitrary, paid AI, or unscoped command is permitted",()=>{
+  for(const id of ["canonical.devlog_activate_start","asteria.baseline_probe_start","github.gh_write","github.gh_read","debugai_start","bash"]){
+    assert.ok(!m.ALLOWED.has(id));
+    assert.throws(()=>m.validateTarget({...target,server_command_id:id}),/SERVER_COMMAND_DENIED/);
+  }
+  assert.throws(()=>m.validateTarget({...target,mode:"dogfood"}),/SERVER_COMMAND_SCOPE_DENIED/);
+  assert.throws(()=>m.validateTarget({...target,base_url:"https://example.org"}),/SERVER_COMMAND_SCOPE_DENIED/);
+  assert.equal(m.validateTarget({...target,server_command_id:""}),null);
+});
+test("Sanitized output rejects free text and secrets",()=>{
+  assert.deepEqual(m.safeResult("project.git_head","a".repeat(40)),["SERVER_GIT_HEAD="+"a".repeat(40)]);
+  assert.throws(()=>m.safeResult("project.git_head","secret"),/SERVER_HEAD_INVALID/);
+  assert.deepEqual(m.safeResult("service.debug_ai_health","http_status=200"),["SERVER_HEALTH=http_status=200"]);
+  assert.throws(()=>m.safeResult("service.debug_ai_state","secret-value"),/SERVER_STATE_INVALID/);
+  assert.deepEqual(m.safeResult("canonical.devlog_activate_status",JSON.stringify({state:"FAIL",helper_actual:"b".repeat(40),event_id:"",error:"SECRET_REAL_VALUE"})),["DEVLOG_ACTIVATION_STATE=FAIL","DEVLOG_HELPER_ACTUAL="+"b".repeat(40),"DEVLOG_EVENT_ID=NONE","DEVLOG_ERROR_PRESENT=true"]);
+});
+test("Real git-head read awaits terminal status, exact ID, command and no write",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:"project.git_head"});
+  const logs=[],calls=[],cmd="c".repeat(24);
+  const fetcher=async(url,args)=>{
+    calls.push({url,body:JSON.parse(args.body)});
+    return {status:url.endsWith("/request")?202:200,json:async()=>url.endsWith("/request")?{id:"cmd_"+cmd}:{id:"cmd_"+cmd,state:"PASS",result:{read_only:true,command_id:"project.git_head",exit_code:0,stdout:"d".repeat(40)}}};
+  };
+  await m.run({request:fetcher,sleep:async()=>{},log:x=>logs.push(x),env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
+  assert.equal(calls.length,2);
+  assert.deepEqual(calls[0].body,{repo:"/workspace/debug-ai",command_id:"project.git_head",arguments:[]});
+  assert.equal(calls[1].body.id,"cmd_"+cmd);
+  assert.ok(logs.includes("SERVER_COMMAND_STATE=PASS"));
+  assert.ok(logs.includes("SERVER_GIT_HEAD="+"d".repeat(40)));
+  assert.ok(!logs.join("|").includes("secret"));
+});
+
+test("Health-only live target uses the existing read-only request/status contract",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:"service.debug_ai_health"});
+  const logs=[],calls=[],id="cmd_"+"b".repeat(24),command="service.debug_ai_health";
+  const request=async(url,args)=>{
+    calls.push({url,body:JSON.parse(args.body)});
+    return {status:url.endsWith("/request")?202:200,json:async()=>url.endsWith("/request")?{id}:{id,state:"PASS",result:{read_only:true,command_id:command,exit_code:0,stdout:"http_status=200"}}};
+  };
+  await m.run({request,sleep:async()=>{},log:x=>logs.push(x),env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
+  assert.equal(calls.length,2);
+  assert.deepEqual(calls[0].body,{repo:"/workspace/debug-ai",command_id:command,arguments:[]});
+  assert.deepEqual(calls[1].body,{repo:"/workspace/debug-ai",id});
+  assert.ok(logs.includes("SERVER_HEALTH=http_status=200"));
+  assert.ok(logs.includes("SERVER_COMMAND_STATE=PASS"));
+  assert.ok(!logs.join("|").includes("secret"));
+});
+
+test("Unconfigured GitOps status is a safe no-request skip",async t=>{
+  const targetFile=targetFixture(t,{gitops_status_id:undefined}),events=[],calls=[];
+  await m.runGitopsStatus({request:async(...args)=>{calls.push(args);throw Error("NETWORK_FORBIDDEN");},log:x=>events.push(x),targetFile});
+  assert.deepEqual(calls,[]);
+  assert.deepEqual(events,["GITOPS_STATUS_READ=SKIPPED"]);
+});
+
+test("GitOps status is read-only, exact ID and safe terminal fields only",async t=>{
+  const id="gitops_"+"a".repeat(24),targetFile=targetFixture(t,{gitops_status_id:id}),events=[],calls=[];
+  assert.equal(m.normalizeGitopsStatusId(""),null);
+  assert.throws(()=>m.normalizeGitopsStatusId("gitops_invalid"),/GITOPS_STATUS_ID_INVALID/);
+  const requester=async(url,args)=>{
+    calls.push({url,body:JSON.parse(args.body)});
+    return {status:200,json:async()=>({id,state:"PASS",result:{deployed_sha:"e".repeat(40),["opaque_"+"secret"]:"must-not-print"}})};
+  };
+  await m.runGitopsStatus({request:requester,log:x=>events.push(x),env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"s"},targetFile});
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].url,"https://debugai.asterav8.jp/v1/gitops/status");
+  assert.deepEqual(calls[0].body,{repo:"/workspace/debug-ai",id});
+  assert.ok(events.includes("GITOPS_HOST_STATE=PASS"));
+  assert.ok(events.includes("GITOPS_DEPLOYED_SHA="+"e".repeat(40)));
+  assert.ok(!events.join(" ").includes("must-not-print"));
+});
+
+test("existing CHAT workflow can retrieve a concrete server workspace inventory page",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:"system.projects_inventory",inventory_page:2});
+  const payload={schema:"debugai.host-workspace-inventory/v1",page:2,page_size:6,total:14,next_page:null,missing_roots:[],entries:[{root:"/home/admin1/projects",name:"repo",path:"/home/admin1/projects/repo",kind:"git_repository",head:"a".repeat(12),branch:"main"}]};
+  const events=[],calls=[],id="cmd_"+"e".repeat(24);
+  const request=async(url,args)=>{
+    calls.push(JSON.parse(args.body));
+    return {status:url.endsWith("/request")?202:200,json:async()=>url.endsWith("/request")?{id}:{id,state:"PASS",result:{read_only:true,command_id:"system.projects_inventory",exit_code:0,stdout:JSON.stringify(payload)}}};
+  };
+  await m.run({request,sleep:async()=>{},log:s=>events.push(s),env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"test-secret"},targetFile});
+  assert.deepEqual(calls[0],{repo:"/workspace/debug-ai",command_id:"system.projects_inventory",arguments:["2"]});
+  assert.equal(calls[1].id,id);
+  assert.ok(events.includes("SERVER_PROJECTS_TOTAL=14"));
+  assert.ok(events.includes("SERVER_PROJECTS_NEXT=NONE"));
+  assert.ok(events.find(x=>x.startsWith("SERVER_PROJECTS_DATA=")).includes("/home/admin1/projects/repo"));
+  assert.ok(!events.join("|").includes("test-secret"));
+  assert.throws(()=>m.validateTarget({...target,server_command_id:"system.projects_inventory",inventory_page:"../"}),/PROJECT_INVENTORY_PAGE_INVALID/);
+});
+
+test("one existing GitHub Actions invocation collects all bounded server workspace inventory pages",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:"system.projects_inventory",inventory_page:0,inventory_all:true});
+  const requests=[],log=[],cmdIds=["cmd_"+"e".repeat(24),"cmd_"+"f".repeat(24)];
+  let nextCommand=0;
+  const mock=async(url,args)=>{
+    const body=JSON.parse(args.body);requests.push({url,body});
+    if(url.endsWith("/request")){
+      const id=cmdIds[nextCommand++];
+      assert.ok(id);
+      return {status:202,json:async()=>({id})};
+    }
+    const index=cmdIds.indexOf(body.id);
+    assert.ok(index>=0);
+    const payload={schema:"debugai.host-workspace-inventory/v1",page:index,page_size:6,total:8,next_page:index===0?1:null,missing_roots:[],entries:[{name:index===0?"first":"last",kind:"directory"}]};
+    return {status:200,json:async()=>({id:body.id,state:"PASS",result:{read_only:true,command_id:"system.projects_inventory",exit_code:0,stdout:JSON.stringify(payload)}})};
+  };
+  await m.run({request:mock,sleep:async()=>{},log:s=>log.push(s),env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
+  assert.equal(nextCommand,2);
+  assert.deepEqual(requests.filter(x=>x.url.endsWith("/request")).map(x=>x.body.arguments),[["0"],["1"]]);
+  assert.equal(log.filter(x=>x==="SERVER_COMMAND_STATE=PASS").length,2);
+  assert.deepEqual(log.filter(x=>x.startsWith("SERVER_PROJECTS_PAGE=")),["SERVER_PROJECTS_PAGE=0","SERVER_PROJECTS_PAGE=1"]);
+  assert.ok(log.includes("SERVER_PROJECTS_SCAN_COMPLETE=TRUE"));
+  assert.deepEqual(log.filter(x=>x.startsWith("SERVER_COMMAND_REQUEST_ID=")).map(x=>x.slice(26)),cmdIds);
+  assert.throws(()=>m.validateTarget({...target,server_command_id:"system.projects_inventory",inventory_all:"yes"}),/PROJECT_INVENTORY_MODE_INVALID/);
+});
+
+test("bounded project file inspect uses offset read contract and sanitized markers",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:"system.project_file_inspect",file_inspect_entry:"webhook-gateway",file_inspect_path:"package.json",file_inspect_offset:0});
+  const payload={schema:"debugai.host-workspace-file-inspect/v1",entry_name:"webhook-gateway",relative_path:"package.json",file_size:100,mtime_iso:"2026-01-01T00:00:00+00:00",sha256:"a".repeat(64),file_identity:{size:100,mtime_iso:"2026-01-01T00:00:00+00:00",sha256:"a".repeat(64)},content_offset:0,content_length:12,content_chunk:"{\"name\":\"ok\"}",next_offset:null,complete:true};
+  const logs=[],calls=[],id="cmd_"+"c".repeat(24);
+  const request=async(url,args)=>{
+    calls.push({url,body:JSON.parse(args.body)});
+    return {status:url.endsWith("/request")?202:200,json:async()=>url.endsWith("/request")?{id}:{id,state:"PASS",result:{read_only:true,command_id:"system.project_file_inspect",exit_code:0,stdout:JSON.stringify(payload)}}};
+  };
+  await m.run({request,sleep:async()=>{},log:x=>logs.push(x),env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
+  assert.deepEqual(calls[0].body,{repo:"/workspace/debug-ai",command_id:"system.project_file_inspect",arguments:["webhook-gateway","package.json","0"]});
+  assert.ok(logs.includes("HOST_FILE_SHA256="+"a".repeat(64)));
+  assert.ok(logs.includes("HOST_FILE_OFFSET=0"));
+  assert.ok(logs.includes("SERVER_COMMAND_READ_ONLY=TRUE"));
+  assert.throws(()=>m.validateTarget({...target,server_command_id:"system.project_file_inspect",file_inspect_path:"../x"}),/PROJECT_FILE_INSPECT_TARGET_INVALID/);
+});
+
+test("bounded project file inspect can collect all pages in one invocation",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:"system.project_file_inspect",file_inspect_entry:"debug-ai",file_inspect_path:"README.md",file_inspect_all_pages:true});
+  const requests=[],logs=[],cmdIds=["cmd_"+"a".repeat(24),"cmd_"+"b".repeat(24)];
+  let nextCommand=0;
+  const sha="f".repeat(64);
+  const request=async(url,args)=>{
+    const body=JSON.parse(args.body);requests.push({url,body});
+    if(url.endsWith("/request")){
+      const id=cmdIds[nextCommand++];
+      return {status:202,json:async()=>({id})};
+    }
+    const index=cmdIds.indexOf(body.id);
+    const offset=Number(requests.filter(x=>x.url.endsWith("/request"))[index].body.arguments[2]);
+    const complete=offset>=512;
+    const payload={schema:"debugai.host-workspace-file-inspect/v1",entry_name:"debug-ai",relative_path:"README.md",file_size:600,mtime_iso:"2026-01-01T00:00:00+00:00",sha256:sha,file_identity:{size:600,mtime_iso:"2026-01-01T00:00:00+00:00",sha256:sha},content_offset:offset,content_length:complete?88:512,content_chunk:complete?"tail":"x".repeat(512),next_offset:complete?null:512,complete};
+    return {status:200,json:async()=>({id:body.id,state:"PASS",result:{read_only:true,command_id:"system.project_file_inspect",exit_code:0,stdout:JSON.stringify(payload)}})};
+  };
+  await m.run({request,sleep:async()=>{},log:s=>logs.push(s),env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
+  assert.equal(nextCommand,2);
+  assert.deepEqual(requests.filter(x=>x.url.endsWith("/request")).map(x=>x.body.arguments),[["debug-ai","README.md","0"],["debug-ai","README.md","512"]]);
+  assert.ok(logs.includes("HOST_FILE_SHA256_MATCH="+sha));
+  assert.ok(logs.includes("HOST_FILE_SCAN_COMPLETE=TRUE"));
+});
+
+test("bounded CHAT log routing accepts only existing Host git history and GitHub Actions metadata",()=>{
+  assert.equal(m.validateTarget({...target,server_command_id:"project.git_recent_commits"}),"project.git_recent_commits");
+  assert.equal(m.validateTarget({...target,server_command_id:"github.actions_recent"}),"github.actions_recent");
+  assert.deepEqual(m.safeResult("project.git_recent_commits","a1b2c3d fix: stable Git log\n0123abcd feat: existing command"),[
+    "SERVER_GIT_LOG="+JSON.stringify([{sha:"a1b2c3d",subject:"fix: stable Git log"},{sha:"0123abcd",subject:"feat: existing command"}])
+  ]);
+  const action=JSON.stringify([{databaseId:37919545339,name:"Verify",status:"completed",conclusion:"success",headSha:"a".repeat(40),event:"pull_request",url:"https://github.com/seigo-gace/debug-ai/actions/runs/37919545339"}]);
+  assert.equal(m.safeResult("github.actions_recent",action)[0],"SERVER_ACTIONS_LOG="+JSON.stringify([{id:37919545339,name:"Verify",status:"completed",conclusion:"success",sha:"a".repeat(40),url:"https://github.com/seigo-gace/debug-ai/actions/runs/37919545339"}]));
+  assert.throws(()=>m.safeResult("project.git_recent_commits","private raw text"),/SERVER_GIT_LOG_INVALID/);
+  assert.throws(()=>m.safeResult("github.actions_recent",JSON.stringify([{databaseId:1,name:"Bearer PRIVATE_TOKEN",status:"completed"}])),/SERVER_ACTIONS_LOG_INVALID/);
+});
+test("bounded CHAT server Git log read returns exact Host command and sanitized history",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:"project.git_recent_commits"}),requests=[],events=[],id="cmd_"+"d".repeat(24);
+  const request=async(url,args)=>{
+    requests.push(JSON.parse(args.body));
+    return{status:url.endsWith("/request")?202:200,json:async()=>url.endsWith("/request")?{id}:{id,state:"PASS",result:{read_only:true,command_id:"project.git_recent_commits",exit_code:0,stdout:"a1b2c3d fix: stable log"}}};
+  };
+  await m.run({request,sleep:async()=>{},log:v=>events.push(v),env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
+  assert.deepEqual(requests[0],{repo:"/workspace/debug-ai",command_id:"project.git_recent_commits",arguments:[]});
+  assert.ok(events.includes("SERVER_COMMAND_STATE=PASS"));
+  assert.ok(events.includes('SERVER_GIT_LOG=[{"sha":"a1b2c3d","subject":"fix: stable log"}]'));
+});
+
+test("CHAT Docker development logs stay scoped, short, sanitized and read-only",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:"service.debug_ai_logs",log_service:"debug-ai",log_lines:12});
+  const logs=[],requests=[],id="cmd_"+"f".repeat(24);
+  const request=async(url,args)=>{
+    requests.push(JSON.parse(args.body));
+    return{status:url.endsWith("/request")?202:200,json:async()=>url.endsWith("/request")?{id}:{id,state:"PASS",result:{
+      read_only:true,command_id:"service.debug_ai_logs",exit_code:0,
+      stdout:"2026-10-09 ERROR CODE_CONNECTION_FAILED\n[REDACTED_SENSITIVE_LINE]\n2026-10-09 WARN RETRY_POSSIBLE"
+    }}};
+  };
+  await m.run({request,sleep:async()=>{},log:v=>logs.push(v),env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
+  assert.deepEqual(requests[0],{repo:"/workspace/debug-ai",command_id:"service.debug_ai_logs",arguments:["debug-ai","12"]});
+  assert.ok(logs.includes("SERVER_COMMAND_STATE=PASS"));
+  assert.ok(logs.join(" ").includes("CODE_CONNECTION_FAILED"));
+  assert.ok(logs.join(" ").includes("[REDACTED_SENSITIVE_LINE]"));
+  for(const service of ["server-core","/tmp","debug-ai;rm"])assert.throws(()=>m.validateTarget({...target,server_command_id:"service.debug_ai_logs",log_service:service}),/SERVER_LOG_SERVICE_DENIED/);
+  for(const count of [0,21,100,"1;whoami"])assert.throws(()=>m.validateTarget({...target,server_command_id:"service.debug_ai_logs",log_lines:count}),/SERVER_LOG_LINES_INVALID/);
+  assert.deepEqual(m.safeResult("service.debug_ai_logs","Authorization Bearer SUPER_SECRET"),["SERVER_RUNTIME_LOG_LINES="+JSON.stringify(["[REDACTED_SENSITIVE_LINE]"])]);
+});
+
+test("CHAT registered host container logs stay scoped, short, sanitized and read-only",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:"service.registered_container_logs",registered_container_entry:"webhook-gateway-api",log_lines:5});
+  const logs=[],requests=[],id="cmd_"+"a".repeat(24);
+  const request=async(url,args)=>{
+    requests.push(JSON.parse(args.body));
+    return{status:url.endsWith("/request")?202:200,json:async()=>url.endsWith("/request")?{id}:{id,state:"PASS",result:{
+      read_only:true,command_id:"service.registered_container_logs",exit_code:0,
+      stdout:"2026-10-09 INFO webhook ready\nBearer SUPER_SECRET\n2026-10-09 INFO ok"
+    }}};
+  };
+  await m.run({request,sleep:async()=>{},log:v=>logs.push(v),env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
+  assert.deepEqual(requests[0],{repo:"/workspace/debug-ai",command_id:"service.registered_container_logs",arguments:["webhook-gateway-api","5"]});
+  assert.ok(logs.includes("SERVER_COMMAND_STATE=PASS"));
+  assert.ok(logs.join(" ").includes("[REDACTED_SENSITIVE_LINE]"));
+  const base=JSON.parse(fs.readFileSync(targetFile,"utf8"));
+  for(const entry of ["","../x","webhook;rm"])assert.throws(()=>m.validateTarget({...base,server_command_id:"service.registered_container_logs",registered_container_entry:entry,log_lines:5}),/REGISTERED_CONTAINER|SERVER_LOG/);
+});
+
+
+test("server-core workflow allows main Source reflect and keeps legacy DebugAI deploy fail-closed",()=>{
+  assert.match(wf,/main\|feat\/chat-actions-client-migration-20261011\) ;;/);
+  assert.match(wf,/CHAT_SOURCE_REFLECT_TRIGGER_BRANCH_DENIED/);
+  assert.match(wf,/node scripts\/chatgpt-source-reflect-dispatch\.cjs verify-dispatch/);
+  assert.match(wf,/dlg_master_servercore_reflect_v1/);
+  assert.match(wf,/CHAT_SOURCE_REFLECT_TRIGGER_HEAD_MISMATCH/);
+  assert.match(wf,/CHAT_SOURCE_REFLECT_SHA_NOT_ON_BRANCH/);
+  assert.match(wf,/SOURCE_REFLECT_AUTO_DOCS_HEAD=YES/);
+  assert.match(wf,/\[\[ "\$GITHUB_REF_NAME" == "feat\/chat-gitops-request-20261009" \]\]/);
+  assert.match(wf,/CHAT_GITOPS_TRIGGER_BRANCH_DENIED/);
+});
+
+test("main idle target passes dispatch preflight without Source reflect",()=>{
+  const idleTarget={
+    ...targetNoBoundedHost,
+    gitops_request:{enabled:false},
+    source_reflect_request:{enabled:false},
+    server_command_id:undefined,
+  };
+  const result=d.validateDispatch({target:idleTarget,route,registry,gitRefName:"main"});
+  assert.equal(result.mode,"idle");
+});
+
+test("main registered Source reflect dispatch matches dlg_master_servercore_reflect_v1",()=>{
+  const sha="a".repeat(40);
+  const reflectTarget={
+    ...targetNoBoundedHost,
+    server_command_id:"",
+    source_reflect_request:{
+      enabled:true,
+      repository:d.REGISTERED_REPOSITORY,
+      branch:d.REGISTERED_BRANCH,
+      sha,
+      delegation_id:d.DELEGATION_ID,
+      runtime_target:d.REGISTERED_RUNTIME,
+    },
+  };
+  const result=d.validateDispatch({target:reflectTarget,route,registry,gitRefName:"main"});
+  assert.equal(result.mode,"source_reflect");
+  assert.equal(result.delegationId,d.DELEGATION_ID);
+});
+
+test("unregistered repository and delegation mismatch fail before Host call",()=>{
+  const base={
+    ...targetNoBoundedHost,
+    source_reflect_request:{
+      enabled:true,
+      repository:"seigo-gace/not-registered",
+      branch:"main",
+      sha:"b".repeat(40),
+      delegation_id:d.DELEGATION_ID,
+      runtime_target:d.REGISTERED_RUNTIME,
+    },
+  };
+  assert.throws(()=>d.validateDispatch({target:base,route,registry,gitRefName:"main"}),/SOURCE_REFLECT_REPOSITORY_UNREGISTERED/);
+  const wrongDelegation={...base,source_reflect_request:{...base.source_reflect_request,delegation_id:"dlg_master_tgserver_reflect_v1"}};
+  assert.throws(()=>d.validateDispatch({target:wrongDelegation,route,registry,gitRefName:"main"}),/SOURCE_REFLECT_DELEGATION_MISMATCH/);
+});
+
+test("branch and SHA registry mismatch and concurrent deploy are rejected",()=>{
+  const sha="c".repeat(40);
+  const reflect={
+    enabled:true,
+    repository:d.REGISTERED_REPOSITORY,
+    branch:"feat/not-allowed",
+    sha,
+    delegation_id:d.DELEGATION_ID,
+    runtime_target:d.REGISTERED_RUNTIME,
+  };
+  assert.throws(()=>d.validateDispatch({target:{...targetNoBoundedHost,source_reflect_request:reflect},route,registry,gitRefName:"main"}),/SOURCE_REFLECT_BRANCH_REGISTRY_MISMATCH/);
+  const badSha={...reflect,branch:"main",sha:"not-a-sha"};
+  assert.throws(()=>d.validateRegisteredDelegation(badSha,registry.repositories.find(x=>x.id===d.DELEGATION_ID)),/SOURCE_REFLECT_SHA_INVALID/);
+  assert.throws(()=>d.validateDispatch({
+    target:{
+      ...targetNoBoundedHost,
+      gitops_request:{enabled:true,branch:"feat/tgserver-async-log-sink-20261003",sha:"d".repeat(40)},
+      source_reflect_request:{...reflect,branch:"main",sha:"d".repeat(40)},
+    },
+    route,registry,gitRefName:"main",
+  }),/CHAT_REFLECT_CONCURRENT_DEPLOY_DENIED/);
+});
+
+test("reflect dispatch forbids server command and non-main trigger branch",()=>{
+  const sha="e".repeat(40);
+  const reflectTarget={
+    ...targetNoBoundedHost,
+    server_command_id:"project.git_head",
+    source_reflect_request:{
+      enabled:true,
+      repository:d.REGISTERED_REPOSITORY,
+      branch:d.REGISTERED_BRANCH,
+      sha,
+      delegation_id:d.DELEGATION_ID,
+      runtime_target:d.REGISTERED_RUNTIME,
+    },
+  };
+  assert.throws(()=>d.validateDispatch({target:reflectTarget,route,registry,gitRefName:"main"}),/SOURCE_REFLECT_SERVER_COMMAND_FORBIDDEN/);
+  const okTarget={...reflectTarget,server_command_id:undefined};
+  assert.throws(()=>d.validateDispatch({target:okTarget,route,registry,gitRefName:"feat/wrong-branch"}),/CHAT_SOURCE_REFLECT_TRIGGER_BRANCH_DENIED/);
+});
+
+test("bounded server read skips Host when no server_command_id (reflect idle guard)",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:""});
+  const calls=[];
+  const request=async()=>{calls.push("host");return{status:200,json:async()=>({})};};
+  await m.run({request,sleep:async()=>{},log:()=>{},env:{CF_ACCESS_CLIENT_ID:"id",CF_ACCESS_CLIENT_SECRET:"secret"},targetFile});
+  assert.equal(calls.length,0);
+});
+
+test("existing Host git status emits bounded counts without filenames",()=>{
+  assert.equal(m.ALLOWED.has("project.git_status"),true);
+  assert.deepEqual(m.safeResult("project.git_status",""),["SERVER_GIT_WORKTREE_CLEAN=true","SERVER_GIT_CHANGED_ENTRIES=0"]);
+  assert.deepEqual(m.safeResult("project.git_status"," M sensitive.env\n?? notes.txt"),["SERVER_GIT_WORKTREE_CLEAN=false","SERVER_GIT_CHANGED_ENTRIES=2"]);
+});
+
+
+test("bounded disk and git changed-path readbacks reject unsafe output",()=>{
+  assert.equal(m.ALLOWED.has("system.disk_usage"),true);
+  assert.equal(m.ALLOWED.has("project.git_changed_paths"),true);
+  assert.deepEqual(m.safeResult("system.disk_usage","blocks_kb=252838256\nused_percent=44%"),["SERVER_DISK_USED_PERCENT=44","SERVER_DISK_BLOCKS_KB=252838256"]);
+  assert.throws(()=>m.safeResult("system.disk_usage","used_percent=150%\nblocks_kb=100"),/SERVER_DISK_RESULT_INVALID/);
+  assert.throws(()=>m.safeResult("system.disk_usage","not-an-observation"),/SERVER_DISK_RESULT_INVALID/);
+  assert.deepEqual(m.safeResult("project.git_changed_paths","package-lock.json\nserver/tests/example.test.cjs"),["SERVER_GIT_CHANGED_PATH_COUNT=2"]);
+  assert.deepEqual(m.safeResult("project.git_changed_paths",""),["SERVER_GIT_CHANGED_PATH_COUNT=0"]);
+  assert.throws(()=>m.safeResult("project.git_changed_paths","evil\u0000path"),/SERVER_CHANGED_PATHS_INVALID/);
+});
+
+
+test("permanent Host status HTTP 404 stops polling without an unsafe retry loop",async t=>{
+ const targetFile=targetFixture(t,{server_command_id:"project.git_head"});
+ const requests=[],logs=[];
+ const request=async(url)=>{
+   requests.push(url);
+   if(url.endsWith("/request"))return {status:202,json:async()=>({id:"cmd_"+"a".repeat(24)})};
+   return {status:404,json:async()=>({error:"NOT_FOUND"})};
+ };
+ await assert.rejects(m.run({request,sleep:async()=>{},log:x=>logs.push(x),env:{CF_ACCESS_CLIENT_ID:"test-id",CF_ACCESS_CLIENT_SECRET:"test-secret"},targetFile}),/STATUS_HTTP_NOT_200/);
+ assert.equal(requests.filter(x=>x.endsWith("/status")).length,1);
+ assert.ok(logs.includes("SERVER_COMMAND_STATUS_HTTP=404"));
+});
+
+
+
+test("registered python unittest resolves manifest and rejects unknown test id",()=>{
+  const repo="/workspace/debug-ai/.debugai-input/test-repos/server-core";
+  const ok={...target,mode:"readonly",base_url:"https://debugai.asterav8.jp",server_command_id:"project.python_unittest",repo,registered_test_target:"server_core_baseline",registered_test_id:"rule_plane_static"};
+  assert.equal(m.validateTarget(ok),"project.python_unittest");
+  assert.throws(()=>m.validateTarget({...ok,registered_test_id:"missing"}),/REGISTERED_TEST_ID_DENIED/);
+  assert.throws(()=>m.validateTarget({...ok,repo:"/workspace/debug-ai"}),/REGISTERED_TEST_REPO_MISMATCH/);
+});
+
+test("python unittest safe result redacts sensitive lines and preserves exit code marker",()=>{
+  const lines=m.safeResult("project.python_unittest","ok line\nBearer SECRET=bad",0);
+  assert.ok(lines[0].startsWith("SERVER_TEST_EXIT_CODE=0"));
+  assert.ok(lines[2].includes("REDACTED_SENSITIVE_LINE"));
+});
+
+test("idle dispatch requires catalog, workflow support, and read-only effect together",()=>{
+  const targetIdle={...target,server_command_id:"project.git_head",bounded_host_request:{enabled:false}};
+  const args={target:targetIdle,route,registry,gitRefName:"main"};
+  assert.equal(d.validateDispatch(args).mode,"idle");
+  const copy=()=>JSON.parse(JSON.stringify(route));
+  const a=copy();a.routes[0].workflow_supported_command_ids=a.routes[0].workflow_supported_command_ids.filter(x=>x!=="project.git_head");
+  assert.throws(()=>d.validateDispatch({...args,route:a}),/IDLE_EFFECTIVE_ROUTE_ADMISSION_DENIED/);
+  const b=copy();b.routes[0].server_command.allowed_command_ids=b.routes[0].server_command.allowed_command_ids.filter(x=>x!=="project.git_head");
+  assert.throws(()=>d.validateDispatch({...args,route:b}),/IDLE_EFFECTIVE_ROUTE_ADMISSION_DENIED/);
+  const c=copy();c.routes[0].command_effects["project.git_head"]="write";
+  assert.throws(()=>d.validateDispatch({...args,route:c}),/IDLE_EFFECTIVE_ROUTE_ADMISSION_DENIED/);
+});
+
+
+test("registered test API rejection preserves HTTP class without echoing response",async t=>{
+  const targetFile=targetFixture(t,{server_command_id:"project.python_unittest",registered_test_target:"server_core_baseline",registered_test_id:"rule_plane_static",repo:"/workspace/debug-ai/.debugai-input/test-repos/server-core"});
+  const requests=[];
+  const request=async(url)=>{requests.push(url);return{status:400,json:async()=>{throw Error("response-body-should-not-be-read");}};};
+  await assert.rejects(m.run({request,sleep:async()=>{},log:()=>{},env:{CF_ACCESS_CLIENT_ID:"a",CF_ACCESS_CLIENT_SECRET:"b"},targetFile}),e=>e.message==="REQUEST_HTTP_NOT_202"&&e.httpStatus===400);
+  assert.equal(requests.length,1);
+});
+
+test("bounded host dispatch rejects DebugAI command overlap and unregistered commands",()=>{
+  const hostTarget={...target,mode:"readonly",bounded_host_request:{enabled:true,command_id:"project.git_head",expected_sha:"GITHUB_WORKFLOW_SHA"},server_command_id:""};
+  assert.equal(d.validateDispatch({target:hostTarget,route,registry,gitRefName:"main"}).mode,"bounded_host");
+  assert.throws(()=>d.validateDispatch({target:{...hostTarget,server_command_id:"project.git_head"},route,registry,gitRefName:"main"}),/BOUNDED_HOST_DEBUGAI_COMMAND_FORBIDDEN/);
+  assert.throws(()=>d.validateDispatch({target:{...hostTarget,bounded_host_request:{enabled:true,command_id:"system.shell",expected_sha:"a".repeat(40)}},route,registry,gitRefName:"main"}),/BOUNDED_HOST_COMMAND_DENIED/);
+});
+
+test("service deploy dispatch is fixed registered repo/service at an explicit SHA only",()=>{
+  const deploy={enabled:true,command_id:"service.deploy",expected_sha:"a".repeat(40),repository:"seigo-gace/webhook-gateway",service:"api"};
+  const args=(r)=>({target:{...targetNoBoundedHost,bounded_host_request:r,server_command_id:""},route,registry,gitRefName:"main"});
+  const ok=d.validateDispatch(args(deploy));
+  assert.equal(ok.mode,"bounded_host");
+  assert.equal(ok.commandId,"service.deploy");
+  assert.throws(()=>d.validateDispatch(args({...deploy,expected_sha:"GITHUB_WORKFLOW_SHA"})),/BOUNDED_HOST_DEPLOY_SHA_EXPLICIT_REQUIRED/);
+  assert.throws(()=>d.validateDispatch(args({...deploy,service:"api;sh"})),/BOUNDED_HOST_DEPLOY_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...deploy,repository:"../x"})),/BOUNDED_HOST_DEPLOY_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...deploy,compose_file:"/tmp/x.yml"})),/BOUNDED_HOST_KEYS_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({enabled:true,command_id:"service.deploy",expected_sha:"a".repeat(40)})),/BOUNDED_HOST_KEYS_INVALID/);
+  const status={enabled:true,command_id:"service.deploy_status",expected_sha:"a".repeat(40),deploy_request_id:"req_"+"1".repeat(24)};
+  assert.equal(d.validateDispatch(args(status)).commandId,"service.deploy_status");
+  assert.throws(()=>d.validateDispatch(args({...status,deploy_request_id:"latest"})),/BOUNDED_HOST_DEPLOY_REQUEST_ID_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...deploy,command_id:"service.deploy_all"})),/BOUNDED_HOST_KEYS_INVALID|BOUNDED_HOST_COMMAND_DENIED/);
+  assert.match(wf,/send\+=\(--repository "\$\(jq -r '\.bounded_host_request\.repository'/);
+});
+
+test("every enabled bounded Host command is START-gated and its result is returned by request id",()=>{
+  assert.match(wf,/\(\.bounded_host_request\.enabled == true\)/);
+  assert.doesNotMatch(wf,/command_id == "project\.source_reflect"\) or \(\.bounded_host_request\.command_id == "service\.deploy"/);
+  assert.match(wf,/issues: read/);
+  assert.match(wf,/echo "BOUNDED_HOST_REQUEST_ID=\$request_id"/);
+  assert.match(wf,/servercore_bounded_result_poll\.py[\s\S]*--request-id "\$BOUNDED_HOST_REQUEST_ID"[\s\S]*--expected-sha "\$BOUNDED_HOST_EXPECTED_SHA"/);
+  assert.ok(wf.indexOf("START Gate for explicit CHAT Host requests")<wf.indexOf("Optional independent bounded Host gateway dispatch"));
+});
+
+test("registered file inspect and docker logs dispatch carry only exact bounded targets",()=>{
+  const args=(r)=>({target:{...targetNoBoundedHost,bounded_host_request:r,server_command_id:""},route,registry,gitRefName:"main"});
+  const file={enabled:true,command_id:"project.file_inspect",expected_sha:"a".repeat(40),path:"README.md",offset:0};
+  assert.equal(d.validateDispatch(args(file)).commandId,"project.file_inspect");
+  assert.throws(()=>d.validateDispatch(args({...file,path:"../etc/passwd"})),/BOUNDED_HOST_FILE_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...file,offset:-1})),/BOUNDED_HOST_FILE_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...file,offset:"0"})),/BOUNDED_HOST_FILE_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({enabled:true,command_id:"project.file_inspect",expected_sha:"a".repeat(40)})),/BOUNDED_HOST_KEYS_INVALID/);
+  const logs={enabled:true,command_id:"docker.logs",expected_sha:"a".repeat(40),container:"server-core-bounded-host",tail:20};
+  assert.equal(d.validateDispatch(args(logs)).commandId,"docker.logs");
+  assert.throws(()=>d.validateDispatch(args({...logs,tail:201})),/BOUNDED_HOST_LOG_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...logs,container:"a;b"})),/BOUNDED_HOST_LOG_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...logs,shell:"ls"})),/BOUNDED_HOST_KEYS_INVALID/);
+  assert.match(wf,/--container "\$\(jq -r '\.bounded_host_request\.container'/);
+  assert.match(wf,/--path "\$\(jq -r '\.bounded_host_request\.path'/);
+});

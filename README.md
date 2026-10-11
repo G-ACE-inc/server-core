@@ -31,16 +31,20 @@ SERVER_AI
   -> target Repository Current
   -> 必要なAuthority / Source / Testだけ
 
-GPT_CHAT
-  -> Rule Plane #17
-  -> GitHub Project Current
+GPT_CHAT / ChatGPT Work coordinator
+  -> operations/github-project-rule-plane.json (Fresh main Manifest; confirm GPT_CHAT profile)
+  -> fetch complete Rule Plane #17 body (not title/snippet; verify beginning, end, sections)
+  -> GitHub Project #1 / Control #15 / owning Project and Change Unit Current
+  -> literal PROJECT_PURPOSE_CANONICAL + linked active Design/Definition of Complete
   -> server-core only when Workspace/server control is required
-  -> target Repository Current / Evidence
+  -> target Repository Current / Source / CI / required Host evidence
+  -> apply #17 pre-action and continuation/report gates before each meaningful action
 ```
 
 server-coreの全正本を一括読込しない。
 
 設計基準線: [`docs/SERVER_CORE_DESIGN.md`](docs/SERVER_CORE_DESIGN.md)  
+ツール開発の**２つの必須機能／実行順：先に② CHAT→Server、既存Log成果を維持して後に①残課題**（共通設計・Current責任＝[server-core Control #10](https://github.com/G-ACE-inc/server-core/issues/10)）：**① 統合Development Log（収集→TGserver ZERO保存→検索→CHAT間復元）**は [`SERVER_CORE_DESIGN` §17](docs/SERVER_CORE_DESIGN.md#17-tool-capability-a--unified-development-log-collect-persist-search-and-restore-2026-10-10)、**② CHAT→Serverの調査・操作・安全なSource反映・Runtime証拠**は [`SERVER_CORE_DESIGN` §16](docs/SERVER_CORE_DESIGN.md#16-tool-capability-b--common-chat-to-host-controlled-reflection-design-contract-2026-10-10)。いずれもGitHub Project #1の固定目的に従う。**設計のmain反映やCIのみではLog保存・Server反映の実E2Eは未完**。
 設計差分: [`docs/DESIGN_DELTA.md`](docs/DESIGN_DELTA.md)
 
 ## 司令室としての役割
@@ -80,6 +84,14 @@ REQUEST
 ```
 
 Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
+
+## GPT CHAT decision Gate — verified scope (2026-10-11)
+
+The existing bounded CHAT checkpoint evaluator is `scripts/github_project_chat_turn_gate.py`; deterministic tests are in `scripts/github_project_chat_turn_gate_test.py`. The existing `server-core-guard` runs these tests, and the existing `chatgpt-live-api-verify` Workflow validates an explicitly supplied START checkpoint before an admitted Host operation. **This is Host request admission, not interception of ordinary ChatGPT answer submission**. FAILURE/STOP are evaluator contracts, not verified native send-time enforcement. Operational START positive/negative evidence and intended boundary are preserved in [Design Delta](docs/DESIGN_DELTA.md) and [CU #40](https://github.com/G-ACE-inc/server-core/issues/40). A green CI alone is never proof that CHAT followed the Work Routine or continued until a legitimate stopping point.
+
+For CU #40 source PRs affecting the existing CHAT Gate evaluator/tests or live Host Actions entry, the existing `server-core-guard` additionally rejects missing Design baseline and Documentation Gate **declarations** in the PR. It also checks real changes for declared README/Tree/Delta updates, append-only Design Delta history, and the named System Document when required. This catches omitted checkpoints at the PR boundary; it cannot prove the statements were truthful or prevent a native CHAT premature reply. On private GitHub Free, native branch protection is unavailable (API 403); CU #40 gate paths on `main` must arrive via merged PR, and the existing guard push step fails CI on direct gate-path pushes without an exact main-target merged PR at the pushed SHA (post-push signal only—not a Git revert). See [Design Delta](docs/DESIGN_DELTA.md) for scope and limitations.
+
+The mandatory Work Routine (design baseline → change assessment → source/test → focused verification → Documentation Gate → GitHub Current/Evidence → actual continuation decision) remains in [G_ACE_WORKSPACE](docs/G_ACE_WORKSPACE.md) §6–§7. README is only a verified entry and status index; the architecture baseline remains [SERVER_CORE_DESIGN](docs/SERVER_CORE_DESIGN.md) and intentional changes are append-only in [DESIGN_DELTA](docs/DESIGN_DELTA.md).
 
 ## Current Documentation State
 

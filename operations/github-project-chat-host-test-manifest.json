@@ -1,0 +1,26 @@
+{
+  "schema": "gace.github-project-chat-host-test-manifest/v1",
+  "owner_control": "https://github.com/G-ACE-inc/server-core/issues/10",
+  "targets": [
+    {
+      "id": "server_core_baseline",
+      "repository": "G-ACE-inc/server-core",
+      "host_test_repo": "/workspace/debug-ai/.debugai-input/test-repos/server-core",
+      "description": "Isolated Host checkout for bounded server-core script tests (not canonical /home/admin1/server-core consumer).",
+      "tests": [
+        {
+          "id": "rule_plane_static",
+          "relative_path": "scripts/github_project_rule_plane_test.py",
+          "timeout_seconds": 30,
+          "kind": "python_script"
+        },
+        {
+          "id": "chat_host_route_static",
+          "relative_path": "scripts/github_project_chat_host_route_test.py",
+          "timeout_seconds": 30,
+          "kind": "python_script"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,399 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import re
+import socket
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+from gace_internal_delivery_auth import DeliveryAuthError, read_delivery_key, verify_delivery
+
+import servercore_bounded_host as bounded_host
+
+RECEIVER_PATH = "/internal/servercore-bounded-host"
+HEALTH_PATH = "/healthz"
+EXPECTED_DESTINATION = "server-core-bounded-host"
+MAX_BODY_BYTES = 4096
+# Deterministic Host preflight denials must not enter infrastructure retry loops.
+TERMINAL_REFLECT_ERRORS = frozenset({
+    "BEFORE_SHA_MISMATCH", "DIRTY_CHECKOUT_DENIED", "REMOTE_MAIN_SHA_MISMATCH",
+    "NON_FAST_FORWARD_DENIED", "ORIGIN_REMOTE_DENIED", "BRANCH_NOT_MAIN",
+    "CANONICAL_ROOT_DENIED", "GIT_CHECKOUT_MISSING", "SHA_INVALID",
+})
+DEFAULT_CONTRACT = Path(__file__).resolve().parents[1] / "operations" / "github-project-bounded-host.json"
+REQUEST_ID_PATTERN = re.compile(r"^req_[0-9a-f]{24}$")
+SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$")
+SERVICE_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
+DEPLOY_SOCKET = "/run/gace/servercore-service-deploy.sock"
+DOCKER_LOGS_SOCKET = "/run/gace/servercore-docker-logs.sock"
+FILE_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_.][A-Za-z0-9_./-]{0,159}$")
+CONTAINER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
+RESULT_SOCKET = "/run/gace/servercore-result.sock"
+RESULT_SCHEMA = "gace.servercore-bounded-result.record/v1"
+COMMAND_PATTERN = re.compile(r"^[a-z][a-z0-9_.]{2,63}$")
+
+
+class ReceiverError(RuntimeError):
+    def __init__(self, code, status):
+        super().__init__(code)
+        self.code = code
+        self.status = status
+
+
+def fail(code, status):
+    raise ReceiverError(code, status)
+
+
+def load_contract(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise SystemExit("CONTRACT_JSON_INVALID") from exc
+
+
+def validate_request(value, contract):
+    if not isinstance(value, dict):
+        fail("REQUEST_SHAPE_INVALID", 422)
+    if value.get("schema") != contract.get("request_schema"):
+        fail("REQUEST_SCHEMA_INVALID", 422)
+    req_id = value.get("id")
+    if not isinstance(req_id, str) or not REQUEST_ID_PATTERN.match(req_id):
+        fail("REQUEST_ID_INVALID", 422)
+    command_id = value.get("command_id")
+    allowed = contract.get("allowed_command_ids") or []
+    if command_id not in allowed:
+        fail("COMMAND_NOT_REGISTERED", 422)
+    expected_sha = value.get("expected_sha")
+    if not isinstance(expected_sha, str) or not SHA_PATTERN.match(expected_sha):
+        fail("EXPECTED_SHA_INVALID", 422)
+    if command_id == "project.source_reflect":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "expected_before"}:
+            fail("REFLECT_KEYS_INVALID", 422)
+        before = value["expected_before"]
+        if not isinstance(before, str) or not SHA_PATTERN.match(before):
+            fail("REFLECT_BEFORE_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
+                "expected_before": before}
+    if command_id == "service.deploy":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "repository", "service"}:
+            fail("DEPLOY_KEYS_INVALID", 422)
+        repository, service = value["repository"], value["service"]
+        if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
+                or not isinstance(service, str) or not SERVICE_PATTERN.fullmatch(service):
+            fail("DEPLOY_TARGET_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
+                "repository": repository, "service": service}
+    if command_id == "service.deploy_status":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "deploy_request_id"}:
+            fail("DEPLOY_STATUS_KEYS_INVALID", 422)
+        deploy_id = value["deploy_request_id"]
+        if not isinstance(deploy_id, str) or not REQUEST_ID_PATTERN.match(deploy_id):
+            fail("DEPLOY_STATUS_ID_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
+                "deploy_request_id": deploy_id}
+    if command_id == "project.file_inspect":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "path", "offset"}:
+            fail("FILE_INSPECT_KEYS_INVALID", 422)
+        path, offset = value["path"], value["offset"]
+        if not isinstance(path, str) or not FILE_PATH_PATTERN.fullmatch(path) or ".." in path \
+                or type(offset) is not int or not 0 <= offset <= 4_000_000:
+            fail("FILE_INSPECT_TARGET_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha, "path": path, "offset": offset}
+    if command_id == "docker.logs":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "container", "tail"}:
+            fail("DOCKER_LOGS_KEYS_INVALID", 422)
+        container, tail = value["container"], value["tail"]
+        if not isinstance(container, str) or not CONTAINER_PATTERN.fullmatch(container) \
+                or type(tail) is not int or not 1 <= tail <= 200:
+            fail("DOCKER_LOGS_TARGET_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
+                "container": container, "tail": tail}
+    if set(value) != {"schema", "id", "command_id", "expected_sha"}:
+        fail("REQUEST_KEYS_INVALID", 422)
+    return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha}
+
+
+def dispatch_reflect(request, socket_path="/run/gace/servercore-source-reflect.sock"):
+    payload = {
+        "schema": "gace.servercore-source-reflect.request/v1",
+        "id": request["id"],
+        "repository": "G-ACE-inc/server-core",
+        "branch": "main",
+        "expected_before": request["expected_before"],
+        "target_sha": request["expected_sha"],
+    }
+    data = (json.dumps(payload, separators=(",", ":")) + "\n").encode("utf-8")
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(120)
+            client.connect(socket_path)
+            client.sendall(data)
+            with client.makefile("rb") as stream:
+                result = json.loads(stream.readline(4096))
+    except (OSError, ValueError, TypeError):
+        fail("REFLECT_EXECUTOR_UNAVAILABLE", 503)
+    if not isinstance(result, dict):
+        fail("REFLECT_EXECUTION_FAILED", 503)
+    if result.get("ok") is not True:
+        code = result.get("error")
+        if code in TERMINAL_REFLECT_ERRORS:
+            fail("REFLECT_PREFLIGHT_" + code, 422)
+        fail("REFLECT_EXECUTION_FAILED", 503)
+    if result.get("request_id") != request["id"] or result.get("target_sha") != request["expected_sha"]:
+        fail("REFLECT_RESULT_MISMATCH", 503)
+    if result.get("state") != "SOURCE_REFLECT_PASS":
+        fail("REFLECT_RESULT_INVALID", 503)
+    return {"source_sha": result["target_sha"], "command_id": request["command_id"],
+            "source_reflect": True, "read_only": False}
+
+
+def deploy_socket_call(payload, socket_path, timeout=60):
+    data = (json.dumps(payload, separators=(",", ":")) + "\n").encode("utf-8")
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(timeout)
+            client.connect(socket_path)
+            client.sendall(data)
+            with client.makefile("rb") as stream:
+                result = json.loads(stream.readline(8192))
+    except (OSError, ValueError, TypeError):
+        fail("DEPLOY_EXECUTOR_UNAVAILABLE", 503)
+    if not isinstance(result, dict):
+        fail("DEPLOY_RESULT_INVALID", 503)
+    return result
+
+
+def dispatch_deploy(request, socket_path=DEPLOY_SOCKET):
+    result = deploy_socket_call({
+        "schema": "gace.servercore-service-deploy.request/v1",
+        "id": request["id"],
+        "repository": request["repository"],
+        "service": request["service"],
+        "target_sha": request["expected_sha"],
+    }, socket_path)
+    if result.get("ok") is not True:
+        # Lock contention is transient; every admission denial is terminal.
+        fail("DEPLOY_EXECUTOR_BUSY" if result.get("error") == "DEPLOY_LOCK_BUSY" else "DEPLOY_ADMISSION_DENIED",
+             503 if result.get("error") == "DEPLOY_LOCK_BUSY" else 422)
+    if result.get("request_id") != request["id"] or result.get("state") not in {
+            "SERVICE_DEPLOY_ACCEPTED", "SERVICE_DEPLOY_DUPLICATE"}:
+        fail("DEPLOY_RESULT_MISMATCH", 503)
+    return {"source_sha": request["expected_sha"], "command_id": request["command_id"],
+            "deploy_state": result["state"], "service_deploy": True, "read_only": False}
+
+
+def dispatch_deploy_status(request, socket_path=DEPLOY_SOCKET):
+    result = deploy_socket_call({
+        "schema": "gace.servercore-service-deploy.status/v1",
+        "id": request["deploy_request_id"],
+    }, socket_path)
+    if result.get("ok") is not True:
+        fail("DEPLOY_REQUEST_UNKNOWN", 422)
+    state = result.get("state")
+    if state in {"QUEUED", "RUNNING"}:
+        fail("DEPLOY_IN_PROGRESS", 503)  # retryable until terminal
+    if state != "SERVICE_DEPLOY_PASS" or result.get("source_sha") != request["expected_sha"]:
+        fail("DEPLOY_FAILED_OR_SHA_MISMATCH", 422)
+    keep = ("repository", "service", "source_sha", "container_id", "health", "http_health",
+            "compose_digest", "recreated", "state")
+    return {**{k: result[k] for k in keep if k in result}, "command_id": request["command_id"],
+            "read_only": True}
+
+
+
+def dispatch_docker_logs(request, root, socket_path=None):
+    sha = bounded_host.head_sha(bounded_host.checked_root(root), request["expected_sha"])
+    data = (json.dumps({"schema": "gace.servercore-docker-logs.request/v1", "id": request["id"],
+                        "container": request["container"], "tail": request["tail"]},
+                       separators=(",", ":")) + "\n").encode("utf-8")
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(45)
+            client.connect(socket_path or DOCKER_LOGS_SOCKET)
+            client.sendall(data)
+            with client.makefile("rb") as stream:
+                reply = json.loads(stream.readline(32768))
+    except (OSError, ValueError, TypeError):
+        fail("DOCKER_LOGS_EXECUTOR_UNAVAILABLE", 503)
+    if not isinstance(reply, dict):
+        fail("DOCKER_LOGS_RESULT_INVALID", 503)
+    if reply.get("ok") is not True:
+        error = str(reply.get("error", ""))
+        if error in {"DOCKER_LOGS_FAILED", "DOCKER_LOGS_EXECUTION_FAILED", "INTERNAL_ERROR", "DOCKER_BINARY_MISSING"}:
+            fail("DOCKER_LOGS_EXECUTION_FAILED", 503)
+        fail("DOCKER_LOGS_DENIED_" + (error if re.fullmatch(r"[A-Z_]{3,60}", error) else "UNKNOWN"), 422)
+    if reply.get("request_id") != request["id"] or reply.get("container") != request["container"]:
+        fail("DOCKER_LOGS_RESULT_MISMATCH", 503)
+    return {"command_id": request["command_id"], "source_sha": sha, "read_only": True,
+            "container": reply["container"], "tail": reply["tail"], "truncated": bool(reply.get("truncated")),
+            "logs": str(reply.get("logs", ""))}
+
+
+def report_result(record, socket_path=None):
+    """Hand the terminal result to the Host result sink (durable + GitHub publish)."""
+    data = (json.dumps({"schema": RESULT_SCHEMA, **record}, separators=(",", ":")) + "\n").encode("utf-8")
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(15)
+            client.connect(socket_path or RESULT_SOCKET)
+            client.sendall(data)
+            with client.makefile("rb") as stream:
+                reply = json.loads(stream.readline(4096))
+    except (OSError, ValueError, TypeError):
+        return False
+    return isinstance(reply, dict) and reply.get("ok") is True
+
+
+def result_record(request_id, command_id, expected_sha, state, exit_code, host_sha, stdout, stderr, started):
+    return {
+        "request_id": request_id,
+        "command_id": command_id if isinstance(command_id, str) and COMMAND_PATTERN.fullmatch(command_id)
+        else "invalid.request",
+        "state": state,
+        "exit_code": exit_code,
+        "host_sha": host_sha if isinstance(host_sha, str) and SHA_PATTERN.fullmatch(host_sha) else "",
+        "expected_sha": expected_sha if isinstance(expected_sha, str) and SHA_PATTERN.fullmatch(expected_sha) else "",
+        "stdout": stdout,
+        "stderr": stderr,
+        "duration_ms": max(0, min(int((time.monotonic() - started) * 1000), 3_600_000)),
+    }
+
+
+def make_handler(contract, *, delivery_key=None, now_fn=None):
+    root = Path(contract.get("canonical_host_root") or bounded_host.CANONICAL_ROOT)
+
+    class Handler(BaseHTTPRequestHandler):
+        server_version = "gace-servercore-bounded-host/1"
+
+        def log_message(self, _format, *_args):
+            return
+
+        def send_json(self, status, payload, *, accepted=False):
+            data = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store")
+            if accepted:
+                self.send_header("x-gace-accepted", "true")
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_GET(self):
+            if self.path != HEALTH_PATH:
+                self.send_json(404, {"ok": False, "error": "NOT_FOUND"})
+                return
+            self.send_json(200, {"ok": True, "service": "servercore-bounded-host"})
+
+        def do_POST(self):
+            if self.path != RECEIVER_PATH:
+                self.send_json(404, {"ok": False, "error": "NOT_FOUND"})
+                return
+            raw_length = self.headers.get("content-length")
+            try:
+                length = int(raw_length or "")
+            except ValueError:
+                self.send_json(411, {"ok": False, "error": "CONTENT_LENGTH_REQUIRED"})
+                return
+            if length < 1 or length > MAX_BODY_BYTES:
+                self.send_json(413, {"ok": False, "error": "BODY_SIZE_INVALID"})
+                return
+            body = self.rfile.read(length)
+            headers = {key.lower(): value for key, value in self.headers.items()}
+            started = time.monotonic()
+            hint_id = hint_command = hint_sha = None
+            authenticated = False
+
+            def record_failure(code, state):
+                # Only authenticated deliveries with a well-formed request id are recorded.
+                if authenticated and hint_id:
+                    report_result(result_record(hint_id, hint_command, hint_sha, state, 1, "", "", code, started))
+            try:
+                tolerance = int(os.environ.get("GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS", "300"))
+                verify_delivery(
+                    headers,
+                    body,
+                    expected_destination=EXPECTED_DESTINATION,
+                    delivery_key=delivery_key,
+                    now=now_fn() if now_fn else None,
+                    tolerance_seconds=tolerance,
+                )
+                authenticated = True
+                parsed = json.loads(body.decode("utf-8"))
+                if isinstance(parsed, dict):
+                    hint_id = parsed.get("id") if isinstance(parsed.get("id"), str) \
+                        and REQUEST_ID_PATTERN.fullmatch(parsed.get("id")) else None
+                    hint_command, hint_sha = parsed.get("command_id"), parsed.get("expected_sha")
+                request = validate_request(parsed, contract)
+                if request["command_id"] == "project.source_reflect":
+                    result = dispatch_reflect(request)
+                elif request["command_id"] == "service.deploy":
+                    result = dispatch_deploy(request)
+                elif request["command_id"] == "service.deploy_status":
+                    result = dispatch_deploy_status(request)
+                elif request["command_id"] == "project.file_inspect":
+                    result = bounded_host.file_inspect(root, request["expected_sha"], request["path"],
+                                                       request["offset"], contract.get("registered_files"))
+                elif request["command_id"] == "docker.logs":
+                    result = dispatch_docker_logs(request, root)
+                else:
+                    result = bounded_host.execute(
+                        request["command_id"],
+                        root=root,
+                        expected_sha=request["expected_sha"],
+                    )
+                read_only = bool(result.get("read_only", True))
+                recorded = report_result(result_record(
+                    request["id"], request["command_id"], request["expected_sha"], "PASS", 0,
+                    result.get("source_sha"), json.dumps(result, sort_keys=True, separators=(",", ":")), "", started))
+                if not recorded and read_only:
+                    fail("RESULT_SINK_UNAVAILABLE", 503)  # idempotent read-only command: Gateway retries
+                self.send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "request_id": request["id"],
+                        "state": "PASS",
+                        "command_id": request["command_id"],
+                        "source_sha": result.get("source_sha"),
+                        "read_only": read_only,
+                        "result_recorded": recorded,
+                        "result": result,
+                    },
+                    accepted=True,
+                )
+            except DeliveryAuthError as exc:
+                self.send_json(exc.status, {"ok": False, "error": exc.code})
+            except ReceiverError as exc:
+                if exc.code != "RESULT_SINK_UNAVAILABLE":
+                    record_failure(exc.code, "FAIL" if exc.status < 500 else "RETRYABLE")
+                self.send_json(exc.status, {"ok": False, "error": exc.code})
+            except bounded_host.BoundaryError as exc:
+                record_failure(str(exc), "FAIL")
+                self.send_json(422, {"ok": False, "error": str(exc), "state": "FAIL"})
+            except Exception:
+                record_failure("INTERNAL_ERROR", "RETRYABLE")
+                self.send_json(500, {"ok": False, "error": "INTERNAL_ERROR"})
+
+    return Handler
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Bounded internal HTTP receiver for server-core Host primitive")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8789)
+    parser.add_argument("--contract", default=str(DEFAULT_CONTRACT))
+    args = parser.parse_args()
+    if args.port < 1 or args.port > 65535:
+        raise SystemExit("PORT_INVALID")
+    contract = load_contract(args.contract)
+    delivery_key = read_delivery_key(env_prefix="GACE_BOUNDED_HOST")
+    server = ThreadingHTTPServer((args.host, args.port), make_handler(contract, delivery_key=delivery_key))
+    server.serve_forever()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -18,20 +18,27 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 6. 今回必要なserver-core / Project Authority・Source・Testだけ
 ```
 
-### GPT_CHAT
+### GPT_CHAT / ChatGPT Work (Master-facing orchestrator)
 
 ```text
-1. canonical Rule Plane #17
-2. GitHub Project #1 Current
-3. Workspace/server controlが必要なTaskだけserver-coreを読む
-4. target Project Current / Repository Evidence
+1. Fetch operations/github-project-rule-plane.json from verified GitHub main and select GPT_CHAT profile (also ChatGPT Work coordinator)
+2. Fetch the COMPLETE canonical Issue #17 body, checking beginning/end and required sections; recover truncated/missing content before treating as loaded
+3. GitHub Project #1 / Control #15 / target Project owning Current; find literal PROJECT_PURPOSE_CANONICAL and active CU / mutation owner / exact next gate
+4. Target repository README-linked active Design Authority + Definition of Complete (Current Task is NOT the whole-project goal)
+5. Workspace/server controlが必要なTaskだけserver-coreを読む; do not pass #17 to SERVER_AI/Composer/Codex (they load #16)
+6. Target Repository/CU Source/Test/CI/Runtime Evidence, check #17 pre-action gate and execute NEXT to the safe gate
+7. Every development turn: fetch fresh Manifest, full applicable GPT CHAT #17 body, and owning Current before action when Master explicitly requires per-turn full readback (Current #40); otherwise revision/delta optimization applies. progress messages do not end work; Current comments also do not end work.
 ```
+
+**Work routing is a selection of the existing GPT_CHAT profile, not a third rule plane or automatic Work-session injection.** When ChatGPT Work leads planning, coding, research or reports on Master's behalf, it must actually load #17 and the target product Design/Current first and distinguish `PROJECT_PURPOSE_CANONICAL` from `CURRENT_WORK_PURPOSE`; no rewrite of the whole product purpose as the active PR/module/Host issue. A delegated Work-run terminal/server Codex/Composer executor uses the existing SERVER_AI #16 and only the task-specific purpose/acceptance excerpt. Fresh readback of the active Work session and its actual actions is required to say the rule was applied.
+
+**Ongoing explanations are not Master reports (#17 §5/§7):** For both GPT CHAT and ChatGPT Work, concise progress/analysis/CI/PR notices are nonterminal; after explaining, execute the next safe owned-CU action. Reserve the **formal five-part report** for Master-requested pause/report, genuinely required Master-only operation/decision, major design/product-impact choice, proven Mission completion, or a verified full same-CU stop after independent work is exhausted. **NEXT is mandatory visibility for Master inside a legitimate report, never permission to end the turn or defer a runnable CHAT action.** If Master must act, supply the complete directly executable instruction. An Issue comment, CI result or progress explanation is not a reporting trigger. Do not claim this repository text can intercept live CHAT/Work responses.
 
 GPT_CHAT拡張RuleをSERVER_AIへdefault loadしない。
 
 README以外のserver-core Authorityを新Task開始時に一括読込しない。
 
-同一Taskで一度確認済みの安定Authority全文は、変更・矛盾・情報不足が無い限り毎ターン再読込しない。ただし開発の各ターンでは関連するGitHub Project/IssueのCurrentと対象HEAD/PR/CI等の変化を軽量に再同期し、対象変更・新規Gate・競合時だけ必要なAuthority/Source範囲を再取得する。古い履歴・別Project・GPT CHAT拡張RuleをSERVER_AIへまとめて渡さない。
+同一Taskで一度確認済みの安定Authority全文は通常、変更・矛盾・情報不足が無い限り毎ターン再読込しない。ただしMasterが現在のCHATに毎ターンのManifest・適用Rule Plane全文・owning CurrentのFresh取得を明示している場合は、その要求を優先して実際に再取得する。読み込んだ事実だけで適用PASSにせず、選択したAction・継続・終了判断へ照合する。ただし開発の各ターンでは関連するGitHub Project/IssueのCurrentと対象HEAD/PR/CI等の変化を軽量に再同期し、対象変更・新規Gate・競合時だけ必要なAuthority/Source範囲を再取得する。古い履歴・別Project・GPT CHAT拡張RuleをSERVER_AIへまとめて渡さない。
 
 ## 2. Command Routing
 
@@ -43,7 +50,8 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 | Master Terminal Command / Copy&Paste / GACE_RESULT / Shell Safety / Syntax Validation | `docs/MASTER_TERMINAL_COMMAND.md` |
 | Workspace運用 / dispatch | `docs/G_ACE_WORKSPACE.md` |
 | Project / Repository / shared Capability / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
-| GPT CHATからの既存Actions経由Host読取・GitOps・Actions Log照合 | `docs/G_ACE_WORKSPACE.md` §6/§9 + `docs/WORKSPACE_REGISTRY.md` + 対象DebugAI Source/Host Current |
+| Tool B: GPT CHATからの既存Actions経由Host読取・GitOps・canonical parent / active checkout / Source反映 | `docs/SERVER_CORE_DESIGN.md` §16（B0–B5）+ `docs/G_ACE_WORKSPACE.md` §6/§9 + `docs/WORKSPACE_REGISTRY.md` + DebugAI認可済Source/Host Current |
+| Tool A: 統合Development Logの収集・送信・TGserver ZERO保存・検索・CHAT間復元 | `docs/SERVER_CORE_DESIGN.md` §17（A0–A4）+ `docs/PROJECT_INTEGRATION_RULES.md` + TGserver `README_ZERO.md` / `docs/TGSERVER_ZERO_PROJECT_INTEGRATION.md` / #44/#50 + 関連Gateway Producer/Runtime Evidence |
 | Project Integration（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Git / Commit / Push / work report | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
@@ -237,3 +245,6 @@ Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / Gi
 Task owner、Authority、Runtime state、Secret contract等が不明な場合は推測で補完しない。
 
 `UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` を維持し、必要なAuthority/readbackだけ追加取得する。
+<!-- Tool-B source_reflect E2E evidence line 2026-10-10T17:25:00+09:00 -->
+
+<!-- Tool-B source_reflect E2E evidence line 2026-10-10T17:30:00+09:00 round-2 -->
