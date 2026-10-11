@@ -40,6 +40,7 @@ jobs:
               text=True,
           ).splitlines())
           cu40_source = {
+              ".github/workflows/server-core-guard.yml",
               "scripts/github_project_chat_turn_gate.py",
               "scripts/github_project_chat_turn_gate_test.py",
               ".github/workflows/chatgpt-live-api-verify.yml",
@@ -69,6 +70,37 @@ jobs:
               if not ("docs/SERVER_CORE_DESIGN.md" in body or "docs/G_ACE_WORKSPACE.md" in body):
                   print("CU40_DESIGN_BASELINE_NOT_REFERENCED")
                   raise SystemExit(1)
+              declarations = {}
+              for line in body.splitlines():
+                  for key in required:
+                      if line.startswith(key):
+                          declarations[key] = line[len(key):].strip()
+              required_files = {
+                  "README_UPDATE_REQUIRED=": "README.md",
+                  "PROJECT_TREE_UPDATE_REQUIRED=": "docs/STRUCTURE.md",
+                  "DESIGN_DELTA_REQUIRED=": "docs/DESIGN_DELTA.md",
+              }
+              for key, path in required_files.items():
+                  decision = declarations[key].split(";", 1)[0].strip().upper()
+                  if decision not in ("YES", "NO"):
+                      print("CU40_DOC_DECISION_INVALID=" + key)
+                      raise SystemExit(1)
+                  if decision == "YES" and path not in changed:
+                      print("CU40_DOC_REQUIRED_BUT_NOT_CHANGED=" + path)
+                      raise SystemExit(1)
+              system_decision = declarations["SYSTEM_DOCUMENT_REQUIRED="].split(";", 1)[0].strip().upper()
+              if system_decision not in ("YES", "NO", "UPDATE_EXISTING"):
+                  print("CU40_SYSTEM_DOCUMENT_DECISION_INVALID")
+                  raise SystemExit(1)
+              if "docs/DESIGN_DELTA.md" in changed:
+                  prior = subprocess.check_output(
+                      ["git", "show", os.environ["PR_BASE_SHA"] + ":docs/DESIGN_DELTA.md"], text=True)
+                  with open("docs/DESIGN_DELTA.md", encoding="utf-8") as document:
+                      current = document.read()
+                  if not current.startswith(prior.rstrip() + "\n"):
+                      print("CU40_DESIGN_DELTA_NOT_APPEND_ONLY")
+                      raise SystemExit(1)
+              print("CU40_DOCUMENT_DIFF_CHECK=PASS")
               print("CU40_DESIGN_PREFLIGHT=DECLARED_ONLY")
               print("CU40_CHANGED_PATHS=" + ",".join(affected))
               print("NOTE=PR receipt is not independent proof of actual design review")
