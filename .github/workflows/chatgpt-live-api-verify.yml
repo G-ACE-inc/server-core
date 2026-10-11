@@ -32,8 +32,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify copied bounded Actions client regression
-        run: node --test tests/chatgpt-bounded-server-read.test.cjs
+      - name: Verify copied bounded Actions client and CHAT decision gate
+        run: |
+          set -euo pipefail
+          python3 -m unittest scripts/github_project_chat_turn_gate_test.py -v
+          node --test tests/chatgpt-bounded-server-read.test.cjs
 
       - name: Read bounded target
         id: target
