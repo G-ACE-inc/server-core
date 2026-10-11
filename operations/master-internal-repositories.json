@@ -41,7 +41,8 @@
         "fix/scout-observation-reuse-20261010",
         "fix/researcher-e-continuation-20261011",
         "feat/ai-core-input-token-shadow-20261011",
-        "fix/evidence-window-integrity-20261011"
+        "fix/evidence-window-integrity-20261011",
+        "test/g3-semantic-progress-counterexample-20261011"
       ],
       "allowed_operations": [
         "deploy"
@@ -129,7 +130,9 @@
         ".github/workflows/chatgpt-live-api-verify.yml",
         "server/main.js",
         "server/control/input-token-shadow.js",
-        "server/control/active-evidence-window.js"
+        "server/control/active-evidence-window.js",
+        "server/control/progress-controller.js",
+        "server/control/tool-loop.js"
       ]
     },
     {
