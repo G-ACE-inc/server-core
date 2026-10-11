@@ -5,6 +5,7 @@ The HMAC-bearing Gateway receiver is permanently read-only for its checkout and
 may reach this socket only through explicit Host ACL admission.
 """
 import argparse
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -44,7 +45,9 @@ def validate(value):
 def execute_request(value):
     request = validate(value)
     # A socket request never selects the Host repo, branch, command, or effects.
-    return reflect(CANONICAL_ROOT, request["expected_before"], request["target_sha"])
+    with open('/tmp/gace-servercore-source-reflect.lock', 'w') as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return reflect(CANONICAL_ROOT, request["expected_before"], request["target_sha"])
 
 
 class Handler(socketserver.StreamRequestHandler):
