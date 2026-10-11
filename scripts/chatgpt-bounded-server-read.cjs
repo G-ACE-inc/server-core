@@ -170,7 +170,7 @@ function safeResult(command,raw,extraExitCode=0){
 }
 async function post(endpoint,payload,headers,request=fetch){
   const res=await request(API+endpoint,{method:"POST",headers:{"content-type":"application/json",...headers},body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)});
-  if(res.status!==202&&endpoint.endsWith("/request"))throw Error("REQUEST_HTTP_NOT_202");
+  if(res.status!==202&&endpoint.endsWith("/request")){const err=Error("REQUEST_HTTP_NOT_202");err.httpStatus=res.status;throw err;}
   if(res.status!==200&&endpoint.endsWith("/status")){const err=Error("STATUS_HTTP_NOT_200");err.status=res.status;err.permanent=res.status>=400&&res.status<500&&res.status!==408&&res.status!==429;throw err;}
   return res.json();
 }
@@ -304,5 +304,5 @@ async function runGitopsStatus({request=fetch,log=console.log,env=process.env,ta
     log("GITOPS_FAILURE_CLASS="+cause);
   }
 }
-if(require.main===module)(async()=>{await run();await runGitopsStatus();})().catch(e=>{console.error("BOUNDED_CHAT_READ_ERROR="+String(e.code||e.message||"UNKNOWN").replace(/[^A-Z0-9_]/g,"").slice(0,80));process.exitCode=1;});
+if(require.main===module)(async()=>{await run();await runGitopsStatus();})().catch(e=>{if(Number.isInteger(e.httpStatus)&&e.httpStatus>=100&&e.httpStatus<=599)console.error("SERVER_COMMAND_REQUEST_HTTP="+e.httpStatus);console.error("BOUNDED_CHAT_READ_ERROR="+String(e.code||e.message||"UNKNOWN").replace(/[^A-Z0-9_]/g,"").slice(0,80));process.exitCode=1;});
 module.exports={ALLOWED,validateTarget,safeResult,run,normalizeGitopsStatusId,runGitopsStatus,validateInspectPayload,fileInspectArguments,FILE_INSPECT_MAX_PAGES,loadTestManifest,resolveRegisteredTest,TEST_MANIFEST_PATH};
