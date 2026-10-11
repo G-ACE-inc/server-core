@@ -13,6 +13,7 @@ def main():
     dockerfile = (ROOT / "Dockerfile.bounded-host").read_text(encoding="utf-8")
     compose = (ROOT / "docker-compose.project-control.yml").read_text(encoding="utf-8")
     ignore = (ROOT / "Dockerfile.bounded-host.dockerignore").read_text(encoding="utf-8")
+    overlay = (ROOT / "docker-compose.source-reflect.yml").read_text(encoding="utf-8")
 
     require(dockerfile, "servercore_bounded_host_receiver.py", "dockerfile")
     require(dockerfile, "USER 65532:65532", "dockerfile")
@@ -26,6 +27,11 @@ def main():
         raise AssertionError("bounded-host service must not publish host ports")
     require(ignore, "!operations/github-project-bounded-host.json", "dockerignore")
     require(ignore, "!scripts/servercore_bounded_host.py", "dockerignore")
+    require(overlay, "GACE_HOST_SOURCE_REFLECT_SOCKET_DIR", "socket_overlay")
+    require(overlay, "target: /run/gace", "socket_overlay")
+    require(overlay, "read_only: true", "socket_overlay")
+    if "servercore-source-reflect.sock" in overlay:
+        raise AssertionError("socket file-level mount is forbidden (stale inode on restart)")
     print("BOUNDED_HOST_RUNTIME_CONFIG=PASS")
 
 
