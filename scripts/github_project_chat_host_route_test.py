@@ -68,7 +68,7 @@ def test_branch_mismatch():
 def test_real_workflow_command_support():
     for command in ("project.git_head", "project.git_status", "system.disk_usage", "project.git_changed_paths", "service.debug_ai_state",
                     "service.debug_ai_health", "system.projects_inventory", "system.project_file_inspect",
-                    "service.registered_container_logs", "service.debug_ai_logs", "service.sandbox_state", "project.git_recent_commits"):
+                    "service.registered_container_logs", "service.debug_ai_logs", "service.sandbox_state", "project.git_recent_commits", "project.python_unittest"):
         out = dispatch(command_id=command, branch="main")
         assert out["result"] == "PASS"
         assert out["read_only"] is True
@@ -230,6 +230,18 @@ def test_routing_link():
     assert routing["chat_github_host_routes"].endswith("github-project-chat-host-routes.json")
 
 
+def test_registered_test_manifest_and_command():
+    manifest = json.loads((ROOT / "operations/github-project-chat-host-test-manifest.json").read_text(encoding="utf-8"))
+    assert manifest["schema"] == "gace.github-project-chat-host-test-manifest/v1"
+    target = next(item for item in manifest["targets"] if item["id"] == "server_core_baseline")
+    assert target["repository"] == "G-ACE-inc/server-core"
+    assert target["host_test_repo"].startswith("/workspace/debug-ai/.debugai-input/test-repos/")
+    assert any(test["id"] == "rule_plane_static" for test in target["tests"])
+    out = dispatch(command_id="project.python_unittest", branch="main")
+    assert out["result"] == "PASS"
+    assert out["read_only"] is True
+
+
 def main():
     tests = [func for name, func in sorted(globals().items()) if name.startswith("test_") and callable(func)]
     for test in tests:
@@ -239,3 +251,15 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def test_registered_test_manifest_and_command():
+    manifest = json.loads((ROOT / "operations/github-project-chat-host-test-manifest.json").read_text(encoding="utf-8"))
+    assert manifest["schema"] == "gace.github-project-chat-host-test-manifest/v1"
+    target = next(item for item in manifest["targets"] if item["id"] == "server_core_baseline")
+    assert target["repository"] == "G-ACE-inc/server-core"
+    assert target["host_test_repo"].startswith("/workspace/debug-ai/.debugai-input/test-repos/")
+    assert any(test["id"] == "rule_plane_static" for test in target["tests"])
+    out = dispatch(command_id="project.python_unittest", branch="main")
+    assert out["result"] == "PASS"
+    assert out["read_only"] is True

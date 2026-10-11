@@ -21,6 +21,7 @@ const IDLE_READ_COMMANDS = new Set([
   "service.debug_ai_logs",
   "service.sandbox_state",
   "project.git_recent_commits",
+  "project.python_unittest",
 ]);
 
 const REFLECT_TRIGGER_BRANCHES = new Set([
