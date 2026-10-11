@@ -75,11 +75,18 @@ def send(request, contract, *, env=None, opener=None):
     if not token:
         raise SendError("GATEWAY_TOKEN_MISSING")
     body = json.dumps(build_event(request, contract), ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    user_agent = str(
+        current.get("GACE_EVENT_GATEWAY_USER_AGENT", "G-ACE-server-core-internal-event/1")
+    ).strip()
     http_request = urllib.request.Request(
         url,
         data=body,
         method="POST",
-        headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "User-Agent": user_agent or "G-ACE-server-core-internal-event/1",
+        },
     )
     try:
         timeout = max(1, min(int(current.get("GACE_EVENT_GATEWAY_TIMEOUT_SECONDS", "10")), 30))

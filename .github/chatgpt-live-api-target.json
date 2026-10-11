@@ -9,5 +9,10 @@
   },
   "source_reflect_request": {
     "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_head",
+    "expected_sha": "GITHUB_WORKFLOW_SHA"
   }
 }
