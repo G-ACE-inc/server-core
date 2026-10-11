@@ -203,6 +203,59 @@
         "README.md",
         "docs/"
       ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_master_webhook_gateway_deploy_v1",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "seigo-gace/webhook-gateway",
+      "repository_id": 1298348169,
+      "repository_node_id": "R_kgDOTWM4iQ",
+      "repository_owner": "seigo-gace",
+      "master_principal": "seigo-gace",
+      "project": {
+        "owner": "seigo-gace",
+        "number": 1,
+        "node_id": "PVT_kwHODOQFoM4BEJII",
+        "control_url": "https://github.com/G-ACE-inc/server-core/issues/10"
+      },
+      "server_project_id": "webhook-gateway",
+      "server_project_path": "/home/admin1/projects/webhook-gateway",
+      "remote": "https://github.com/seigo-gace/webhook-gateway.git",
+      "default_branch": "main",
+      "allowed_branches": [
+        "main"
+      ],
+      "allowed_operations": [
+        "deploy"
+      ],
+      "allowed_scopes": [
+        "gace.service.deploy"
+      ],
+      "runtime_target": {
+        "id": "webhook-gateway.compose",
+        "compose_file": "docker-compose.yml",
+        "compose_digest": "e0a877658e9d5cdffd112d5077c25773cce7496065125d8eb7ac00429e903d25",
+        "services": [
+          "api"
+        ],
+        "health_service": "api",
+        "health_url": "http://127.0.0.1:7373/healthz"
+      },
+      "issuer": "master:seigo-gace",
+      "authority": "gace-master",
+      "audit_identity": "master:seigo-gace/internal:webhook-gateway",
+      "request_identity": "servercore.bounded-host-service-deploy",
+      "allow_production": true,
+      "effects": {
+        "destructive": false,
+        "persistent_data": false,
+        "secrets": false,
+        "provider_model": false,
+        "public_exposure": false
+      },
+      "enabled": true,
+      "revoked": false
     }
   ]
 }
