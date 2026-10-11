@@ -3,11 +3,22 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "server-core common Actions idle after Docker service state and bounded Git status E2E",
+  "request": "Tool B read-only disk usage via existing server-core Actions",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
     "enabled": false
+  },
+  "server_command_id": "system.disk_usage",
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6106331397; https://github.com/G-ACE-inc/server-core/pull/73; main cd97eb3d6b7e7f9cc72704d5e8d498335043ad02"
   }
 }
