@@ -116,6 +116,15 @@ function validateDispatch({ target, route, registry, gitRefName }) {
   }
 
   validateIdleTarget(target);
+  const command = target.server_command_id ?? "";
+  if (command) {
+    const supported = current.workflow_supported_command_ids || [];
+    const allowed = current.server_command?.allowed_command_ids || [];
+    const effects = current.command_effects || {};
+    if (!supported.includes(command) || !allowed.includes(command) || effects[command] !== "read_only") {
+      throw new Error("IDLE_EFFECTIVE_ROUTE_ADMISSION_DENIED");
+    }
+  }
   if (gitopsEnabled) {
     throw new Error("IDLE_GITOPS_TARGET_NOT_SUPPORTED_HERE");
   }
