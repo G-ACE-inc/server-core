@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 PREFIX = ".github/chat-host-requests/"
-REQUEST = re.compile(r"^\\.github/chat-host-requests/req_[a-f0-9]{24}\\.json$")
+REQUEST = re.compile(r"^[.]github/chat-host-requests/req_[a-f0-9]{24}[.]json$")
 TARGET = Path(".github/chatgpt-live-api-target.json")
 
 def select(added, changed):
