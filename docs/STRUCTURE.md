@@ -146,6 +146,15 @@ Secret / Token値をoperationsへ保存しない。
 - `github_project_*_test.py`
   - request / transport / runtime config回帰
 
+### GPT CHAT decision checkpoint implementation (CU #40)
+
+- `scripts/github_project_chat_turn_gate.py`: bounded START/FAILURE/STOP **supplied-receipt** evaluator; not native ChatGPT send interception
+- `scripts/github_project_chat_turn_gate_test.py`: positive/negative receipt regression; does not prove an actual CHAT turn continued
+- `.github/workflows/server-core-guard.yml`: existing deterministic test invocation
+- `.github/workflows/chatgpt-live-api-verify.yml`: existing live bounded Host lane, explicit START admission before Host credentials and commands
+- `.github/chatgpt-live-api-target.json`: existing bounded trigger; keep idle configuration after tests
+- `docs/DESIGN_DELTA.md`: recorded decision/limit of CU #40 Gate implementation and real operational evidence
+
 ## .cursor/
 
 - `.cursor/rules/00_agent_runtime.mdc`
