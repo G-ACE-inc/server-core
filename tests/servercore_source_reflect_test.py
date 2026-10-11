@@ -18,10 +18,12 @@ class ReflectTests(TestCase):
         self.root = Path(self.temp.name)
         (self.root / ".git").mkdir()
 
-    def execute(self, *, before=A, remote=B, dirty=False, branch="main", ancestor=A, dry_run=False):
+    def execute(self, *, before=A, remote=B, dirty=False, branch="main", ancestor=A, dry_run=False, origin=None):
         commands = []
         def fake_git(root, *argv):
             commands.append(argv)
+            if argv == ("remote", "get-url", "origin"):
+                return origin if origin is not None else source.EXPECTED_ORIGIN
             if argv == ("rev-parse", "--abbrev-ref", "HEAD"):
                 return branch
             if argv == ("rev-parse", "HEAD"):
@@ -62,6 +64,10 @@ class ReflectTests(TestCase):
     def test_diverged_denied(self):
         with self.assertRaisesRegex(source.ReflectError, "NON_FAST_FORWARD_DENIED"):
             self.execute(ancestor=C)
+
+    def test_unregistered_origin_denied(self):
+        with self.assertRaisesRegex(source.ReflectError, "ORIGIN_REMOTE_DENIED"):
+            self.execute(origin="https://example.net/untrusted.git")
 
     def test_wrong_branch_denied(self):
         with self.assertRaisesRegex(source.ReflectError, "BRANCH_NOT_MAIN"):
