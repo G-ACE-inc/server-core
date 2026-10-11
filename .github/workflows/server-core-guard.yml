@@ -96,7 +96,7 @@ jobs:
                       ["git", "show", os.environ["PR_BASE_SHA"] + ":docs/DESIGN_DELTA.md"], text=True)
                   with open("docs/DESIGN_DELTA.md", encoding="utf-8") as document:
                       current = document.read()
-                  if not current.startswith(prior.rstrip() + "\\n"):
+                  if not current.startswith(prior.rstrip() + "\n"):
                       print("CU40_DESIGN_DELTA_NOT_APPEND_ONLY")
                       raise SystemExit(1)
               print("CU40_DOCUMENT_DIFF_CHECK=PASS")
