@@ -405,6 +405,16 @@ Minimum negative cases include: unregistered repository/Project item, forged or 
 
 **Ownership and rollout.** server-core #10 owns common contract/dispatch/evidence, existing DebugAI Host owner owns runner and admission, target Repositories own tests and product Source, and TGserver owns log durability/search. First inventory existing commands and admitted operations; add only missing bounded capability to those owners, preserving security and commercial isolation. Stage implementation per owned CU after this design is reviewed; update append-only Design Delta, README/Tree only when needed. No Host/credential/runtime permission is changed by this design commit.
 
+### 16.10 Server development completeness review (2026-10-11)
+
+**Design acceptance before implementation.** Tool B must cover not merely Source reflection but the full authorized development loop, without a generic shell or new transport. Required Host capabilities include: registered workspace/file and disk/inode inspection; exact Git worktree/remote/diff/conflict evidence; approved per-project test/build execution with exit code and captured logs; Docker/Compose service status, image/config/dependency identity, resource and bounded network/health diagnostics; admitted lifecycle/rollback with downtime and persistent-volume protection; failure diagnosis and safe same-CU resumption; Actions job logs and safe artifact ZIP inspection; and exact Source-versus-active-consumer reconciliation. These are requirements, **not claims of installed commands**.
+
+**Preconditions.** Every action requires a registered owner, Project item, target canonical realpath, branch/exact SHA, input schema, bounded effect, redaction/output/time limit, matching active Host admission and audit correlation. Writes additionally require checked dirty/concurrent owner state, precise service/path impact, rollback prestate and protected-effect approval. No arbitrary commands, free-form filesystem roots, credential copying, destructive cleanup or unapproved provider usage.
+
+**Acceptance scenarios.** Verify: diagnosis of an observed fault using admitted file/log/status reads; unsafe dirty/diverged checkout rejection; registered test failure and passing retest tied to exact CI SHA; actual source-only active-file parity; independently admitted Compose operation and rollback with live health; stale SHA, unavailable gh, denied effect, replay, transport timeout and malicious artifact rejection; and a fresh CHAT reconstructing the CU from GitHub Current and available Tool A evidence. A blocked protected operation must not stop other permitted work. Declare each operation as source-listed, Actions-supported, Host-admitted and live-E2E-proven separately. Completion requires a CHAT-origin fault→patch→test→reflect→runtime evidence cycle.
+
+**Implementation order.** First reconcile the current DebugAI Host runner and dispatch allowlists with this coverage. Reuse existing commands wherever supported; implement missing bounded operations only in their existing owner. Each additional capability must pass negative authorization tests before a live positive test. Do not use this design amendment to grant new Host privileges.
+
 ## 17. Tool capability A — Unified Development Log: collect, persist, search and restore (2026-10-10)
 
 ### 17.1 Fixed tool priorities, purpose and owner
