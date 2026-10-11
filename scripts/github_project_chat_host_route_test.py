@@ -68,12 +68,11 @@ def test_branch_mismatch():
 def test_real_workflow_command_support():
     for command in ("project.git_head", "project.git_status", "system.disk_usage", "project.git_changed_paths", "service.debug_ai_state",
                     "service.debug_ai_health", "system.projects_inventory", "system.project_file_inspect",
-                    "service.registered_container_logs", "service.debug_ai_logs"):
+                    "service.registered_container_logs", "service.debug_ai_logs", "service.sandbox_state", "project.git_recent_commits"):
         out = dispatch(command_id=command, branch="main")
         assert out["result"] == "PASS"
         assert out["read_only"] is True
-    for command in ("service.sandbox_state", "project.git_recent_commits",
-                    "project.pwd", "github.auth_status_scopes"):
+    for command in ("project.pwd", "github.auth_status_scopes"):
         assert dispatch(command_id=command, branch="main")["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
 
 
