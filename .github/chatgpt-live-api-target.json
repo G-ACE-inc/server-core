@@ -3,11 +3,14 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "server-core common Actions idle after Docker service state and bounded Git status E2E",
+  "request": "Tool B inventory existing bounded READ_ONLY live E2E",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
     "enabled": false
-  }
+  },
+  "server_command_id": "system.projects_inventory",
+  "inventory_page": 0,
+  "inventory_all": false
 }
