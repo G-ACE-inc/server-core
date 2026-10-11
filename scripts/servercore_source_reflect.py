@@ -14,6 +14,7 @@ import sys
 CANONICAL_ROOT = Path("/home/admin1/server-core")
 LOCK_PATH = Path("/tmp/gace-servercore-source-reflect.lock")
 SHA = re.compile(r"^[0-9a-f]{40}$")
+EXPECTED_ORIGIN = "https://github.com/G-ACE-inc/server-core.git"
 
 
 class ReflectError(Exception):
@@ -41,8 +42,12 @@ def reflect(root, expected_before, target_sha, *, dry_run=False):
     root = Path(root)
     if root.is_symlink() or not root.is_dir() or root.resolve() != CANONICAL_ROOT:
         raise ReflectError("CANONICAL_ROOT_DENIED")
-    if not (root / ".git").exists():
+    if (root / ".git").is_symlink() or not (root / ".git").is_dir():
         raise ReflectError("GIT_CHECKOUT_MISSING")
+    # A local directory named server-core is not sufficient authorization.
+    # Do not fetch from a substituted remote (including local file URLs).
+    if git(root, "remote", "get-url", "origin") != EXPECTED_ORIGIN:
+        raise ReflectError("ORIGIN_REMOTE_DENIED")
     if git(root, "rev-parse", "--abbrev-ref", "HEAD") != "main":
         raise ReflectError("BRANCH_NOT_MAIN")
     before = git(root, "rev-parse", "HEAD")
