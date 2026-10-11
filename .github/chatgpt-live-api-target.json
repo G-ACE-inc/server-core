@@ -3,12 +3,11 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "Main bounded Host Docker-managed service state live verification",
+  "request": "server-core main idle after verified Docker-managed service state read; no Host request or deploy",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
     "enabled": false
-  },
-  "server_command_id": "service.debug_ai_state"
+  }
 }
