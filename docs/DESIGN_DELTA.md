@@ -679,3 +679,15 @@ Verification required: same-HEAD CI test and guard, then a separate admitted CHA
 Baseline: `docs/G_ACE_WORKSPACE.md` §6/§7 and `docs/PROJECT_TEMPLATE.md` System / Feature-bundle Document contract. Existing CU #40 PR admission could accept `SYSTEM_DOCUMENT_REQUIRED=YES` or `UPDATE_EXISTING` without any named changed System Document. The existing `server-core-guard` now requires exactly one `SYSTEM_DOCUMENT_PATH=docs/*.md` in the PR body for these decisions, excludes the Workspace Rule/Tree/Design Delta authorities as substitutes, and verifies that exact path occurs in the PR Git diff. This adds no workflow, permission, authorization, or separate design authority.
 
 Operational rejection evidence: [PR #68](https://github.com/G-ACE-inc/server-core/pull/68) [run 38117514290](https://github.com/G-ACE-inc/server-core/actions/runs/38117514290) failed with `CU40_SYSTEM_DOCUMENT_PATH_MISSING_OR_AMBIGUOUS`. The guard still does not prove document quality, actual GPT CHAT model reading, or native final response interception. System documents remain required only when the template criteria are actually met; avoid creating documentation without a system need. Existing baseline and prior Delta history are retained as a prefix. Rollback: revert the scoped existing Guard check and the README/Tree entries; no Host/runtime effects.
+
+## 2026-10-11 — Main admission: GitHub Free private cannot enforce native protection
+
+### Baseline and observed gap
+CU #40 Work Routine enforcement in `server-core-guard` was scoped to `pull_request` events ([PR #64–#70](https://github.com/G-ACE-inc/server-core/pull/64)). Anyone with `push`/`admin` on `main` could bypass Design/Documentation Gate declarations by pushing directly. GitHub API readback: org `G-ACE-inc` plan `free`, repository private; branch protection and rulesets endpoints return **403**; GraphQL protection/ruleset lists are empty (`protected=false` at platform layer).
+
+### Bounded correction (existing workflow only)
+Append a `push`/`main`-scoped step to the existing `server-core-guard` (no new Workflow file): when a push changes CU #40 gate Source paths, require an associated **merged** pull request for the commit SHA via `GET /commits/{sha}/pulls`. Otherwise emit `CU40_MAIN_DIRECT_PUSH_BLOCKED` and fail the guard run. Merged PR paths continue to pass. This preserves other workflows, Actions permissions model, and non-gate main documentation hotfixes.
+
+### Limits, evidence, rollback
+Post-push CI failure does **not** revert Git history and is not equivalent to required status checks under branch protection. Hard pre-push block still needs GitHub Pro/Team private protection or a public-repository ruleset. Evidence: API 403 on protection/ruleset create; [Issue #40](https://github.com/G-ACE-inc/server-core/issues/40) CU scope. Rollback: remove the push admission step and restore prior README/`GITHUB_FREE_MAX` wording; PR-scoped guards from #64–#70 remain.
+
