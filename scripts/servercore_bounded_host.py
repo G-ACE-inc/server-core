@@ -30,6 +30,13 @@ def checked_root(root):
 
 
 def _run(argv, root, timeout=35):
+    if argv and argv[0] == "git":
+        # The container runs under an unprivileged UID while the canonical
+        # checkout is owned by the Host user. Trust ONLY the prevalidated root
+        # for these fixed read-only Git subcommands; never use --global config.
+        argv = ["git", "-c", "safe.directory=" + str(root),
+                "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
+                *argv[1:]]
     try:
         p = subprocess.run(argv, cwd=root, capture_output=True, text=True,
                            timeout=timeout, check=False, env={
