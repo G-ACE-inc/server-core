@@ -35,7 +35,7 @@ Cost順序:
 
 Canonical item: Issue #17.
 
-GPT CHATは#17 -> GitHub Project Currentを先に読み、Workspace/server controlが必要なTaskだけserver-coreを読む。
+GPT CHAT / ChatGPT Work coordinatorはFresh main ManifestでGPT_CHAT Profileを確定し、Issue #17の本文全体を欠落・途中切断なしで読んでからGitHub Project #1 / owning Current / 固定目的を確認する。以後はRule変更分とCurrent差分だけ再取得し、Workspace/server controlが必要なTaskだけserver-coreを読む。Issue・CIの記述だけで実CHATのルール適用を証明したと扱わない。
 GPT CHAT拡張Ruleはserver AIの常時Contextへ複製しない。
 
 ## Authority ownership
