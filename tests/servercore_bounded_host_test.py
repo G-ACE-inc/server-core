@@ -61,6 +61,24 @@ class BoundedHostTests(unittest.TestCase):
             with self.assertRaisesRegex(host.BoundaryError, "GIT_HISTORY_INVALID"):
                 host.execute("project.git_recent_commits", self.root, SHA)
 
+    def test_git_diff_stat_clean(self):
+        with patch.object(host, "_run", side_effect=[SHA + "\n", ""]):
+            value = host.execute("project.git_diff_stat", self.root, SHA)
+        self.assertFalse(value["changed"])
+        self.assertEqual(value["summary"], "clean")
+
+    def test_git_diff_stat_tracked_change(self):
+        with patch.object(host, "_run", side_effect=[SHA + "\n", " 2 files changed, 5 insertions(+), 1 deletion(-)\n"]):
+            value = host.execute("project.git_diff_stat", self.root, SHA)
+        self.assertTrue(value["changed"])
+        self.assertEqual(value["summary"], "2 files changed, 5 insertions(+), 1 deletion(-)")
+        self.assertNotIn("README.md", str(value))
+
+    def test_git_diff_stat_rejects_multiline_output(self):
+        with patch.object(host, "_run", side_effect=[SHA + "\n", "bad\nprivate/path"]):
+            with self.assertRaisesRegex(host.BoundaryError, "GIT_DIFF_STAT_INVALID"):
+                host.execute("project.git_diff_stat", self.root, SHA)
+
     def test_unregistered_fails_closed(self):
         with self.assertRaisesRegex(host.BoundaryError, "COMMAND_NOT_REGISTERED"):
             self.run_with("system.shell")
