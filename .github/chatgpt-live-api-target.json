@@ -11,7 +11,7 @@
     "enabled": false
   },
   "bounded_host_request": {
-    "enabled": true,
+    "enabled": false,
     "command_id": "project.git_head",
     "expected_sha": "GITHUB_WORKFLOW_SHA"
   }
