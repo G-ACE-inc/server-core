@@ -3,7 +3,7 @@ const fs=require("node:fs");
 const {setTimeout:delay}=require("node:timers/promises");
 const API="https://debugai.asterav8.jp";
 const DEFAULT_REPO="/workspace/debug-ai";
-const ALLOWED=new Set(["project.git_head","project.git_status","project.git_recent_commits","github.actions_recent","service.debug_ai_logs","service.registered_container_logs","service.debug_ai_state","service.sandbox_state","service.debug_ai_health","canonical.devlog_activate_status","system.projects_inventory","system.project_file_inspect"]);
+const ALLOWED=new Set(["project.git_head","project.git_status","project.git_recent_commits","github.actions_recent","service.debug_ai_logs","service.registered_container_logs","service.debug_ai_state","service.sandbox_state","service.debug_ai_health","canonical.devlog_activate_status","system.projects_inventory","system.project_file_inspect","system.disk_usage","project.git_changed_paths"]);
 const REGISTERED_CONTAINER_ENTRY_RE=/^[A-Za-z0-9._-]{1,120}$/;
 const ENTRY_NAME_RE=/^[A-Za-z0-9._-]{1,120}$/;
 const REL_PATH_RE=/^[A-Za-z0-9_./-]{1,180}$/;
@@ -81,6 +81,19 @@ function safeResult(command,raw){
       return plain.slice(0,400);
     });
     return["SERVER_RUNTIME_LOG_LINES="+JSON.stringify(lines)];
+  }
+  if(command==="system.disk_usage"){
+    if(stdout.length>4096||/[\x00\r]/.test(stdout))throw Error("SERVER_DISK_RESULT_INVALID");
+    const usage=/used_percent=([0-9]{1,3})%/.exec(stdout);
+    const blocks=/blocks_kb=([0-9]{1,15})/.exec(stdout);
+    if(!usage||!blocks||Number(usage[1])>100)throw Error("SERVER_DISK_RESULT_INVALID");
+    return ["SERVER_DISK_USED_PERCENT="+usage[1],"SERVER_DISK_BLOCKS_KB="+blocks[1]];
+  }
+  if(command==="project.git_changed_paths"){
+    if(stdout.length>4096||/[\x00\r]/.test(stdout))throw Error("SERVER_CHANGED_PATHS_INVALID");
+    const rows=stdout?stdout.split("\n"):[];
+    if(rows.length>150||rows.some(x=>x.length>300))throw Error("SERVER_CHANGED_PATHS_INVALID");
+    return ["SERVER_GIT_CHANGED_PATH_COUNT="+rows.length];
   }
   if(command==="project.git_status"){
     if(stdout.length>4096||/\x00|\r/.test(stdout))throw Error("SERVER_GIT_STATUS_INVALID");
