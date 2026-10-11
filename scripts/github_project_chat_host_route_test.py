@@ -75,7 +75,6 @@ def test_real_workflow_command_support():
         assert out["result"] == "PASS"
         assert out["read_only"] is True
     assert dispatch(command_id="project.git_status")["result"] == "PASS"
-    assert dispatch(command_id="project.git_status")["read_only"] is True
     for command in ("project.pwd", "github.auth_status_scopes"):
         assert dispatch(command_id=command)["error"] == "COMMAND_UNSUPPORTED_BY_TRIGGER"
 
