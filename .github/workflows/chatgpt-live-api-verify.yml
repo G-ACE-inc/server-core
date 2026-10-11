@@ -36,6 +36,8 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest scripts/github_project_chat_turn_gate_test.py -v
+          # Assert the same route admission contract used before bounded Host requests.
+          python3 scripts/github_project_chat_host_route_test.py
           node --test tests/chatgpt-bounded-server-read.test.cjs
 
       - name: Read bounded target
