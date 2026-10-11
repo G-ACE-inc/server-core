@@ -150,5 +150,81 @@ class DeliveryAuthTests(unittest.TestCase):
         )
 
 
+class ServiceDeployTransportTests(unittest.TestCase):
+    CONTRACT = {**CONTRACT, "allowed_command_ids": [*CONTRACT["allowed_command_ids"],
+                                                    "service.deploy", "service.deploy_status"]}
+    SHA = "c" * 40
+
+    def deploy_request(self):
+        return sender.validate_cli("service.deploy", self.SHA, self.CONTRACT,
+                                   repository="seigo-gace/webhook-gateway", service="api")
+
+    def test_sender_requires_exact_target_and_rejects_wildcards(self):
+        request = self.deploy_request()
+        self.assertEqual((request["repository"], request["service"]), ("seigo-gace/webhook-gateway", "api"))
+        for service in ("*", "api;x", "../api", None):
+            with self.assertRaisesRegex(sender.SendError, "SERVICE_DEPLOY_TARGET_INVALID"):
+                sender.validate_cli("service.deploy", self.SHA, self.CONTRACT,
+                                    repository="seigo-gace/webhook-gateway", service=service)
+        with self.assertRaisesRegex(sender.SendError, "UNEXPECTED_DEPLOY_TARGET"):
+            sender.validate_cli("project.git_head", self.SHA, self.CONTRACT, repository="a/b", service="api")
+        with self.assertRaisesRegex(sender.SendError, "DEPLOY_REQUEST_ID_INVALID"):
+            sender.validate_cli("service.deploy_status", self.SHA, self.CONTRACT, deploy_request_id="latest")
+
+    def test_receiver_validation_keys(self):
+        request = self.deploy_request()
+        self.assertEqual(receiver.validate_request(request, self.CONTRACT)["service"], "api")
+        with self.assertRaisesRegex(receiver.ReceiverError, "DEPLOY_KEYS_INVALID"):
+            receiver.validate_request({**request, "compose_file": "/tmp/x.yml"}, self.CONTRACT)
+        with self.assertRaisesRegex(receiver.ReceiverError, "DEPLOY_TARGET_INVALID"):
+            receiver.validate_request({**request, "service": "api;whoami"}, self.CONTRACT)
+        status = sender.validate_cli("service.deploy_status", self.SHA, self.CONTRACT,
+                                     deploy_request_id="req_" + "1" * 24)
+        self.assertEqual(receiver.validate_request(status, self.CONTRACT)["deploy_request_id"], "req_" + "1" * 24)
+
+    def test_receiver_unavailable_socket_fails_closed(self):
+        with self.assertRaisesRegex(receiver.ReceiverError, "DEPLOY_EXECUTOR_UNAVAILABLE"):
+            receiver.dispatch_deploy(receiver.validate_request(self.deploy_request(), self.CONTRACT),
+                                     "/tmp/no-such-gace-deploy-socket")
+
+    def test_receiver_maps_writer_replies(self):
+        request = receiver.validate_request(self.deploy_request(), self.CONTRACT)
+        ok = {"ok": True, "request_id": request["id"], "state": "SERVICE_DEPLOY_ACCEPTED"}
+        with patch.object(receiver, "deploy_socket_call", return_value=ok):
+            self.assertEqual(receiver.dispatch_deploy(request)["deploy_state"], "SERVICE_DEPLOY_ACCEPTED")
+        for reply, status in (({"ok": False, "error": "DEPLOY_LOCK_BUSY"}, 503),
+                              ({"ok": False, "error": "SERVICE_NOT_REGISTERED"}, 422)):
+            with patch.object(receiver, "deploy_socket_call", return_value=reply):
+                with self.assertRaises(receiver.ReceiverError) as raised:
+                    receiver.dispatch_deploy(request)
+                self.assertEqual(raised.exception.status, status)
+        with patch.object(receiver, "deploy_socket_call", return_value={**ok, "request_id": "req_" + "9" * 24}):
+            with self.assertRaisesRegex(receiver.ReceiverError, "DEPLOY_RESULT_MISMATCH"):
+                receiver.dispatch_deploy(request)
+
+    def test_status_requires_terminal_pass_and_exact_sha(self):
+        status = receiver.validate_request(sender.validate_cli(
+            "service.deploy_status", self.SHA, self.CONTRACT, deploy_request_id="req_" + "1" * 24), self.CONTRACT)
+        passed = {"ok": True, "state": "SERVICE_DEPLOY_PASS", "source_sha": self.SHA, "service": "api",
+                  "repository": "seigo-gace/webhook-gateway", "recreated": False, "http_health": "HTTP_200"}
+        with patch.object(receiver, "deploy_socket_call", return_value=passed):
+            self.assertEqual(receiver.dispatch_deploy_status(status)["state"], "SERVICE_DEPLOY_PASS")
+        for reply, code, http in (
+                ({"ok": True, "state": "RUNNING"}, "DEPLOY_IN_PROGRESS", 503),
+                ({"ok": True, "state": "FAIL"}, "DEPLOY_FAILED_OR_SHA_MISMATCH", 422),
+                ({**passed, "source_sha": "d" * 40}, "DEPLOY_FAILED_OR_SHA_MISMATCH", 422),
+                ({"ok": False, "error": "DEPLOY_REQUEST_UNKNOWN"}, "DEPLOY_REQUEST_UNKNOWN", 422)):
+            with patch.object(receiver, "deploy_socket_call", return_value=reply):
+                with self.assertRaises(receiver.ReceiverError) as raised:
+                    receiver.dispatch_deploy_status(status)
+                self.assertEqual((raised.exception.code, raised.exception.status), (code, http))
+
+    def test_committed_contract_registers_effects(self):
+        from pathlib import Path
+        contract = json.loads((Path(__file__).resolve().parents[1] / "operations" / "github-project-bounded-host.json").read_text())
+        self.assertEqual(contract["command_effects"]["service.deploy"], "service_deploy")
+        self.assertEqual(contract["command_effects"]["service.deploy_status"], "read_only")
+
+
 if __name__ == "__main__":
     unittest.main()

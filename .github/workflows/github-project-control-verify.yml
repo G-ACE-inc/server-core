@@ -55,6 +55,11 @@ jobs:
         run: |
           python3 -m py_compile scripts/servercore_registered_service_deploy.py tests/servercore_registered_service_deploy_test.py
           python3 -m unittest discover -s tests -p servercore_registered_service_deploy_test.py -v
+      - name: Registered service deploy writer and installer tests
+        run: |
+          python3 -m py_compile scripts/servercore_service_deploy_socket.py scripts/servercore_service_deploy_host_bootstrap.py tests/servercore_service_deploy_socket_test.py tests/servercore_service_deploy_host_bootstrap_test.py
+          python3 -m unittest discover -s tests -p servercore_service_deploy_socket_test.py -v
+          python3 -m unittest discover -s tests -p servercore_service_deploy_host_bootstrap_test.py -v
       - name: TGserver ZERO full deploy coverage audit tests
         run: |
           python3 -m py_compile scripts/tgzero_deploy_coverage.py tests/tgzero_deploy_coverage_test.py

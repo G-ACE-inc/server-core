@@ -13,6 +13,9 @@ from urllib.parse import urlparse
 
 DEFAULT_CONTRACT = Path(__file__).resolve().parents[1] / "operations" / "github-project-bounded-host.json"
 SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$")
+SERVICE_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
+REQUEST_ID_PATTERN = re.compile(r"^req_[0-9a-f]{24}$")
 
 
 class SendError(RuntimeError):
@@ -53,7 +56,8 @@ def build_event(request, contract):
     }
 
 
-def validate_cli(command_id, expected_sha, contract, expected_before=None):
+def validate_cli(command_id, expected_sha, contract, expected_before=None, repository=None,
+                 service=None, deploy_request_id=None):
     allowed = contract.get("allowed_command_ids") or []
     if command_id not in allowed:
         raise SendError("COMMAND_NOT_REGISTERED")
@@ -71,6 +75,20 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None):
         request["expected_before"] = expected_before
     elif expected_before is not None:
         raise SendError("UNEXPECTED_BEFORE_SHA")
+    if command_id == "service.deploy":
+        if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
+                or not isinstance(service, str) or not SERVICE_PATTERN.fullmatch(service):
+            raise SendError("SERVICE_DEPLOY_TARGET_INVALID")
+        request["repository"] = repository
+        request["service"] = service
+    elif repository is not None or service is not None:
+        raise SendError("UNEXPECTED_DEPLOY_TARGET")
+    if command_id == "service.deploy_status":
+        if not isinstance(deploy_request_id, str) or not REQUEST_ID_PATTERN.fullmatch(deploy_request_id):
+            raise SendError("DEPLOY_REQUEST_ID_INVALID")
+        request["deploy_request_id"] = deploy_request_id
+    elif deploy_request_id is not None:
+        raise SendError("UNEXPECTED_DEPLOY_REQUEST_ID")
     return request
 
 
@@ -118,10 +136,14 @@ def main():
     parser.add_argument("--command-id", required=True)
     parser.add_argument("--expected-sha", required=True)
     parser.add_argument("--expected-before")
+    parser.add_argument("--repository")
+    parser.add_argument("--service")
+    parser.add_argument("--deploy-request-id")
     parser.add_argument("--contract", default=str(DEFAULT_CONTRACT))
     args = parser.parse_args()
     contract = load_contract(args.contract)
-    request = validate_cli(args.command_id, args.expected_sha, contract, args.expected_before)
+    request = validate_cli(args.command_id, args.expected_sha, contract, args.expected_before,
+                           args.repository, args.service, args.deploy_request_id)
     try:
         receipt = send(request, contract)
         print(json.dumps({"state": "QUEUED", "request_id": request["id"], "gateway": receipt}, sort_keys=True))

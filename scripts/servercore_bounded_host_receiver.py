@@ -24,6 +24,9 @@ TERMINAL_REFLECT_ERRORS = frozenset({
 DEFAULT_CONTRACT = Path(__file__).resolve().parents[1] / "operations" / "github-project-bounded-host.json"
 REQUEST_ID_PATTERN = re.compile(r"^req_[0-9a-f]{24}$")
 SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$")
+SERVICE_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
+DEPLOY_SOCKET = "/run/gace/servercore-service-deploy.sock"
 
 
 class ReceiverError(RuntimeError):
@@ -67,6 +70,23 @@ def validate_request(value, contract):
             fail("REFLECT_BEFORE_INVALID", 422)
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
                 "expected_before": before}
+    if command_id == "service.deploy":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "repository", "service"}:
+            fail("DEPLOY_KEYS_INVALID", 422)
+        repository, service = value["repository"], value["service"]
+        if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
+                or not isinstance(service, str) or not SERVICE_PATTERN.fullmatch(service):
+            fail("DEPLOY_TARGET_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
+                "repository": repository, "service": service}
+    if command_id == "service.deploy_status":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "deploy_request_id"}:
+            fail("DEPLOY_STATUS_KEYS_INVALID", 422)
+        deploy_id = value["deploy_request_id"]
+        if not isinstance(deploy_id, str) or not REQUEST_ID_PATTERN.match(deploy_id):
+            fail("DEPLOY_STATUS_ID_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
+                "deploy_request_id": deploy_id}
     if set(value) != {"schema", "id", "command_id", "expected_sha"}:
         fail("REQUEST_KEYS_INVALID", 422)
     return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha}
@@ -104,6 +124,59 @@ def dispatch_reflect(request, socket_path="/run/gace/servercore-source-reflect.s
         fail("REFLECT_RESULT_INVALID", 503)
     return {"source_sha": result["target_sha"], "command_id": request["command_id"],
             "source_reflect": True, "read_only": False}
+
+
+def deploy_socket_call(payload, socket_path, timeout=60):
+    data = (json.dumps(payload, separators=(",", ":")) + "\n").encode("utf-8")
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(timeout)
+            client.connect(socket_path)
+            client.sendall(data)
+            with client.makefile("rb") as stream:
+                result = json.loads(stream.readline(8192))
+    except (OSError, ValueError, TypeError):
+        fail("DEPLOY_EXECUTOR_UNAVAILABLE", 503)
+    if not isinstance(result, dict):
+        fail("DEPLOY_RESULT_INVALID", 503)
+    return result
+
+
+def dispatch_deploy(request, socket_path=DEPLOY_SOCKET):
+    result = deploy_socket_call({
+        "schema": "gace.servercore-service-deploy.request/v1",
+        "id": request["id"],
+        "repository": request["repository"],
+        "service": request["service"],
+        "target_sha": request["expected_sha"],
+    }, socket_path)
+    if result.get("ok") is not True:
+        # Lock contention is transient; every admission denial is terminal.
+        fail("DEPLOY_EXECUTOR_BUSY" if result.get("error") == "DEPLOY_LOCK_BUSY" else "DEPLOY_ADMISSION_DENIED",
+             503 if result.get("error") == "DEPLOY_LOCK_BUSY" else 422)
+    if result.get("request_id") != request["id"] or result.get("state") not in {
+            "SERVICE_DEPLOY_ACCEPTED", "SERVICE_DEPLOY_DUPLICATE"}:
+        fail("DEPLOY_RESULT_MISMATCH", 503)
+    return {"source_sha": request["expected_sha"], "command_id": request["command_id"],
+            "deploy_state": result["state"], "service_deploy": True, "read_only": False}
+
+
+def dispatch_deploy_status(request, socket_path=DEPLOY_SOCKET):
+    result = deploy_socket_call({
+        "schema": "gace.servercore-service-deploy.status/v1",
+        "id": request["deploy_request_id"],
+    }, socket_path)
+    if result.get("ok") is not True:
+        fail("DEPLOY_REQUEST_UNKNOWN", 422)
+    state = result.get("state")
+    if state in {"QUEUED", "RUNNING"}:
+        fail("DEPLOY_IN_PROGRESS", 503)  # retryable until terminal
+    if state != "SERVICE_DEPLOY_PASS" or result.get("source_sha") != request["expected_sha"]:
+        fail("DEPLOY_FAILED_OR_SHA_MISMATCH", 422)
+    keep = ("repository", "service", "source_sha", "container_id", "health", "http_health",
+            "compose_digest", "recreated", "state")
+    return {**{k: result[k] for k in keep if k in result}, "command_id": request["command_id"],
+            "read_only": True}
 
 
 def make_handler(contract, *, delivery_key=None, now_fn=None):
@@ -160,6 +233,10 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                 request = validate_request(json.loads(body.decode("utf-8")), contract)
                 if request["command_id"] == "project.source_reflect":
                     result = dispatch_reflect(request)
+                elif request["command_id"] == "service.deploy":
+                    result = dispatch_deploy(request)
+                elif request["command_id"] == "service.deploy_status":
+                    result = dispatch_deploy_status(request)
                 else:
                     result = bounded_host.execute(
                         request["command_id"],

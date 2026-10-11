@@ -448,3 +448,21 @@ test("bounded host dispatch rejects DebugAI command overlap and unregistered com
   assert.throws(()=>d.validateDispatch({target:{...hostTarget,server_command_id:"project.git_head"},route,registry,gitRefName:"main"}),/BOUNDED_HOST_DEBUGAI_COMMAND_FORBIDDEN/);
   assert.throws(()=>d.validateDispatch({target:{...hostTarget,bounded_host_request:{enabled:true,command_id:"system.shell",expected_sha:"a".repeat(40)}},route,registry,gitRefName:"main"}),/BOUNDED_HOST_COMMAND_DENIED/);
 });
+
+test("service deploy dispatch is fixed registered repo/service at an explicit SHA only",()=>{
+  const deploy={enabled:true,command_id:"service.deploy",expected_sha:"a".repeat(40),repository:"seigo-gace/webhook-gateway",service:"api"};
+  const args=(r)=>({target:{...targetNoBoundedHost,bounded_host_request:r,server_command_id:""},route,registry,gitRefName:"main"});
+  const ok=d.validateDispatch(args(deploy));
+  assert.equal(ok.mode,"bounded_host");
+  assert.equal(ok.commandId,"service.deploy");
+  assert.throws(()=>d.validateDispatch(args({...deploy,expected_sha:"GITHUB_WORKFLOW_SHA"})),/BOUNDED_HOST_DEPLOY_SHA_EXPLICIT_REQUIRED/);
+  assert.throws(()=>d.validateDispatch(args({...deploy,service:"api;sh"})),/BOUNDED_HOST_DEPLOY_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...deploy,repository:"../x"})),/BOUNDED_HOST_DEPLOY_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...deploy,compose_file:"/tmp/x.yml"})),/BOUNDED_HOST_KEYS_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({enabled:true,command_id:"service.deploy",expected_sha:"a".repeat(40)})),/BOUNDED_HOST_KEYS_INVALID/);
+  const status={enabled:true,command_id:"service.deploy_status",expected_sha:"a".repeat(40),deploy_request_id:"req_"+"1".repeat(24)};
+  assert.equal(d.validateDispatch(args(status)).commandId,"service.deploy_status");
+  assert.throws(()=>d.validateDispatch(args({...status,deploy_request_id:"latest"})),/BOUNDED_HOST_DEPLOY_REQUEST_ID_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...deploy,command_id:"service.deploy_all"})),/BOUNDED_HOST_KEYS_INVALID|BOUNDED_HOST_COMMAND_DENIED/);
+  assert.match(wf,/--command-id "\$command_id" --expected-sha "\$expected_sha" --repository "\$repository" --service "\$service"/);
+});
