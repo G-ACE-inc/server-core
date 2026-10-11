@@ -66,4 +66,4 @@ class DecisionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-# INTEGRATION_NEGATIVE_PR_ONLY: never merge; exercise missing-document guard.
+# INTEGRATION_NEGATIVE_PR_ONLY: never merge; exercise declared-YES-without-files guard.
