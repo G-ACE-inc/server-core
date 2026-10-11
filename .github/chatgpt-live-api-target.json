@@ -3,7 +3,7 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "Independent Host reflect acceptance complete; ordinary idle target",
+  "request": "Resume existing Tool B common deploy route: one-shot exact SHA source reflect after prior verified Host af4a2249",
   "gitops_request": {
     "enabled": false
   },
@@ -11,8 +11,19 @@
     "enabled": false
   },
   "bounded_host_request": {
-    "enabled": false,
-    "command_id": "project.git_head",
-    "expected_sha": "GITHUB_WORKFLOW_SHA"
+    "enabled": true,
+    "command_id": "project.source_reflect",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "expected_before": "af4a22498d2b40386fdf5308dfde400755deba78"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Control #10 Tool B; Host expected-before af4a2249 was directly verified, PR112 merged and CI success; no DebugAI product execution"
   }
 }
