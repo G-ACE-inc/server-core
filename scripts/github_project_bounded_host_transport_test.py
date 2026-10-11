@@ -91,7 +91,7 @@ class DeliveryAuthTests(unittest.TestCase):
             headers,
             body,
             expected_destination="server-core-bounded-host",
-            secret=secret,
+            delivery_key=secret,
             now=1700000000,
             tolerance_seconds=300,
         )

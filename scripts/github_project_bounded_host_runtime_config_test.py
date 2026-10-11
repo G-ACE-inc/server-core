@@ -19,7 +19,7 @@ def main():
     require(dockerfile, 'ENTRYPOINT ["python3", "/app/scripts/servercore_bounded_host_receiver.py"]', "dockerfile")
     require(compose, "server-core-bounded-host:", "compose")
     require(compose, "GACE_BOUNDED_HOST_CANONICAL_ROOT", "compose")
-    require(compose, "GACE_BOUNDED_HOST_DELIVERY_SECRET_FILE", "compose")
+    require(compose, "GACE_BOUNDED_HOST_HMAC_KEY_FILE", "compose")
     require(compose, "target: /home/admin1/server-core", "compose")
     require(compose, "8789", "compose")
     if "server-core-bounded-host" in compose and "\n    ports:" in compose.split("server-core-bounded-host:")[1].split("networks:")[0]:

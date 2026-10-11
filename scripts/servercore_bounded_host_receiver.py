@@ -6,7 +6,7 @@ import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from gace_internal_delivery_auth import DeliveryAuthError, read_delivery_secret, verify_delivery
+from gace_internal_delivery_auth import DeliveryAuthError, read_delivery_key, verify_delivery
 
 import servercore_bounded_host as bounded_host
 
@@ -55,7 +55,7 @@ def validate_request(value, contract):
     return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha}
 
 
-def make_handler(contract, *, secret=None, now_fn=None):
+def make_handler(contract, *, delivery_key=None, now_fn=None):
     root = Path(contract.get("canonical_host_root") or bounded_host.CANONICAL_ROOT)
 
     class Handler(BaseHTTPRequestHandler):
@@ -102,7 +102,7 @@ def make_handler(contract, *, secret=None, now_fn=None):
                     headers,
                     body,
                     expected_destination=EXPECTED_DESTINATION,
-                    secret=secret,
+                    delivery_key=delivery_key,
                     now=now_fn() if now_fn else None,
                     tolerance_seconds=tolerance,
                 )
@@ -146,8 +146,8 @@ def main():
     if args.port < 1 or args.port > 65535:
         raise SystemExit("PORT_INVALID")
     contract = load_contract(args.contract)
-    secret = read_delivery_secret(env_prefix="GACE_BOUNDED_HOST")
-    server = ThreadingHTTPServer((args.host, args.port), make_handler(contract, secret=secret))
+    delivery_key = read_delivery_key(env_prefix="GACE_BOUNDED_HOST")
+    server = ThreadingHTTPServer((args.host, args.port), make_handler(contract, delivery_key=delivery_key))
     server.serve_forever()
 
 

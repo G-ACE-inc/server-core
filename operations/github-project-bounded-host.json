@@ -22,7 +22,7 @@
     "source_id": "server-core-github",
     "receiver_endpoint": "/internal/servercore-bounded-host",
     "delivery_secret_env": "OUTBOUND_SERVER_CORE_BOUNDED_HOST_SECRET",
-    "delivery_secret_file_env": "GACE_BOUNDED_HOST_DELIVERY_SECRET_FILE",
+    "delivery_secret_file_env": "GACE_BOUNDED_HOST_HMAC_KEY_FILE",
     "gateway_url_env": "GACE_EVENT_GATEWAY_URL",
     "gateway_token_env": "GACE_EVENT_GATEWAY_TOKEN",
     "signature_tolerance_seconds_env": "GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS"

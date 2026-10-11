@@ -34,9 +34,9 @@ def decode_secret(value):
     return value.encode("utf-8")
 
 
-def read_delivery_secret(*, env_prefix="GACE_BOUNDED_HOST"):
-    direct = os.environ.get(f"{env_prefix}_DELIVERY_SECRET")
-    file_path = os.environ.get(f"{env_prefix}_DELIVERY_SECRET_FILE")
+def read_delivery_key(*, env_prefix="GACE_BOUNDED_HOST"):
+    direct = os.environ.get(f"{env_prefix}_HMAC_KEY")
+    file_path = os.environ.get(f"{env_prefix}_HMAC_KEY_FILE")
     if direct and file_path:
         fail("DELIVERY_SECRET_SOURCE_AMBIGUOUS", 503)
     if file_path:
@@ -52,7 +52,7 @@ def verify_delivery(
     body,
     *,
     expected_destination,
-    secret=None,
+    delivery_key=None,
     now=None,
     tolerance_seconds=300,
 ):
@@ -79,7 +79,7 @@ def verify_delivery(
         supplied = base64.b64decode(signature[3:], validate=True)
     except (binascii.Error, ValueError):
         fail("DELIVERY_SIGNATURE_INVALID", 401)
-    key = secret if secret is not None else read_delivery_secret(env_prefix="GACE_BOUNDED_HOST")
+    key = delivery_key if delivery_key is not None else read_delivery_key(env_prefix="GACE_BOUNDED_HOST")
     expected = hmac.new(
         key,
         message_id.encode() + b"." + timestamp.encode() + b"." + body,

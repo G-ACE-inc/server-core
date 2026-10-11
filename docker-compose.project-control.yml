@@ -53,7 +53,7 @@ services:
     init: true
     user: "${GACE_SERVER_UID:?GACE_SERVER_UID is required}:${GACE_SERVER_GID:?GACE_SERVER_GID is required}"
     environment:
-      GACE_BOUNDED_HOST_DELIVERY_SECRET_FILE: /run/secrets/bounded-host-delivery
+      GACE_BOUNDED_HOST_HMAC_KEY_FILE: /run/secrets/bounded-host-delivery
       GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS: "${GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS:-300}"
     volumes:
       - type: bind
@@ -61,7 +61,7 @@ services:
         target: /home/admin1/server-core
         read_only: true
       - type: bind
-        source: "${GACE_BOUNDED_HOST_DELIVERY_SECRET_FILE:?GACE_BOUNDED_HOST_DELIVERY_SECRET_FILE is required}"
+        source: "${GACE_BOUNDED_HOST_HMAC_KEY_FILE:?GACE_BOUNDED_HOST_HMAC_KEY_FILE is required}"
         target: /run/secrets/bounded-host-delivery
         read_only: true
     networks:

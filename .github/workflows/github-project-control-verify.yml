@@ -38,4 +38,4 @@ jobs:
       - name: Project Control container source
         run: |
           docker build -f Dockerfile.project-control -t gace-server-core-project-control:ci .
-          GACE_SERVER_UID=10001 GACE_SERVER_GID=10001 GACE_PROJECT_CONTROL_GH_CONFIG_DIR=/tmp/gace-gh-config GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE=/tmp/gace-project-control-delivery-secret GACE_BOUNDED_HOST_CANONICAL_ROOT=/tmp/gace-server-core-canonical GACE_BOUNDED_HOST_DELIVERY_SECRET_FILE=/tmp/gace-bounded-host-delivery-secret docker compose -f docker-compose.project-control.yml config --quiet
+          GACE_SERVER_UID=10001 GACE_SERVER_GID=10001 GACE_PROJECT_CONTROL_GH_CONFIG_DIR=/tmp/gace-gh-config GACE_PROJECT_CONTROL_DELIVERY_SECRET_FILE=/tmp/gace-project-control-delivery-secret GACE_BOUNDED_HOST_CANONICAL_ROOT=/tmp/gace-server-core-canonical GACE_BOUNDED_HOST_HMAC_KEY_FILE=/tmp/gace-bounded-host-delivery-secret docker compose -f docker-compose.project-control.yml config --quiet
