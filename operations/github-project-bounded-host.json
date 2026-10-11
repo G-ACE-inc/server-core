@@ -8,6 +8,7 @@
   "allowed_command_ids": [
     "project.git_head",
     "project.git_status",
+    "project.git_recent_commits",
     "project.source_reflect",
     "service.deploy",
     "service.deploy_status"
@@ -17,7 +18,8 @@
     "project.git_status": "read_only",
     "project.source_reflect": "source_reflect",
     "service.deploy": "service_deploy",
-    "service.deploy_status": "read_only"
+    "service.deploy_status": "read_only",
+    "project.git_recent_commits": "read_only"
   },
   "transport": {
     "kind": "webhook_gateway_internal_event",
