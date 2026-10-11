@@ -51,6 +51,10 @@ jobs:
         run: |
           python3 -m py_compile scripts/servercore_service_deploy_admission.py tests/servercore_service_deploy_admission_test.py
           python3 -m unittest discover -s tests -p servercore_service_deploy_admission_test.py -v
+      - name: Fixed registered service executor tests
+        run: |
+          python3 -m py_compile scripts/servercore_registered_service_deploy.py tests/servercore_registered_service_deploy_test.py
+          python3 -m unittest discover -s tests -p servercore_registered_service_deploy_test.py -v
       - name: Project Control container source
         run: |
           docker build -f Dockerfile.project-control -t gace-server-core-project-control:ci .
