@@ -36,7 +36,9 @@
       "allowed_branches": [
         "feat/tgserver-async-log-sink-20261003",
         "master-internal-runtime-20261008",
-        "fix/p1c-refix-no-new-evidence-20261010"
+        "fix/p1c-refix-no-new-evidence-20261010",
+        "fix/free-review-host-forward-20261010",
+        "fix/scout-observation-reuse-20261010"
       ],
       "allowed_operations": [
         "deploy"
@@ -93,7 +95,33 @@
         "scripts/host-server-command-runner.sh",
         "scripts/chatgpt-bounded-server-read.cjs",
         "operations/host-admitted-workspace-entries.json",
-        "operations/host-managed-container-entries.json"
+        "operations/host-managed-container-entries.json",
+        "server/adapters/external-review-quota.js",
+        "scripts/external-review-volume-probe.cjs",
+        "AGENTS.md",
+        "server/adapters/external-review.js",
+        "server/adapters/ai-core.js",
+        "server/control/causal-scout-skill-effect-benchmark.js",
+        "server/control/durable-workflow-stage.js",
+        "server/control/invocation-compiler.js",
+        "server/control/read-only-tool-runtime-base.js",
+        "server/control/researcher-skill-effect-benchmark.js",
+        "server/control/role-output-validator.js",
+        "server/control/run-observation-context.js",
+        "server/control/run-observation-provider.js",
+        "server/control/runtime-packets.js",
+        "server/control/sandbox-queue-selftest.js",
+        "server/control/sandbox-runtime.js",
+        "server/control/sandbox-verification.js",
+        "server/control/production-skill-procedures.js",
+        "server/control/skill-procedures.js",
+        "server/control/skill-registry.js",
+        "scripts/actions-artifact-evidence.cjs",
+        "server/control/actions-artifact-evidence.js",
+        "server/control/actions-artifact-github.js",
+        "server/control/actions-artifact-zip.js",
+        ".github/chatgpt-live-api-target.json",
+        ".github/workflows/chatgpt-live-api-verify.yml"
       ]
     },
     {

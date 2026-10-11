@@ -592,3 +592,16 @@ Keep A0–A4 and B0–B5 acceptance, all existing Log Source and Owner claims, p
 
 ### Verification state
 Design entry/Delta/Source and same-head CI to be verified independently. Tool B Host canonical-path read and source reflection remain NOT_VERIFIED until live server evidence exists.
+
+## 2026-10-11 — Preserve installed DebugAI admission during GC repair qualification
+
+Current main adopts `server/control/storage-retention.js`, required by the CI-qualified DebugAI archive receipt/GC fix. Reconcile the existing PR42 registry with main while retaining every already installed DebugAI branch/path grant. Copying main alone would revoke two branches and twenty paths used by existing owners. No issuer, identity, effect, runtime, service, Secret or other repository entry changes. This restores registry/readback compatibility; it creates no new execution route or admission bypass.
+
+Verification: target entry equals the installed trusted policy except the already adopted storage-retention path; Rule Plane deterministic checks and 23 CHAT Host routing tests pass. Exact Source, CI, trusted admission and live product outcomes remain distinct. Apply only through the existing Host registration/readback script; rollback is the previous trusted policy through that same boundary. Canonical main Tool B and server-core enrollment changes remain preserved. Codex owns this narrow PR42 reconciliation and cleanup; no new parent/worktree was created.
+
+Codex practical-completion scope also admits only the four independently CI-qualified Artifact implementation paths and the existing CHAT Actions target/workflow files needed for the fixed owned control/deploy pair. The Artifact test is covered by the existing server/tests grant. No arbitrary branch, shell or wildcard effect/path is added; all previously installed grants remain preserved. Master expressly delegates completion and actual debugging, and original Artifact instruction includes normal qualified Host reflection. Source CI and trusted policy admission/readback are required before any execution.
+
+
+### Artifact admission CU integration regression — 2026-10-11
+
+Fresh canonical common CHAT route migration already permits and supports bounded `project.git_status`, but omitted its `read_only` effect and retained a legacy test expecting it to be unsupported. Exact integration guard38104645836 failed at that mismatch. Complete only that existing command effect and verify supported/read-only plus retained unsupported-command negatives; no new command, transport, branch, scope or credential authority. Keep all other Owner migration changes. Runtime registry remains pinned to independently qualified fd1657f while this correction qualifies.
