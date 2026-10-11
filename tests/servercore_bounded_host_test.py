@@ -92,7 +92,7 @@ class BoundedHostTests(unittest.TestCase):
         target.parent.mkdir()
         content = b"A" * host.FILE_CHUNK_BYTES + b"B" * 31
         target.write_bytes(content)
-        with patch.object(host, "_run", return_value=SHA + "\\n"):
+        with patch.object(host, "_run", return_value=SHA + "\n"):
             first = host.file_inspect(self.root, SHA, "docs/LOAD_SCOPE.md", 0, ["docs/LOAD_SCOPE.md"])
             second = host.file_inspect(self.root, SHA, "docs/LOAD_SCOPE.md", first["next_offset"], ["docs/LOAD_SCOPE.md"])
         self.assertEqual(first["offset"], 0)
@@ -107,14 +107,14 @@ class BoundedHostTests(unittest.TestCase):
     def test_file_inspect_rejects_unregistered_target(self):
         target = self.root / "README.md"
         target.write_text("safe")
-        with patch.object(host, "_run", return_value=SHA + "\\n"):
+        with patch.object(host, "_run", return_value=SHA + "\n"):
             with self.assertRaisesRegex(host.BoundaryError, "FILE_NOT_REGISTERED"):
                 host.file_inspect(self.root, SHA, "README.md", 0, ["docs/LOAD_SCOPE.md"])
 
     def test_file_inspect_rejects_invalid_offset(self):
         target = self.root / "README.md"
         target.write_text("safe")
-        with patch.object(host, "_run", return_value=SHA + "\\n"):
+        with patch.object(host, "_run", return_value=SHA + "\n"):
             with self.assertRaisesRegex(host.BoundaryError, "FILE_OFFSET_INVALID"):
                 host.file_inspect(self.root, SHA, "README.md", -1, ["README.md"])
 
