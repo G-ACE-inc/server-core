@@ -3,11 +3,12 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "server-core main idle after verified Docker-managed service state read; no Host request or deploy",
+  "request": "Bounded existing Host Git status live E2E",
   "gitops_request": {
     "enabled": false
   },
   "source_reflect_request": {
     "enabled": false
-  }
+  },
+  "server_command_id": "project.git_status"
 }
