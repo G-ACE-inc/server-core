@@ -11,6 +11,8 @@ entry={"repository":"seigo-gace/debug-ai","enabled":True,"revoked":False,
        "delegation_mode":"MASTER_INTERNAL_PERSISTENT","allow_production":True,
        "server_project_path":"/home/admin1/projects/debug-ai",
        "allowed_operations":["deploy"],
+       "remote":"https://github.com/seigo-gace/debug-ai.git",
+       "allowed_branches":["main","master-internal-runtime-20261008"],
        "runtime_target":{"compose_file":"compose.yaml","compose_digest":"a"*64,
                          "services":["debug-ai","sandbox-runner"],"health_service":"debug-ai"}}
 def registered(): return {"repositories":[entry.copy()]}
@@ -51,6 +53,18 @@ class ServiceAdmissionTests(unittest.TestCase):
         data=registered()
         data["repositories"][0]["runtime_target"]={**entry["runtime_target"],"compose_file":"../../unsafe.yaml"}
         with self.assertRaisesRegex(mod.AdmissionError,"COMPOSE_PATH_INVALID"):
+            mod.require_registered(data,"seigo-gace/debug-ai",SHA,"debug-ai")
+
+    def test_deny_registered_remote_mismatch(self):
+        data=registered()
+        data["repositories"][0]["remote"]="https://github.com/other/other.git"
+        with self.assertRaisesRegex(mod.AdmissionError,"REGISTERED_REMOTE_INVALID"):
+            mod.require_registered(data,"seigo-gace/debug-ai",SHA,"debug-ai")
+
+    def test_deny_missing_registered_branches(self):
+        data=registered()
+        data["repositories"][0]["allowed_branches"]=[]
+        with self.assertRaisesRegex(mod.AdmissionError,"REGISTERED_BRANCHES_INVALID"):
             mod.require_registered(data,"seigo-gace/debug-ai",SHA,"debug-ai")
 
     def test_reject_duplicate_registration(self):

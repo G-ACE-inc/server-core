@@ -865,3 +865,7 @@ Master clarified that **deployable units are actual development repositories, no
 ### 2026-10-11 — Catalog contains gace-dev-kb
 
 Master confirmed `gace-dev-kb` resides inside the `Catalog` development unit. Preserve TGserver's `P012` modular-catalog and `P014` gace-dev-kb log namespaces and distinct GitHub mapping; KB implementation/runtime is on PC, not a Catalog VPS container. They share workspace component ownership but **remain distinct execution/deployment locations**. The source audit preserves gace-dev-kb component_of Catalog and runtime_location=PC; its separate deployment unit must not be dispatched to the VPS Docker route. PC machine path and remote deploy route are UNKNOWN until separately verified. No cross-repository checkout, Docker restart, or authorization expansion is implied.
+
+### 2026-10-11 — Common registered service Deploy pre-admission correction
+
+Before connecting existing Host-local registered Compose deploy source to the shared Receiver/Host executor, require Host origin exactly matches the registered repository, Host branch is on the delegated branch allowlist, Host HEAD equals the requested exact SHA, and checkout is clean. Reject wrong remote/branch, dirty tree, wrong source SHA and mismatched Compose digest. This is an in-place correction to Tool B Host admission, **not** a new Deploy Workflow, registry, token, MCP or project-specific development task. CI validates registration fields; live Host validation and protected common dispatch remain separate pending gates.

@@ -53,7 +53,14 @@ def require_registered(registry, repository, target_sha, service):
     path = entry.get("server_project_path")
     if not isinstance(path, str) or not path.startswith("/home/admin1/projects/") or ".." in Path(path).parts:
         raise AdmissionError("HOST_REPOSITORY_PATH_DENIED")
-    return {"repository": repository, "target_sha": target_sha, "service": service,
+    remote = entry.get("remote")
+    branches = entry.get("allowed_branches")
+    if not isinstance(remote, str) or remote != "https://github.com/" + repository + ".git":
+        raise AdmissionError("REGISTERED_REMOTE_INVALID")
+    if not isinstance(branches, list) or not branches or any(not isinstance(x, str) or not x for x in branches):
+        raise AdmissionError("REGISTERED_BRANCHES_INVALID")
+    return {"remote": remote, "allowed_branches": list(branches),
+            "repository": repository, "target_sha": target_sha, "service": service,
             "root": path, "compose_file": compose, "compose_digest": digest,
             "health_service": runtime.get("health_service"), "health_url": runtime.get("health_url")}
 
@@ -68,11 +75,20 @@ def inspect_host(registry, repository, target_sha, service):
         raise AdmissionError("COMPOSE_FILE_NOT_CANONICAL")
     if hashlib.sha256(compose.read_bytes()).hexdigest() != admission["compose_digest"]:
         raise AdmissionError("COMPOSE_DIGEST_MISMATCH")
-    cmd = ["git", "-c", "core.hooksPath=/dev/null", "-c", "safe.directory=" + str(root),
-           "-C", str(root), "rev-parse", "HEAD"]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-    if result.returncode or result.stdout.strip() != target_sha:
+    cmd = ["git", "-c", "core.hooksPath=/dev/null", "-c", "safe.directory=" + str(root), "-C", str(root)]
+    def read_git(*args):
+        result = subprocess.run([*cmd, *args], capture_output=True, text=True, timeout=15)
+        if result.returncode:
+            raise AdmissionError("HOST_GIT_READ_FAILED")
+        return result.stdout.strip()
+    if read_git("remote", "get-url", "origin") != admission["remote"]:
+        raise AdmissionError("HOST_ORIGIN_MISMATCH")
+    if read_git("symbolic-ref", "--short", "HEAD") not in admission["allowed_branches"]:
+        raise AdmissionError("HOST_BRANCH_DENIED")
+    if read_git("rev-parse", "HEAD") != target_sha:
         raise AdmissionError("HOST_SOURCE_SHA_MISMATCH")
+    if read_git("status", "--porcelain"):
+        raise AdmissionError("HOST_CHECKOUT_DIRTY")
     return {**admission, "state": "DEPLOY_ADMISSION_PREFLIGHT_PASS", "mutation_performed": False}
 
 
