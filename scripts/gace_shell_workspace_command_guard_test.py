@@ -378,7 +378,7 @@ class HookTests(unittest.TestCase):
 
     def test_deny_bound_git_commit_wrong_branch(self):
         import os
-        binding = self._full_binding_json(branch="main")
+        binding = self._full_binding_json(branch="wrong-on-purpose")
         env = os.environ.copy()
         env["GACE_MUTATION_BINDING"] = binding
         proc = subprocess.run(
@@ -435,7 +435,7 @@ class HookTests(unittest.TestCase):
 
     def test_deny_bound_git_dash_c_commit_wrong_branch(self):
         import os
-        binding = self._full_binding_json(branch="main")
+        binding = self._full_binding_json(branch="wrong-on-purpose")
         env = os.environ.copy()
         env["GACE_MUTATION_BINDING"] = binding
         proc = subprocess.run(
