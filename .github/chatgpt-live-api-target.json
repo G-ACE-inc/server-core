@@ -3,7 +3,7 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "CHAT-originated project.git_head E2E returned PASS; idle/no repeat",
+  "request": "CHAT project.git_status one-shot result-return E2E",
   "gitops_request": {
     "enabled": false
   },
@@ -11,8 +11,18 @@
     "enabled": false
   },
   "bounded_host_request": {
-    "enabled": false,
-    "command_id": "project.git_head",
-    "expected_sha": "GITHUB_WORKFLOW_SHA"
+    "enabled": true,
+    "command_id": "project.git_status",
+    "expected_sha": "ce30d479adefb8751140867fc9c5b417ab82c38d"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Current manifest #17 #10 earlier checked, actual GPT CHAT git_head request req_b2ec9a1c68817f83313c6182 E2E PASS; Host latest independently verified SHA ce30d479adefb8751140867fc9c5b417ab82c38d"
   }
 }
