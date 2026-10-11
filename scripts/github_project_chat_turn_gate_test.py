@@ -32,7 +32,9 @@ class DecisionTests(unittest.TestCase):
         self.assertEqual(gate.evaluate({**good, "completed_actions": None}), "FAILURE_COMPLETED_ACTIONS_INVALID")
         self.assertEqual(gate.evaluate({**good, "next_action_evidence": ""}), "FAILURE_NEXT_ACTION_NOT_EXECUTED")
         self.assertEqual(gate.evaluate({**good, "next_action_evidence": None}), "FAILURE_NEXT_ACTION_NOT_EXECUTED")
-        self.assertEqual(gate.evaluate({**good, "next_action_evidence": "readback obtained"}), "PASS")
+        self.assertEqual(gate.evaluate({**good, "next_action_evidence": "readback obtained"}), "FAILURE_NEXT_ACTION_NOT_EXECUTED")
+        self.assertEqual(gate.evaluate({**good, "next_action_evidence": "https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6107486587"}), "PASS")
+        self.assertEqual(gate.evaluate({**good, "next_action_evidence": "https://github.com/attacker/other/anything"}), "FAILURE_NEXT_ACTION_NOT_EXECUTED")
 
     def test_live_workflow_has_request_gate_before_host_access(self):
         workflow = (module_path.parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text(encoding="utf-8")
