@@ -92,6 +92,23 @@ jobs:
               if system_decision not in ("YES", "NO", "UPDATE_EXISTING"):
                   print("CU40_SYSTEM_DOCUMENT_DECISION_INVALID")
                   raise SystemExit(1)
+              if system_decision != "NO":
+                  system_paths = [line[len("SYSTEM_DOCUMENT_PATH="):].strip()
+                                  for line in body.splitlines()
+                                  if line.startswith("SYSTEM_DOCUMENT_PATH=")]
+                  if len(system_paths) != 1:
+                      print("CU40_SYSTEM_DOCUMENT_PATH_MISSING_OR_AMBIGUOUS")
+                      raise SystemExit(1)
+                  system_path = system_paths[0]
+                  if not system_path.startswith("docs/") or not system_path.endswith(".md"):
+                      print("CU40_SYSTEM_DOCUMENT_PATH_INVALID")
+                      raise SystemExit(1)
+                  if system_path in ("docs/DESIGN_DELTA.md", "docs/STRUCTURE.md", "docs/G_ACE_WORKSPACE.md"):
+                      print("CU40_SYSTEM_DOCUMENT_AUTHORITY_MISMATCH")
+                      raise SystemExit(1)
+                  if system_path not in changed:
+                      print("CU40_SYSTEM_DOCUMENT_NOT_CHANGED=" + system_path)
+                      raise SystemExit(1)
               if "docs/DESIGN_DELTA.md" in changed:
                   prior = subprocess.check_output(
                       ["git", "show", os.environ["PR_BASE_SHA"] + ":docs/DESIGN_DELTA.md"], text=True)
