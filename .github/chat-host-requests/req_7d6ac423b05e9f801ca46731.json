@@ -1,0 +1,28 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Tool B CHAT-origin read-only preflight after owner handoff: probe main Host SHA before generic dev.job. Do not infer Docker install from this probe.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_head",
+    "expected_sha": "d02307137fd1027bc477eece2041ef5f8e9e0676"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Fresh GitHub main Manifest and full Issue #17, Control #10 #6115088917 handoff, #6115099908 Server AI rollout instruction; actual Host final SHA unknown; this read-only probe is for exact SHA d023071 only."
+  }
+}
