@@ -25,6 +25,10 @@ jobs:
           python3 scripts/github_project_runtime_config_test.py
           python3 -m py_compile scripts/github_project_chat_host_route.py scripts/github_project_chat_host_route_test.py
           python3 scripts/github_project_chat_host_route_test.py
+      - name: Concurrent CHAT isolated request selection tests
+        run: |
+          python3 -m py_compile scripts/chatgpt_isolated_request_select.py tests/chatgpt_isolated_request_select_test.py
+          python3 -m unittest discover -s tests -p chatgpt_isolated_request_select_test.py -v
       - name: Server-core independent bounded Host unit tests
         run: |
           python3 -m py_compile scripts/servercore_bounded_host.py tests/servercore_bounded_host_test.py
