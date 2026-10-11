@@ -11,7 +11,11 @@ function targetFixture(t,overrides={}){
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),"debugai-chat-target-"));
   t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
   const targetFile=path.join(dir,"target.json");
-  fs.writeFileSync(targetFile,JSON.stringify({...target,...overrides}));
+  // Runtime target fields vary across real CHAT invocations; mocks must not inherit them.
+  // Keep the known idle transport identity, then apply only this test's explicit inputs.
+  const base={base_url:target.base_url,mode:"readonly",run_id:"",repo:target.repo,
+    request:"",gitops_request:{enabled:false},source_reflect_request:{enabled:false}};
+  fs.writeFileSync(targetFile,JSON.stringify({...base,...overrides}));
   return targetFile;
 }
 test("Bounded CHAT read uses existing workflow/API and validates the configured read-only command",()=>{
