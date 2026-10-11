@@ -464,5 +464,14 @@ test("service deploy dispatch is fixed registered repo/service at an explicit SH
   assert.equal(d.validateDispatch(args(status)).commandId,"service.deploy_status");
   assert.throws(()=>d.validateDispatch(args({...status,deploy_request_id:"latest"})),/BOUNDED_HOST_DEPLOY_REQUEST_ID_INVALID/);
   assert.throws(()=>d.validateDispatch(args({...deploy,command_id:"service.deploy_all"})),/BOUNDED_HOST_KEYS_INVALID|BOUNDED_HOST_COMMAND_DENIED/);
-  assert.match(wf,/--command-id "\$command_id" --expected-sha "\$expected_sha" --repository "\$repository" --service "\$service"/);
+  assert.match(wf,/send\+=\(--repository "\$\(jq -r '\.bounded_host_request\.repository'/);
+});
+
+test("every enabled bounded Host command is START-gated and its result is returned by request id",()=>{
+  assert.match(wf,/\(\.bounded_host_request\.enabled == true\)/);
+  assert.doesNotMatch(wf,/command_id == "project\.source_reflect"\) or \(\.bounded_host_request\.command_id == "service\.deploy"/);
+  assert.match(wf,/issues: read/);
+  assert.match(wf,/echo "BOUNDED_HOST_REQUEST_ID=\$request_id"/);
+  assert.match(wf,/servercore_bounded_result_poll\.py[\s\S]*--request-id "\$BOUNDED_HOST_REQUEST_ID"[\s\S]*--expected-sha "\$BOUNDED_HOST_EXPECTED_SHA"/);
+  assert.ok(wf.indexOf("START Gate for explicit CHAT Host requests")<wf.indexOf("Optional independent bounded Host gateway dispatch"));
 });
