@@ -79,7 +79,7 @@ class GatewaySendTests(unittest.TestCase):
             def connect(self, _): pass
             def sendall(self, _): pass
             def makefile(self, _):
-                return io.BytesIO(json.dumps({"ok": False, "error": self.code}).encode() + b"\\n")
+                return io.BytesIO(json.dumps({"ok": False, "error": self.code}).encode() + bytes([10]))
         request = {"id": "req_" + "a"*24, "command_id": "project.source_reflect",
                    "expected_sha": "b"*40, "expected_before": "a"*40}
         for code in ("DIRTY_CHECKOUT_DENIED", "REMOTE_MAIN_SHA_MISMATCH", "BEFORE_SHA_MISMATCH"):
