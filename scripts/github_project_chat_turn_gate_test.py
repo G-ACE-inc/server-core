@@ -29,6 +29,8 @@ class DecisionTests(unittest.TestCase):
     def test_live_workflow_has_request_gate_before_host_access(self):
         workflow = (module_path.parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text(encoding="utf-8")
         assert "CHAT_START_GATE_RECEIPT_MISSING" in workflow
+        assert "CHAT_START_GATE_PHASE_DENIED" in workflow
+        assert '.chat_decision_checkpoint.phase == "START"' in workflow
         assert "python3 scripts/github_project_chat_turn_gate.py --state" in workflow
         assert workflow.index("START Gate for explicit CHAT Host requests") < workflow.index("Require Cloudflare Access credentials")
         assert "CHAT_START_GATE=IDLE" in workflow
