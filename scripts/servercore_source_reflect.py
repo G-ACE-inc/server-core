@@ -6,6 +6,7 @@ HOST-LOCAL ONLY. Not exposed by the HMAC-bearing read-only receiver.
 import argparse
 import fcntl
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -82,7 +83,8 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     try:
-        with LOCK_PATH.open("w") as lock:
+        fd = os.open(LOCK_PATH, os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, "w") as lock:
             fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             result = reflect(CANONICAL_ROOT, args.expected_before, args.target_sha,
                              dry_run=args.dry_run)

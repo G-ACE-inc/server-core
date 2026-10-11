@@ -53,18 +53,25 @@ def build_event(request, contract):
     }
 
 
-def validate_cli(command_id, expected_sha, contract):
+def validate_cli(command_id, expected_sha, contract, expected_before=None):
     allowed = contract.get("allowed_command_ids") or []
     if command_id not in allowed:
         raise SendError("COMMAND_NOT_REGISTERED")
     if not SHA_PATTERN.match(expected_sha):
         raise SendError("EXPECTED_SHA_INVALID")
-    return {
+    request = {
         "schema": contract.get("request_schema"),
         "id": "req_" + secrets.token_hex(12),
         "command_id": command_id,
         "expected_sha": expected_sha,
     }
+    if command_id == "project.source_reflect":
+        if not isinstance(expected_before, str) or not SHA_PATTERN.fullmatch(expected_before):
+            raise SendError("REFLECT_BEFORE_INVALID")
+        request["expected_before"] = expected_before
+    elif expected_before is not None:
+        raise SendError("UNEXPECTED_BEFORE_SHA")
+    return request
 
 
 def send(request, contract, *, env=None, opener=None):
@@ -110,10 +117,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--command-id", required=True)
     parser.add_argument("--expected-sha", required=True)
+    parser.add_argument("--expected-before")
     parser.add_argument("--contract", default=str(DEFAULT_CONTRACT))
     args = parser.parse_args()
     contract = load_contract(args.contract)
-    request = validate_cli(args.command_id, args.expected_sha, contract)
+    request = validate_cli(args.command_id, args.expected_sha, contract, args.expected_before)
     try:
         receipt = send(request, contract)
         print(json.dumps({"state": "QUEUED", "request_id": request["id"], "gateway": receipt}, sort_keys=True))

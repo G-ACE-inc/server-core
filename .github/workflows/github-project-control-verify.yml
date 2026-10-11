@@ -39,6 +39,10 @@ jobs:
         run: |
           python3 -m py_compile scripts/servercore_source_reflect.py tests/servercore_source_reflect_test.py
           python3 -m unittest discover -s tests -p servercore_source_reflect_test.py -v
+      - name: Segregated UNIX source reflect admission tests
+        run: |
+          python3 -m py_compile scripts/servercore_source_reflect_socket.py scripts/servercore_bounded_host_receiver.py scripts/servercore_bounded_host_gateway_send.py tests/servercore_source_reflect_socket_test.py
+          python3 -m unittest discover -s tests -p servercore_source_reflect_socket_test.py -v
       - name: Project Control container source
         run: |
           docker build -f Dockerfile.project-control -t gace-server-core-project-control:ci .

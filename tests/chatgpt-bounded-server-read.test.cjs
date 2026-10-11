@@ -19,6 +19,23 @@ function targetFixture(t,overrides={}){
   fs.writeFileSync(targetFile,JSON.stringify({...base,...overrides}));
   return targetFile;
 }
+test("Independent bounded Host dispatch does not require DebugAI product route",()=>{
+  const independent={...target,bounded_host_request:{enabled:true,command_id:"project.source_reflect",
+    expected_sha:"GITHUB_WORKFLOW_SHA",expected_before:"a".repeat(40)},server_command_id:""};
+  assert.deepEqual(d.validateDispatch({target:independent,route:{routes:[]},registry:{repositories:[]},gitRefName:"main"}),
+    {mode:"bounded_host",commandId:"project.source_reflect"});
+  assert.match(wf,/steps\.target\.outputs\.bounded_host_enabled != 'true'/);
+});
+test("Independent deploy effect needs exact before SHA and rejects extra request fields",()=>{
+  const x={enabled:true,command_id:"project.source_reflect",expected_sha:"GITHUB_WORKFLOW_SHA",expected_before:"a".repeat(40)};
+  const contract=JSON.parse(fs.readFileSync(path.resolve(__dirname,"../operations/github-project-bounded-host.json"),"utf8"));
+  assert.doesNotThrow(()=>d.validateBoundedHostRequest(x,contract));
+  assert.throws(()=>d.validateBoundedHostRequest({...x,expected_before:"HEAD"},contract),/BOUNDED_HOST_BEFORE_SHA_INVALID/);
+  assert.throws(()=>d.validateBoundedHostRequest({...x,arbitrary_shell:"bash"},contract),/BOUNDED_HOST_KEYS_INVALID/);
+  assert.throws(()=>d.validateBoundedHostRequest({...x,command_id:"project.registered_tests"},contract),/BOUNDED_HOST_COMMAND_DENIED|BOUNDED_HOST_KEYS_INVALID/);
+  assert.match(wf,/\.bounded_host_request\.expected_before/);
+  assert.match(wf,/CHAT_START_GATE_RECEIPT_MISSING/);
+});
 test("Bounded CHAT read uses existing workflow/API and validates the configured read-only command",()=>{
   assert.match(wf,/node scripts\/chatgpt-bounded-server-read\.cjs/);
   assert.equal(target.mode,"readonly");

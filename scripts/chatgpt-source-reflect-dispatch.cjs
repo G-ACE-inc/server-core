@@ -36,8 +36,14 @@ function assertBoundedHostShape(request) {
     throw new Error("BOUNDED_HOST_SHAPE_INVALID");
   }
   const keys = Object.keys(request).sort();
-  const expected = ["command_id", "enabled", "expected_sha"].sort();
+  const expected = request.command_id === "project.source_reflect"
+    ? ["command_id", "enabled", "expected_before", "expected_sha"].sort()
+    : ["command_id", "enabled", "expected_sha"].sort();
   if (keys.join("|") !== expected.join("|")) throw new Error("BOUNDED_HOST_KEYS_INVALID");
+  if (request.command_id === "project.source_reflect" &&
+      !/^[0-9a-f]{40}$/.test(String(request.expected_before || ""))) {
+    throw new Error("BOUNDED_HOST_BEFORE_SHA_INVALID");
+  }
   const shaVal = String(request.expected_sha || "");
   if (shaVal !== "GITHUB_WORKFLOW_SHA" && !/^[0-9a-f]{40}$/.test(shaVal)) {
     throw new Error("BOUNDED_HOST_SHA_INVALID");
@@ -52,7 +58,7 @@ function validateBoundedHostRequest(request, contract) {
   const allowed = new Set(contract.allowed_command_ids || []);
   if (!allowed.has(request.command_id)) throw new Error("BOUNDED_HOST_COMMAND_DENIED");
   const effects = contract.command_effects || {};
-  if (effects[request.command_id] !== "read_only") throw new Error("BOUNDED_HOST_EFFECT_DENIED");
+  if (!["read_only", "source_reflect"].includes(effects[request.command_id])) throw new Error("BOUNDED_HOST_EFFECT_DENIED");
 }
 
 function loadJson(path) {
@@ -122,11 +128,6 @@ function validateIdleTarget(target) {
 }
 
 function validateDispatch({ target, route, registry, gitRefName }) {
-  const current = (route.routes || []).find((item) => item.id === "route_debugai_live_read");
-  if (!current) throw new Error("COMMON_ROUTE_MISSING");
-  if (current.workflow_repository !== "G-ACE-inc/server-core") {
-    throw new Error("MIGRATED_ROUTE_OWNER_MISMATCH");
-  }
   const gitopsEnabled = target.gitops_request?.enabled === true;
   const reflectEnabled = target.source_reflect_request?.enabled === true;
   const boundedHostEnabled = target.bounded_host_request?.enabled === true;
@@ -145,6 +146,13 @@ function validateDispatch({ target, route, registry, gitRefName }) {
     const hostContract = loadJson(BOUNDED_HOST_CONTRACT_PATH);
     validateBoundedHostRequest(target.bounded_host_request, hostContract);
     return { mode: "bounded_host", commandId: target.bounded_host_request.command_id };
+  }
+
+  // Independent bounded Host does not require the DebugAI product route.
+  const current = (route.routes || []).find((item) => item.id === "route_debugai_live_read");
+  if (!current) throw new Error("COMMON_ROUTE_MISSING");
+  if (current.workflow_repository !== "G-ACE-inc/server-core") {
+    throw new Error("MIGRATED_ROUTE_OWNER_MISMATCH");
   }
 
   if (reflectEnabled) {

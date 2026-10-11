@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch
 
 import servercore_bounded_host_gateway_send as sender
+import servercore_bounded_host_receiver as receiver
 from gace_internal_delivery_auth import verify_delivery
 
 CONTRACT = {
@@ -46,6 +47,27 @@ class GatewaySendTests(unittest.TestCase):
         self.assertNotIn("project.registered_tests", contract["allowed_command_ids"])
         with self.assertRaisesRegex(sender.SendError, "COMMAND_NOT_REGISTERED"):
             sender.validate_cli("project.registered_tests", "a" * 40, contract)
+
+    def test_reflect_requires_before_sha_and_rejects_extra_fields(self):
+        contract = {**CONTRACT, "allowed_command_ids": [*CONTRACT["allowed_command_ids"], "project.source_reflect"]}
+        with self.assertRaisesRegex(sender.SendError, "REFLECT_BEFORE_INVALID"):
+            sender.validate_cli("project.source_reflect", "b" * 40, contract)
+        request = sender.validate_cli("project.source_reflect", "b" * 40, contract,
+                                      expected_before="a" * 40)
+        self.assertEqual(request["expected_before"], "a" * 40)
+        self.assertEqual(receiver.validate_request(request, contract)["expected_sha"], "b" * 40)
+        with self.assertRaisesRegex(receiver.ReceiverError, "REFLECT_KEYS_INVALID"):
+            receiver.validate_request({**request, "shell": "echo nope"}, contract)
+        with self.assertRaisesRegex(sender.SendError, "UNEXPECTED_BEFORE_SHA"):
+            sender.validate_cli("project.git_head", "b" * 40, contract,
+                                expected_before="a" * 40)
+
+    def test_reflect_rejected_without_admitted_socket(self):
+        contract = {**CONTRACT, "allowed_command_ids": [*CONTRACT["allowed_command_ids"], "project.source_reflect"]}
+        request = sender.validate_cli("project.source_reflect", "b" * 40, contract,
+                                      expected_before="a" * 40)
+        with self.assertRaisesRegex(receiver.ReceiverError, "REFLECT_EXECUTOR_UNAVAILABLE"):
+            receiver.dispatch_reflect(request, "/tmp/no-such-gace-approved-socket")
 
     def test_gateway_send_accepts_202(self):
         req = sender.validate_cli("project.git_head", "c" * 40, CONTRACT)

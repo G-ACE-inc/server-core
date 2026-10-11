@@ -3,6 +3,7 @@ import argparse
 import json
 import os
 import re
+import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -52,7 +53,46 @@ def validate_request(value, contract):
     expected_sha = value.get("expected_sha")
     if not isinstance(expected_sha, str) or not SHA_PATTERN.match(expected_sha):
         fail("EXPECTED_SHA_INVALID", 422)
+    if command_id == "project.source_reflect":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "expected_before"}:
+            fail("REFLECT_KEYS_INVALID", 422)
+        before = value["expected_before"]
+        if not isinstance(before, str) or not SHA_PATTERN.match(before):
+            fail("REFLECT_BEFORE_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
+                "expected_before": before}
+    if set(value) != {"schema", "id", "command_id", "expected_sha"}:
+        fail("REQUEST_KEYS_INVALID", 422)
     return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha}
+
+
+def dispatch_reflect(request, socket_path="/run/gace/servercore-source-reflect.sock"):
+    payload = {
+        "schema": "gace.servercore-source-reflect.request/v1",
+        "id": request["id"],
+        "repository": "G-ACE-inc/server-core",
+        "branch": "main",
+        "expected_before": request["expected_before"],
+        "target_sha": request["expected_sha"],
+    }
+    data = (json.dumps(payload, separators=(",", ":")) + "\n").encode("utf-8")
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(120)
+            client.connect(socket_path)
+            client.sendall(data)
+            with client.makefile("rb") as stream:
+                result = json.loads(stream.readline(4096))
+    except (OSError, ValueError, TypeError):
+        fail("REFLECT_EXECUTOR_UNAVAILABLE", 503)
+    if not isinstance(result, dict) or result.get("ok") is not True:
+        fail("REFLECT_EXECUTION_FAILED", 503)
+    if result.get("request_id") != request["id"] or result.get("target_sha") != request["expected_sha"]:
+        fail("REFLECT_RESULT_MISMATCH", 503)
+    if result.get("state") != "SOURCE_REFLECT_PASS":
+        fail("REFLECT_RESULT_INVALID", 503)
+    return {"source_sha": result["target_sha"], "command_id": request["command_id"],
+            "source_reflect": True, "read_only": False}
 
 
 def make_handler(contract, *, delivery_key=None, now_fn=None):
@@ -107,11 +147,14 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                     tolerance_seconds=tolerance,
                 )
                 request = validate_request(json.loads(body.decode("utf-8")), contract)
-                result = bounded_host.execute(
-                    request["command_id"],
-                    root=root,
-                    expected_sha=request["expected_sha"],
-                )
+                if request["command_id"] == "project.source_reflect":
+                    result = dispatch_reflect(request)
+                else:
+                    result = bounded_host.execute(
+                        request["command_id"],
+                        root=root,
+                        expected_sha=request["expected_sha"],
+                    )
                 self.send_json(
                     200,
                     {
@@ -120,7 +163,7 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                         "state": "PASS",
                         "command_id": request["command_id"],
                         "source_sha": result.get("source_sha"),
-                        "read_only": True,
+                        "read_only": bool(result.get("read_only", True)),
                         "result": result,
                     },
                     accepted=True,
