@@ -709,3 +709,7 @@ Tighten the **existing** `server-core-guard` main push check for CU #40 gate-own
 
 ### Limits and rollback
 The check runs **after** main has already been updated. It is a CI warning/failure signal, not native private GitHub Free branch protection. An associated merged PR alone no longer qualifies without exact SHA and target branch. A true direct-main negative push is not exercised because it would contaminate unprotected main. Rollback: revert only the stricter predicate and accompanying README/Tree description. Actual per-PR/source correctness and ordinary CHAT reply termination are separate.
+
+## 2026-10-11 — Reconcile bounded Host logs dispatch on current main
+
+Baseline: SERVER_CORE_DESIGN §16.9–16.10 and existing Tool B Control #10. PR #75 implemented service.debug_ai_logs on a stale branch, causing merge conflict with concurrent main changes. This CU reuses its bounded Source-only intent on current main: add service.debug_ai_logs to existing idle dispatch and registered workflow_supported intersection, retain allowed_command_ids/effects, and extend existing deterministic route test; do not copy stale route registry wholesale. The bounded client already validates log_service and log_lines, redacts output, and invokes the registered Host command. No new Workflow, MCP, token or Host entitlement. Real CHAT-origin Host log read is required after same-HEAD CI; only registered service and 1–20 lines are allowed. Preserve other denied commands and revert idle target after E2E. Historical PR #75 remains separately traceable; do not double-merge.
