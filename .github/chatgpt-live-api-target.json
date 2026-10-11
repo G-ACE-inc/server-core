@@ -3,7 +3,7 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "Tool B Host source synchronization request already dispatched; idle/no repeat",
+  "request": "One-shot Tool B common service.deploy NEGATIVE route proof (webhook-gateway not yet registered -> must be denied 422); disarm after dispatch",
   "gitops_request": {
     "enabled": false
   },
@@ -11,8 +11,10 @@
     "enabled": false
   },
   "bounded_host_request": {
-    "enabled": false,
-    "command_id": "project.git_head",
-    "expected_sha": "GITHUB_WORKFLOW_SHA"
+    "enabled": true,
+    "command_id": "service.deploy",
+    "expected_sha": "04747d0d579154827a7db2875d388adbbaaf956b",
+    "repository": "seigo-gace/webhook-gateway",
+    "service": "api"
   }
 }
