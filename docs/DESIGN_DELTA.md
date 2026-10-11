@@ -729,3 +729,7 @@ Design baseline: SERVER_CORE_DESIGN §16.9–16.10. Existing server-core dispatc
 ## 2026-10-11 — Tool B common route registry evidence sync
 
 Baseline: Control #10, `operations/github-project-chat-host-routes.json` route_debugai_live_read handoff note. Prior note still marked inventory, disk, Git changed-path, logs, and sandbox Host E2E as pending although ordinary CHAT Actions runs 38117859559, 38119011721, 38119034738, 38121803165, and 38121944210 already recorded PASS with Host receipts on main. This bounded CU updates only the registry handoff text to bind verified run IDs, records project.git_recent_commits as still pending post-#79 retest (38121975277 failure), and states the #80 three-way idle admission rule plus non-dispatch catalog-only commands. No workflow, Host, DebugAI product, token, or dispatch code change. Rollback: revert the handoff note and this Delta append only.
+
+## 2026-10-11 — Tool B git_recent_commits Host E2E PASS after #79
+
+Post-#79 retest via merged PR #81 triggered Actions run 38123852985 on main: Host request cmd_25935adb02776b64d6c1e46b, SERVER_COMMAND_STATE=PASS, SERVER_COMMAND_READ_ONLY=TRUE, bounded SERVER_GIT_LOG emitted. Follow-up chore PR restores idle target. Registry handoff updated to bind this run ID. No DebugAI Repository/Host mutation.
