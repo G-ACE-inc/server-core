@@ -122,7 +122,12 @@ jobs:
             echo "SERVERCORE_BOUNDED_HOST_GATEWAY=NOT_CONFIGURED"
             exit 46
           }
-          python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha"
+          if [[ "$command_id" == "project.source_reflect" ]]; then
+            expected_before="$(jq -r '.bounded_host_request.expected_before' "$target")"
+            python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha" --expected-before "$expected_before"
+          else
+            python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha"
+          fi
           echo "SERVERCORE_BOUNDED_HOST_DISPATCH=QUEUED"
 
       - name: Require Cloudflare Access credentials
