@@ -31,7 +31,8 @@ def git(root, *args):
     ]
     try:
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                text=True, timeout=60, check=False)
+                                text=True, timeout=60, check=False,
+                                umask=0o022)  # checkout files must stay readable/executable despite the 0117 service umask
     except (OSError, subprocess.TimeoutExpired):
         raise ReflectError("GIT_EXECUTION_FAILED") from None
     if result.returncode:
