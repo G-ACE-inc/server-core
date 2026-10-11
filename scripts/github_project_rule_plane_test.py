@@ -113,7 +113,6 @@ for path, required in {
         for marker in required:
             assert marker in source, (path, marker)
 
-print("GITHUB_PROJECT_RULE_PLANE=PASS")
 
 # Both entrypoints must route CHAT through Manifest and complete #17, not a snippet.
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -130,3 +129,8 @@ chat_entry = readme.split("GPT_CHAT / ChatGPT Work coordinator", 1)[1].split("``
 assert chat_entry.index("operations/github-project-rule-plane.json") < chat_entry.index("fetch complete Rule Plane #17 body") < chat_entry.index("GitHub Project #1 / Control #15")
 chat_route = router.split("### GPT_CHAT / ChatGPT Work", 1)[1].split("```", 2)[1]
 assert chat_route.index("operations/github-project-rule-plane.json") < chat_route.index("Fetch the COMPLETE canonical Issue #17 body") < chat_route.index("GitHub Project #1 / Control #15")
+
+# The existing contract check is static. Do not claim it attests live CHAT behavior.
+# A true PASS marker must follow every assertion (including the ordered bootstrap checks).
+assert "CHAT_PRE_ACTION_GATE" in (ROOT / "docs/LOAD_SCOPE.md").read_text(encoding="utf-8") or "check #17 pre-action gate" in router
+print("GITHUB_PROJECT_RULE_PLANE=PASS")
