@@ -916,10 +916,6 @@ Following isolated CHAT request E2E success on existing Actions→Gateway→Host
 - **Owner/rollout:** server-core Source; actual Host runtime remains independently gated on reviewed Source/CI, exact Host SHA reflection and same-SHA CHAT→Actions→Host→result E2E. This delta is not a runtime PASS claim. DebugAI legacy product route and PR #117 Draft are unchanged.
 
 
-### 2026-10-12 — Work Routine design-first gate implementation (PR #39 owner branch)
-
-Integrated PR #135 design contract into the existing Work Routine §6 without a new rule plane, Project field or workflow. Added `scripts/work_routine_design_entry_gate.py` plus tests; wired optional `GACE_WORK_ROUTINE_TURN` receipt checking into `gace_mutation_rehydrate_check.py` and extended `github_project_chat_turn_gate.py` START receipts when `mutation_scope` / design evidence is supplied. CI runs the new unit tests via existing `server-core-guard`. Native ordinary-CHAT interception remains **NOT_IMPLEMENTED**; bounded mutation/START paths are the verified enforcement surface.
-
 ### 2026-10-12 — Master selection: OpenHands sandbox for Tool B
 
 **Decision / scope.** Master selected the third OSS candidate, OpenHands, for the common GitHub Project #1 registered-repository development terminal. This supersedes continued one-command-at-a-time growth as the primary developer workflow; the existing signed CHAT→Actions→Gateway→Host route and bounded production operation path stay intact. Actual OpenHands installation, model configuration, Host admission and E2E remain **NOT VERIFIED** until direct Runtime evidence is recorded. This entry is not a generic production shell authorization.
@@ -957,3 +953,7 @@ Integrated PR #135 design contract into the existing Work Routine §6 without a 
 - **Result:** correlated by `request_id` through the existing sink/poller. First `stdout` line is `GACE_DEV_JOB {meta}` (session, base/workspace SHA, job exit, timeout/limit flags, changed files, diff stat), then job stdout; `stderr` is job stderr. Job exit != 0, timeout or output-limit => state `FAIL` with the job exit code (Gateway still gets 200 + accepted so a failing test is a result, not an infrastructure retry).
 - **Existing files touched (additive only):** `chatgpt-live-api-verify.yml` dispatch step gains one `dev.job` branch (the existing START Gate/active detection already covers every enabled `bounded_host_request`); `github-project-control-verify.yml` registers the new tests; `chatgpt-source-reflect-dispatch.cjs` shape/effect validation; `servercore_bounded_host_gateway_send.py`; Receiver. Work Routine, Rule Plane, gates and DebugAI product route are untouched.
 - **Status:** Source + unit/CI tests only. Host admission, staging, CHAT-origin E2E and TGserver ZERO readback are NOT VERIFIED until recorded in `#10` with Runtime evidence.
+
+### 2026-10-12 — Work Routine design-first gate implementation (PR #39 owner branch)
+
+Integrated PR #135 design contract into the existing Work Routine §6 without a new rule plane, Project field or workflow. Added `scripts/work_routine_design_entry_gate.py` plus tests; wired optional `GACE_WORK_ROUTINE_TURN` receipt checking into `gace_mutation_rehydrate_check.py` and extended `github_project_chat_turn_gate.py` START receipts when `mutation_scope` / design evidence is supplied. CI runs the new unit tests via existing `server-core-guard`. Native ordinary-CHAT interception remains **NOT_IMPLEMENTED**; bounded mutation/START paths are the verified enforcement surface.
