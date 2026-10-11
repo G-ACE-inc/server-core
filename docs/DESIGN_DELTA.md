@@ -813,3 +813,11 @@ During source integration review, `project.registered_tests` was found to execut
 ## 2026-10-11 — Bounded Host container Git ownership compatibility
 
 Baseline: §16.9.1 independent common executor, merged PR #94. The receiver runs unprivileged with canonical checkout mounted read-only. Git may reject different UID ownership as unsafe, even when host-local git tests passed. Change: fixed git read commands now set process-local `safe.directory` to the validated canonical root, disable fsmonitor and hooks per invocation. No global Git trust, no arbitrary shell, no Host policy or credential changes; unit test asserts exact scoped invocation. Verification: same-HEAD CI pending; container/Host parity remains NOT_VERIFIED until approved runtime deployment.
+
+## 2026-10-11 — Deploy P0: exact-SHA canonical Source reflection, independent Host local primitive
+
+Master acceptance is CHAT-authored GitHub Source → real VPS Source reflection/Deploy → runtime health/exact SHA readback. Historical READ E2E (Actions 38135212887) and repo checkout matching main do not qualify as generalized deploy.
+
+First concrete Source unit: `scripts/servercore_source_reflect.py` pins canonical `/home/admin1/server-core`, branch `main`, explicit expected-before/target 40-hex SHA, clean tracked/untracked status, fetch of `origin/main`, remote SHA equality, ancestor fast-forward check, OS file lock, ff-only merge and exact post-reflect SHA. No arbitrary shell, no branch/repo supplied by caller, no reset/stash, no arbitrary hooks; rejects dirty files including outstanding `operations/master-internal-repositories.json` edits rather than overwriting them. Existing CI exercises positive/negative and dry-run cases.
+
+**Deliberate separation:** this Source unit is NOT wired into the credential-bearing read-only bounded receiver or deployed as a privileged service. It needs an independently authorized write-capable Host executor/transport binding and safe runtime installation, followed by an actual target Source reflect and separate service deploy/health verification. `SOURCE_REFLECT_PASS` is not service `DEPLOY_PASS`. Do not bypass Host ownership checks or claim running instance parity from GitHub CI success. No new workflow, Token, MCP, DebugAI modification, sibling project/worktree.
