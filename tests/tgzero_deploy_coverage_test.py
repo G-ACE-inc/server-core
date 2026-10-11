@@ -28,5 +28,14 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(result["rows"][0]["deploy_coverage"],"AUTHORITY_MAPPED_NOT_HOST_VERIFIED")
         self.assertEqual(result["rows"][0]["repository_mappings"][0]["stream"],"runtime")
 
+
+    def test_multiple_log_streams_are_one_repo(self):
+        s={"projects":{"P004":{"name":"runtime"},"P005":{"name":"kb"}}}
+        repo={"repos":{"seigo-gace/debug-ai":{"runtime":"P004","kb":"P005"}}}
+        result=m.coverage(s,repo,{},{"repositories":[]})
+        self.assertEqual(result["total_registered_log_project_ids"],2)
+        self.assertEqual(result["total_repository_mappings"],1)
+        self.assertEqual(result["repositories"][0]["project_ids"],["P004","P005"])
+
 if __name__=="__main__":
     unittest.main()
