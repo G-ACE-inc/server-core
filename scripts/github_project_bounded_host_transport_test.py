@@ -69,6 +69,30 @@ class GatewaySendTests(unittest.TestCase):
         with self.assertRaisesRegex(receiver.ReceiverError, "REFLECT_EXECUTOR_UNAVAILABLE"):
             receiver.dispatch_reflect(request, "/tmp/no-such-gace-approved-socket")
 
+    def test_terminal_host_preflight_denials_do_not_retry_as_infrastructure(self):
+        import io
+        class Socket:
+            def __init__(self, code): self.code = code
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def settimeout(self, _): pass
+            def connect(self, _): pass
+            def sendall(self, _): pass
+            def makefile(self, _):
+                return io.BytesIO(json.dumps({"ok": False, "error": self.code}).encode() + bytes([10]))
+        request = {"id": "req_" + "a"*24, "command_id": "project.source_reflect",
+                   "expected_sha": "b"*40, "expected_before": "a"*40}
+        for code in ("DIRTY_CHECKOUT_DENIED", "REMOTE_MAIN_SHA_MISMATCH", "BEFORE_SHA_MISMATCH"):
+            with self.subTest(code=code), patch.object(receiver.socket, "socket", return_value=Socket(code)):
+                with self.assertRaises(receiver.ReceiverError) as error:
+                    receiver.dispatch_reflect(request)
+                self.assertEqual(error.exception.status, 422)
+                self.assertEqual(error.exception.code, "REFLECT_PREFLIGHT_" + code)
+        with patch.object(receiver.socket, "socket", return_value=Socket("GIT_EXECUTION_FAILED")):
+            with self.assertRaises(receiver.ReceiverError) as error:
+                receiver.dispatch_reflect(request)
+            self.assertEqual(error.exception.status, 503)
+
     def test_gateway_send_accepts_202(self):
         req = sender.validate_cli("project.git_head", "c" * 40, CONTRACT)
 

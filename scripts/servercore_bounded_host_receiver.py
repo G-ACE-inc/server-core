@@ -15,6 +15,12 @@ RECEIVER_PATH = "/internal/servercore-bounded-host"
 HEALTH_PATH = "/healthz"
 EXPECTED_DESTINATION = "server-core-bounded-host"
 MAX_BODY_BYTES = 4096
+# Deterministic Host preflight denials must not enter infrastructure retry loops.
+TERMINAL_REFLECT_ERRORS = frozenset({
+    "BEFORE_SHA_MISMATCH", "DIRTY_CHECKOUT_DENIED", "REMOTE_MAIN_SHA_MISMATCH",
+    "NON_FAST_FORWARD_DENIED", "ORIGIN_REMOTE_DENIED", "BRANCH_NOT_MAIN",
+    "CANONICAL_ROOT_DENIED", "GIT_CHECKOUT_MISSING", "SHA_INVALID",
+})
 DEFAULT_CONTRACT = Path(__file__).resolve().parents[1] / "operations" / "github-project-bounded-host.json"
 REQUEST_ID_PATTERN = re.compile(r"^req_[0-9a-f]{24}$")
 SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
@@ -85,7 +91,12 @@ def dispatch_reflect(request, socket_path="/run/gace/servercore-source-reflect.s
                 result = json.loads(stream.readline(4096))
     except (OSError, ValueError, TypeError):
         fail("REFLECT_EXECUTOR_UNAVAILABLE", 503)
-    if not isinstance(result, dict) or result.get("ok") is not True:
+    if not isinstance(result, dict):
+        fail("REFLECT_EXECUTION_FAILED", 503)
+    if result.get("ok") is not True:
+        code = result.get("error")
+        if code in TERMINAL_REFLECT_ERRORS:
+            fail("REFLECT_PREFLIGHT_" + code, 422)
         fail("REFLECT_EXECUTION_FAILED", 503)
     if result.get("request_id") != request["id"] or result.get("target_sha") != request["expected_sha"]:
         fail("REFLECT_RESULT_MISMATCH", 503)
