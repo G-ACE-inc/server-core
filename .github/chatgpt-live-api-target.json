@@ -14,18 +14,5 @@
     "enabled": false,
     "command_id": "project.git_head",
     "expected_sha": "GITHUB_WORKFLOW_SHA"
-  },
-  "server_command_id": "service.debug_ai_logs",
-  "log_service": "debug-ai",
-  "log_lines": 20,
-  "chat_decision_checkpoint": {
-    "phase": "START",
-    "profile": "GPT_CHAT",
-    "manifest_verified": true,
-    "rule_full_read": true,
-    "current_verified": true,
-    "purpose_verified": true,
-    "cu_verified": true,
-    "source_evidence": "Fresh main Manifest, GPT_CHAT #17 full, DebugAI #41 Current; post-repair real Host state PASS Run 38160636649; read-only bounded logs."
   }
 }
