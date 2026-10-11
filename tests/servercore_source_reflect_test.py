@@ -23,7 +23,7 @@ class ReflectTests(TestCase):
         def fake_git(root, *argv):
             commands.append(argv)
             if argv == ("remote", "get-url", "origin"):
-                return origin if origin is not None else source.EXPECTED_ORIGIN
+                return origin if origin is not None else sorted(source.ALLOWED_ORIGINS)[0]
             if argv == ("rev-parse", "--abbrev-ref", "HEAD"):
                 return branch
             if argv == ("rev-parse", "HEAD"):
