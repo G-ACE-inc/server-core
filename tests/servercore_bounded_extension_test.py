@@ -53,7 +53,7 @@ class ContractTests(unittest.TestCase):
         for command in ("project.file_inspect", "docker.logs"):
             self.assertIn(command, CONTRACT["allowed_command_ids"])
             self.assertEqual(CONTRACT["command_effects"][command], "read_only")
-        self.assertEqual(CONTRACT["registered_log_containers"], ["server-core-bounded-host"])
+        self.assertEqual(CONTRACT["registered_log_containers"], ["server-core-bounded-host", "tgserver-tgs-1"])
         self.assertEqual(CONTRACT["result_return"]["stream_limit_chars"], 4000)
 
 
