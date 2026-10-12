@@ -1,0 +1,37 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Tool B post-umask Hotfix CHAT-origin dev.job first live test; expect one registered git status only. No Host source mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "b5f82f637920d19089a402921674442be5a1bc77",
+    "repository": "G-ACE-inc/server-core",
+    "session": "req_b2e7854c019ac36fdb204e91",
+    "argv": [
+      "git",
+      "status",
+      "--short"
+    ],
+    "timeout_s": 10,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Fresh manifest/issue17/control10; main b5f82f637920d19089a402921674442be5a1bc77; PR139 exact-head 3/3 PASS; operator provided provisioner restart 02:20 CEST, UMask=0117, socket /run/gace/servercore-dev-job.sock, Receiver health 200; this probe verifies live readiness, not presumed runtime PASS."
+  }
+}
