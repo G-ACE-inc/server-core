@@ -152,3 +152,76 @@ This register distinguishes an **entrypoint source** from an **effective runtime
 | Host / DebugAI runner | Existing bounded Host admission, registry and verified running revision | PR39 Source CI is not Host reflection; PR36/#37 are separate mutation owners | Pinned runtime rule version, wrong-CU denial and allowed nested-worktree proof |
 
 **Safe migration gate:** collect actual consumer readback first; identify a single owner for each shared invariant, preserve client-specific adapters and legacy compatibility, then remove a duplicate only after focused regression and actual-loader proof. A missing Host/client proof is `NOT_VERIFIED`, never implicit approval to rewrite another owner's Global file or Host branch. Project item registration and formal Notion cutover remain separate gates.
+
+
+## Master client acceptance — ChatGPT-first, concurrent project continuity (2026-10-12 proposed design)
+
+**Origin and status:** Independent architecture review of [Notion GPT CHAT r18](https://app.notion.com/p/3aecdcf128e481e0ada5dfbb2c5ae93d), [control #15](https://github.com/G-ACE-inc/server-core/issues/15), [Rule #17](https://github.com/G-ACE-inc/server-core/issues/17), [owning work-routine §6](G_ACE_WORKSPACE.md#6-development-routine), and observed [CHAT regression #40](https://github.com/G-ACE-inc/server-core/issues/40). This section defines **proposed product-level acceptance criteria and evidence boundaries** for improving the existing system. It is not an additional Rule Plane, a new Work Routine, a new mutation authorization, or a declaration of operational completion. Existing owner Current and approved implementation/change boundaries still control actual changes.
+
+### Client operating model (non-negotiable acceptance context)
+
+- Master is a nontechnical client and product/acceptance authority; do not require Master to select commands, code changes, SHAs, branches, test strategies, CI repairs or deployment implementation. Ask for genuine product-result choices or protected irreversible external effects only. If an unavoidable Master command is required, provide a validated, immediately executable complete command and its expected return evidence.
+- Ordinary ChatGPT app CHAT is the **primary design, investigation, planning, GitHub dispatch, evidence interpretation, debugging and orchestration interface**; GitHub Project + owning Issues are the shared Current/control plane and registered repository Source/CI/Host remain the authority for actual state. Cursor, Codex, Composer and Server AI are bounded workers, not competing independent planners.
+- Support **up to eight concurrently active Projects** under separate owning Current/CU/writer boundaries. This is a capacity goal, **not** permission for eight simultaneous conflicting mutations, unregistered repositories, extra paid providers or automatic background CHAT execution. Existing approved isolation inside parent projects remains allowed.
+- Optimize for the user's included ChatGPT application capacity and verified low-cost execution. Avoid repeated Master shell work, repeated full rules, unnecessary provider calls, duplicated agent research and branch/worktree/project proliferation. Do not represent ChatGPT Plus usage as unlimited or promise autonomous background tool use where no scheduler/worker is actually deployed.
+- Meaning of **minimal**: preserve all required features, safety, design fidelity and verification while removing unnecessary handoffs, repeated checks, duplicate authorities and terminal explanations.
+
+### Responsibility-to-effect matrix — distinguish document from execution
+
+| Capability | Existing source/owner | Execution/verification boundary | Acceptance evidence |
+|---|---|---|---|
+| Stable mission, Master latest intent, project isolation | Project #1 + owning Issue Current | Existing authenticated Project/Host admissions, checked against purpose/CU/owner/effects | Real correct-CU allow + wrong-CU/wrong-scope deny; per-project Current readback |
+| GPT CHAT behavior and formal report triggers | #17 (refer to §§5–7) | Actual active CHAT session actions; no known built-in answer pre-send hook | Independent transcript showing progress explanation **followed by** same-turn work and only legitimate STOP |
+| Shared development loop | Workspace §6 (single owner) | Existing executor/CI/Host steps, preserving precise scope | Evidence chain of analyze → design/reuse → patch → focused test → failure repair → CI → optional Host readback |
+| Effective rules, adapted per surface | Manifest + #16/#17 + thin adapters | Actual new-session client load; code/static CI only proves stored configuration | Per-surface applied version and behavior; UNKNOWN if not observable |
+| Safe source/deploy operation | Owning repo + authorized Host/Registry | Path/branch/SHA/effect admission; exact source and runtime checks | Allow/deny tests, exact SHA, deployed revision and runtime evidence as applicable |
+| Long-session/CHAT handoff and parallel continuity | Existing Current Issue, Project fields, retained Dev Log evidence | Resume by fresh readback, not by chat recollection | One CHAT changeover resumes the actual next undone action, no duplicate PR/mutation |
+| Multi-project cost and progress | Existing Project Current + per-owner events/CI | Independent owner queues with bounded external workers where they exist | Up to eight distinct Current records recoverable; no global stop caused by one project's failure |
+
+### Cohesive CU execution contract (implementation target, not a second routine)
+
+Keep the six existing Workspace §6 stages. **Do not add another workflow merely to express them.** Their runtime semantics must be:
+
+1. Resolve a single owning Mission/CU and actual next incomplete acceptance gate from fresh Current and Design; determine the safe executable work set and a single writer before action.
+2. Execute the largest **coherent and safe** CU segment that tools/capacity permit; create a branch/commit/PR only when justified by isolation/review/recovery needs, not for every file, explanation, test or chat reply.
+3. After any failure, mark the **failed operation** and its dependency scope, collect direct evidence, replan and execute another legal same-CU action. Authentication refusal must never be bypassed and an unverified step must never be counted PASS.
+4. Treat commit, passing CI, Issue record, and intermediate explanations as **checkpoints**, not completion. Continue legal and independent same-CU work before concluding the response; no unowned switch to a neighboring project.
+5. Persist a compact validated current state at durable checkpoints: canonical purpose; latest Master intent; owning project/CU/writer; adopted design/revision; last verified Source/CI/Host status; pending external run ID; preservation constraints; exact unfinished action and its dependencies. Store it in the **existing** owning Current; do not create a parallel tracker or copy raw logs into policy.
+6. Finish only upon demonstrable CU acceptance, explicit Master stop/report, a proven Master-only input/decision or genuinely exhausted authorized work; do not misclassify tool failure, provider quota, CI wait or missing GPT app answer interceptor as a global blocker.
+
+### Acceptance trials before migration cutover
+
+Maintain **three separate verification planes** without conflating PASS:
+
+**A — stored design/source:** Existing owner contracts have one normative home; Notion r18 eight chapters are mapped meaning-for-meaning; static tests and CI pass for an exact SHA; safety/permission/one-writer/parent containment are not weakened.
+
+**B — effective executable route:** New active CHAT and delegated executor actually load intended source/current version; GitHub Project control admission protects wrong owner/CU; eligible GitHub→Actions→Host path returns job/run/readback evidence. Do not infer project-wide Host enrollment from the DebugAI-only route.
+
+**C — client-observed continuity:** (i) one live CHAT continues tool work after an explanatory checkpoint, (ii) an injected test failure yields evidence→replan→further legal action, (iii) passing CI does not end an unfinished CU, (iv) a new CHAT restores actual Current and does not redo completed steps, (v) two isolated project CUs progress without cross-owner mutation, (vi) recovery records permit up to eight distinct Project contexts without conflation, (vii) real completion or real Master-only boundary produces correct nontechnical report. Record an actual failed trial as FAIL, not a documentary PASS.
+
+**Cost/continuity measurements:** per CU count user interventions, avoidable CHAT stop events, real action transitions after intermediate explanations, repeated full-policy reads, duplicate research/PRs, and provider paid/free quota consumption. Capture baseline and post-change samples; values not measured are UNKNOWN. Eight-project support must not imply eight simultaneously autonomous ChatGPT sessions or infinite context.
+
+**Cutover:** Existing Manifest `migration.cutover=NOT_RUN` and `project_item_registration=NOT_VERIFIED` remain unchanged until actual Project registration, active consumer load, route admission and observed behavior meet the required proof. Notion continues as migration/history and decision context until then. Do not delete historical Notion pages or close #15 based on a document/CI-only success.
+
+
+### Concrete migration and implementation allocation (client acceptance delta)
+
+The table below is an **implementation backlog against existing owners**, not a new cross-project CU or authority. Each item needs its actual owning Current/branch check before any source mutation. A passing static rule test must not close these rows.
+
+| Gap ID | Required user-visible change | Reuse/current implementation | Responsible change boundary | Exact trial / completion evidence |
+|---|---|---|---|---|
+| C01 | A development CHAT advances after an interim explanation instead of stopping | #17 §5–7; existing CU40 design and `github_project_chat_turn_gate.py` | Existing CU40 GPT_CHAT behavior owner; **not** #162 | Real same-turn tool action after interim explanation, with verified unfinished CU |
+| C02 | Failure leads to diagnosis and useful action without asking Master for routine debugging | Workspace §6 ITERATE; #40 behavior matrix | Existing CU40, scoped to operator behavior | Failed action evidence, scoped replan, new authorized action and its result |
+| C03 | A green PR/CI does not masquerade as Product/CU completion | GitHub checks + owning Issue acceptance + #17 stop contract | Existing CU40 and per-repo Current owner | Evidence of a post-CI legal next action, or evidence proving actual terminal condition |
+| C04 | New CHAT recovers correct exact work without redoing completed fixes | Project #1 / canonical Issue; `EXECUTION_SNAPSHOT` contract | Existing Project Control / owning Project Current | Across two independent CHAT sessions, same CU/last SHA/next gate rehydrated and deduplicated |
+| C05 | Eight projects are separately recoverable with no mutation collision | Existing four Project fields + per-project canonical Current | Project Control owner and each owning Project; no new Project fields without proof | Enumerate up to eight registered contexts, read exact next gate for each and reject cross-CU mutation |
+| C06 | CHAT can request only eligible registered server actions and independently verify result | Current GitHub Actions transport / bounded Host consumer and registry | Existing #10 common-host capability owner, separate from DebugAI product owner | Authorized command allow, invalid repo/scope deny, exact request/Actions job/Host revision result |
+| C07 | Master rarely needs to paste commands or select a technical fix | #17 decision authority and available tool routing | GPT CHAT operator + owner-specific task packets | Count Master interventions and validate any exceptional completed command, with an exact legitimate reason |
+| C08 | Rule/Design changes do not multiply token, branch, project or model costs | Dual profile Manifest, LOAD_SCOPE, existing Work Routine §6 | Rule Plane #15/16/17 respective owners; per-consumer adapters | Track full-policy re-reads, client load evidence and duplicate research/branch work, before/after |
+| C09 | Notion r18 meaning remains while GitHub becomes the working rule authority | Notion r18 §§1–8, #15 migration and existing adapters | #15 migration owner, not a new Notion copy | Requirements trace + actual selected consumer load + Project item registration and cutover readback |
+
+**Order of execution:** C01–C03 first for the observed stop regression; C04 then validates real chat handoff; C06 closes the server command dependency without treating the temporary DebugAI product API as final common architecture; C05 validates multi-project separation; C07–C09 quantify reduced intervention/cost and conclude migration. Parallelize only across verified distinct mutation owners and branches. A client-observed failure in C01–C03 overrides any synthetic receipt PASS. Preserve current #10/DebugAI/TGserver owners and pause states instead of claiming this governance PR authorizes Host changes.
+
+**Trial recording contract:** for each row, record `CASE_ID / PROJECT_CURRENT / OWNER / DESIGN_REV / SOURCE_SHA / ENTRY_SURFACE / BEFORE / ACTION / ACTUAL_RESULT / AFTER / STATUS / EVIDENCE_URL / NEXT_SAFE_ACTION` in the existing owning Issue. Do not turn this table into a second mutable Current; record `UNKNOWN` when the client behavior, installed loader or Host result is not observed.
+
+**Baseline at proposal time:** C01–C03 have real failure observations under #40 and remain NOT_VERIFIED as recovered; C04–C09 are NOT_VERIFIED as full end-to-end outcomes. No invented elapsed-time, autonomy percentage, API quota or savings.
