@@ -969,6 +969,12 @@ def classify_command(
     worktrees_root: Path,
     registry_doc: Path,
 ) -> dict:
+    if (os.environ.get("GACE_WORK_ROUTINE_REQUIRED", "").strip() == "1"
+            and not os.environ.get("GACE_MUTATION_BINDING", "").strip()
+            and (mutators_in_executable(command) or _has_executable_mutators(command)
+                 or (command.strip().lower().startswith("git")
+                     and _git_tail_is_write(parse_git_invocation(command, cwd)[1] or "")))):
+        return {"result": "DENY", "code": "WORK_ROUTINE_MUTATION_BINDING_REQUIRED", "command_class": "STRICT_WORK_ROUTINE"}
     bound_compound = _binding_compound_git_admission(command, cwd)
     if bound_compound is not None:
         return bound_compound
