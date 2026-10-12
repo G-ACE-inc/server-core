@@ -437,6 +437,32 @@ class ReceiverWiring(unittest.TestCase):
         self.assertEqual(result["source_sha"], request["expected_sha"])
         self.assertEqual(result["stdout"], "o")
 
+    def test_cross_repo_sha_is_independent_of_servercore_host_sha(self):
+        host_sha = "a" * 40
+        repo_sha = "b" * 40
+        parsed = receiver.validate_request(self.req(repo_sha=repo_sha), self.CONTRACT)
+        self.assertEqual(parsed["expected_sha"], host_sha)
+        self.assertEqual(parsed["repo_sha"], repo_sha)
+        for invalid in ("bad", "z" * 40, 123):
+            with self.assertRaises(receiver.ReceiverError):
+                receiver.validate_request(self.req(repo_sha=invalid), self.CONTRACT)
+
+        reply = {"ok": True, "request_id": "req_" + "1" * 24, "session": "req_" + "2" * 24,
+                 "job_exit": 0, "base_sha": repo_sha}
+        root = Path(tempfile.mkdtemp()).resolve()
+        self.addCleanup(shutil.rmtree, root, True)
+        run_git(root, "init", "-q", "-b", "main")
+        (root / "f").write_text("x")
+        run_git(root, "add", "-A")
+        run_git(root, "commit", "-q", "-m", "c")
+        host_sha = head(root)
+        request = receiver.validate_request(self.req(expected_sha=host_sha, repo_sha=repo_sha), self.CONTRACT)
+        path, seen = self.serve(reply)
+        result = receiver.dispatch_dev_job(request, root, path)
+        self.assertEqual(seen[0]["expected_sha"], repo_sha)
+        self.assertEqual(result["source_sha"], host_sha)
+        self.assertEqual(result["base_sha"], repo_sha)
+
     def test_dispatch_denials_are_terminal_and_failures_retryable(self):
         with self.assertRaises(receiver.ReceiverError) as ctx:
             self.dispatch({"ok": False, "error": "REPOSITORY_NOT_REGISTERED"})
@@ -478,6 +504,13 @@ class SenderWiring(unittest.TestCase):
         for bad in ({"timeout_s": 16}, {"argv": []}, {"fresh": None}, {"session": "x"}, {"repository": None}):
             with self.assertRaises(sender.SendError):
                 self.call(**bad)
+
+    def test_target_repository_sha_is_optional_and_validated(self):
+        self.assertNotIn("repo_sha", self.call())
+        self.assertEqual(self.call(repo_sha="b" * 40)["repo_sha"], "b" * 40)
+        for invalid in ("short", "z" * 40, 5):
+            with self.assertRaises(sender.SendError):
+                self.call(repo_sha=invalid)
 
     def test_job_fields_rejected_for_other_commands(self):
         with self.assertRaises(sender.SendError):
