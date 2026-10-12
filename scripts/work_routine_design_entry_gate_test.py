@@ -164,7 +164,7 @@ class ReceiptDefaultTrustBoundaryTests(unittest.TestCase):
             root = Path(td)
             manifest = root / "operations" / "github-project-rule-plane.json"
             manifest.parent.mkdir()
-            manifest.write_text('{"rule_planes":{"server_ai":{"issue_number":16}}}', encoding="utf-8")
+            manifest.write_text('{"control_plane":{"repository":"G-ACE-inc/server-core"},"rule_planes":{"server_ai":{"issue_number":16}}}', encoding="utf-8")
             with patch.object(emitter, "gh_issue_body", return_value="fresh rule/current"):
                 receipt = emitter.build_receipt(
                     repo_root=root, profile="SERVER_AI",
