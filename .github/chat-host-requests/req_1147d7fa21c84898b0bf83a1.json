@@ -1,0 +1,29 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "",
+  "request": "Existing independent bounded Host route regression test after PR169, no DebugAI product target.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_head",
+    "expected_sha": "7caabfa33315a8bb9423df286a03291f8c5f5dee"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "source_evidence": "G-ACE #10 existing Host pinned SHA #6125135940, PR #169 merged and CI gate success"
+  }
+}
