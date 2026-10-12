@@ -79,6 +79,33 @@ class RehydrateTests(unittest.TestCase):
         self.assertEqual(out["code"], "BASELINE_REPOSITORY_VERIFIED")
         self.assertEqual(out.get("current_mission_verified"), "NO")
 
+    def test_strict_mode_denies_missing_binding_at_mutation_entry(self):
+        out = run("mutate", self.repo, env={
+            "GACE_WORK_ROUTINE_REQUIRED": "1",
+            "GACE_MUTATION_BINDING": "",
+            "GACE_WORK_ROUTINE_TURN": "",
+        })
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "WORK_ROUTINE_MUTATION_BINDING_REQUIRED")
+
+    def test_strict_mode_readonly_still_allowed(self):
+        out = run("readonly", self.repo, env={
+            "GACE_WORK_ROUTINE_REQUIRED": "1",
+            "GACE_MUTATION_BINDING": "",
+            "GACE_WORK_ROUTINE_TURN": "",
+        })
+        self.assertEqual(out["result"], "ALLOW")
+        self.assertEqual(out["code"], "READONLY_BYPASS")
+
+    def test_strict_mode_binding_without_turn_receipt_denied(self):
+        out = run("mutate", self.repo, env={
+            "GACE_WORK_ROUTINE_REQUIRED": "1",
+            "GACE_MUTATION_BINDING": full_binding(self.repo),
+            "GACE_WORK_ROUTINE_TURN": "",
+        })
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "WORK_ROUTINE_TURN_RECEIPT_REQUIRED")
+
     def test_deny_malformed_binding_json(self):
         out = run("mutate", self.repo, env={"GACE_MUTATION_BINDING": "{invalid"})
         self.assertEqual(out["result"], "DENY")
