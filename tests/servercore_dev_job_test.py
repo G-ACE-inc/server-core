@@ -503,6 +503,60 @@ class ContractAndInstallerFiles(unittest.TestCase):
         self.assertNotIn("docker.sock", (ROOT / "scripts/servercore_dev_job_socket.py").read_text())
 
 
+class SessionReclamationAtCap(Base):
+    """At the session cap only idle, unlocked sessions are reclaimed (oldest first); active work is never evicted."""
+
+    def fill(self, idle_hours):
+        base = job.workspace_base(self.root)
+        now = time.time()
+        names = []
+        for i, hours in enumerate(idle_hours):
+            path = base / ("req_%024x" % i)
+            path.mkdir()
+            (path / "work.txt").write_text("edit")
+            os.utime(path, (now - hours * 3600, now - hours * 3600))
+            names.append(path.name)
+        return base, names
+
+    def test_oldest_idle_session_is_reclaimed_to_make_room(self):
+        base, names = self.fill([5, 4, 3, 0.1, 0.1, 0.1, 0.1, 0.1])  # 8 live, three idle for hours
+        result = self.go(self.request(session="req_" + "e" * 24))
+        self.assertEqual(result["job_exit"], 0)
+        self.assertFalse((base / names[0]).exists(), "the least recently used idle session is reclaimed")
+        for kept in names[1:]:
+            self.assertTrue((base / kept).exists(), "only as many as needed are reclaimed")
+        self.assertEqual(len([p for p in base.iterdir() if p.is_dir()]), job.MAX_SESSIONS)
+
+    def test_recent_work_is_never_reclaimed(self):
+        base, names = self.fill([0.5] * job.MAX_SESSIONS)  # all idle for 30 min < 1 h
+        self.denied("SESSION_LIMIT_REACHED", self.request(session="req_" + "e" * 24))
+        self.assertTrue(all((base / n).exists() for n in names))
+
+    def test_running_session_is_not_reclaimed_even_when_idle(self):
+        base, names = self.fill([5] + [0.1] * (job.MAX_SESSIONS - 1))
+        self.state.mkdir(mode=0o700, parents=True, exist_ok=True)
+        fd = os.open(self.state / (names[0] + ".lock"), os.O_CREAT | os.O_RDWR, 0o600)
+        self.addCleanup(os.close, fd)
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        self.denied("SESSION_LIMIT_REACHED", self.request(session="req_" + "e" * 24))
+        self.assertTrue((base / names[0] / "work.txt").exists())
+
+    def test_ttl_prune_and_cap_are_unchanged(self):
+        self.assertEqual(job.MAX_SESSIONS, 8)
+        self.assertEqual(job.SESSION_TTL_SECONDS, 24 * 3600)
+        base, names = self.fill([25])  # beyond the 24 h TTL
+        self.go(self.request(session="req_" + "e" * 24))
+        self.assertFalse((base / names[0]).exists())
+
+    def test_use_refreshes_the_idle_clock(self):
+        self.go()  # creates the session
+        workspace = job.workspace_base(self.root) / self.sid
+        old = time.time() - 5 * 3600
+        os.utime(workspace, (old, old))
+        self.go()  # reuse (fresh=false) marks it recently used
+        self.assertGreater(workspace.stat().st_mtime, time.time() - 60)
+
+
 class WorkspaceUnderRestrictiveUmask(unittest.TestCase):
     """Regression: the Host unit runs with UMask=0117; `git clone` then made 0660 directories and failed."""
 
