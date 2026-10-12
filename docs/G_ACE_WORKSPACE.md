@@ -298,7 +298,11 @@ Authority: `docs/KB_REUSE_DESIGN.md`。
 
 ## 12. Server / Runtime
 
-本番常駐は原則Docker / Docker Compose。
+本番常駐・サーバー側のアプリケーション実行環境は Docker / Docker Compose を原則とする。**Node.js、Python等のアプリケーションランタイム、依存パッケージ、プロセスは対象Projectのコンテナ内で運用する。** サーバーHostへ Node.js/Python や各Projectの依存ライブラリを直接インストール・更新したり、Hostでアプリを常駐起動したりする手順をデフォルトで選ばない。
+
+開発・調査・テスト・修正・反映時は、対象Projectの既存 Compose 定義、サービス名、Image、コンテナ内作業ディレクトリ、Volume と認可された実行経路を先に確認し、既存コンテナ／イメージの範囲で操作する。新しい Docker Compose 構成、Host ランタイム、Port公開、永続Volume操作を勝手に作らない。Host側で必要となる Docker Engine/Compose・systemd・Gateway・許可済みHost補助処理などの管理はアプリ実行と区別し、既存の設計・権限・保護操作境界に従う。
+
+Node/Python のコマンドをMasterへ提示する場合、Host直実行を想定せず、実測した対象コンテナと既存認可に基づく実行経路を使用し、`docs/MASTER_TERMINAL_COMMAND.md` を厳守する。例外的なHost直接実行が必要なら、実在する正式な運用契約・理由・影響を確認し、推測で例外を作らない。コンテナ内での実行成功と本番反映・Host状態は分けて検証する。
 
 ServerはRuntime/Processing環境であり、Project Source履歴・Design・Documentの正本をServerだけに置かない。
 
