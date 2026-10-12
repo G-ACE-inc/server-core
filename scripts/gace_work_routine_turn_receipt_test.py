@@ -77,6 +77,37 @@ class TurnReceiptTests(unittest.TestCase):
                 )
             fetch.assert_not_called()
 
+    def test_project_item_exact_issue_identity_and_pr_denial(self):
+        mod = load("receipt_project_id", MODULE)
+        node = "PVT_kwHODOQFoM4BEJII"
+        target = "https://github.com/G-ACE-inc/server-core/issues/15"
+        reply = {"data":{"node":{"items":{"nodes":[
+            {"id":"PVTI_one","content":{"__typename":"Issue","url":target}},
+            {"id":"PVTI_pr","content":{"__typename":"PullRequest"}}
+        ]}}}}
+        class Result:
+            returncode = 0
+            stdout = json.dumps(reply)
+        with patch.object(mod.subprocess, "run", return_value=Result()):
+            self.assertTrue(mod.project_item_issue_identity(node, "PVTI_one", target))
+            self.assertFalse(mod.project_item_issue_identity(node, "PVTI_one", target.replace("/15", "/10")))
+            self.assertFalse(mod.project_item_issue_identity(node, "PVTI_pr", target))
+            self.assertFalse(mod.project_item_issue_identity(node, "PVTI_missing", target))
+
+    def test_mismatched_project_item_rejected_before_issue_fetch(self):
+        mod = load("receipt_project_fail", MODULE)
+        with patch.object(mod, "project_item_issue_identity", return_value=False):
+            with patch.object(mod, "gh_issue_body") as fetch:
+                with self.assertRaisesRegex(RuntimeError, "PROJECT_ITEM_CURRENT_IDENTITY_MISMATCH"):
+                    mod.build_receipt(
+                        repo_root=Path(__file__).resolve().parents[1],
+                        profile="GPT_CHAT", control_repo="G-ACE-inc/server-core",
+                        current_issue=15, mutation_scope="routine_fix",
+                        design_status="DESIGN_NOT_APPLICABLE", purpose_cu_aligned=True,
+                        cu_verified=True, project_item_id="PVTI_wrong",
+                    )
+                fetch.assert_not_called()
+
     def test_invalid_current_issue_rejected_before_fetch(self):
         receipt_mod = load("receipt_bad_issue", MODULE)
         with patch.object(receipt_mod, "gh_issue_body") as fetch:

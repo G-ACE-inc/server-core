@@ -34,6 +34,32 @@ def gh_issue_body(repo: str, issue_number: int) -> str:
     return proc.stdout
 
 
+
+def project_item_issue_identity(project_node: str, item_id: str, expected_url: str) -> bool:
+    """Match the exact registered Project item to an Issue URL, never a PR or CU title."""
+    query = (
+        "query($id:ID!){node(id:$id){... on ProjectV2 {items(first:100)"
+        "{nodes{id content{__typename ... on Issue{url}}}}}}}"
+    )
+    try:
+        proc = subprocess.run(
+            ["gh", "api", "graphql", "-f", "query=" + query, "-F", "id=" + project_node],
+            capture_output=True, text=True, timeout=60, check=False,
+        )
+        if proc.returncode:
+            return False
+        doc = json.loads(proc.stdout)
+        nodes = (((doc.get("data") or {}).get("node") or {}).get("items") or {}).get("nodes") or []
+        matches = [item for item in nodes if item.get("id") == item_id]
+        return (
+            len(matches) == 1
+            and (matches[0].get("content") or {}).get("__typename") == "Issue"
+            and (matches[0].get("content") or {}).get("url") == expected_url
+        )
+    except (OSError, ValueError, subprocess.TimeoutExpired, AttributeError):
+        return False
+
+
 def _load_gate_module():
     gate_path = Path(__file__).with_name("work_routine_design_entry_gate.py")
     spec = importlib.util.spec_from_file_location("work_routine_design_entry_gate", gate_path)
@@ -83,6 +109,7 @@ def build_receipt(
     design_status: str,
     purpose_cu_aligned: bool | None,
     cu_verified: bool = False,
+    project_item_id: str | None = None,
     source_design_aligned: bool | None = None,
     design_baseline_section_id: str | None = None,
     design_baseline_path: str = "docs/G_ACE_WORKSPACE.md",
@@ -96,6 +123,11 @@ def build_receipt(
     expected_repo = (manifest.get("control_plane") or {}).get("repository")
     if not expected_repo or control_repo.lower() != expected_repo.lower():
         raise RuntimeError("CURRENT_CONTROL_REPOSITORY_MISMATCH")
+    project_node = (manifest.get("project") or {}).get("node_id")
+    expected_issue_url = f"https://github.com/{control_repo}/issues/{current_issue}"
+    item_identity = bool(project_node and project_item_id and project_item_issue_identity(project_node, project_item_id, expected_issue_url))
+    if project_item_id and not item_identity:
+        raise RuntimeError("PROJECT_ITEM_CURRENT_IDENTITY_MISMATCH")
     rule_issue = load_manifest_rule_issue(manifest_path, profile)
     manifest_sha = sha256_file(manifest_path)
     rule_body = gh_issue_body(control_repo, rule_issue)
@@ -109,6 +141,7 @@ def build_receipt(
         "manifest_verified": True,
         "rule_plane_read": True,
         "current_verified": True,
+        "project_item_verified": item_identity,
         # A successful Current fetch is not itself proof that canonical purpose is present.
         "purpose_verified": purpose_verified,
         "cu_verified": cu_verified,
@@ -129,6 +162,7 @@ def build_receipt(
         "rule_plane_issue": rule_issue,
         "rule_plane_body_sha256": sha256_text(rule_body),
         "current_issue": current_issue,
+        "project_item_id": project_item_id or "",
         "current_body_sha256": sha256_text(current_body),
     })
     if design_baseline_section_id:
@@ -149,6 +183,7 @@ def main() -> int:
     ap.add_argument("--profile", choices=("SERVER_AI", "GPT_CHAT"), default="SERVER_AI")
     ap.add_argument("--control-repo", default="G-ACE-inc/server-core")
     ap.add_argument("--current-issue", type=int, required=True, help="Explicit owning Current issue; never default to CU40")
+    ap.add_argument("--project-item-id", default=None, help="Exact Project #1 Issue item ID for live identity check")
     ap.add_argument("--mutation-scope", default="routine_fix")
     ap.add_argument("--design-status", default="DESIGN_NOT_VERIFIED")
     ap.add_argument("--purpose-cu-aligned", choices=("true", "false"), default=None)
@@ -167,6 +202,7 @@ def main() -> int:
             design_status=args.design_status,
             purpose_cu_aligned=(args.purpose_cu_aligned == "true" if args.purpose_cu_aligned else None),
             cu_verified=(args.cu_verified == "true"),
+            project_item_id=args.project_item_id,
             source_design_aligned=(
                 True
                 if args.source_design_aligned == "true"
