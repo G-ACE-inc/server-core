@@ -1,0 +1,38 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Revert only already-promoted docs change in isolated Docker session and verify sandbox clean",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "1d1b1f0711e615f1ba2a0217a7c4665048abb8c2",
+    "repository": "G-ACE-inc/server-core",
+    "session": "req_1cb77fd6e398d8e9b505311d",
+    "argv": [
+      "git",
+      "checkout",
+      "--",
+      "docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md"
+    ],
+    "timeout_s": 15,
+    "fresh": false
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Docker diff #6119465182 promoted identically into PR #150 and merged 92e5a9d, exact merge CI success; cleanup only isolated doc edit."
+  }
+}
