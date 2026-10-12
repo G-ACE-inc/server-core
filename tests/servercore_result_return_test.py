@@ -142,10 +142,10 @@ class SinkTests(unittest.TestCase):
 
 
 class ReceiverResultTests(unittest.TestCase):
-    def serve(self, now=1700000000, secret=b"k"):
+    def serve(self, now=1700000000, secret=b"k", root="/nonexistent"):
         contract = {"request_schema": "gace.servercore-bounded-host.request/v1",
                     "allowed_command_ids": ["project.git_head", "project.git_status", "service.deploy"],
-                    "canonical_host_root": "/nonexistent"}
+                    "canonical_host_root": root}
         handler = receiver.make_handler(contract, delivery_key=secret, now_fn=lambda: now)
         server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
         threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -199,6 +199,51 @@ class ReceiverResultTests(unittest.TestCase):
         self.assertEqual(status, 422)
         self.assertEqual((reports[0]["state"], reports[0]["exit_code"], reports[0]["stderr"]),
                          ("FAIL", 1, "SOURCE_SHA_MISMATCH"))
+
+    def real_repo(self):
+        import subprocess
+        tmp = Path(tempfile.mkdtemp()).resolve()
+        self.addCleanup(__import__("shutil").rmtree, tmp, ignore_errors=True)
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(tmp)]
+        subprocess.run([*git, "init", "-q", "-b", "main"], check=True, capture_output=True)
+        (tmp / "a").write_text("x")
+        subprocess.run([*git, "add", "a"], check=True, capture_output=True)
+        subprocess.run([*git, "commit", "-q", "-m", "c"], check=True, capture_output=True)
+        head = subprocess.run([*git, "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
+        return tmp, head
+
+    def test_sha_mismatch_reports_the_real_host_head_so_one_denial_is_enough_to_repin(self):
+        root, head = self.real_repo()
+        reports = []
+        with patch.object(receiver, "report_result", side_effect=lambda r, p=None: reports.append(r) or True):
+            status, body = self.post(self.serve(root=str(root)), self.request())
+        self.assertEqual((status, body["error"], body["host_sha"]), (422, "SOURCE_SHA_MISMATCH", head))
+        self.assertEqual((reports[0]["state"], reports[0]["host_sha"], reports[0]["expected_sha"], reports[0]["stderr"]),
+                         ("FAIL", head, SHA, "SOURCE_SHA_MISMATCH"))
+        self.assertEqual(sink.validate_record({**reports[0], "schema": sink.RECORD_SCHEMA})["host_sha"], head)
+        self.assertEqual(reports[0]["stdout"], "")
+
+    def test_matching_sha_still_passes_and_other_denials_never_disclose_head(self):
+        root, head = self.real_repo()
+        reports = []
+        with patch.object(receiver, "report_result", side_effect=lambda r, p=None: reports.append(r) or True):
+            status, body = self.post(self.serve(root=str(root)), self.request(expected_sha=head))
+            self.assertEqual((status, body["state"], reports[-1]["host_sha"]), (200, "PASS", head))
+            with patch.object(receiver.bounded_host, "execute",
+                              side_effect=receiver.bounded_host.BoundaryError("COMMAND_NOT_REGISTERED")):
+                status, body = self.post(self.serve(root=str(root)), self.request())
+        self.assertEqual(status, 422)
+        self.assertNotIn("host_sha", body)
+        self.assertEqual(reports[-1]["host_sha"], "")
+
+    def test_unauthenticated_mismatch_discloses_nothing(self):
+        root, _ = self.real_repo()
+        reports = []
+        with patch.object(receiver, "report_result", side_effect=lambda r, p=None: reports.append(r) or True):
+            status, body = self.post(self.serve(root=str(root)), self.request(), secret=b"wrong")
+        self.assertGreaterEqual(status, 400)
+        self.assertNotIn("host_sha", body)
+        self.assertEqual(reports, [])
 
     def test_validation_failure_with_valid_id_is_reported(self):
         reports = []

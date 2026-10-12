@@ -371,10 +371,10 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
             hint_id = hint_command = hint_sha = None
             authenticated = False
 
-            def record_failure(code, state):
+            def record_failure(code, state, host_sha=""):
                 # Only authenticated deliveries with a well-formed request id are recorded.
                 if authenticated and hint_id:
-                    report_result(result_record(hint_id, hint_command, hint_sha, state, 1, "", "", code, started))
+                    report_result(result_record(hint_id, hint_command, hint_sha, state, 1, host_sha, "", code, started))
             try:
                 tolerance = int(os.environ.get("GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS", "300"))
                 verify_delivery(
@@ -442,8 +442,19 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                     record_failure(exc.code, "FAIL" if exc.status < 500 else "RETRYABLE")
                 self.send_json(exc.status, {"ok": False, "error": exc.code})
             except bounded_host.BoundaryError as exc:
-                record_failure(str(exc), "FAIL")
-                self.send_json(422, {"ok": False, "error": str(exc), "state": "FAIL"})
+                payload = {"ok": False, "error": str(exc), "state": "FAIL"}
+                host_head = ""
+                if str(exc) == "SOURCE_SHA_MISMATCH":
+                    # An authenticated caller learns the real Host HEAD (a commit id, not a secret) so one denied
+                    # request is enough to re-pin; otherwise the caller can only guess at SHAs.
+                    try:
+                        host_head = bounded_host.head_sha(bounded_host.checked_root(root))
+                    except bounded_host.BoundaryError:
+                        host_head = ""
+                    if host_head:
+                        payload["host_sha"] = host_head
+                record_failure(str(exc), "FAIL", host_head)
+                self.send_json(422, payload)
             except Exception:
                 record_failure("INTERNAL_ERROR", "RETRYABLE")
                 self.send_json(500, {"ok": False, "error": "INTERNAL_ERROR"})
