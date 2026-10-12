@@ -756,6 +756,34 @@ class HookTests(unittest.TestCase):
         out = json.loads(proc.stdout.strip())
         self.assertEqual(out["permission"], "deny")
 
+    def test_hook_strict_partial_turn_without_binding_denies_write(self):
+        import os
+        payload = json.dumps({"command": "git commit -m test", "cwd": str(ROOT)})
+        env = os.environ.copy()
+        env.pop("GACE_MUTATION_BINDING", None)
+        env["GACE_WORK_ROUTINE_TURN"] = "/nonexistent/turn.json"
+        proc = subprocess.run(
+            ["bash", str(HOOK)], input=payload, capture_output=True,
+            text=True, check=False, env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["permission"], "deny")
+        self.assertIn("WORK_ROUTINE_MUTATION_BINDING_REQUIRED", out["user_message"])
+
+    def test_hook_strict_partial_binding_without_turn_denies_write(self):
+        import os
+        env = os.environ.copy()
+        env["GACE_MUTATION_BINDING"] = self._full_binding_json()
+        env.pop("GACE_WORK_ROUTINE_TURN", None)
+        payload = json.dumps({"command": "git commit -m test", "cwd": str(ROOT)})
+        proc = subprocess.run(
+            ["bash", str(HOOK)], input=payload, capture_output=True,
+            text=True, check=False, env=env,
+        )
+        out = json.loads(proc.stdout.strip())
+        self.assertEqual(out["permission"], "deny")
+        self.assertIn("WORK_ROUTINE_TURN_RECEIPT_REQUIRED", out["user_message"])
+
     def test_echo_quoted_git_commit_not_compound_blocked(self):
         import os
         binding = self._full_binding_json()
