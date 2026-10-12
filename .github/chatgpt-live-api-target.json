@@ -3,7 +3,7 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "Read-only current DebugAI Host Git HEAD for G3 Source comparison",
+  "request": "DebugAI Host git HEAD 880c8ee verified PASS at Actions 38269092973; idle",
   "gitops_request": {
     "enabled": false
   },
@@ -14,22 +14,5 @@
     "enabled": false,
     "command_id": "project.git_head",
     "expected_sha": "GITHUB_WORKFLOW_SHA"
-  },
-  "server_command_id": "project.git_head",
-  "chat_decision_checkpoint": {
-    "phase": "START",
-    "profile": "GPT_CHAT",
-    "manifest_verified": true,
-    "rule_full_read": true,
-    "current_verified": true,
-    "purpose_verified": true,
-    "cu_verified": true,
-    "purpose_cu_aligned": true,
-    "mutation_scope": "read_only",
-    "design_status": "DESIGN_NOT_APPLICABLE",
-    "design_adoption": "ADOPTED_MAIN",
-    "implementation_context": "not_applicable",
-    "source_design_aligned": true,
-    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
   }
 }
