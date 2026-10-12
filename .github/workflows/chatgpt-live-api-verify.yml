@@ -35,12 +35,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Select commit-local CHAT request (without shared target mutation)
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 scripts/chatgpt_isolated_request_select.py
-
       - name: Verify copied bounded Actions client and CHAT decision gate
         run: |
           set -euo pipefail
@@ -52,6 +46,12 @@ jobs:
           echo "SERVERCORE_REGISTERED_TEST_SHA=${GITHUB_SHA}"
           echo "SERVERCORE_REGISTERED_TESTS=PASS"
           node --test tests/chatgpt-bounded-server-read.test.cjs
+
+      - name: Select commit-local CHAT request (without shared target mutation)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/chatgpt_isolated_request_select.py
 
       - name: Read bounded target
         id: target
