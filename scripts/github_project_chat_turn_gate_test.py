@@ -84,6 +84,23 @@ class DecisionTests(unittest.TestCase):
         )
         self.assertEqual(gate.evaluate(good), "START_DESIGN_NOT_FOUND_BLOCK")
 
+    def test_start_design_changing_requires_explicit_alignment(self):
+        good = dict(
+            phase="START", profile="GPT_CHAT",
+            manifest_verified=True, rule_full_read=True,
+            current_verified=True, purpose_verified=True,
+            cu_verified=True, purpose_cu_aligned=True,
+            source_evidence="github://run/1",
+            mutation_scope="design_changing",
+            design_status="DESIGN_VERIFIED",
+            design_adoption="ADOPTED_MAIN",
+            implementation_context="adopted_main_implementation",
+        )
+        self.assertEqual(gate.evaluate(good), "START_SOURCE_DESIGN_MISMATCH")
+        self.assertEqual(gate.evaluate({**good, "source_design_aligned": None}), "START_SOURCE_DESIGN_MISMATCH")
+        self.assertEqual(gate.evaluate({**good, "source_design_aligned": False}), "START_SOURCE_DESIGN_MISMATCH")
+        self.assertEqual(gate.evaluate({**good, "source_design_aligned": True}), "PASS")
+
     def test_start_design_gate_pass_routine_fix(self):
         good = dict(
             phase="START", profile="GPT_CHAT",
