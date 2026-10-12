@@ -460,5 +460,54 @@ class ContractAndInstallerFiles(unittest.TestCase):
         self.assertNotIn("docker.sock", (ROOT / "scripts/servercore_dev_job_socket.py").read_text())
 
 
+class WorkspaceUnderRestrictiveUmask(unittest.TestCase):
+    """Regression: the Host unit runs with UMask=0117; `git clone` then made 0660 directories and failed."""
+
+    def make_repo(self):
+        tmp = Path(tempfile.mkdtemp()).resolve()
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        root = tmp / "repo"
+        root.mkdir()
+        run_git(root, "init", "-q", "-b", "main")
+        (root / "a.txt").write_text("x\n")
+        run_git(root, "add", "a.txt")
+        run_git(root, "commit", "-q", "-m", "c")
+        sha = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], check=True,
+                             capture_output=True, text=True).stdout.strip()
+        return tmp, root, sha
+
+    def test_workspace_is_created_and_traversable_under_umask_0117(self):
+        tmp, root, sha = self.make_repo()
+        workspace = tmp / "ws"
+        old = os.umask(0o117)
+        try:
+            job.create_workspace(root, workspace, sha)  # real git clone + checkout + remote remove
+        finally:
+            os.umask(old)
+        self.assertEqual((workspace / "a.txt").read_text(), "x\n")
+        for directory in (workspace, workspace / ".git", workspace / ".git" / "objects", workspace / ".git" / "refs"):
+            self.assertEqual(os.stat(directory).st_mode & 0o111, 0o111, str(directory))
+        self.assertEqual(os.stat(workspace).st_mode & 0o777, 0o755)
+        head = subprocess.run(["git", "-C", str(workspace), "-c", "safe.directory=" + str(workspace),
+                               "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
+        self.assertEqual(head, sha)
+
+    def test_only_the_git_children_get_the_traversable_umask(self):
+        tmp, root, sha = self.make_repo()
+        seen = []
+
+        def spy(step, **kwargs):
+            seen.append((step[0], kwargs.get("umask")))
+            return subprocess.run(step, **kwargs)
+
+        old = os.umask(0o117)
+        try:
+            job.create_workspace(root, tmp / "ws", sha, runner=spy)
+            self.assertEqual(os.umask(0o117), 0o117)  # the process (socket + private state) stays restrictive
+        finally:
+            os.umask(old)
+        self.assertEqual(seen, [("git", 0o022)] * 3)
+
+
 if __name__ == "__main__":
     unittest.main()

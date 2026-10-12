@@ -277,7 +277,10 @@ def create_workspace(root, workspace, sha, runner=subprocess.run):
     )
     for step in steps:
         try:
-            result = runner(step, capture_output=True, text=True, timeout=60, check=False, env=CLEAN_ENV)
+            # Only these fixed git children get a traversable umask (the process keeps 0117 for the socket and
+            # private state); subprocess applies it in the child, so no process-wide umask swap in this threaded server.
+            result = runner(step, capture_output=True, text=True, timeout=60, check=False, env=CLEAN_ENV,
+                            umask=0o022)
         except (OSError, subprocess.TimeoutExpired):
             shutil.rmtree(workspace, ignore_errors=True)
             raise JobError("WORKSPACE_CREATE_FAILED") from None
