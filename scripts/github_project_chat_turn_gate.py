@@ -55,7 +55,7 @@ def evaluate_design_turn(state: dict) -> str:
         "design_status": state.get("design_status", "DESIGN_NOT_APPLICABLE"),
         "design_adoption": state.get("design_adoption", "ADOPTED_MAIN"),
         "implementation_context": state.get("implementation_context", "not_applicable"),
-        "source_design_aligned": state.get("source_design_aligned", True),
+        "source_design_aligned": state.get("source_design_aligned"),
         "claimed_adopted_without_merge": state.get("claimed_adopted_without_merge", False),
     }
     return module.evaluate_turn(mapped)
