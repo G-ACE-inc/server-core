@@ -3,7 +3,7 @@
   "mode": "readonly",
   "run_id": "",
   "repo": "/workspace/debug-ai",
-  "request": "CHAT-originated project.git_status E2E returned PASS (run 38153497069, req_9937d85539805c920c0f2658); idle/no repeat",
+  "request": "One-shot ordinary CHAT Host inventory read-only via existing DebugAI server command (Tool B HEAD re-anchor)",
   "gitops_request": {
     "enabled": false
   },
@@ -14,5 +14,18 @@
     "enabled": false,
     "command_id": "project.git_head",
     "expected_sha": "GITHUB_WORKFLOW_SHA"
+  },
+  "server_command_id": "system.projects_inventory",
+  "inventory_page": 0,
+  "inventory_all": true,
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Rule #17 and control #10 read; this is read-only independent inventory, not a Host SHA-gated command."
   }
 }
