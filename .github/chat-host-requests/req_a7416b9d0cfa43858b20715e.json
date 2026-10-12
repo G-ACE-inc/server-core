@@ -1,0 +1,36 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "CHAT-origin Tool B actual registered Python test inside already existing clean Docker session",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "1d1b1f0711e615f1ba2a0217a7c4665048abb8c2",
+    "repository": "G-ACE-inc/server-core",
+    "session": "req_1cb77fd6e398d8e9b505311d",
+    "argv": [
+      "python3",
+      "scripts/github_project_rule_plane_test.py"
+    ],
+    "timeout_s": 15,
+    "fresh": false
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Same-CU fresh #17, signed CHAT Host result #6119419723 confirms existing clean session; run registered test only."
+  }
+}
