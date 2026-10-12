@@ -254,6 +254,45 @@ class RehydrateTests(unittest.TestCase):
                 verdict = mod.evaluate_work_routine_turn_receipt()
         self.assertIsNone(verdict)
 
+    def test_actual_mutate_entry_binds_receipt_scope_to_write(self):
+        """Exercise the CLI entry, not only its helper evaluator."""
+        shared = {
+            "manifest_verified": True,
+            "rule_plane_profile": "GPT_CHAT",
+            "rule_plane_read": True,
+            "current_verified": True,
+            "purpose_verified": True,
+            "cu_verified": True,
+            "purpose_cu_aligned": True,
+        }
+        with tempfile.TemporaryDirectory() as td:
+            receipt = Path(td) / "turn.json"
+            env = {
+                "GACE_MUTATION_BINDING": full_binding(self.repo),
+                "GACE_WORK_ROUTINE_TURN": str(receipt),
+                "GACE_WORK_ROUTINE_REQUIRED": "0",
+                "GACE_WORK_ROUTINE_REQUIRE_CONTENT_HASH": "0",
+            }
+            receipt.write_text(
+                json.dumps({**shared, "mutation_scope": "read_only"}),
+                encoding="utf-8",
+            )
+            denied = run("mutate", self.repo, env=env, paths=["f.txt"])
+            self.assertEqual(denied["result"], "DENY")
+            self.assertEqual(denied["code"], "WORK_ROUTINE_MUTATION_SCOPE_MISMATCH")
+
+            receipt.write_text(json.dumps({
+                **shared,
+                "mutation_scope": "routine_fix",
+                "design_status": "DESIGN_VERIFIED",
+                "design_adoption": "ADOPTED_MAIN",
+                "implementation_context": "adopted_main_implementation",
+                "source_design_aligned": True,
+            }), encoding="utf-8")
+            allowed = run("mutate", self.repo, env=env, paths=["f.txt"])
+            self.assertEqual(allowed["result"], "ALLOW")
+            self.assertEqual(allowed["code"], "IDENTITY_BOUND")
+
     def test_git_c_commit_is_write(self):
         mod = self._load_mod()
         self.assertTrue(mod.is_git_write_command("git -C /tmp/repo commit -m x"))
