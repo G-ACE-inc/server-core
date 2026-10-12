@@ -114,7 +114,8 @@ def validate_request(value, contract):
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
                 "container": container, "tail": tail}
     if command_id == "dev.job":
-        if set(value) != {"schema", "id", "command_id", "expected_sha", "repository", "session", "argv", "timeout_s", "fresh"}:
+        if set(value) not in ({"schema", "id", "command_id", "expected_sha", "repository", "session", "argv", "timeout_s", "fresh"},
+                              {"schema", "id", "command_id", "expected_sha", "repository", "session", "argv", "timeout_s", "fresh", "repo_sha"}):
             fail("DEV_JOB_KEYS_INVALID", 422)
         repository, session, argv = value["repository"], value["session"], value["argv"]
         timeout_s, fresh = value["timeout_s"], value["fresh"]
@@ -124,8 +125,11 @@ def validate_request(value, contract):
                 or any(not isinstance(a, str) or not 1 <= len(a) <= 1200 for a in argv) \
                 or type(timeout_s) is not int or not 1 <= timeout_s <= 15 or type(fresh) is not bool:
             fail("DEV_JOB_TARGET_INVALID", 422)
-        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha, "repository": repository,
-                "session": session, "argv": argv, "timeout_s": timeout_s, "fresh": fresh}
+        repo_sha = value.get("repo_sha", expected_sha)
+        if not isinstance(repo_sha, str) or not SHA_PATTERN.fullmatch(repo_sha):
+            fail("DEV_JOB_REPO_SHA_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha, "repo_sha": repo_sha,
+                "repository": repository, "session": session, "argv": argv, "timeout_s": timeout_s, "fresh": fresh}
     if set(value) != {"schema", "id", "command_id", "expected_sha"}:
         fail("REQUEST_KEYS_INVALID", 422)
     return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha}
@@ -251,7 +255,7 @@ def dispatch_dev_job(request, root, socket_path=None):
     """Generic isolated development job: admission + Docker authority live only in the Host provisioner."""
     sha = bounded_host.head_sha(bounded_host.checked_root(root), request["expected_sha"])
     data = (json.dumps({"schema": "gace.servercore-dev-job.request/v1", "id": request["id"],
-                        "repository": request["repository"], "expected_sha": request["expected_sha"],
+                        "repository": request["repository"], "expected_sha": request.get("repo_sha", request["expected_sha"]),
                         "session": request["session"], "argv": request["argv"],
                         "timeout_s": request["timeout_s"], "fresh": request["fresh"]},
                        separators=(",", ":")) + "\n").encode("utf-8")
