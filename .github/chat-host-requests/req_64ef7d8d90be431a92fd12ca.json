@@ -1,0 +1,29 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "",
+  "request": "Verify canonical Host dirty status remains expected after protected source reflect, read only.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_status",
+    "expected_sha": "a75dc103a28830282621011f8f6aea332b1a4280"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "source_evidence": "#10 Host SHA readback PASS https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6125895613; Composer host protected registry #6125860447"
+  }
+}
