@@ -172,9 +172,9 @@ class ReceiptDefaultTrustBoundaryTests(unittest.TestCase):
                     mutation_scope="routine_fix", design_status="DESIGN_NOT_VERIFIED",
                     purpose_cu_aligned=True,
                 )
-        self.assertFalse(receipt["source_design_aligned"])
+        self.assertNotIn("source_design_aligned", receipt)
         self.assertEqual(receipt["design_status"], "DESIGN_NOT_VERIFIED")
-        self.assertEqual(gate.evaluate_turn(receipt), "SOURCE_DESIGN_MISMATCH")
+        self.assertEqual(gate.evaluate_turn(receipt), "DESIGN_BASELINE_UNKNOWN_FOR_FIX")
 
 
 class WorkRoutineContentHashTests(unittest.TestCase):

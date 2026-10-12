@@ -78,10 +78,9 @@ def evaluate(state):
             return "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED"
         if not isinstance(state.get("source_evidence"), str) or not state["source_evidence"].strip():
             return "START_EVIDENCE_MISSING"
-        if "mutation_scope" in state or state.get("design_status"):
-            design_out = evaluate_design_turn(state)
-            if design_out != "PASS":
-                return "START_" + design_out
+        design_out = evaluate_design_turn(state)
+        if design_out != "PASS":
+            return "START_" + design_out
         return "PASS"
     if phase == "FAILURE":
         if not all(isinstance(state.get(k), str) and state[k].strip()

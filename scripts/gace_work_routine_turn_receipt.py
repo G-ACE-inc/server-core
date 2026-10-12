@@ -82,7 +82,7 @@ def build_receipt(
     mutation_scope: str,
     design_status: str,
     purpose_cu_aligned: bool,
-    source_design_aligned: bool = False,
+    source_design_aligned: bool | None = None,
     design_baseline_section_id: str | None = None,
     design_baseline_path: str = "docs/G_ACE_WORKSPACE.md",
 ) -> dict:
@@ -93,28 +93,37 @@ def build_receipt(
     manifest_sha = sha256_file(manifest_path)
     rule_body = gh_issue_body(control_repo, rule_issue)
     current_body = gh_issue_body(control_repo, current_issue)
+    purpose_marker = "## Fixed Project purpose (verbatim)"
+    purpose_section = current_body.split(purpose_marker, 1)[1].split("\n## ", 1)[0].strip() if purpose_marker in current_body else ""
+    purpose_verified = bool(purpose_section and not purpose_section.startswith("#"))
     receipt = {
         "recorded_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "rule_plane_profile": profile,
         "manifest_verified": True,
         "rule_plane_read": True,
         "current_verified": True,
-        "purpose_verified": profile != "GPT_CHAT",
+        # A successful Current fetch is not itself proof that canonical purpose is present.
+        "purpose_verified": purpose_verified,
         "cu_verified": True,
         "purpose_cu_aligned": purpose_cu_aligned,
         "mutation_scope": mutation_scope,
         "design_status": design_status,
         "design_adoption": "ADOPTED_MAIN",
         "implementation_context": "adopted_main_implementation",
-        "source_design_aligned": source_design_aligned,
         "claimed_adopted_without_merge": False,
+    }
+    if source_design_aligned is True:
+        receipt["source_design_aligned"] = True
+    elif source_design_aligned is False:
+        receipt["source_design_aligned"] = False
+    receipt.update({
         "manifest_path": "operations/github-project-rule-plane.json",
         "manifest_sha256": manifest_sha,
         "rule_plane_issue": rule_issue,
         "rule_plane_body_sha256": sha256_text(rule_body),
         "current_issue": current_issue,
         "current_body_sha256": sha256_text(current_body),
-    }
+    })
     if design_baseline_section_id:
         receipt.update(
             design_baseline_section_fields(
@@ -136,7 +145,7 @@ def main() -> int:
     ap.add_argument("--mutation-scope", default="routine_fix")
     ap.add_argument("--design-status", default="DESIGN_NOT_VERIFIED")
     ap.add_argument("--purpose-cu-aligned", choices=("true", "false"), default="true")
-    ap.add_argument("--source-design-aligned", choices=("true", "false"), default="false")
+    ap.add_argument("--source-design-aligned", choices=("true", "false"), default=None)
     ap.add_argument("--design-baseline-section", default="")
     ap.add_argument("--design-baseline-path", default="docs/G_ACE_WORKSPACE.md")
     args = ap.parse_args()
@@ -149,7 +158,13 @@ def main() -> int:
             mutation_scope=args.mutation_scope,
             design_status=args.design_status,
             purpose_cu_aligned=args.purpose_cu_aligned == "true",
-            source_design_aligned=args.source_design_aligned == "true",
+            source_design_aligned=(
+                True
+                if args.source_design_aligned == "true"
+                else False
+                if args.source_design_aligned == "false"
+                else None
+            ),
             design_baseline_section_id=(args.design_baseline_section or None),
             design_baseline_path=args.design_baseline_path,
         )

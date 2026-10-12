@@ -303,6 +303,7 @@ jobs:
           python3 scripts/gace_mutation_rehydrate_check_test.py
           python3 -m unittest scripts/github_project_chat_turn_gate_test.py -v
           python3 -m unittest scripts/work_routine_design_entry_gate_test.py -v
+          python3 scripts/gace_work_routine_turn_receipt_test.py
           python3 -m py_compile scripts/github_project_chat_host_route.py
           python3 scripts/github_project_chat_host_route_test.py
 
