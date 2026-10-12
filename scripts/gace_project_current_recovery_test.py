@@ -53,6 +53,27 @@ class RecoveryTests(unittest.TestCase):
     def test_repeated_cursor_denied(self):
         with self.assertRaisesRegex(RuntimeError,"PROJECT_PAGINATION_INVALID"):
             mod.recover(P,lambda q,v:packet([],"next"))
+    def test_fresh_issue_closed_overrides_project_cache(self):
+        item=issue("a","https://github.com/x/y/issues/1",state="OPEN",
+                   fields={"Change Unit":"C05","Mutation Owner":"writer"})
+        current={"html_url":"https://github.com/x/y/issues/1","state":"closed",
+                 "body":"Canonical current", "updated_at":"2026-10-12T00:00:00Z"}
+        out=mod.recover(P,lambda q,v:packet([item]),lambda repo,num:current)
+        row=out["issue_items"][0]
+        self.assertEqual(row["recovery"],"CLOSED_NO_DISPATCH")
+        self.assertEqual(row["fields"]["Project state mismatch"],"YES")
+        self.assertEqual(len(row["current_body_sha256"]),64)
+
+    def test_wrong_issue_current_rejected(self):
+        item=issue("a","https://github.com/x/y/issues/1")
+        for current in (
+            {"html_url":"https://github.com/x/y/issues/2","state":"open","body":"bad"},
+            {"html_url":"https://github.com/x/y/issues/1","state":"open","body":"bad","pull_request":{}},
+            {"html_url":"https://github.com/x/y/issues/1","state":"open"},
+        ):
+            with self.subTest(current=current):
+                with self.assertRaisesRegex(RuntimeError,"ISSUE_CURRENT_IDENTITY_INVALID"):
+                    mod.recover(P,lambda q,v:packet([item]),lambda repo,num:current)
     def test_wrong_project_id_denied(self):
         with self.assertRaisesRegex(ValueError,"PROJECT_ID_INVALID"):
             mod.recover("bad",lambda q,v:packet([]))
