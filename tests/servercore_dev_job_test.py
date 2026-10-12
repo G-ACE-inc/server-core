@@ -168,6 +168,8 @@ class ProvisionerPositive(Base):
         runner = DiffFake(sha=head(self.root))
         result = self.go(self.request(argv=["git", "diff", "--", "README.md"]), runner=runner)
         self.assertEqual(result["stdout"], patch_text)
+        self.assertFalse(result["stdout_truncated"])
+        self.assertFalse(result["stderr_truncated"])
         self.assertEqual(result["changed"], [" M README.md"])
         workspace = self.root / ".worktrees/dev-jobs" / self.sid
         remotes = subprocess.run(["git", "-C", str(workspace), "remote"], capture_output=True, text=True, check=True)
@@ -177,6 +179,20 @@ class ProvisionerPositive(Base):
     def test_diff_output_limit_is_not_a_complete_patch_guarantee(self):
         """Never promote a patch that is only a tail of an oversized stdout."""
         self.assertEqual(job._text(b"x" * (job.RESULT_CHARS + 10)), "x" * job.RESULT_CHARS)
+
+        class OversizedFake(Fake):
+            def __call__(self, cmd, timeout, kill):
+                args = [cmd[cmd.index("--entrypoint") + 1]] + cmd[cmd.index(IMAGE) + 1:]
+                if args[:2] == ["git", "diff"] and "--shortstat" not in args:
+                    self.calls.append(cmd)
+                    return 0, b"x" * (job.RESULT_CHARS + 10), b"", False, False
+                return super().__call__(cmd, timeout, kill)
+
+        result = self.go(self.request(argv=["git", "diff", "--", "README.md"]),
+                         runner=OversizedFake(sha=head(self.root)))
+        self.assertTrue(result["stdout_truncated"])
+        self.assertFalse(result["stderr_truncated"])
+        self.assertEqual(len(result["stdout"]), job.RESULT_CHARS)
 
     def test_records_are_private(self):
         value = self.request()
@@ -379,6 +395,8 @@ class ReceiverWiring(unittest.TestCase):
         self.assertEqual((state, code, err), ("PASS", 0, "err"))
         meta = json.loads(out.split("\n", 1)[0][len("GACE_DEV_JOB "):])
         self.assertEqual(len(meta["changed"]), 10)
+        self.assertIn("stdout_truncated", meta)
+        self.assertIn("stderr_truncated", meta)
         self.assertTrue(out.endswith("\nout"))
         self.assertEqual(receiver.dev_job_record_fields({**base, "job_exit": 2})[:2], ("FAIL", 2))
         self.assertEqual(receiver.dev_job_record_fields({**base, "job_exit": 0, "timed_out": True})[:2], ("FAIL", 1))
