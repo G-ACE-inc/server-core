@@ -1,0 +1,37 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Tool B CHAT-origin sandbox-only edit test: create harmless change in tracked docs without committing or Host production reflect, verify changed diff evidence in result.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "9d034d09d78522df04ce63a4d875dbb2e912f7cc",
+    "repository": "G-ACE-inc/server-core",
+    "session": "req_c927de51a8b0f43629ec13d7",
+    "argv": [
+      "python3",
+      "-c",
+      "from pathlib import Path; p=Path('README.md'); p.write_text(p.read_text()+'\\nTool B isolated E2E smoke (not committed)\\n')"
+    ],
+    "timeout_s": 10,
+    "fresh": false
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Tool B CHAT-origin 4 dev.job receipt proof #6115611716 with protected Host SHA, continue reversible SANDBOX-only edit and diff detection; no git commit/Host reflect or production mutation."
+  }
+}
