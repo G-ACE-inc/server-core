@@ -64,6 +64,19 @@ class TurnReceiptTests(unittest.TestCase):
         self.assertEqual(gate_mod.evaluate_turn(receipt), "PURPOSE_CU_MISMATCH")
 
 
+    def test_control_repo_mismatch_rejected_before_issue_fetch(self):
+        receipt_mod = load("receipt_bad_repo", MODULE)
+        with patch.object(receipt_mod, "gh_issue_body") as fetch:
+            with self.assertRaisesRegex(RuntimeError, "CURRENT_CONTROL_REPOSITORY_MISMATCH"):
+                receipt_mod.build_receipt(
+                    repo_root=Path(__file__).resolve().parents[1],
+                    profile="GPT_CHAT", control_repo="another-org/another-repo",
+                    current_issue=40, mutation_scope="routine_fix",
+                    design_status="DESIGN_NOT_APPLICABLE", purpose_cu_aligned=True,
+                    cu_verified=True,
+                )
+            fetch.assert_not_called()
+
     def test_invalid_current_issue_rejected_before_fetch(self):
         receipt_mod = load("receipt_bad_issue", MODULE)
         with patch.object(receipt_mod, "gh_issue_body") as fetch:
