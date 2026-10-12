@@ -32,13 +32,12 @@ SERVER_AI
   -> 必要なAuthority / Source / Testだけ
 
 GPT_CHAT / ChatGPT Work coordinator
-  -> operations/github-project-rule-plane.json (Fresh main Manifest; confirm GPT_CHAT profile)
-  -> fetch complete Rule Plane #17 body (not title/snippet; verify beginning, end, sections)
+  -> docs/G_ACE_WORKSPACE.md §6 (sole CHAT development Work Routine)
   -> GitHub Project #1 / Control #15 / owning Project and Change Unit Current
-  -> literal PROJECT_PURPOSE_CANONICAL + linked active Design/Definition of Complete
-  -> server-core only when Workspace/server control is required
-  -> target Repository Current / Source / CI / required Host evidence
-  -> apply #17 pre-action and continuation/report gates before each meaningful action
+  -> current Mission / writer / acceptance / next runnable action
+  -> target Repository Source / CI / required Host evidence
+  -> execute -> verify -> record -> iterate in the same turn
+  -> docs/MASTER_TERMINAL_COMMAND.md only when issuing Master a terminal command
 ```
 
 server-coreの全正本を一括読込しない。
