@@ -525,3 +525,12 @@ test("docs-only reflection checks first-parent changes for merge commits",()=>{
   assert.doesNotMatch(wf,/git show --name-only --pretty=format:/);
   assert.match(wf,/docs\/\*\|README\.md\|operations\/github-project-chat-host-routes\.json/);
 });
+
+test("dev.job dispatch accepts optional independent repo_sha and rejects malformed values",()=>{
+  const contract=JSON.parse(fs.readFileSync(path.resolve(__dirname,"../operations/github-project-bounded-host.json"),"utf8"));
+  const base={enabled:true,command_id:"dev.job",expected_sha:"a".repeat(40),repository:"seigo-gace/TGserver",session:"req_"+"b".repeat(24),argv:["git","rev-parse","HEAD"],timeout_s:10,fresh:true};
+  assert.doesNotThrow(()=>d.validateBoundedHostRequest(base,contract));
+  assert.doesNotThrow(()=>d.validateBoundedHostRequest({...base,repo_sha:"c".repeat(40)},contract));
+  assert.throws(()=>d.validateBoundedHostRequest({...base,repo_sha:"bad"},contract),/BOUNDED_HOST_REPO_SHA_INVALID/);
+  assert.throws(()=>d.validateBoundedHostRequest({...base,repo_sha:"c".repeat(40),unauthorized:true},contract),/BOUNDED_HOST_KEYS_INVALID/);
+});
