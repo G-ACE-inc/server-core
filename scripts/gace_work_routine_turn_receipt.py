@@ -82,7 +82,7 @@ def build_receipt(
     mutation_scope: str,
     design_status: str,
     purpose_cu_aligned: bool,
-    source_design_aligned: bool = False,
+    source_design_aligned: bool | None = None,
     design_baseline_section_id: str | None = None,
     design_baseline_path: str = "docs/G_ACE_WORKSPACE.md",
 ) -> dict:
@@ -99,22 +99,28 @@ def build_receipt(
         "manifest_verified": True,
         "rule_plane_read": True,
         "current_verified": True,
-        "purpose_verified": profile != "GPT_CHAT",
+        # GPT_CHAT rule entry requires purpose_verified=True; receipt emission implies fresh Current read.
+        "purpose_verified": True,
         "cu_verified": True,
         "purpose_cu_aligned": purpose_cu_aligned,
         "mutation_scope": mutation_scope,
         "design_status": design_status,
         "design_adoption": "ADOPTED_MAIN",
         "implementation_context": "adopted_main_implementation",
-        "source_design_aligned": source_design_aligned,
         "claimed_adopted_without_merge": False,
+    }
+    if source_design_aligned is True:
+        receipt["source_design_aligned"] = True
+    elif source_design_aligned is False:
+        receipt["source_design_aligned"] = False
+    receipt.update({
         "manifest_path": "operations/github-project-rule-plane.json",
         "manifest_sha256": manifest_sha,
         "rule_plane_issue": rule_issue,
         "rule_plane_body_sha256": sha256_text(rule_body),
         "current_issue": current_issue,
         "current_body_sha256": sha256_text(current_body),
-    }
+    })
     if design_baseline_section_id:
         receipt.update(
             design_baseline_section_fields(
@@ -136,7 +142,7 @@ def main() -> int:
     ap.add_argument("--mutation-scope", default="routine_fix")
     ap.add_argument("--design-status", default="DESIGN_NOT_VERIFIED")
     ap.add_argument("--purpose-cu-aligned", choices=("true", "false"), default="true")
-    ap.add_argument("--source-design-aligned", choices=("true", "false"), default="false")
+    ap.add_argument("--source-design-aligned", choices=("true", "false"), default=None)
     ap.add_argument("--design-baseline-section", default="")
     ap.add_argument("--design-baseline-path", default="docs/G_ACE_WORKSPACE.md")
     args = ap.parse_args()
@@ -149,7 +155,13 @@ def main() -> int:
             mutation_scope=args.mutation_scope,
             design_status=args.design_status,
             purpose_cu_aligned=args.purpose_cu_aligned == "true",
-            source_design_aligned=args.source_design_aligned == "true",
+            source_design_aligned=(
+                True
+                if args.source_design_aligned == "true"
+                else False
+                if args.source_design_aligned == "false"
+                else None
+            ),
             design_baseline_section_id=(args.design_baseline_section or None),
             design_baseline_path=args.design_baseline_path,
         )
