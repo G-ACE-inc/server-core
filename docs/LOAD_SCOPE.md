@@ -23,6 +23,13 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 **Single development procedure:** `docs/G_ACE_WORKSPACE.md` §6 (Work Routine).
 **Only Master-facing command-format contract:** `docs/MASTER_TERMINAL_COMMAND.md` when a command must be provided.
 
+**Restored contract locations (references, not duplicate rules):**
+- Project placement / no sibling derivatives / reuse and ownership: `docs/G_ACE_WORKSPACE.md` §4.1–§4.2.
+- Master-only intent approval vs delegated routine technical work: `docs/G_ACE_WORKSPACE.md` §6, **Master approval and delegated technical authority**.
+- CHAT blocked → mandatory paste-ready Server AI instruction or verified Master command: §6, **Mandatory executable handoff**; terminal format remains `docs/MASTER_TERMINAL_COMMAND.md`.
+- Server application runtimes (Node.js/Python) in existing Docker / Docker Compose containers: `docs/G_ACE_WORKSPACE.md` §12. Host infrastructure exceptions require their existing authority.
+
+
 At the start of a task, read its owning GitHub Project Current (mission, CU, writer, acceptance and next action) and the exact repository evidence required by Work Routine §6. Recheck changed Current/HEAD when the state changes. Do **not** require the full GPT CHAT Rule Plane #17 on every turn, run a second START/STOP prose checklist, or turn a routine progress explanation/CI success into a stopping condition. Historical #17 remains available for migration and audit, not a second mandatory development procedure. SERVER_AI may continue its existing machine-admission/permissions bootstrap; this change does not relax any Host, approval or effect guard.
 
 Work for the maximum feasible part of the same Change Unit per turn. If an action is unavailable, perform independent in-scope actions; if no action can be taken by this executor, consult Master with the precise missing capability and one completed command/instruction (if needed), using the command contract. Master selects product/work priorities; executor handles authorized technical work. Do not treat a GitHub record as completion until the actual Mission acceptance is satisfied.
