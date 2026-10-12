@@ -20,17 +20,12 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 
 ### GPT_CHAT / ChatGPT Work (Master-facing orchestrator)
 
-```text
-1. Fetch operations/github-project-rule-plane.json from verified GitHub main and select GPT_CHAT profile (also ChatGPT Work coordinator)
-2. Fetch the COMPLETE canonical Issue #17 body, checking beginning/end and required sections; recover truncated/missing content before treating as loaded
-3. GitHub Project #1 / Control #15 / target Project owning Current; find literal PROJECT_PURPOSE_CANONICAL and active CU / mutation owner / exact next gate
-4. Target repository README-linked active Design Authority + Definition of Complete (Current Task is NOT the whole-project goal)
-5. Workspace/server controlが必要なTaskだけserver-coreを読む; do not pass #17 to SERVER_AI/Composer/Codex (they load #16)
-6. Target Repository/CU Source/Test/CI/Runtime Evidence, check #17 pre-action gate and execute NEXT to the safe gate
-7. Every development turn: fetch fresh Manifest, full applicable GPT CHAT #17 body, and owning Current before action when Master explicitly requires per-turn full readback (Current #40); otherwise revision/delta optimization applies. progress messages do not end work; Current comments also do not end work.
-```
+**Single development procedure:** `docs/G_ACE_WORKSPACE.md` §6 (Work Routine).
+**Only Master-facing command-format contract:** `docs/MASTER_TERMINAL_COMMAND.md` when a command must be provided.
 
-**Work routing is a selection of the existing GPT_CHAT profile, not a third rule plane or automatic Work-session injection.** When ChatGPT Work leads planning, coding, research or reports on Master's behalf, it must actually load #17 and the target product Design/Current first and distinguish `PROJECT_PURPOSE_CANONICAL` from `CURRENT_WORK_PURPOSE`; no rewrite of the whole product purpose as the active PR/module/Host issue. A delegated Work-run terminal/server Codex/Composer executor uses the existing SERVER_AI #16 and only the task-specific purpose/acceptance excerpt. Fresh readback of the active Work session and its actual actions is required to say the rule was applied.
+At the start of a task, read its owning GitHub Project Current (mission, CU, writer, acceptance and next action) and the exact repository evidence required by Work Routine §6. Recheck changed Current/HEAD when the state changes. Do **not** require the full GPT CHAT Rule Plane #17 on every turn, run a second START/STOP prose checklist, or turn a routine progress explanation/CI success into a stopping condition. Historical #17 remains available for migration and audit, not a second mandatory development procedure. SERVER_AI may continue its existing machine-admission/permissions bootstrap; this change does not relax any Host, approval or effect guard.
+
+Work for the maximum feasible part of the same Change Unit per turn. If an action is unavailable, perform independent in-scope actions; if no action can be taken by this executor, consult Master with the precise missing capability and one completed command/instruction (if needed), using the command contract. Master selects product/work priorities; executor handles authorized technical work. Do not treat a GitHub record as completion until the actual Mission acceptance is satisfied.
 
 ### Master-commissioned integrated development: mission-first dispatch (existing §6)
 
@@ -44,15 +39,15 @@ For a genuine missing access needed to complete the commissioned CU, first exhau
 
 For an owned Change Unit, first inspect the affected design requirements, existing callers, tests, documentation decisions and expected CI conditions as **one impact set** before the first write. Plan the complete smallest coherent source-and-test diff, including positive/negative regression cases. Do not commit after each tool action, file edit, passing individual test, progress message or gate; these are intermediate checkpoints, not independent Change Units. Prefer a logical commit covering the verified cohesive change and related tests/docs. Multiple commits are appropriate when they form independently reviewable, revertible or risky steps, or preserve an intentional recovery point; do not impose a numerical cap or rewrite an active branch merely to cosmetically reduce count.
 
-During a block/section boundary, give a short nonterminal progress explanation if useful and continue the next executable same-CU action. After a failed test or CI, inspect the exact failure and its impact before deciding whether a follow-up commit is necessary; consolidate fixes **before first commit where possible**, without hiding real recovery history after push. Treat GitHub Commit/PR/CI/Issue record as evidence milestones, not stop triggers. At the end, compare the whole CU acceptance, remaining independent actions and legitimate #17 stop criteria before any formal Master report. Do not repeatedly reload unrelated authority or start a new branch/PR for each correction. 
+During a block/section boundary, give a short nonterminal progress explanation if useful and continue the next executable same-CU action. After a failed test or CI, inspect the exact failure and its impact before deciding whether a follow-up commit is necessary; consolidate fixes **before first commit where possible**, without hiding real recovery history after push. Treat GitHub Commit/PR/CI/Issue record as evidence milestones, not stop triggers. At the end, compare actual Mission acceptance and remaining runnable same-CU actions before any Master-requested final report. Do not repeatedly reload unrelated authority or start a new branch/PR for each correction. 
 
-**Ongoing explanations are not Master reports (#17 §5/§7):** For both GPT CHAT and ChatGPT Work, concise progress/analysis/CI/PR notices are nonterminal; after explaining, execute the next safe owned-CU action. Reserve the **formal five-part report** for Master-requested pause/report, genuinely required Master-only operation/decision, major design/product-impact choice, proven Mission completion, or a verified full same-CU stop after independent work is exhausted. **NEXT is mandatory visibility for Master inside a legitimate report, never permission to end the turn or defer a runnable CHAT action.** If Master must act, supply the complete directly executable instruction. An Issue comment, CI result or progress explanation is not a reporting trigger. Do not claim this repository text can intercept live CHAT/Work responses.
+**Ongoing explanations are not Master reports (Work Routine §6):** For both GPT CHAT and ChatGPT Work, concise progress/analysis/CI/PR notices are nonterminal; after explaining, execute the next safe owned-CU action. Reserve the **formal five-part report** for Master-requested pause/report, genuinely required Master-only operation/decision, major design/product-impact choice, proven Mission completion, or a verified full same-CU stop after independent work is exhausted. **NEXT is mandatory visibility for Master inside a legitimate report, never permission to end the turn or defer a runnable CHAT action.** If Master must act, supply the complete directly executable instruction. An Issue comment, CI result or progress explanation is not a reporting trigger. Do not claim this repository text can intercept live CHAT/Work responses.
 
 GPT_CHAT拡張RuleをSERVER_AIへdefault loadしない。
 
 README以外のserver-core Authorityを新Task開始時に一括読込しない。
 
-同一Taskで一度確認済みの安定Authority全文は通常、変更・矛盾・情報不足が無い限り毎ターン再読込しない。ただしMasterが現在のCHATに毎ターンのManifest・適用Rule Plane全文・owning CurrentのFresh取得を明示している場合は、その要求を優先して実際に再取得する。読み込んだ事実だけで適用PASSにせず、選択したAction・継続・終了判断へ照合する。ただし開発の各ターンでは関連するGitHub Project/IssueのCurrentと対象HEAD/PR/CI等の変化を軽量に再同期し、対象変更・新規Gate・競合時だけ必要なAuthority/Source範囲を再取得する。古い履歴・別Project・GPT CHAT拡張RuleをSERVER_AIへまとめて渡さない。
+同一Taskで一度確認済みの安定Authority全文は通常、変更・矛盾・情報不足が無い限り再読込しない。開発進行はWork Routine §6に一本化し、毎ターンのRule Plane全文読込を独立した前提条件としない。読み込んだ事実だけで適用PASSにせず、選択したAction・継続・終了判断へ照合する。ただし開発の各ターンでは関連するGitHub Project/IssueのCurrentと対象HEAD/PR/CI等の変化を軽量に再同期し、対象変更・新規Gate・競合時だけ必要なAuthority/Source範囲を再取得する。古い履歴・別Project・GPT CHAT拡張RuleをSERVER_AIへまとめて渡さない。
 
 ## 2. Command Routing
 
