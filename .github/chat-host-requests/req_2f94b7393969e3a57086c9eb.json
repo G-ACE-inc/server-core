@@ -1,0 +1,46 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Tool B delegated CHAT-path completion; independent TGserver session; request-specific output marker and overlap probe",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "4acc81a8da2348cb9d548ebd75f82bf849420c16",
+    "repository": "seigo-gace/TGserver",
+    "repo_sha": "1993c658b743f18de4284709eaca788ed8047712",
+    "session": "req_2f94b7393969e3a57086c9eb",
+    "argv": [
+      "python3",
+      "-c",
+      "import time,subprocess;print('TOOLB_SESSION=req_2f94b7393969e3a57086c9eb',flush=True);print('START_NS='+str(time.time_ns()),flush=True);time.sleep(7);subprocess.run(['git','rev-parse','HEAD'],check=True);print('END_NS='+str(time.time_ns()),flush=True)"
+    ],
+    "timeout_s": 15,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Delegated SERVER_AI replay of the existing GPT CHAT START receipt from req_f7f (previous CHAT request b36398c); upstream CHAT rule attestation preserved, not a new SERVER_AI #17 read. Fresh #16, Project #1, #10, approved design 16.11/17 and Host-ready #6129044607 verified; Master explicitly commissioned this completion."
+  }
+}
