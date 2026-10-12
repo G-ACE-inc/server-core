@@ -191,23 +191,23 @@ for path, required in {
             assert marker in source, (path, marker)
 
 
-# Both entrypoints must route CHAT through Manifest and complete #17, not a snippet.
+# GPT CHAT now has exactly one development procedure, Work Routine §6.
+# Preserve Current and Master command entry without requiring legacy #17 full read.
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
-assert "operations/github-project-rule-plane.json (Fresh main Manifest; confirm GPT_CHAT profile)" in readme
-assert "fetch complete Rule Plane #17 body" in readme
-assert "apply #17 pre-action and continuation/report gates" in readme
-assert "Fetch the COMPLETE canonical Issue #17 body" in router
-assert "recover truncated/missing content" in router
-assert "progress messages do not end work" in router
-assert "do not pass #17 to SERVER_AI/Composer/Codex" in router
+routine = (ROOT / "docs/G_ACE_WORKSPACE.md").read_text(encoding="utf-8")
+command_contract = (ROOT / "docs/MASTER_TERMINAL_COMMAND.md").read_text(encoding="utf-8")
+assert "docs/G_ACE_WORKSPACE.md §6 (sole CHAT development Work Routine)" in readme
+assert "docs/MASTER_TERMINAL_COMMAND.md only when issuing Master a terminal command" in readme
+assert "**Single development procedure:** `docs/G_ACE_WORKSPACE.md` §6" in router
+assert "**Only Master-facing command-format contract:** `docs/MASTER_TERMINAL_COMMAND.md`" in router
+assert "## 6. Development Routine" in routine
+assert "6. ITERATE:" in routine
+assert "MASTER TERMINAL COMMAND CONTRACT" in command_contract
+assert "Fetch the COMPLETE canonical Issue #17 body" not in router
+assert "fetch complete Rule Plane #17 body" not in readme
+assert "SERVER_AI" in router  # non-CHAT executor still retains separate bootstrap
+# Router retains GitHub Current state authority; it no longer imposes a second workflow.
+assert "owning GitHub Project Current" in router
+assert "GitHub Project #1 / Control #15" in readme
 
-# Ordering regression: CHAT Manifest must precede FULL #17, and #17 precede Current.
-chat_entry = readme.split("GPT_CHAT / ChatGPT Work coordinator", 1)[1].split("```", 1)[0]
-assert chat_entry.index("operations/github-project-rule-plane.json") < chat_entry.index("fetch complete Rule Plane #17 body") < chat_entry.index("GitHub Project #1 / Control #15")
-chat_route = router.split("### GPT_CHAT / ChatGPT Work", 1)[1].split("```", 2)[1]
-assert chat_route.index("operations/github-project-rule-plane.json") < chat_route.index("Fetch the COMPLETE canonical Issue #17 body") < chat_route.index("GitHub Project #1 / Control #15")
-
-# The existing contract check is static. Do not claim it attests live CHAT behavior.
-# A true PASS marker must follow every assertion (including the ordered bootstrap checks).
-assert "CHAT_PRE_ACTION_GATE" in (ROOT / "docs/LOAD_SCOPE.md").read_text(encoding="utf-8") or "check #17 pre-action gate" in router
 print("GITHUB_PROJECT_RULE_PLANE=PASS")
