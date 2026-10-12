@@ -1,4 +1,4 @@
-# CU40 — Work Routine actual execution binding (proposed design, 2026-10-12)
+# CU40 — Work Routine execution and Mission termination design (2026-10-12)
 
 Status: IMPLEMENTED_ON_MAIN for the bounded mutation-admission correction via PR #156 (merge `2dc0a07bd1e406533285c5479b7fb686d360adfc`); GPT CHAT behavioral continuation and native reply interception remain **NOT VERIFIED**. This document is an implementation design and acceptance boundary, not proof of the latter. Owner: GPT CHAT / CU40, server-core existing shared routine. Baseline: `docs/G_ACE_WORKSPACE.md` §6; `docs/LOAD_SCOPE.md`; Rule #17 §§5–7; Current #40. Do not alter #10 Tool B, DebugAI or TGserver owners.
 
