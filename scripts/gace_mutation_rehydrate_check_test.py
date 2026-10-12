@@ -162,6 +162,22 @@ class RehydrateTests(unittest.TestCase):
         spec.loader.exec_module(mod)
         return mod
 
+    def test_strict_work_routine_requires_turn_receipt(self):
+        from unittest.mock import patch
+
+        mod = self._load_mod()
+        with patch.dict(os.environ, {"GACE_WORK_ROUTINE_REQUIRED": "1"}, clear=True):
+            verdict = mod.evaluate_work_routine_turn_receipt()
+        self.assertEqual(verdict["result"], "DENY")
+        self.assertEqual(verdict["code"], "WORK_ROUTINE_TURN_RECEIPT_REQUIRED")
+
+    def test_legacy_work_routine_receipt_optional_without_strict_mode(self):
+        from unittest.mock import patch
+
+        mod = self._load_mod()
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertIsNone(mod.evaluate_work_routine_turn_receipt())
+
     def test_git_c_commit_is_write(self):
         mod = self._load_mod()
         self.assertTrue(mod.is_git_write_command("git -C /tmp/repo commit -m x"))
