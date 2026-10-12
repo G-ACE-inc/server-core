@@ -1,0 +1,28 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Tool B resumed CHAT origin: read-only server-core Host actual git status to re-anchor exact SHA before any workspace edit or reflection.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_status",
+    "expected_sha": "9d034d09d78522df04ce63a4d875dbb2e912f7cc"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Fresh #10 Current #6115871157; Host last qualified exact SHA 9d034d0 from #6115583380; read-only status ONLY to re-anchor before mutation, no dev.job and no deploy."
+  }
+}
