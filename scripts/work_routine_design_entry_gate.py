@@ -26,6 +26,7 @@ DESIGN_STATUSES = {
 ADOPTIONS = {"ADOPTED_MAIN", "PROPOSED_PR", "UNKNOWN"}
 IMPLEMENTATION_CONTEXTS = {"proposed_pr_staging", "adopted_main_implementation", "not_applicable"}
 
+DESIGN_BASELINE_CANONICAL_PATH = "docs/G_ACE_WORKSPACE.md"
 DESIGN_BASELINE_SECTIONS = {
     "work_routine_section_6": (
         "### Design-alignment checks within the existing Work Routine",
@@ -74,6 +75,8 @@ def verify_design_baseline_content_hashes(state: dict) -> str:
     if not root_raw:
         return "DESIGN_BASELINE_REPO_ROOT_REQUIRED"
     rel = state.get("design_baseline_path")
+    if section_id == "work_routine_section_6" and rel != DESIGN_BASELINE_CANONICAL_PATH:
+        return "DESIGN_BASELINE_PATH_NOT_CANONICAL"
     if not isinstance(rel, str) or ".." in rel or rel.startswith("/"):
         return "DESIGN_BASELINE_PATH_INVALID"
     design_path = Path(root_raw) / rel
