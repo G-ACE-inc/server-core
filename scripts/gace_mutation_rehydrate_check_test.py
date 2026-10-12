@@ -88,6 +88,18 @@ class RehydrateTests(unittest.TestCase):
         self.assertEqual(out["result"], "DENY")
         self.assertEqual(out["code"], "WORK_ROUTINE_MUTATION_BINDING_REQUIRED")
 
+    def test_optin_receipt_requires_binding_even_without_strict_mode(self):
+        with tempfile.TemporaryDirectory() as td:
+            receipt = Path(td) / "turn.json"
+            receipt.write_text(json.dumps({"mutation_scope": "routine_fix"}), encoding="utf-8")
+            out = run("mutate", self.repo, env={
+                "GACE_WORK_ROUTINE_REQUIRED": "0",
+                "GACE_MUTATION_BINDING": "",
+                "GACE_WORK_ROUTINE_TURN": str(receipt),
+            }, paths=["f.txt"])
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "WORK_ROUTINE_MUTATION_BINDING_REQUIRED")
+
     def test_strict_mode_readonly_still_allowed(self):
         out = run("readonly", self.repo, env={
             "GACE_WORK_ROUTINE_REQUIRED": "1",
