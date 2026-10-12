@@ -1,0 +1,37 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Tool B normal CHAT-origin dev.job E2E after verified HOST_READY #6115583380; run git status in registered isolated container; compare result receipt to Host SHA 9d034d0.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "9d034d09d78522df04ce63a4d875dbb2e912f7cc",
+    "repository": "G-ACE-inc/server-core",
+    "session": "req_c927de51a8b0f43629ec13d7",
+    "argv": [
+      "git",
+      "status",
+      "--short"
+    ],
+    "timeout_s": 10,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Full Issue #17 and fresh Manifest, Control #10 HOST_READY #6115583380 with Host SHA 9d034d09d78522df04ce63a4d875dbb2e912f7cc, four signed Host receipts #6115568086/#6115568627/#6115569156/#6115569745; execute genuine CHAT-origin bounded dev.job one job per immutable request."
+  }
+}
