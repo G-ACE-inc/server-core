@@ -99,6 +99,7 @@ class DecisionTests(unittest.TestCase):
         self.assertEqual(gate.evaluate(good), "START_SOURCE_DESIGN_MISMATCH")
         self.assertEqual(gate.evaluate({**good, "source_design_aligned": None}), "START_SOURCE_DESIGN_MISMATCH")
         self.assertEqual(gate.evaluate({**good, "source_design_aligned": False}), "START_SOURCE_DESIGN_MISMATCH")
+        self.assertEqual(gate.evaluate({**good, "source_design_aligned": "true"}), "START_SOURCE_DESIGN_MISMATCH")
         self.assertEqual(gate.evaluate({**good, "source_design_aligned": True}), "PASS")
 
     def test_start_design_gate_pass_routine_fix(self):
