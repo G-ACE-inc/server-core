@@ -294,7 +294,8 @@ def check(
         )
 
     if state is BindingState.ABSENT:
-        if os.environ.get("GACE_WORK_ROUTINE_REQUIRED", "").strip() == "1":
+        if (os.environ.get("GACE_WORK_ROUTINE_REQUIRED", "").strip() == "1"
+                or os.environ.get("GACE_WORK_ROUTINE_TURN", "").strip()):
             return emit(
                 "DENY",
                 "WORK_ROUTINE_MUTATION_BINDING_REQUIRED",
