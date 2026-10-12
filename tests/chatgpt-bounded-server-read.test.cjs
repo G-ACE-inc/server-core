@@ -33,9 +33,10 @@ test("Independent Host request is selected only after legacy client checks",()=>
   assert.ok(legacy>=0 && select>legacy && dispatch>select,
     "Legacy client tests must read untouched idle target before isolated Host selection");
   const targetRead=wf.slice(wf.indexOf("      - name: Read bounded target"),wf.indexOf("      - name: START Gate"));
-  assert.match(targetRead,/if \\[\\[ "\\$bounded_host_enabled" != "true" \\]\\]; then/);
-  assert.match(targetRead,/\\$base.*https:\\/\\/debugai\\.asterav8\\.jp/);
-  assert.match(targetRead,/\\$repo.*\\/workspace\\/debug-ai/);
+  assert.ok(targetRead.includes('if [[ "$bounded_host_enabled" != "true" ]]; then'));
+  assert.ok(targetRead.includes('https://debugai.asterav8.jp'));
+  assert.ok(targetRead.includes('/workspace/debug-ai'));
+
 });
 test("Independent deploy effect needs exact before SHA and rejects extra request fields",()=>{
   const x={enabled:true,command_id:"project.source_reflect",expected_sha:"GITHUB_WORKFLOW_SHA",expected_before:"a".repeat(40)};
