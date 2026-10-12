@@ -782,7 +782,7 @@ class HookTests(unittest.TestCase):
         )
         out = json.loads(proc.stdout.strip())
         self.assertEqual(out["permission"], "deny")
-        self.assertIn("WORK_ROUTINE_TURN_RECEIPT_REQUIRED", out["user_message"])
+        self.assertIn("BINDING_INCOMPLETE", out["user_message"])
 
     def test_echo_quoted_git_commit_not_compound_blocked(self):
         import os
