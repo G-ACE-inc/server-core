@@ -1,6 +1,6 @@
 # CU40 — Work Routine actual execution binding (proposed design, 2026-10-12)
 
-Status: PROPOSED_PR, not adopted main. Owner: GPT CHAT / CU40, server-core existing shared routine. Baseline: `docs/G_ACE_WORKSPACE.md` §6; `docs/LOAD_SCOPE.md`; Rule #17 §§5–7; Current #40. Do not alter #10 Tool B, DebugAI or TGserver owners.
+Status: IMPLEMENTED_ON_MAIN for the bounded mutation-admission correction via PR #156 (merge `2dc0a07bd1e406533285c5479b7fb686d360adfc`); GPT CHAT behavioral continuation and native reply interception remain **NOT VERIFIED**. This document is an implementation design and acceptance boundary, not proof of the latter. Owner: GPT CHAT / CU40, server-core existing shared routine. Baseline: `docs/G_ACE_WORKSPACE.md` §6; `docs/LOAD_SCOPE.md`; Rule #17 §§5–7; Current #40. Do not alter #10 Tool B, DebugAI or TGserver owners.
 
 ## Problem and root cause
 
@@ -24,3 +24,12 @@ Only existing `scripts/gace_mutation_rehydrate_check.py`, focused tests, and thi
 ## Why this correction matters
 
 The mismatch allows a read-only proof to be treated as write authorization in the actual installed mutation-check pathway. The proposed code change closes one genuine instance of **reading/verifying something different from the action performed**. This is a necessary but **not sufficient** component of restoring normal CHAT autonomous development; it must never be reported as a guarantee against premature replies.
+
+## As-built acceptance / evidence separation (2026-10-12)
+
+- Design-before-source: design commit `679192bd037a63ecc6fecabdbcb556cc16073ff4` preceded source commit `7f6e2013f1890b4c939eb89bb46ad8343e8bdb2a`; tests at `a2834829cca72c2e56162585bdce751b7a2422db`.
+- Same-CU PR #156 merged as `2dc0a07bd1e406533285c5479b7fb686d360adfc`. Source/readback confirms mutation preflight rejects a `read_only` receipt and leaves routine fix eligibility available.
+- Exact merged main checks: guard, verify and windows-parser SUCCESS; two request validation jobs SKIPPED, not FAIL (GitHub Actions runs `38235000235`, `38235000438`, `38235000204`). These checks validate source/test plane only.
+- Normal ordinary GPT CHAT native response interception: **NOT IMPLEMENTED / NOT VERIFIED**. No existing installed send hook was found in the inspected repository entrypoint. Merely checking an optional receipt is not equivalent to native reply control. Do not assign `COMPLETE` to overall CU40 based on this narrower merged patch.
+- Real behavioral acceptance must be based on successive GPT CHAT turns actually (a) reading current rule/current, (b) continuing authorized same-CU work after a progress note, issue checkpoint and CI success, (c) handling an actual failure with REPLAN plus executed next action, and (d) ending/reporting only at a verified legitimate terminal condition. Record actual user-reported regressions as FAIL; never self-certify guarantees based on a single turn.
+- No repeated CI/PR/test is required for unmodified code; avoid inferring Host or Runtime activation from source checks. The limited fix is adopted; the broader chat-behavior goal remains open.
