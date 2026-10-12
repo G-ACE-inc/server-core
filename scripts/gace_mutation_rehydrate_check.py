@@ -410,6 +410,14 @@ def evaluate_work_routine_turn_receipt() -> dict | None:
             "WORK_ROUTINE_TURN_RECEIPT_UNREADABLE",
             current_mission_verified="NO",
         )
+    # A receipt for observation cannot authorize a real repository mutation.
+    # This is an effective mutation entry point, not a native CHAT reply hook.
+    if not isinstance(state, dict) or state.get("mutation_scope") == "read_only":
+        return emit(
+            "DENY",
+            "WORK_ROUTINE_MUTATION_SCOPE_MISMATCH",
+            current_mission_verified="NO",
+        )
     gate_path = Path(__file__).resolve().with_name("work_routine_design_entry_gate.py")
     spec = importlib.util.spec_from_file_location("work_routine_design_entry_gate", gate_path)
     if spec is None or spec.loader is None:

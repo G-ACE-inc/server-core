@@ -205,6 +205,55 @@ class RehydrateTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             self.assertIsNone(mod.evaluate_work_routine_turn_receipt())
 
+    def test_mutation_rejects_readonly_receipt_without_claiming_reply_enforcement(self):
+        from unittest.mock import patch
+
+        mod = self._load_mod()
+        state = {
+            "manifest_verified": True,
+            "rule_plane_profile": "GPT_CHAT",
+            "rule_plane_read": True,
+            "current_verified": True,
+            "purpose_verified": True,
+            "cu_verified": True,
+            "purpose_cu_aligned": True,
+            "mutation_scope": "read_only",
+        }
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "receipt.json"
+            path.write_text(json.dumps(state), encoding="utf-8")
+            with patch.dict(os.environ, {"GACE_WORK_ROUTINE_TURN": str(path),
+                                      "GACE_WORK_ROUTINE_REQUIRE_CONTENT_HASH": "0"}, clear=True):
+                verdict = mod.evaluate_work_routine_turn_receipt()
+        self.assertEqual(verdict["result"], "DENY")
+        self.assertEqual(verdict["code"], "WORK_ROUTINE_MUTATION_SCOPE_MISMATCH")
+
+    def test_mutation_preserves_valid_routine_fix_receipt(self):
+        from unittest.mock import patch
+
+        mod = self._load_mod()
+        state = {
+            "manifest_verified": True,
+            "rule_plane_profile": "GPT_CHAT",
+            "rule_plane_read": True,
+            "current_verified": True,
+            "purpose_verified": True,
+            "cu_verified": True,
+            "purpose_cu_aligned": True,
+            "mutation_scope": "routine_fix",
+            "design_status": "DESIGN_VERIFIED",
+            "design_adoption": "ADOPTED_MAIN",
+            "implementation_context": "adopted_main_implementation",
+            "source_design_aligned": True,
+        }
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "receipt.json"
+            path.write_text(json.dumps(state), encoding="utf-8")
+            with patch.dict(os.environ, {"GACE_WORK_ROUTINE_TURN": str(path),
+                                      "GACE_WORK_ROUTINE_REQUIRE_CONTENT_HASH": "0"}, clear=True):
+                verdict = mod.evaluate_work_routine_turn_receipt()
+        self.assertIsNone(verdict)
+
     def test_git_c_commit_is_write(self):
         mod = self._load_mod()
         self.assertTrue(mod.is_git_write_command("git -C /tmp/repo commit -m x"))
