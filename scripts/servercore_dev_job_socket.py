@@ -281,7 +281,8 @@ def prune_sessions(base, keep, now=None, state_dir=None):
     now = time.time() if now is None else now
     entries = [p for p in Path(base).iterdir() if REQ_ID.fullmatch(p.name) and not p.is_symlink() and p.is_dir()]
     for path in entries:
-        if path.name != keep and now - path.stat().st_mtime > SESSION_TTL_SECONDS:
+        if path.name != keep and now - path.stat().st_mtime > SESSION_TTL_SECONDS \
+                and _session_lock_free(state_dir, path.name):
             shutil.rmtree(path, ignore_errors=True)
     live = sorted((p for p in Path(base).iterdir()
                    if REQ_ID.fullmatch(p.name) and not p.is_symlink() and p.is_dir() and p.name != keep),
