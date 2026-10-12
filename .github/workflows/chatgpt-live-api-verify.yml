@@ -63,7 +63,11 @@ jobs:
           repo="$(jq -r '.repo' .github/chatgpt-live-api-target.json)"
           request="$(jq -r '.request // ""' .github/chatgpt-live-api-target.json)"
           run_id="$(jq -r '.run_id // ""' .github/chatgpt-live-api-target.json)"
-          [[ "$base" == "https://debugai.asterav8.jp" ]]
+          # The independent bounded Host route does not require DebugAI product API identity.
+          bounded_host_enabled="$(jq -r '.bounded_host_request.enabled // false' .github/chatgpt-live-api-target.json)"
+          if [[ "$bounded_host_enabled" != "true" ]]; then
+            [[ "$base" == "https://debugai.asterav8.jp" ]]
+          fi
           [[ "$mode" =~ ^(readonly|dogfood)$ ]]
           gitops_enabled="$(jq -r '.gitops_request.enabled // false' .github/chatgpt-live-api-target.json)"
           [[ "$gitops_enabled" == "true" || "$gitops_enabled" == "false" ]]
@@ -73,10 +77,11 @@ jobs:
           [[ "$source_reflect_enabled" != "true" || "$gitops_enabled" != "true" ]] || { echo "CHAT_REFLECT_CONCURRENT_DEPLOY_DENIED"; exit 44; }
           [[ "$source_reflect_enabled" != "true" || "$mode" == "readonly" ]] || { echo "CHAT_REFLECT_MODE_DENIED"; exit 45; }
           echo "source_reflect_enabled=$source_reflect_enabled" >> "$GITHUB_OUTPUT"
-          bounded_host_enabled="$(jq -r '.bounded_host_request.enabled // false' .github/chatgpt-live-api-target.json)"
           [[ "$bounded_host_enabled" == "true" || "$bounded_host_enabled" == "false" ]]
           echo "bounded_host_enabled=$bounded_host_enabled" >> "$GITHUB_OUTPUT"
-          [[ "$repo" == "/workspace/debug-ai" || "$repo" =~ ^/workspace/debug-ai/\.debugai-input/test-repos/[A-Za-z0-9._-]+$ ]]
+          if [[ "$bounded_host_enabled" != "true" ]]; then
+            [[ "$repo" == "/workspace/debug-ai" || "$repo" =~ ^/workspace/debug-ai/\.debugai-input/test-repos/[A-Za-z0-9._-]+$ ]]
+          fi
           [[ ${#request} -le 2000 ]]
           [[ -z "$run_id" || "$run_id" =~ ^run_[A-Za-z0-9_]+$ ]]
           {
