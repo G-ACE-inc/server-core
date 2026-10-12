@@ -506,3 +506,10 @@ test("generic dev.job dispatch carries only an exact bounded job manifest",()=>{
   assert.match(wf,/"\$command_id" == "dev\.job"/);
   assert.match(wf,/--job-argv-json "\$\(jq -c '\.bounded_host_request\.argv'/);
 });
+
+
+test("docs-only reflection checks first-parent changes for merge commits",()=>{
+  assert.match(wf,/git diff --name-only "\$\{GITHUB_SHA\}\^1" "\$\{GITHUB_SHA\}"/);
+  assert.doesNotMatch(wf,/git show --name-only --pretty=format:/);
+  assert.match(wf,/docs\/\*\|README\.md\|operations\/github-project-chat-host-routes\.json/);
+});

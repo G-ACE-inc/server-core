@@ -336,7 +336,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t files < <(git show --name-only --pretty=format: "${GITHUB_SHA}")
+          # Compare with first parent so PR merge commits do not produce an empty file list.
+          mapfile -t files < <(git diff --name-only "${GITHUB_SHA}^1" "${GITHUB_SHA}")
           if [[ ${#files[@]} -eq 0 ]]; then
             echo "auto_docs_reflect=false" >> "$GITHUB_OUTPUT"
             exit 0
