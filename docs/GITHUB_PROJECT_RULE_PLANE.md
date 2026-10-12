@@ -202,3 +202,26 @@ Maintain **three separate verification planes** without conflating PASS:
 **Cost/continuity measurements:** per CU count user interventions, avoidable CHAT stop events, real action transitions after intermediate explanations, repeated full-policy reads, duplicate research/PRs, and provider paid/free quota consumption. Capture baseline and post-change samples; values not measured are UNKNOWN. Eight-project support must not imply eight simultaneously autonomous ChatGPT sessions or infinite context.
 
 **Cutover:** Existing Manifest `migration.cutover=NOT_RUN` and `project_item_registration=NOT_VERIFIED` remain unchanged until actual Project registration, active consumer load, route admission and observed behavior meet the required proof. Notion continues as migration/history and decision context until then. Do not delete historical Notion pages or close #15 based on a document/CI-only success.
+
+
+### Concrete migration and implementation allocation (client acceptance delta)
+
+The table below is an **implementation backlog against existing owners**, not a new cross-project CU or authority. Each item needs its actual owning Current/branch check before any source mutation. A passing static rule test must not close these rows.
+
+| Gap ID | Required user-visible change | Reuse/current implementation | Responsible change boundary | Exact trial / completion evidence |
+|---|---|---|---|---|
+| C01 | A development CHAT advances after an interim explanation instead of stopping | #17 §5–7; existing CU40 design and `github_project_chat_turn_gate.py` | Existing CU40 GPT_CHAT behavior owner; **not** #162 | Real same-turn tool action after interim explanation, with verified unfinished CU |
+| C02 | Failure leads to diagnosis and useful action without asking Master for routine debugging | Workspace §6 ITERATE; #40 behavior matrix | Existing CU40, scoped to operator behavior | Failed action evidence, scoped replan, new authorized action and its result |
+| C03 | A green PR/CI does not masquerade as Product/CU completion | GitHub checks + owning Issue acceptance + #17 stop contract | Existing CU40 and per-repo Current owner | Evidence of a post-CI legal next action, or evidence proving actual terminal condition |
+| C04 | New CHAT recovers correct exact work without redoing completed fixes | Project #1 / canonical Issue; `EXECUTION_SNAPSHOT` contract | Existing Project Control / owning Project Current | Across two independent CHAT sessions, same CU/last SHA/next gate rehydrated and deduplicated |
+| C05 | Eight projects are separately recoverable with no mutation collision | Existing four Project fields + per-project canonical Current | Project Control owner and each owning Project; no new Project fields without proof | Enumerate up to eight registered contexts, read exact next gate for each and reject cross-CU mutation |
+| C06 | CHAT can request only eligible registered server actions and independently verify result | Current GitHub Actions transport / bounded Host consumer and registry | Existing #10 common-host capability owner, separate from DebugAI product owner | Authorized command allow, invalid repo/scope deny, exact request/Actions job/Host revision result |
+| C07 | Master rarely needs to paste commands or select a technical fix | #17 decision authority and available tool routing | GPT CHAT operator + owner-specific task packets | Count Master interventions and validate any exceptional completed command, with an exact legitimate reason |
+| C08 | Rule/Design changes do not multiply token, branch, project or model costs | Dual profile Manifest, LOAD_SCOPE, existing Work Routine §6 | Rule Plane #15/16/17 respective owners; per-consumer adapters | Track full-policy re-reads, client load evidence and duplicate research/branch work, before/after |
+| C09 | Notion r18 meaning remains while GitHub becomes the working rule authority | Notion r18 §§1–8, #15 migration and existing adapters | #15 migration owner, not a new Notion copy | Requirements trace + actual selected consumer load + Project item registration and cutover readback |
+
+**Order of execution:** C01–C03 first for the observed stop regression; C04 then validates real chat handoff; C06 closes the server command dependency without treating the temporary DebugAI product API as final common architecture; C05 validates multi-project separation; C07–C09 quantify reduced intervention/cost and conclude migration. Parallelize only across verified distinct mutation owners and branches. A client-observed failure in C01–C03 overrides any synthetic receipt PASS. Preserve current #10/DebugAI/TGserver owners and pause states instead of claiming this governance PR authorizes Host changes.
+
+**Trial recording contract:** for each row, record `CASE_ID / PROJECT_CURRENT / OWNER / DESIGN_REV / SOURCE_SHA / ENTRY_SURFACE / BEFORE / ACTION / ACTUAL_RESULT / AFTER / STATUS / EVIDENCE_URL / NEXT_SAFE_ACTION` in the existing owning Issue. Do not turn this table into a second mutable Current; record `UNKNOWN` when the client behavior, installed loader or Host result is not observed.
+
+**Baseline at proposal time:** C01–C03 have real failure observations under #40 and remain NOT_VERIFIED as recovered; C04–C09 are NOT_VERIFIED as full end-to-end outcomes. No invented elapsed-time, autonomy percentage, API quota or savings.
