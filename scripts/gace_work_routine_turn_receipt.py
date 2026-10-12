@@ -81,7 +81,8 @@ def build_receipt(
     current_issue: int,
     mutation_scope: str,
     design_status: str,
-    purpose_cu_aligned: bool,
+    purpose_cu_aligned: bool | None,
+    cu_verified: bool = False,
     source_design_aligned: bool | None = None,
     design_baseline_section_id: str | None = None,
     design_baseline_path: str = "docs/G_ACE_WORKSPACE.md",
@@ -104,8 +105,8 @@ def build_receipt(
         "current_verified": True,
         # A successful Current fetch is not itself proof that canonical purpose is present.
         "purpose_verified": purpose_verified,
-        "cu_verified": True,
-        "purpose_cu_aligned": purpose_cu_aligned,
+        "cu_verified": cu_verified,
+        "purpose_cu_aligned": purpose_cu_aligned is True,
         "mutation_scope": mutation_scope,
         "design_status": design_status,
         "design_adoption": "ADOPTED_MAIN",
@@ -144,7 +145,8 @@ def main() -> int:
     ap.add_argument("--current-issue", type=int, default=40)
     ap.add_argument("--mutation-scope", default="routine_fix")
     ap.add_argument("--design-status", default="DESIGN_NOT_VERIFIED")
-    ap.add_argument("--purpose-cu-aligned", choices=("true", "false"), default="true")
+    ap.add_argument("--purpose-cu-aligned", choices=("true", "false"), default=None)
+    ap.add_argument("--cu-verified", choices=("true", "false"), default=None)
     ap.add_argument("--source-design-aligned", choices=("true", "false"), default=None)
     ap.add_argument("--design-baseline-section", default="")
     ap.add_argument("--design-baseline-path", default="docs/G_ACE_WORKSPACE.md")
@@ -157,7 +159,8 @@ def main() -> int:
             current_issue=args.current_issue,
             mutation_scope=args.mutation_scope,
             design_status=args.design_status,
-            purpose_cu_aligned=args.purpose_cu_aligned == "true",
+            purpose_cu_aligned=(args.purpose_cu_aligned == "true" if args.purpose_cu_aligned else None),
+            cu_verified=(args.cu_verified == "true"),
             source_design_aligned=(
                 True
                 if args.source_design_aligned == "true"

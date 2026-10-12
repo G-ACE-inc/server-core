@@ -171,6 +171,7 @@ class ReceiptDefaultTrustBoundaryTests(unittest.TestCase):
                     control_repo="G-ACE-inc/server-core", current_issue=40,
                     mutation_scope="routine_fix", design_status="DESIGN_NOT_VERIFIED",
                     purpose_cu_aligned=True,
+                    cu_verified=True,
                 )
         self.assertNotIn("source_design_aligned", receipt)
         self.assertEqual(receipt["design_status"], "DESIGN_NOT_VERIFIED")
@@ -386,6 +387,7 @@ class DesignBaselineHashTests(unittest.TestCase):
                     mutation_scope="routine_fix",
                     design_status="DESIGN_VERIFIED",
                     purpose_cu_aligned=True,
+                    cu_verified=True,
                     source_design_aligned=True,
                     design_baseline_section_id="work_routine_section_6",
                 )
