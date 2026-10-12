@@ -172,7 +172,7 @@ class DockerLogsWriterTests(unittest.TestCase):
     def test_compose_labels_must_match_project_root_exactly(self):
         class Done:
             returncode = 0
-            stdout = "/home/admin1/projects/TGserver\\n"
+            stdout = "/home/admin1/projects/TGserver\n"
             stderr = ""
         calls = []
         def run(argv, **kwargs):
