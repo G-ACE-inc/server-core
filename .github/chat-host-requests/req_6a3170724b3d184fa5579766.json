@@ -1,0 +1,46 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Native GPT CHAT A independent Tool B read-only 7-second overlap test for G-ACE-inc/server-core, current #10 and committed procedure",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "543e135a35e180f1367dd7b553521d26483d05cb",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "543e135a35e180f1367dd7b553521d26483d05cb",
+    "session": "req_94aa4c4de7909a33aae5ecb6",
+    "argv": [
+      "python3",
+      "-c",
+      "import subprocess,time;print('NATIVE_CHAT_SESSION=req_94aa4c4de7909a33aae5ecb6',flush=True);print('START_NS='+str(time.time_ns()),flush=True);time.sleep(7);subprocess.run(['git','rev-parse','HEAD'],check=True);subprocess.run(['git','status','--short'],check=True);print('END_NS='+str(time.time_ns()),flush=True)"
+    ],
+    "timeout_s": 15,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Fresh main Manifest fcd38e3, #17 live issue, #10 Current and latest comment6129868412, docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md (709e8f0), docs/SERVER_CORE_DESIGN.md section16.11 and section17, committed operations/github-project-bounded-host.json; branch main verified 543e135a35e180f1367dd7b553521d26483d05cb. This is fresh independent native CHAT A and limited to isolated read-only dev.job."
+  }
+}
