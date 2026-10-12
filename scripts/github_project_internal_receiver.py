@@ -17,6 +17,7 @@ from github_project_control import (
     gh_run,
     load_json,
     parse_json,
+    project_control_lock,
     validate_contract,
     validate_request,
 )
@@ -128,6 +129,86 @@ def execution_status(code):
     return 500
 
 
+REQUEST_HISTORY_QUERY = """query($owner: String!, $name: String!, $number: Int!, $cursor: String) {
+  repository(owner: $owner, name: $name) {
+    issue(number: $number) {
+      comments(first: 100, after: $cursor) {
+        nodes { body }
+        pageInfo { hasNextPage endCursor }
+      }
+    }
+  }
+}"""
+
+
+def claim_request_before_mutation(request, contract, *, gh_fn=gh_run):
+    """Durably claim the signed request id before any Project write.
+
+    Replay (including an ambiguous crash between claim and write) fails closed.
+    This uses the existing result Issue rather than introducing a second store.
+    It is NOT a cross-container mutex or a recovery mechanism.
+    """
+    sink = contract["internal_event_transport"]["result_sink"]
+    repository = sink["repository"]
+    owner, name = repository.split("/", 1)
+    issue_number = int(sink["issue_number"])
+    intent_marker = f"<!-- gace-project-control-intent:{request['id']} -->"
+    result_marker = f"<!-- gace-project-control-result:{request['id']} -->"
+    cursor = None
+    for _page in range(100):
+        args = [
+            "api", "graphql", "-f", "query=" + REQUEST_HISTORY_QUERY,
+            "-f", "owner=" + owner, "-f", "name=" + name,
+            "-F", "number=" + str(issue_number),
+        ]
+        if cursor is not None:
+            args.extend(["-f", "cursor=" + cursor])
+        raw = gh_fn(args, contract)
+        data = parse_json(raw, "REQUEST_HISTORY_JSON_INVALID")
+        try:
+            connection = data["data"]["repository"]["issue"]["comments"]
+            nodes = connection["nodes"]
+            page = connection["pageInfo"]
+            more = page["hasNextPage"]
+            next_cursor = page["endCursor"]
+        except (TypeError, KeyError):
+            fail("REQUEST_HISTORY_INVALID", 503)
+        if not isinstance(nodes, list) or not isinstance(more, bool):
+            fail("REQUEST_HISTORY_INVALID", 503)
+        for node in nodes:
+            if not isinstance(node, dict) or not isinstance(node.get("body"), str):
+                fail("REQUEST_HISTORY_INVALID", 503)
+            body = node["body"]
+            if intent_marker in body or result_marker in body:
+                fail("REQUEST_REPLAY_OR_IN_DOUBT", 409)
+        if not more:
+            break
+        if not isinstance(next_cursor, str) or not next_cursor or next_cursor == cursor:
+            fail("REQUEST_HISTORY_PAGINATION_INVALID", 503)
+        cursor = next_cursor
+    else:
+        fail("REQUEST_HISTORY_LIMIT_EXCEEDED", 503)
+
+    digest = hashlib.sha256(json.dumps(
+        request, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")).hexdigest()
+    body = "\n".join([
+        intent_marker,
+        "G-ACE Project control intent (written BEFORE Project mutation).",
+        "",
+        f"- REQUEST_ID: {request['id']}",
+        f"- REQUEST_SHA256: {digest}",
+        "- STATE: INTENT_LOGGED (may require reconciliation after interrupted execution)",
+    ])
+    # An ambiguous POST error must not cause a blind retry of Project mutation.
+    # The next delivery searches all history and fails closed if POST persisted.
+    gh_fn(
+        ["api", f"repos/{repository}/issues/{issue_number}/comments", "-f", "body=" + body],
+        contract,
+    )
+    return "INTENT_LOGGED"
+
+
 def publish_result_comment(request, result, contract, *, gh_fn=gh_run):
     sink = contract["internal_event_transport"]["result_sink"]
     repository = sink["repository"]
@@ -180,6 +261,7 @@ def make_handler(
     secret=None,
     execute_fn=execute,
     publish_fn=publish_result_comment,
+    claim_fn=claim_request_before_mutation,
     now_fn=time.time,
 ):
     class Handler(BaseHTTPRequestHandler):
@@ -227,8 +309,13 @@ def make_handler(
                 ))
                 verify_delivery(headers, body, secret=secret, now=now_fn(), tolerance_seconds=tolerance)
                 request = parse_request_body(body, contract)
-                result = execute_fn(request, contract)
-                evidence = publish_fn(request, result, contract)
+                # Serialize mutation AND its result publication with CLI on the
+                # container-local lock path. Host CLI on another filesystem
+                # does not share that lock; this is not durable deduplication.
+                with project_control_lock():
+                    claim_fn(request, contract)
+                    result = execute_fn(request, contract)
+                    evidence = publish_fn(request, result, contract)
                 self.send_json(
                     200,
                     {
