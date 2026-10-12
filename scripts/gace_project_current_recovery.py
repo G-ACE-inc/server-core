@@ -5,6 +5,7 @@ This inventory is evidence for a CHAT planner, NEVER authorization to mutate.
 Uses the existing authenticated gh CLI; no workflow, token or state store.
 """
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -39,6 +40,18 @@ def gh_graphql(query, variables):
         raise RuntimeError("GRAPHQL_ERRORS")
     return data["data"]
 
+def gh_issue(repo, number):
+    p = subprocess.run(["gh", "api", f"repos/{repo}/issues/{number}"], capture_output=True, text=True, timeout=60, check=False)
+    if p.returncode:
+        raise RuntimeError("ISSUE_CURRENT_READ_FAILED")
+    try:
+        doc = json.loads(p.stdout)
+    except ValueError as exc:
+        raise RuntimeError("ISSUE_CURRENT_INVALID") from exc
+    if not isinstance(doc, dict):
+        raise RuntimeError("ISSUE_CURRENT_INVALID")
+    return doc
+
 def issue_fields(item):
     result = {}
     for node in ((item.get("fieldValues") or {}).get("nodes") or []):
@@ -50,7 +63,7 @@ def issue_fields(item):
                 result[name] = value.strip()
     return result
 
-def recover(project_id, fetch=gh_graphql):
+def recover(project_id, fetch=gh_graphql, fetch_issue=None):
     if not project_id or not re.fullmatch(r"PVT_[A-Za-z0-9_-]+", project_id):
         raise ValueError("PROJECT_ID_INVALID")
     seen_ids, rows, cursor = set(), [], None
@@ -72,8 +85,19 @@ def recover(project_id, fetch=gh_graphql):
             if not match:
                 raise RuntimeError("REGISTERED_ISSUE_URL_INVALID")
             fields = issue_fields(item)
+            current = None
+            if fetch_issue is not None:
+                current = fetch_issue(match.group(1)+"/"+match.group(2), int(match.group(3)))
+                if (not isinstance(current, dict) or current.get("html_url") != url
+                        or "pull_request" in current or current.get("state") not in ("open", "closed")
+                        or not isinstance(current.get("body"), str)):
+                    raise RuntimeError("ISSUE_CURRENT_IDENTITY_INVALID")
             missing = [f for f in FIELDS if not fields.get(f)]
             state = content.get("state")
+            if current is not None and current["state"].upper() != state:
+                # ProjectV2's cached Issue state must not silently overwrite owning Current.
+                state = current["state"].upper()
+                fields["Project state mismatch"] = "YES"
             if state not in ("OPEN", "CLOSED"):
                 raise RuntimeError("ISSUE_STATE_UNVERIFIED")
             # Only a complete owner+CU pair can be considered for dispatch;
@@ -85,6 +109,8 @@ def recover(project_id, fetch=gh_graphql):
                          "repository":match.group(1)+"/"+match.group(2),
                          "issue_number":int(match.group(3)),
                          "state":state, "fields":fields, "missing_fields":missing,
+                         "current_updated_at":current.get("updated_at") if current else None,
+                         "current_body_sha256":hashlib.sha256(current["body"].encode()).hexdigest() if current else None,
                          "recovery":verdict})
         page = items.get("pageInfo") or {}
         if not page.get("hasNextPage"):
@@ -105,7 +131,7 @@ def main(argv=None):
     parser.add_argument("--project-id",required=True)
     args=parser.parse_args(argv)
     try:
-        print(json.dumps(recover(args.project_id),ensure_ascii=False,sort_keys=True))
+        print(json.dumps(recover(args.project_id,fetch_issue=gh_issue),ensure_ascii=False,sort_keys=True))
         return 0
     except (ValueError,RuntimeError,subprocess.TimeoutExpired,OSError) as exc:
         print("PROJECT_RECOVERY_FAILED="+str(exc),file=sys.stderr)
