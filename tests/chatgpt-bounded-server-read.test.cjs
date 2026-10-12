@@ -534,3 +534,9 @@ test("dev.job dispatch accepts optional independent repo_sha and rejects malform
   assert.throws(()=>d.validateBoundedHostRequest({...base,repo_sha:"bad"},contract),/BOUNDED_HOST_REPO_SHA_INVALID/);
   assert.throws(()=>d.validateBoundedHostRequest({...base,repo_sha:"c".repeat(40),unauthorized:true},contract),/BOUNDED_HOST_KEYS_INVALID/);
 });
+
+test("Push request concurrency uses the supported commit message marker",()=>{
+  assert.ok(wf.includes("contains(github.event.head_commit.message, '[isolated-host-request]') && github.sha || 'legacy'"));
+  assert.ok(!wf.includes("github.event.head_commit.added"));
+  assert.match(wf,/cancel-in-progress: false/);
+});

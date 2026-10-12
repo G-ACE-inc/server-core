@@ -19,8 +19,9 @@ permissions:
   issues: read
 
 concurrency:
-  # Preserve the legacy singleton lane while keeping independent request commits distinct.
-  group: chatgpt-live-dogfood-${{ contains(join(github.event.head_commit.added, ','), '.github/chat-host-requests/req_') && github.sha || 'legacy' }}
+  # Push workflow payloads omit changed-file lists; use the documented request commit marker.
+  # Preserve the legacy singleton lane while keeping marked independent commits distinct.
+  group: chatgpt-live-dogfood-${{ contains(github.event.head_commit.message, '[isolated-host-request]') && github.sha || 'legacy' }}
   cancel-in-progress: false
 
 jobs:
