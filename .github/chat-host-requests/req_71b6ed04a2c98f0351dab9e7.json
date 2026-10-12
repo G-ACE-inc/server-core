@@ -1,0 +1,37 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Tool B CHAT-origin fresh=true reset after expected exit3; result must show clean HEAD and exit0.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "9d034d09d78522df04ce63a4d875dbb2e912f7cc",
+    "repository": "G-ACE-inc/server-core",
+    "session": "req_c927de51a8b0f43629ec13d7",
+    "argv": [
+      "git",
+      "status",
+      "--short"
+    ],
+    "timeout_s": 10,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "CHAT-origin success receipts #6115595225,#6115599964 and deliberately failed exit3 receipt #6115604555; now same-session fresh reset at verified Host SHA."
+  }
+}
