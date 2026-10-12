@@ -26,6 +26,69 @@ DESIGN_STATUSES = {
 ADOPTIONS = {"ADOPTED_MAIN", "PROPOSED_PR", "UNKNOWN"}
 IMPLEMENTATION_CONTEXTS = {"proposed_pr_staging", "adopted_main_implementation", "not_applicable"}
 
+DESIGN_BASELINE_SECTIONS = {
+    "work_routine_section_6": (
+        "### Design-alignment checks within the existing Work Routine",
+        "## 7. Documentation Gate",
+    ),
+}
+
+
+def extract_marked_section(text: str, start_marker: str, end_marker: str) -> str:
+    start = text.find(start_marker)
+    if start < 0:
+        raise ValueError("section_start_missing")
+    end = text.find(end_marker, start)
+    if end < 0:
+        raise ValueError("section_end_missing")
+    return text[start:end].strip()
+
+
+def design_baseline_hash_required(state: dict) -> bool:
+    if os.environ.get("GACE_WORK_ROUTINE_REQUIRE_CONTENT_HASH") != "1":
+        return False
+    if state.get("mutation_scope") == "read_only":
+        return False
+    if state.get("design_status") == "DESIGN_VERIFIED":
+        return True
+    if state.get("source_design_aligned") is True:
+        return True
+    return False
+
+
+def verify_design_baseline_content_hashes(state: dict) -> str:
+    if not design_baseline_hash_required(state):
+        return "PASS"
+    for key in (
+        "design_baseline_path",
+        "design_baseline_section_id",
+        "design_baseline_section_sha256",
+    ):
+        if state.get(key) in (None, ""):
+            return "DESIGN_BASELINE_EVIDENCE_HASH_REQUIRED"
+    section_id = state.get("design_baseline_section_id")
+    markers = DESIGN_BASELINE_SECTIONS.get(section_id)
+    if not markers:
+        return "DESIGN_BASELINE_SECTION_ID_INVALID"
+    root_raw = os.environ.get("GACE_WORK_ROUTINE_REPO_ROOT", "").strip()
+    if not root_raw:
+        return "DESIGN_BASELINE_REPO_ROOT_REQUIRED"
+    rel = state.get("design_baseline_path")
+    if not isinstance(rel, str) or ".." in rel or rel.startswith("/"):
+        return "DESIGN_BASELINE_PATH_INVALID"
+    design_path = Path(root_raw) / rel
+    if not design_path.is_file():
+        return "DESIGN_BASELINE_FILE_MISSING"
+    try:
+        doc = design_path.read_text(encoding="utf-8")
+        section = extract_marked_section(doc, markers[0], markers[1])
+    except (OSError, ValueError):
+        return "DESIGN_BASELINE_SECTION_UNREADABLE"
+    actual = sha256_text(section)
+    if actual != state.get("design_baseline_section_sha256"):
+        return "DESIGN_BASELINE_HASH_MISMATCH"
+    return "PASS"
+
 
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -120,6 +183,10 @@ def evaluate_design(state: dict) -> str:
         return "MUTATION_SCOPE_INVALID"
     if scope == "read_only":
         return "PASS"
+
+    baseline = verify_design_baseline_content_hashes(state)
+    if baseline != "PASS":
+        return baseline
 
     status = state.get("design_status")
     if status not in DESIGN_STATUSES:
