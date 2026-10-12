@@ -337,6 +337,34 @@ class DesignBaselineHashTests(unittest.TestCase):
                 with patch.object(gate, "manifest_rule_issue", return_value=16):
                     self.assertEqual(gate.evaluate_turn(state), "DESIGN_BASELINE_HASH_MISMATCH")
 
+    def test_strict_rejects_noncanonical_design_path(self):
+        import os
+        from unittest.mock import patch
+        root = Path(__file__).resolve().parents[1]
+        state = attach_work_routine_design_baseline(base_rule(), root)
+        state["design_baseline_path"] = "docs/alternate.md"
+        with patch.dict(os.environ, {
+            "GACE_WORK_ROUTINE_REQUIRE_CONTENT_HASH": "1",
+            "GACE_WORK_ROUTINE_REPO_ROOT": str(root),
+        }):
+            self.assertEqual(
+                gate.verify_design_baseline_content_hashes(state),
+                "DESIGN_BASELINE_PATH_NOT_CANONICAL",
+            )
+
+    def test_emitter_rejects_alternate_baseline_path(self):
+        import importlib.util
+        from unittest.mock import patch
+        path = Path(__file__).with_name("gace_work_routine_turn_receipt.py")
+        spec = importlib.util.spec_from_file_location("emitter_path_test", path)
+        emitter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(emitter)
+        with self.assertRaisesRegex(RuntimeError, "DESIGN_BASELINE_PATH_NOT_CANONICAL"):
+            emitter.design_baseline_section_fields(
+                Path(__file__).resolve().parents[1],
+                "work_routine_section_6", "docs/alternate.md",
+            )
+
     def test_emitter_attaches_verified_section_for_design_verified(self):
         import importlib.util
         import tempfile

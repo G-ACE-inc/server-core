@@ -47,6 +47,8 @@ def _load_gate_module():
 def design_baseline_section_fields(repo_root: Path, section_id: str, rel_path: str) -> dict:
     gate = _load_gate_module()
     markers = gate.DESIGN_BASELINE_SECTIONS.get(section_id)
+    if section_id == "work_routine_section_6" and rel_path != gate.DESIGN_BASELINE_CANONICAL_PATH:
+        raise RuntimeError("DESIGN_BASELINE_PATH_NOT_CANONICAL")
     if not markers:
         raise RuntimeError("DESIGN_BASELINE_SECTION_ID_INVALID")
     design_path = repo_root / rel_path
