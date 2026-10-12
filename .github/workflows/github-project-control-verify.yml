@@ -31,6 +31,8 @@ jobs:
         run: |
           python3 -m py_compile scripts/github_project_control.py scripts/github_project_control_test.py scripts/github_project_request_from_comment.py scripts/github_project_request_from_comment_test.py scripts/github_project_internal_send.py scripts/github_project_internal_receiver.py scripts/github_project_internal_transport_test.py scripts/github_project_runtime_config_test.py
           python3 scripts/github_project_control_test.py
+          python3 -m py_compile scripts/gace_project_current_recovery.py scripts/gace_project_current_recovery_test.py
+          python3 -m unittest scripts/gace_project_current_recovery_test.py -v
           python3 scripts/github_project_request_from_comment_test.py
           python3 scripts/github_project_internal_transport_test.py
           python3 scripts/github_project_runtime_config_test.py
