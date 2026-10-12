@@ -1,0 +1,37 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Correct escaped newline formatting in isolated docs patch then return complete git diff",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "1d1b1f0711e615f1ba2a0217a7c4665048abb8c2",
+    "repository": "G-ACE-inc/server-core",
+    "session": "req_1cb77fd6e398d8e9b505311d",
+    "argv": [
+      "python3",
+      "-c",
+      "from pathlib import Path; import subprocess; p=Path('docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md');s=p.read_text();s=s.replace(chr(92)+'n**CHAT-origin',chr(10)+'**CHAT-origin').replace('promotion.'+chr(92)+'n','promotion.'+chr(10));p.write_text(s);subprocess.run(['git','diff','--','docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md'],check=True)"
+    ],
+    "timeout_s": 15,
+    "fresh": false
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Signed CHAT Docker diff #6119456520 exposed literal backslash-n; correct formatting before authorized Github PR promotion."
+  }
+}
