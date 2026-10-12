@@ -977,3 +977,11 @@ Live Host use hit `DEV_JOB_DENIED_SESSION_LIMIT_REACHED` on a single day: every 
 **Change:** Set `purpose_verified=True` when emitting a receipt; omit `source_design_aligned` unless explicitly true/false; CLI `--source-design-aligned` defaults to unset (not false). Always run design evaluation on START in `github_project_chat_turn_gate.py` (defaults remain routine_fix / DESIGN_NOT_APPLICABLE). Added `scripts/gace_work_routine_turn_receipt_test.py`.
 
 **Boundary unchanged:** Native ordinary ChatGPT answer pre-send interception remains **NOT_IMPLEMENTED**. This fixes only the bounded supplied-receipt consumer used when operators opt in via `GACE_WORK_ROUTINE_TURN`.
+
+### 2026-10-13 — GPT CHAT development entry simplification (Master decision)
+
+**Requirement:** Only `docs/G_ACE_WORKSPACE.md` §6 Work Routine governs ordinary CHAT development progression; `docs/MASTER_TERMINAL_COMMAND.md` governs any Master-facing terminal command. Maximize meaningful work within a turn; ask Master for an actual missing action rather than reporting after each CI/Issue checkpoint.
+
+**Delta:** `docs/LOAD_SCOPE.md` routes CHAT to the existing §6 instead of requiring full Rule #17 every turn. The §6 development pre-dispatch no longer repeats a separate full Rule Plane/START/STOP prose sequence. GitHub Project Current remains the authoritative *task data*, not another development routine; SERVER_AI bootstrap, authenticated Host/CI guards, and approval boundaries remain in effect. Legacy Rule #17 source is preserved for migration history.
+
+**Proof boundary:** This is an instruction-loading and documentation change, NOT a native ChatGPT response-final interceptor. CI checks repository compatibility; actual behavior must be assessed in ordinary Chat sessions. No additional workflow, receipt gate, MCP, token or Host mutation.
