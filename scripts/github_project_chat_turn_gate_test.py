@@ -13,11 +13,13 @@ class DecisionTests(unittest.TestCase):
         good = dict(phase="START", profile="GPT_CHAT",
                     manifest_verified=True, rule_full_read=True,
                     current_verified=True, purpose_verified=True,
-                    cu_verified=True, source_evidence="github://run/1")
+                    cu_verified=True, purpose_cu_aligned=True, source_evidence="github://run/1")
         self.assertEqual(gate.evaluate(good), "PASS")
         for key in ("manifest_verified", "rule_full_read", "current_verified", "purpose_verified", "cu_verified"):
             self.assertNotEqual(gate.evaluate({**good, key: False}), "PASS")
         self.assertEqual(gate.evaluate({**good, "profile": "SERVER_AI"}), "START_PROFILE_MISMATCH")
+        self.assertEqual(gate.evaluate({k: v for k, v in good.items() if k != "purpose_cu_aligned"}), "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED")
+        self.assertEqual(gate.evaluate({**good, "purpose_cu_aligned": False}), "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED")
 
     def test_failure_replan(self):
         good = dict(phase="FAILURE", failed_step="Host read", failure_evidence="run/42",
