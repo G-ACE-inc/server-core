@@ -1,0 +1,29 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Tool B reflect preflight: actual Host git status without changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_status",
+    "expected_sha": "1d1b1f0711e615f1ba2a0217a7c4665048abb8c2"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "source_evidence": "Rule #17 and Control #10; PR154 merged but not Host; last verified Host #6120134934. Source reflect preflight requires clean checkout, read-only actual project.git_status."
+  }
+}
