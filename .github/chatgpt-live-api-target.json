@@ -1,9 +1,9 @@
 {
   "base_url": "https://debugai.asterav8.jp",
   "mode": "readonly",
-  "run_id": "",
+  "run_id": "run_mv5agtgf_96b706c70a",
   "repo": "/workspace/debug-ai",
-  "request": "Read-only G3 runtime state PASS: Actions 38264388881; returned to idle",
+  "request": "Read-only stored DebugAI G3 native run status and inspect. No restart or model calls.",
   "gitops_request": {
     "enabled": false
   },
@@ -14,5 +14,21 @@
     "enabled": false,
     "command_id": "project.git_head",
     "expected_sha": "GITHUB_WORKFLOW_SHA"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
   }
 }
