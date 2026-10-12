@@ -1,0 +1,28 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Tool B: verify current CHAT can independently call existing shared bounded Host while other CHAT owns Work Routine; read-only project.git_head. No mutation of Host source/registry or ZERO.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_head",
+    "expected_sha": "1d1b1f0711e615f1ba2a0217a7c4665048abb8c2"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Current #10 and #17 rehydrated; evidence run 38215632135 and Host receipt #6119402255; isolated new commit-local request; read-only no Host mutation; historical Host SHA may have advanced and will fail closed."
+  }
+}
