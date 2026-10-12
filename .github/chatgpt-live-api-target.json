@@ -25,10 +25,10 @@
     "purpose_verified": true,
     "cu_verified": true,
     "purpose_cu_aligned": true,
-    "mutation_scope": "routine_fix",
+    "mutation_scope": "read_only",
     "design_status": "DESIGN_NOT_APPLICABLE",
     "design_adoption": "ADOPTED_MAIN",
-    "implementation_context": "read_only_runtimestate",
+    "implementation_context": "not_applicable",
     "source_design_aligned": true,
     "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
   }
