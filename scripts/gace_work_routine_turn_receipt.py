@@ -10,6 +10,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+import importlib.util
+
 
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -32,6 +34,33 @@ def gh_issue_body(repo: str, issue_number: int) -> str:
     return proc.stdout
 
 
+def _load_gate_module():
+    gate_path = Path(__file__).with_name("work_routine_design_entry_gate.py")
+    spec = importlib.util.spec_from_file_location("work_routine_design_entry_gate", gate_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("DESIGN_GATE_UNAVAILABLE")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def design_baseline_section_fields(repo_root: Path, section_id: str, rel_path: str) -> dict:
+    gate = _load_gate_module()
+    markers = gate.DESIGN_BASELINE_SECTIONS.get(section_id)
+    if not markers:
+        raise RuntimeError("DESIGN_BASELINE_SECTION_ID_INVALID")
+    design_path = repo_root / rel_path
+    if not design_path.is_file():
+        raise RuntimeError("DESIGN_BASELINE_FILE_MISSING")
+    doc = design_path.read_text(encoding="utf-8")
+    section = gate.extract_marked_section(doc, markers[0], markers[1])
+    return {
+        "design_baseline_path": rel_path,
+        "design_baseline_section_id": section_id,
+        "design_baseline_section_sha256": sha256_text(section),
+    }
+
+
 def load_manifest_rule_issue(manifest_path: Path, profile: str) -> int:
     doc = json.loads(manifest_path.read_text(encoding="utf-8"))
     key = "server_ai" if profile == "SERVER_AI" else "gpt_chat"
@@ -52,6 +81,8 @@ def build_receipt(
     design_status: str,
     purpose_cu_aligned: bool,
     source_design_aligned: bool = False,
+    design_baseline_section_id: str | None = None,
+    design_baseline_path: str = "docs/G_ACE_WORKSPACE.md",
 ) -> dict:
     manifest_path = repo_root / "operations" / "github-project-rule-plane.json"
     if not manifest_path.is_file():
@@ -60,7 +91,7 @@ def build_receipt(
     manifest_sha = sha256_file(manifest_path)
     rule_body = gh_issue_body(control_repo, rule_issue)
     current_body = gh_issue_body(control_repo, current_issue)
-    return {
+    receipt = {
         "recorded_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "rule_plane_profile": profile,
         "manifest_verified": True,
@@ -82,6 +113,15 @@ def build_receipt(
         "current_issue": current_issue,
         "current_body_sha256": sha256_text(current_body),
     }
+    if design_baseline_section_id:
+        receipt.update(
+            design_baseline_section_fields(
+                repo_root, design_baseline_section_id, design_baseline_path
+            )
+        )
+    elif design_status == "DESIGN_VERIFIED" or source_design_aligned:
+        raise RuntimeError("DESIGN_BASELINE_SECTION_REQUIRED")
+    return receipt
 
 
 def main() -> int:
@@ -95,6 +135,8 @@ def main() -> int:
     ap.add_argument("--design-status", default="DESIGN_NOT_VERIFIED")
     ap.add_argument("--purpose-cu-aligned", choices=("true", "false"), default="true")
     ap.add_argument("--source-design-aligned", choices=("true", "false"), default="false")
+    ap.add_argument("--design-baseline-section", default="")
+    ap.add_argument("--design-baseline-path", default="docs/G_ACE_WORKSPACE.md")
     args = ap.parse_args()
     try:
         receipt = build_receipt(
@@ -106,6 +148,8 @@ def main() -> int:
             design_status=args.design_status,
             purpose_cu_aligned=args.purpose_cu_aligned == "true",
             source_design_aligned=args.source_design_aligned == "true",
+            design_baseline_section_id=(args.design_baseline_section or None),
+            design_baseline_path=args.design_baseline_path,
         )
         args.output.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print("GACE_WORK_ROUTINE_TURN_RECEIPT=" + str(args.output))
