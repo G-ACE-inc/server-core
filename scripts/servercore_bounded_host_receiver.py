@@ -274,7 +274,8 @@ def dispatch_dev_job(request, root, socket_path=None):
     if reply.get("request_id") != request["id"] or reply.get("session") != request["session"]:
         fail("DEV_JOB_RESULT_MISMATCH", 503)
     keep = ("session", "repository", "project_item", "base_sha", "workspace_head", "job_exit", "timed_out",
-            "output_limit_exceeded", "workspace_budget_exceeded", "stdout", "stderr", "changed", "diff_stat",
+            "output_limit_exceeded", "workspace_budget_exceeded", "stdout_truncated", "stderr_truncated",
+            "stdout", "stderr", "changed", "diff_stat",
             "duration_ms", "replayed")
     return {**{k: reply.get(k) for k in keep}, "command_id": request["command_id"], "source_sha": sha,
             "read_only": False}
@@ -283,7 +284,8 @@ def dispatch_dev_job(request, root, socket_path=None):
 def dev_job_record_fields(result):
     """Bounded sink fields: first stdout line is a compact metadata record, then job stdout."""
     meta = {k: result.get(k) for k in ("session", "base_sha", "workspace_head", "job_exit", "timed_out",
-                                       "output_limit_exceeded", "workspace_budget_exceeded", "diff_stat",
+                                       "output_limit_exceeded", "workspace_budget_exceeded", "stdout_truncated", "stderr_truncated",
+                                       "diff_stat",
                                        "duration_ms", "replayed")}
     meta["changed"] = list(result.get("changed") or [])[:10]
     job_exit = result.get("job_exit")
