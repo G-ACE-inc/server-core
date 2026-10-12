@@ -294,6 +294,12 @@ def check(
         )
 
     if state is BindingState.ABSENT:
+        if os.environ.get("GACE_WORK_ROUTINE_REQUIRED", "").strip() == "1":
+            return emit(
+                "DENY",
+                "WORK_ROUTINE_MUTATION_BINDING_REQUIRED",
+                current_mission_verified="NO",
+            )
         return emit(
             "ALLOW",
             "BASELINE_REPOSITORY_VERIFIED",
