@@ -145,6 +145,46 @@ class DockerLogsWriterTests(unittest.TestCase):
             with self.assertRaises(logs.LogsError):
                 logs.registered_containers(Path(tmp))
 
+
+    def test_registered_project_compose_container_without_per_container_registration(self):
+        request = {"schema": logs.SCHEMA, "id": RID, "container": "tgserver-tgs-1", "tail": 10}
+        root = frozenset(["/home/admin1/projects/TGserver"])
+        seen = []
+        def inspect(name, roots):
+            seen.append((name, roots))
+            return name == "tgserver-tgs-1"
+        self.assertEqual(logs.validate(request, frozenset(), root, inspector=inspect)["tail"], 10)
+        self.assertEqual(seen, [("tgserver-tgs-1", root)])
+        with self.assertRaisesRegex(logs.LogsError, "CONTAINER_NOT_REGISTERED"):
+            logs.validate({**request, "container": "unknown"}, frozenset(), root, inspector=lambda n, r: False)
+
+    def test_project_roots_only_from_registered_enabled_entries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            op = Path(tmp) / "operations"
+            op.mkdir()
+            (op / "master-internal-repositories.json").write_text(json.dumps({"repositories": [
+                {"enabled": True, "revoked": False, "server_project_path": "/home/admin1/projects/TGserver"},
+                {"enabled": False, "revoked": False, "server_project_path": "/home/admin1/projects/disabled"},
+                {"enabled": True, "revoked": False, "server_project_path": "/home/admin1/projects/../escape"}
+            ]}))
+            self.assertEqual(logs.registered_project_roots(Path(tmp)), frozenset(["/home/admin1/projects/TGserver"]))
+
+    def test_compose_labels_must_match_project_root_exactly(self):
+        class Done:
+            returncode = 0
+            stdout = "/home/admin1/projects/TGserver\n"
+            stderr = ""
+        calls = []
+        def run(argv, **kwargs):
+            calls.append(argv)
+            return Done()
+        self.assertTrue(logs.project_container_admitted("tgserver-tgs-1",
+            frozenset(["/home/admin1/projects/TGserver"]), runner=run, binary="/usr/bin/docker"))
+        self.assertEqual(calls[0][1], "inspect")
+        with self.assertRaisesRegex(logs.LogsError, "CONTAINER_NOT_REGISTERED"):
+            logs.project_container_admitted("tgserver-tgs-1",
+                frozenset(["/home/admin1/projects/other"]), runner=run, binary="/usr/bin/docker")
+
     def test_fixed_argv_and_bounds(self):
         seen = {}
 

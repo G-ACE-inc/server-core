@@ -62,13 +62,62 @@ def registered_containers(root=ROOT):
     return frozenset(names)
 
 
-def validate(value, registered):
+
+def registered_project_roots(root=ROOT, git_reader=git):
+    """Reuse committed Project #1 repository registrations, never a per-container ACL."""
+    if root == ROOT:
+        result = git_reader("show", "HEAD:operations/master-internal-repositories.json")
+        if result.returncode:
+            raise LogsError("PROJECT_REGISTRY_UNAVAILABLE")
+        data = result.stdout
+    else:
+        path = Path(root) / "operations/master-internal-repositories.json"
+        try:
+            data = path.read_text(encoding="utf-8")
+        except OSError:
+            raise LogsError("PROJECT_REGISTRY_UNAVAILABLE") from None
+    try:
+        entries = json.loads(data)["repositories"]
+    except (ValueError, KeyError, TypeError):
+        raise LogsError("PROJECT_REGISTRY_INVALID") from None
+    roots = set()
+    for entry in entries:
+        if not isinstance(entry, dict) or entry.get("enabled") is not True or entry.get("revoked") is not False:
+            continue
+        path = entry.get("server_project_path")
+        if isinstance(path, str) and re.fullmatch(r"/home/admin1/projects/[A-Za-z0-9_.-]+", path):
+            roots.add(path)
+    return frozenset(roots)
+
+
+def project_container_admitted(container, roots, *, runner=subprocess.run, binary=None):
+    """Only Compose containers owned by a registered checkout may be read."""
+    docker = binary or docker_binary()
+    try:
+        result = runner([docker, "inspect", "--format",
+            '{{index .Config.Labels "com.docker.compose.project.working_dir"}}', container],
+            capture_output=True, text=True, timeout=10, check=False,
+            env={"PATH": "/usr/bin:/bin", "HOME": "/home/admin1"})
+    except (OSError, subprocess.TimeoutExpired):
+        raise LogsError("DOCKER_INSPECT_FAILED") from None
+    if result.returncode:
+        raise LogsError("CONTAINER_NOT_REGISTERED")
+    project_dir = result.stdout.strip()
+    if project_dir not in roots:
+        raise LogsError("CONTAINER_NOT_REGISTERED")
+    return True
+
+
+def validate(value, registered, project_roots=None, inspector=project_container_admitted):
     if not isinstance(value, dict) or set(value) != KEYS or value.get("schema") != SCHEMA:
         raise LogsError("REQUEST_SHAPE_INVALID")
     if not isinstance(value["id"], str) or not REQ_ID.fullmatch(value["id"]):
         raise LogsError("REQUEST_ID_INVALID")
-    if not isinstance(value["container"], str) or value["container"] not in registered:
+    if not isinstance(value["container"], str) or not CONTAINER.fullmatch(value["container"]):
         raise LogsError("CONTAINER_NOT_REGISTERED")
+    if value["container"] not in registered:
+        if project_roots is None or not inspector(value["container"], project_roots):
+            raise LogsError("CONTAINER_NOT_REGISTERED")
     if type(value["tail"]) is not int or not 1 <= value["tail"] <= MAX_TAIL:
         raise LogsError("TAIL_INVALID")
     return value
@@ -103,7 +152,7 @@ class Handler(socketserver.StreamRequestHandler):
             raw = self.rfile.readline(MAX_REQUEST + 1)
             if not raw or len(raw) > MAX_REQUEST or not raw.endswith(b"\n"):
                 raise LogsError("REQUEST_SIZE_DENIED")
-            request = validate(json.loads(raw.decode("utf-8")), registered_containers())
+            request = validate(json.loads(raw.decode("utf-8")), registered_containers(), registered_project_roots())
             reply = {"ok": True, "request_id": request["id"], **read_logs(request)}
         except LogsError as exc:
             reply = {"ok": False, "error": str(exc)[:80]}
