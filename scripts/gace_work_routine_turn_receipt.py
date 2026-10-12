@@ -134,8 +134,13 @@ def build_receipt(
     manifest_sha = sha256_file(manifest_path)
     rule_body = gh_issue_body(control_repo, rule_issue)
     current_body = gh_issue_body(control_repo, current_issue)
-    purpose_marker = "## Fixed Project purpose (verbatim)"
-    purpose_section = current_body.split(purpose_marker, 1)[1].split("\n## ", 1)[0].strip() if purpose_marker in current_body else ""
+    # #40 uses the explicit fixed-purpose heading, whereas canonical Control #15
+    # uses a regular Purpose heading. This confirms presence, NOT CU alignment.
+    purpose_section = ""
+    for purpose_marker in ("## Fixed Project purpose (verbatim)", "## Purpose"):
+        if purpose_marker in current_body.splitlines():
+            purpose_section = current_body.split(purpose_marker + "\n", 1)[1].split("\n## ", 1)[0].strip()
+            break
     purpose_verified = bool(purpose_section and not purpose_section.startswith("#"))
     receipt = {
         "recorded_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
