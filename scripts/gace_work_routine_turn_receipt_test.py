@@ -64,6 +64,27 @@ class TurnReceiptTests(unittest.TestCase):
         self.assertEqual(gate_mod.evaluate_turn(receipt), "PURPOSE_CU_MISMATCH")
 
 
+    def test_invalid_current_issue_rejected_before_fetch(self):
+        receipt_mod = load("receipt_bad_issue", MODULE)
+        with patch.object(receipt_mod, "gh_issue_body") as fetch:
+            with self.assertRaisesRegex(RuntimeError, "CURRENT_ISSUE_INVALID"):
+                receipt_mod.build_receipt(
+                    repo_root=Path(__file__).resolve().parents[1],
+                    profile="GPT_CHAT", control_repo="G-ACE-inc/server-core",
+                    current_issue=0, mutation_scope="routine_fix",
+                    design_status="DESIGN_NOT_APPLICABLE", purpose_cu_aligned=True,
+                    cu_verified=True,
+                )
+            fetch.assert_not_called()
+
+    def test_cli_requires_explicit_current_owner(self):
+        receipt_mod = load("receipt_cli", MODULE)
+        import sys
+        with patch.object(sys, "argv", ["receipt", "--output", "/tmp/unused-receipt.json"]):
+            with self.assertRaises(SystemExit) as err:
+                receipt_mod.main()
+        self.assertEqual(err.exception.code, 2)
+
     def test_missing_cu_attestation_is_not_automatically_verified(self):
         receipt_mod = load("receipt_missing_cu", MODULE)
         gate_mod = load("gate_missing_cu", GATE)

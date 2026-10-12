@@ -90,6 +90,8 @@ def build_receipt(
     manifest_path = repo_root / "operations" / "github-project-rule-plane.json"
     if not manifest_path.is_file():
         raise RuntimeError("MANIFEST_NOT_FOUND")
+    if current_issue < 1:
+        raise RuntimeError("CURRENT_ISSUE_INVALID")
     rule_issue = load_manifest_rule_issue(manifest_path, profile)
     manifest_sha = sha256_file(manifest_path)
     rule_body = gh_issue_body(control_repo, rule_issue)
@@ -142,7 +144,7 @@ def main() -> int:
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--profile", choices=("SERVER_AI", "GPT_CHAT"), default="SERVER_AI")
     ap.add_argument("--control-repo", default="G-ACE-inc/server-core")
-    ap.add_argument("--current-issue", type=int, default=40)
+    ap.add_argument("--current-issue", type=int, required=True, help="Explicit owning Current issue; never default to CU40")
     ap.add_argument("--mutation-scope", default="routine_fix")
     ap.add_argument("--design-status", default="DESIGN_NOT_VERIFIED")
     ap.add_argument("--purpose-cu-aligned", choices=("true", "false"), default=None)
