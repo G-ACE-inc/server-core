@@ -47,6 +47,7 @@ CAPTURE_CAP = 256 * 1024
 RESULT_CHARS = 8000
 MAX_SESSIONS = 8
 SESSION_TTL_SECONDS = 24 * 3600
+SESSION_EVICT_IDLE_SECONDS = 3600  # at the cap only sessions idle this long may be reclaimed (active work is protected)
 WORKSPACE_BYTES = 200 * 1024 * 1024
 DOCKER_CANDIDATES = ("/usr/bin/docker", "/usr/local/bin/docker")
 CLEAN_ENV = {"PATH": "/usr/bin:/bin", "HOME": "/home/admin1"}
@@ -256,13 +257,43 @@ def workspace_bytes(path):
     return total
 
 
-def prune_sessions(base, keep, now=None):
+def _session_lock_free(state_dir, name):
+    """True when no running job holds the session lock (a missing lock file means nothing is running)."""
+    if state_dir is None:
+        return True
+    lock_path = Path(state_dir) / (name + ".lock")
+    if not lock_path.is_file() or lock_path.is_symlink():
+        return True
+    try:
+        fd = os.open(lock_path, os.O_RDWR | os.O_NOFOLLOW)
+    except OSError:
+        return False
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        return False
+    finally:
+        os.close(fd)
+    return True
+
+
+def prune_sessions(base, keep, now=None, state_dir=None):
     now = time.time() if now is None else now
     entries = [p for p in Path(base).iterdir() if REQ_ID.fullmatch(p.name) and not p.is_symlink() and p.is_dir()]
     for path in entries:
         if path.name != keep and now - path.stat().st_mtime > SESSION_TTL_SECONDS:
             shutil.rmtree(path, ignore_errors=True)
-    live = [p for p in Path(base).iterdir() if REQ_ID.fullmatch(p.name) and p.is_dir() and p.name != keep]
+    live = sorted((p for p in Path(base).iterdir()
+                   if REQ_ID.fullmatch(p.name) and not p.is_symlink() and p.is_dir() and p.name != keep),
+                  key=lambda p: p.stat().st_mtime)
+    # At the cap, reclaim the least recently used IDLE sessions (oldest first, never a running one, never recent work)
+    # instead of blocking every new session until the 24 h TTL; the cap itself is unchanged.
+    for path in list(live):
+        if len(live) < MAX_SESSIONS:
+            break
+        if now - path.stat().st_mtime > SESSION_EVICT_IDLE_SECONDS and _session_lock_free(state_dir, path.name):
+            shutil.rmtree(path, ignore_errors=True)
+            live.remove(path)
     if len(live) >= MAX_SESSIONS:
         raise JobError("SESSION_LIMIT_REACHED")
 
@@ -324,10 +355,12 @@ def execute(request, entry, policy, registered_root, *, state_dir=STATE_DIR, bin
         base = workspace_base(registered_root)
         workspace = workspace_path(base, request["session"])
         meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.is_file() and workspace.exists() else None
+        if meta is not None:
+            os.utime(workspace)  # mark the session as recently used (idle clock for TTL and reclamation)
         if request["fresh"] or meta is None:
             if workspace.exists():
                 shutil.rmtree(workspace)
-            prune_sessions(base, request["session"])
+            prune_sessions(base, request["session"], state_dir=state_dir)
             clone(registered_root, workspace, request["expected_sha"])
             _write_private(meta_path, {"base_sha": request["expected_sha"], "repository": request["repository"]})
         elif meta.get("base_sha") != request["expected_sha"] or meta.get("repository") != request["repository"]:
