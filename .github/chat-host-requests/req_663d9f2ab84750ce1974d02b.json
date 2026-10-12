@@ -1,0 +1,37 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Tool B CHAT-origin deliberate failure test, expected exit 3 and durable terminal result; followed by clean fresh reset.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "9d034d09d78522df04ce63a4d875dbb2e912f7cc",
+    "repository": "G-ACE-inc/server-core",
+    "session": "req_c927de51a8b0f43629ec13d7",
+    "argv": [
+      "python3",
+      "-c",
+      "import sys; print('boom'); sys.exit(3)"
+    ],
+    "timeout_s": 10,
+    "fresh": false
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Read #17 Control #10 and two CHAT-origin Host PASS receipts #6115595225 and #6115599964, same session exact Host SHA; controlled failure is expected, then run fresh=true restoration."
+  }
+}
