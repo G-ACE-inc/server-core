@@ -100,6 +100,18 @@
         "root": "/home/admin1/server-core",
         "branch": "main",
         "project_item": "G-ACE-inc Project #1 / Control #10"
+      },
+      "seigo-gace/TGserver": {
+        "owner": "seigo-gace",
+        "root": "/home/admin1/projects/TGserver",
+        "branch": "main",
+        "project_item": "PVTI_lAHODOQFoM4BEJIIzg-lZHw"
+      },
+      "seigo-gace/debug-ai": {
+        "owner": "seigo-gace",
+        "root": "/home/admin1/projects/debug-ai",
+        "branch": "main",
+        "project_item": "PVTI_lAHODOQFoM4BEJIIzg-sWS8"
       }
     },
     "limits": {

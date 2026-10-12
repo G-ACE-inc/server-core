@@ -437,6 +437,32 @@ class ReceiverWiring(unittest.TestCase):
         self.assertEqual(result["source_sha"], request["expected_sha"])
         self.assertEqual(result["stdout"], "o")
 
+    def test_cross_repo_sha_is_independent_of_servercore_host_sha(self):
+        host_sha = "a" * 40
+        repo_sha = "b" * 40
+        parsed = receiver.validate_request(self.req(repo_sha=repo_sha), self.CONTRACT)
+        self.assertEqual(parsed["expected_sha"], host_sha)
+        self.assertEqual(parsed["repo_sha"], repo_sha)
+        for invalid in ("bad", "z" * 40, 123):
+            with self.assertRaises(receiver.ReceiverError):
+                receiver.validate_request(self.req(repo_sha=invalid), self.CONTRACT)
+
+        reply = {"ok": True, "request_id": "req_" + "1" * 24, "session": "req_" + "2" * 24,
+                 "job_exit": 0, "base_sha": repo_sha}
+        root = Path(tempfile.mkdtemp()).resolve()
+        self.addCleanup(shutil.rmtree, root, True)
+        run_git(root, "init", "-q", "-b", "main")
+        (root / "f").write_text("x")
+        run_git(root, "add", "-A")
+        run_git(root, "commit", "-q", "-m", "c")
+        host_sha = head(root)
+        request = receiver.validate_request(self.req(expected_sha=host_sha, repo_sha=repo_sha), self.CONTRACT)
+        path, seen = self.serve(reply)
+        result = receiver.dispatch_dev_job(request, root, path)
+        self.assertEqual(seen[0]["expected_sha"], repo_sha)
+        self.assertEqual(result["source_sha"], host_sha)
+        self.assertEqual(result["base_sha"], repo_sha)
+
     def test_dispatch_denials_are_terminal_and_failures_retryable(self):
         with self.assertRaises(receiver.ReceiverError) as ctx:
             self.dispatch({"ok": False, "error": "REPOSITORY_NOT_REGISTERED"})
@@ -479,6 +505,13 @@ class SenderWiring(unittest.TestCase):
             with self.assertRaises(sender.SendError):
                 self.call(**bad)
 
+    def test_target_repository_sha_is_optional_and_validated(self):
+        self.assertNotIn("repo_sha", self.call())
+        self.assertEqual(self.call(repo_sha="b" * 40)["repo_sha"], "b" * 40)
+        for invalid in ("short", "z" * 40, 5):
+            with self.assertRaises(sender.SendError):
+                self.call(repo_sha=invalid)
+
     def test_job_fields_rejected_for_other_commands(self):
         with self.assertRaises(sender.SendError):
             sender.validate_cli("project.git_head", "a" * 40, self.CONTRACT, argv=["git"])
@@ -487,15 +520,17 @@ class SenderWiring(unittest.TestCase):
 
 
 class ContractAndInstallerFiles(unittest.TestCase):
-    def test_committed_contract_matches_committed_design_and_registers_only_server_core(self):
+    def test_committed_contract_matches_design_and_registered_projects(self):
         contract = json.loads((ROOT / "operations/github-project-bounded-host.json").read_text())
         policy = contract["dev_job"]
         self.assertEqual(policy["design_section_sha256"],
                          job.design_section_digest((ROOT / "docs/SERVER_CORE_DESIGN.md").read_text(encoding="utf-8")))
-        self.assertEqual(list(policy["registered_repositories"]), ["G-ACE-inc/server-core"])
+        self.assertEqual(set(policy["registered_repositories"]), {"G-ACE-inc/server-core", "seigo-gace/TGserver", "seigo-gace/debug-ai"})
+        self.assertEqual(policy["registered_repositories"]["seigo-gace/TGserver"]["root"], "/home/admin1/projects/TGserver")
+        self.assertEqual(policy["registered_repositories"]["seigo-gace/debug-ai"]["root"], "/home/admin1/projects/debug-ai")
         self.assertEqual(policy["allowed_executables"], ["git", "python3", "sh"])
         self.assertEqual(contract["command_effects"]["dev.job"], "dev_job")
-        self.assertNotIn("debug-ai", json.dumps(policy))
+        self.assertEqual(policy["registered_repositories"]["G-ACE-inc/server-core"]["branch"], "main")
 
     def test_unit_has_no_docker_socket_mount_and_runs_as_user(self):
         text = (ROOT / "scripts/servercore_dev_job_host_bootstrap.py").read_text()

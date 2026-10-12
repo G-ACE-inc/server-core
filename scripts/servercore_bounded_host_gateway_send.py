@@ -60,7 +60,7 @@ def build_event(request, contract):
 
 def validate_cli(command_id, expected_sha, contract, expected_before=None, repository=None,
                  service=None, deploy_request_id=None, path=None, offset=None, container=None, tail=None,
-                 session=None, argv=None, timeout_s=None, fresh=None):
+                 session=None, argv=None, timeout_s=None, fresh=None, repo_sha=None):
     allowed = contract.get("allowed_command_ids") or []
     if command_id not in allowed:
         raise SendError("COMMAND_NOT_REGISTERED")
@@ -93,6 +93,10 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
                 or any(not isinstance(a, str) or not 1 <= len(a) <= 1200 for a in argv) \
                 or type(timeout_s) is not int or not 1 <= timeout_s <= 15 or type(fresh) is not bool:
             raise SendError("DEV_JOB_TARGET_INVALID")
+        if repo_sha is not None and (not isinstance(repo_sha, str) or not SHA_PATTERN.fullmatch(repo_sha)):
+            raise SendError("DEV_JOB_REPO_SHA_INVALID")
+        if repo_sha is not None:
+            request["repo_sha"] = repo_sha
         request.update({"repository": repository, "session": session, "argv": argv,
                         "timeout_s": timeout_s, "fresh": fresh})
     elif session is not None or argv is not None or timeout_s is not None or fresh is not None:
@@ -186,6 +190,7 @@ def main():
     parser.add_argument("--job-argv-json")
     parser.add_argument("--timeout-s", type=int)
     parser.add_argument("--fresh", choices=("true", "false"))
+    parser.add_argument("--repo-sha")
     parser.add_argument("--contract", default=str(DEFAULT_CONTRACT))
     args = parser.parse_args()
     contract = load_contract(args.contract)
@@ -193,7 +198,7 @@ def main():
                            args.repository, args.service, args.deploy_request_id,
                            args.path, args.offset, args.container, args.tail,
                            args.session, parse_argv(args.job_argv_json),
-                           args.timeout_s, None if args.fresh is None else args.fresh == "true")
+                           args.timeout_s, None if args.fresh is None else args.fresh == "true", args.repo_sha)
     try:
         receipt = send(request, contract)
         print(json.dumps({"state": "QUEUED", "request_id": request["id"], "gateway": receipt}, sort_keys=True))
