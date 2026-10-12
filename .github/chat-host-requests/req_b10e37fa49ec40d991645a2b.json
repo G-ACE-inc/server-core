@@ -1,0 +1,37 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "CHAT-origin Tool B temporary README sandbox-only edit and small git diff, with subsequent explicit restore",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "1d1b1f0711e615f1ba2a0217a7c4665048abb8c2",
+    "repository": "G-ACE-inc/server-core",
+    "session": "req_1cb77fd6e398d8e9b505311d",
+    "argv": [
+      "python3",
+      "-c",
+      "from pathlib import Path; import subprocess; p=Path('README.md'); p.write_text(p.read_text()+'\\nCHAT Tool B isolated reversible E2E probe 20261012\\n'); subprocess.run(['git','diff','--','README.md'],check=True)"
+    ],
+    "timeout_s": 15,
+    "fresh": false
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "CHAT E2E read PASS #6119402255 and dev.job test PASS #6119430140; same clean isolated session, no Host production writes."
+  }
+}
