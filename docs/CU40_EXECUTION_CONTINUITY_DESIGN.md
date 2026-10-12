@@ -51,3 +51,29 @@ Exact existing Source behavior in `scripts/gace_mutation_rehydrate_check.py:chec
 **Tests / regression:** extend existing `scripts/github_project_chat_turn_gate_test.py` with accepted complete/blocked/master-only/interrupted STOP receipts, missing mission acceptance, false claimed completion, skipped action review, wrong next decision, and remaining action mismatch; preserve all START/FAILURE tests and existing Host START only wiring. CI exact source SHA and actual live CHAT continuation readbacks are independent evidence layers.
 
 **Operator acceptance independent of opt-in code:** real GPT CHAT must continue past intermediate explanation, green CI, PR merge and comment; when any action fails, perform actual replanning action and inspect its result. A terminal final reply is legitimate only at verified entire Mission complete, genuine total blocker after independent work, Master-only action, or explicit Master pause/report. Missing native hook means this cannot be *guaranteed* for arbitrary future ordinary CHAT turns. Do not call the overall CU DONE due to checkpoint tests alone. No new standalone gate, tokens, workflow, branch-tree proliferation or mutation to other CUs.
+
+## 2026-10-12 real ordinary CHAT behavior recovery priority (Master development-mode re-anchor)
+
+### Regression confirmed by actual normal-chat transcripts
+
+Between PRs #156 and #160, this owner repeatedly ended the GPT CHAT turn after a successful isolated PR/CI and a statement that the Mission remained incomplete. This is a concrete **STOP/report regression** under #17 §§5,7. The previous source changes govern optional bounded mutation or explicit STOP receipts, **not** the ordinary ChatGPT final-answer path. The existing `.github/workflows/chatgpt-live-api-verify.yml` calls `github_project_chat_turn_gate.py` only with START receipts for explicit Host requests; there is no demonstrated native ordinary-CHAT final-reply STOP caller. Future optional-gate refinements have **no demonstrated causal impact** on that regression and must not be selected as this CU's next primary activity.
+
+### Operational recovery order — existing §6, not a new gate
+
+1. At the **start of each actual GPT CHAT development turn**, fresh-read main Manifest → complete #17 body → #40 owner Current → this adopted design; identify Mission acceptance and which owner is authorized.
+2. Choose actions by **causal contribution to the unsatisfied Mission**. If the action only changes a receipt, test, or documentation, explain its real execution binding before authorizing mutation. Mere ease of repository patching is not priority evidence. No new branch/PR when only already-verified code is restated.
+3. After progress explanation, each completed PR/CI or an Issue checkpoint, run a **same-turn continuation**: read the result, compare to Mission acceptance, and execute another available directly relevant action. Treat logging as a checkpoint, never a STOP.
+4. On failure, separate failed step from Mission; actually try an authorized root-cause inspection or independent same-CU action and inspect its result. Do not fabricate a failure or a rerun solely to claim behavioral testing.
+5. The final reply may claim true completion only if Mission-wide acceptance has evidence; otherwise it is a genuine stop only when all independent action paths were checked and actually blocked, a Master-only protected decision is necessary, or Master explicitly requested a pause/report. Never invent the native send-hook capability to satisfy this condition.
+
+### Acceptance evidence matrix (real CHAT, not synthetic receipts)
+
+| Behavior | Required evidence | State as of this design update |
+|---|---|---|
+| Rule/Current fresh read | Actual GPT CHAT tool calls at new turn | Demonstrated in individual turns; longitudinal adherence not yet established |
+| Same-turn continuation beyond explanations / CI / comment | Subsequent meaningful tools **in the same actual turn** tied to Mission | Some instances observed; multiple premature formal reports remain documented FAIL |
+| FAILURE→REPLAN→ACTION | Genuine tool failure, bounded alternative action, and result readback | Some instances observed in prior CI/redirect errors; not a persistent guarantee |
+| Valid terminal decision | Mission acceptance or exhaustive blocked/owner-controlled reason substantiated before actual reply | **FAIL** in Master-observed premature ends |
+| Native ordinary-CHAT final reply interception | Installed active caller of a STOP hook, or supported product functionality verified live | **NOT VERIFIED**; repository STOP receipt tests are not evidence |
+
+**Owner priority:** restore real operator behavior using the existing #17 instructions and observable actual CHAT turns; treat the STOP checkpoint test patch as a completed bounded improvement. Do not open another gate-focused implementation PR merely because machine predicates can be tested. This document is not a second authority and does not activate a model/product hook by itself.
