@@ -1,0 +1,28 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "CU #40 GPT CHAT direct read-only Host HEAD probe after merged PR #146; no checkout mutation. Compare exact Host HEAD with fd9b1324f349f3f79ac10a37598db8c2b694882c.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_head",
+    "expected_sha": "fd9b1324f349f3f79ac10a37598db8c2b694882c"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Fresh Manifest main; #17 full body; #40 current; PR146 direct CHAT merge fd9b1324; existing registered request route with bounded read only Host HEAD, no mutation."
+  }
+}
