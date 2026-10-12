@@ -356,6 +356,8 @@ def execute(request, entry, policy, registered_root, *, state_dir=STATE_DIR, bin
             "project_item": entry.get("project_item", ""), "base_sha": request["expected_sha"],
             "workspace_head": info["head"][:40], "job_exit": rc, "timed_out": timed_out,
             "output_limit_exceeded": exceeded, "workspace_budget_exceeded": removed,
+            "stdout_truncated": len(out.decode("utf-8", errors="replace")) > RESULT_CHARS,
+            "stderr_truncated": len(err.decode("utf-8", errors="replace")) > RESULT_CHARS,
             "stdout": _text(out), "stderr": _text(err), "changed": changed, "diff_stat": info["diff"][:200],
             "duration_ms": int((time.monotonic() - started) * 1000), "replayed": False,
         }
