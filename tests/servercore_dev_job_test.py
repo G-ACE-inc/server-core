@@ -541,6 +541,17 @@ class SessionReclamationAtCap(Base):
         self.denied("SESSION_LIMIT_REACHED", self.request(session="req_" + "e" * 24))
         self.assertTrue((base / names[0] / "work.txt").exists())
 
+    def test_ttl_does_not_remove_running_session(self):
+        base, names = self.fill([25])
+        self.state.mkdir(mode=0o700, parents=True, exist_ok=True)
+        fd = os.open(self.state / (names[0] + ".lock"), os.O_CREAT | os.O_RDWR, 0o600)
+        self.addCleanup(os.close, fd)
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        result = self.go(self.request(session="req_" + "e" * 24))
+        self.assertEqual(result["job_exit"], 0)
+        self.assertTrue((base / names[0] / "work.txt").exists(),
+                        "expired but locked active session must not be removed")
+
     def test_ttl_prune_and_cap_are_unchanged(self):
         self.assertEqual(job.MAX_SESSIONS, 8)
         self.assertEqual(job.SESSION_TTL_SECONDS, 24 * 3600)
