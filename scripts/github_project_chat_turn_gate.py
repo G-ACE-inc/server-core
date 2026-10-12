@@ -30,6 +30,7 @@ ALLOWED_KEYS = {
     "source_evidence", "failed_step", "failure_evidence", "next_action",
     "independent_actions", "completed_actions", "next_action_evidence", "stop_reason",
     "stop_evidence", "remaining_actions", "completion_verified",
+    "mission_acceptance_verified", "same_cu_actions_reviewed", "next_action_decision",
 }
 
 
@@ -114,8 +115,21 @@ def evaluate(state):
         return "STOP_REMAINING_ACTIONS_UNVERIFIED"
     if remaining and reason != "MASTER_INTERRUPT":
         return "STOP_RUNNABLE_ACTIONS_REMAIN"
-    if reason == "VERIFIED_COMPLETE" and state.get("completion_verified") is not True:
-        return "STOP_COMPLETION_UNVERIFIED"
+    if reason != "MASTER_INTERRUPT":
+        if state.get("same_cu_actions_reviewed") is not True:
+            return "STOP_SAME_CU_ACTIONS_NOT_REVIEWED"
+        decisions = {
+            "VERIFIED_COMPLETE": "MISSION_ACCEPTED",
+            "ALL_ACTIONS_BLOCKED": "NO_RUNNABLE_ACTIONS",
+            "MASTER_ONLY_ACTION": "MASTER_ONLY_ACTION_REQUIRED",
+        }
+        if state.get("next_action_decision") != decisions.get(reason):
+            return "STOP_MISSION_DECISION_MISMATCH"
+    if reason == "VERIFIED_COMPLETE":
+        if state.get("completion_verified") is not True or state.get("mission_acceptance_verified") is not True:
+            return "STOP_MISSION_ACCEPTANCE_UNVERIFIED"
+    elif state.get("mission_acceptance_verified") is True:
+        return "STOP_MISSION_ACCEPTANCE_CONTRADICTORY"
     return "PASS"
 
 def main():

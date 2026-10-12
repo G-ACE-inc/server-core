@@ -60,13 +60,53 @@ class DecisionTests(unittest.TestCase):
         self.assertIn("SYSTEM_DOCUMENT_REQUIRED=", guard)
 
     def test_stop_rejects_unfinished(self):
-        base = dict(phase="STOP", stop_reason="ALL_ACTIONS_BLOCKED",
-                    stop_evidence="run/42", remaining_actions=[])
+        base = dict(
+            phase="STOP", stop_reason="ALL_ACTIONS_BLOCKED",
+            stop_evidence="run/42", remaining_actions=[],
+            mission_acceptance_verified=False,
+            same_cu_actions_reviewed=True,
+            next_action_decision="NO_RUNNABLE_ACTIONS",
+        )
         self.assertEqual(gate.evaluate(base), "PASS")
-        self.assertEqual(gate.evaluate({**base, "remaining_actions": ["Inspect logs"]}), "STOP_RUNNABLE_ACTIONS_REMAIN")
-        self.assertEqual(gate.evaluate({**base, "stop_reason": "VERIFIED_COMPLETE"}), "STOP_COMPLETION_UNVERIFIED")
-        self.assertEqual(gate.evaluate({**base, "stop_reason": "VERIFIED_COMPLETE",
-                                        "completion_verified": True}), "PASS")
+        self.assertEqual(
+            gate.evaluate({**base, "remaining_actions": ["Inspect logs"]}),
+            "STOP_RUNNABLE_ACTIONS_REMAIN",
+        )
+        self.assertEqual(
+            gate.evaluate({**base, "same_cu_actions_reviewed": False}),
+            "STOP_SAME_CU_ACTIONS_NOT_REVIEWED",
+        )
+        self.assertEqual(
+            gate.evaluate({**base, "next_action_decision": "REPORT_AFTER_CI"}),
+            "STOP_MISSION_DECISION_MISMATCH",
+        )
+        self.assertEqual(
+            gate.evaluate({**base, "mission_acceptance_verified": True}),
+            "STOP_MISSION_ACCEPTANCE_CONTRADICTORY",
+        )
+        self.assertEqual(
+            gate.evaluate({**base, "stop_reason": "VERIFIED_COMPLETE"}),
+            "STOP_MISSION_DECISION_MISMATCH",
+        )
+        complete = {**base, "stop_reason": "VERIFIED_COMPLETE",
+                    "next_action_decision": "MISSION_ACCEPTED",
+                    "completion_verified": True}
+        self.assertEqual(gate.evaluate(complete), "STOP_MISSION_ACCEPTANCE_UNVERIFIED")
+        self.assertEqual(
+            gate.evaluate({**complete, "mission_acceptance_verified": True}), "PASS"
+        )
+        master_only = {
+            **base, "stop_reason": "MASTER_ONLY_ACTION",
+            "next_action_decision": "MASTER_ONLY_ACTION_REQUIRED",
+        }
+        self.assertEqual(gate.evaluate(master_only), "PASS")
+        self.assertEqual(
+            gate.evaluate({**base, "stop_reason": "MASTER_INTERRUPT",
+                           "remaining_actions": ["Inspect logs"],
+                           "same_cu_actions_reviewed": False,
+                           "next_action_decision": None}),
+            "PASS",
+        )
         self.assertEqual(gate.evaluate({**base, "stop_reason": "NO_RESPONSE"}), "STOP_REASON_UNVERIFIED")
         self.assertEqual(gate.evaluate({**base, "remaining_actions": None}), "STOP_REMAINING_ACTIONS_UNVERIFIED")
 
