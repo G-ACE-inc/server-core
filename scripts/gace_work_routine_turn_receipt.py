@@ -93,14 +93,17 @@ def build_receipt(
     manifest_sha = sha256_file(manifest_path)
     rule_body = gh_issue_body(control_repo, rule_issue)
     current_body = gh_issue_body(control_repo, current_issue)
+    purpose_marker = "## Fixed Project purpose (verbatim)"
+    purpose_section = current_body.split(purpose_marker, 1)[1].split("\n## ", 1)[0].strip() if purpose_marker in current_body else ""
+    purpose_verified = bool(purpose_section and not purpose_section.startswith("#"))
     receipt = {
         "recorded_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "rule_plane_profile": profile,
         "manifest_verified": True,
         "rule_plane_read": True,
         "current_verified": True,
-        # GPT_CHAT rule entry requires purpose_verified=True; receipt emission implies fresh Current read.
-        "purpose_verified": True,
+        # A successful Current fetch is not itself proof that canonical purpose is present.
+        "purpose_verified": purpose_verified,
         "cu_verified": True,
         "purpose_cu_aligned": purpose_cu_aligned,
         "mutation_scope": mutation_scope,
