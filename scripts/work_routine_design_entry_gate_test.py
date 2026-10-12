@@ -149,6 +149,33 @@ class WorkRoutineDesignEntryGateTests(unittest.TestCase):
 
 
 
+class ReceiptDefaultTrustBoundaryTests(unittest.TestCase):
+    def test_emitter_does_not_invent_verified_design(self):
+        import importlib.util
+        import tempfile
+        from unittest.mock import patch
+
+        emitter_path = Path(__file__).with_name("gace_work_routine_turn_receipt.py")
+        spec = importlib.util.spec_from_file_location("turn_emitter", emitter_path)
+        emitter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(emitter)
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            manifest = root / "operations" / "github-project-rule-plane.json"
+            manifest.parent.mkdir()
+            manifest.write_text('{"rule_planes":{"server_ai":{"issue_number":16}}}', encoding="utf-8")
+            with patch.object(emitter, "gh_issue_body", return_value="fresh rule/current"):
+                receipt = emitter.build_receipt(
+                    repo_root=root, profile="SERVER_AI",
+                    control_repo="G-ACE-inc/server-core", current_issue=40,
+                    mutation_scope="routine_fix", design_status="DESIGN_NOT_VERIFIED",
+                    purpose_cu_aligned=True,
+                )
+        self.assertFalse(receipt["source_design_aligned"])
+        self.assertEqual(receipt["design_status"], "DESIGN_NOT_VERIFIED")
+        self.assertEqual(gate.evaluate_turn(receipt), "SOURCE_DESIGN_MISMATCH")
+
+
 class WorkRoutineContentHashTests(unittest.TestCase):
     def test_strict_requires_hashes(self):
         import os
