@@ -1,0 +1,36 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "GPT CHAT live Tool B dev.job: registered Python rule plane test inside isolated Docker at HOST_READY pinned SHA",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "1d1b1f0711e615f1ba2a0217a7c4665048abb8c2",
+    "repository": "G-ACE-inc/server-core",
+    "session": "req_f8bc72e307514da59c0bd0f2",
+    "argv": [
+      "python3",
+      "scripts/github_project_rule_plane_test.py"
+    ],
+    "timeout_s": 15,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Read Manifest Rule #17, Issue #10 HOST_READY comment #6119370977 and actual CHAT-origin project.git_head PASS #6119402255."
+  }
+}
