@@ -2,6 +2,10 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 GUARD="${ROOT}/scripts/gace_shell_workspace_command_guard.py"
+# Strict Work Routine: enable only when mutation binding and turn receipt are both supplied.
+if [[ -n "${GACE_WORK_ROUTINE_TURN:-}" && -n "${GACE_MUTATION_BINDING:-}" ]]; then
+  export GACE_WORK_ROUTINE_REQUIRED=1
+fi
 input="$(cat)"
 stderr_file="$(mktemp)"
 trap 'rm -f "$stderr_file"' EXIT

@@ -121,6 +121,9 @@ fi
 
 rehydrate_script="${repo_root}/scripts/gace_mutation_rehydrate_check.py"
 if [[ -f "$rehydrate_script" ]]; then
+  if [[ -n "${GACE_WORK_ROUTINE_TURN:-}" ]]; then
+    export GACE_WORK_ROUTINE_REQUIRED=1
+  fi
   paths_file="$(mktemp)"
   if ((${#changed_paths[@]})); then
     printf '%s\n' "${changed_paths[@]}" >"$paths_file"
