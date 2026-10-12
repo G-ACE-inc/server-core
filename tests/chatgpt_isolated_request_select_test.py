@@ -28,7 +28,9 @@ class IsolatedRequests(unittest.TestCase):
 
     def test_isolated_actions_concurrency_keeps_legacy_lane(self):
         workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text()
-        self.assertIn("github.event.head_commit.added", workflow)
+        self.assertIn("github.event.head_commit.message", workflow)
+        self.assertIn("[isolated-host-request]", workflow)
+        self.assertNotIn("github.event.head_commit.added", workflow)
         self.assertIn("github.sha || 'legacy'", workflow)
         self.assertIn("cancel-in-progress: false", workflow)
 

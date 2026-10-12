@@ -529,9 +529,11 @@ class ContractAndInstallerFiles(unittest.TestCase):
         policy = contract["dev_job"]
         self.assertEqual(policy["design_section_sha256"],
                          job.design_section_digest((ROOT / "docs/SERVER_CORE_DESIGN.md").read_text(encoding="utf-8")))
-        self.assertEqual(set(policy["registered_repositories"]), {"G-ACE-inc/server-core", "seigo-gace/TGserver", "seigo-gace/debug-ai"})
+        self.assertEqual(set(policy["registered_repositories"]), {"G-ACE-inc/server-core", "seigo-gace/TGserver", "seigo-gace/debug-ai", "seigo-gace/webhook-gateway", "seigo-gace/asteria"})
         self.assertEqual(policy["registered_repositories"]["seigo-gace/TGserver"]["root"], "/home/admin1/projects/TGserver")
         self.assertEqual(policy["registered_repositories"]["seigo-gace/debug-ai"]["root"], "/home/admin1/projects/debug-ai")
+        self.assertEqual(policy["registered_repositories"]["seigo-gace/webhook-gateway"]["root"], "/home/admin1/projects/webhook-gateway")
+        self.assertEqual(policy["registered_repositories"]["seigo-gace/asteria"]["branch"], "feat/translation-safety-completion-20261005")
         self.assertEqual(policy["allowed_executables"], ["git", "python3", "sh"])
         self.assertEqual(contract["command_effects"]["dev.job"], "dev_job")
         self.assertEqual(policy["registered_repositories"]["G-ACE-inc/server-core"]["branch"], "main")

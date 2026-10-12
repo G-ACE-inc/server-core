@@ -112,6 +112,18 @@
         "root": "/home/admin1/projects/debug-ai",
         "branch": "test/g3-semantic-progress-counterexample-20261011",
         "project_item": "PVTI_lAHODOQFoM4BEJIIzg-sWS8"
+      },
+      "seigo-gace/webhook-gateway": {
+        "owner": "seigo-gace",
+        "root": "/home/admin1/projects/webhook-gateway",
+        "branch": "main",
+        "project_item": "PVTI_lAHODOQFoM4BEJIIzg-lZNg"
+      },
+      "seigo-gace/asteria": {
+        "owner": "seigo-gace",
+        "root": "/home/admin1/projects/asteria",
+        "branch": "feat/translation-safety-completion-20261005",
+        "project_item": "PVTI_lAHODOQFoM4BEJIIzg-sRdQ"
       }
     },
     "limits": {

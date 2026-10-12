@@ -307,3 +307,6 @@ licensing, Customer authentication, new executor/queue/transport/service or shel
 endpoint. Source/CI and real Runtime qualification remain separate; this source
 checkpoint does not claim live persistent-mode PASS. Protected product/spec/public/
 provider/model/Secret/destructive persistent decisions remain Master-owned.
+
+
+Tool B independent request callers must include `[isolated-host-request]` in the commit message and add one new request file per commit; see [CHAT Host route](docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md). The isolated development contract maps the five repositories currently observed in Project #1. This source registration is separate from post-reflection Runtime and same-event TGserver search evidence in Control #10.
