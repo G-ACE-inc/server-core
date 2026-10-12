@@ -1,4 +1,4 @@
-> **Current architecture correction (2026-10-11, server-core #10 / Tool B):** This page documents an **existing transitional DebugAI-specific authenticated route**, not the finished independent server-core common Host executor. The final common CHAT/Work→GitHub Project→Actions→Host system must have server-core-owned execution/consumer and Host test/reflect/readback independent from DebugAI's product Repository/runtime. Existing `debugai.asterav8.jp`, `/workspace/debug-ai` and DebugAI-managed test-repos paths are migration dependencies, not permanent acceptance. Preserve the working DebugAI-specific path for DebugAI until the server-core-owned alternative is verified. See `docs/SERVER_CORE_DESIGN.md` §16.9.1 for ownership and acceptance. No unadmitted Host permission change or replacement transport is authorized merely by this note.
+> **Current Tool B entry (2026-10-13):** Normal CHAT uses the existing **server-core-owned** `.github/chat-host-requests/req_*.json` → `chatgpt-live-api-verify.yml` → Gateway → bounded Host receiver → isolated Docker `dev.job` → request-linked #10 result. Five registered repositories and logical session parallelism are runtime-qualified; exact ZERO checkpoint/Telegram correlation is qualified. This path does not call DebugAI product API when `bounded_host_request.enabled=true`. Legacy `base_url` / `repo` compatibility fields remain in the request envelope and do not select the common Host execution repository. The earlier DebugAI-specific route below is retained history; use the following normal-CHAT procedure first.
 
 # CHAT → GitHub → bounded Host — common Project routes
 
@@ -6,7 +6,30 @@
 **Contract:** `operations/github-project-chat-host-routes.json`  
 **DebugAI execution body:** unchanged (`seigo-gace/debug-ai`)
 
-## Purpose
+## 通常CHATの開始・別CHAT実測手順
+
+Owner: existing `G-ACE-inc/server-core#10`, approved minimum Tool B task. Native CHAT uses its GPT_CHAT profile: read `operations/github-project-rule-plane.json`, the manifest-selected Rule #17 and owning #10 Current; do not copy a prior executor's read attestations. SERVER_AI continues to use #16. Fetch this page from current GitHub main. Read the design §16.11 / §17 and committed `operations/github-project-bounded-host.json`; preserve the parent platform purpose and approved read-only test scope. Project #1 membership is established in the committed mapping but never broad Host authority.
+
+1. Use current #10 Host evidence to pin `expected_sha`; GitHub main alone does not establish Host HEAD. Use the selected registered repo's current verified canonical branch tip as `repo_sha`; keep these two SHAs distinct. On an actual `SOURCE_SHA_MISMATCH`, re-anchor using the returned actual Host SHA and a new request file. Do not deploy or change policies to make a read-only test pass.
+2. Generate a new unique `req_<24 lowercase hex>` for this CHAT's session and a distinct new request file with that naming convention. Copy the envelope shape from a committed successful request such as `.github/chat-host-requests/req_dcb0ba0366cc58ce5bf3e6ca.json`, but replace the session, exact SHAs, selected repository, request summary, command and START receipt with this CHAT's own verified values. Keep gitops/source_reflect disabled, run_id empty and no server_command_id. A copied envelope is a schema reference, never transferable rule/current evidence.
+3. Set command_id `dev.job`; argv `["python3","-c",<code below>]`, timeout_s15, fresh true. Put this CHAT's session id in the printed marker. The code only inspects the isolated repository and records a seven-second execution interval:
+   ```python
+   import subprocess,time
+   print('NATIVE_CHAT_SESSION='+SESSION,flush=True)
+   print('START_NS='+str(time.time_ns()),flush=True)
+   time.sleep(7)
+   subprocess.run(['git','rev-parse','HEAD'],check=True)
+   subprocess.run(['git','status','--short'],check=True)
+   print('END_NS='+str(time.time_ns()),flush=True)
+   ```
+   `SESSION` is the generated session string literal in the committed code; resolve it before writing, not a user-edited placeholder. The START receipt must contain actual current verification, profileGPT_CHAT, purpose/CU alignment, read_only scope, adopted design reference/evidence and a concise source_evidence locator/description. Never claim a rule read that did not happen.
+4. First verify that this native CHAT actually exposes GitHub file creation and Actions/result read tools. If its connector is read-only, report that precise missing capability; do not invent a write or treat another executor as this client. Create exactly one new file on server-core main through the existing GitHub connector with commit message containing `[isolated-host-request]`. Leave `.github/chatgpt-live-api-target.json` and other CHAT files untouched. Bind the resulting exact commit SHA to its existing workflow Run; read its correlated #10 result. PASS requires expected/actual Host SHA, selected repo base SHA, this CHAT's session marker and its generated Host request ID to match. An Actions dispatch202 alone is insufficient.
+5. A native two-CHAT test uses two real independent newly opened conversations, not two synthetic receipts from one executor. CHAT A selects `G-ACE-inc/server-core`; CHAT B selects `seigo-gace/TGserver`. Master pastes the instructions into both chats close together. Each records its own actual request/session/Run/result URL in #10. Compare the two emitted START_NS/END_NS intervals: `min(endA,endB)>max(startA,startB)` proves real worker overlap. If both pass but do not overlap, preserve those successes and repeat only this bounded pair with new request IDs; do not relabel sequential execution as parallel.
+6. Each CHAT may record the visible checkpoint through the existing owner-only TGserver #50 `[DEVLOG]` relay and search its returned exact event_id through existing `[TGZERO]` Reader. Use the observed repo/stream map and your own session/sequence; require actual Telegram correlation. Never capture internal reasoning or credentials. Existing final qualified example: TGserver #123 / event3d877d5e34f52664e170d6d2691328e428ff6d03088924039dcef4d981b7c120.
+
+The server executor cannot create native ChatGPT conversations with its available tools. Until two actual conversations produce the above evidence, `NATIVE_TWO_CHAT_ACCEPTANCE=NOT_VERIFIED`, even though the server-side independent-request test already passed. No new connector/workflow/token is required by this test.
+
+## Retained legacy Purpose
 
 Reuse the **already proven** path (CHAT `update_file` → GitHub Actions push → Cloudflare Access → DebugAI `/v1/server-command/*`) for registered Project control repositories, with server-core owning **dispatch binding and evidence shape** only.
 
