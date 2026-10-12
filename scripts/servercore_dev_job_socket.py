@@ -146,8 +146,17 @@ def check_head(root, entry, expected_sha):
     branch = git(root, "symbolic-ref", "--short", "-q", "HEAD")
     if head.returncode or head.stdout.strip() != expected_sha:
         raise JobError("STALE_SHA")
-    if branch.returncode or branch.stdout.strip() != entry.get("branch"):
-        raise JobError("BRANCH_NOT_REGISTERED")
+    registered = entry.get("branch")
+    if branch.returncode == 0:
+        if branch.stdout.strip() != registered:
+            raise JobError("BRANCH_NOT_REGISTERED")
+        return
+    # Detached HEAD at the registered branch tip (branch may be checked out in another worktree).
+    for ref in (registered, "origin/" + registered, "refs/heads/" + registered, "refs/remotes/origin/" + registered):
+        tip = git(root, "rev-parse", "-q", ref)
+        if tip.returncode == 0 and tip.stdout.strip() == head.stdout.strip():
+            return
+    raise JobError("BRANCH_NOT_REGISTERED")
 
 
 def _real_dir(path):
