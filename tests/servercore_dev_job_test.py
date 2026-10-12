@@ -243,6 +243,10 @@ class ProvisionerNegative(Base):
         run_git(self.root, "checkout", "-q", "-b", "feature")
         self.denied("BRANCH_NOT_REGISTERED", self.request())
 
+    def test_detached_head_at_registered_branch_tip_is_allowed(self):
+        run_git(self.root, "checkout", "-q", "--detach", "HEAD")
+        self.assertEqual(self.go(self.request())["job_exit"], 0)
+
     def test_design_digest_missing_stale_or_modified(self):
         (self.root / "docs/SERVER_CORE_DESIGN.md").write_text(DESIGN.replace("Body text.", "Widened acceptance."))
         self.commit()
