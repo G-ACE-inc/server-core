@@ -92,6 +92,10 @@ def build_receipt(
         raise RuntimeError("MANIFEST_NOT_FOUND")
     if current_issue < 1:
         raise RuntimeError("CURRENT_ISSUE_INVALID")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected_repo = (manifest.get("control_plane") or {}).get("repository")
+    if not expected_repo or control_repo.lower() != expected_repo.lower():
+        raise RuntimeError("CURRENT_CONTROL_REPOSITORY_MISMATCH")
     rule_issue = load_manifest_rule_issue(manifest_path, profile)
     manifest_sha = sha256_file(manifest_path)
     rule_body = gh_issue_body(control_repo, rule_issue)
