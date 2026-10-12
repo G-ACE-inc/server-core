@@ -38,7 +38,7 @@ class TurnReceiptTests(unittest.TestCase):
     def test_control_issue_purpose_readback_does_not_infer_cu(self):
         receipt_mod = load("receipt_control_purpose", MODULE)
         gate_mod = load("gate_control_purpose", GATE)
-        body = "## Purpose\\nMigrate operating authority without losing client intent.\\n\\n## Scope\\nBounded"
+        body = "## Purpose\nMigrate operating authority without losing client intent.\n\n## Scope\nBounded"
         with patch.object(receipt_mod, "gh_issue_body", return_value=body):
             receipt = receipt_mod.build_receipt(
                 repo_root=Path(__file__).resolve().parents[1],
@@ -53,7 +53,7 @@ class TurnReceiptTests(unittest.TestCase):
 
     def test_empty_control_purpose_is_not_verified(self):
         receipt_mod = load("receipt_empty_purpose", MODULE)
-        with patch.object(receipt_mod, "gh_issue_body", return_value="## Purpose\\n\\n## Scope\\nSomething"):
+        with patch.object(receipt_mod, "gh_issue_body", return_value="## Purpose\n\n## Scope\nSomething"):
             receipt = receipt_mod.build_receipt(
                 repo_root=Path(__file__).resolve().parents[1],
                 profile="GPT_CHAT", control_repo="G-ACE-inc/server-core",
