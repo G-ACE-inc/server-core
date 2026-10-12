@@ -38,23 +38,25 @@ def gh_issue_body(repo: str, issue_number: int) -> str:
 def project_item_issue_identity(project_node: str, item_id: str, expected_url: str) -> bool:
     """Match the exact registered Project item to an Issue URL, never a PR or CU title."""
     query = (
-        "query($id:ID!){node(id:$id){... on ProjectV2 {items(first:100)"
-        "{nodes{id content{__typename ... on Issue{url}}}}}}}"
+        "query($id:ID!){node(id:$id){... on ProjectV2Item "
+        "{id project{id} content{__typename ... on Issue{url}}}}}"
     )
     try:
         proc = subprocess.run(
-            ["gh", "api", "graphql", "-f", "query=" + query, "-F", "id=" + project_node],
+            ["gh", "api", "graphql", "-f", "query=" + query, "-F", "id=" + item_id],
             capture_output=True, text=True, timeout=60, check=False,
         )
         if proc.returncode:
             return False
         doc = json.loads(proc.stdout)
-        nodes = (((doc.get("data") or {}).get("node") or {}).get("items") or {}).get("nodes") or []
-        matches = [item for item in nodes if item.get("id") == item_id]
+        if doc.get("errors"):
+            return False
+        item = (doc.get("data") or {}).get("node") or {}
         return (
-            len(matches) == 1
-            and (matches[0].get("content") or {}).get("__typename") == "Issue"
-            and (matches[0].get("content") or {}).get("url") == expected_url
+            item.get("id") == item_id
+            and (item.get("project") or {}).get("id") == project_node
+            and (item.get("content") or {}).get("__typename") == "Issue"
+            and (item.get("content") or {}).get("url") == expected_url
         )
     except (OSError, ValueError, subprocess.TimeoutExpired, AttributeError):
         return False

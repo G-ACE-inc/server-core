@@ -81,18 +81,28 @@ class TurnReceiptTests(unittest.TestCase):
         mod = load("receipt_project_id", MODULE)
         node = "PVT_kwHODOQFoM4BEJII"
         target = "https://github.com/G-ACE-inc/server-core/issues/15"
-        reply = {"data":{"node":{"items":{"nodes":[
-            {"id":"PVTI_one","content":{"__typename":"Issue","url":target}},
-            {"id":"PVTI_pr","content":{"__typename":"PullRequest"}}
-        ]}}}}
+        item = {"id":"PVTI_one","project":{"id":node},
+                "content":{"__typename":"Issue","url":target}}
         class Result:
             returncode = 0
-            stdout = json.dumps(reply)
-        with patch.object(mod.subprocess, "run", return_value=Result()):
+            stdout = json.dumps({"data":{"node":item}})
+        with patch.object(mod.subprocess, "run", return_value=Result()) as run:
             self.assertTrue(mod.project_item_issue_identity(node, "PVTI_one", target))
             self.assertFalse(mod.project_item_issue_identity(node, "PVTI_one", target.replace("/15", "/10")))
-            self.assertFalse(mod.project_item_issue_identity(node, "PVTI_pr", target))
-            self.assertFalse(mod.project_item_issue_identity(node, "PVTI_missing", target))
+            self.assertIn("id=PVTI_one", run.call_args.args[0])
+        for bad in (
+            {**item,"project":{"id":"PVT_other"}},
+            {**item,"content":{"__typename":"PullRequest"}},
+            {**item,"id":"PVTI_wrong"},
+        ):
+            result = type("Result", (), {"returncode":0,"stdout":json.dumps({"data":{"node":bad}})})()
+            with patch.object(mod.subprocess, "run", return_value=result):
+                self.assertFalse(mod.project_item_issue_identity(node, "PVTI_one", target))
+        error_result = type("Result", (), {
+            "returncode":0,"stdout":json.dumps({"errors":[{"message":"denied"}],"data":{"node":item}})
+        })()
+        with patch.object(mod.subprocess, "run", return_value=error_result):
+            self.assertFalse(mod.project_item_issue_identity(node, "PVTI_one", target))
 
     def test_mismatched_project_item_rejected_before_issue_fetch(self):
         mod = load("receipt_project_fail", MODULE)
