@@ -53,7 +53,7 @@
     "source_reflect_admission": "Requires separately ACL-admitted Host-local UNIX socket executor; existing read-only receiver must not have checkout write access. Dedicated Host runtime authorization must be proven before activation.",
     "service_deploy_admission": "Fixed registered repository/service only via separately Host-admitted UNIX socket writer (/run/gace/servercore-service-deploy.sock); Receiver has no Docker authority. Authority comes from operations/master-internal-repositories.json deploy entries, never from docker ps or log registration.",
     "file_inspect_admission": "Exact registered_files only (no globs/traversal/symlinks), one 2400-byte chunk per request via offset; canonical master-internal registry is intentionally NOT registered.",
-    "docker_logs_admission": "Only containers in registered_log_containers via separately admitted Host UNIX socket /run/gace/servercore-docker-logs.sock (fixed `docker logs --tail N --timestamps`, tail<=200); Receiver has no Docker authority; authority is the committed contract only. Adding another project's container requires an explicit reviewed contract change."
+    "docker_logs_admission": "Only containers in registered_log_containers via separately admitted Host UNIX socket /run/gace/servercore-docker-logs.sock (fixed `docker logs --tail N --timestamps`, tail<=200); Receiver has no Docker authority; authority is the committed contract only. Adding another project's container requires an explicit reviewed contract change. The existing TGserver tgs container is admitted for incident diagnostics; all Docker log requests remain read-only and bounded."
   },
   "result_return": {
     "kind": "github_issue_comment",
@@ -81,7 +81,8 @@
     "scripts/servercore_result_sink.py"
   ],
   "registered_log_containers": [
-    "server-core-bounded-host"
+    "server-core-bounded-host",
+    "tgserver-tgs-1"
   ],
   "dev_job": {
     "schema": "gace.servercore-dev-job.policy/v1",
