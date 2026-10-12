@@ -364,6 +364,9 @@ def check(
                 current_mission_verified="NO",
             )
 
+    os.environ["GACE_WORK_ROUTINE_REPO_ROOT"] = str(repo_root.resolve())
+    if os.environ.get("GACE_WORK_ROUTINE_REQUIRED", "").strip() == "1":
+        os.environ["GACE_WORK_ROUTINE_REQUIRE_CONTENT_HASH"] = "1"
     routine_deny = evaluate_work_routine_turn_receipt()
     if routine_deny is not None:
         return routine_deny

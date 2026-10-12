@@ -147,5 +147,86 @@ class WorkRoutineDesignEntryGateTests(unittest.TestCase):
         )
 
 
+
+
+class WorkRoutineContentHashTests(unittest.TestCase):
+    def test_strict_requires_hashes(self):
+        import os
+        from unittest.mock import patch
+
+        state = base_rule(rule_plane_profile="SERVER_AI", purpose_verified=True)
+        with patch.dict(
+            os.environ,
+            {"GACE_WORK_ROUTINE_REQUIRE_CONTENT_HASH": "1", "GACE_WORK_ROUTINE_REPO_ROOT": str(Path(__file__).resolve().parents[1])},
+            clear=False,
+        ):
+            self.assertEqual(gate.evaluate_turn(state), "RULE_ENTRY_EVIDENCE_HASH_REQUIRED")
+
+    def test_manifest_hash_mismatch_denied(self):
+        import os
+        from unittest.mock import patch
+
+        root = Path(__file__).resolve().parents[1]
+        manifest = root / "operations/github-project-rule-plane.json"
+        import hashlib
+
+        good = hashlib.sha256(manifest.read_bytes()).hexdigest()
+        state = base_rule(
+            rule_plane_profile="SERVER_AI",
+            purpose_verified=True,
+            manifest_sha256=good,
+            rule_plane_issue=16,
+            current_issue=40,
+            rule_plane_body_sha256="deadbeef",
+            current_body_sha256="deadbeef",
+        )
+        with patch.dict(
+            os.environ,
+            {
+                "GACE_WORK_ROUTINE_REQUIRE_CONTENT_HASH": "1",
+                "GACE_WORK_ROUTINE_REPO_ROOT": str(root),
+            },
+            clear=False,
+        ):
+            with patch.object(gate, "gh_issue_body", side_effect=lambda repo, num: f"body-{num}"):
+                with patch.object(gate, "manifest_rule_issue", return_value=16):
+                    out = gate.evaluate_turn(state)
+        self.assertEqual(out, "RULE_ENTRY_RULE_PLANE_HASH_MISMATCH")
+
+    def test_verified_hashes_pass_with_mock_gh(self):
+        import os
+        from unittest.mock import patch
+        import hashlib
+
+        root = Path(__file__).resolve().parents[1]
+        manifest = root / "operations/github-project-rule-plane.json"
+        manifest_sha = hashlib.sha256(manifest.read_bytes()).hexdigest()
+        rule_body = "rule-body-16"
+        current_body = "current-body-40"
+        state = base_rule(
+            rule_plane_profile="SERVER_AI",
+            purpose_verified=True,
+            manifest_sha256=manifest_sha,
+            rule_plane_issue=16,
+            current_issue=40,
+            rule_plane_body_sha256=hashlib.sha256(rule_body.encode()).hexdigest(),
+            current_body_sha256=hashlib.sha256(current_body.encode()).hexdigest(),
+        )
+
+        def fake_gh(repo, num):
+            return rule_body if num == 16 else current_body
+
+        with patch.dict(
+            os.environ,
+            {
+                "GACE_WORK_ROUTINE_REQUIRE_CONTENT_HASH": "1",
+                "GACE_WORK_ROUTINE_REPO_ROOT": str(root),
+            },
+            clear=False,
+        ):
+            with patch.object(gate, "gh_issue_body", side_effect=fake_gh):
+                with patch.object(gate, "manifest_rule_issue", return_value=16):
+                    self.assertEqual(gate.evaluate_turn(state), "PASS")
+
 if __name__ == "__main__":
     unittest.main()

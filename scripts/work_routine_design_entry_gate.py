@@ -7,8 +7,12 @@ turn submission. CI and bounded mutation entry points may call this mechanically
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
+import subprocess
 import sys
+from pathlib import Path
 
 PROFILES = {"GPT_CHAT", "SERVER_AI"}
 MUTATION_SCOPES = {"design_changing", "routine_fix", "read_only"}
@@ -21,6 +25,74 @@ DESIGN_STATUSES = {
 }
 ADOPTIONS = {"ADOPTED_MAIN", "PROPOSED_PR", "UNKNOWN"}
 IMPLEMENTATION_CONTEXTS = {"proposed_pr_staging", "adopted_main_implementation", "not_applicable"}
+
+
+def sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def gh_issue_body(control_repo: str, issue_number: int) -> str:
+    proc = subprocess.run(
+        ["gh", "issue", "view", str(issue_number), "--repo", control_repo, "--json", "body", "-q", ".body"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    if proc.returncode != 0 or not proc.stdout.strip():
+        raise RuntimeError("GH_ISSUE_READ_FAILED")
+    return proc.stdout
+
+
+def manifest_rule_issue(manifest_path: Path, profile: str) -> int:
+    doc = json.loads(manifest_path.read_text(encoding="utf-8"))
+    key = "server_ai" if profile == "SERVER_AI" else "gpt_chat"
+    block = (doc.get("rule_planes") or {}).get(key) or {}
+    num = block.get("issue_number")
+    if not isinstance(num, int):
+        raise ValueError("invalid")
+    return num
+
+
+def verify_evidence_content_hashes(state: dict) -> str:
+    if os.environ.get("GACE_WORK_ROUTINE_REQUIRE_CONTENT_HASH") != "1":
+        return "PASS"
+    for key in (
+        "manifest_sha256",
+        "rule_plane_body_sha256",
+        "current_body_sha256",
+        "current_issue",
+        "rule_plane_issue",
+    ):
+        if state.get(key) in (None, ""):
+            return "RULE_ENTRY_EVIDENCE_HASH_REQUIRED"
+    root_raw = os.environ.get("GACE_WORK_ROUTINE_REPO_ROOT", "").strip()
+    if not root_raw:
+        return "RULE_ENTRY_REPO_ROOT_REQUIRED"
+    manifest_rel = state.get("manifest_path") or "operations/github-project-rule-plane.json"
+    manifest_path = Path(root_raw) / manifest_rel
+    if not manifest_path.is_file():
+        return "RULE_ENTRY_MANIFEST_FILE_MISSING"
+    actual_manifest = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+    if actual_manifest != state.get("manifest_sha256"):
+        return "RULE_ENTRY_MANIFEST_HASH_MISMATCH"
+    profile = state.get("rule_plane_profile")
+    if profile not in PROFILES:
+        return "RULE_ENTRY_PROFILE_INVALID"
+    control_repo = os.environ.get("GACE_CONTROL_REPO", "G-ACE-inc/server-core").strip()
+    try:
+        rule_body = gh_issue_body(control_repo, int(state["rule_plane_issue"]))
+        current_body = gh_issue_body(control_repo, int(state["current_issue"]))
+        expected_rule = manifest_rule_issue(manifest_path, profile)
+    except (RuntimeError, OSError, ValueError, TypeError, json.JSONDecodeError):
+        return "RULE_ENTRY_EVIDENCE_READ_FAILED"
+    if expected_rule != int(state["rule_plane_issue"]):
+        return "RULE_ENTRY_RULE_ISSUE_MISMATCH"
+    if sha256_text(rule_body) != state.get("rule_plane_body_sha256"):
+        return "RULE_ENTRY_RULE_PLANE_HASH_MISMATCH"
+    if sha256_text(current_body) != state.get("current_body_sha256"):
+        return "RULE_ENTRY_CURRENT_HASH_MISMATCH"
+    return "PASS"
 
 
 def evaluate_rule_entry(state: dict) -> str:
@@ -36,6 +108,9 @@ def evaluate_rule_entry(state: dict) -> str:
         return "RULE_ENTRY_CU_NOT_VERIFIED"
     if state.get("purpose_cu_aligned") is not True:
         return "PURPOSE_CU_MISMATCH"
+    content = verify_evidence_content_hashes(state)
+    if content != "PASS":
+        return content
     return "PASS"
 
 
@@ -78,7 +153,6 @@ def evaluate_design(state: dict) -> str:
             return "SOURCE_DESIGN_MISMATCH"
         return "PASS"
 
-    # routine_fix inside adopted design
     if status == "DESIGN_DRIFT" or state.get("source_design_aligned") is False:
         return "SOURCE_DESIGN_MISMATCH"
     if status in ("DESIGN_NOT_FOUND", "DESIGN_NOT_VERIFIED"):
