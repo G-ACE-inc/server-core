@@ -1,0 +1,29 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "run_id": "",
+  "repo": "/workspace/debug-ai",
+  "request": "Tool B cross-CHAT gateway ability: retry after explicit START purpose/CU alignment field. Read-only project.git_head; no server mutations.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.git_head",
+    "expected_sha": "1d1b1f0711e615f1ba2a0217a7c4665048abb8c2"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "source_evidence": "Control #10 owning Tool B, main request 181b7f86151fc52f389e2ea1d9ab16e55eddfec7 failed START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED in Actions run 38218779767; targeted correction adds explicit verified purpose/CU alignment under existing #17, read-only Host head E2E.",
+    "purpose_cu_aligned": true
+  }
+}
