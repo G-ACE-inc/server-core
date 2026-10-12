@@ -47,7 +47,9 @@ function assertBoundedHostShape(request) {
           : request.command_id === "docker.logs"
             ? ["command_id", "container", "enabled", "expected_sha", "tail"].sort()
             : request.command_id === "dev.job"
-              ? ["argv", "command_id", "enabled", "expected_sha", "fresh", "repository", "session", "timeout_s"].sort()
+              ? (Object.hasOwn(request, "repo_sha")
+                ? ["argv", "command_id", "enabled", "expected_sha", "fresh", "repo_sha", "repository", "session", "timeout_s"].sort()
+                : ["argv", "command_id", "enabled", "expected_sha", "fresh", "repository", "session", "timeout_s"].sort())
               : ["command_id", "enabled", "expected_sha"].sort();
   if (keys.join("|") !== expected.join("|")) throw new Error("BOUNDED_HOST_KEYS_INVALID");
   if (request.command_id === "project.source_reflect" &&
@@ -82,6 +84,10 @@ function assertBoundedHostShape(request) {
        !Number.isInteger(request.timeout_s) || request.timeout_s < 1 || request.timeout_s > 15 ||
        typeof request.fresh !== "boolean")) {
     throw new Error("BOUNDED_HOST_JOB_TARGET_INVALID");
+  }
+  if (request.command_id === "dev.job" && Object.hasOwn(request, "repo_sha") &&
+      (typeof request.repo_sha !== "string" || !/^[0-9a-f]{40}$/.test(request.repo_sha))) {
+    throw new Error("BOUNDED_HOST_REPO_SHA_INVALID");
   }
   const shaVal = String(request.expected_sha || "");
   // Service deploy targets another repository: never the workflow SHA alias.
