@@ -379,6 +379,12 @@ def evaluate_work_routine_turn_receipt() -> dict | None:
     """Optional mechanical Work Routine turn receipt (JSON path in env)."""
     raw = os.environ.get("GACE_WORK_ROUTINE_TURN", "").strip()
     if not raw:
+        if os.environ.get("GACE_WORK_ROUTINE_REQUIRED", "").strip() == "1":
+            return emit(
+                "DENY",
+                "WORK_ROUTINE_TURN_RECEIPT_REQUIRED",
+                current_mission_verified="NO",
+            )
         return None
     turn_path = Path(raw)
     if not turn_path.is_file():
