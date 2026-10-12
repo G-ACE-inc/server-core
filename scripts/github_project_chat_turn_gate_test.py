@@ -20,6 +20,8 @@ class DecisionTests(unittest.TestCase):
         self.assertEqual(gate.evaluate({**good, "profile": "SERVER_AI"}), "START_PROFILE_MISMATCH")
         self.assertEqual(gate.evaluate({k: v for k, v in good.items() if k != "purpose_cu_aligned"}), "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED")
         self.assertEqual(gate.evaluate({**good, "purpose_cu_aligned": False}), "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED")
+        self.assertEqual(gate.evaluate({**good, "purpose_cu_aligned": None}), "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED")
+        self.assertEqual(gate.evaluate({**good, "purpose_cu_aligned": "true"}), "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED")
 
     def test_failure_replan(self):
         good = dict(phase="FAILURE", failed_step="Host read", failure_evidence="run/42",
