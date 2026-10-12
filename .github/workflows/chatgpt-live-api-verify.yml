@@ -77,7 +77,6 @@ jobs:
           [[ "$source_reflect_enabled" != "true" || "$gitops_enabled" != "true" ]] || { echo "CHAT_REFLECT_CONCURRENT_DEPLOY_DENIED"; exit 44; }
           [[ "$source_reflect_enabled" != "true" || "$mode" == "readonly" ]] || { echo "CHAT_REFLECT_MODE_DENIED"; exit 45; }
           echo "source_reflect_enabled=$source_reflect_enabled" >> "$GITHUB_OUTPUT"
-          bounded_host_enabled="$(jq -r '.bounded_host_request.enabled // false' .github/chatgpt-live-api-target.json)"
           [[ "$bounded_host_enabled" == "true" || "$bounded_host_enabled" == "false" ]]
           echo "bounded_host_enabled=$bounded_host_enabled" >> "$GITHUB_OUTPUT"
           if [[ "$bounded_host_enabled" != "true" ]]; then
