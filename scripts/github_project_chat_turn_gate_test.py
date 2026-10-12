@@ -13,11 +13,15 @@ class DecisionTests(unittest.TestCase):
         good = dict(phase="START", profile="GPT_CHAT",
                     manifest_verified=True, rule_full_read=True,
                     current_verified=True, purpose_verified=True,
-                    cu_verified=True, source_evidence="github://run/1")
+                    cu_verified=True, purpose_cu_aligned=True, source_evidence="github://run/1")
         self.assertEqual(gate.evaluate(good), "PASS")
         for key in ("manifest_verified", "rule_full_read", "current_verified", "purpose_verified", "cu_verified"):
             self.assertNotEqual(gate.evaluate({**good, key: False}), "PASS")
         self.assertEqual(gate.evaluate({**good, "profile": "SERVER_AI"}), "START_PROFILE_MISMATCH")
+        self.assertEqual(gate.evaluate({k: v for k, v in good.items() if k != "purpose_cu_aligned"}), "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED")
+        self.assertEqual(gate.evaluate({**good, "purpose_cu_aligned": False}), "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED")
+        self.assertEqual(gate.evaluate({**good, "purpose_cu_aligned": None}), "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED")
+        self.assertEqual(gate.evaluate({**good, "purpose_cu_aligned": "true"}), "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED")
 
     def test_failure_replan(self):
         good = dict(phase="FAILURE", failed_step="Host read", failure_evidence="run/42",
@@ -71,7 +75,7 @@ class DecisionTests(unittest.TestCase):
             phase="START", profile="GPT_CHAT",
             manifest_verified=True, rule_full_read=True,
             current_verified=True, purpose_verified=True,
-            cu_verified=True, source_evidence="github://run/1",
+            cu_verified=True, purpose_cu_aligned=True, source_evidence="github://run/1",
             mutation_scope="design_changing",
             design_status="DESIGN_NOT_FOUND",
             design_adoption="ADOPTED_MAIN",
@@ -85,7 +89,7 @@ class DecisionTests(unittest.TestCase):
             phase="START", profile="GPT_CHAT",
             manifest_verified=True, rule_full_read=True,
             current_verified=True, purpose_verified=True,
-            cu_verified=True, source_evidence="github://run/1",
+            cu_verified=True, purpose_cu_aligned=True, source_evidence="github://run/1",
             mutation_scope="routine_fix",
             design_status="DESIGN_VERIFIED",
             design_adoption="ADOPTED_MAIN",

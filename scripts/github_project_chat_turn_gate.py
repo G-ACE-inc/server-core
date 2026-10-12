@@ -74,6 +74,8 @@ def evaluate(state):
                 return "START_" + k.upper() + "_NOT_VERIFIED"
         if state.get("profile") != "GPT_CHAT":
             return "START_PROFILE_MISMATCH"
+        if state.get("purpose_cu_aligned") is not True:
+            return "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED"
         if not isinstance(state.get("source_evidence"), str) or not state["source_evidence"].strip():
             return "START_EVIDENCE_MISSING"
         if "mutation_scope" in state or state.get("design_status"):
