@@ -35,6 +35,34 @@ class TurnReceiptTests(unittest.TestCase):
         self.assertIs(receipt.get("purpose_verified"), True)
         self.assertEqual(gate_mod.evaluate_turn(receipt), "PASS")
 
+    def test_control_issue_purpose_readback_does_not_infer_cu(self):
+        receipt_mod = load("receipt_control_purpose", MODULE)
+        gate_mod = load("gate_control_purpose", GATE)
+        body = "## Purpose\nMigrate operating authority without losing client intent.\n\n## Scope\nBounded"
+        with patch.object(receipt_mod, "gh_issue_body", return_value=body):
+            receipt = receipt_mod.build_receipt(
+                repo_root=Path(__file__).resolve().parents[1],
+                profile="GPT_CHAT", control_repo="G-ACE-inc/server-core",
+                current_issue=15, mutation_scope="routine_fix",
+                design_status="DESIGN_NOT_APPLICABLE",
+                purpose_cu_aligned=None,
+            )
+        self.assertTrue(receipt["purpose_verified"])
+        self.assertFalse(receipt["cu_verified"])
+        self.assertNotEqual(gate_mod.evaluate_turn(receipt), "PASS")
+
+    def test_empty_control_purpose_is_not_verified(self):
+        receipt_mod = load("receipt_empty_purpose", MODULE)
+        with patch.object(receipt_mod, "gh_issue_body", return_value="## Purpose\n\n## Scope\nSomething"):
+            receipt = receipt_mod.build_receipt(
+                repo_root=Path(__file__).resolve().parents[1],
+                profile="GPT_CHAT", control_repo="G-ACE-inc/server-core",
+                current_issue=15, mutation_scope="routine_fix",
+                design_status="DESIGN_NOT_APPLICABLE",
+                purpose_cu_aligned=None,
+            )
+        self.assertFalse(receipt["purpose_verified"])
+
     def test_gpt_chat_receipt_rejects_current_without_canonical_purpose(self):
         receipt_mod = load("receipt_no_purpose", MODULE)
         gate_mod = load("gate_no_purpose", GATE)
