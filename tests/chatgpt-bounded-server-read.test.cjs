@@ -26,6 +26,17 @@ test("Independent bounded Host dispatch does not require DebugAI product route",
     {mode:"bounded_host",commandId:"project.source_reflect"});
   assert.match(wf,/steps\.target\.outputs\.bounded_host_enabled != 'true'/);
 });
+test("Independent Host request is selected only after legacy client checks",()=>{
+  const legacy=wf.indexOf("      - name: Verify copied bounded Actions client and CHAT decision gate");
+  const select=wf.indexOf("      - name: Select commit-local CHAT request (without shared target mutation)");
+  const dispatch=wf.indexOf("      - name: Optional independent bounded Host gateway dispatch");
+  assert.ok(legacy>=0 && select>legacy && dispatch>select,
+    "Legacy client tests must read untouched idle target before isolated Host selection");
+  const targetRead=wf.slice(wf.indexOf("      - name: Read bounded target"),wf.indexOf("      - name: START Gate"));
+  assert.match(targetRead,/if \\[\\[ "\\$bounded_host_enabled" != "true" \\]\\]; then/);
+  assert.match(targetRead,/\\$base.*https:\\/\\/debugai\\.asterav8\\.jp/);
+  assert.match(targetRead,/\\$repo.*\\/workspace\\/debug-ai/);
+});
 test("Independent deploy effect needs exact before SHA and rejects extra request fields",()=>{
   const x={enabled:true,command_id:"project.source_reflect",expected_sha:"GITHUB_WORKFLOW_SHA",expected_before:"a".repeat(40)};
   const contract=JSON.parse(fs.readFileSync(path.resolve(__dirname,"../operations/github-project-bounded-host.json"),"utf8"));
