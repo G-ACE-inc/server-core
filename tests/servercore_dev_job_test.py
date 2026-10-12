@@ -487,15 +487,17 @@ class SenderWiring(unittest.TestCase):
 
 
 class ContractAndInstallerFiles(unittest.TestCase):
-    def test_committed_contract_matches_committed_design_and_registers_only_server_core(self):
+    def test_committed_contract_matches_design_and_registered_projects(self):
         contract = json.loads((ROOT / "operations/github-project-bounded-host.json").read_text())
         policy = contract["dev_job"]
         self.assertEqual(policy["design_section_sha256"],
                          job.design_section_digest((ROOT / "docs/SERVER_CORE_DESIGN.md").read_text(encoding="utf-8")))
-        self.assertEqual(list(policy["registered_repositories"]), ["G-ACE-inc/server-core"])
+        self.assertEqual(set(policy["registered_repositories"]), {"G-ACE-inc/server-core", "seigo-gace/TGserver", "seigo-gace/debug-ai"})
+        self.assertEqual(policy["registered_repositories"]["seigo-gace/TGserver"]["root"], "/home/admin1/projects/TGserver")
+        self.assertEqual(policy["registered_repositories"]["seigo-gace/debug-ai"]["root"], "/home/admin1/projects/debug-ai")
         self.assertEqual(policy["allowed_executables"], ["git", "python3", "sh"])
         self.assertEqual(contract["command_effects"]["dev.job"], "dev_job")
-        self.assertNotIn("debug-ai", json.dumps(policy))
+        self.assertEqual(policy["registered_repositories"]["G-ACE-inc/server-core"]["branch"], "main")
 
     def test_unit_has_no_docker_socket_mount_and_runs_as_user(self):
         text = (ROOT / "scripts/servercore_dev_job_host_bootstrap.py").read_text()
