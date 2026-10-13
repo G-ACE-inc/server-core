@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core enumerate existing nested checkouts and git SHA without modification",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'from pathlib import Path\nimport subprocess\np=Path(\"/home/admin1/projects/ai-core/.worktrees\")\nprint(\"WORKTREES_EXISTS=\"+str(p.is_dir()))\nfor d in (list(p.iterdir())[:14] if p.is_dir() else []):\n print(\"ENTRY=\"+d.name+\" IS_DIR=\"+str(d.is_dir()))\n if d.is_dir():\n  r=subprocess.run([\"git\",\"-C\",str(d),\"rev-parse\",\"--short=12\",\"HEAD\"],capture_output=True,text=True,timeout=6)\n  print(\"GIT=\"+(r.stdout.strip() if r.returncode==0 else \"NOT_GIT\"))\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "ai-core PR3",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core source Host checkout deployment readiness without mutation"
+  }
+}
