@@ -150,7 +150,23 @@ class DockerRouteTests(unittest.TestCase):
              patch.object(receiver, "deploy_socket_call", return_value=reply):
             result = receiver.dispatch_docker_operation(request, Path("/x"))
         self.assertEqual(result["stdout"], "running")
+        self.assertFalse(result["stdout_truncated"])
         self.assertTrue(result["read_only"])
+
+    def test_receiver_preserves_latest_compose_logs_and_truncation_marker(self):
+        request = {"id": SESSION, "command_id": "docker.operation", "expected_sha": SHA,
+                   "repository": REPO, "service": "debug-ai", "operation": "logs", "argv": [], "tail": 200}
+        payload = "old:" + "x" * 18000 + ":LATEST"
+        reply = {"ok": True, "request_id": SESSION, "state": "DOCKER_OPERATION_PASS",
+                 "repository": REPO, "service": "debug-ai", "operation": "logs",
+                 "source_sha": SHA, "stdout": payload, "stderr": "", "exit_code": 0}
+        with patch.object(receiver.bounded_host, "checked_root", return_value=Path("/x")), \
+             patch.object(receiver.bounded_host, "head_sha", return_value=SHA), \
+             patch.object(receiver, "deploy_socket_call", return_value=reply):
+            result = receiver.dispatch_docker_operation(request, Path("/x"))
+        self.assertEqual(len(result["stdout"]), 16000)
+        self.assertTrue(result["stdout"].endswith(":LATEST"))
+        self.assertTrue(result["stdout_truncated"])
 
 class HostTerminalRouteTests(unittest.TestCase):
     def test_gateway_and_receiver_use_existing_route(self):
