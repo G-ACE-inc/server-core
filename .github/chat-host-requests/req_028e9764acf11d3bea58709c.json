@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Validate newly built Receiver in isolated staging while production remains live, cleanup staging only.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "command": "set -e; name=gace-receiver-test-20261013; old=server-core-bounded-host; ! docker inspect \"$name\" >/dev/null 2>&1; trap 'docker rm -f \"$name\" >/dev/null 2>&1 || true' EXIT; docker run -d --name \"$name\" --network gace-internal --user 1000:1000 --read-only --tmpfs /tmp:size=32m,mode=1777 --security-opt no-new-privileges --cap-drop ALL --pids-limit 64 --memory 192m --volumes-from \"$old\":ro --env-file <(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' \"$old\") gace-server-core-bounded-host:hostsha-66026698 >/dev/null; sleep 3; docker inspect -f 'STAGING={{.State.Running}} EXIT={{.State.ExitCode}}' \"$name\"; docker logs --tail 4 \"$name\" 2>&1 | cut -c1-100; docker exec \"$name\" python3 -c 'import urllib.request;assert urllib.request.urlopen(\"http://127.0.0.1:8789/healthz\",timeout=3).status==200;print(\"STAGING_HEALTH=PASS\")'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR205 Host reflect image nonroot file check PASS #6144856066. Staging verifies actual full runtime with same existing mounts before production swap; cleanup staging only and no new infra."
+  }
+}
