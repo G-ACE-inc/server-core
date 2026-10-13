@@ -152,6 +152,35 @@ class DockerRouteTests(unittest.TestCase):
         self.assertEqual(result["stdout"], "running")
         self.assertTrue(result["read_only"])
 
+class HostTerminalRouteTests(unittest.TestCase):
+    def test_gateway_and_receiver_use_existing_route(self):
+        contract = {"request_schema": "gace.servercore-bounded-host.request/v1",
+                    "allowed_command_ids": ["host.command"]}
+        req = sender.validate_cli("host.command", SHA, contract,
+                                   repository=REPO, path="docker compose ps")
+        self.assertEqual(req["command"], "docker compose ps")
+        self.assertEqual(receiver.validate_request(req, contract)["repository"], REPO)
+        with self.assertRaisesRegex(receiver.ReceiverError, "HOST_COMMAND_TARGET_INVALID"):
+            receiver.validate_request({**req, "repository": "../../tmp"}, contract)
+
+    def test_writer_rejects_unregistered_host_command(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = root / "registry.json"
+            registry.write_text(json.dumps({"repositories": [{
+                "repository": REPO, "enabled": True, "revoked": False,
+                "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+                "allowed_operations": ["docker.operation"],
+                "server_project_path": "/home/admin1/projects/debug-ai"
+            }]}))
+            payload = {"schema": writer.HOST_COMMAND_SCHEMA, "id": SESSION,
+                       "repository": REPO, "target_sha": SHA,
+                       "command": "docker ps"}
+            with self.assertRaisesRegex(writer.AdmissionError, "HOST_COMMAND_NOT_REGISTERED"):
+                writer.run_host_command(payload, registry_path=registry,
+                                        lock_path=root / "lock", result_dir=root / "results")
+
+
 class CrossRepoComposeScopeTests(unittest.TestCase):
     def test_cross_repo_docker_grant_does_not_imply_deploy(self):
         from servercore_service_deploy_admission import require_registered, AdmissionError
