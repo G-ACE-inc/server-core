@@ -76,7 +76,16 @@ class DockerOperationsTests(unittest.TestCase):
 
     def test_output_cap(self):
         result = module.operate(ENTRY, "api", "logs", runner=lambda *a, **k: completed("x"*6000))
-        self.assertEqual(len(result["stdout"]), 4000)
+        self.assertEqual(len(result["stdout"]), 6000)
+        self.assertFalse(result["stdout_truncated"])
+
+    def test_log_tail_over_cap_keeps_latest_lines_and_marks_truncation(self):
+        data = "prefix:" + "x" * 16000 + ":LATEST"
+        result = module.operate(ENTRY, "api", "logs", runner=lambda *a, **k: completed(data))
+        self.assertEqual(len(result["stdout"]), 16000)
+        self.assertTrue(result["stdout"].endswith(":LATEST"))
+        self.assertTrue(result["stdout_truncated"])
+        self.assertFalse(result["stderr_truncated"])
 
     def test_untrusted_exec_argv_rejected(self):
         with self.assertRaisesRegex(module.DockerOperationError, "EXEC_ARGV_INVALID"):
