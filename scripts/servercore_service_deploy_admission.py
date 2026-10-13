@@ -20,7 +20,7 @@ class AdmissionError(ValueError):
     pass
 
 
-def require_registered(registry, repository, target_sha, service):
+def require_registered(registry, repository, target_sha, service, *, permission="deploy"):
     if not isinstance(repository, str) or not REPO.fullmatch(repository):
         raise AdmissionError("REPOSITORY_INVALID")
     if not isinstance(target_sha, str) or not SHA.fullmatch(target_sha):
@@ -37,8 +37,19 @@ def require_registered(registry, repository, target_sha, service):
         raise AdmissionError("DELEGATION_DISABLED")
     if entry.get("delegation_mode") != "MASTER_INTERNAL_PERSISTENT" or entry.get("allow_production") is not True:
         raise AdmissionError("DELEGATION_AUTHORITY_DENIED")
-    if "deploy" not in entry.get("allowed_operations", []):
-        raise AdmissionError("DEPLOY_OPERATION_NOT_REGISTERED")
+    grants = entry.get("allowed_operations", [])
+    if permission == "deploy":
+        if "deploy" not in grants:
+            raise AdmissionError("DEPLOY_OPERATION_NOT_REGISTERED")
+    elif permission == "docker.operation":
+        # Preserve the already-qualified DebugAI legacy grant, without allowing
+        # new per-repository Docker rights to imply image build/deploy rights.
+        if "docker.operation" not in grants and not (
+            repository == "seigo-gace/debug-ai" and "deploy" in grants
+        ):
+            raise AdmissionError("DOCKER_OPERATION_NOT_REGISTERED")
+    else:
+        raise AdmissionError("OPERATION_PERMISSION_INVALID")
     runtime = entry.get("runtime_target")
     if not isinstance(runtime, dict) or not isinstance(runtime.get("services"), list):
         raise AdmissionError("DEPLOY_RUNTIME_NOT_REGISTERED")
