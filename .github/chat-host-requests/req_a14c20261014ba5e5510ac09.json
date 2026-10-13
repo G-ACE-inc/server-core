@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core host source directory diagnostic",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'from pathlib import Path\nfor s in (\"/home/admin1/projects/ai-core\",\"/home/admin1/projects/ai-core/.git\",\"/home/admin1/projects/ai-core/runtime\",\"/home/admin1/projects/ai-core/README.md\"):\n p=Path(s)\n print(s+\" exists=\"+str(p.exists())+\" dir=\"+str(p.is_dir())+\" file=\"+str(p.is_file())+\" link=\"+str(p.is_symlink()))\nif Path(\"/home/admin1/projects/ai-core\").is_dir():\n print(\"CHILDREN=\"+\",\".join(x.name for x in list(Path(\"/home/admin1/projects/ai-core\").iterdir())[:25]))\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "ai-core PR3",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core source Host checkout deployment readiness without mutation"
+  }
+}
