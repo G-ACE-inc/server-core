@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Astera production evidence status and Main8 section07 read-only bounded check.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/astera_v8",
+    "repo_sha": "a9ec6611e271379753fd4c07e99897eb6ed0f661",
+    "command": "timeout 20 docker exec astera-v8 node -e 'const E=require(\"./src/astera-engine\");const e=new E();e.process({question:\"Node.js 22の現在の公式サポート状況を確認し、事実と未確認事項を区別してください。\",evidence_search:{deadline_ms:4500,maximum_results:3}},{id:\"runtime-probe\"}).then(x=>{let t=String(x.material?.text||\"\");console.log(JSON.stringify({task_results:(x.result?.task_results||[]).map(y=>({id:y.task_id||y.id,evidence_status:y.evidence?.status||y.evidence_result?.status||null,search_state:y.evidence?.search_state||y.evidence_result?.search_state||null})),section07:t.slice(t.indexOf(\"07 \"),t.indexOf(\"08 \")).slice(0,1000)}));process.exit(0)}).catch(x=>{console.error(x.code||x.message);process.exit(1)})'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Prior real runtime probe 6150682472 generated 6079-char Main8 but CLI remained alive. Explicit process exit and evidence status inspect."
+  }
+}
