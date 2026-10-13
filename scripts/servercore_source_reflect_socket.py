@@ -13,11 +13,11 @@ import re
 import socketserver
 import stat
 
-from servercore_source_reflect import CANONICAL_ROOT, SHA, ReflectError, LOCK_PATH, reflect
+from servercore_source_reflect import SHA, ReflectError, LOCK_PATH, reflect
+from servercore_source_reflect_admission import AdmissionError as ReflectAdmissionError, load_registry, require_reflect
 
 SOCKET_PATH = Path("/run/gace/servercore-source-reflect.sock")
 MAX_REQUEST = 2048
-REPO = "G-ACE-inc/server-core"
 SCHEMA = "gace.servercore-source-reflect.request/v1"
 REQ_ID = re.compile(r"^req_[0-9a-f]{24}$")
 
@@ -31,7 +31,7 @@ def validate(value):
         "schema", "id", "repository", "branch", "expected_before", "target_sha"
     }:
         raise AdmissionError("REQUEST_KEYS_DENIED")
-    if value["schema"] != SCHEMA or value["repository"] != REPO or value["branch"] != "main":
+    if value["schema"] != SCHEMA:
         raise AdmissionError("REQUEST_TARGET_DENIED")
     if not isinstance(value["id"], str) or not REQ_ID.fullmatch(value["id"]):
         raise AdmissionError("REQUEST_ID_DENIED")
@@ -44,11 +44,17 @@ def validate(value):
 
 def execute_request(value):
     request = validate(value)
-    # A socket request never selects the Host repo, branch, command, or effects.
+    admission = require_reflect(load_registry(), request["repository"], request["branch"], request["target_sha"])
     fd = os.open(LOCK_PATH, os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "w") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        return reflect(CANONICAL_ROOT, request["expected_before"], request["target_sha"])
+        return reflect(
+            admission["root"],
+            request["expected_before"],
+            request["target_sha"],
+            branch=admission["branch"],
+            allowed_origins=admission["allowed_origins"],
+        )
 
 
 class Handler(socketserver.StreamRequestHandler):
@@ -63,7 +69,7 @@ class Handler(socketserver.StreamRequestHandler):
             reply = {"ok": True, "request_id": value["id"], **result}
         except BlockingIOError:
             reply = {"ok": False, "error": "REFLECT_LOCK_BUSY"}
-        except (AdmissionError, ReflectError) as exc:
+        except (AdmissionError, ReflectAdmissionError, ReflectError) as exc:
             reply = {"ok": False, "error": str(exc)[:80]}
         except (ValueError, UnicodeError, TypeError):
             reply = {"ok": False, "error": "REQUEST_JSON_INVALID"}

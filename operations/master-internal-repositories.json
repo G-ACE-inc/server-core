@@ -36,10 +36,12 @@
       "allowed_branches": [
         "feat/tgserver-async-log-sink-20261003",
         "master-internal-runtime-20261008",
-        "fix/p1c-refix-no-new-evidence-20261010"
+        "fix/p1c-refix-no-new-evidence-20261010",
+        "test/g3-semantic-progress-counterexample-20261011"
       ],
       "allowed_operations": [
-        "deploy"
+        "deploy",
+        "host.command"
       ],
       "allowed_scopes": [
         "debugai.compose.reflect"
@@ -121,7 +123,8 @@
         "main"
       ],
       "allowed_operations": [
-        "reflect"
+        "reflect",
+        "host.command"
       ],
       "allowed_scopes": [
         "gace.source.reflect"
@@ -176,7 +179,8 @@
         "main"
       ],
       "allowed_operations": [
-        "reflect"
+        "reflect",
+        "host.command"
       ],
       "allowed_scopes": [
         "gace.source.reflect"
@@ -202,6 +206,152 @@
       "allowed_paths": [
         "README.md",
         "docs/"
+      ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_master_webhook_gateway_docker_op_v1",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "seigo-gace/webhook-gateway",
+      "repository_id": 1298348169,
+      "repository_node_id": "R_kgDOTWM4iQ",
+      "repository_owner": "seigo-gace",
+      "master_principal": "seigo-gace",
+      "project": {
+        "owner": "seigo-gace",
+        "number": 1,
+        "node_id": "PVT_kwHODOQFoM4BEJII",
+        "item_id": "PVTI_lAHODOQFoM4BEJIIzg-lZNg",
+        "control_url": "https://github.com/seigo-gace/webhook-gateway/issues/1"
+      },
+      "server_project_id": "webhook-gateway",
+      "server_project_path": "/home/admin1/projects/webhook-gateway",
+      "repo": "/workspace/debug-ai",
+      "remote": "https://github.com/seigo-gace/webhook-gateway.git",
+      "default_branch": "main",
+      "allowed_branches": [
+        "main"
+      ],
+      "allowed_operations": [
+        "docker.operation",
+        "host.command"
+      ],
+      "allowed_scopes": [
+        "gace.docker.operation"
+      ],
+      "runtime_target": {
+        "id": "webhook-gateway.compose",
+        "compose_file": "docker-compose.yml",
+        "compose_digest": "e0a877658e9d5cdffd112d5077c25773cce7496065125d8eb7ac00429e903d25",
+        "services": [
+          "api",
+          "worker",
+          "postgres"
+        ],
+        "health_service": "api",
+        "health_url": "http://127.0.0.1:7373/healthz"
+      },
+      "issuer": "master:seigo-gace",
+      "authority": "gace-master",
+      "audit_identity": "master:seigo-gace/internal:webhook-gateway",
+      "request_identity": "debugai.authenticated-control",
+      "allow_production": true,
+      "effects": {
+        "destructive": false,
+        "persistent_data": false,
+        "secrets": false,
+        "provider_model": false,
+        "public_exposure": false
+      },
+      "enabled": true,
+      "revoked": false,
+      "allowed_paths": [
+        "README.md",
+        "docs/"
+      ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_project1_asteria",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "seigo-gace/asteria",
+      "server_project_path": "/home/admin1/projects/asteria",
+      "enabled": true,
+      "revoked": false,
+      "allowed_operations": [
+        "host.command"
+      ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_project1_astera_v8",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "seigo-gace/astera_v8",
+      "server_project_path": "/home/admin1/projects/astera_v8",
+      "enabled": true,
+      "revoked": false,
+      "allowed_operations": [
+        "host.command"
+      ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_project1_astera_app",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "seigo-gace/astera-app",
+      "server_project_path": "/home/admin1/projects/astera-app",
+      "enabled": true,
+      "revoked": false,
+      "allowed_operations": [
+        "host.command"
+      ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_project1_modular_catalog",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "seigo-gace/modular-catalog",
+      "server_project_path": "/home/admin1/projects/Catalog/modular-catalog",
+      "enabled": true,
+      "revoked": false,
+      "allowed_operations": [
+        "host.command"
+      ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_project1_deterministic_japanese_parser_mcp",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "seigo-gace/Deterministic-Japanese-Parser-MCP",
+      "server_project_path": "/home/admin1/projects/Deterministic-Japanese-Parser-MCP",
+      "enabled": true,
+      "revoked": false,
+      "allowed_operations": [
+        "host.command"
+      ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_project1_libral_vault",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "seigo-gace/Libral-Vault",
+      "server_project_path": "/home/admin1/projects/libral-vault",
+      "enabled": true,
+      "revoked": false,
+      "allowed_operations": [
+        "host.command"
+      ]
+    },
+    {
+      "schema": "debugai.master-internal-delegation/v1",
+      "id": "dlg_project1_ai_core",
+      "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+      "repository": "seigo-gace/ai-core",
+      "server_project_path": "/home/admin1/projects/ai-core/.worktrees/source-import-20261013",
+      "enabled": true,
+      "revoked": false,
+      "allowed_operations": [
+        "host.command"
       ]
     }
   ]

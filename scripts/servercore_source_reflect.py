@@ -40,20 +40,24 @@ def git(root, *args):
     return result.stdout.strip()
 
 
-def reflect(root, expected_before, target_sha, *, dry_run=False):
+def reflect(root, expected_before, target_sha, *, branch="main", allowed_origins=None, dry_run=False):
     if not SHA.fullmatch(expected_before) or not SHA.fullmatch(target_sha):
         raise ReflectError("SHA_INVALID")
-    root = Path(root)
-    if root.is_symlink() or not root.is_dir() or root.resolve() != CANONICAL_ROOT:
+    root = Path(root).resolve()
+    if root.is_symlink() or not root.is_dir():
+        raise ReflectError("CANONICAL_ROOT_DENIED")
+    if not (root == CANONICAL_ROOT.resolve() or str(root).startswith("/home/admin1/projects/")):
         raise ReflectError("CANONICAL_ROOT_DENIED")
     if (root / ".git").is_symlink() or not (root / ".git").is_dir():
         raise ReflectError("GIT_CHECKOUT_MISSING")
     # A local directory named server-core is not sufficient authorization.
     # Do not fetch from a substituted remote (including local file URLs).
-    if git(root, "remote", "get-url", "origin") not in ALLOWED_ORIGINS:
+    origins = allowed_origins if allowed_origins is not None else ALLOWED_ORIGINS
+    if git(root, "remote", "get-url", "origin") not in origins:
         raise ReflectError("ORIGIN_REMOTE_DENIED")
-    if git(root, "rev-parse", "--abbrev-ref", "HEAD") != "main":
-        raise ReflectError("BRANCH_NOT_MAIN")
+    active_branch = git(root, "rev-parse", "--abbrev-ref", "HEAD")
+    if active_branch != branch:
+        raise ReflectError("BRANCH_NOT_ALLOWED")
     before = git(root, "rev-parse", "HEAD")
     if before != expected_before:
         raise ReflectError("BEFORE_SHA_MISMATCH")
@@ -61,10 +65,10 @@ def reflect(root, expected_before, target_sha, *, dry_run=False):
     if git(root, "status", "--porcelain", "--untracked-files=all"):
         raise ReflectError("DIRTY_CHECKOUT_DENIED")
     # Fetch only the registered main branch. Never accept a branch from the request.
-    git(root, "fetch", "--no-tags", "origin", "refs/heads/main")
+    git(root, "fetch", "--no-tags", "origin", "refs/heads/" + branch)
     current_remote = git(root, "rev-parse", "FETCH_HEAD")
     if current_remote != target_sha:
-        raise ReflectError("REMOTE_MAIN_SHA_MISMATCH")
+        raise ReflectError("REMOTE_BRANCH_SHA_MISMATCH")
     if git(root, "merge-base", before, target_sha) != before:
         raise ReflectError("NON_FAST_FORWARD_DENIED")
     if dry_run:

@@ -58,7 +58,7 @@ def build_event(request, contract):
     }
 
 
-def validate_cli(command_id, expected_sha, contract, expected_before=None, repository=None,
+def validate_cli(command_id, expected_sha, contract, expected_before=None, reflect_repository=None, reflect_branch=None, repository=None,
                  service=None, deploy_request_id=None, path=None, offset=None, container=None, tail=None,
                  session=None, argv=None, timeout_s=None, fresh=None, repo_sha=None,
                  docker_operation=None, host_command=None):
@@ -77,6 +77,14 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
         if not isinstance(expected_before, str) or not SHA_PATTERN.fullmatch(expected_before):
             raise SendError("REFLECT_BEFORE_INVALID")
         request["expected_before"] = expected_before
+        if reflect_repository is not None:
+            if not isinstance(reflect_repository, str) or not REPOSITORY_PATTERN.fullmatch(reflect_repository):
+                raise SendError("REFLECT_REPOSITORY_INVALID")
+            request["repository"] = reflect_repository
+        if reflect_branch is not None:
+            if not isinstance(reflect_branch, str) or not reflect_branch or reflect_branch.startswith("-"):
+                raise SendError("REFLECT_BRANCH_INVALID")
+            request["branch"] = reflect_branch
     elif expected_before is not None:
         raise SendError("UNEXPECTED_BEFORE_SHA")
     if command_id in {"service.deploy", "docker.operation"}:
