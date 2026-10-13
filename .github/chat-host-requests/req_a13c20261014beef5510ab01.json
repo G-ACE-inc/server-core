@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core read-only parent live headroom test third backend",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'from pathlib import Path\nimport subprocess\nx=subprocess.run([\"systemctl\",\"show\",\"ai-core.slice\",\"-p\",\"ControlGroup\",\"--value\"],capture_output=True,text=True,timeout=8)\nassert x.returncode==0 and x.stdout.strip().startswith(\"/\")\np=Path(\"/sys/fs/cgroup\")/x.stdout.strip().lstrip(\"/\")\ncur=int((p/\"memory.current\").read_text());high=int((p/\"memory.high\").read_text());maxm=int((p/\"memory.max\").read_text())\nthird=9216*1024**2\nprint(\"CURRENT=\"+str(cur)+\" HIGH=\"+str(high)+\" MAX=\"+str(maxm))\nprint(\"THIRD_LIMIT=\"+str(third)+\" SAFE_1G=\"+str(cur+third+1024**3<=high))\nprint(\"HEADROOM_TO_HIGH=\"+str(high-cur))\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "ai-core PR3",
+    "source_design_aligned": true,
+    "source_evidence": "read-only current cgroup third memory admission"
+  }
+}
