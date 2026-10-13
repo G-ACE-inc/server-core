@@ -113,5 +113,13 @@ def operate(entry, service, operation, *, argv=None, tail=100, timeout=45, runne
     # Only a non-empty service identity is evidence that ps/inspect found it.
     if operation in {"ps", "inspect"} and not stdout.strip():
         raise DockerOperationError("SERVICE_NOT_RUNNING_OR_NOT_COMPOSE_OWNED")
+    # Bounded results must not silently discard the latest log lines.
+    stdout_cap, stderr_cap = 16000, 1000
+    stdout_truncated = len(stdout) > stdout_cap
+    stderr_truncated = len(stderr) > stderr_cap
     return {"operation": operation, "service": service,
-            "stdout": stdout[:4000], "stderr": stderr[:1000], "exit_code": 0}
+            "stdout": stdout[-stdout_cap:] if stdout_truncated else stdout,
+            "stderr": stderr[-stderr_cap:] if stderr_truncated else stderr,
+            "stdout_truncated": stdout_truncated,
+            "stderr_truncated": stderr_truncated,
+            "exit_code": 0}
