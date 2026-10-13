@@ -229,6 +229,12 @@ def check_registered_compose_path(admitted):
         raise AdmissionError("DOCKER_COMPOSE_PATH_CHANGED")
     if hashlib.sha256(path.read_bytes()).hexdigest() != admitted["compose_digest"]:
         raise AdmissionError("DOCKER_COMPOSE_DIGEST_CHANGED")
+    for item in admitted.get("compose_overrides", []):
+        override = Path(item["path"])
+        if override.is_symlink() or not override.is_file() or not override.is_absolute():
+            raise AdmissionError("DOCKER_COMPOSE_OVERRIDE_PATH_CHANGED")
+        if hashlib.sha256(override.read_bytes()).hexdigest() != item["sha256"]:
+            raise AdmissionError("DOCKER_COMPOSE_OVERRIDE_DIGEST_CHANGED")
     return root
 
 def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, result_dir=None):
@@ -240,6 +246,9 @@ def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, 
                 "recorded_state": existing.get("state"), "result": existing}
     registry = json.loads(Path(registry_path).read_text(encoding="utf-8"))
     admitted = require_registered(registry, request["repository"], request["target_sha"], request["service"])
+    entry = next(x for x in registry["repositories"] if x.get("repository") == request["repository"])
+    runtime = entry["runtime_target"]
+    admitted["compose_overrides"] = runtime.get("compose_overrides", [])
     check_registered_compose_path(admitted)
     entry = next(x for x in registry["repositories"] if x.get("repository") == request["repository"])
     fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
