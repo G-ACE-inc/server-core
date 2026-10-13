@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core post-shutdown verify Astera preview, free ports, four stopped backends and actual reclaimed cgroup memory",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'from pathlib import Path\nimport subprocess,json\np=Path(\"/proc/1380720/cmdline\")\nprint(\"ASTERA_PREVIEW_PROCESS=\"+(\"PRESENT\" if p.exists() and b\"preview-proxy.mjs\" in p.read_bytes() else \"ABSENT\"))\ns=subprocess.run([\"ss\",\"-ltn\"],capture_output=True,text=True,timeout=8,check=True).stdout\nfor n in (18080,18181,18281,18282,18283,18284):\n print(\"LISTEN_\"+str(n)+\"=\"+str(any(\":\"+str(n)+\" \" in q for q in s.splitlines())))\nc=Path(\"/sys/fs/cgroup/ai.slice/ai-core.slice\")\nfor n in (\"memory.current\",\"memory.high\",\"memory.max\",\"memory.swap.current\"):\n print(n+\"=\"+(c/n).read_text().strip())\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "post Master-authorized Astera and all four model shutdown receipt 6152133316"
+  }
+}
