@@ -245,7 +245,7 @@ def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, 
         return {"request_id": request["id"], "state": "DOCKER_OPERATION_DUPLICATE",
                 "recorded_state": existing.get("state"), "result": existing}
     registry = json.loads(Path(registry_path).read_text(encoding="utf-8"))
-    admitted = require_registered(registry, request["repository"], request["target_sha"], request["service"])
+    admitted = require_registered(registry, request["repository"], request["target_sha"], request["service"], permission="docker.operation")
     entry = next(x for x in registry["repositories"] if x.get("repository") == request["repository"])
     runtime = entry["runtime_target"]
     admitted["compose_overrides"] = runtime.get("compose_overrides", [])

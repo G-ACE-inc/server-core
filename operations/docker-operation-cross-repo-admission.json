@@ -75,9 +75,15 @@
     "Verify host registry SHA and all runtime files fresh",
     "Preserve every existing host-only entry and delegation; merge additions only",
     "Check exact registered GitHub Project item, repository identity, branch and runtime ownership",
+    "Add only allowed_operations docker.operation for newly admitted repositories; do not add deploy, do not modify existing grants",
     "Do not add webhook redis, asteria other projects, or server-core bounded-host",
     "After source CI success and Host admission, first perform read-only ps on registered running services",
     "Run restart idempotency only on existing sandbox-runner after confirming no active session",
     "Observe health and independent issue result; do not claim Runtime PASS from source"
+  ],
+  "authorization_grant": "docker.operation",
+  "forbidden_implicit_grants": [
+    "deploy",
+    "reflect"
   ]
 }

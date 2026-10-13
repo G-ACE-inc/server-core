@@ -140,6 +140,29 @@ class DockerRouteTests(unittest.TestCase):
         self.assertTrue(result["read_only"])
 
 class CrossRepoComposeScopeTests(unittest.TestCase):
+    def test_cross_repo_docker_grant_does_not_imply_deploy(self):
+        from servercore_service_deploy_admission import require_registered, AdmissionError
+        entry = {"repository": "seigo-gace/TGserver", "enabled": True,
+                 "revoked": False, "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
+                 "allow_production": True, "allowed_operations": ["docker.operation"],
+                 "runtime_target": {"compose_file": "docker-compose.yml",
+                                    "compose_digest": "a" * 64,
+                                    "services": ["conversation-collector"]},
+                 "server_project_path": "/home/admin1/projects/TGserver",
+                 "remote": "https://github.com/seigo-gace/TGserver.git",
+                 "allowed_branches": ["main"]}
+        registry = {"repositories": [entry]}
+        admitted = require_registered(registry, "seigo-gace/TGserver", "a" * 40,
+                                      "conversation-collector", permission="docker.operation")
+        self.assertEqual(admitted["service"], "conversation-collector")
+        with self.assertRaisesRegex(AdmissionError, "DEPLOY_OPERATION_NOT_REGISTERED"):
+            require_registered(registry, "seigo-gace/TGserver", "a" * 40,
+                               "conversation-collector")
+        entry["allowed_operations"] = []
+        with self.assertRaisesRegex(AdmissionError, "DOCKER_OPERATION_NOT_REGISTERED"):
+            require_registered(registry, "seigo-gace/TGserver", "a" * 40,
+                               "conversation-collector", permission="docker.operation")
+
     def test_override_command_order_and_registry_rejection(self):
         from servercore_registered_docker_ops import checked_service, DockerOperationError
         entry = {"server_project_path": "/home/admin1/projects/TGserver",
