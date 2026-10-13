@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Astera-v8 production three-service live state read-back through new authorized host.command, no state mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "repository": "seigo-gace/astera_v8",
+    "repo_sha": "6d2fdda5dd9f62becbacf1f41a3b6c975db3ed4b",
+    "command": "python3 -c 'import urllib.request,json; ports=(7374,7375,7376); [(lambda p: print(str(p)+\" \"+urllib.request.urlopen(\"http://127.0.0.1:\"+str(p)+\"/healthz\",timeout=4).read(800).decode()))(p) for p in ports]'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Astera-v8 PR35 merged/deployed SHA 6d2fdda. New terminal prior req_3d5cdc7aa658c41b9b90f136 PASS. Read production health on actual Core 7375, Evaluator 7374, Evidence 7376."
+  }
+}
