@@ -28,6 +28,7 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 - Master-only intent approval vs delegated routine technical work: `docs/G_ACE_WORKSPACE.md` §6, **Master approval and delegated technical authority**.
 - CHAT blocked → mandatory paste-ready Server AI instruction or verified Master command: §6, **Mandatory executable handoff**; terminal format remains `docs/MASTER_TERMINAL_COMMAND.md`.
 - Server application runtimes (Node.js/Python) in existing Docker / Docker Compose containers: `docs/G_ACE_WORKSPACE.md` §12. Host infrastructure exceptions require their existing authority.
+- Existing fixed Host commands → bounded `host.command` fallback → isolated `dev.job`, with log retrieval and TGserver evidence separation: `docs/G_ACE_WORKSPACE.md` §9 **Common Host terminal / registered commands / evidence routing**; live owner/admission remains Issue #10. Repo enrollment is separately owned.
 
 
 At the start of a task, read its owning GitHub Project Current (mission, CU, writer, acceptance and next action) and the exact repository evidence required by Work Routine §6. Recheck changed Current/HEAD when the state changes. Do **not** require the full GPT CHAT Rule Plane #17 on every turn, run a second START/STOP prose checklist, or turn a routine progress explanation/CI success into a stopping condition. Historical #17 remains available for migration and audit, not a second mandatory development procedure. SERVER_AI may continue its existing machine-admission/permissions bootstrap; this change does not relax any Host, approval or effect guard.
