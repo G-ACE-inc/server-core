@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Master-authorized stop of exact Astera preview 18181 owner and remaining two AI model containers, preserve assets",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import os,signal,time,subprocess,json\npid=1380720\ntry:\n data=open(\"/proc/\"+str(pid)+\"/cmdline\",\"rb\").read().decode().replace(chr(0),\" \")\n assert data.startswith(\"node /tmp/astera-runtime-acceptance/preview-proxy.mjs \") and \" 18181 \" in data\n os.kill(pid,signal.SIGTERM)\n for i in range(30):\n  if not os.path.exists(\"/proc/\"+str(pid)): break\n  time.sleep(.2)\n print(\"ASTERA_PREVIEW_SIGNAL=TERM\")\nexcept FileNotFoundError: print(\"ASTERA_PREVIEW=ALREADY_STOPPED\")\nfor n in (\"ai-qwen3\",\"ai-coder\"):\n r=subprocess.run([\"docker\",\"stop\",\"--timeout\",\"20\",n],capture_output=True,text=True,timeout=32)\n print(\"STOP_\"+n+\"=\"+str(r.returncode))\n if r.returncode: raise SystemExit(1)\nr=subprocess.run([\"docker\",\"inspect\",\"--format\",\"{{.Name}}={{.State.Running}}\",\"ai-granite\",\"ai-qwen3\",\"ai-ministral\",\"ai-coder\"],capture_output=True,text=True,timeout=10,check=True)\nprint(\"MODEL_STATES=\"+r.stdout.strip().replace(chr(10),\";\"))\nassert all(row.endswith(\"=false\") for row in r.stdout.splitlines())\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Master permits Astera and all four model stops; exact Host inspect receipt 6152113604"
+  }
+}
