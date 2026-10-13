@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only verify reflected PR206 source regression tests and active Receiver container image; no restart or mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "command": "set -e; python3 -m unittest tests/servercore_registered_docker_ops_test.py tests/servercore_docker_operation_route_test.py -q; printf 'HOST_SOURCE_SHA=%s\\n' \"$(git rev-parse HEAD)\"; docker inspect --format 'RECEIVER_IMAGE={{.Config.Image}} RECEIVER_RUNNING={{.State.Running}}' server-core-bounded-host"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Issue #10 comment 6147230478 PR206_HOST_FF_PASS to c0c24449; protected Registry byte-identical, 3 stashes preserved. Source and live Receiver must be verified separately."
+  }
+}
