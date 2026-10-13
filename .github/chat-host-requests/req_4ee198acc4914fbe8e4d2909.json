@@ -1,0 +1,41 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only 200-tail registered DebugAI Compose logs to verify 16000-char preservation and explicit truncation state in live Writer/Receiver/Sink; no new system.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "docker.operation",
+    "expected_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "repository": "seigo-gace/debug-ai",
+    "service": "debug-ai",
+    "operation": "logs",
+    "argv": [],
+    "tail": 200
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Registered Docker log operation tail30 PASS, durable Writer and Sink 6574 chars stdout_truncated false issue #10 comment 6147568922. Need bounded >16k real output truncation indicator and latest lines validation."
+  }
+}
