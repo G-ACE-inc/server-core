@@ -106,7 +106,9 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
         if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
                 or not isinstance(host_command, str) or not 1 <= len(host_command) <= 1600 or "\x00" in host_command:
             raise SendError("HOST_COMMAND_TARGET_INVALID")
-        request.update({"repository": repository, "command": host_command})
+        if not isinstance(repo_sha, str) or not SHA_PATTERN.fullmatch(repo_sha):
+            raise SendError("HOST_COMMAND_REPO_SHA_INVALID")
+        request.update({"repository": repository, "repo_sha": repo_sha, "command": host_command})
     elif host_command is not None:
         raise SendError("UNEXPECTED_HOST_COMMAND")
     if command_id == "docker.operation":
