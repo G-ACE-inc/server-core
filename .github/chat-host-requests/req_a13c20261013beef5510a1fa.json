@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core 4 model rotation 2 shared slots exact HEAD mock regression",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import io,tarfile,urllib.request,types,sys,unittest\ns=\"eec9ab1a9d4d2b10ea5ede217ee8ba08ecd8cf55\";b=urllib.request.urlopen(\"https://api.github.com/repos/seigo-gace/ai-core/tarball/\"+s,timeout=12).read(800001);assert len(b)<800001\nt=tarfile.open(fileobj=io.BytesIO(b),mode=\"r:gz\");d={x.name.split(\"/\",1)[1]:t.extractfile(x).read().decode() for x in t.getmembers() if x.isfile()}\nr=types.ModuleType(\"runtime\");r.__path__=[];sys.modules[\"runtime\"]=r\nm=types.ModuleType(\"runtime.model_gate\");m.__file__=\"/tmp/ai-core/runtime/model_gate.py\";sys.modules[m.__name__]=m\nexec(compile(d[\"runtime/model_gate.py\"],m.__file__,\"exec\"),m.__dict__)\nq=types.ModuleType(\"test_model_gate\");q.__file__=\"/tmp/ai-core/tests/test_model_gate.py\"\nexec(compile(d[\"tests/test_model_gate.py\"],q.__file__,\"exec\"),q.__dict__)\nz=unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromTestCase(q.CoordinatorTests))\nprint(\"AI_CORE_DYNAMIC_ROTATION=\"+str(z.testsRun)+\" FAIL=\"+str(len(z.failures))+\" ERR=\"+str(len(z.errors)))\nassert z.wasSuccessful()'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core exact rotation eec9ab1a9d4d2b10ea5ede217ee8ba08ecd8cf55"
+  }
+}
