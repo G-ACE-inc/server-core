@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core exact SHA 15 safe in-memory unittest methods, no host filesystem writes or Docker mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import io,tarfile,urllib.request,types,sys,unittest\nsha=\"e48824521f6cedc154e4ef36ebf4fc2c4735f182\"\nt=tarfile.open(fileobj=io.BytesIO(urllib.request.urlopen(\"https://api.github.com/repos/seigo-gace/ai-core/tarball/\"+sha,timeout=15).read()),mode=\"r:gz\")\nd={x.name.split(\"/\",1)[1]:t.extractfile(x).read().decode() for x in t if x.isfile() and \"/\" in x.name}\nm=types.ModuleType(\"runtime.model_gate\");m.__file__=\"/virtual/runtime/model_gate.py\"\nsys.modules[\"runtime\"]=types.ModuleType(\"runtime\");sys.modules[m.__name__]=m\nexec(compile(d[\"runtime/model_gate.py\"],m.__file__,\"exec\"),m.__dict__)\nu=types.ModuleType(\"tests\");u.__file__=\"/virtual/tests/test_model_gate.py\"\nexec(compile(d[\"tests/test_model_gate.py\"],u.__file__,\"exec\"),u.__dict__)\nn=[\"test_idle_unload_does_not_hold_lock_for_ready_warm_request\",\"test_warm_recovery_does_not_block_other_warm_model\",\"test_ready_warm_model_can_serve_during_cold_load\",\"test_second_cold_load_rejected_while_first_is_pending\"]\nr=unittest.TextTestRunner().run(unittest.TestSuite(u.SourceTests(x) for x in n))\nprint(\"AI_CORE_TESTS\",sha,r.testsRun,len(r.failures),len(r.errors))\nsys.exit(not r.wasSuccessful())'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "AI Core 1 model 1 API current Draft PR #3",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Issue #1/PR #3 exact e488245; 15 in-memory tests; no Docker lifecycle"
+  }
+}
