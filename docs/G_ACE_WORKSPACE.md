@@ -292,6 +292,10 @@ DebugAIは独立Project/runtime。Source mainへのMCP実装反映とWorkspace L
 
 ### Common Host terminal / registered commands / evidence routing (Issue #10)
 
+**Master-only operating decision (2026-10-14):** The **server-core common CHAT→Host terminal is the sole default and production development route for GPT CHAT**. Do not route ordinary Project #1 development to the old DebugAI Server Command transport and do not request routine command, SHA, CI, merge, reflection, deploy or failure-recovery choices from Master. The old DebugAI route is **retired for ordinary GPT CHAT routing**, not migrated by changing documentation; retain historical code/credentials for separate existing consumers until ownership/use is audited. Reuse the current server-core command catalog or admitted bounded `host.command` in that route, `dev.job` only for isolated tests; exact per-repo authorization remains an automatic technical check. Missing admission is an engineering defect to investigate and correct within the approved Master-owned development scope, not a request for Master to choose a technical solution. Do not claim success from GitHub registration alone; verify runtime Result IDs and exact Host readback. Explicit Master decisions remain for genuine changes to product scope, spending, deletion/data exposure or changes outside the commissioned purpose.
+
+
+
 For already registered and explicitly authorized Project repositories, this is the **single operational selection policy**, not a new transport, Gate or repository enrollment procedure. Owning executable contracts and allowlists remain with Issue #10 and the existing Host/Receiver/Registry implementation.
 
 1. **Primary entrypoint = existing common Host terminal** (CHAT → GitHub Actions → Gateway → Receiver → Host Writer → VPS). CHAT first identifies the registered Repo, actual checkout, current branch, exact SHA and requested read/reflect/deploy/isolated-test effect. Do not start with a separate legacy DebugAI route, ask Master to pick a terminal, or send Master manual commands while the admitted common route is available. The common entrypoint is not an unrestricted Host permission.
