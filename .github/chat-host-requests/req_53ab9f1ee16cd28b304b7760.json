@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read only presence of failed request Writer receipt",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "50e4ae9f9dc6250a06e8c83cd7f7ce9b1ee6bcd4",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "50e4ae9f9dc6250a06e8c83cd7f7ce9b1ee6bcd4",
+    "command": "test -f /home/admin1/logs/servercore-service-deploy/req_d0998889a9516d2a561f5614.json && echo WRITER_RECEIPT_EXISTS || echo WRITER_RECEIPT_MISSING"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Master receiver restart PASS, prior long 9k request req_d099... gateway accepted but NOT_RETURNED. Docker.logs separate route PASS #6144116569. Read-only existence of exact existing Writer ledger record only."
+  }
+}
