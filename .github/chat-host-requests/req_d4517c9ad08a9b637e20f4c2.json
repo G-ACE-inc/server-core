@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Reflect merged result preservation fix to existing Host with exact ff-only and protected Registry unchanged, no PC.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "f6257151c9f5426f9c748397a9a02b2165a28cf5",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "f6257151c9f5426f9c748397a9a02b2165a28cf5",
+    "command": "set -e; test \"$(git rev-parse HEAD)\" = f6257151c9f5426f9c748397a9a02b2165a28cf5; before=$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1); git fetch --no-tags origin refs/heads/main >/dev/null; git cat-file -e 35b7e6f3134bb3818ba2e44780e5acc23207e69e^{commit}; git merge --ff-only 35b7e6f3134bb3818ba2e44780e5acc23207e69e >/dev/null; test \"$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1)\" = \"$before\"; printf 'RESULT_PRESERVE_SOURCE_REFLECT=PASS\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR #201 merged after CI 6/6 success; Host f625... confirmed native evidence #6143378594. Read-only merge ff-only and preserve protected 11 Repo Registry bytes."
+  }
+}
