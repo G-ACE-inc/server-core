@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core reuse old 18181-18184 Gate ports; exact source regression and existing host port verification",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess,types,sys,unittest,yaml\np=\"/home/admin1/projects/ai-core/.worktrees/source-import-20261013\"\nr=subprocess.run([\"git\",\"-C\",p,\"fetch\",\"--no-tags\",\"origin\",\"feat/per-model-lifecycle-20261013\"],capture_output=True,text=True,timeout=35)\nassert r.returncode==0,\"FETCH_FAILED\"\nsha=subprocess.check_output([\"git\",\"-C\",p,\"rev-parse\",\"FETCH_HEAD\"],text=True).strip()\ndef src(k):return subprocess.check_output([\"git\",\"-C\",p,\"show\",\"FETCH_HEAD:\"+k],text=True,timeout=8)\npol=yaml.safe_load(src(\"runtime/model-policy.yaml\"))\nports=[v[\"gate_port\"] for v in pol[\"models\"].values()]\nassert ports==[18181,18182,18183,18184] and pol[\"max_resident\"]==2 and pol[\"max_active\"]==2\nr=types.ModuleType(\"runtime\");r.__path__=[];sys.modules[\"runtime\"]=r\nm=types.ModuleType(\"runtime.model_gate\");m.__file__=\"/tmp/ai-core/model_gate.py\";sys.modules[m.__name__]=m\nexec(compile(src(\"runtime/model_gate.py\"),m.__file__,\"exec\"),m.__dict__)\nq=types.ModuleType(\"test_model_gate\");q.__file__=\"/tmp/ai-core/test_model_gate.py\";exec(compile(src(\"tests/test_model_gate.py\"),q.__file__,\"exec\"),q.__dict__)\nz=unittest.TextTestRunner().run(unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(q.CoordinatorTests),unittest.defaultTestLoader.loadTestsFromTestCase(q.GateHttpTests)]))\nprint(\"SHA=\"+sha+\" TESTS=\"+str(z.testsRun)+\" FAIL=\"+str(len(z.failures))+\" ERR=\"+str(len(z.errors))+\" SAFE_PORTS=\"+str(ports));assert z.wasSuccessful()\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Master requests reuse AI Core original port range; Astera preview absent and all models stopped receipt 6152147010; PR3 current"
+  }
+}
