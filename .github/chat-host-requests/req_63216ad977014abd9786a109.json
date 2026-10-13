@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only current Host and protected registry preflight for PR214 exact main Source reflection",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "command": "git rev-parse HEAD; git branch --show-current; git status --short; git stash list --format='%gd'; docker inspect --format 'RECEIVER={{.Config.Image}} RUNNING={{.State.Running}}' server-core-bounded-host"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR214 merged current main 0e0a9ecfeb9da3c01a9aa4a51a840da940005fe9 with exact-head CI 3/3 PASS. Inspect actual Host before guarded ff-only; protected Registry and stashes must survive."
+  }
+}
