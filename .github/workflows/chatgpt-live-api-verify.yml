@@ -149,6 +149,8 @@ jobs:
             send+=(--deploy-request-id "$(jq -r '.bounded_host_request.deploy_request_id' "$target")")
           elif [[ "$command_id" == "project.file_inspect" ]]; then
             send+=(--path "$(jq -r '.bounded_host_request.path' "$target")" --offset "$(jq -r '.bounded_host_request.offset' "$target")")
+          elif [[ "$command_id" == "host.command" ]]; then
+            send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --host-command "$(jq -r '.bounded_host_request.command' "$target")")
           elif [[ "$command_id" == "docker.operation" ]]; then
             send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --service "$(jq -r '.bounded_host_request.service' "$target")" --docker-operation "$(jq -r '.bounded_host_request.operation' "$target")" --tail "$(jq -r '.bounded_host_request.tail // 100' "$target")" --job-argv-json "$(jq -c '.bounded_host_request.argv // []' "$target")")
           elif [[ "$command_id" == "docker.logs" ]]; then

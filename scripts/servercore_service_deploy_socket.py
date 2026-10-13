@@ -275,6 +275,72 @@ def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, 
     return {"request_id": request["id"], **outcome}
 
 
+HOST_COMMAND_SCHEMA = "gace.servercore-host-command.request/v1"
+HOST_COMMAND_KEYS = {"schema", "id", "repository", "target_sha", "command"}
+HOST_COMMAND_MAX_SECONDS = 90
+
+def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, result_dir=None,
+                     runner=None):
+    """Run a Master-delegated Host command inside an existing, registered checkout.
+
+    Not a sandbox/dev.job. Uses the already privileged Host writer and durable
+    result ledger. No caller-provided cwd, uid, Docker socket, or registry path.
+    """
+    import subprocess
+    if not isinstance(value, dict) or set(value) != HOST_COMMAND_KEYS or value.get("schema") != HOST_COMMAND_SCHEMA:
+        raise AdmissionError("HOST_COMMAND_KEYS_INVALID")
+    request_id = _req_id(value["id"])
+    repository, target_sha, command_text = value["repository"], value["target_sha"], value["command"]
+    if not isinstance(repository, str) or not REPO.fullmatch(repository):
+        raise AdmissionError("REPOSITORY_INVALID")
+    if not isinstance(target_sha, str) or not SHA.fullmatch(target_sha):
+        raise AdmissionError("TARGET_SHA_INVALID")
+    if not isinstance(command_text, str) or not 1 <= len(command_text) <= 1600 or "\x00" in command_text:
+        raise AdmissionError("HOST_COMMAND_INVALID")
+    previous = read_result(request_id, result_dir)
+    if previous is not None:
+        return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
+    registry = json.loads(Path(registry_path).read_text(encoding="utf-8"))
+    entries = [e for e in registry.get("repositories", []) if isinstance(e, dict)
+               and e.get("repository") == repository]
+    if len(entries) != 1:
+        raise AdmissionError("REGISTERED_REPOSITORY_NOT_UNIQUE")
+    entry = entries[0]
+    if entry.get("enabled") is not True or entry.get("revoked") is not False \
+            or entry.get("delegation_mode") != "MASTER_INTERNAL_PERSISTENT" \
+            or "host.command" not in entry.get("allowed_operations", []):
+        raise AdmissionError("HOST_COMMAND_NOT_REGISTERED")
+    root = Path(str(entry.get("server_project_path", "")))
+    if not root.is_absolute() or root.is_symlink() or not root.is_dir() \
+            or not (root / ".git").is_dir() or root.resolve() != root \
+            or not (str(root).startswith("/home/admin1/projects/") or str(root) == "/home/admin1/server-core"):
+        raise AdmissionError("HOST_COMMAND_ROOT_INVALID")
+    git = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                         capture_output=True, text=True, timeout=15)
+    if git.returncode or git.stdout.strip() != target_sha:
+        raise AdmissionError("HOST_COMMAND_SHA_MISMATCH")
+    fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "w") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        previous = read_result(request_id, result_dir)
+        if previous is not None:
+            return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
+        base = {"request_id": request_id, "repository": repository, "source_sha": target_sha}
+        write_result(request_id, {**base, "state": "RUNNING"}, result_dir)
+        try:
+            run = runner or subprocess.run
+            completed = run(["/bin/bash", "-lc", command_text], cwd=str(root),
+                            capture_output=True, text=True, timeout=HOST_COMMAND_MAX_SECONDS,
+                            check=False)
+            result = {**base, "state": "HOST_COMMAND_PASS" if completed.returncode == 0 else "FAIL",
+                      "exit_code": completed.returncode,
+                      "stdout": completed.stdout[:4000], "stderr": completed.stderr[:1000]}
+        except (OSError, subprocess.TimeoutExpired):
+            result = {**base, "state": "FAIL", "failure_class": "HOST_COMMAND_EXECUTION_FAILED"}
+        write_result(request_id, result, result_dir)
+        return result
+
+
 class Handler(socketserver.StreamRequestHandler):
     def handle(self):
         self.connection.settimeout(60)
@@ -287,6 +353,8 @@ class Handler(socketserver.StreamRequestHandler):
                 reply = {"ok": True, **status_request(value)}
             elif isinstance(value, dict) and value.get("schema") == DOCKER_OP_SCHEMA:
                 reply = {"ok": True, **run_docker_operation(value)}
+            elif isinstance(value, dict) and value.get("schema") == HOST_COMMAND_SCHEMA:
+                reply = {"ok": True, **run_host_command(value)}
             else:
                 reply = {"ok": True, "request_id": value["id"], **accept_request(value)}
         except BlockingIOError:

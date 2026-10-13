@@ -16,7 +16,8 @@
     "project.file_inspect",
     "docker.logs",
     "docker.operation",
-    "dev.job"
+    "dev.job",
+    "host.command"
   ],
   "command_effects": {
     "project.git_head": "read_only",
@@ -29,7 +30,8 @@
     "docker.logs": "read_only",
     "project.git_diff_stat": "read_only",
     "dev.job": "dev_job",
-    "docker.operation": "registered_container_operation"
+    "docker.operation": "registered_container_operation",
+    "host.command": "registered_host_command"
   },
   "transport": {
     "kind": "webhook_gateway_internal_event",
