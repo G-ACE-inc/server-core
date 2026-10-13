@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Confirm image contract and module file mode causing CONTRACT_JSON_INVALID, no mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d7f7d390e6d23dc5e32d94de23516931cc5eff09",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "d7f7d390e6d23dc5e32d94de23516931cc5eff09",
+    "command": "docker run --rm --user 0 --entrypoint stat gace-server-core-bounded-host:hostsha-d7f7d390 -c '%a %u %g %n' /app/operations/github-project-bounded-host.json /app/scripts/servercore_bounded_host.py /app/scripts/gace_internal_delivery_auth.py /app/scripts/servercore_bounded_host_receiver.py; stat -c '%a %n' operations/github-project-bounded-host.json"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "Staging Receiver from built image failed CONTRACT_JSON_INVALID #6144692943, default contract /app/operations/github-project-bounded-host.json. Read image file modes only to identify nonroot read failure."
+  }
+}
