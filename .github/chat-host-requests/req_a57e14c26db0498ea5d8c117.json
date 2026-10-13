@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Identify earliest redundant Japanese request by printing source/span/origin after prepareRequest in running Astera Core, no external searches.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "repository": "seigo-gace/astera_v8",
+    "repo_sha": "318a9b33c6aa92d45c684c7a24d90740a8a7fcab",
+    "command": "docker exec astera-v8 node -e 'const E=require(\"./src/astera-engine\");new E().prepareRequest({question:\"Node.js 22の公式サポート状況を確認し、事実と未確認事項を区別してください。\",language:\"ja\"}).then(p=>{const m=p.analysis_task_packet?.case_model;console.log(JSON.stringify({requests:m?.judgment_requests?.map(x=>({id:x.id,origin:x.source_origin,text:x.request_text,span:x.source_span,parser_task_ids:x.parser_task_ids})),normalization:m?.normalization}));process.exit(0)}).catch(x=>{console.error(x.code||x.name);process.exit(1)})'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Integrated Japanese Main8 had R02 and duplicate R03 according to Issue10 6150195526. Need source backed/original parser span mapping to determine if parser-only subtask folded by src/runtime/multi-judgment-case-normalizer."
+  }
+}
