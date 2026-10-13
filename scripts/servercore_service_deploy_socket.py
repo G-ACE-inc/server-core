@@ -22,7 +22,8 @@ import time
 import urllib.request
 
 from servercore_registered_service_deploy import command, deploy
-from servercore_service_deploy_admission import REGISTRY, AdmissionError as DeployAdmissionError
+from servercore_service_deploy_admission import REGISTRY, AdmissionError as DeployAdmissionError, require_registered
+from servercore_registered_docker_ops import DockerOperationError, operate, OPS
 
 SOCKET_PATH = Path("/run/gace/servercore-service-deploy.sock")
 LOCK_PATH = Path("/tmp/gace-servercore-service-deploy.lock")
@@ -30,6 +31,8 @@ RESULT_DIR = Path("/home/admin1/logs/servercore-service-deploy")
 MAX_REQUEST = 2048
 DEPLOY_SCHEMA = "gace.servercore-service-deploy.request/v1"
 STATUS_SCHEMA = "gace.servercore-service-deploy.status/v1"
+DOCKER_OP_SCHEMA = "gace.servercore-docker-operation.request/v1"
+DOCKER_OP_KEYS = {"schema", "id", "repository", "service", "target_sha", "operation", "argv", "tail"}
 REQ_ID = re.compile(r"^req_[0-9a-f]{24}$")
 SHA = re.compile(r"^[0-9a-f]{40}$")
 REPO = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$")
@@ -139,7 +142,7 @@ def run_apply(request, registry, entry, lock, result_dir=None):
             "compose_digest": runtime["compose_digest"], "http_health": health,
             "before": before, "after": after,
             "recreated": before is None or before != after}, result_dir)
-    except (AdmissionError, DeployAdmissionError) as exc:
+    except (AdmissionError, DeployAdmissionError, DockerOperationError) as exc:
         write_result(request["id"], {**base, "state": "FAIL", "failure_class": str(exc)[:80]}, result_dir)
     except Exception:
         write_result(request["id"], {**base, "state": "FAIL", "failure_class": "INTERNAL_ERROR"}, result_dir)
@@ -182,6 +185,67 @@ def status_request(value, *, result_dir=None):
     return result
 
 
+
+def validate_docker_operation(value):
+    if not isinstance(value, dict) or set(value) != DOCKER_OP_KEYS:
+        raise AdmissionError("DOCKER_OPERATION_KEYS_DENIED")
+    if value["schema"] != DOCKER_OP_SCHEMA:
+        raise AdmissionError("DOCKER_OPERATION_SCHEMA_DENIED")
+    _req_id(value["id"])
+    if not isinstance(value["repository"], str) or not REPO.fullmatch(value["repository"]):
+        raise AdmissionError("REPOSITORY_INVALID")
+    if not isinstance(value["service"], str) or not SERVICE.fullmatch(value["service"]):
+        raise AdmissionError("SERVICE_INVALID")
+    if not isinstance(value["target_sha"], str) or not SHA.fullmatch(value["target_sha"]):
+        raise AdmissionError("TARGET_SHA_INVALID")
+    if not isinstance(value["operation"], str) or value["operation"] not in OPS:
+        raise AdmissionError("DOCKER_OPERATION_DENIED")
+    argv = value["argv"]
+    if not isinstance(argv, list) or (value["operation"] == "exec") != bool(argv):
+        raise AdmissionError("DOCKER_EXEC_ARGS_DENIED")
+    if len(argv) > 10 or sum(len(arg) for arg in argv if isinstance(arg, str)) > 1000:
+        raise AdmissionError("DOCKER_EXEC_ARGS_TOO_LARGE")
+    if any(not isinstance(arg, str) or not 1 <= len(arg) <= 512 for arg in argv):
+        raise AdmissionError("DOCKER_EXEC_ARGS_INVALID")
+    if type(value["tail"]) is not int or not 1 <= value["tail"] <= 200:
+        raise AdmissionError("DOCKER_TAIL_INVALID")
+    return value
+
+
+def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, result_dir=None):
+    """Use the existing registry and Host writer lock; retry IDs never repeat writes."""
+    request = validate_docker_operation(value)
+    existing = read_result(request["id"], result_dir)
+    if existing is not None:
+        return {"request_id": request["id"], "state": "DOCKER_OPERATION_DUPLICATE",
+                "recorded_state": existing.get("state"), "result": existing}
+    registry = json.loads(Path(registry_path).read_text(encoding="utf-8"))
+    require_registered(registry, request["repository"], request["target_sha"], request["service"])
+    entry = next(x for x in registry["repositories"] if x.get("repository") == request["repository"])
+    fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "w") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        # Repeat the idempotency read inside the lock as well.
+        existing = read_result(request["id"], result_dir)
+        if existing is not None:
+            return {"request_id": request["id"], "state": "DOCKER_OPERATION_DUPLICATE",
+                    "recorded_state": existing.get("state"), "result": existing}
+        base = {"request_id": request["id"], "repository": request["repository"],
+                "service": request["service"], "operation": request["operation"],
+                "source_sha": request["target_sha"]}
+        write_result(request["id"], {**base, "state": "RUNNING"}, result_dir)
+        try:
+            result = operate(entry, request["service"], request["operation"],
+                             argv=request["argv"] or None, tail=request["tail"], timeout=45)
+            outcome = {**base, "state": "DOCKER_OPERATION_PASS", **result}
+        except DockerOperationError as exc:
+            outcome = {**base, "state": "FAIL", "failure_class": str(exc)[:80]}
+        except Exception:
+            outcome = {**base, "state": "FAIL", "failure_class": "INTERNAL_ERROR"}
+        write_result(request["id"], outcome, result_dir)
+    return {"request_id": request["id"], **outcome}
+
+
 class Handler(socketserver.StreamRequestHandler):
     def handle(self):
         self.connection.settimeout(60)
@@ -192,6 +256,8 @@ class Handler(socketserver.StreamRequestHandler):
             value = json.loads(raw.decode("utf-8"))
             if isinstance(value, dict) and value.get("schema") == STATUS_SCHEMA:
                 reply = {"ok": True, **status_request(value)}
+            elif isinstance(value, dict) and value.get("schema") == DOCKER_OP_SCHEMA:
+                reply = {"ok": True, **run_docker_operation(value)}
             else:
                 reply = {"ok": True, "request_id": value["id"], **accept_request(value)}
         except BlockingIOError:
