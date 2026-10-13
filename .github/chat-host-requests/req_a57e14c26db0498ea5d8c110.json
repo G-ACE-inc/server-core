@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Preflight Astera-v8 merge #36 production reflection: exact Git status/branch/HEAD/remote; preserve unknown and dirty; read only.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "repository": "seigo-gace/astera_v8",
+    "repo_sha": "6d2fdda5dd9f62becbacf1f41a3b6c975db3ed4b",
+    "command": "git status --porcelain=v1 && git branch --show-current && git rev-parse HEAD && git remote get-url origin"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR36 CI success 3/3, merged 318a9b33c6aa92d45c684c7a24d90740a8a7fcab. Previous Host Astera repo SHA6d2fdda confirmed. Host SHA2bbba0 confirmed Issue10 6149944068. Preflight before controlled fast-forward and rebuild."
+  }
+}
