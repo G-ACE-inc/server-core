@@ -1,0 +1,46 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Astera-v8 after merge #35: inspect registered checkout exact branch/status before allowed source reflection. Read-only.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "543e135a35e180f1367dd7b553521d26483d05cb",
+    "repository": "seigo-gace/astera_v8",
+    "session": "req_abcdef1234567890abcdef12",
+    "argv": [
+      "git",
+      "status",
+      "--short",
+      "--branch"
+    ],
+    "timeout_s": 15,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Astera-v8 #35 merged into main at 6d2fdda5dd9f62becbacf1f41a3b6c975db3ed4b, PR complete CI 3/3. Existing Host dev.job registry includes seigo-gace/astera_v8 but deploy registry does not. Read-only status preflight before any reflection."
+  }
+}
