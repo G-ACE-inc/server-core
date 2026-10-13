@@ -25,6 +25,35 @@ CONTRACT = {
 
 
 class GatewaySendTests(unittest.TestCase):
+    def test_cli_host_command_does_not_shift_into_dev_job_arguments(self):
+        from unittest.mock import patch
+        import sys
+        contract = {**CONTRACT, "allowed_command_ids": ["host.command"]}
+        argv = ["sender", "--command-id", "host.command", "--expected-sha", "a"*40,
+                "--repository", "seigo-gace/astera_v8", "--repo-sha", "b"*40,
+                "--host-command", "git status --short"]
+        with patch.object(sys, "argv", argv), patch.object(sender, "load_contract", return_value=contract), \
+             patch.object(sender, "send", return_value={"ok": True}) as send:
+            self.assertEqual(sender.main(), 0)
+        request = send.call_args.args[0]
+        self.assertEqual(request["command_id"], "host.command")
+        self.assertEqual(request["repository"], "seigo-gace/astera_v8")
+        self.assertEqual(request["command"], "git status --short")
+
+    def test_cli_source_reflect_passes_repository_and_branch(self):
+        from unittest.mock import patch
+        import sys
+        contract = {**CONTRACT, "allowed_command_ids": ["project.source_reflect"]}
+        argv = ["sender", "--command-id", "project.source_reflect", "--expected-sha", "b"*40,
+                "--expected-before", "a"*40, "--reflect-repository", "seigo-gace/TGserver",
+                "--reflect-branch", "main"]
+        with patch.object(sys, "argv", argv), patch.object(sender, "load_contract", return_value=contract), \
+             patch.object(sender, "send", return_value={"ok": True}) as send:
+            self.assertEqual(sender.main(), 0)
+        request = send.call_args.args[0]
+        self.assertEqual(request["repository"], "seigo-gace/TGserver")
+        self.assertEqual(request["branch"], "main")
+
     def test_build_event(self):
         req = {
             "schema": "gace.servercore-bounded-host.request/v1",
