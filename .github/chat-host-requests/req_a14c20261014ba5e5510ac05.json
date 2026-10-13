@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core production read-only backend identity and running baseline",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess,json\nnames=[\"ai-granite\",\"ai-qwen3\",\"ai-ministral\",\"ai-coder\"]\nx=subprocess.run([\"docker\",\"inspect\"]+names,capture_output=True,text=True,timeout=20)\nprint(\"DOCKER_INSPECT_RC=\"+str(x.returncode))\nif x.returncode: print(\"ERROR=\"+x.stderr[:160]);raise SystemExit(x.returncode)\nfor d in json.loads(x.stdout):\n st=d.get(\"State\",{})\n print(\"MODEL=\"+d[\"Name\"].lstrip(\"/\")+\" RUNNING=\"+str(st.get(\"Running\"))+\" HEALTH=\"+str(st.get(\"Health\",{}).get(\"Status\",\"UNKNOWN\"))+\" PID=\"+str(st.get(\"Pid\",0)))\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "ai-core PR3",
+    "source_design_aligned": true,
+    "source_evidence": "live readonly backend states under existing 36GiB 6-core parent"
+  }
+}
