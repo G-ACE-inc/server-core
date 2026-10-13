@@ -8,7 +8,7 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 ENTRY = {"server_project_path": "/home/admin1/projects/example",
-         "runtime_target": {"compose_file": "docker-compose.yml", "service": "api"}}
+         "runtime_target": {"compose_file": "docker-compose.yml", "services": ["api"]}}
 
 class DockerOperationsTests(unittest.TestCase):
     def test_registered_status(self):
@@ -28,9 +28,18 @@ class DockerOperationsTests(unittest.TestCase):
             return type("Completed", (), {"returncode": 0, "stdout": "ok", "stderr": ""})()
         module.operate(ENTRY, "api", "exec", argv=["python3", "-V", "--version"], runner=run)
 
+    def test_registered_registry_schema(self):
+        prefix, root = module.checked_service(ENTRY, "api")
+        self.assertEqual(root, "/home/admin1/projects/example")
+        self.assertEqual(prefix[-1], "/home/admin1/projects/example/docker-compose.yml")
+
     def test_banned_target(self):
         with self.assertRaisesRegex(module.DockerOperationError, "SERVICE_NOT_REGISTERED"):
             module.operate(ENTRY, "db", "restart", runner=lambda *a, **kw: None)
+
+    def test_stats_requires_dedicated_implementation(self):
+        with self.assertRaisesRegex(module.DockerOperationError, "OPERATION_DENIED"):
+            module.operate(ENTRY, "api", "stats")
 
     def test_banned_operation(self):
         with self.assertRaisesRegex(module.DockerOperationError, "OPERATION_DENIED"):
