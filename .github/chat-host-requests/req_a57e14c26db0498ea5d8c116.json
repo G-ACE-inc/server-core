@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read actual Claim/Evidence search status for same Japanese live input after PR36; prior probe incorrectly inspected internal evidence_raw instead of public evidence. No secrets.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "repository": "seigo-gace/astera_v8",
+    "repo_sha": "318a9b33c6aa92d45c684c7a24d90740a8a7fcab",
+    "command": "docker exec astera-v8 node -e 'const E=require(\"./src/astera-engine\");const e=new E();setTimeout(()=>{console.log(\"TIMEOUT_25000\");process.exit(124)},25000);e.process({question:\"Node.js 22の公式サポート状況を確認し、事実と未確認事項を区別してください。\",language:\"ja\",evidence_search:{deadline_ms:6000,maximum_results:3}},{id:\"astera-evidence-readback\"}).then(o=>{const t=o.result?.task_results||[];const j=o.result?.judgment?.[\"07_evidence_status\"]||{};console.log(JSON.stringify({type:o.result?.type,trace:o.result?.runtime_trace_status,tasks:t.map(x=>({id:x.task?.id,source_status:x.evidence?.source_status,search_state:x.evidence?.search_state,coverage:x.evidence?.coverage_state,quality:x.evidence?.quality_score_bp,confirmed:x.canonical?.confirmed_count,unresolved:x.canonical?.undetermined_count})),main8_evidence:j.evidence_search,confirmed_claims:o.result?.canonical_claims?.confirmed_count,overall_claims:o.result?.canonical_claims?.claim_count}));process.exit(0)}).catch(x=>{console.error(\"ERROR=\"+(x.code||x.name));process.exit(1)})'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Live Japanese integration succeeded receipt 6150195526 but initial debug projection omitted evidence because public task_results owns evidence not evidence_raw; capture correct evidence fields to establish actual status."
+  }
+}
