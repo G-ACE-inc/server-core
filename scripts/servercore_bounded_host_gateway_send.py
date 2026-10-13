@@ -238,7 +238,7 @@ def main():
                            repository=args.repository, service=args.service,
                            deploy_request_id=args.deploy_request_id,
                            path=args.path, offset=args.offset, container=args.container, tail=args.tail,
-                           session=args.session, argv=parse_argv(args.job_argv_json),
+                           session=getattr(args, "session"), argv=parse_argv(args.job_argv_json),
                            timeout_s=args.timeout_s,
                            fresh=None if args.fresh is None else args.fresh == "true",
                            repo_sha=args.repo_sha, docker_operation=args.docker_operation,
