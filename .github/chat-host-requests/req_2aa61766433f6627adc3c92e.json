@@ -1,0 +1,46 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Repeat CHAT A Tool B independent bounded read-only host verification for G-ACE-inc/server-core; new request/session; prior A and B sequential rather than overlap",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "543e135a35e180f1367dd7b553521d26483d05cb",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "719455548389588eb608d64c7803bc7894543ac4",
+    "session": "req_6dd91d53dab0a5fd93ea7a61",
+    "argv": [
+      "python3",
+      "-c",
+      "import subprocess,time;print('NATIVE_CHAT_SESSION=req_6dd91d53dab0a5fd93ea7a61',flush=True);print('START_NS='+str(time.time_ns()),flush=True);time.sleep(7);subprocess.run(['git','rev-parse','HEAD'],check=True);subprocess.run(['git','status','--short'],check=True);print('END_NS='+str(time.time_ns()),flush=True)"
+    ],
+    "timeout_s": 15,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "This same existing native CHAT A conversation re-read live main Manifest, #17, #10 Current and new A/B interval comparison comment 6130192116; current route normal-CHAT procedure; design §16.11/§17; committed bounded host registry, Work Routine §6. Existing #10 proven Host SHA 543e135a; independently verified branch main tip 7194555 before request. One new read-only isolated dev.job, not a second ChatGPT conversation identity."
+  }
+}
