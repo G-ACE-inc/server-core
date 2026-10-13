@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core validate old/new router generation in memory without temporary Host filesystem",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess,types,sys,yaml\nfrom pathlib import Path\nfrom unittest.mock import patch\np=\"/home/admin1/projects/ai-core/.worktrees/source-import-20261013\"\nsrc=subprocess.check_output([\"git\",\"-C\",p,\"show\",\"FETCH_HEAD:router/scripts/generate_config.py\"],text=True,timeout=8)\nm=types.ModuleType(\"configgen\");exec(compile(src,\"configgen.py\",\"exec\"),m.__dict__)\nresults=[]\ndef save(self, content, **kwargs): results.append(yaml.safe_load(content))\nwith patch.object(m,\"discover\",return_value=\"/models/test.gguf\"),patch.object(Path,\"mkdir\",return_value=None),patch.object(Path,\"write_text\",save):\n for args in ([],[\"--peer-target\",\"gate\",\"--exclusive-traffic\"]):\n  with patch.object(sys,\"argv\",[\"generate_config.py\",\"--output\",\"/unused\"]+args): m.main()\nassert results[0][\"peers\"][\"coder\"][\"proxy\"]==\"http://127.0.0.1:18084\"\nassert results[1][\"peers\"][\"coder\"][\"proxy\"]==\"http://127.0.0.1:18184\"\nassert results[0][\"apiKeys\"]==results[1][\"apiKeys\"]\nassert results[1][\"globalConcurrencyLimit\"]==2 and results[1][\"models\"]=={}\nprint(\"OLD_ROUTER_REUSE_GENERATOR=PASS GATE_OPT_IN=PASS LEGACY_DEFAULT_PRESERVED=PASS\")\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "existing nested worktree fetch and isolated router gate config test"
+  }
+}
