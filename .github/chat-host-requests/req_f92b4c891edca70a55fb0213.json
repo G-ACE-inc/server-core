@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core exact-source in-memory concurrency smoke of background cold idle-stop versus warm inference; existing enrolled Host terminal, no filesystem or real Docker changes.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d7f7d390e6d23dc5e32d94de23516931cc5eff09",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import urllib.request,tarfile,io,threading,types,time\nh=\"cefa8161ca3cbaece3953ef2806f96c26abf534b\"\nb=urllib.request.urlopen(\"https://api.github.com/repos/seigo-gace/ai-core/tarball/\"+h,timeout=10).read(500001)\nassert len(b)<500001\nt=tarfile.open(fileobj=io.BytesIO(b),mode=\"r:gz\")\ns=next(t.extractfile(x).read() for x in t if x.name.endswith(\"/runtime/model_gate.py\"))\nm={\"__file__\":\"/tmp/runtime/model_gate.py\",\"__name__\":\"ai_core_gate\"}\nexec(compile(s,\"model_gate.py\",\"exec\"),m)\nclass D:\n def __init__(self): self.loaded={\"coder\",\"ministral\"};self.enter=threading.Event();self.leave=threading.Event()\n def running(self,x): return x[\"service\"] in self.loaded\n def stop(self,x): self.enter.set();assert self.leave.wait(3);self.loaded.remove(x[\"service\"])\n def start(self,x): self.loaded.add(x[\"service\"])\nd=D();sp={x:{\"service\":x,\"warm\":x!=\"ministral\"} for x in (\"coder\",\"ministral\",\"qwen3\")}\nnow=[100];c=m[\"Coordinator\"](sp,d,idle_seconds=10,clock=lambda:now[0])\nwith c.lease(\"ministral\"): pass\nnow[0]=140\nw=threading.Thread(target=c.reap,daemon=True);w.start()\nassert d.enter.wait(1)\nstart=time.monotonic()\nwith c.lease(\"coder\"): pass\nassert time.monotonic()-start<1\nd.leave.set();w.join(2)\nassert not w.is_alive() and d.loaded=={\"coder\",\"qwen3\"} and not c.transitioning\nprint(\"AI_CORE_REAPER_PARALLEL=PASS SHA=\"+h)'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Rule #17 is historical; Work Routine §6 reviewed. ai-core Issue #1, PR #3 current exact sha cefa8161ca3cbaece3953ef2806f96c26abf534b; Host SHA d7f7d390e6d23dc5e32d94de23516931cc5eff09 from last ten Issue #10 receipts and Github commit verified. Existing Python-in-memory test pattern reused; no real model access."
+  }
+}
