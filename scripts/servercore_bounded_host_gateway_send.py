@@ -60,7 +60,8 @@ def build_event(request, contract):
 
 def validate_cli(command_id, expected_sha, contract, expected_before=None, repository=None,
                  service=None, deploy_request_id=None, path=None, offset=None, container=None, tail=None,
-                 session=None, argv=None, timeout_s=None, fresh=None, repo_sha=None):
+                 session=None, argv=None, timeout_s=None, fresh=None, repo_sha=None,
+                 docker_operation=None):
     allowed = contract.get("allowed_command_ids") or []
     if command_id not in allowed:
         raise SendError("COMMAND_NOT_REGISTERED")
@@ -78,7 +79,7 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
         request["expected_before"] = expected_before
     elif expected_before is not None:
         raise SendError("UNEXPECTED_BEFORE_SHA")
-    if command_id == "service.deploy":
+    if command_id in {"service.deploy", "docker.operation"}:
         if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
                 or not isinstance(service, str) or not SERVICE_PATTERN.fullmatch(service):
             raise SendError("SERVICE_DEPLOY_TARGET_INVALID")
@@ -99,8 +100,24 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
             request["repo_sha"] = repo_sha
         request.update({"repository": repository, "session": session, "argv": argv,
                         "timeout_s": timeout_s, "fresh": fresh})
-    elif session is not None or argv is not None or timeout_s is not None or fresh is not None:
+    elif session is not None or (argv is not None and command_id != "docker.operation") or timeout_s is not None or fresh is not None:
         raise SendError("UNEXPECTED_DEV_JOB_TARGET")
+    if command_id == "docker.operation":
+        if docker_operation not in {"ps", "inspect", "logs", "stats", "start", "stop",
+                                    "restart", "up", "exec"}:
+            raise SendError("DOCKER_OPERATION_INVALID")
+        values = argv or []
+        if not isinstance(values, list) or len(values) > 10 or any(
+                not isinstance(a, str) or not 1 <= len(a) <= 512 for a in values
+        ) or sum(map(len, values)) > 1000 or (docker_operation == "exec") != bool(values):
+            raise SendError("DOCKER_OPERATION_ARGV_INVALID")
+        if tail is None:
+            tail = 100
+        if type(tail) is not int or not 1 <= tail <= 200:
+            raise SendError("DOCKER_OPERATION_TAIL_INVALID")
+        request.update({"operation": docker_operation, "argv": values, "tail": tail})
+    elif docker_operation is not None:
+        raise SendError("UNEXPECTED_DOCKER_OPERATION")
     if command_id == "service.deploy_status":
         if not isinstance(deploy_request_id, str) or not REQUEST_ID_PATTERN.fullmatch(deploy_request_id):
             raise SendError("DEPLOY_REQUEST_ID_INVALID")
@@ -121,7 +138,7 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
             raise SendError("DOCKER_LOGS_TARGET_INVALID")
         request["container"] = container
         request["tail"] = tail
-    elif container is not None or tail is not None:
+    elif container is not None or (tail is not None and command_id != "docker.operation"):
         raise SendError("UNEXPECTED_LOG_TARGET")
     return request
 
@@ -181,6 +198,7 @@ def main():
     parser.add_argument("--expected-before")
     parser.add_argument("--repository")
     parser.add_argument("--service")
+    parser.add_argument("--docker-operation")
     parser.add_argument("--deploy-request-id")
     parser.add_argument("--path")
     parser.add_argument("--offset", type=int)
@@ -198,7 +216,8 @@ def main():
                            args.repository, args.service, args.deploy_request_id,
                            args.path, args.offset, args.container, args.tail,
                            args.session, parse_argv(args.job_argv_json),
-                           args.timeout_s, None if args.fresh is None else args.fresh == "true", args.repo_sha)
+                           args.timeout_s, None if args.fresh is None else args.fresh == "true", args.repo_sha,
+                           args.docker_operation)
     try:
         receipt = send(request, contract)
         print(json.dumps({"state": "QUEUED", "request_id": request["id"], "gateway": receipt}, sort_keys=True))
