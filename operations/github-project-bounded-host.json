@@ -154,6 +154,11 @@
         "owner": "seigo-gace",
         "root": "/home/admin1/projects/libral-vault",
         "branch": "feat/internal-hmac-api"
+      },
+      "seigo-gace/ai-core": {
+        "owner": "seigo-gace",
+        "root": "/home/admin1/projects/ai-core/.worktrees/source-import-20261013",
+        "branch": "import/server-baseline-20261013"
       }
     },
     "limits": {
