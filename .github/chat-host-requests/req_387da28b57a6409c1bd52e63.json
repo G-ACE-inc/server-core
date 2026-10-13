@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core Issue #1 exact pinned source SHA unit test in Python-owned ephemeral /tmp; no git checkout writes and no Docker operations.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2b76da06adc8220eb5fa13bfcac6c68a92240c55",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import io, tarfile, tempfile, urllib.request, subprocess, pathlib\nsha=\"6d3173a41926835395ba72d2e09e07c69d9154a9\"\nurl=\"https://api.github.com/repos/seigo-gace/ai-core/tarball/\"+sha\nb=urllib.request.urlopen(url,timeout=12).read(500001)\nassert len(b)<500001, \"ARCHIVE_TOO_LARGE\"\nwith tempfile.TemporaryDirectory(prefix=\"gace-ai-core-src-\") as d:\n  t=tarfile.open(fileobj=io.BytesIO(b),mode=\"r:gz\")\n  mm=t.getmembers()\n  assert len(mm)<100 and all(not m.issym() and not m.islnk() and not pathlib.PurePosixPath(m.name).is_absolute() and \"..\" not in pathlib.PurePosixPath(m.name).parts for m in mm), \"UNSAFE_ARCHIVE\"\n  t.extractall(d)\n  root=next(pathlib.Path(d).iterdir())\n  for folder in (\"tests\",\"router/tests\"):\n    subprocess.run([\"python3\",\"-m\",\"unittest\",\"discover\",\"-s\",folder,\"-p\",\"test_*.py\",\"-q\"],cwd=root,check=True,timeout=25)\n  subprocess.run([\"python3\",\"runtime/model_gate.py\",\"--preflight\"],cwd=root,check=True,timeout=8)\n  print(\"AI_CORE_EXACT_SOURCE=PASS SHA=\"+sha)'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Previous req_076850 failed in git-fetch object DB, req_dbed failed Git clone temp subtree; no Host effect. Current attempt uses Python urllib immutable commit tarball and Python tempfile, source unit/mock tests only. Latest source SHA6d3173a... after Stage A no lifecycle."
+  }
+}
