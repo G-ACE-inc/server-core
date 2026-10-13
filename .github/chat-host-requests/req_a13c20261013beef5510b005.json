@@ -1,0 +1,46 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core isolated exact-source full unittest suite",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "session": "req_a1c020261013160100000001",
+    "argv": [
+      "python3",
+      "-c",
+      "import io,tarfile,urllib.request,tempfile,pathlib,subprocess,sys\ns=\"8f61233ea953f6f253433cf1fc29313191a6ffa0\"\nb=urllib.request.urlopen(\"https://api.github.com/repos/seigo-gace/ai-core/tarball/\"+s,timeout=8).read(900001)\nassert len(b)<900001\nt=tarfile.open(fileobj=io.BytesIO(b),mode=\"r:gz\")\nwith tempfile.TemporaryDirectory(prefix=\"aicore-\") as d:\n for m in t.getmembers():\n  if not m.isfile():continue\n  n=m.name.split(\"/\",1)[-1]\n  if not n or \"..\" in pathlib.PurePosixPath(n).parts:continue\n  p=pathlib.Path(d,n);p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(t.extractfile(m).read())\n z=subprocess.run([sys.executable,\"-m\",\"unittest\",\"discover\",\"-s\",\"tests\",\"-q\"],cwd=d,capture_output=True,text=True,timeout=13)\n print(\"AI_CORE_FULL_SUITE_EXIT=\"+str(z.returncode))\n print((z.stdout+z.stderr)[-2800:])\n assert z.returncode==0"
+    ],
+    "timeout_s": 15,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "ai-core PR #3",
+    "source_design_aligned": true,
+    "source_evidence": "adopted design and source 8f61233"
+  }
+}
