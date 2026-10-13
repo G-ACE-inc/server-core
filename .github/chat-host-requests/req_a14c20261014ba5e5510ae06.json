@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core reused original port 18181-18184 and generate Gate config while all backend models cold",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess,types,sys,yaml\nfrom pathlib import Path\nfrom unittest.mock import patch\np=\"/home/admin1/projects/ai-core/.worktrees/source-import-20261013\"\nf=subprocess.run([\"git\",\"-C\",p,\"fetch\",\"--no-tags\",\"origin\",\"feat/per-model-lifecycle-20261013\"],capture_output=True,text=True,timeout=35)\nassert f.returncode==0,\"FETCH_FAILED\"\ndef get(q):return subprocess.check_output([\"git\",\"-C\",p,\"show\",\"FETCH_HEAD:\"+q],text=True,timeout=8)\nsha=subprocess.check_output([\"git\",\"-C\",p,\"rev-parse\",\"FETCH_HEAD\"],text=True).strip()\ns=get(\"router/scripts/generate_config.py\")\nmodule=types.ModuleType(\"config_gen\");module.__file__=p+\"/router/scripts/generate_config.py\"\nexec(compile(s,module.__file__,\"exec\"),module.__dict__)\nout=[]\ndef read(self,**kw):\n if str(self).endswith(\"runtime/model-policy.yaml\"):return get(\"runtime/model-policy.yaml\")\n if str(self).endswith(\"compose.runtime.yml\"):return get(\"compose.runtime.yml\")\n raise RuntimeError(str(self))\ndef write(self,src,**kw):out.append(yaml.safe_load(src))\nwith patch.object(module,\"discover\",side_effect=RuntimeError(\"COLD_BACKEND_MUST_NOT_BE_PROBED\")),patch.object(Path,\"read_text\",read),patch.object(Path,\"write_text\",write),patch.object(Path,\"mkdir\",return_value=None),patch.object(sys,\"argv\",[\"gen\",\"--output\",\"/unused\",\"--peer-target\",\"gate\",\"--exclusive-traffic\"]):\n module.main()\ncfg=out[0]\nassert cfg[\"peers\"][\"granite\"][\"proxy\"]==\"http://127.0.0.1:18181\"\nassert cfg[\"peers\"][\"coder\"][\"proxy\"]==\"http://127.0.0.1:18184\"\nassert cfg[\"peers\"][\"coder\"][\"models\"]==[\"/models/qwen2.5-coder-7b-instruct-q4_k_m.gguf\"]\nassert cfg[\"models\"]=={} and cfg[\"globalConcurrencyLimit\"]==2\nprint(\"SOURCE_SHA=\"+sha+\" COLD_GATE_CONFIG=PASS OLD_PORT_REUSE=PASS ALL_MODELS_STOPPED_PROBES=0\")\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Master requests old AI Core port reuse, cold backend startup and original Gate port contracts; source exact d2c4302"
+  }
+}
