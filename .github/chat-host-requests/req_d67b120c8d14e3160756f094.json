@@ -1,0 +1,46 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Five-repository overlapping isolated Host worker diagnostic, repo seigo-gace/webhook-gateway",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "543e135a35e180f1367dd7b553521d26483d05cb",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "04747d0d579154827a7db2875d388adbbaaf956b",
+    "session": "req_d67b120c8d14e3160756f094",
+    "argv": [
+      "python3",
+      "-c",
+      "import subprocess,time;print('FIVE_REPO_SESSION=req_d67b120c8d14e3160756f094',flush=True);print('START_NS='+str(time.time_ns()),flush=True);time.sleep(7);subprocess.run(['git','rev-parse','HEAD'],check=True);print('END_NS='+str(time.time_ns()),flush=True)"
+    ],
+    "timeout_s": 15,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "GPT_CHAT independent 5-repository parallel capacity test, fresh Manifest/Rule17/Issue10 and bounded Host contract; five known canonical repo SHA values from live #10 prior host receipts, expected Host SHA pinned to 543e135. Single initiating CHAT, not five native Chat identities. No deployment."
+  }
+}
