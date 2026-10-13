@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core master-authorized retirement of exact legacy ai-llama-router only; preserve container image configuration and four model backends",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess,json\nname=\"ai-llama-router\"\np=subprocess.run([\"docker\",\"inspect\",name],capture_output=True,text=True,timeout=10,check=True)\nobj=json.loads(p.stdout)[0]\nassert obj[\"Name\"]==\"/\"+name and obj[\"Config\"][\"Image\"]==\"ai-core-llama-swap:v257\"\nassert obj[\"State\"][\"Running\"] is True\nr=subprocess.run([\"docker\",\"stop\",\"--time\",\"20\",name],capture_output=True,text=True,timeout=35)\nprint(\"LEGACY_ROUTER_STOP_RC=\"+str(r.returncode))\nprint(\"STOP_OUTPUT=\"+(r.stdout or r.stderr)[:180])\np=subprocess.run([\"docker\",\"inspect\",\"--format\",\"{{.State.Running}}\",name],capture_output=True,text=True,timeout=8)\nprint(\"LEGACY_ROUTER_RUNNING_AFTER=\"+p.stdout.strip())\nif r.returncode or p.stdout.strip()!=\"false\": raise SystemExit(1)\nprint(\"OLD_ROUTER_STOP=PASS FOUR_MODEL_BACKENDS_UNCHANGED=NOT_TESTED\")\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Master explicitly retires old router, exact Docker inspect receipt 6151935576"
+  }
+}
