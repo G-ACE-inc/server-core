@@ -479,6 +479,17 @@ test("service deploy dispatch is fixed registered repo/service at an explicit SH
   assert.match(wf,/send\+=\(--repository "\$\(jq -r '\.bounded_host_request\.repository'/);
 });
 
+test("registered Host terminal uses existing CHAT Actions admission",()=>{
+  const request={enabled:true,command_id:"host.command",expected_sha:"a".repeat(40),
+    repository:"seigo-gace/TGserver",command:"docker compose ps"};
+  const args=r=>({target:{...targetNoBoundedHost,bounded_host_request:r,server_command_id:""},route,registry,gitRefName:"main"});
+  assert.equal(d.validateDispatch(args(request)).commandId,"host.command");
+  assert.throws(()=>d.validateDispatch(args({...request,repository:"../../etc"})),/BOUNDED_HOST_TERMINAL_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...request,command:""})),/BOUNDED_HOST_TERMINAL_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...request,unexpected:"extra"})),/BOUNDED_HOST_KEYS_INVALID/);
+  assert.match(wf,/--host-command/);
+});
+
 test("registered Docker operation passes same CHAT dispatch and denies unsupported targets",()=>{
   const op={enabled:true,command_id:"docker.operation",expected_sha:"a".repeat(40),
     repository:"seigo-gace/debug-ai",service:"debug-ai",operation:"ps",argv:[],tail:100};
