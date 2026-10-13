@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only fresh Host head and active Receiver after Composer simultaneous reflect and sender PR216 merge",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "command": "git rev-parse HEAD; git branch --show-current; git status --short; git stash list --format='%gd'; docker inspect --format 'RECEIVER={{.Config.Image}} RUNNING={{.State.Running}}' server-core-bounded-host"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Other CHAT Host issue10 latest confirmed old approved runtime Host SHA 2bbba0bc at 2026-10-13 16:13; PR216 merged main 6b541d. Read-only next with exact observed SHA, preserve protected registry and stashes."
+  }
+}
