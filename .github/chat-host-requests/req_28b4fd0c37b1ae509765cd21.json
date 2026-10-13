@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "ff-only apply verified reply fix with local-only git filemode=false, preserve all other checkout changes & protected registry. No PC.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "35b7e6f3134bb3818ba2e44780e5acc23207e69e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "35b7e6f3134bb3818ba2e44780e5acc23207e69e",
+    "command": "set -e; test \"$(git rev-parse HEAD)\" = 35b7e6f3134bb3818ba2e44780e5acc23207e69e; test -z \"$(git diff --cached --name-only)\"; test -z \"$(git diff --numstat -- scripts/servercore_bounded_host_receiver.py | grep -v '^0[[:space:]]0[[:space:]]')\"; before=$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1); git fetch --no-tags origin refs/heads/main >/dev/null; git -c core.filemode=false merge --ff-only 50e4ae9f9dc6250a06e8c83cd7f7ce9b1ee6bcd4 >/dev/null; test \"$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1)\" = \"$before\"; printf 'LONG_REPLY_REFLECT=PASS\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Host readback #6143886385 mode change only 100755=>100644, filesystem mode 660, no staged diff; do not modify protected registry or others. Limit core.filemode=false to this exact ff-only merge."
+  }
+}
