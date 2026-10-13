@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Inspect only metadata of long-output result sink record; no raw logs",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "50e4ae9f9dc6250a06e8c83cd7f7ce9b1ee6bcd4",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "50e4ae9f9dc6250a06e8c83cd7f7ce9b1ee6bcd4",
+    "command": "python3 -c 'import json,pathlib;r=\"req_d0998889a9516d2a561f5614\";d=json.loads((pathlib.Path(\"/home/admin1/logs/servercore-bounded-results\")/(r+\".json\")).read_text());print(\"SINK_STATE=\"+str(d.get(\"state\")));print(\"SINK_LENGTH=\"+str(len(d.get(\"stdout\",\"\"))));print(\"SINK_TRUNCATED=\"+str(d.get(\"stdout_truncated\")));print(\"SINK_PUBLISHED=\"+str(bool(d.get(\"published\"))));print(\"SINK_ATTEMPTS=\"+str(d.get(\"attempts\")))'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Prior live Host receipt #6144153934 shows Writer HOST_COMMAND_PASS 9029 chars, sink record exists. Need sink state/length/truncation/publication of exact original long request."
+  }
+}
