@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only actual Git log latest SHA from all eleven protected registered Host checkout paths in one existing host.command; identify missing checkout log sources without registration changes.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "command": "python3 -c 'import json,subprocess\nr=json.load(open(\"operations/master-internal-repositories.json\"))[\"repositories\"]\nfor x in r:\n try:\n  z=subprocess.run([\"git\",\"-C\",x[\"server_project_path\"],\"log\",\"-1\",\"--format=%H\"],capture_output=True,text=True,timeout=5)\n  ok=z.returncode==0 and len(z.stdout.strip())==40\n  print(x[\"repository\"]+\" GIT_LOG=\"+(\"PASS\" if ok else \"FAIL\")+\" SHA=\"+(z.stdout.strip()[:40] if ok else \"UNKNOWN\"))\n except (OSError,KeyError,subprocess.TimeoutExpired):print(str(x.get(\"repository\"))+\" GIT_LOG=FAIL SHA=UNKNOWN\")'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Host 11-repository Registry inventory all HOST=True, 2 specific DOCKER=True, Issue10 comment 6147646586. Validate real registered checkout git log read without new Docker grants/approvals."
+  }
+}
