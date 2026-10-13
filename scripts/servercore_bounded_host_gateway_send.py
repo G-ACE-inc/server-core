@@ -61,7 +61,7 @@ def build_event(request, contract):
 def validate_cli(command_id, expected_sha, contract, expected_before=None, repository=None,
                  service=None, deploy_request_id=None, path=None, offset=None, container=None, tail=None,
                  session=None, argv=None, timeout_s=None, fresh=None, repo_sha=None,
-                 docker_operation=None):
+                 docker_operation=None, host_command=None):
     allowed = contract.get("allowed_command_ids") or []
     if command_id not in allowed:
         raise SendError("COMMAND_NOT_REGISTERED")
@@ -104,9 +104,11 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
         raise SendError("UNEXPECTED_DEV_JOB_TARGET")
     if command_id == "host.command":
         if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
-                or not isinstance(path, str) or not 1 <= len(path) <= 1600 or "\x00" in path:
+                or not isinstance(host_command, str) or not 1 <= len(host_command) <= 1600 or "\x00" in host_command:
             raise SendError("HOST_COMMAND_TARGET_INVALID")
-        request.update({"repository": repository, "command": path})
+        request.update({"repository": repository, "command": host_command})
+    elif host_command is not None:
+        raise SendError("UNEXPECTED_HOST_COMMAND")
     if command_id == "docker.operation":
         if docker_operation not in {"ps", "inspect", "logs", "stats", "start", "stop",
                                     "restart", "up", "exec"}:
@@ -135,7 +137,7 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
             raise SendError("FILE_INSPECT_TARGET_INVALID")
         request["path"] = path
         request["offset"] = offset
-    elif (path is not None and command_id != "host.command") or offset is not None:
+    elif path is not None or offset is not None:
         raise SendError("UNEXPECTED_FILE_TARGET")
     if command_id == "docker.logs":
         if not isinstance(container, str) or not CONTAINER_PATTERN.fullmatch(container) \
@@ -204,6 +206,7 @@ def main():
     parser.add_argument("--repository")
     parser.add_argument("--service")
     parser.add_argument("--docker-operation")
+    parser.add_argument("--host-command")
     parser.add_argument("--deploy-request-id")
     parser.add_argument("--path")
     parser.add_argument("--offset", type=int)
@@ -222,7 +225,7 @@ def main():
                            args.path, args.offset, args.container, args.tail,
                            args.session, parse_argv(args.job_argv_json),
                            args.timeout_s, None if args.fresh is None else args.fresh == "true", args.repo_sha,
-                           args.docker_operation)
+                           args.docker_operation, args.host_command)
     try:
         receipt = send(request, contract)
         print(json.dumps({"state": "QUEUED", "request_id": request["id"], "gateway": receipt}, sort_keys=True))
