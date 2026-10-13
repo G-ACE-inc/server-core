@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core existing authorized worktree branch remote and dirty preflight",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess\np=\"/home/admin1/projects/ai-core/.worktrees/source-import-20261013\"\nfor args in ([\"rev-parse\",\"--abbrev-ref\",\"HEAD\"],[\"rev-parse\",\"HEAD\"],[\"status\",\"--porcelain\"],[\"remote\",\"-v\"],[\"branch\",\"-a\"]):\n r=subprocess.run([\"git\",\"-C\",p]+args,capture_output=True,text=True,timeout=12)\n print(\"CHECK=\"+args[0]+\" RC=\"+str(r.returncode)+\" OUT=\"+(r.stdout or r.stderr)[:600].replace(chr(10),\";\"))\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "ai-core PR3",
+    "source_design_aligned": true,
+    "source_evidence": "ai-core registered host.command on existing imported worktree; inspecting mutation prerequisites"
+  }
+}
