@@ -147,15 +147,22 @@ def check_head(root, entry, expected_sha):
     if head.returncode or head.stdout.strip() != expected_sha:
         raise JobError("STALE_SHA")
     registered = entry.get("branch")
+    branches = entry.get("allowed_branches", [registered])
+    if (not isinstance(branches, list) or not branches or
+            any(not isinstance(b, str) or not b or b.startswith("-") for b in branches) or
+            registered not in branches):
+        raise JobError("REGISTERED_BRANCHES_INVALID")
     if branch.returncode == 0:
-        if branch.stdout.strip() != registered:
+        if branch.stdout.strip() not in branches:
             raise JobError("BRANCH_NOT_REGISTERED")
         return
-    # Detached HEAD at the registered branch tip (branch may be checked out in another worktree).
-    for ref in (registered, "origin/" + registered, "refs/heads/" + registered, "refs/remotes/origin/" + registered):
-        tip = git(root, "rev-parse", "-q", ref)
-        if tip.returncode == 0 and tip.stdout.strip() == head.stdout.strip():
-            return
+    # Detached HEAD must match a registered branch tip exactly.
+    for registered_branch in branches:
+        for ref in (registered_branch, "origin/" + registered_branch,
+                    "refs/heads/" + registered_branch, "refs/remotes/origin/" + registered_branch):
+            tip = git(root, "rev-parse", "-q", ref)
+            if tip.returncode == 0 and tip.stdout.strip() == head.stdout.strip():
+                return
     raise JobError("BRANCH_NOT_REGISTERED")
 
 
