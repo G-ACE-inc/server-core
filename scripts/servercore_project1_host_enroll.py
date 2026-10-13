@@ -20,6 +20,7 @@ BACKUP = Path("/home/admin1/logs/servercore-service-deploy/registry-before-proje
 UNIT = "gace-servercore-service-deploy.service"
 SOCKET = Path("/run/gace/servercore-service-deploy.sock")
 NEW = {
+    "seigo-gace/asteria": "/home/admin1/projects/asteria",
     "seigo-gace/astera_v8": "/home/admin1/projects/astera_v8",
     "seigo-gace/astera-app": "/home/admin1/projects/astera-app",
     "seigo-gace/modular-catalog": "/home/admin1/projects/Catalog/modular-catalog",
