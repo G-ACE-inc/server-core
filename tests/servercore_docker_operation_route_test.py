@@ -164,9 +164,9 @@ class HostTerminalRouteTests(unittest.TestCase):
             receiver.validate_request({**req, "repository": "../../tmp"}, contract)
         with self.assertRaisesRegex(sender.SendError, "HOST_COMMAND_TARGET_INVALID"):
             sender.validate_cli("host.command", SHA, contract,
-                                repository=REPO, host_command="bad\\x00command")
+                                repository=REPO, host_command="bad\x00command")
         with self.assertRaisesRegex(receiver.ReceiverError, "HOST_COMMAND_TARGET_INVALID"):
-            receiver.validate_request({**req, "command": "bad\\x00command"}, contract)
+            receiver.validate_request({**req, "command": "bad\x00command"}, contract)
 
     def test_writer_rejects_unregistered_host_command(self):
         with tempfile.TemporaryDirectory() as tmp:
