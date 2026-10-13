@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Normal CHAT independently verifies real Docker and Compose CLI through existing server-core registered Host terminal; no Host changes.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "0786ca5589db1f69ff704b32f6400486e2cff0f1",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "0786ca5589db1f69ff704b32f6400486e2cff0f1",
+    "command": "docker ps --format '{{.Names}}' | head -n 5 && docker compose ls --all"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Current Project #1 control #10 and Work Routine. First native CHAT Docker ps PASS but compose project config failed because env missing; see https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6141634915. Perform independently verifiable docker compose ls --all without modifying environment or services, on verified Host SHA 0786ca5589db1f69ff704b32f6400486e2cff0f1."
+  }
+}
