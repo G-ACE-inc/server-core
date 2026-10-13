@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only exact preflight flags for guarded ff-only PR206 reflection, no source or registry changes.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "command": "printf 'BRANCH=%s\\n' \"$(git branch --show-current)\"; printf 'HEAD=%s\\n' \"$(git rev-parse HEAD)\"; printf 'STASH_COUNT=%s\\n' \"$(git stash list | wc -l)\"; printf 'REGISTRY_SHA=%s\\n' \"$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1)\"; printf 'MODE_IGNORED_DIFF=%s\\n' \"$(git -c core.filemode=false diff --name-only -- scripts/servercore_bounded_host_receiver.py scripts/servercore_docker_logs_socket.py scripts/servercore_result_sink.py | wc -l)\"; git status --porcelain=v1 | head -8"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Host command request req_b7a739333155f3241b625158 exited1 with zero stderr before merge; need independent readback of precondition flags. No registry content."
+  }
+}
