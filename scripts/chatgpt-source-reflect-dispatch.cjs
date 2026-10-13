@@ -66,7 +66,7 @@ function assertBoundedHostShape(request) {
   }
   if (request.command_id === "docker.operation") {
     const allowed = new Set(["ps", "inspect", "logs", "stats", "start", "stop", "restart", "up", "exec"]);
-    if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*\\/[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(String(request.repository || "")) ||
+    if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*\/[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(String(request.repository || "")) ||
         !/^[a-z0-9][a-z0-9_-]{0,62}$/.test(String(request.service || "")) ||
         !allowed.has(request.operation)) throw new Error("BOUNDED_HOST_DOCKER_TARGET_INVALID");
     if (!Array.isArray(request.argv) || request.argv.length > 10 ||
