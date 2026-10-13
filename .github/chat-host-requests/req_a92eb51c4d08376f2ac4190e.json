@@ -1,0 +1,41 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Tool B native GPT CHAT E2E retry docker.operation/ps after PR186 dispatch validator fix. Read-only registered service debug-ai.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "docker.operation",
+    "expected_sha": "d15dd98e1a0417ffcde26d0e915c9df632e11e50",
+    "repository": "seigo-gace/debug-ai",
+    "service": "debug-ai",
+    "operation": "ps",
+    "argv": [],
+    "tail": 100
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Fresh GPT_CHAT Manifest/Rule17/Issue10; Composer Host E2E 6138619955; previous GitHub run 38349550766 failed at JS dispatch. Corrected JS PR186 merged main 51977c; existing Host source sha d15dd98. Native chat read-only Docker ps operation on registered debug-ai service."
+  }
+}
