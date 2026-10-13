@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only audit each registered repo actual Host checkout branch, main ref, Compose config services and compare registered dev.job branches. No mutations/secret values.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "command": "python3 -c 'import json,pathlib,subprocess\np=json.load(open(\"operations/github-project-bounded-host.json\"))[\"dev_job\"][\"registered_repositories\"]\nfor repo,entry in p.items():\n root=entry[\"root\"]\n def git(*args):\n  x=subprocess.run([\"git\",\"-C\",root,*args],capture_output=True,text=True,timeout=6)\n  return x.stdout.strip() if x.returncode==0 else \"UNKNOWN\"\n print(repo,\"REGISTERED=\"+entry[\"branch\"],\"ACTUAL=\"+git(\"branch\",\"--show-current\"),\"HEAD=\"+git(\"rev-parse\",\"--short\",\"HEAD\"),\"MAIN=\"+git(\"rev-parse\",\"--short\",\"main\"),\"COMPOSE=\"+\",\".join(x.name for x in pathlib.Path(root).glob(\"*compose*.y*ml\")))\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Master reports astera_v8 registered stale branch and missing common deploy route; audit 11 registered host checkouts and services to identify all same pattern before any permission changes."
+  }
+}
