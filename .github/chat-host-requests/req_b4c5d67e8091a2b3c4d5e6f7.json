@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Check existing isolated ai-core source checkout already created by Master; register existing only, never create new project/worktree or touch PC.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4b6b0b21162c2d9fa06a79f44a954cbe32d9c24e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4b6b0b21162c2d9fa06a79f44a954cbe32d9c24e",
+    "command": "find /home/admin1/projects/ai-core/.worktrees -maxdepth 3 -name .git -print 2>/dev/null | head -n 12; for d in /home/admin1/projects/ai-core/.worktrees/*; do if test -d \"$d\"; then printf 'PATH=%s ' \"$d\"; git -C \"$d\" remote get-url origin 2>/dev/null || :; git -C \"$d\" branch --show-current 2>/dev/null || :; fi; done"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Master created seigo-gace/ai-core GitHub repo after developing on VPS. Repo includes scripts/import-host-source.sh constrained to pre-existing ai-core/.worktrees checkout. Check existing source checkout without mutation to register safely. Host HEAD from receipt #6142307949."
+  }
+}
