@@ -507,3 +507,14 @@ Log collection must also function for projects not admitted for DebugAI Host mut
 
 **Last verified Log gap at design time:** TGserver #50 owner's actual [DEVLOG] relay Actions 37992536124 parsed a valid server-core event but reported both Gateway URL configuration options absent, failed before HTTP transport, and did not reach ZERO. Other ZERO Reader searches have shown indexed results for some projects, but are not evidence that that failed event was durably sent or indexed. Preserve this as a separate delivery blocker until an independent same-event retest. Avoid spending Groq/Gemini free daily/monthly calls on transport or Log tests.
 
+
+
+### 16.11.A — Docker-first CHAT operations extension (PR #184, source design)
+
+The common server-core CHAT route must control *registered* containerized workloads without installing application runtimes directly on the Host. It reuses the existing authenticated GitHub Actions → Gateway → bounded receiver → privilege-separated Host UNIX socket. The isolated `dev.job` sandbox never receives `/var/run/docker.sock` or the Host credential store.
+
+The `docker.operation` request carries the registered repository, its Compose service and one bounded operation. The existing Host writer resolves the canonical Compose file and allowed service names from the protected `operations/master-internal-repositories.json` runtime registry; request-supplied file paths, Docker flags, container IDs, arbitrary project names and new privileges are forbidden. Operations expose `ps`, `inspect` (Compose status, not arbitrary Docker inspect/env), `logs`, `exec`, `start`, `stop`, `restart` and `up`. Build/update continues through existing `service.deploy` so image creation and health checks retain their established exact-SHA route.
+
+`exec` executes the user-specified argv *inside* one already-registered service container, not the Host. Docker management and session outputs must be request-correlated, bounded and returned to the initiating CHAT with error status. Stateful restart/start/stop/up must be idempotent by immutable request ID, locked and audit-recorded. An ordinary GitHub commit, CI PASS, or isolated Python unit test alone does not prove runtime activation. Runtime operation requires a separately admitted Host writer and live state/health readback; protected runtime registry and TGserver topic mappings must remain unchanged.
+
+This extension is a new capability of the existing Tool B and **does not create a new service, MCP, workflow, token, project or Host application runtime**. Source first; Host activation only after reviewed CI, registry cross-check and a bounded live test.
