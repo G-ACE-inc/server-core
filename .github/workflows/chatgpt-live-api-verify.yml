@@ -143,6 +143,10 @@ jobs:
           send=(python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha")
           if [[ "$command_id" == "project.source_reflect" ]]; then
             send+=(--expected-before "$(jq -r '.bounded_host_request.expected_before' "$target")")
+            reflect_repo="$(jq -r '.bounded_host_request.repository // empty' "$target")"
+            reflect_branch="$(jq -r '.bounded_host_request.branch // empty' "$target")"
+            if [[ -n "$reflect_repo" ]]; then send+=(--reflect-repository "$reflect_repo"); fi
+            if [[ -n "$reflect_branch" ]]; then send+=(--reflect-branch "$reflect_branch"); fi
           elif [[ "$command_id" == "service.deploy" ]]; then
             send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --service "$(jq -r '.bounded_host_request.service' "$target")")
           elif [[ "$command_id" == "service.deploy_status" ]]; then
