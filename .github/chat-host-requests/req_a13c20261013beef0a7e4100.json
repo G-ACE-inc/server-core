@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core exact source memory observability smoke, no container mutations",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import io,tarfile,urllib.request,types,sys\ns=\"a0ea5f630dca4ae2ebff4c018bf7937fd562a25b\";b=urllib.request.urlopen(\"https://api.github.com/repos/seigo-gace/ai-core/tarball/\"+s,timeout=12).read(800001)\nassert len(b)<800001\nt=tarfile.open(fileobj=io.BytesIO(b),mode=\"r:gz\");d={x.name.split(\"/\",1)[1]:t.extractfile(x).read().decode() for x in t.getmembers() if x.isfile()}\nm=types.ModuleType(\"model_gate\");m.__file__=\"/tmp/model_gate.py\";sys.modules[m.__name__]=m\nexec(compile(d[\"runtime/model_gate.py\"],m.__file__,\"exec\"),m.__dict__)\nh=types.ModuleType(\"host_readiness\");h.__file__=\"/tmp/runtime/host_readiness.py\"\nexec(compile(d[\"runtime/host_readiness.py\"],h.__file__,\"exec\"),h.__dict__)\nh.model_specs_from_compose=lambda *a:{x:{\"service\":x,\"backend_port\":1,\"gate_port\":2,\"warm\":False,\"memory_limit_bytes\":1,\"cpu_limit\":1} for x in (\"a\",\"b\",\"c\",\"d\")}\nclass D:\n def _inspect(self,s):return {\"State\":{\"Running\":True,\"Pid\":0}}\nv=h.report(\"\",{\"max_resident\":2},driver=D(),parent_budget={})\nassert v[\"memory_comparison\"][\"actual_reclaimed_bytes\"] is None\nassert v[\"memory_comparison\"][\"projection_only\"] is True\nassert v[\"memory_comparison\"][\"measured_running_models\"]==0\nprint(\"AI_CORE_MEMORY_OBSERVABILITY=PASS\")'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Generic AI Core measured memory accounting source SHA a0ea5f630dca4ae2ebff4c018bf7937fd562a25b"
+  }
+}
