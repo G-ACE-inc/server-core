@@ -515,6 +515,10 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                 state, exit_code, out, err = "PASS", 0, json.dumps(result, sort_keys=True, separators=(",", ":")), ""
                 if request["command_id"] == "dev.job":
                     state, exit_code, out, err = dev_job_record_fields(result)
+                elif request["command_id"] == "host.command":
+                    exit_code = result.get("exit_code", 1)
+                    state = "PASS" if result.get("state") == "HOST_COMMAND_PASS" and exit_code == 0 else "FAIL"
+                    out, err = str(result.get("stdout") or ""), str(result.get("stderr") or "")
                 recorded = report_result(result_record(
                     request["id"], request["command_id"], request["expected_sha"], state, exit_code,
                     result.get("source_sha"), out, err, started))
