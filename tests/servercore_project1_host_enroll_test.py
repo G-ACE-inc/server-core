@@ -11,6 +11,7 @@ spec.loader.exec_module(m)
 class Project1HostEnrollmentTests(unittest.TestCase):
     def test_exact_verified_server_git_roots(self):
         self.assertEqual(m.NEW, {
+            "seigo-gace/asteria": "/home/admin1/projects/asteria",
             "seigo-gace/astera_v8": "/home/admin1/projects/astera_v8",
             "seigo-gace/astera-app": "/home/admin1/projects/astera-app",
             "seigo-gace/modular-catalog": "/home/admin1/projects/Catalog/modular-catalog",
