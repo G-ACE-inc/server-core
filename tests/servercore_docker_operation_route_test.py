@@ -140,6 +140,21 @@ class DockerRouteTests(unittest.TestCase):
         self.assertTrue(result["read_only"])
 
 class CrossRepoComposeScopeTests(unittest.TestCase):
+    def test_override_command_order_and_registry_rejection(self):
+        from servercore_registered_docker_ops import checked_service, DockerOperationError
+        entry = {"server_project_path": "/home/admin1/projects/TGserver",
+                 "runtime_target": {"compose_file": "docker-compose.yml",
+                 "services": ["conversation-collector"],
+                 "compose_overrides": [{"path": "/home/admin1/logs/TGserver/deployments/20261005/collector-runtime.override.yml",
+                   "sha256": "0" * 64}]}}
+        prefix, root = checked_service(entry, "conversation-collector")
+        self.assertEqual(prefix[-2:], ["-f", entry["runtime_target"]["compose_overrides"][0]["path"]])
+        self.assertEqual(root, "/home/admin1/projects/TGserver")
+        invalid = json.loads(json.dumps(entry))
+        invalid["runtime_target"]["compose_overrides"][0]["path"] = "../../etc/passwd"
+        with self.assertRaisesRegex(DockerOperationError, "COMPOSE_OVERRIDE_REGISTRY_INVALID"):
+            checked_service(invalid, "conversation-collector")
+
     def test_override_digest_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
