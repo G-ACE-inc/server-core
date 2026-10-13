@@ -1,0 +1,41 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Cross-registered runtime actual log read seigo-gace/webhook-gateway/api via existing docker.operation, read-only, no new registration.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "docker.operation",
+    "expected_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "repository": "seigo-gace/webhook-gateway",
+    "service": "api",
+    "operation": "logs",
+    "argv": [],
+    "tail": 40
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Protected live registry proved TGserver conversation-collector and gateway api registered services issue #10 comment 6147714508. PR206 Receiver/Writer runtime validated by DebugAI logs; read-only cross-repo log read required."
+  }
+}
