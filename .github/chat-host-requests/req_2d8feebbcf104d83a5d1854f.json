@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only verify existing Writer reload, Receiver image and registry registered Compose service names (no secret values).",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "command": "systemctl --user show gace-docker-writer-pr206.service -p Result -p ExecMainStatus; systemctl --user is-active gace-servercore-service-deploy.service; docker inspect --format 'RECEIVER={{.Config.Image}} RUNNING={{.State.Running}}' server-core-bounded-host; python3 -c 'import json; r=json.load(open(\"operations/master-internal-repositories.json\"))[\"repositories\"]; print(\"RUNTIME_SERVICES=\"+\",\".join(x[\"repository\"]+\":\"+\"|\".join((x.get(\"runtime_target\") or {}).get(\"services\",[])) for x in r if (x.get(\"runtime_target\") or {}).get(\"services\")))'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Issue #10 comment 6147422874 scheduled existing user unit Writer restart; readback required. PR206 Receiver new live image validated comment 6147399810. Do not output protected Registry values other than registered repo/service names."
+  }
+}
