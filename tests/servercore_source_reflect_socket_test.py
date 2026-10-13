@@ -13,7 +13,7 @@ A, B = "a" * 40, "b" * 40
 REQUEST = {
     "schema": target.SCHEMA,
     "id": "req_" + "1" * 24,
-    "repository": target.REPO,
+    "repository": "G-ACE-inc/server-core",
     "branch": "main",
     "expected_before": A,
     "target_sha": B,
@@ -21,19 +21,26 @@ REQUEST = {
 
 
 class SocketReflectTests(unittest.TestCase):
-    def test_registered_request_calls_fixed_host(self):
-        with patch.object(target, "reflect", return_value={"state": "SOURCE_REFLECT_PASS"}) as run:
+    def test_registered_request_calls_admitted_host(self):
+        admission = {"root": Path("/home/admin1/server-core"), "branch": "main", "allowed_origins": frozenset()}
+        with patch.object(target, "require_reflect", return_value=admission), \
+                patch.object(target, "load_registry", return_value={}), \
+                patch.object(target, "reflect", return_value={"state": "SOURCE_REFLECT_PASS"}) as run:
             result = target.execute_request(REQUEST)
         self.assertEqual(result["state"], "SOURCE_REFLECT_PASS")
-        run.assert_called_once_with(target.CANONICAL_ROOT, A, B)
+        run.assert_called_once_with(admission["root"], A, B, branch="main", allowed_origins=admission["allowed_origins"])
 
     def test_rejects_unregistered_repo(self):
-        with self.assertRaisesRegex(target.AdmissionError, "REQUEST_TARGET_DENIED"):
-            target.validate({**REQUEST, "repository": "seigo-gace/debug-ai"})
+        with patch.object(target, "load_registry", return_value={"repositories": []}), \
+                patch.object(target, "require_reflect", side_effect=target.ReflectAdmissionError("REFLECT_OPERATION_NOT_REGISTERED")):
+            with self.assertRaises(target.ReflectAdmissionError):
+                target.execute_request({**REQUEST, "repository": "seigo-gace/debug-ai"})
 
     def test_rejects_unregistered_branch(self):
-        with self.assertRaisesRegex(target.AdmissionError, "REQUEST_TARGET_DENIED"):
-            target.validate({**REQUEST, "branch": "feature/unbounded"})
+        with patch.object(target, "load_registry", return_value={"repositories": []}), \
+                patch.object(target, "require_reflect", side_effect=target.ReflectAdmissionError("BRANCH_NOT_ALLOWED")):
+            with self.assertRaises(target.ReflectAdmissionError):
+                target.execute_request({**REQUEST, "branch": "feature/unbounded"})
 
     def test_rejects_extra_keys_and_effects(self):
         with self.assertRaisesRegex(target.AdmissionError, "REQUEST_KEYS_DENIED"):

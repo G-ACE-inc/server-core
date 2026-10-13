@@ -57,8 +57,8 @@ class ReflectTests(TestCase):
         with self.assertRaisesRegex(source.ReflectError, "BEFORE_SHA_MISMATCH"):
             self.execute(before=C)
 
-    def test_remote_main_mismatch_denied(self):
-        with self.assertRaisesRegex(source.ReflectError, "REMOTE_MAIN_SHA_MISMATCH"):
+    def test_remote_branch_mismatch_denied(self):
+        with self.assertRaisesRegex(source.ReflectError, "REMOTE_BRANCH_SHA_MISMATCH"):
             self.execute(remote=C)
 
     def test_diverged_denied(self):
@@ -70,7 +70,7 @@ class ReflectTests(TestCase):
             self.execute(origin="https://example.net/untrusted.git")
 
     def test_wrong_branch_denied(self):
-        with self.assertRaisesRegex(source.ReflectError, "BRANCH_NOT_MAIN"):
+        with self.assertRaisesRegex(source.ReflectError, "BRANCH_NOT_ALLOWED"):
             self.execute(branch="develop")
 
     def test_wrong_root_denied(self):

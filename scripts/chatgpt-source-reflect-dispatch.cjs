@@ -37,7 +37,9 @@ function assertBoundedHostShape(request) {
   }
   const keys = Object.keys(request).sort();
   const expected = request.command_id === "project.source_reflect"
-    ? ["command_id", "enabled", "expected_before", "expected_sha"].sort()
+    ? (Object.hasOwn(request, "repository")
+        ? ["branch", "command_id", "enabled", "expected_before", "expected_sha", "repository"].sort()
+        : ["command_id", "enabled", "expected_before", "expected_sha"].sort())
     : request.command_id === "service.deploy"
       ? ["command_id", "enabled", "expected_sha", "repository", "service"].sort()
       : request.command_id === "docker.operation"
@@ -123,6 +125,36 @@ function assertBoundedHostShape(request) {
   }
   if (!/^[a-z][a-z0-9_.-]{1,80}$/.test(String(request.command_id || ""))) {
     throw new Error("BOUNDED_HOST_COMMAND_INVALID");
+  }
+}
+
+
+function findDelegationByRepository(registry, repository) {
+  const list = registry.repositories ?? registry.delegations ?? [];
+  return list.find((item) => item.repository === repository) ?? null;
+}
+
+function validateBoundedHostReflectTarget(request, registry) {
+  if (request.command_id !== "project.source_reflect" || !Object.hasOwn(request, "repository")) {
+    return;
+  }
+  const repository = String(request.repository || "");
+  const branch = String(request.branch || "");
+  if (!/^[A-Za-z0-9._/-]{1,160}$/.test(branch) || branch.startsWith("-") || branch.includes("..")) {
+    throw new Error("BOUNDED_HOST_REFLECT_BRANCH_INVALID");
+  }
+  const delegation = findDelegationByRepository(registry, repository);
+  if (!delegation || delegation.enabled !== true || delegation.revoked === true) {
+    throw new Error("BOUNDED_HOST_REFLECT_DELEGATION_DENIED");
+  }
+  if (!(delegation.allowed_operations || []).includes("reflect")) {
+    throw new Error("BOUNDED_HOST_REFLECT_OPERATION_DENIED");
+  }
+  if (!(delegation.allowed_branches || []).includes(branch)) {
+    throw new Error("BOUNDED_HOST_REFLECT_BRANCH_DENIED");
+  }
+  if ((delegation.runtime_target || {}).kind !== "source_only") {
+    throw new Error("BOUNDED_HOST_REFLECT_RUNTIME_DENIED");
   }
 }
 
@@ -218,6 +250,7 @@ function validateDispatch({ target, route, registry, gitRefName }) {
     if (!REFLECT_TRIGGER_BRANCHES.has(gitRefName)) throw new Error("BOUNDED_HOST_TRIGGER_BRANCH_DENIED");
     const hostContract = loadJson(BOUNDED_HOST_CONTRACT_PATH);
     validateBoundedHostRequest(target.bounded_host_request, hostContract);
+    validateBoundedHostReflectTarget(target.bounded_host_request, registry);
     return { mode: "bounded_host", commandId: target.bounded_host_request.command_id };
   }
 

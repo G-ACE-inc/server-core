@@ -243,6 +243,28 @@ class ProvisionerNegative(Base):
         run_git(self.root, "checkout", "-q", "-b", "feature")
         self.denied("BRANCH_NOT_REGISTERED", self.request())
 
+    def test_registered_main_can_be_used_after_checkout_moves_to_main(self):
+        run_git(self.root, "checkout", "-q", "-b", "feature/old")
+        self.write_contract()
+        contract = json.loads((self.root / "operations/github-project-bounded-host.json").read_text())
+        entry = contract["dev_job"]["registered_repositories"]["G-ACE-inc/server-core"]
+        entry["branch"] = "feature/old"
+        entry["allowed_branches"] = ["feature/old", "main"]
+        (self.root / "operations/github-project-bounded-host.json").write_text(json.dumps(contract))
+        self.commit()
+        run_git(self.root, "checkout", "-q", "main")
+        self.go(self.request())
+
+    def test_unregistered_branch_still_denied_with_main_allowed(self):
+        self.write_contract()
+        contract = json.loads((self.root / "operations/github-project-bounded-host.json").read_text())
+        entry = contract["dev_job"]["registered_repositories"]["G-ACE-inc/server-core"]
+        entry["allowed_branches"] = ["main", "feature/old"]
+        (self.root / "operations/github-project-bounded-host.json").write_text(json.dumps(contract))
+        self.commit()
+        run_git(self.root, "checkout", "-q", "-b", "feature/unapproved")
+        self.denied("BRANCH_NOT_REGISTERED", self.request())
+
     def test_detached_head_at_registered_branch_tip_is_allowed(self):
         run_git(self.root, "checkout", "-q", "--detach", "HEAD")
         self.assertEqual(self.go(self.request())["job_exit"], 0)
