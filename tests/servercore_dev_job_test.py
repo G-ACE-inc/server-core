@@ -529,7 +529,7 @@ class ContractAndInstallerFiles(unittest.TestCase):
         policy = contract["dev_job"]
         self.assertEqual(policy["design_section_sha256"],
                          job.design_section_digest((ROOT / "docs/SERVER_CORE_DESIGN.md").read_text(encoding="utf-8")))
-        self.assertEqual(set(policy["registered_repositories"]), {"G-ACE-inc/server-core", "seigo-gace/TGserver", "seigo-gace/debug-ai", "seigo-gace/webhook-gateway", "seigo-gace/asteria", "seigo-gace/astera_v8", "seigo-gace/astera-app", "seigo-gace/modular-catalog", "seigo-gace/Deterministic-Japanese-Parser-MCP", "seigo-gace/Libral-Vault"})
+        self.assertEqual(set(policy["registered_repositories"]), {"G-ACE-inc/server-core", "seigo-gace/TGserver", "seigo-gace/debug-ai", "seigo-gace/webhook-gateway", "seigo-gace/asteria", "seigo-gace/astera_v8", "seigo-gace/astera-app", "seigo-gace/modular-catalog", "seigo-gace/Deterministic-Japanese-Parser-MCP", "seigo-gace/Libral-Vault", "seigo-gace/ai-core"})
         self.assertEqual(policy["registered_repositories"]["seigo-gace/TGserver"]["root"], "/home/admin1/projects/TGserver")
         self.assertEqual(policy["registered_repositories"]["seigo-gace/debug-ai"]["root"], "/home/admin1/projects/debug-ai")
         self.assertEqual(policy["registered_repositories"]["seigo-gace/webhook-gateway"]["root"], "/home/admin1/projects/webhook-gateway")
@@ -539,7 +539,8 @@ class ContractAndInstallerFiles(unittest.TestCase):
         self.assertEqual(policy["registered_repositories"]["G-ACE-inc/server-core"]["branch"], "main")
         self.assertEqual(policy["registered_repositories"]["seigo-gace/modular-catalog"]["root"], "/home/admin1/projects/Catalog/modular-catalog")
         self.assertEqual(policy["registered_repositories"]["seigo-gace/Libral-Vault"]["root"], "/home/admin1/projects/libral-vault")
-        self.assertNotIn("seigo-gace/ai-core", policy["registered_repositories"], "non-git ai-core runtime must not be admitted as a Git checkout")
+        self.assertEqual(policy["registered_repositories"]["seigo-gace/ai-core"]["root"], "/home/admin1/projects/ai-core/.worktrees/source-import-20261013")
+        self.assertEqual(policy["registered_repositories"]["seigo-gace/ai-core"]["branch"], "import/server-baseline-20261013")
         self.assertNotIn("seigo-gace/gace-dev-kb", policy["registered_repositories"], "KB consumer must remain outside VPS developer control")
 
     def test_unit_has_no_docker_socket_mount_and_runs_as_user(self):
