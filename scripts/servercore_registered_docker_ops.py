@@ -62,7 +62,7 @@ def operate(entry, service, operation, *, argv=None, tail=100, timeout=45, runne
         "ps": [*prefix, "ps", service],
         "inspect": [*prefix, "ps", "--format", "json", service],
         "logs": [*prefix, "logs", "--no-color", "--tail", str(tail), service],
-        "stats": ["docker", "stats", "--no-stream", "--format", "{{.Name}}|{{.CPUPerc}}|{{.MemUsage}}"],
+        "stats": [*prefix, "stats", "--no-stream", service],
         "start": [*prefix, "start", service],
         "stop": [*prefix, "stop", service],
         "restart": [*prefix, "restart", service],
