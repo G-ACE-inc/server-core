@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Verify live protected 11 repo roots drive read-only Docker log admission; no service or PC modifications.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "f6257151c9f5426f9c748397a9a02b2165a28cf5",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "f6257151c9f5426f9c748397a9a02b2165a28cf5",
+    "command": "python3 -c 'import sys;sys.path.insert(0,\"scripts\");import servercore_docker_logs_socket as m;r=m.registered_project_roots();print(\"LOG_REGISTERED_ROOT_COUNT=\"+str(len(r)));print(\"CATALOG_NESTED=\"+str(\"/home/admin1/projects/Catalog/modular-catalog\" in r));print(\"AI_CORE_NESTED=\"+str(\"/home/admin1/projects/ai-core/.worktrees/source-import-20261013\" in r));print(\"SERVER_CORE_ROOT=\"+str(\"/home/admin1/server-core\" in r))'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR#200 merged Host f625...; reader restart PASS https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6143364155. Verify protected dirty Registry live 11 roots, including nested without exposing secrets, read-only."
+  }
+}
