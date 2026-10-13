@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Urgent Astera evaluator restarting; inspect last 40 container error logs only, no mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/astera_v8",
+    "repo_sha": "46eee755b0bb86ea3522aa3ff25e06049440221b",
+    "command": "docker logs --tail 40 astera-v8-evaluator"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "After failed build 6151066773 evaluator disappeared 6151089267; no-build recovery 6151102718 started but subsequent docker compose ps 6151117898 shows Restarting(1). Need immediate root cause logs and restore."
+  }
+}
