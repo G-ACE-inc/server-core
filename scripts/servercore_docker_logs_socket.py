@@ -64,18 +64,18 @@ def registered_containers(root=ROOT):
 
 
 def registered_project_roots(root=ROOT, git_reader=git):
-    """Reuse committed Project #1 repository registrations, never a per-container ACL."""
-    if root == ROOT:
-        result = git_reader("show", "HEAD:operations/master-internal-repositories.json")
-        if result.returncode:
+    """Read active Host grants, not a stale committed copy.
+
+    The master registry is protected Host state. Never fall back to a Git copy
+    when it is missing or unreadable: that would silently hide live grants.
+    """
+    path = Path(root) / "operations/master-internal-repositories.json"
+    try:
+        if path.is_symlink() or not path.is_file():
             raise LogsError("PROJECT_REGISTRY_UNAVAILABLE")
-        data = result.stdout
-    else:
-        path = Path(root) / "operations/master-internal-repositories.json"
-        try:
-            data = path.read_text(encoding="utf-8")
-        except OSError:
-            raise LogsError("PROJECT_REGISTRY_UNAVAILABLE") from None
+        data = path.read_text(encoding="utf-8")
+    except OSError:
+        raise LogsError("PROJECT_REGISTRY_UNAVAILABLE") from None
     try:
         entries = json.loads(data)["repositories"]
     except (ValueError, KeyError, TypeError):
@@ -85,8 +85,18 @@ def registered_project_roots(root=ROOT, git_reader=git):
         if not isinstance(entry, dict) or entry.get("enabled") is not True or entry.get("revoked") is not False:
             continue
         path = entry.get("server_project_path")
-        if isinstance(path, str) and re.fullmatch(r"/home/admin1/projects/[A-Za-z0-9_.-]+", path):
-            roots.add(path)
+        if not isinstance(path, str):
+            continue
+        candidate = Path(path)
+        # Existing approved host roots include nested Catalog and AI Core
+        # source-import worktree. No arbitrary parent or path traversal.
+        if not (path == "/home/admin1/server-core" or
+                (path.startswith("/home/admin1/projects/") and
+                 candidate.is_absolute() and ".." not in candidate.parts)):
+            continue
+        if root == ROOT and (candidate.is_symlink() or not candidate.is_dir() or candidate.resolve() != candidate):
+            continue
+        roots.add(path)
     return frozenset(roots)
 
 

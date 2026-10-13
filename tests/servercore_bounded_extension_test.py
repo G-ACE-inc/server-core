@@ -164,10 +164,12 @@ class DockerLogsWriterTests(unittest.TestCase):
             op.mkdir()
             (op / "master-internal-repositories.json").write_text(json.dumps({"repositories": [
                 {"enabled": True, "revoked": False, "server_project_path": "/home/admin1/projects/TGserver"},
+                {"enabled": True, "revoked": False, "server_project_path": "/home/admin1/projects/Catalog/modular-catalog"},
+                {"enabled": True, "revoked": False, "server_project_path": "/home/admin1/server-core"},
                 {"enabled": False, "revoked": False, "server_project_path": "/home/admin1/projects/disabled"},
                 {"enabled": True, "revoked": False, "server_project_path": "/home/admin1/projects/../escape"}
             ]}))
-            self.assertEqual(logs.registered_project_roots(Path(tmp)), frozenset(["/home/admin1/projects/TGserver"]))
+            self.assertEqual(logs.registered_project_roots(Path(tmp)), frozenset(["/home/admin1/projects/TGserver", "/home/admin1/projects/Catalog/modular-catalog", "/home/admin1/server-core"]))
 
     def test_compose_labels_must_match_project_root_exactly(self):
         class Done:
