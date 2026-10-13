@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Discover exact registered TGserver and debug-ai Host checkout commits and running names to test independent parallel Repo log readback",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "command": "printf 'TG_SHA='; git -C /home/admin1/projects/TGserver rev-parse HEAD; printf 'DEBUG_SHA='; git -C /home/admin1/projects/debug-ai rev-parse HEAD; docker ps --format '{{.Names}}' --filter name=debug-ai | head -8; docker ps --format '{{.Names}}' --filter name=tgserver | head -5"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Full 240 line Host output archive PASS #6144984458. Need cross-repo parallel work scenario, get live exact TGserver/debug-ai Host HEADs and container names for bounded independent requests."
+  }
+}
