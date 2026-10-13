@@ -104,6 +104,27 @@ def validate_request(value, contract):
                 or type(offset) is not int or not 0 <= offset <= 4_000_000:
             fail("FILE_INSPECT_TARGET_INVALID", 422)
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha, "path": path, "offset": offset}
+    if command_id == "docker.operation":
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "repository",
+                           "service", "operation", "argv", "tail"}:
+            fail("DOCKER_OPERATION_KEYS_INVALID", 422)
+        repo, service, operation, argv, tail = (
+            value["repository"], value["service"], value["operation"], value["argv"], value["tail"])
+        if not isinstance(repo, str) or not REPOSITORY_PATTERN.fullmatch(repo) \
+                or not isinstance(service, str) or not SERVICE_PATTERN.fullmatch(service):
+            fail("DOCKER_OPERATION_TARGET_INVALID", 422)
+        if not isinstance(operation, str) or operation not in {
+                "ps", "inspect", "logs", "stats", "start", "stop", "restart", "up", "exec"}:
+            fail("DOCKER_OPERATION_UNSUPPORTED", 422)
+        if not isinstance(argv, list) or len(argv) > 10 or any(
+                not isinstance(arg, str) or not 1 <= len(arg) <= 512 for arg in argv
+        ) or sum(map(len, argv)) > 1000 or (operation == "exec") != bool(argv):
+            fail("DOCKER_OPERATION_ARGV_INVALID", 422)
+        if type(tail) is not int or not 1 <= tail <= 200:
+            fail("DOCKER_OPERATION_TAIL_INVALID", 422)
+        return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
+                "repository": repo, "service": service, "operation": operation,
+                "argv": argv, "tail": tail}
     if command_id == "docker.logs":
         if set(value) != {"schema", "id", "command_id", "expected_sha", "container", "tail"}:
             fail("DOCKER_LOGS_KEYS_INVALID", 422)
@@ -222,6 +243,44 @@ def dispatch_deploy_status(request, socket_path=DEPLOY_SOCKET):
             "read_only": True}
 
 
+
+
+def dispatch_docker_operation(request, root, socket_path=DEPLOY_SOCKET):
+    """Use the same protected Host writer as service.deploy; never expose Docker to dev.job."""
+    sha = bounded_host.head_sha(bounded_host.checked_root(root), request["expected_sha"])
+    reply = deploy_socket_call({
+        "schema": "gace.servercore-docker-operation.request/v1",
+        "id": request["id"],
+        "repository": request["repository"],
+        "service": request["service"],
+        "target_sha": sha,
+        "operation": request["operation"],
+        "argv": request["argv"],
+        "tail": request["tail"],
+    }, socket_path, timeout=60)
+    if reply.get("ok") is not True:
+        if reply.get("error") == "DEPLOY_LOCK_BUSY":
+            fail("DOCKER_OPERATION_BUSY", 503)
+        fail("DOCKER_OPERATION_ADMISSION_DENIED", 422)
+    if reply.get("request_id") != request["id"]:
+        fail("DOCKER_OPERATION_RESULT_ID_MISMATCH", 503)
+    value = reply.get("result", reply)
+    if reply.get("state") == "DOCKER_OPERATION_DUPLICATE":
+        if reply.get("recorded_state") != "DOCKER_OPERATION_PASS":
+            fail("DOCKER_OPERATION_PREVIOUSLY_FAILED", 422)
+    elif reply.get("state") != "DOCKER_OPERATION_PASS":
+        fail("DOCKER_OPERATION_FAILED", 422)
+    if not isinstance(value, dict) or value.get("service") != request["service"] \
+            or value.get("repository") != request["repository"] \
+            or value.get("operation") != request["operation"] \
+            or value.get("source_sha") != sha:
+        fail("DOCKER_OPERATION_RESULT_MISMATCH", 503)
+    read_only = request["operation"] in {"ps", "inspect", "logs", "stats"}
+    return {"command_id": request["command_id"], "source_sha": sha,
+            "service": value["service"], "repository": value["repository"],
+            "operation": value["operation"], "stdout": str(value.get("stdout") or "")[:4000],
+            "stderr": str(value.get("stderr") or "")[:1000],
+            "read_only": read_only, "exit_code": 0, "state": "DOCKER_OPERATION_PASS"}
 
 def dispatch_docker_logs(request, root, socket_path=None):
     sha = bounded_host.head_sha(bounded_host.checked_root(root), request["expected_sha"])
@@ -407,6 +466,8 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                                                        request["offset"], contract.get("registered_files"))
                 elif request["command_id"] == "docker.logs":
                     result = dispatch_docker_logs(request, root)
+                elif request["command_id"] == "docker.operation":
+                    result = dispatch_docker_operation(request, root)
                 elif request["command_id"] == "dev.job":
                     result = dispatch_dev_job(request, root)
                 else:
