@@ -334,7 +334,7 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
                             check=False)
             result = {**base, "state": "HOST_COMMAND_PASS" if completed.returncode == 0 else "FAIL",
                       "exit_code": completed.returncode,
-                      "stdout": completed.stdout[:4000], "stderr": completed.stderr[:1000]}
+                      "stdout": completed.stdout[:16000], "stderr": completed.stderr[:1000]}
         except (OSError, subprocess.TimeoutExpired):
             result = {**base, "state": "FAIL", "failure_class": "HOST_COMMAND_EXECUTION_FAILED"}
         write_result(request_id, result, result_dir)
