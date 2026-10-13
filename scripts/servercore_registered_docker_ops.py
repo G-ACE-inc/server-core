@@ -10,7 +10,7 @@ from pathlib import Path
 
 SERVICE_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
 SAFE_ARG = re.compile(r"^[^\x00-\x1f\x7f]{1,512}$")
-READ_OPS = frozenset({"ps", "inspect", "logs", "stats", "exec"})
+READ_OPS = frozenset({"ps", "inspect", "logs", "exec"})
 WRITE_OPS = frozenset({"start", "stop", "restart", "build", "up"})
 OPS = READ_OPS | WRITE_OPS
 
@@ -49,7 +49,7 @@ def operate(entry, service, operation, *, argv=None, tail=100, timeout=45, runne
     'exec' can execute arbitrary code inside an admitted container and therefore
     must be exposed ONLY through an explicit separately authorized Host path.
     """
-    if operation not in OPS:
+    if not isinstance(operation, str) or operation not in OPS:
         raise DockerOperationError("OPERATION_DENIED")
     prefix, root = checked_service(entry, service)
     if type(timeout) is not int or not 1 <= timeout <= 900:
@@ -62,7 +62,6 @@ def operate(entry, service, operation, *, argv=None, tail=100, timeout=45, runne
         "ps": [*prefix, "ps", service],
         "inspect": [*prefix, "ps", "--format", "json", service],
         "logs": [*prefix, "logs", "--no-color", "--tail", str(tail), service],
-        "stats": [*prefix, "ps", "--format", "json", service],
         "start": [*prefix, "start", service],
         "stop": [*prefix, "stop", service],
         "restart": [*prefix, "restart", service],
