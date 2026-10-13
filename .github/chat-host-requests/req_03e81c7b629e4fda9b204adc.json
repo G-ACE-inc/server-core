@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CHAT native Docker exec inside existing designated sandbox-runner container; no restart, write or runtime production mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "0786ca5589db1f69ff704b32f6400486e2cff0f1",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "0786ca5589db1f69ff704b32f6400486e2cff0f1",
+    "command": "docker inspect --format '{{.State.Running}}' debug-ai-sandbox-runner-1 | grep -qx true && docker exec debug-ai-sandbox-runner-1 sh -c 'printf DOCKER_EXEC_RUNTIME_PASS' && printf '\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Master continuation; actual Host write/read/cleanup PASS https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6141741342. Verify Docker exec via existing sandbox-runner without file or container mutation. Host SHA 0786ca5589db1f69ff704b32f6400486e2cff0f1."
+  }
+}
