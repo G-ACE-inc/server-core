@@ -6,7 +6,7 @@ WORKDIR /app
 COPY operations/github-project-bounded-host.json /app/operations/github-project-bounded-host.json
 COPY scripts/servercore_bounded_host.py /app/scripts/servercore_bounded_host.py
 COPY scripts/gace_internal_delivery_auth.py /app/scripts/gace_internal_delivery_auth.py
-COPY scripts/servercore_bounded_host_receiver.py /app/scripts/servercore_bounded_host_receiver.py
+COPY --chmod=755 scripts/servercore_bounded_host_receiver.py /app/scripts/servercore_bounded_host_receiver.py
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
