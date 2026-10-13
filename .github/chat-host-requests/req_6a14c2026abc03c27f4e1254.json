@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core nested source checkout exact SHA, dirty state and new Router entrypoints, read-only",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "command": "git -C /home/admin1/projects/ai-core/.worktrees/source-import-20261013 status --short --branch; git -C /home/admin1/projects/ai-core/.worktrees/source-import-20261013 rev-parse HEAD; ls -la /home/admin1/projects/ai-core/.worktrees/source-import-20261013/runtime | head -30"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "AI Core PR3 existing nested checkout",
+    "source_design_aligned": true,
+    "source_evidence": "Host receipt 6152444032 existing .worktrees/source-import-20261013 found"
+  }
+}
