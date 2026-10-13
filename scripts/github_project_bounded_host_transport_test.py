@@ -25,6 +25,7 @@ CONTRACT = {
 
 
 class GatewaySendTests(unittest.TestCase):
+    # Regression: CLI parameter order must never change the selected Host command.
     def test_cli_host_command_does_not_shift_into_dev_job_arguments(self):
         from unittest.mock import patch
         import sys
