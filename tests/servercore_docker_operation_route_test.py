@@ -141,3 +141,22 @@ class DockerRouteTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CrossRepoComposeScopeTests(unittest.TestCase):
+    def test_override_digest_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".git").mkdir()
+            compose = root / "docker-compose.yml"
+            compose.write_text("services: {}\n")
+            override = root / "collector-runtime.override.yml"
+            override.write_text("services: {}\n")
+            admitted = {"root": str(root), "compose_file": compose.name,
+                        "compose_digest": hashlib.sha256(compose.read_bytes()).hexdigest(),
+                        "compose_overrides": [{"path": str(override),
+                          "sha256": hashlib.sha256(override.read_bytes()).hexdigest()}]}
+            self.assertEqual(writer.check_registered_compose_path(admitted), root)
+            override.write_text("services: {other: {}}\n")
+            with self.assertRaisesRegex(writer.AdmissionError, "DOCKER_COMPOSE_OVERRIDE_DIGEST_CHANGED"):
+                writer.check_registered_compose_path(admitted)
