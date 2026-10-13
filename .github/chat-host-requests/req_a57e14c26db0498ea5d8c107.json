@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Astera-v8 verified JSON health key fields only (no body byte truncation); read-only.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "repository": "seigo-gace/astera_v8",
+    "repo_sha": "6d2fdda5dd9f62becbacf1f41a3b6c975db3ed4b",
+    "command": "python3 -c 'import urllib.request,json; [(lambda p: print(p,*(lambda j: (j.get(\"ok\"),j.get(\"service\"),j.get(\"status\",j.get(\"readiness\",\"UNKNOWN\"))))(json.load(urllib.request.urlopen(\"http://127.0.0.1:\"+str(p)+\"/healthz\",timeout=4)))))(p) for p in (7374,7375,7376)]'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Host 2bbba0 confirmed latest receipt 6149827794, prior health retrieval first two healthy but raw byte slice broke mid-UTF8. Parse full JSON then output bounded fields; exact Astera repo 6d2fdda."
+  }
+}
