@@ -11,6 +11,7 @@ because Gateway delivery timeouts are shorter than image builds.
 """
 import argparse
 import fcntl
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -212,6 +213,24 @@ def validate_docker_operation(value):
     return value
 
 
+
+def check_registered_compose_path(admitted):
+    """Revalidate on-disk registered Compose scope; no status-clean requirement.
+
+    The user can legitimately have dirty source work while inspecting/restarting
+    a container. Never let a symlink or swapped Compose file redirect privileged
+    operations away from the preexisting protected registry.
+    """
+    root = Path(admitted["root"])
+    if root.is_symlink() or not root.is_dir() or not (root / ".git").is_dir():
+        raise AdmissionError("DOCKER_HOST_CHECKOUT_INVALID")
+    path = root / admitted["compose_file"]
+    if path.is_symlink() or not path.is_file() or path.resolve().parent != root.resolve():
+        raise AdmissionError("DOCKER_COMPOSE_PATH_CHANGED")
+    if hashlib.sha256(path.read_bytes()).hexdigest() != admitted["compose_digest"]:
+        raise AdmissionError("DOCKER_COMPOSE_DIGEST_CHANGED")
+    return root
+
 def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, result_dir=None):
     """Use the existing registry and Host writer lock; retry IDs never repeat writes."""
     request = validate_docker_operation(value)
@@ -220,7 +239,8 @@ def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, 
         return {"request_id": request["id"], "state": "DOCKER_OPERATION_DUPLICATE",
                 "recorded_state": existing.get("state"), "result": existing}
     registry = json.loads(Path(registry_path).read_text(encoding="utf-8"))
-    require_registered(registry, request["repository"], request["target_sha"], request["service"])
+    admitted = require_registered(registry, request["repository"], request["target_sha"], request["service"])
+    check_registered_compose_path(admitted)
     entry = next(x for x in registry["repositories"] if x.get("repository") == request["repository"])
     fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "w") as lock:
