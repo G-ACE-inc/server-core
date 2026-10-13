@@ -139,10 +139,6 @@ class DockerRouteTests(unittest.TestCase):
         self.assertEqual(result["stdout"], "running")
         self.assertTrue(result["read_only"])
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class CrossRepoComposeScopeTests(unittest.TestCase):
     def test_override_digest_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -160,3 +156,7 @@ class CrossRepoComposeScopeTests(unittest.TestCase):
             override.write_text("services: {other: {}}\n")
             with self.assertRaisesRegex(writer.AdmissionError, "DOCKER_COMPOSE_OVERRIDE_DIGEST_CHANGED"):
                 writer.check_registered_compose_path(admitted)
+
+
+if __name__ == "__main__":
+    unittest.main()
