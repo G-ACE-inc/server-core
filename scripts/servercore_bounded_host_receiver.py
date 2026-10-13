@@ -126,14 +126,16 @@ def validate_request(value, contract):
                 "repository": repo, "service": service, "operation": operation,
                 "argv": argv, "tail": tail}
     if command_id == "host.command":
-        if set(value) != {"schema", "id", "command_id", "expected_sha", "repository", "command"}:
+        if set(value) != {"schema", "id", "command_id", "expected_sha", "repository", "repo_sha", "command"}:
             fail("HOST_COMMAND_KEYS_INVALID", 422)
         repository, command = value["repository"], value["command"]
+        repo_sha = value["repo_sha"]
         if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
+                or not isinstance(repo_sha, str) or not SHA_PATTERN.fullmatch(repo_sha) \
                 or not isinstance(command, str) or not 1 <= len(command) <= 1600 or "\x00" in command:
             fail("HOST_COMMAND_TARGET_INVALID", 422)
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
-                "repository": repository, "command": command}
+                "repository": repository, "repo_sha": repo_sha, "command": command}
     if command_id == "docker.logs":
         if set(value) != {"schema", "id", "command_id", "expected_sha", "container", "tail"}:
             fail("DOCKER_LOGS_KEYS_INVALID", 422)
@@ -295,13 +297,13 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
     sha = bounded_host.head_sha(bounded_host.checked_root(root), request["expected_sha"])
     reply = deploy_socket_call({
         "schema": "gace.servercore-host-command.request/v1", "id": request["id"],
-        "repository": request["repository"], "target_sha": sha,
+        "repository": request["repository"], "target_sha": request["repo_sha"],
         "command": request["command"]
     }, socket_path, timeout=120)
     if reply.get("ok") is not True:
         fail("HOST_COMMAND_ADMISSION_DENIED", 422)
     if reply.get("request_id") != request["id"] or reply.get("repository") != request["repository"] \
-            or reply.get("source_sha") != sha:
+            or reply.get("source_sha") != request["repo_sha"]:
         fail("HOST_COMMAND_RESULT_MISMATCH", 503)
     if reply.get("state") == "HOST_COMMAND_DUPLICATE":
         result = reply.get("result")
@@ -310,7 +312,7 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
     else:
         result = reply
     return {"command_id": request["command_id"], "repository": request["repository"],
-            "source_sha": sha, "state": result.get("state"), "exit_code": result.get("exit_code", 1),
+            "source_sha": sha, "repo_sha": request["repo_sha"], "state": result.get("state"), "exit_code": result.get("exit_code", 1),
             "stdout": str(result.get("stdout") or "")[:4000],
             "stderr": str(result.get("stderr") or "")[:1000], "read_only": False}
 
