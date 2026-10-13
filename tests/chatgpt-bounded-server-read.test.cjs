@@ -479,6 +479,18 @@ test("service deploy dispatch is fixed registered repo/service at an explicit SH
   assert.match(wf,/send\+=\(--repository "\$\(jq -r '\.bounded_host_request\.repository'/);
 });
 
+test("registered Docker operation passes same CHAT dispatch and denies unsupported targets",()=>{
+  const op={enabled:true,command_id:"docker.operation",expected_sha:"a".repeat(40),
+    repository:"seigo-gace/debug-ai",service:"debug-ai",operation:"ps",argv:[],tail:100};
+  const args=r=>({target:{...targetNoBoundedHost,bounded_host_request:r,server_command_id:""},route,registry,gitRefName:"main"});
+  assert.equal(d.validateDispatch(args(op)).commandId,"docker.operation");
+  assert.equal(d.validateDispatch(args({...op,operation:"exec",argv:["node","-V"]})).mode,"bounded_host");
+  assert.throws(()=>d.validateDispatch(args({...op,operation:"down"})),/BOUNDED_HOST_DOCKER_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...op,argv:["sh"]})),/BOUNDED_HOST_DOCKER_ARGV_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...op,repository:"../host"})),/BOUNDED_HOST_DOCKER_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...op,docker_socket:"/var/run/docker.sock"})),/BOUNDED_HOST_KEYS_INVALID/);
+});
+
 test("every enabled bounded Host command is START-gated and its result is returned by request id",()=>{
   assert.match(wf,/\(\.bounded_host_request\.enabled == true\)/);
   assert.doesNotMatch(wf,/command_id == "project\.source_reflect"\) or \(\.bounded_host_request\.command_id == "service\.deploy"/);
