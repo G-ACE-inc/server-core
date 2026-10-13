@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core read-only Host checkout structure for new Router source deployment; prior git -C path was not a git repository",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "command": "printf 'AI_CORE_DIR='; ls -ld /home/admin1/projects/ai-core; printf 'AI_CORE_CONTENTS='; ls -la /home/admin1/projects/ai-core | head -35; printf 'SERVERCORE_HEAD='; git rev-parse HEAD"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "ai-core PR #3 cutover",
+    "source_design_aligned": true,
+    "source_evidence": "Issue #10 receipt 6152417392 confirms all 4 stopped, ports free, git -C ai-core not a repository; inspect location before Source reflection"
+  }
+}
