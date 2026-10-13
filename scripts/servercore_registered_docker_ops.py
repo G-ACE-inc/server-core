@@ -10,9 +10,9 @@ import subprocess
 from pathlib import Path
 
 SERVICE_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
-COMPOSE_RE = re.compile(r"^[A-Za-z0-9_.-]+\\.ya?ml$")
+COMPOSE_RE = re.compile(r"^[A-Za-z0-9_.-]+\.ya?ml$")
 CONTAINER_ID_RE = re.compile(r"^[a-f0-9]{12,64}$")
-ARG_RE = re.compile(r"^[^\\x00-\\x1f\\x7f]{1,512}$")
+ARG_RE = re.compile(r"^[^\x00-\x1f\x7f]{1,512}$")
 READ_OPS = frozenset({"ps", "inspect", "logs", "stats"})
 WRITE_OPS = frozenset({"start", "stop", "restart", "up", "exec"})
 OPS = READ_OPS | WRITE_OPS
