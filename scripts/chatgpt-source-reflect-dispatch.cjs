@@ -43,7 +43,7 @@ function assertBoundedHostShape(request) {
       : request.command_id === "docker.operation"
         ? ["argv", "command_id", "enabled", "expected_sha", "operation", "repository", "service", "tail"].sort()
       : request.command_id === "host.command"
-        ? ["command", "command_id", "enabled", "expected_sha", "repository"].sort()
+        ? ["command", "command_id", "enabled", "expected_sha", "repo_sha", "repository"].sort()
       : request.command_id === "service.deploy_status"
         ? ["command_id", "deploy_request_id", "enabled", "expected_sha"].sort()
         : request.command_id === "project.file_inspect"
@@ -81,6 +81,7 @@ function assertBoundedHostShape(request) {
   }
   if (request.command_id === "host.command" &&
       (!/^[A-Za-z0-9][A-Za-z0-9_.-]*\/[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(String(request.repository || "")) ||
+       !/^[0-9a-f]{40}$/.test(String(request.repo_sha || "")) ||
        typeof request.command !== "string" || request.command.length < 1 || request.command.length > 1600 ||
        request.command.includes("\\x00"))) {
     throw new Error("BOUNDED_HOST_TERMINAL_TARGET_INVALID");

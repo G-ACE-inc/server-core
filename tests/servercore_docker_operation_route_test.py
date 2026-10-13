@@ -157,14 +157,15 @@ class HostTerminalRouteTests(unittest.TestCase):
         contract = {"request_schema": "gace.servercore-bounded-host.request/v1",
                     "allowed_command_ids": ["host.command"]}
         req = sender.validate_cli("host.command", SHA, contract,
-                                   repository=REPO, host_command="docker compose ps")
+                                   repository=REPO, repo_sha="b"*40, host_command="docker compose ps")
         self.assertEqual(req["command"], "docker compose ps")
+        self.assertEqual(req["repo_sha"], "b"*40)
         self.assertEqual(receiver.validate_request(req, contract)["repository"], REPO)
         with self.assertRaisesRegex(receiver.ReceiverError, "HOST_COMMAND_TARGET_INVALID"):
             receiver.validate_request({**req, "repository": "../../tmp"}, contract)
         with self.assertRaisesRegex(sender.SendError, "HOST_COMMAND_TARGET_INVALID"):
             sender.validate_cli("host.command", SHA, contract,
-                                repository=REPO, host_command="bad\x00command")
+                                repository=REPO, repo_sha="b"*40, host_command="bad\x00command")
         with self.assertRaisesRegex(receiver.ReceiverError, "HOST_COMMAND_TARGET_INVALID"):
             receiver.validate_request({**req, "command": "bad\x00command"}, contract)
 

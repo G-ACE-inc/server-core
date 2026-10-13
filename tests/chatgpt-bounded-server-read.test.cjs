@@ -481,10 +481,11 @@ test("service deploy dispatch is fixed registered repo/service at an explicit SH
 
 test("registered Host terminal uses existing CHAT Actions admission",()=>{
   const request={enabled:true,command_id:"host.command",expected_sha:"a".repeat(40),
-    repository:"seigo-gace/TGserver",command:"docker compose ps"};
+    repository:"seigo-gace/TGserver",repo_sha:"b".repeat(40),command:"docker compose ps"};
   const args=r=>({target:{...targetNoBoundedHost,bounded_host_request:r,server_command_id:""},route,registry,gitRefName:"main"});
   assert.equal(d.validateDispatch(args(request)).commandId,"host.command");
   assert.throws(()=>d.validateDispatch(args({...request,repository:"../../etc"})),/BOUNDED_HOST_TERMINAL_TARGET_INVALID/);
+  assert.throws(()=>d.validateDispatch(args({...request,repo_sha:"a"})),/BOUNDED_HOST_TERMINAL_TARGET_INVALID/);
   assert.throws(()=>d.validateDispatch(args({...request,command:""})),/BOUNDED_HOST_TERMINAL_TARGET_INVALID/);
   assert.throws(()=>d.validateDispatch(args({...request,unexpected:"extra"})),/BOUNDED_HOST_KEYS_INVALID/);
   assert.match(wf,/--host-command/);
