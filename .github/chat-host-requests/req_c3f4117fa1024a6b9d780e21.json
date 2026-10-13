@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CHAT-owned reversible Host terminal write/read/remove in /tmp only; no production mutations.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "0786ca5589db1f69ff704b32f6400486e2cff0f1",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "0786ca5589db1f69ff704b32f6400486e2cff0f1",
+    "command": "set -e; p=/tmp/gace-chat-host-mutation-c3f4117f; test ! -e \"$p\"; printf 'GACE_HOST_MUTATION_PASS\\n' > \"$p\"; grep -qx GACE_HOST_MUTATION_PASS \"$p\"; rm -- \"$p\"; test ! -e \"$p\"; printf 'HOST_WRITE_READ_CLEANUP=PASS\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Master directed continuation of registered Host terminal; prior request 9eb7350 failed before Gateway START_MUTATION_SCOPE_INVALID, without Host mutation. Corrected existing Work Routine mutation_scope=routine_fix; only one reversible file in Host /tmp, pre/post absent, at Host HEAD 0786ca5589db1f69ff704b32f6400486e2cff0f1."
+  }
+}
