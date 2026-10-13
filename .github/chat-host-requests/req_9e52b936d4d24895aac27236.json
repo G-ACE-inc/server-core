@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only identify real existing logfile paths in established Host log roots, filenames only; no contents or new registration.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "command": "python3 -c 'import pathlib\nfor base in (\"/home/admin1/logs\",\"/home/admin1/server-core\",\"/home/admin1/projects/TGserver\"):\n p=pathlib.Path(base); found=[]\n if p.is_dir():\n  for x in p.glob(\"*/*\"):\n   if x.is_file() and (x.suffix in (\".log\",\".jsonl\") or \"log\" in x.name.lower()):found.append(str(x))\n print(\"ROOT=\"+base+\" FOUND=\"+str(len(found))+\" EXAMPLES=\"+\",\".join(found[:15]))\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Registered 9 Compose services actual logs PASS Issue #10 comment 6148137959. Repo root logs/**/*.log scan showed no files, inspect established Host logs path without probing secret contents."
+  }
+}
