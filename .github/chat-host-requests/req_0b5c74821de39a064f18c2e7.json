@@ -1,0 +1,44 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Retry native CHAT Docker exec node -V sequentially, isolated from concurrent logs after req_36b failure",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "docker.operation",
+    "expected_sha": "d15dd98e1a0417ffcde26d0e915c9df632e11e50",
+    "repository": "seigo-gace/debug-ai",
+    "service": "debug-ai",
+    "operation": "exec",
+    "argv": [
+      "node",
+      "-V"
+    ],
+    "tail": 10
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Fresh verified #10 Host SHA d15dd98 and current registered Docker operation. Prior native ps and logs PASS, concurrent exec failed DOCKER_OPERATION_FAILED; sequential retry to isolate request contention without changing Host or container."
+  }
+}
