@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only one-shot failed service errors and Receiver status, avoid sensitive environment",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d7f7d390e6d23dc5e32d94de23516931cc5eff09",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "d7f7d390e6d23dc5e32d94de23516931cc5eff09",
+    "command": "journalctl --user -u gace-receiver-switch-docker-20261013.service -n 24 --no-pager -o cat | tail -24; docker inspect -f 'OLD_RUNNING={{.State.Running}}' server-core-bounded-host"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "cu_verified": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "Automated sg docker switch yielded ROLLBACK with previous receiver active and transient unit exit-code #6144657504. Need exact error cause, no new changes yet."
+  }
+}
