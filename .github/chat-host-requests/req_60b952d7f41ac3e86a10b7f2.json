@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Continue registered Repo mapping inventory on existing Host. Read-only only, no PC access.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "0786ca5589db1f69ff704b32f6400486e2cff0f1",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "0786ca5589db1f69ff704b32f6400486e2cff0f1",
+    "command": "for p in ai-core Catalog catalog modular-catalog ModuleCatalog Libral-Vault libral-vault; do d=/home/admin1/projects/$p; if test -d \"$d\"; then printf '%s exists ' \"$p\"; git -C \"$d\" rev-parse --is-inside-work-tree 2>/dev/null || :; git -C \"$d\" remote get-url origin 2>/dev/null || :; else printf '%s absent\\n' \"$p\"; fi; done"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Master asks register all Server projects; prior Host identity evidence https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6142030398 shows ai-core/Catalog/Libral-Vault missing as `.git` directory; distinguish directory/worktree or alias before registration. Never touch PC."
+  }
+}
