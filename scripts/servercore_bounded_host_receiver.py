@@ -501,6 +501,8 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                     result = dispatch_docker_logs(request, root)
                 elif request["command_id"] == "docker.operation":
                     result = dispatch_docker_operation(request, root)
+                elif request["command_id"] == "host.command":
+                    result = dispatch_host_command(request, root)
                 elif request["command_id"] == "dev.job":
                     result = dispatch_dev_job(request, root)
                 else:
