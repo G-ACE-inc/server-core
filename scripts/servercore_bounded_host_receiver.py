@@ -130,7 +130,7 @@ def validate_request(value, contract):
             fail("HOST_COMMAND_KEYS_INVALID", 422)
         repository, command = value["repository"], value["command"]
         if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
-                or not isinstance(command, str) or not 1 <= len(command) <= 1600 or "\\x00" in command:
+                or not isinstance(command, str) or not 1 <= len(command) <= 1600 or "\x00" in command:
             fail("HOST_COMMAND_TARGET_INVALID", 422)
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
                 "repository": repository, "command": command}
