@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core validate free alternate loopback gate ports to avoid live Astera 18181 listener",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess\nr=subprocess.run([\"ss\",\"-ltn\"],capture_output=True,text=True,timeout=8,check=True)\nfor n in (18181,18182,18183,18184,18281,18282,18283,18284,18080):\n found=any(\":\"+str(n)+\" \" in row for row in r.stdout.splitlines())\n print(\"PORT_\"+str(n)+\"=\"+(\"IN_USE\" if found else \"AVAILABLE\"))\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Avoid unrelated Astera proxy 18181 owner, real Host process readback receipt 6152054810"
+  }
+}
