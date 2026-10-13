@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CHAT-owned final Tool B existing Host terminal Docker CLI E2E: read-only docker ps and docker compose ps for registered server-core host checkout; no isolated dev.job changes.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "0786ca5589db1f69ff704b32f6400486e2cff0f1",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "0786ca5589db1f69ff704b32f6400486e2cff0f1",
+    "command": "docker ps --format '{{.Names}}' | head -n 10; docker compose -f docker-compose.project-control.yml ps --all --format json | head -c 900; docker compose version"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Master directed normal CHAT to verify existing GitHub Host terminal Docker E2E. Current manifest/G_ACE_WORKSPACE section 6 and Issue #10 confirmed. Host Source and Writer SHA 0786ca5589db1f69ff704b32f6400486e2cff0f1 verified; Composer Receiver refreshed Runtime PASS https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6141606003. Existing four-Repo registered Host command; no Host mutation intended."
+  }
+}
