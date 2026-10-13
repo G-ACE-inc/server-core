@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "E2E verification of 9000-character deterministic stdout after Receiver reload. Do not modify Host or PC.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "50e4ae9f9dc6250a06e8c83cd7f7ce9b1ee6bcd4",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "50e4ae9f9dc6250a06e8c83cd7f7ce9b1ee6bcd4",
+    "command": "python3 -c 'print(\"LONG_E2E_START\");print(\"0123456789\"*900);print(\"LONG_E2E_END\")'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Master provided LONG_REPLY_RECEIVER_RELOAD PASS, merged PR#202 SHA 50e4ae9; verify 9k response and sink/Issue preview."
+  }
+}
