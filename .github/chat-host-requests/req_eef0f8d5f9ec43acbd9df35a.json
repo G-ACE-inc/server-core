@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only inspect server-core canonical checkout dirty paths and HEAD after source-reflect denied; do not print protected registry contents or mutate any file.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "command": "git rev-parse HEAD; git status --short; git stash list --format='%gd'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR206 exact SHA CI6/6 PASS; Host reflect request req_547ea1ba5585d7aa6f2709cc denied DIRTY_CHECKOUT_DENIED; inspect only checkout status to preserve Registry/stashes and isolate allowed source reflection."
+  }
+}
