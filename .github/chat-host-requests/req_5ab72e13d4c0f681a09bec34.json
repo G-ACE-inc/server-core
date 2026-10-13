@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Independently verify durable full 240-line archive metadata after Issue preview clipped 4000 chars, no raw logs",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "command": "python3 -c 'import json,pathlib; p=pathlib.Path(\"/home/admin1/logs/servercore-bounded-results/req_eaca3dff653ca04363f95204.json\");d=json.loads(p.read_text());s=d.get(\"stdout\", \"\");print(\"ARCHIVE_STATE=\"+str(d.get(\"state\")));print(\"ARCHIVE_LENGTH=\"+str(len(s)));print(\"ARCHIVE_LINES=\"+str(len(s.splitlines())));print(\"ARCHIVE_END_MARKER=\"+str(\"log-entry-0239\" in s));print(\"ARCHIVE_TRUNCATED=\"+str(d.get(\"stdout_truncated\")));print(\"ARCHIVE_PUBLISHED=\"+str(bool(d.get(\"published\"))))'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Receiver new image active #6144924225, multiline 240-line test Issue receipt PASS #6144962858 with 4000-char preview truncated true. Check exact sink stored 240 lines/last marker."
+  }
+}
