@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Schedule guarded source main activation for PR214+PR216 with preserved Registry and stashes; retain Cursor branch",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "command": "systemd-run --user --on-active=8s --unit=gace-common-pr216-main-sync /usr/bin/sg docker -c 'bash -lc '\\''set -e; old=2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6; target=6b541d277dfb1f204e9889699227aa0ecd17ecff; cd /home/admin1/server-core; test \"$(git rev-parse HEAD)\" = \"$old\"; test \"$(git branch --show-current)\" = fix/common-host-all-repo-terminal-20261014; test \"$(git -c core.filemode=false status --porcelain | wc -l)\" -eq 0; test \"$(git stash list | wc -l)\" -eq 3; h=$(sha256sum operations/master-internal-repositories.json | cut -d'\\''\\'\\'''\\'' '\\''\\'\\'''\\'' -f1); git fetch --no-tags origin main >/dev/null; test \"$h\" = \"$(git show \"$target\":operations/master-internal-repositories.json | sha256sum | cut -d'\\''\\'\\'''\\'' '\\''\\'\\'''\\'' -f1)\"; git merge-base --is-ancestor main \"$target\"; git switch main >/dev/null; git -c core.filemode=false merge --ff-only \"$target\" >/dev/null; test \"$(git rev-parse HEAD)\" = \"$target\"; test \"$h\" = \"$(sha256sum operations/master-internal-repositories.json | cut -d'\\''\\'\\'''\\'' '\\''\\'\\'''\\'' -f1)\"; test \"$(git stash list | wc -l)\" -eq 3; echo COMMON_MAIN_ACTIVATE=PASS REGISTRY_IDENTICAL=YES STASHES=3'\\'''"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Host check req_41590c3d552fd7dc72e8e2d2: status0 registry physical==origin/main==HEAD stash3 local main ancestor. Target exact merged PR216 SHA6b541d; use delayed existing user systemd unit to prevent self-invalidating result."
+  }
+}
