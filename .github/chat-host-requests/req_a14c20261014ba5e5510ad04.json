@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core migrate legacy four permanent residents to two: retire unused Granite and Ministral containers while keeping Qwen3 and Coder",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess,json\nretire=[\"ai-granite\",\"ai-ministral\"]\npreserve=[\"ai-qwen3\",\"ai-coder\"]\np=subprocess.run([\"docker\",\"inspect\"]+retire+preserve,capture_output=True,text=True,timeout=10,check=True)\nd={x[\"Name\"].lstrip(\"/\"):x for x in json.loads(p.stdout)}\nassert len(d)==4 and all(d[n][\"State\"][\"Running\"] for n in d)\nfor n in retire:\n r=subprocess.run([\"docker\",\"stop\",\"--timeout\",\"25\",n],capture_output=True,text=True,timeout=40)\n print(\"STOP_\"+n+\"=\"+str(r.returncode))\n if r.returncode: raise SystemExit(1)\np=subprocess.run([\"docker\",\"inspect\"]+retire+preserve,capture_output=True,text=True,timeout=10,check=True)\nv={x[\"Name\"].lstrip(\"/\"):x[\"State\"][\"Running\"] for x in json.loads(p.stdout)}\nfor n in retire+preserve: print(\"RUNNING_\"+n+\"=\"+str(v[n]))\nassert all(not v[n] for n in retire) and all(v[n] for n in preserve)\nprint(\"TWO_RESIDENT_CUTOVER=PASS\")\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Master explicit 4 to dynamic 2 migration; legacy router stopped receipt 6151947843 and health confirmed receipt 6151963772"
+  }
+}
