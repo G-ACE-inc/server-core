@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only sanitized inventory of protected registry for all registered repositories: enabled status and existing host.command/docker.operation capabilities. No secret values, no changes.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "command": "python3 -c 'import json\nr=json.load(open(\"operations/master-internal-repositories.json\"))[\"repositories\"]\nfor x in r:\n a=set(x.get(\"allowed_operations\") or []);s=(x.get(\"runtime_target\") or {}).get(\"services\") or []\n print(str(x.get(\"repository\"))+\" HOST=\"+str(\"host.command\" in a)+\" DOCKER=\"+str(\"docker.operation\" in a)+\" SERVICES=\"+str(len(s))+\" ENABLED=\"+str(x.get(\"enabled\") is True))'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR206 Source/CI/Receiver/Writer live PASS; DebugAI logs 6574 chars and tail200 9510 chars archived untruncated #10 comment 6147615157. Verify registrations in existing protected registry without exposing contents or expanding permissions."
+  }
+}
