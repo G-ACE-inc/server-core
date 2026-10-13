@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core Mission #1: fresh Host Docker identity and cgroup limits readback using already-enrolled server-core native Host terminal; no start/stop/deploy.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2b76da06adc8220eb5fa13bfcac6c68a92240c55",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "git rev-parse HEAD && docker inspect --format '{{.Name}}|{{.State.Running}}|{{.HostConfig.CgroupParent}}|{{.HostConfig.Memory}}' ai-granite ai-qwen3 ai-ministral ai-coder"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Issue #1 / PR #3; Source exact HEAD 0b6bac62 25/25+13/13 PASS, four-resident Host inventory BLOCKED and consumer exclusivity UNKNOWN. Existing registered ai-core checkout SHA 2955d728; last Host SHA 2b76da06 from Issue #10 receipt. Read-only docker inspect only, no change of model residency."
+  }
+}
