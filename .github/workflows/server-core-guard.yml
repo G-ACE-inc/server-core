@@ -529,6 +529,12 @@ jobs:
           test "$before" = "$(sha256sum "$tmp/.cursor/mcp.json")"
           echo 'WORKSPACE_MCP_UNKNOWN_TRANSPORT_FAIL_CLOSED=PASS'
 
+      - name: Registered Docker operation regression
+        run: |
+          set -euo pipefail
+          python3 tests/servercore_registered_docker_ops_test.py
+          python3 tests/servercore_docker_operation_route_test.py
+
       - name: No tracked env files
         run: |
           set -euo pipefail
