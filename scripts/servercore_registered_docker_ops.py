@@ -19,14 +19,14 @@ class DockerOperationError(Exception):
 
 def checked_service(entry, service):
     """Verify requested service against the existing registry-owned Compose scope."""
-    if not isinstance(entry, dict) or not SERVICE_RE.fullmatch(service or ""):
+    if not isinstance(entry, dict) or not isinstance(service, str) or not SERVICE_RE.fullmatch(service):
         raise DockerOperationError("TARGET_INVALID")
     runtime = entry.get("runtime_target") or {}
     root = entry.get("server_project_path")
     compose_file = runtime.get("compose_file")
     if not isinstance(root, str) or not root.startswith("/home/admin1/") or ".." in Path(root).parts:
         raise DockerOperationError("ROOT_NOT_REGISTERED")
-    if not isinstance(compose_file, str) or Path(compose_file).is_absolute() or ".." in Path(compose_file).parts:
+    if not isinstance(compose_file, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+\\.ya?ml", compose_file):
         raise DockerOperationError("COMPOSE_NOT_REGISTERED")
     configured = runtime.get("services")
     if configured is None:
@@ -62,7 +62,7 @@ def operate(entry, service, operation, *, argv=None, tail=100, timeout=45, runne
         "ps": [*prefix, "ps", service],
         "inspect": [*prefix, "ps", "--format", "json", service],
         "logs": [*prefix, "logs", "--no-color", "--tail", str(tail), service],
-        "stats": [*prefix, "stats", "--no-stream", service],
+        "stats": [*prefix, "ps", "--format", "json", service],
         "start": [*prefix, "start", service],
         "stop": [*prefix, "stop", service],
         "restart": [*prefix, "restart", service],
