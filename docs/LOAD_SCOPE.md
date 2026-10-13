@@ -20,7 +20,7 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 
 ### GPT_CHAT / ChatGPT Work (Master-facing orchestrator)
 
-**Single development procedure:** `docs/G_ACE_WORKSPACE.md` §6 (Work Routine). The existing **server-core common CHAT→Actions→Host terminal** is the first server-execution choice for registered and admitted tasks; the legacy DebugAI product API and Master copy/paste terminal handoff are fallback/historical routes, never the default merely because one Repo's branch or Deploy admission fails. Issue #10 Current controls exactly which Repository/effect is currently admitted. Do not infer all-Repo Deploy from the 11-Repo read/dev.job registration.
+**Single development procedure:** `docs/G_ACE_WORKSPACE.md` §6 (Work Routine). Old DebugAI Server Command transport is not an ordinary GPT CHAT fallback; use the server-core common Host terminal and resolve current admission defects through Issue #10 rather than requesting Master terminal/technical approvals. The existing **server-core common CHAT→Actions→Host terminal** is the first server-execution choice for registered and admitted tasks; the legacy DebugAI product API and Master copy/paste terminal handoff are fallback/historical routes, never the default merely because one Repo's branch or Deploy admission fails. Issue #10 Current controls exactly which Repository/effect is currently admitted. Do not infer all-Repo Deploy from the 11-Repo read/dev.job registration.
 **Only Master-facing command-format contract:** `docs/MASTER_TERMINAL_COMMAND.md` when a command must be provided.
 
 **Restored contract locations (references, not duplicate rules):**
