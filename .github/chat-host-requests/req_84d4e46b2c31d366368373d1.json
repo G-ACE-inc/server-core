@@ -1,0 +1,46 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Native CHAT B renewed independent Tool B TGserver read-only verification",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "543e135a35e180f1367dd7b553521d26483d05cb",
+    "repository": "seigo-gace/TGserver",
+    "repo_sha": "1993c658b743f18de4284709eaca788ed8047712",
+    "session": "req_84d4e46b2c31d366368373d1",
+    "argv": [
+      "python3",
+      "-c",
+      "import subprocess,time;print('NATIVE_CHAT_SESSION=req_84d4e46b2c31d366368373d1',flush=True);print('TOOLB_REPO=seigo-gace/TGserver',flush=True);print('START_NS='+str(time.time_ns()),flush=True);time.sleep(7);subprocess.run(['git','rev-parse','HEAD'],check=True);subprocess.run(['git','status','--short'],check=True);print('END_NS='+str(time.time_ns()),flush=True)"
+    ],
+    "timeout_s": 15,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_ADOPTED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Native CHAT B new independent request: refreshed main Manifest, #17, #10 Current comments 6130192116, docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md, docs/LOAD_SCOPE.md, docs/G_ACE_WORKSPACE.md section6, adopted design 16.11/17, bounded host contract; historical Host SHA 543e135a from latest #10 proven readback; TGserver main exact SHA confirmed fresh API. Read-only session; no source/deploy."
+  }
+}
