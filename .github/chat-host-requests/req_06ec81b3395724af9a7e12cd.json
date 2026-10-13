@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core generic per-model registry source-exact in-memory Python validation (one model not hardcoded four). No Docker or disk mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "50e4ae9f9dc6250a06e8c83cd7f7ce9b1ee6bcd4",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import io,tarfile,urllib.request,types,sys\nsha=\"c96266e77839b4a9aa04bf4fa80b2c60723f0ee7\"\nb=urllib.request.urlopen(\"https://api.github.com/repos/seigo-gace/ai-core/tarball/\"+sha,timeout=12).read(500001)\nassert len(b)<500001\nt=tarfile.open(fileobj=io.BytesIO(b),mode=\"r:gz\")\nsrc={x.name.split(\"/\",1)[1]:t.extractfile(x).read().decode() for x in t.getmembers() if x.isfile()}\nassert \"runtime/host_readiness.py\" in src\nfor p,s in src.items():\n  if p.endswith(\".py\"): compile(s,p,\"exec\")\nm=types.ModuleType(\"model_gate\");m.__file__=\"/tmp/a/runtime/model_gate.py\";sys.modules[\"model_gate\"]=m\nexec(compile(src[\"runtime/model_gate.py\"],m.__file__,\"exec\"),m.__dict__)\nh=types.ModuleType(\"host_readiness\");h.__file__=\"/tmp/a/runtime/host_readiness.py\";sys.modules[\"host_readiness\"]=h\nexec(compile(src[\"runtime/host_readiness.py\"],h.__file__,\"exec\"),h.__dict__)\nv={\"research_model\":{\"service\":\"research_model\",\"backend_port\":18090,\"gate_port\":18190,\"warm\":True,\"memory_limit_bytes\":1000,\"cpu_limit\":1.0}}\nh.model_specs_from_compose=lambda *args:v\nclass D:\n  def _inspect(self,s): return {\"State\":{\"Running\":True,\"Pid\":0}}\no=h.report(\"ignored\",{\"max_resident\":1},driver=D(),parent_budget={})\nassert o[\"backend_count\"]==1 and o[\"models\"][0][\"model\"]==\"research_model\" and o[\"admission\"]==\"SOURCE_AND_HOST_ONLY\"\nprint(\"AI_CORE_GENERIC_REGISTRY=PASS SHA=\"+sha+\" PYFILES=\"+str(sum(x.endswith(\".py\") for x in src)))'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Issue #1 Current/PR3 exact SHA c96266e77839b4a9aa04bf4fa80b2c60723f0ee7 updated generic Host readiness; last Issue #10 Host receipt HEAD 50e4ae9f9dc6250a06e8c83cd7f7ce9b1ee6bcd4. This read-only Host request fetches source into memory only (prior user and native SHA proven) and exercises 1-model policy fake Docker, no deployed services."
+  }
+}
