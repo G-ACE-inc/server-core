@@ -534,6 +534,9 @@ jobs:
           set -euo pipefail
           python3 tests/servercore_registered_docker_ops_test.py
           python3 tests/servercore_docker_operation_route_test.py
+          python3 tests/servercore_registered_service_deploy_test.py
+          python3 tests/servercore_service_deploy_socket_test.py
+          python3 tests/servercore_service_deploy_admission_test.py
 
       - name: No tracked env files
         run: |
