@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only compare Host clean feature checkout, local main/origin/main and protected Registry content before exact main sync; no mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "command": "printf 'HEAD='; git rev-parse HEAD; printf 'BRANCH='; git branch --show-current; printf 'LOCAL_MAIN='; git rev-parse main; printf 'ORIGIN_MAIN='; git rev-parse origin/main; printf 'STATUS='; git status --porcelain | wc -l; printf 'REGISTRY_WORK='; sha256sum operations/master-internal-repositories.json | cut -d' ' -f1; printf 'REGISTRY_MAIN='; git show main:operations/master-internal-repositories.json | sha256sum | cut -d' ' -f1; printf 'REGISTRY_FEATURE='; git show HEAD:operations/master-internal-repositories.json | sha256sum | cut -d' ' -f1"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Host readback run38429540103 PASS feature branch 2bbba0bc, Receiver old, stash3, all-Repo PR214 and sender PR216 merged main. Compare hashes before touching Host checkout."
+  }
+}
