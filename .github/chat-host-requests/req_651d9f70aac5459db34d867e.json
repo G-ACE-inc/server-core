@@ -1,0 +1,41 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only native docker.operation registered service log probe after existing Writer restart; no Docker mutation, no new route.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "docker.operation",
+    "expected_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "repository": "seigo-gace/debug-ai",
+    "service": "debug-ai",
+    "operation": "logs",
+    "argv": [],
+    "tail": 30
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR206 current Receiver image c0c24449 and original Docker Writer restart was scheduled (Issue #10 comment 6147422874); followup host.command poll remained pending; independent docker.logs PASS Issue #10 comment 6147479726. Need actual Writer-backed docker.operation read-only response to establish availability and truncation markers."
+  }
+}
