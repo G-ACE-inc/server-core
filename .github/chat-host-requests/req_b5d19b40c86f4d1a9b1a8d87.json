@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Reflect only PR206 pre-request main checkpoint; preserve protected Registry bytes and 3 stashes, ignore only filemode-only dirty scripts; refuse if target touches protected registry.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "66026698ea657aa85eba145a0fce3805d6796642",
+    "command": "set -e; old=66026698ea657aa85eba145a0fce3805d6796642; target=c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5; test \"$(git rev-parse HEAD)\" = \"$old\"; test \"$(git branch --show-current)\" = main; test \"$(git stash list | wc -l)\" -eq 3; a=$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1); test \"$a\" = 34137248f7fe82e417ffd0d21128603ff9f6364d2583f421200d8d7d3b648c71; test -z \"$(git -c core.filemode=false diff --name-only -- scripts/servercore_bounded_host_receiver.py scripts/servercore_docker_logs_socket.py scripts/servercore_result_sink.py)\"; git fetch --no-tags origin main >/dev/null; git merge-base --is-ancestor \"$old\" \"$target\"; if git diff --name-only \"$old\" \"$target\" | grep -qx operations/master-internal-repositories.json; then echo REGISTRY_TARGET_OVERLAP; exit 21; fi; git -c core.filemode=false merge --ff-only \"$target\" >/dev/null; test \"$(git rev-parse HEAD)\" = \"$target\"; test \"$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1)\" = \"$a\"; test \"$(git stash list | wc -l)\" -eq 3; echo PR206_HOST_FF_PASS HEAD=\"$target\" REGISTRY_PRESERVED=YES STASHES=3"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "GitHub compare 66026698..c0c24449 ahead 24 and protected registry unchanged; Host diff --numstat reports three scripts 0/0 (mode-only), protected Registry digest 34137248; existing source-reflect failed dirty checkout, fallback existing authorized host.command guarded ff-only preserving Registry/stashes."
+  }
+}
