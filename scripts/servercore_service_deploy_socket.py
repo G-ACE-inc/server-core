@@ -279,6 +279,22 @@ HOST_COMMAND_SCHEMA = "gace.servercore-host-command.request/v1"
 HOST_COMMAND_KEYS = {"schema", "id", "repository", "target_sha", "command"}
 HOST_COMMAND_MAX_SECONDS = 90
 
+def host_command_repo_sha(root, controller_sha, *, runner=None):
+    """Controller SHA pins server-core, not the independent target Repo HEAD."""
+    import subprocess
+    run = runner or subprocess.run
+    for path, expected in (("/home/admin1/server-core", controller_sha), (str(root), None)):
+        result = run(["git", "-C", path, "rev-parse", "HEAD"],
+                     capture_output=True, text=True, timeout=15)
+        if result.returncode or not SHA.fullmatch(result.stdout.strip()):
+            raise AdmissionError("HOST_COMMAND_GIT_IDENTITY_INVALID")
+        if expected is not None and result.stdout.strip() != expected:
+            raise AdmissionError("HOST_COMMAND_SHA_MISMATCH")
+        if expected is None:
+            return result.stdout.strip()
+    raise AdmissionError("HOST_COMMAND_GIT_IDENTITY_INVALID")
+
+
 def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, result_dir=None,
                      runner=None):
     """Run a Master-delegated Host command inside an existing, registered checkout.
@@ -315,17 +331,15 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
             or not (root / ".git").is_dir() or root.resolve() != root \
             or not (str(root).startswith("/home/admin1/projects/") or str(root) == "/home/admin1/server-core"):
         raise AdmissionError("HOST_COMMAND_ROOT_INVALID")
-    git = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
-                         capture_output=True, text=True, timeout=15)
-    if git.returncode or git.stdout.strip() != target_sha:
-        raise AdmissionError("HOST_COMMAND_SHA_MISMATCH")
+    repository_sha = host_command_repo_sha(root, target_sha)
     fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "w") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         previous = read_result(request_id, result_dir)
         if previous is not None:
             return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
-        base = {"request_id": request_id, "repository": repository, "source_sha": target_sha}
+        base = {"request_id": request_id, "repository": repository, "source_sha": target_sha,
+                "repository_sha": repository_sha}
         write_result(request_id, {**base, "state": "RUNNING"}, result_dir)
         try:
             run = runner or subprocess.run
