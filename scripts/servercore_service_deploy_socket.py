@@ -306,13 +306,13 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
     if len(entries) != 1:
         raise AdmissionError("REGISTERED_REPOSITORY_NOT_UNIQUE")
     entry = entries[0]
-    if entry.get("enabled") is not True or entry.get("revoked") is not False \\
-            or entry.get("delegation_mode") != "MASTER_INTERNAL_PERSISTENT" \\
+    if entry.get("enabled") is not True or entry.get("revoked") is not False \
+            or entry.get("delegation_mode") != "MASTER_INTERNAL_PERSISTENT" \
             or "host.command" not in entry.get("allowed_operations", []):
         raise AdmissionError("HOST_COMMAND_NOT_REGISTERED")
     root = Path(str(entry.get("server_project_path", "")))
-    if not root.is_absolute() or root.is_symlink() or not root.is_dir() \\
-            or not (root / ".git").is_dir() or root.resolve() != root \\
+    if not root.is_absolute() or root.is_symlink() or not root.is_dir() \
+            or not (root / ".git").is_dir() or root.resolve() != root \
             or not (str(root).startswith("/home/admin1/projects/") or str(root) == "/home/admin1/server-core"):
         raise AdmissionError("HOST_COMMAND_ROOT_INVALID")
     git = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
