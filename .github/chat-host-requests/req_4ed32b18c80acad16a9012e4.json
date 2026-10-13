@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core exact source latest SHA: memory-only compile of all tracked .py files plus observe-only gate runtime admission/409 no-lifecycle behavioral contract. No filesystem or Docker mutations.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "f6257151c9f5426f9c748397a9a02b2165a28cf5",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import io,tarfile,urllib.request,types,sys,ast\nsha=\"482b3489a5d2c87c47b40b84532d834b31db2739\"\nb=urllib.request.urlopen(\"https://api.github.com/repos/seigo-gace/ai-core/tarball/\"+sha,timeout=12).read(500001)\nassert len(b)<500001\nt=tarfile.open(fileobj=io.BytesIO(b),mode=\"r:gz\")\nsrc={m.name.split(\"/\",1)[1]:t.extractfile(m).read().decode() for m in t.getmembers() if m.isfile()}\nassert \"runtime/model_gate.py\" in src and \"tests/test_model_gate.py\" in src\nfor k,v in src.items():\n  if k.endswith(\".py\"): compile(v,k,\"exec\")\np=types.ModuleType(\"runtime\");p.__path__=[];sys.modules[\"runtime\"]=p\nm=types.ModuleType(\"runtime.model_gate\");sys.modules[m.__name__]=m\nexec(compile(src[\"runtime/model_gate.py\"],\"runtime/model_gate.py\",\"exec\"),m.__dict__)\nclass D:\n  def running(self,s): return True\n  def start(self,s): raise AssertionError(\"MUTATION\")\n  stop=start\nspecs={n:{\"service\":n,\"model_id\":n,\"backend_port\":18081+i} for i,n in enumerate((\"granite\",\"qwen3\",\"ministral\",\"coder\"))}\nc=m.Coordinator(specs,D(),observe_only=True)\nassert len(c.preflight())==4;c.reap()\nh=m.make_handler(c,\"coder\",\"1234567890123456\").__new__(m.make_handler(c,\"coder\",\"1234567890123456\"))\nh.headers={\"Authorization\":\"Bearer 1234567890123456\"};h.path=\"/v1/chat/completions\"\nout=[];h._send=lambda code,body:out.append((code,body))\nh.do_POST();assert out[0][0]==409 and out[0][1][\"error\"][\"code\"]==\"OBSERVE_ONLY_NO_INFERENCE\"\nprint(\"AI_CORE_SOURCE_IN_MEMORY=PASS SHA=\"+sha+\" PYFILES=\"+str(sum(k.endswith(\".py\") for k in src)))'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Fresh AI Core Issue #1 and PR #3 exact HEAD 482b3489a5d2c87c47b40b84532d834b31db2739. Existing host.command cannot write files, but GitHub tarball HTTPS source read previously succeeded; this probe compiles source in memory and checks no-lifecycle 4-resident and POST 409 contracts, no network model request or Docker mutation. Host SHA from recent Issue #10 receipt."
+  }
+}
