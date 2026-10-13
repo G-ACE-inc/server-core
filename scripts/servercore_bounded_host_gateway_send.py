@@ -104,7 +104,7 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
         raise SendError("UNEXPECTED_DEV_JOB_TARGET")
     if command_id == "host.command":
         if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
-                or not isinstance(path, str) or not 1 <= len(path) <= 1600 or "\\x00" in path:
+                or not isinstance(path, str) or not 1 <= len(path) <= 1600 or "\x00" in path:
             raise SendError("HOST_COMMAND_TARGET_INVALID")
         request.update({"repository": repository, "command": path})
     if command_id == "docker.operation":
