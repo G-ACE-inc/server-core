@@ -1,0 +1,83 @@
+{
+  "schema": "gace.docker-operation-admission-proposal/v1",
+  "status": "SOURCE_PROPOSAL_ONLY_HOST_NOT_APPLIED",
+  "control_issue": "https://github.com/G-ACE-inc/server-core/issues/10",
+  "host_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6138903465",
+  "protected_registry": "/home/admin1/server-core/operations/master-internal-repositories.json",
+  "protected_registry_expected_sha256": "34137248f7fe82e417ffd0d21128603ff9f6364d2583f421200d8d7d3b648c71",
+  "deployment_policy": "HOST_MERGE_ONLY_NEVER_REPLACE_PROTECTED_REGISTRY",
+  "targets": [
+    {
+      "repository": "seigo-gace/TGserver",
+      "root": "/home/admin1/projects/TGserver",
+      "branch": "main",
+      "observed_sha": "1993c658b743f18de4284709eaca788ed8047712",
+      "compose_file": "docker-compose.yml",
+      "compose_digest": "c4fb230f09a759df2aadb573b567f55d1c2a9ca1c05a516b8e2b5959500f303a",
+      "compose_overrides": [
+        {
+          "path": "/home/admin1/logs/TGserver/deployments/20261005/collector-runtime.override.yml",
+          "sha256": "065baa17817abc3d1f881a3817fdbcb6e7d1d627968d17cb3af395f87915ccb7"
+        }
+      ],
+      "project": "tgserver",
+      "services": [
+        "tgs",
+        "conversation-collector",
+        "redis",
+        "meilisearch"
+      ],
+      "restart_test_prohibited": true
+    },
+    {
+      "repository": "seigo-gace/webhook-gateway",
+      "root": "/home/admin1/projects/webhook-gateway",
+      "branch": "main",
+      "observed_sha": "04747d0d579154827a7db2875d388adbbaaf956b",
+      "compose_file": "docker-compose.yml",
+      "compose_digest": "e0a877658e9d5cdffd112d5077c25773cce7496065125d8eb7ac00429e903d25",
+      "project": "webhook-gateway",
+      "services": [
+        "api",
+        "worker",
+        "postgres"
+      ],
+      "excluded_pending_runtime_verification": [
+        "redis"
+      ],
+      "restart_test_prohibited": true
+    },
+    {
+      "repository": "seigo-gace/asteria",
+      "root": "/home/admin1/projects/asteria",
+      "branch": "feat/translation-safety-completion-20261005",
+      "observed_sha": "67c8f87fedcd7e39a57d79262e2cdc1a9b4438fd",
+      "compose_file": "compose.yml",
+      "compose_digest": "049748fc38c389ad6a7a64a81a84a4807b2a8468dfbfa05aad3f6ab0df6cef80",
+      "services": [
+        "asteria-ai"
+      ],
+      "state": "DEFINED_NOT_RUNNING",
+      "restart_test_prohibited": true
+    }
+  ],
+  "excluded": [
+    {
+      "repository": "G-ACE-inc/server-core",
+      "reason": "bounded-host is not compose-managed at canonical root; existing admission requires project paths under /home/admin1/projects"
+    },
+    {
+      "repository": "seigo-gace/debug-ai",
+      "reason": "already registered; preserve existing registry unchanged"
+    }
+  ],
+  "activation": [
+    "Verify host registry SHA and all runtime files fresh",
+    "Preserve every existing host-only entry and delegation; merge additions only",
+    "Check exact registered GitHub Project item, repository identity, branch and runtime ownership",
+    "Do not add webhook redis, asteria other projects, or server-core bounded-host",
+    "After source CI success and Host admission, first perform read-only ps on registered running services",
+    "Run restart idempotency only on existing sandbox-runner after confirming no active session",
+    "Observe health and independent issue result; do not claim Runtime PASS from source"
+  ]
+}
