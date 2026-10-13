@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core exact Source fresh model concurrency proof: run warm inference lease while another cold model is still waiting for readiness; in-memory fake drivers, no filesystem writes or Docker mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "35b7e6f3134bb3818ba2e44780e5acc23207e69e",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import io,tarfile,urllib.request,types,sys,threading,time\nsha=\"f927f7db3c0018edfef15d9532d8a550598b6d7d\"\nb=urllib.request.urlopen(\"https://api.github.com/repos/seigo-gace/ai-core/tarball/\"+sha,timeout=12).read(500001)\nt=tarfile.open(fileobj=io.BytesIO(b),mode=\"r:gz\")\ns=next(t.extractfile(x).read().decode() for x in t.getmembers() if x.name.endswith(\"/runtime/model_gate.py\"))\nm=types.ModuleType(\"runtime.model_gate\");m.__file__=\"/virtual/runtime/model_gate.py\";exec(compile(s,m.__file__,\"exec\"),m.__dict__)\nclass D:\n def __init__(self):self.on={\"coder\",\"qwen3\"};self.seen=threading.Event();self.ready=threading.Event()\n def running(self,s):return s[\"service\"] in self.on\n def start(self,s):self.on.add(s[\"service\"])\n def stop(self,s):self.on.remove(s[\"service\"])\n def healthy(self,s):self.seen.set();return self.ready.is_set()\nd=D();names=(\"granite\",\"qwen3\",\"ministral\",\"coder\")\nspec={n:{\"service\":n,\"warm\":n in (\"coder\",\"qwen3\")} for n in names}\nc=m.Coordinator(spec,d,start_timeout=20)\nfail=[]\ndef cold():\n try:\n  with c.lease(\"granite\"):pass\n except Exception as e:fail.append(str(e))\nt=threading.Thread(target=cold,daemon=True);t.start();assert d.seen.wait(2)\ndef warm():\n try:\n  with c.lease(\"qwen3\"):pass\n except Exception as e:fail.append(str(e))\nw=threading.Thread(target=warm,daemon=True);w.start();w.join(1.5)\nok=not w.is_alive();d.ready.set();t.join(3);w.join(3)\nassert ok and not t.is_alive() and not fail and len(d.on)==2 and not c.transitioning\nprint(\"AI_CORE_WARM_DURING_COLD=PASS SHA=\"+sha)'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Issue #1 current PR #3 SHA f927f7; latest Host read-only receipt 6143863912 PASS; verify warm model not blocked while cold starts, no live Docker call and no file creation. Reuse exactly existing authorized host.command."
+  }
+}
