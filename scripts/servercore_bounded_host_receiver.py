@@ -313,7 +313,7 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
         result = reply
     return {"command_id": request["command_id"], "repository": request["repository"],
             "source_sha": sha, "repo_sha": request["repo_sha"], "state": result.get("state"), "exit_code": result.get("exit_code", 1),
-            "stdout": str(result.get("stdout") or "")[:4000],
+            "stdout": str(result.get("stdout") or "")[:16000],
             "stderr": str(result.get("stderr") or "")[:1000], "read_only": False}
 
 

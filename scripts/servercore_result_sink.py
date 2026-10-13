@@ -28,7 +28,8 @@ MARKER = "GACE_BOUNDED_HOST_RESULT"
 RECORD_SCHEMA = "gace.servercore-bounded-result.record/v1"
 QUERY_SCHEMA = "gace.servercore-bounded-result.query/v1"
 MAX_REQUEST = 24576
-STREAM_LIMIT = 4000
+STREAM_LIMIT = 4000  # GitHub comment preview only; durable sanitized record uses RECORD_LIMIT
+RECORD_LIMIT = 20000
 REQ_ID = re.compile(r"^req_[0-9a-f]{24}$")
 SHA = re.compile(r"^[0-9a-f]{40}$")
 COMMAND = re.compile(r"^[a-z][a-z0-9_.]{2,63}$")
@@ -133,8 +134,8 @@ def public_view(record):
 
 def accept_record(value, *, result_dir=None, now=None):
     validate_record(value)
-    stdout, out_cut = bound(value["stdout"])
-    stderr, err_cut = bound(value["stderr"])
+    stdout, out_cut = bound(value["stdout"], RECORD_LIMIT)
+    stderr, err_cut = bound(value["stderr"], RECORD_LIMIT)
     stamp = (now or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")
     with _LOCK:
         existing = read_record(value["request_id"], result_dir)
@@ -157,6 +158,10 @@ def accept_record(value, *, result_dir=None, now=None):
 def comment_body(record):
     view = public_view(record)
     view.pop("published", None)
+    for stream in ("stdout", "stderr"):
+        preview, clipped = bound(view.get(stream, ""), STREAM_LIMIT)
+        view[stream] = preview
+        view[stream + "_preview_truncated"] = clipped
     lines = [
         f"<!-- {MARKER} request_id={record['request_id']} -->",
         f"[{MARKER}] request_id={record['request_id']}",
