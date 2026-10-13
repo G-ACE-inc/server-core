@@ -18,9 +18,11 @@ EXPECTED_DESTINATION = "server-core-bounded-host"
 MAX_BODY_BYTES = 4096
 # Deterministic Host preflight denials must not enter infrastructure retry loops.
 TERMINAL_REFLECT_ERRORS = frozenset({
-    "BEFORE_SHA_MISMATCH", "DIRTY_CHECKOUT_DENIED", "REMOTE_MAIN_SHA_MISMATCH",
-    "NON_FAST_FORWARD_DENIED", "ORIGIN_REMOTE_DENIED", "BRANCH_NOT_MAIN",
+    "BEFORE_SHA_MISMATCH", "DIRTY_CHECKOUT_DENIED", "REMOTE_BRANCH_SHA_MISMATCH",
+    "NON_FAST_FORWARD_DENIED", "ORIGIN_REMOTE_DENIED", "BRANCH_NOT_ALLOWED",
     "CANONICAL_ROOT_DENIED", "GIT_CHECKOUT_MISSING", "SHA_INVALID",
+    "REFLECT_OPERATION_NOT_REGISTERED", "BRANCH_NOT_ALLOWED", "BRANCH_INVALID",
+    "REFLECT_RUNTIME_NOT_SOURCE_ONLY", "REGISTERED_REPOSITORY_NOT_UNIQUE",
 })
 DEFAULT_CONTRACT = Path(__file__).resolve().parents[1] / "operations" / "github-project-bounded-host.json"
 REQUEST_ID_PATTERN = re.compile(r"^req_[0-9a-f]{24}$")
@@ -72,13 +74,21 @@ def validate_request(value, contract):
     if not isinstance(expected_sha, str) or not SHA_PATTERN.match(expected_sha):
         fail("EXPECTED_SHA_INVALID", 422)
     if command_id == "project.source_reflect":
-        if set(value) != {"schema", "id", "command_id", "expected_sha", "expected_before"}:
+        base_keys = {"schema", "id", "command_id", "expected_sha", "expected_before"}
+        extra = set(value) - base_keys
+        if extra - {"repository", "branch"}:
+            fail("REFLECT_KEYS_INVALID", 422)
+        if not base_keys <= set(value):
             fail("REFLECT_KEYS_INVALID", 422)
         before = value["expected_before"]
         if not isinstance(before, str) or not SHA_PATTERN.match(before):
             fail("REFLECT_BEFORE_INVALID", 422)
+        repository = value.get("repository", "G-ACE-inc/server-core")
+        branch = value.get("branch", "main")
+        if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository)                 or not isinstance(branch, str) or not branch or branch.startswith("-") or ".." in branch:
+            fail("REFLECT_TARGET_INVALID", 422)
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
-                "expected_before": before}
+                "expected_before": before, "repository": repository, "branch": branch}
     if command_id == "service.deploy":
         if set(value) != {"schema", "id", "command_id", "expected_sha", "repository", "service"}:
             fail("DEPLOY_KEYS_INVALID", 422)
@@ -168,11 +178,13 @@ def validate_request(value, contract):
 
 
 def dispatch_reflect(request, socket_path="/run/gace/servercore-source-reflect.sock"):
+    repository = request.get("repository", "G-ACE-inc/server-core")
+    branch = request.get("branch", "main")
     payload = {
         "schema": "gace.servercore-source-reflect.request/v1",
         "id": request["id"],
-        "repository": "G-ACE-inc/server-core",
-        "branch": "main",
+        "repository": repository,
+        "branch": branch,
         "expected_before": request["expected_before"],
         "target_sha": request["expected_sha"],
     }

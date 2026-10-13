@@ -82,7 +82,7 @@ class GatewaySendTests(unittest.TestCase):
                 return io.BytesIO(json.dumps({"ok": False, "error": self.code}).encode() + bytes([10]))
         request = {"id": "req_" + "a"*24, "command_id": "project.source_reflect",
                    "expected_sha": "b"*40, "expected_before": "a"*40}
-        for code in ("DIRTY_CHECKOUT_DENIED", "REMOTE_MAIN_SHA_MISMATCH", "BEFORE_SHA_MISMATCH"):
+        for code in ("DIRTY_CHECKOUT_DENIED", "REMOTE_BRANCH_SHA_MISMATCH", "BEFORE_SHA_MISMATCH"):
             with self.subTest(code=code), patch.object(receiver.socket, "socket", return_value=Socket(code)):
                 with self.assertRaises(receiver.ReceiverError) as error:
                     receiver.dispatch_reflect(request)
