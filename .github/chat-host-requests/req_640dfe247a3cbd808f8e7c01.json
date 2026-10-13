@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Fast-forward approved Docker log registry fix Source on existing Host; preserve protected Registry byte-for-byte, do not touch PC.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2b76da06adc8220eb5fa13bfcac6c68a92240c55",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "2b76da06adc8220eb5fa13bfcac6c68a92240c55",
+    "command": "set -e; test \"$(git rev-parse HEAD)\" = 2b76da06adc8220eb5fa13bfcac6c68a92240c55; before=$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1); git fetch --no-tags origin refs/heads/main >/dev/null; git cat-file -e f6257151c9f5426f9c748397a9a02b2165a28cf5^{commit}; git merge --ff-only f6257151c9f5426f9c748397a9a02b2165a28cf5 >/dev/null; test \"$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1)\" = \"$before\"; printf 'LOG_FIX_SOURCE_REFLECT=PASS\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Master approved log restriction cleanup. PR #200 CI 6/6 PASS merge f625715; preserved current protected Host Registry c3530743..., Host observed 2b76da... in previous live receipt. Exact ff-only readback verifies protected Registry unchanged."
+  }
+}
