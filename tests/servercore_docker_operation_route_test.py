@@ -1,5 +1,6 @@
 """Regression coverage for the existing CHAT → Host registered Docker operation lane."""
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -80,6 +81,7 @@ class DockerRouteTests(unittest.TestCase):
             }]}))
             lock, result_dir = root / "lock", root / "results"
             with patch.object(writer, "require_registered", return_value={}), \
+                 patch.object(writer, "check_registered_compose_path", return_value=None), \
                  patch.object(writer, "operate", return_value={
                      "service": "debug-ai", "operation": "restart", "exit_code": 0,
                      "stdout": "ok", "stderr": ""
@@ -105,6 +107,19 @@ class DockerRouteTests(unittest.TestCase):
                     writer.run_docker_operation(REQUEST, registry_path=registry,
                                                 lock_path=root/"lock", result_dir=root/"result")
                 operation.assert_not_called()
+
+    def test_registered_compose_digest_and_path_rechecked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".git").mkdir()
+            compose = root / "compose.yaml"
+            compose.write_text("services: {}\\n")
+            admitted = {"root": str(root), "compose_file": "compose.yaml",
+                        "compose_digest": hashlib.sha256(compose.read_bytes()).hexdigest()}
+            self.assertEqual(writer.check_registered_compose_path(admitted), root)
+            compose.write_text("services: {other: {}}\\n")
+            with self.assertRaisesRegex(writer.AdmissionError, "DOCKER_COMPOSE_DIGEST_CHANGED"):
+                writer.check_registered_compose_path(admitted)
 
     def test_receiver_requires_correlated_host_receipt(self):
         request = {
