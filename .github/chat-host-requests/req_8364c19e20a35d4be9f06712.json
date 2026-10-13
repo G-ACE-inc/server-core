@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Reflect merged protected-registry enrollment helper Source into existing Host without touching protected Registry bytes or PC.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "a7f02fd4c759253905ffda0003bb62dbba60723c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "a7f02fd4c759253905ffda0003bb62dbba60723c",
+    "command": "set -e; test \"$(git rev-parse HEAD)\" = a7f02fd4c759253905ffda0003bb62dbba60723c; before=$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1); git fetch --no-tags origin refs/heads/main >/dev/null; git cat-file -e bbbd2fb29981fe45f4a06d44929901adbf7fb4fa^{commit}; git merge --ff-only bbbd2fb29981fe45f4a06d44929901adbf7fb4fa >/dev/null; test \"$(git rev-parse HEAD)\" = bbbd2fb29981fe45f4a06d44929901adbf7fb4fa; test \"$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1)\" = \"$before\"; printf 'HOST_ENROLL_SOURCE_REFLECT=PASS\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR #195 six/6 checks success, merged bbbd2fb29981fe45f4a06d44929901adbf7fb4fa; request only fast-forward from observed Host SHA a7f02fd4c759253905ffda0003bb62dbba60723c, preserving protected registry exact digest; activation helper requires Host process restart separate from this command to avoid stopping own writer."
+  }
+}
