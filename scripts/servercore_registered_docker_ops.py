@@ -41,7 +41,22 @@ def checked_service(entry, service):
         raise DockerOperationError("SERVICE_REGISTRY_INVALID")
     if service not in registered:
         raise DockerOperationError("SERVICE_NOT_REGISTERED")
-    return ["docker", "compose", "--project-directory", root, "-f", str(Path(root) / compose_file)], root
+    override = runtime.get("compose_overrides", [])
+    if not isinstance(override, list) or len(override) > 4 or any(
+        not isinstance(item, dict) or set(item) != {"path", "sha256"}
+        or not isinstance(item["path"], str)
+        or not COMPOSE_RE.fullmatch(Path(item["path"]).name)
+        or not item["path"].startswith("/home/admin1/")
+        or ".." in Path(item["path"]).parts
+        or not isinstance(item["sha256"], str)
+        or not re.fullmatch(r"[0-9a-f]{64}", item["sha256"])
+        for item in override
+    ):
+        raise DockerOperationError("COMPOSE_OVERRIDE_REGISTRY_INVALID")
+    prefix = ["docker", "compose", "--project-directory", root, "-f", str(Path(root) / compose_file)]
+    for item in override:
+        prefix.extend(["-f", item["path"]])
+    return prefix, root
 
 def checked_argv(argv):
     if not isinstance(argv, list) or not 1 <= len(argv) <= 10:
