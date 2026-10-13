@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Astera production cross-topic independent official technical evidence diagnosis with TLS RFC, read only.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/astera_v8",
+    "repo_sha": "a9ec6611e271379753fd4c07e99897eb6ed0f661",
+    "command": "timeout 20 docker exec astera-v8 node -e 'const E=require(\"./src/astera-engine\");const C=require(\"./src/evidence-search/api/client\");const c=new C();new E({evidenceSearchClient:{search:async(p,x)=>{let r=await c.search(p,x);console.log(JSON.stringify({status:r.status,quality_status:r.quality?.final?.status,score:r.quality?.final?.score_bp,blocked:r.quality?.final?.blocking_reasons,found:(r.query_execution?.initial||[]).filter(z=>z.status===\"FOUND\").length,providers:(r.provider_execution?.initial||[]).map(z=>({id:z.provider_id,status:z.status})),adopted:(r.evidence||[]).length}));return r}}}).process({question:\"RFC 8446の公式仕様で確認できるTLS 1.3のバージョンについて調べ、根拠を示してください。\",evidence_search:{deadline_ms:4500,maximum_results:3}},{id:\"runtime-probe\"}).then(()=>process.exit(0)).catch(x=>{console.error(x.code||x.message);process.exit(1)})'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Production Node22 search quality missing primary role 6150791246; PR38 tests pass but production not adopted. Contrast verified IETF official RFC source with same API and bounded runtime."
+  }
+}
