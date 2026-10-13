@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Preflight exact five Project #1 Git checkout remotes against committed enrollment helper; read-only no Registry/PC change.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "bbbd2fb29981fe45f4a06d44929901adbf7fb4fa",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "bbbd2fb29981fe45f4a06d44929901adbf7fb4fa",
+    "command": "python3 -c 'import sys; sys.path.insert(0,\"scripts\"); import servercore_project1_host_enroll as m; [(m.verify_checkout(r,p),print(r+\"=PASS\")) for r,p in m.NEW.items()]'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR195 merged at bbbd2fb, live Host source reflect PASS https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6142230244; enforce real git origin match before protected authority grant, no PC."
+  }
+}
