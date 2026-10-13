@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only pinpoint Astera-v8 Host authorization denial; print registry presence/grants and actual checkout SHA match, no secret data",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "command": "python3 -c 'import json,subprocess,pathlib\nd=json.load(open(\"operations/master-internal-repositories.json\"))\nx=[e for e in d.get(\"repositories\",[]) if e.get(\"repository\")==\"seigo-gace/astera_v8\"]\nprint(\"REGISTRY_COUNT=\"+str(len(d.get(\"repositories\",[])))+\" TARGET_MATCHES=\"+str(len(x)))\nif x:\n e=x[0];p=pathlib.Path(e[\"server_project_path\"])\n g=subprocess.run([\"git\",\"-C\",str(p),\"rev-parse\",\"HEAD\"],capture_output=True,text=True)\n print(\"ENABLED=\"+str(e.get(\"enabled\"))+\" REVOKED=\"+str(e.get(\"revoked\"))+\" MODE=\"+str(e.get(\"delegation_mode\"))+\" HOST_OP=\"+str(\"host.command\" in e.get(\"allowed_operations\",[]))+\" ROOT_GITDIR=\"+str((p/\".git\").is_dir())+\" ROOT_EXISTS=\"+str(p.is_dir()))\n print(\"CHECKOUT_SHA_MATCH=\"+str(g.stdout.strip()==\"2fd92fcf247e0af0e749eb9cd593d5e70c38b133\")+\" GIT_EXIT=\"+str(g.returncode)+\" SHORT=\"+g.stdout[:8])\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Astera Host terminal request req_4b56929c02bfdd7db892c6e7 failed HOST_COMMAND_ADMISSION_DENIED after successful gateway; check per-repo grants and checkout without Host mutation."
+  }
+}
