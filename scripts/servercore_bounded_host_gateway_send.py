@@ -213,6 +213,8 @@ def main():
     parser.add_argument("--command-id", required=True)
     parser.add_argument("--expected-sha", required=True)
     parser.add_argument("--expected-before")
+    parser.add_argument("--reflect-repository")
+    parser.add_argument("--reflect-branch")
     parser.add_argument("--repository")
     parser.add_argument("--service")
     parser.add_argument("--docker-operation")
@@ -230,12 +232,17 @@ def main():
     parser.add_argument("--contract", default=str(DEFAULT_CONTRACT))
     args = parser.parse_args()
     contract = load_contract(args.contract)
-    request = validate_cli(args.command_id, args.expected_sha, contract, args.expected_before,
-                           args.repository, args.service, args.deploy_request_id,
-                           args.path, args.offset, args.container, args.tail,
-                           args.session, parse_argv(args.job_argv_json),
-                           args.timeout_s, None if args.fresh is None else args.fresh == "true", args.repo_sha,
-                           args.docker_operation, args.host_command)
+    request = validate_cli(args.command_id, args.expected_sha, contract,
+                           expected_before=args.expected_before,
+                           reflect_repository=args.reflect_repository, reflect_branch=args.reflect_branch,
+                           repository=args.repository, service=args.service,
+                           deploy_request_id=args.deploy_request_id,
+                           path=args.path, offset=args.offset, container=args.container, tail=args.tail,
+                           session=args.session, argv=parse_argv(args.job_argv_json),
+                           timeout_s=args.timeout_s,
+                           fresh=None if args.fresh is None else args.fresh == "true",
+                           repo_sha=args.repo_sha, docker_operation=args.docker_operation,
+                           host_command=args.host_command)
     try:
         receipt = send(request, contract)
         print(json.dumps({"state": "QUEUED", "request_id": request["id"], "gateway": receipt}, sort_keys=True))
