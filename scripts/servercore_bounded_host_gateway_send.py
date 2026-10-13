@@ -85,7 +85,7 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
             raise SendError("SERVICE_DEPLOY_TARGET_INVALID")
         request["repository"] = repository
         request["service"] = service
-    elif command_id != "dev.job" and (repository is not None or service is not None):
+    elif command_id not in {"dev.job", "host.command"} and (repository is not None or service is not None):
         raise SendError("UNEXPECTED_DEPLOY_TARGET")
     if command_id == "dev.job":
         if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
@@ -102,6 +102,11 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
                         "timeout_s": timeout_s, "fresh": fresh})
     elif session is not None or (argv is not None and command_id != "docker.operation") or timeout_s is not None or fresh is not None:
         raise SendError("UNEXPECTED_DEV_JOB_TARGET")
+    if command_id == "host.command":
+        if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
+                or not isinstance(path, str) or not 1 <= len(path) <= 1600 or "\\x00" in path:
+            raise SendError("HOST_COMMAND_TARGET_INVALID")
+        request.update({"repository": repository, "command": path})
     if command_id == "docker.operation":
         if docker_operation not in {"ps", "inspect", "logs", "stats", "start", "stop",
                                     "restart", "up", "exec"}:
@@ -130,7 +135,7 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, repos
             raise SendError("FILE_INSPECT_TARGET_INVALID")
         request["path"] = path
         request["offset"] = offset
-    elif path is not None or offset is not None:
+    elif (path is not None and command_id != "host.command") or offset is not None:
         raise SendError("UNEXPECTED_FILE_TARGET")
     if command_id == "docker.logs":
         if not isinstance(container, str) or not CONTAINER_PATTERN.fullmatch(container) \
