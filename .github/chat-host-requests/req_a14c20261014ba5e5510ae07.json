@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core validate offline new Gate config on existing 18181 ports using exact source",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess as S,types,sys,yaml\nfrom pathlib import Path\nfrom unittest.mock import patch\np=\"/home/admin1/projects/ai-core/.worktrees/source-import-20261013\"\ndef git(*a):return S.check_output([\"git\",\"-C\",p,*a],text=True,timeout=35)\ngit(\"fetch\",\"--no-tags\",\"origin\",\"feat/per-model-lifecycle-20261013\")\ndef src(f):return git(\"show\",\"FETCH_HEAD:\"+f)\nm=types.ModuleType(\"gen\");m.__file__=p+\"/router/scripts/generate_config.py\"\nexec(compile(src(\"router/scripts/generate_config.py\"),m.__file__,\"exec\"),m.__dict__)\no=[]\ndef rd(self,**k):\n if str(self).endswith(\"model-policy.yaml\"):return src(\"runtime/model-policy.yaml\")\n if str(self).endswith(\"compose.runtime.yml\"):return src(\"compose.runtime.yml\")\n raise RuntimeError(str(self))\ndef wr(self,s,**k):o.append(yaml.safe_load(s))\nwith patch.object(m,\"discover\",side_effect=RuntimeError(\"COLD_BACKEND\")),patch.object(Path,\"read_text\",rd),patch.object(Path,\"write_text\",wr),patch.object(Path,\"mkdir\",return_value=None),patch.object(sys,\"argv\",[\"gen\",\"--output\",\"/unused\",\"--peer-target\",\"gate\",\"--exclusive-traffic\"]):m.main()\nc=o[0]\nassert c[\"peers\"][\"granite\"][\"proxy\"]==\"http://127.0.0.1:18181\"\nassert c[\"peers\"][\"coder\"][\"proxy\"]==\"http://127.0.0.1:18184\"\nassert c[\"peers\"][\"coder\"][\"models\"]==[\"/models/qwen2.5-coder-7b-instruct-q4_k_m.gguf\"]\nassert c[\"models\"]=={} and c[\"globalConcurrencyLimit\"]==2\nprint(\"SHA=\"+git(\"rev-parse\",\"FETCH_HEAD\").strip()+\" COLD_GATE=PASS LEGACY_PORTS=PASS\")'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core original Gate port re-use and all four cold model sources"
+  }
+}
