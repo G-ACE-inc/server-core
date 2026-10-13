@@ -209,7 +209,10 @@ def deploy_socket_call(payload, socket_path, timeout=60):
             client.connect(socket_path)
             client.sendall(data)
             with client.makefile("rb") as stream:
-                result = json.loads(stream.readline(8192))
+                raw_reply = stream.readline(32768)
+                if not raw_reply.endswith(b"\\n") or len(raw_reply) >= 32768:
+                    fail("DEPLOY_RESULT_INVALID", 503)
+                result = json.loads(raw_reply)
     except (OSError, ValueError, TypeError):
         fail("DEPLOY_EXECUTOR_UNAVAILABLE", 503)
     if not isinstance(result, dict):
