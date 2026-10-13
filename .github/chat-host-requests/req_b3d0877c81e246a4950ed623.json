@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Reflect final six-new-Repo enrollment helper Source for existing Host only. Exact ff-only preserve protected Registry, no PC access.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "bbbd2fb29981fe45f4a06d44929901adbf7fb4fa",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "bbbd2fb29981fe45f4a06d44929901adbf7fb4fa",
+    "command": "set -e; test \"$(git rev-parse HEAD)\" = bbbd2fb29981fe45f4a06d44929901adbf7fb4fa; before=$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1); git fetch --no-tags origin refs/heads/main >/dev/null; git cat-file -e 4b6b0b21162c2d9fa06a79f44a954cbe32d9c24e^{commit}; git merge --ff-only 4b6b0b21162c2d9fa06a79f44a954cbe32d9c24e >/dev/null; test \"$(git rev-parse HEAD)\" = 4b6b0b21162c2d9fa06a79f44a954cbe32d9c24e; test \"$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1)\" = \"$before\"; printf 'HOST_ENROLL_ALL_SOURCE_REFLECT=PASS\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR #196 exact CI 6/6 SUCCESS merge 4b6b0b21162c2d9fa06a79f44a954cbe32d9c24e corrects earlier missing ast eria in Host Registry grant list. Host HEAD pinned bbbd2fb29981fe45f4a06d44929901adbf7fb4fa from proof #6142253524 and prior source reflection. Preserve protected dirty Registry."
+  }
+}
