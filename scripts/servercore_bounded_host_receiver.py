@@ -178,11 +178,13 @@ def validate_request(value, contract):
 
 
 def dispatch_reflect(request, socket_path="/run/gace/servercore-source-reflect.sock"):
+    repository = request.get("repository", "G-ACE-inc/server-core")
+    branch = request.get("branch", "main")
     payload = {
         "schema": "gace.servercore-source-reflect.request/v1",
         "id": request["id"],
-        "repository": request["repository"],
-        "branch": request["branch"],
+        "repository": repository,
+        "branch": branch,
         "expected_before": request["expected_before"],
         "target_sha": request["expected_sha"],
     }
