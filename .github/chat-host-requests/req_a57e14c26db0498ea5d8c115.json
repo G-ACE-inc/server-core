@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Bounded 25-second real production Astera engine test for Japanese factual question and signed EvidenceSearch through canonical client; no secrets/output payload dump.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2bbba0bc58ed3b61085d42c20b91ee6ac05caaa6",
+    "repository": "seigo-gace/astera_v8",
+    "repo_sha": "318a9b33c6aa92d45c684c7a24d90740a8a7fcab",
+    "command": "docker exec astera-v8 node -e 'const Engine=require(\"./src/astera-engine\");const e=new Engine();setTimeout(()=>{console.log(\"PROBE_TIMEOUT_25000\");process.exit(124)},25000);e.process({question:\"Node.js 22の公式サポート状況を確認し、事実と未確認事項を区別してください。\",language:\"ja\",evidence_search:{deadline_ms:6000,maximum_results:3}},{id:\"astera-real-search-check\"}).then(o=>{const t=o.result?.task_results||[];console.log(JSON.stringify({type:o.result?.type,trace:o.result?.runtime_trace_status,task_count:t.length,task_evidence:t.map(x=>({state:x.evidence_raw?.search_state,status:x.evidence_raw?.status,items:x.evidence_raw?.evidence?.length||0,confirmed:x.canonical?.confirmed_count,unresolved:x.canonical?.undetermined_count})),main8_chars:o.material?.text?.length||0,main8_head:(o.material?.text||\"\").slice(0,250)}));process.exit(0)}).catch(x=>{console.error(\"PROBE_ERROR=\"+(x.code||x.name));process.exit(1)})'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Exact SHA318a9b3 deployed Core healthy, Evidence API READY receipt 6150169852; PR36 now forwards input evidence_search deadline; inspect actual source-claim-search-Main8 with timeout in child test process, no state mutation."
+  }
+}
