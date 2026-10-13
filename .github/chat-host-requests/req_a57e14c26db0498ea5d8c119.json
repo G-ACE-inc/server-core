@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "PR37 merge exact Astera SHA a9ec661 FF-only Host source reflection; no tracked dirty, no reset, protect local artifacts/env.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/astera_v8",
+    "repo_sha": "318a9b33c6aa92d45c684c7a24d90740a8a7fcab",
+    "command": "test \"$(git branch --show-current)\" = main && test \"$(git rev-parse HEAD)\" = 318a9b33c6aa92d45c684c7a24d90740a8a7fcab && test -z \"$(git status --porcelain --untracked-files=no)\" && git fetch origin main && test \"$(git rev-parse FETCH_HEAD)\" = a9ec6611e271379753fd4c07e99897eb6ed0f661 && git merge --ff-only a9ec6611e271379753fd4c07e99897eb6ed0f661 && test \"$(git rev-parse HEAD)\" = a9ec6611e271379753fd4c07e99897eb6ed0f661 && git status --short"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "PR37 CI 3/3 PASS exact head041ad1c merged SHAa9ec6611; live Astera old318a9b, host exact6b541d verified Issue10 6150283349. FF-only safely."
+  }
+}
