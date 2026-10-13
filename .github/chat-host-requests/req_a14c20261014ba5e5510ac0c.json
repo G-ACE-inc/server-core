@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core isolated existing worktree fetch source objects without checkout or runtime effect",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess\np=\"/home/admin1/projects/ai-core/.worktrees/source-import-20261013\"\nc=[\"git\",\"-C\",p,\"fetch\",\"--no-tags\",\"origin\",\"feat/per-model-lifecycle-20261013\"]\nr=subprocess.run(c,capture_output=True,text=True,timeout=35)\nprint(\"FETCH_RC=\"+str(r.returncode))\nprint(\"OUTPUT=\"+(r.stderr or r.stdout)[:350].replace(chr(10),\";\"))\nfor key in (\"HEAD\",\"FETCH_HEAD\"):\n x=subprocess.run([\"git\",\"-C\",p,\"rev-parse\",key],capture_output=True,text=True,timeout=7)\n print(key+\"=\"+(x.stdout.strip() if x.returncode==0 else \"UNAVAILABLE\"))\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "isolated_git_fetch_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "ai-core PR3",
+    "source_design_aligned": true,
+    "source_evidence": "existing clean nested worktree, git fetch only; no checkout and no Docker"
+  }
+}
