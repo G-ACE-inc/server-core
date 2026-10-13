@@ -295,7 +295,7 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         raise AdmissionError("REPOSITORY_INVALID")
     if not isinstance(target_sha, str) or not SHA.fullmatch(target_sha):
         raise AdmissionError("TARGET_SHA_INVALID")
-    if not isinstance(command_text, str) or not 1 <= len(command_text) <= 1600 or "\\x00" in command_text:
+    if not isinstance(command_text, str) or not 1 <= len(command_text) <= 1600 or "\x00" in command_text:
         raise AdmissionError("HOST_COMMAND_INVALID")
     previous = read_result(request_id, result_dir)
     if previous is not None:
