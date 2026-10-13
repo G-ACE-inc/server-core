@@ -94,7 +94,7 @@ def registered_project_roots(root=ROOT, git_reader=git):
                 (path.startswith("/home/admin1/projects/") and
                  candidate.is_absolute() and ".." not in candidate.parts)):
             continue
-        if candidate.is_symlink() or not candidate.is_dir() or candidate.resolve() != candidate:
+        if root == ROOT and (candidate.is_symlink() or not candidate.is_dir() or candidate.resolve() != candidate):
             continue
         roots.add(path)
     return frozenset(roots)
