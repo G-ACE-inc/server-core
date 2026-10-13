@@ -32,6 +32,19 @@ CONTRACT = {"request_schema": "gace.servercore-bounded-host.request/v1",
             "allowed_command_ids": ["docker.operation"]}
 
 class DockerRouteTests(unittest.TestCase):
+    def test_compose_ps_without_container_is_not_success(self):
+        from servercore_registered_docker_ops import operate, DockerOperationError
+        entry = {"server_project_path": "/home/admin1/projects/TGserver",
+                 "runtime_target": {"compose_file": "docker-compose.yml", "services": ["redis"]}}
+        class Result:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+        with self.assertRaisesRegex(DockerOperationError, "SERVICE_NOT_RUNNING_OR_NOT_COMPOSE_OWNED"):
+            operate(entry, "redis", "ps", runner=lambda *args, **kwargs: Result())
+        with self.assertRaisesRegex(DockerOperationError, "SERVICE_NOT_RUNNING_OR_NOT_COMPOSE_OWNED"):
+            operate(entry, "redis", "inspect", runner=lambda *args, **kwargs: Result())
+
     def test_writer_validates_exact_request(self):
         self.assertEqual(writer.validate_docker_operation(REQUEST), REQUEST)
         with self.assertRaisesRegex(writer.AdmissionError, "KEYS"):
