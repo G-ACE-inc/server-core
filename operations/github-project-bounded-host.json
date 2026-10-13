@@ -129,6 +129,31 @@
         "root": "/home/admin1/projects/asteria",
         "branch": "feat/translation-safety-completion-20261005",
         "project_item": "PVTI_lAHODOQFoM4BEJIIzg-sRdQ"
+      },
+      "seigo-gace/astera_v8": {
+        "owner": "seigo-gace",
+        "root": "/home/admin1/projects/astera_v8",
+        "branch": "test/evidence-search-cancel-regression-20260927"
+      },
+      "seigo-gace/astera-app": {
+        "owner": "seigo-gace",
+        "root": "/home/admin1/projects/astera-app",
+        "branch": "audit/cloudflare-dns-read-20260925"
+      },
+      "seigo-gace/modular-catalog": {
+        "owner": "seigo-gace",
+        "root": "/home/admin1/projects/Catalog/modular-catalog",
+        "branch": "feat/reusable-knowledge-factory-v1-20261002"
+      },
+      "seigo-gace/Deterministic-Japanese-Parser-MCP": {
+        "owner": "seigo-gace",
+        "root": "/home/admin1/projects/Deterministic-Japanese-Parser-MCP",
+        "branch": "feat/purpose-routing-completion-20260927"
+      },
+      "seigo-gace/Libral-Vault": {
+        "owner": "seigo-gace",
+        "root": "/home/admin1/projects/libral-vault",
+        "branch": "feat/internal-hmac-api"
       }
     },
     "limits": {
