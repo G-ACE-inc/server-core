@@ -49,6 +49,36 @@ class DeployTests(unittest.TestCase):
             with self.assertRaisesRegex(m.AdmissionError,"SERVICE_RUNTIME_MISMATCH"):
                 m.deploy({},"seigo-gace/debug-ai",SHA,"debug-ai",apply=True)
 
+    def test_health_starting_is_polled_until_healthy(self):
+        seen = [0]
+        def warmup(args, timeout=120):
+            if ".State.Health" in " ".join(args):
+                seen[0] += 1
+                return "starting" if seen[0] == 1 else "healthy"
+            return cmd(args, timeout)
+        with patch.object(m, "inspect_host", return_value=A), \
+             patch.object(m, "command", side_effect=warmup), \
+             patch.object(m.time, "sleep", return_value=None) as sleeper:
+            out = m.deploy({}, "seigo-gace/debug-ai", SHA, "debug-ai", apply=True)
+        self.assertEqual(out["health"], "healthy")
+        self.assertEqual(out["state"], "SERVICE_DEPLOY_RUNTIME_RUNNING")
+        self.assertEqual(seen[0], 2)
+        sleeper.assert_called_once()
+
+    def test_health_starting_forever_exhausts_bounded_timeout(self):
+        def never_ready(args, timeout=120):
+            return "starting" if ".State.Health" in " ".join(args) else cmd(args, timeout)
+        with patch.object(m, "command", side_effect=never_ready):
+            with self.assertRaisesRegex(m.AdmissionError, "SERVICE_HEALTH_NOT_READY"):
+                m.wait_for_service_health("a" * 64, timeout_seconds=0)
+
+    def test_health_check_detects_container_stopped(self):
+        def stopped(args, timeout=120):
+            return "exited" if "{{.State.Status}}" in args else cmd(args, timeout)
+        with patch.object(m, "command", side_effect=stopped):
+            with self.assertRaisesRegex(m.AdmissionError, "SERVICE_RUNTIME_MISMATCH"):
+                m.wait_for_service_health("a" * 64, timeout_seconds=0)
+
     def test_runtime_success_evidence(self):
         with patch.object(m,"inspect_host",return_value=A),patch.object(m,"command",side_effect=cmd):
             out=m.deploy({},"seigo-gace/debug-ai",SHA,"debug-ai",apply=True)
