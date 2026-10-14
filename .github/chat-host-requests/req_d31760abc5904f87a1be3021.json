@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPG Core and Vault tunnel runtime existence audit (paths and container names only; no secret content)",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "command": "python3 -c 'import os; paths=[\"/home/admin1/projects/GPG-Core\",\"/home/admin1/projects/libral-vault\",\"/home/admin1/projects/astera_v8\",\"/run/user/1000/astera_v8_cloudflare_tunnel_token\"];[(print(p+\" EXISTS=\"+str(os.path.lexists(p))+\" TYPE=\"+(\"dir\" if os.path.isdir(p) else \"file\" if os.path.isfile(p) else \"other\"))) for p in paths]' "
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/Libral-Vault/pull/6"
+  }
+}
