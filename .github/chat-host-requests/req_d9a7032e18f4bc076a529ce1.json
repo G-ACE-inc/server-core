@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Retry private Gateway project key issue after Host command sanitizer replaced Python secret variable assignment with REDACTED causing NameError before mutation. Rename Python local variable only, key remains never displayed or committed.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport json,os,secrets,subprocess\nroot=Path(\"/home/admin1/projects/webhook-gateway\")\np=root/\".env\"\nif p.is_symlink() or not p.is_file():\n    raise RuntimeError(\"ENV_PATH_INVALID\")\nbefore=p.read_bytes()\nif b\"INTERNAL_EVENT_API_TOKEN\" not in before:\n    raise RuntimeError(\"LEGACY_KEY_NOT_FOUND\")\nif any(line.partition(b\"=\")[0].strip()==b\"INTERNAL_EVENT_API_PROJECT_KEYS_JSON\" for line in before.splitlines()):\n    raise RuntimeError(\"PROJECT_KEY_ALREADY_PRESENT\")\nif not before.endswith(b\"\\n\"):\n    raise RuntimeError(\"ENV_EOL_INVALID\")\nk=secrets.token_urlsafe(36)\nentry=\"INTERNAL_EVENT_API_PROJECT_KEYS_JSON='\"+json.dumps({\"server-core\":k},separators=(\",\",\":\"))+\"'\\n\"\nfd=os.open(p,os.O_WRONLY|os.O_APPEND|os.O_NOFOLLOW)\ntry:\n    os.write(fd,entry.encode())\n    os.fsync(fd)\nfinally:\n    os.close(fd)\ntry:\n    result=subprocess.run([\"docker\",\"compose\",\"config\",\"--format\",\"json\"],cwd=root,capture_output=True,timeout=25,check=True)\n    api=json.loads(result.stdout)[\"services\"][\"api\"][\"environment\"]\n    assert api.get(\"INTERNAL_EVENT_API_TOKEN\")\n    assert json.loads(api[\"INTERNAL_EVENT_API_PROJECT_KEYS_JSON\"])[\"server-core\"]==k\nexcept Exception as e:\n    with p.open(\"r+b\") as f:\n        f.truncate(len(before))\n    raise RuntimeError(\"ENV_CONFIG_VERIFY_FAILED\") from None\nprint(\"PROJECT_KEY_REGISTERED=YES\")\nprint(\"KEY_VALUE_REDACTED=YES\")\nprint(\"LEGACY_TOKEN_PRESERVED=YES\")\nprint(\"COMPOSE_API_CONFIG=PASS\")\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Prior attempt failed NameError REDACTED at Python line14 before env modification receipt https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6167491384; API deploy preflight PASS receipt 6167463739."
+  }
+}
