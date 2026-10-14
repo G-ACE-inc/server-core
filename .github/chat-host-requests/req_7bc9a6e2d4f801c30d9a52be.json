@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Webhook Gateway protected Host registry read-only actual grants and effects (no secrets). Check whether existing registered source reflect/deploy admission is truly absent at runtime.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d3e9b0d288d27f8832bca434636f2b157a20af52",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "04747d0d579154827a7db2875d388adbbaaf956b",
+    "command": "python3 -c 'import json; p=\"/home/admin1/server-core/operations/master-internal-repositories.json\"; x=json.load(open(p)); a=[e for e in x[\"repositories\"] if e.get(\"repository\")==\"seigo-gace/webhook-gateway\"]; print(\"ENTRIES\",len(a)); print(\"OPS\",a[0][\"allowed_operations\"] if a else []); print(\"RUNTIME\",a[0].get(\"runtime_target\",{}).get(\"id\") if a else \"NONE\"); print(\"EFFECTS\",a[0].get(\"effects\",{}) if a else {})'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "Read-only inspection of protected host runtime Registry grant only; no mutation; existing webhook is healthy; source PR26 merged but Host untouched.",
+    "source_design_aligned": true,
+    "source_evidence": "G-ACE Project Manifest & #17 Current, Workspace §6/§9; Host Issue #10 SHA receipt d3e9b0d, Gateway Host checkout 04747d0 and e10a0d7 merged, PR26 CI PASS. Source registry grants docker.operation+host.command only, Host may differ."
+  }
+}
