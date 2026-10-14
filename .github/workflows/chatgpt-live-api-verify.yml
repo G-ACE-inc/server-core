@@ -65,8 +65,11 @@ jobs:
             .gitops_request.enabled == false and
             .source_reflect_request.enabled == false and
             ((.server_command_id // "") == "")' "$target" >/dev/null
+          jq -e '.chat_decision_checkpoint | type == "object"' "$target" >/dev/null || { echo "CHAT_START_GATE_RECEIPT_MISSING"; exit 81; }
+          jq -e '.chat_decision_checkpoint.phase == "START"' "$target" >/dev/null || { echo "CHAT_START_GATE_PHASE_DENIED"; exit 82; }
           jq -c '.chat_decision_checkpoint' "$target" > /tmp/gace-chat-start-checkpoint.json
           python3 scripts/github_project_chat_turn_gate.py --state /tmp/gace-chat-start-checkpoint.json
+          echo "CHAT_START_GATE=PASS"
           echo "CURRENT_TERMINAL_COMMAND=host.command"
 
       - name: Dispatch current common Server Terminal command
