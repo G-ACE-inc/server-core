@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Master priority: verify webhook-gateway actual Host command and deployed API state, no edits",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "command": "printf 'WEBHOOK_HEAD='; git rev-parse HEAD; printf 'WEBHOOK_STATUS='; git status --porcelain; printf 'COMPOSE_STATUS\\n'; docker compose ps --format json; printf 'HEALTH_LOCAL\\n'; curl -sS -o /dev/null -w '%{http_code}\\n' --max-time 5 http://127.0.0.1:7373/healthz || true"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Fresh Manifest, #17, #10, LOAD_SCOPE, Work Routine §6, README and bounded Host contract verified 2026-10-14; webhook current Host SHA 7a9ea997 and checkout SHA e10a0d7 from #10 receipts 6167572034 and 6167534603; read-only incident diagnosis only."
+  }
+}
