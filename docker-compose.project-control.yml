@@ -83,7 +83,7 @@ services:
         - CMD
         - python3
         - -c
-        - "import urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8789/healthz', timeout=2); raise SystemExit(0 if r.status == 200 else 1)"
+        - "import os,urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8789/healthz', timeout=2); raise SystemExit(0 if r.status==200 and (os.path.isdir('/run/gace') and os.path.exists('/run/gace/servercore-result.sock')) else 1)"
       interval: 10s
       timeout: 3s
       retries: 6

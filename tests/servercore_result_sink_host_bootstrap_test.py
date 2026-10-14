@@ -83,6 +83,26 @@ class BootstrapTests(unittest.TestCase):
                 m.install(HEAD)
         ctl.assert_not_called()
 
+    def test_remount_skips_when_bounded_host_not_running(self):
+        with patch.object(m.subprocess, "run") as run:
+            run.return_value = type("R", (), {"returncode": 0, "stdout": "false"})()
+            out = m.remount_bounded_host_consumer()
+        self.assertEqual(out["state"], "BOUNDED_HOST_REMOUNT_SKIPPED")
+
+    def test_remount_restarts_running_bounded_host(self):
+        calls = []
+
+        def fake_run(argv, **kw):
+            calls.append(argv)
+            if argv[:2] == ["docker", "inspect"]:
+                return type("R", (), {"returncode": 0, "stdout": "true"})()
+            return type("R", (), {"returncode": 0, "stdout": ""})()
+
+        with patch.object(m.subprocess, "run", side_effect=fake_run):
+            out = m.remount_bounded_host_consumer()
+        self.assertEqual(out["state"], "BOUNDED_HOST_REMOUNTED")
+        self.assertEqual(calls[-1][:2], ["docker", "restart"])
+
 
 if __name__ == "__main__":
     unittest.main()
