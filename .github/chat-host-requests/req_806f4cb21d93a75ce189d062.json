@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Preflight existing registered service.deploy API-only without service changes after verified Gateway e10a0d7 Host source FF; protect existing secret and worker/database.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "command": "cd /home/admin1/server-core && python3 scripts/servercore_registered_service_deploy.py --repository seigo-gace/webhook-gateway --target-sha e10a0d7606b21c38f0d4f875f7a403cd3d5fe296 --service api && printf 'GATEWAY_HEAD=' && git -C /home/admin1/projects/webhook-gateway rev-parse HEAD && printf 'GATEWAY_STATUS=' && git -C /home/admin1/projects/webhook-gateway status --porcelain=v1 --untracked-files=all"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Gateway actual Host source FF PASS https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6167434178; source PR26 merged CI success; #221 reflect/deploy API-only registered Host confirmed #10 6167192120."
+  }
+}
