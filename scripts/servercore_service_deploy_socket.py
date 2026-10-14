@@ -300,19 +300,19 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
     previous = read_result(request_id, result_dir)
     if previous is not None:
         return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
-    registry = json.loads(Path(registry_path).read_text(encoding="utf-8"))
-    entries = [e for e in registry.get("repositories", []) if isinstance(e, dict)
-               and e.get("repository") == repository]
-    if len(entries) != 1:
-        raise AdmissionError("REGISTERED_REPOSITORY_NOT_UNIQUE")
-    entry = entries[0]
-    if entry.get("enabled") is not True or entry.get("revoked") is not False \
-            or entry.get("delegation_mode") != "MASTER_INTERNAL_PERSISTENT" \
-            or "host.command" not in entry.get("allowed_operations", []):
+    # Current shared Terminal: its Project #1 registered checkout map is the
+    # sole host.command registration source. Legacy DebugAI delegation grants
+    # are not part of general Chat Host command admission.
+    terminal_contract = json.loads(
+        (Path(__file__).resolve().parents[1] / "operations/github-project-bounded-host.json")
+        .read_text(encoding="utf-8"))
+    registered = terminal_contract.get("dev_job", {}).get("registered_repositories", {})
+    entry = registered.get(repository) if isinstance(registered, dict) else None
+    if not isinstance(entry, dict):
         raise AdmissionError("HOST_COMMAND_NOT_REGISTERED")
-    root = Path(str(entry.get("server_project_path", "")))
+    root = Path(str(entry.get("root", "")))
     if not root.is_absolute() or root.is_symlink() or not root.is_dir() \
-            or not (root / ".git").is_dir() or root.resolve() != root \
+            or not (root / ".git").exists() or root.resolve() != root \
             or not (str(root).startswith("/home/admin1/projects/") or str(root) == "/home/admin1/server-core"):
         raise AdmissionError("HOST_COMMAND_ROOT_INVALID")
     git = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],

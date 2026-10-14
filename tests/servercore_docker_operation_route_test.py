@@ -186,20 +186,14 @@ class HostTerminalRouteTests(unittest.TestCase):
             receiver.validate_request({**req, "command": "bad\x00command"}, contract)
 
     def test_writer_rejects_unregistered_host_command(self):
+        # Current Terminal registration is independent of old DebugAI grants.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            registry = root / "registry.json"
-            registry.write_text(json.dumps({"repositories": [{
-                "repository": REPO, "enabled": True, "revoked": False,
-                "delegation_mode": "MASTER_INTERNAL_PERSISTENT",
-                "allowed_operations": ["docker.operation"],
-                "server_project_path": "/home/admin1/projects/debug-ai"
-            }]}))
             payload = {"schema": writer.HOST_COMMAND_SCHEMA, "id": SESSION,
-                       "repository": REPO, "target_sha": SHA,
+                       "repository": "unknown-unregistered/checkout", "target_sha": SHA,
                        "command": "docker ps"}
             with self.assertRaisesRegex(writer.AdmissionError, "HOST_COMMAND_NOT_REGISTERED"):
-                writer.run_host_command(payload, registry_path=registry,
+                writer.run_host_command(payload, registry_path=root / "unused",
                                         lock_path=root / "lock", result_dir=root / "results")
 
 
