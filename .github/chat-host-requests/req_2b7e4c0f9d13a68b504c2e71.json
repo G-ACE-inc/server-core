@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Webhook only: corrected quoting via shell heredoc; read Docker API/worker/postgres health and recent delivery aggregates, no event bodies/keys. AI Core excluded.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "command": "cd /home/admin1/projects/webhook-gateway && git rev-parse HEAD && docker compose ps api worker postgres && docker compose exec -T api node <<'JS'\n(async()=>{\nconst pg=await import(\"pg\");\nconst db=new pg.Client({connectionString:process.env.DATABASE_URL});\nawait db.connect();\nconst a=await db.query(\"SELECT d.destination_id,d.status,coalesce(d.last_status_code,0) code,count(*)::int n FROM deliveries d WHERE d.created_at>now()-interval '3 hours' GROUP BY 1,2,3 ORDER BY n DESC LIMIT 15\");\nconsole.log(\"DELIVERY_COUNTS\",JSON.stringify(a.rows));\nconst b=await db.query(\"SELECT e.source_id,d.destination_id,d.status,d.last_status_code FROM events e JOIN deliveries d ON d.event_id=e.id WHERE e.received_at>now()-interval '3 hours' ORDER BY e.received_at DESC LIMIT 6\");\nconsole.log(\"LATEST\",JSON.stringify(b.rows));\nawait db.end();\n})().catch(e=>{console.log(\"DB_CHECK_FAILED\",e.code||\"ERR\");process.exit(2)})\nJS"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Rule17/Manifest #1 and server-core issue10; webhook source e10a0d7; runtime key verification PASS 6167640821; prior read-only attempt shell quoting error 6168086579; no mutation."
+  }
+}
