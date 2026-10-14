@@ -8,7 +8,8 @@ from pathlib import Path
 
 PREFIX = ".github/chat-host-requests/"
 REQUEST = re.compile(r"^[.]github/chat-host-requests/req_[a-f0-9]{24}[.]json$")
-TARGET = Path(".github/chatgpt-live-api-target.json")
+TARGET = Path("/tmp/gace-common-host-request.json")
+LEGACY_TARGET = ".github/chatgpt-live-api-target.json"
 
 def select(added, changed):
     candidates = [p for p in changed if p.startswith(PREFIX)]
@@ -16,7 +17,7 @@ def select(added, changed):
         return None
     if len(candidates) != 1 or not REQUEST.fullmatch(candidates[0]):
         raise ValueError("REQUEST_PATH_DENIED")
-    if candidates[0] not in added or str(TARGET) in changed:
+    if candidates[0] not in added or LEGACY_TARGET in changed:
         raise ValueError("REQUEST_MUST_BE_NEW_AND_SEPARATE")
     return Path(candidates[0])
 
