@@ -1,0 +1,37 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Check durable status of already accepted Webhook API-only production deployment req_4fc402b49fbe8c8279c2b5d8; not a second deploy. Require source e10a0d7 and healthy runtime before completion.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "service.deploy_status",
+    "expected_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "deploy_request_id": "req_4fc402b49fbe8c8279c2b5d8"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "service.deploy accepted initial request req_4fc402b49fbe8c8279c2b5d8 issue receipt https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6167534603. Source exact e10a0d7 and configuration yes."
+  }
+}
