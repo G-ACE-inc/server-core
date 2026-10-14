@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Audit boot units and cron for legacy GPG-Core references (no secret contents)",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "e343aaff1f52120e07631fbe7f9292342cb1dea0",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "e343aaff1f52120e07631fbe7f9292342cb1dea0",
+    "command": "python3 -c 'import subprocess,os; paths=[\"/home/admin1/.config/systemd/user\",\"/etc/systemd/system\",\"/home/admin1/.config/cron\"];paths=[p for p in paths if os.path.isdir(p)];r=subprocess.run([\"grep\",\"-RIlE\",\"GPG-Core|secure_up.sh|gpg_core\",*paths],capture_output=True,text=True,timeout=14);print(\"BOOT_REFERENCES\",r.stdout.splitlines()[:50],\"COUNT\",len(r.stdout.splitlines()));p=subprocess.run([\"crontab\",\"-l\"],capture_output=True,text=True);print(\"USER_CRON_GPG_REFERENCE\",any(t in p.stdout for t in (\"GPG-Core\",\"secure_up.sh\",\"gpg_core\")));print(\"GPG_PROJECT_EXECUTABLES\",[v for v in os.listdir(\"/home/admin1/projects/GPG-Core/scripts\")])'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/Libral-Vault/pull/6"
+  }
+}
