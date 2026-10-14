@@ -56,8 +56,8 @@ class DeployTests(unittest.TestCase):
                 seen[0] += 1
                 return "starting" if seen[0] == 1 else "healthy"
             return cmd(args, timeout)
-        with patch.object(m, "inspect_host", return_value=A), \\
-             patch.object(m, "command", side_effect=warmup), \\
+        with patch.object(m, "inspect_host", return_value=A), \
+             patch.object(m, "command", side_effect=warmup), \
              patch.object(m.time, "sleep", return_value=None) as sleeper:
             out = m.deploy({}, "seigo-gace/debug-ai", SHA, "debug-ai", apply=True)
         self.assertEqual(out["health"], "healthy")
