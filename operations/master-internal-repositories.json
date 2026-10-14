@@ -234,10 +234,14 @@
       ],
       "allowed_operations": [
         "docker.operation",
-        "host.command"
+        "host.command",
+        "reflect",
+        "deploy"
       ],
       "allowed_scopes": [
-        "gace.docker.operation"
+        "gace.docker.operation",
+        "gace.source.reflect",
+        "gace.service.deploy"
       ],
       "runtime_target": {
         "id": "webhook-gateway.compose",
@@ -249,7 +253,11 @@
           "postgres"
         ],
         "health_service": "api",
-        "health_url": "http://127.0.0.1:7373/healthz"
+        "health_url": "http://127.0.0.1:7373/healthz",
+        "source_reflect": true,
+        "deploy_services": [
+          "api"
+        ]
       },
       "issuer": "master:seigo-gace",
       "authority": "gace-master",
