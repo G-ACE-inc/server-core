@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Audit all 11 registered Host terminal checkouts before cross-repository repair",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "command": "python3 -c 'import json,subprocess,pathlib; p=json.load(open(\"operations/github-project-bounded-host.json\")); a=p[\"dev_job\"][\"registered_repositories\"]; print(\"REPO_COUNT\",len(a)); [(lambda n,v: print(n,\"PATH\",v[\"root\"],\"HEAD\",subprocess.run([\"git\",\"-C\",v[\"root\"],\"rev-parse\",\"HEAD\"],capture_output=True,text=True,timeout=3).stdout.strip(),\"BRANCH\",subprocess.run([\"git\",\"-C\",v[\"root\"],\"branch\",\"--show-current\"],capture_output=True,text=True,timeout=3).stdout.strip(),\"EXISTS\",pathlib.Path(v[\"root\"]).exists()))(n,v) for n,v in a.items()]'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Fresh GitHub manifest Issue17 Issue10 LOAD_SCOPE Workspace §6 and registered Host policy. Exact Host 7a9ea997 confirmed issue10 #6167647222. Audit registered roots only."
+  }
+}
