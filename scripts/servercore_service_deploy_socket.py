@@ -329,7 +329,9 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         write_result(request_id, {**base, "state": "RUNNING"}, result_dir)
         try:
             run = runner or subprocess.run
-            # The socket uses umask 0117; normal Host commands need executable directories.\n            # Keep socket masking intact and set the child shell umask only.\n            completed = run(["/bin/bash", "-lc", "umask 0022; " + command_text], cwd=str(root),
+            # The socket uses umask 0117; normal Host commands need executable directories.
+            # Keep socket masking intact and set the child shell umask only.
+            completed = run(["/bin/bash", "-lc", "umask 0022; " + command_text], cwd=str(root),
                             capture_output=True, text=True, timeout=HOST_COMMAND_MAX_SECONDS,
                             check=False)
             result = {**base, "state": "HOST_COMMAND_PASS" if completed.returncode == 0 else "FAIL",
