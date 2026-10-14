@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Post-removal current ServerTerminal only E2E read-write-cleanup on webhook-gateway",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "command": "set -eu; f=.gace-terminal-retirement-probe; test ! -e \"$f\"; trap 'rm -f \"$f\"' EXIT; printf 'NEW_TERMINAL_ONLY\\n' > \"$f\"; test \"$(cat \"$f\")\" = NEW_TERMINAL_ONLY; rm \"$f\"; trap - EXIT; echo RETIRED_OLD_ROUTE_E2E=PASS"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Master ordered retire old fixed command route. Fresh manifest #17 #10 Workspace §6, PR227 merged b9c5c72, earlier webhook SHA verified Issue #10; test current Actions→Gateway→Host no old DebugAI command API."
+  }
+}
