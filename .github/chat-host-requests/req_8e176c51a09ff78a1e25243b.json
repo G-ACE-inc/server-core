@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core model real boot root-cause inspect failed Stage B without mutations",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "cf81f8174da134340f8168be2516c251282ff3da",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "docker ps -a --format '{{.Names}}|{{.Status}}' | grep '^ai-' || true; for c in ai-coder ai-qwen3; do echo MODEL=$c; docker inspect \"$c\" --format 'Running={{.State.Running}} Exit={{.State.ExitCode}} Error={{.State.Error}} Health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}'; docker logs --tail 18 \"$c\" 2>&1 | tail -18; done; cat /sys/fs/cgroup/ai.slice/ai-core.slice/memory.current 2>/dev/null || true"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
