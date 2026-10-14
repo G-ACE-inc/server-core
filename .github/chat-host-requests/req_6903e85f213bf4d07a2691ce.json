@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Reflect PR223 merged Actions-side registered Compose source-reflect fix into existing server-core Host checkout with exact old SHA; preserve protected Registry and receivers.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.source_reflect",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "expected_before": "510d1157f68f0a819548f93a00aa5b5ea6e51596",
+    "repository": "G-ACE-inc/server-core",
+    "branch": "main"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Project #1 Manifest/Rule #17/Work Routine §6 §9; PR223 merged f62f4d4 CI 3/3 success, PR221 Host reflection proof https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6167164240, server-core actual Host HEAD 510d."
+  }
+}
