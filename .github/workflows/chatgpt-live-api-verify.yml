@@ -49,6 +49,10 @@ jobs:
         run: |
           set -euo pipefail
           target=.github/chatgpt-live-api-target.json
+          if [[ "$(jq -r '.bounded_host_request.enabled // false' "$target")" != "true" ]]; then
+            echo "COMMON_TERMINAL_IDLE=YES"
+            exit 0
+          fi
           jq -e '.bounded_host_request.enabled == true and .gitops_request.enabled == false and .source_reflect_request.enabled == false and (.server_command_id // "") == "" and (.run_id // "") == ""' "$target" >/dev/null
           echo "COMMON_TERMINAL_ONLY=PASS"
 
@@ -132,6 +136,7 @@ jobs:
           echo "SERVERCORE_BOUNDED_HOST_DISPATCH=QUEUED"
 
       - name: Bounded Host result return (request id correlated)
+        if: ${{ env.BOUNDED_HOST_REQUEST_ID != '' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
