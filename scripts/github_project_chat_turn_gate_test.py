@@ -46,8 +46,10 @@ class DecisionTests(unittest.TestCase):
         assert "CHAT_START_GATE_PHASE_DENIED" in workflow
         assert '.chat_decision_checkpoint.phase == "START"' in workflow
         assert "python3 scripts/github_project_chat_turn_gate.py --state" in workflow
-        assert workflow.index("START Gate for explicit CHAT Host requests") < workflow.index("Require Cloudflare Access credentials")
-        assert "CHAT_START_GATE=IDLE" in workflow
+        assert workflow.index("Validate current Terminal arbitrary command and START decision") < workflow.index("Dispatch current common Server Terminal command")
+        assert "CHAT_START_GATE=PASS" in workflow
+        assert "debugai.asterav8.jp" not in workflow
+        assert "--command-id host.command" in workflow
 
     def test_existing_guard_requires_design_preflight_for_cu40(self):
         guard = (module_path.parents[1] / ".github/workflows/server-core-guard.yml").read_text(encoding="utf-8")
