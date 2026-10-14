@@ -312,7 +312,7 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         raise AdmissionError("HOST_COMMAND_NOT_REGISTERED")
     root = Path(str(entry.get("root", "")))
     if not root.is_absolute() or root.is_symlink() or not root.is_dir() \
-            or not (root / ".git").is_dir() or root.resolve() != root \
+            or not (root / ".git").exists() or root.resolve() != root \
             or not (str(root).startswith("/home/admin1/projects/") or str(root) == "/home/admin1/server-core"):
         raise AdmissionError("HOST_COMMAND_ROOT_INVALID")
     git = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
