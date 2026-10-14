@@ -150,7 +150,7 @@
       "seigo-gace/astera_v8": {
         "owner": "seigo-gace",
         "root": "/home/admin1/projects/astera_v8",
-        "branch": "test/evidence-search-cancel-regression-20260927",
+        "branch": "main",
         "allowed_branches": [
           "test/evidence-search-cancel-regression-20260927",
           "main"
