@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Use existing registered source reflect writer for Webhook Gateway exact main SHA e10a0d7 after server-core PR221 exact API-only grant. Preserve .env, all nested .worktrees/.snapshots, running containers; do not deploy services in this request.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "project.source_reflect",
+    "repository": "seigo-gace/webhook-gateway",
+    "branch": "main",
+    "expected_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "expected_before": "04747d0d579154827a7db2875d388adbbaaf956b"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Manifest #1, #17 Current, workspace §6 §9; Gateway PR26 merge e10a0d7; server-core PR221 merged and Host Source Reflect PASS https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6167164240 ; Host grants reflect/deploy API-only https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6167192120 ; webhook Host .worktrees/.snapshots preserved status clean https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6167023172 "
+  }
+}
