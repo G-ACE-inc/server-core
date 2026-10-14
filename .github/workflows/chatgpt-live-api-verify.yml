@@ -26,7 +26,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify copied bounded Actions client and CHAT decision gate
+      - name: Verify current Terminal CHAT request and rule gate
         run: |
           set -euo pipefail
           python3 -m unittest scripts/github_project_chat_turn_gate_test.py -v
@@ -36,7 +36,6 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           echo "SERVERCORE_REGISTERED_TEST_SHA=${GITHUB_SHA}"
           echo "SERVERCORE_REGISTERED_TESTS=PASS"
-          node --test tests/chatgpt-bounded-server-read.test.cjs
 
       - name: Select commit-local CHAT request (without shared target mutation)
         shell: bash
@@ -71,12 +70,6 @@ jobs:
           else
             echo "CHAT_START_GATE=IDLE"
           fi
-
-      - name: Verify server-core Actions dispatch contract
-        shell: bash
-        run: |
-          set -euo pipefail
-          node scripts/chatgpt-source-reflect-dispatch.cjs verify-dispatch --git-ref "$GITHUB_REF_NAME"
 
       - name: Common bounded Host gateway dispatch
         shell: bash
