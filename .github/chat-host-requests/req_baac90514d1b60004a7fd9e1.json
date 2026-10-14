@@ -1,0 +1,45 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DJP original 9.85M input corpus direct inventory, existing registered dev.job only, read-only. No new workflow or project.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "dev.job",
+    "expected_sha": "1c18ed26b7b90157abb24aacb57e072212a1a61e",
+    "repository": "seigo-gace/Deterministic-Japanese-Parser-MCP",
+    "session": "req_baac90514d1b60004a7fd9e1",
+    "argv": [
+      "sh",
+      "-c",
+      "pwd; git rev-parse HEAD; find . -maxdepth 3 -type f \\( -name '*manifest*.json' -o -name '*.jsonl.gz' -o -name '*.sqlite3' \\) -print | head -70"
+    ],
+    "timeout_s": 40,
+    "fresh": true
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_BRANCH",
+    "implementation_context": "read_only",
+    "source_design_aligned": true,
+    "source_evidence": "Main Master CU: inspect original 9,852,513 Direct Final data in registered parser checkout; no production mutation, host route #10 and Rule17 read."
+  }
+}
