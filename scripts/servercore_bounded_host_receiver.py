@@ -469,8 +469,14 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
             self.send_header("Cache-Control", "no-store")
             if accepted:
                 self.send_header("x-gace-accepted", "true")
-            self.end_headers()
-            self.wfile.write(data)
+            try:
+                self.end_headers()
+                self.wfile.write(data)
+            except (BrokenPipeError, ConnectionResetError):
+                # The caller disconnected; the Host result is handled by the durable sink,
+                # not by re-running the request or dumping an uncorrelated traceback.
+                print("GACE_RECEIVER_CLIENT_DISCONNECTED status=" + str(status),
+                      file=sys.stderr, flush=True)
 
         def do_GET(self):
             if self.path != HEALTH_PATH:
