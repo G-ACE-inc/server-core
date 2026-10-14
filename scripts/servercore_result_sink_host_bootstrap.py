@@ -95,6 +95,36 @@ def systemctl_user(*args):
         raise AdmissionError("SYSTEMD_COMMAND_FAILED")
 
 
+BOUNDED_HOST_CONTAINER = "server-core-bounded-host"
+
+
+def remount_bounded_host_consumer():
+    """Restart the Receiver when Host /run/gace was recreated so stale bind mounts see live sockets."""
+    try:
+        inspect = subprocess.run(
+            ["docker", "inspect", "-f", "{{.State.Running}}", BOUNDED_HOST_CONTAINER],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return {"state": "BOUNDED_HOST_REMOUNT_SKIPPED", "reason": "DOCKER_UNAVAILABLE"}
+    if inspect.returncode or inspect.stdout.strip() != "true":
+        return {"state": "BOUNDED_HOST_REMOUNT_SKIPPED", "reason": "CONTAINER_NOT_RUNNING"}
+    try:
+        restart = subprocess.run(
+            ["docker", "restart", BOUNDED_HOST_CONTAINER],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return {"state": "BOUNDED_HOST_REMOUNT_FAILED", "reason": "DOCKER_RESTART_FAILED"}
+    if restart.returncode:
+        return {"state": "BOUNDED_HOST_REMOUNT_FAILED", "reason": "DOCKER_RESTART_NONZERO"}
+    return {"state": "BOUNDED_HOST_REMOUNTED"}
+
+
 def install(expected_head):
     preflight(expected_head)
     if UNIT.exists():
@@ -117,7 +147,9 @@ def install(expected_head):
     info = SOCKET.stat()
     if info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) & 0o007:
         raise AdmissionError("HOST_SOCKET_ACCESS_INVALID")
-    return {"state": "RESULT_SINK_READY", "sha": expected_head, "socket": str(SOCKET)}
+    result = {"state": "RESULT_SINK_READY", "sha": expected_head, "socket": str(SOCKET)}
+    result["bounded_host"] = remount_bounded_host_consumer()
+    return result
 
 
 def main():
