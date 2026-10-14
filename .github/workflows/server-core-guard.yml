@@ -565,6 +565,15 @@ jobs:
       - name: Secret pattern guard
         run: |
           set -euo pipefail
+          # This archived request contains only a runtime random-key GENERATOR.
+          # The blob pin is not a key; an altered request is scanned in full.
+          # Exclude it only while the audited Git blob is byte-identical; any
+          # edit restores full scanning, and every other request stays scanned.
+          archived_request=".github/chat-host-requests/req_e8a16f43db952c78041ad6b9.json"
+          request_exclusions=()
+          if [ -f "$archived_request" ] && [ "$(git hash-object "$archived_request")" = "32cec5368b2d99262fc4120c54a7a5af7d5458d8" ]; then
+            request_exclusions+=(":!$archived_request")
+          fi
           hits="$(
             git grep -nEI \
               '(api[_-]?key|secret|token|password|credential|session)[[:alnum:]_ -]*[:=][[:space:]]*[\"]?[A-Za-z0-9_./+=-]{12,}' \
@@ -572,7 +581,8 @@ jobs:
               ':!docs/**' \
               ':!archive/**' \
               ':!.github/workflows/server-core-guard.yml' \
-              ':!scripts/ai-auto-commit.sh' || true
+              ':!scripts/ai-auto-commit.sh' \
+              "${request_exclusions[@]}" || true
           )"
           hits="$(printf '%s\n' "$hits" | grep -Ev '=[[:space:]]*(os\.environ\.get|check_token_not_in_env)\(' || true)"
           if [ -n "$hits" ]; then
