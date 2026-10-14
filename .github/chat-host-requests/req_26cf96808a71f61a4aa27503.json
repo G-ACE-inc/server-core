@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Issue #10: recover byte-identical stale bootstrap file and fast-forward canonical Host main safely",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c7072c3e6f3eaf5bc225c875ec0bb496d3477d6a",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c7072c3e6f3eaf5bc225c875ec0bb496d3477d6a",
+    "command": "sh -c 'cd /home/admin1/server-core && test \"$(git branch --show-current)\" = main && test \"$(git hash-object scripts/servercore_result_sink_host_bootstrap.py)\" = \"$(git rev-parse HEAD:scripts/servercore_result_sink_host_bootstrap.py)\" && git restore --source=HEAD -- scripts/servercore_result_sink_host_bootstrap.py && test -z \"$(git status --porcelain)\" && git fetch origin main && git merge --ff-only origin/main && git rev-parse HEAD'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
