@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 exact-head full unittest suite in temporary isolated source with cleanup",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "e343aaff1f52120e07631fbe7f9292342cb1dea0",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess,tarfile,io,tempfile,pathlib,os,sys\ns=\"62861bfa96de87b5320f554097e799438654875b\"\nb=subprocess.check_output([\"gh\",\"api\",\"repos/seigo-gace/ai-core/tarball/\"+s],timeout=25)\nif len(b)>4000000: raise ValueError(\"ARCHIVE_TOO_LARGE\")\nwith tempfile.TemporaryDirectory(prefix=\"ai-core-exact-tests-\") as tmp:\n t=tarfile.open(fileobj=io.BytesIO(b),mode=\"r:gz\")\n for m in t:\n  q=pathlib.PurePosixPath(m.name).parts[1:]\n  if not m.isfile() or not q or \"..\" in q:continue\n  p=pathlib.Path(tmp).joinpath(*q);p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(t.extractfile(m).read())\n env=dict(os.environ,PYTHONPATH=tmp)\n z=subprocess.run([sys.executable,\"-m\",\"unittest\",\"discover\",\"-s\",\"tests\",\"-p\",\"test_*.py\"],cwd=tmp,env=env,text=True,capture_output=True,timeout=85)\n print(z.stdout[-1800:]);print(z.stderr[-3500:])\n print(\"AI_CORE_EXACT_SHA=\"+s+\" EXIT=\"+str(z.returncode))\n sys.exit(z.returncode)'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
