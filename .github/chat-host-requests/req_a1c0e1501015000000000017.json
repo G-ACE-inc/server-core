@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Verify reloaded server-core Host Writer child directory modes and cleanup",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "cf81f8174da134340f8168be2516c251282ff3da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "cf81f8174da134340f8168be2516c251282ff3da",
+    "command": "systemctl --user is-active gace-servercore-service-deploy.service; grep -F 'umask 0022; ' scripts/servercore_service_deploy_socket.py | wc -l; d=.gace-host-umask-pr231-check; test ! -e \"$d\" && mkdir \"$d\" && stat -c 'CHILD_DIRECTORY_MODE=%a' \"$d\"; rmdir \"$d\"; test ! -e \"$d\" && echo CLEANUP=PASS"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/231"
+  }
+}
