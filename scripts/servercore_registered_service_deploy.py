@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import time
 
 from servercore_service_deploy_admission import (
     AdmissionError, REGISTRY, SHA, inspect_host,
@@ -24,6 +25,27 @@ def command(args, *, timeout=120):
     if result.returncode:
         raise AdmissionError("HOST_COMMAND_FAILED")
     return result.stdout.strip()
+
+
+
+def wait_for_service_health(container_id, *, timeout_seconds=120, poll_seconds=2):
+    """Compose may return before Docker's health start period completes."""
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        status = command(["docker", "inspect", "--format", "{{.State.Status}}", container_id], timeout=15)
+        if status != "running":
+            raise AdmissionError("SERVICE_RUNTIME_MISMATCH")
+        health = command(["docker", "inspect", "--format",
+                          "{{if .State.Health}}{{.State.Health.Status}}{{else}}NONE{{end}}",
+                          container_id], timeout=15)
+        if health in {"healthy", "NONE"}:
+            return health
+        if health not in {"starting", "unhealthy"}:
+            raise AdmissionError("SERVICE_HEALTH_STATUS_INVALID")
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise AdmissionError("SERVICE_HEALTH_NOT_READY")
+        time.sleep(min(poll_seconds, remaining))
 
 
 def deploy(registry, repository, target_sha, service, *, apply=False):
@@ -53,11 +75,7 @@ def deploy(registry, repository, target_sha, service, *, apply=False):
     status = command(["docker", "inspect", "--format", "{{.State.Status}}", container_id], timeout=15)
     if label != service or status != "running":
         raise AdmissionError("SERVICE_RUNTIME_MISMATCH")
-    health = command(["docker", "inspect", "--format",
-                      "{{if .State.Health}}{{.State.Health.Status}}{{else}}NONE{{end}}",
-                      container_id], timeout=15)
-    if health not in {"healthy", "NONE"}:
-        raise AdmissionError("SERVICE_HEALTH_NOT_READY")
+    health = wait_for_service_health(container_id)
     return {"state": "SERVICE_DEPLOY_RUNTIME_RUNNING", "repository": repository,
             "service": service, "source_sha": target_sha, "container_id": container_id,
             "health": health, "mutation_performed": True}
