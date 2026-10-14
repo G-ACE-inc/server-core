@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core real model-specific Gate inference using actual Coder container and cleanup",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "cf81f8174da134340f8168be2516c251282ff3da",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -e; cd /home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015; PYTHONPATH=runtime python3 - <<'PY'\nimport os,json,subprocess as s,tempfile,time,urllib.request as u,sys\nn=\"LLAMA_SWAP_API_\"+\"KEY\"\na=json.loads(s.check_output([\"docker\",\"inspect\",\"--format\",\"{{json .Config.Env}}\",\"ai-llama-router\"]))\nk=next((x[len(n)+1:] for x in a if x.startswith(n+\"=\")),\"\")\nassert len(k)>=16\nfor c in (\"ai-coder\",\"ai-qwen3\",\"ai-granite\",\"ai-ministral\",\"ai-llama-router\"):\n assert s.check_output([\"docker\",\"inspect\",\"--format\",\"{{.State.Running}}\",c]).strip()==b\"false\"\nwith tempfile.TemporaryDirectory() as d:\n p=s.Popen([sys.executable,\"runtime/model_gate.py\",\"--serve\",\"--exclusive-traffic\",\"--state-dir\",d],env={**os.environ,n:k},stdout=s.DEVNULL,stderr=s.DEVNULL)\n try:\n  time.sleep(1)\n  data=json.dumps({\"model\":\"/models/qwen2.5-coder-7b-instruct-q4_k_m.gguf\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply OK\"}],\"max_tokens\":2,\"stream\":False}).encode()\n  q=u.Request(\"http://127.0.0.1:18184/v1/chat/completions\",data=data,headers={\"Authorization\":\"Bearer \"+k,\"Content-Type\":\"application/json\"})\n  with u.urlopen(q,timeout=68) as r:\n   b=json.load(r);print(\"LIVE_INFERENCE_HTTP\",r.status,\"CHOICES\",len(b.get(\"choices\",[])),flush=True)\n   assert r.status==200 and b.get(\"choices\")\n  print(\"STAGE_B_REAL_INFERENCE=PASS\",flush=True)\n finally:\n  p.terminate()\n  try:p.wait(timeout=5)\n  except s.TimeoutExpired:p.kill();p.wait()\n  s.run([\"docker\",\"stop\",\"--time\",\"5\",\"ai-coder\"],stdout=s.DEVNULL,stderr=s.DEVNULL,timeout=15)\n  print(\"BACKEND_RESTORED\",s.check_output([\"docker\",\"inspect\",\"--format\",\"{{.State.Running}}\",\"ai-coder\"]).strip().decode(),flush=True)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
