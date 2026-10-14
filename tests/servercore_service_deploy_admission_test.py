@@ -33,6 +33,31 @@ class ServiceAdmissionTests(unittest.TestCase):
         with self.assertRaisesRegex(mod.AdmissionError,"DEPLOY_OPERATION_NOT_REGISTERED"):
             mod.require_registered(data,"seigo-gace/debug-ai",SHA,"debug-ai")
 
+    def test_gateway_api_only_deploy_does_not_expand_docker_access(self):
+        data = registered()
+        e = data["repositories"][0]
+        e["repository"] = "seigo-gace/webhook-gateway"
+        e["remote"] = "https://github.com/seigo-gace/webhook-gateway.git"
+        e["allowed_operations"] = ["deploy", "docker.operation"]
+        e["runtime_target"] = {**entry["runtime_target"],
+                               "services": ["api", "worker", "postgres"],
+                               "deploy_services": ["api"]}
+        x = mod.require_registered(data, "seigo-gace/webhook-gateway", SHA, "api")
+        self.assertEqual(x["service"], "api")
+        for service in ("worker", "postgres"):
+            with self.assertRaisesRegex(mod.AdmissionError, "DEPLOY_SERVICE_NOT_REGISTERED"):
+                mod.require_registered(data, "seigo-gace/webhook-gateway", SHA, service)
+        read = mod.require_registered(data, "seigo-gace/webhook-gateway", SHA,
+                                      "worker", permission="docker.operation")
+        self.assertEqual(read["service"], "worker")
+
+    def test_invalid_deploy_services_list_is_denied(self):
+        data = registered()
+        data["repositories"][0]["runtime_target"] = {
+            **entry["runtime_target"], "deploy_services": ["debug-ai", "unregistered"]}
+        with self.assertRaisesRegex(mod.AdmissionError, "DEPLOY_SERVICE_NOT_REGISTERED"):
+            mod.require_registered(data, "seigo-gace/debug-ai", SHA, "debug-ai")
+
     def test_no_unregistered_service(self):
         with self.assertRaisesRegex(mod.AdmissionError,"SERVICE_NOT_REGISTERED"):
             mod.require_registered(registered(),"seigo-gace/debug-ai",SHA,"database")
