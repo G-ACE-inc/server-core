@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Issue #10 schedule merged PR218 sink bootstrap to restart consumer AFTER terminal receipt",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ef8ba5bed1043eb8e9e791bb3295e8058377e6d7",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ef8ba5bed1043eb8e9e791bb3295e8058377e6d7",
+    "command": "sh -c 'cd /home/admin1/server-core && test \"$(git rev-parse HEAD)\" = ef8ba5bed1043eb8e9e791bb3295e8058377e6d7 && test -z \"$(git status --porcelain -- scripts)\" && nohup sh -c \"sleep 5; python3 /home/admin1/server-core/scripts/servercore_result_sink_host_bootstrap.py --expected-head ef8ba5bed1043eb8e9e791bb3295e8058377e6d7 --install\" >/tmp/gace-result-sink-bootstrap-20261014.log 2>&1 </dev/null & echo BOOTSTRAP_SCHEDULED'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
