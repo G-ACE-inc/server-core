@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core Host physical cgroup memory and model container read-only baseline for Stage B",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "e343aaff1f52120e07631fbe7f9292342cb1dea0",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess,pathlib\nr=subprocess.run([\"systemctl\",\"show\",\"ai-core.slice\",\"-p\",\"ControlGroup\",\"--value\"],text=True,capture_output=True,timeout=6)\ng=r.stdout.strip();print(\"CGROUP=\"+g)\nif r.returncode or not g.startswith(\"/\"):raise ValueError(\"CGROUP_NOT_RESOLVED\")\np=pathlib.Path(\"/sys/fs/cgroup\")/g.lstrip(\"/\")\nfor k in (\"memory.current\",\"memory.high\",\"memory.max\",\"cpu.max\"):\n print(\"CG_\"+k.upper().replace(\".\",\"_\")+\"=\"+(p/k).read_text().strip())\nr=subprocess.run([\"docker\",\"ps\",\"-a\",\"--filter\",\"name=^/ai-\",\"--format\",\"{{.Names}}|{{.State}}\"],capture_output=True,text=True,timeout=10)\nprint(\"DOCKER_QUERY_EXIT=\"+str(r.returncode))\nprint(\"AI_CONTAINERS=\"+r.stdout.strip()[:1200])\nprint(\"AI_RESOURCE_BASELINE=COLLECTED\")'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
