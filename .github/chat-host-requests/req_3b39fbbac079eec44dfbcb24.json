@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 latest-source safe handoff regression exact-SHA in-memory",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess,json,base64,types,sys,unittest\nsha=\"3b39fbbac079eec44dfbcb24e67e99b3c7be66cf\"\ndef get(p):\n d=json.loads(subprocess.check_output([\"gh\",\"api\",\"repos/seigo-gace/ai-core/contents/\"+p+\"?ref=\"+sha],timeout=25));return base64.b64decode(d[\"content\"]).decode()\nr=types.ModuleType(\"runtime\");r.__path__=[];sys.modules[\"runtime\"]=r\nm=types.ModuleType(\"runtime.model_gate\");m.__file__=\"/tmp/runtime/model_gate.py\";sys.modules[m.__name__]=m\nexec(compile(get(\"runtime/model_gate.py\"),m.__file__,\"exec\"),m.__dict__)\nt=types.ModuleType(\"test_generic_handoff_residents\");t.__file__=\"/tmp/tests/test_generic_handoff_residents.py\";sys.modules[t.__name__]=t\nexec(compile(get(\"tests/test_generic_handoff_residents.py\"),t.__file__,\"exec\"),t.__dict__)\nv=unittest.TextTestRunner(verbosity=1).run(unittest.defaultTestLoader.loadTestsFromModule(t))\nprint(\"AI_CORE_TEST_SHA=\"+sha+\" CASES=\"+str(v.testsRun)+\" PASS=\"+str(v.wasSuccessful()))\nassert v.wasSuccessful()'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
