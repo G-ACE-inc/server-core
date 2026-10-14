@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Webhook Gateway only: read-only inspect current API/worker/postgres health and aggregate delivery statuses after new internal project key E2E. No AI Core, no keys/body printed.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "command": "cd /home/admin1/projects/webhook-gateway && printf 'HOST_HEAD=' && git rev-parse HEAD && docker compose ps --format json api worker postgres | node -e 'let s=\"\";process.stdin.on(\"data\",d=>s+=d).on(\"end\",()=>{for(const x of s.trim().split(\"\\n\")){try{const v=JSON.parse(x);console.log(\"SVC\",v.Service,v.State,v.Health||\"none\")}catch{}}})' && docker compose exec -T api node -e 'import(\"pg\").then(async m=>{const db=new m.Client({connectionString:process.env.DATABASE_URL});await db.connect();const r=await db.query(\"SELECT d.destination_id,d.status,coalesce(d.last_status_code,0) code,count(*)::int n FROM deliveries d WHERE d.created_at>now()-interval \\'3 hours\\' GROUP BY 1,2,3 ORDER BY n DESC LIMIT 20\");console.log(\"DELIVERY_COUNTS\",JSON.stringify(r.rows));const t=await db.query(\"SELECT e.source_id,d.destination_id,d.status,d.last_status_code FROM events e JOIN deliveries d ON d.event_id=e.id WHERE e.received_at>now()-interval \\'3 hours\\' ORDER BY e.received_at DESC LIMIT 6\");console.log(\"LATEST\",JSON.stringify(t.rows));await db.end()}).catch(e=>{console.log(\"DB_CHECK_FAILED\",e.code||\"error\");process.exit(2)})'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Rule #17/Manifest / server-core #10 Current, Gateway merged PR26 and e10a0d7 Host reflected 6167434178, keys 6167518545, running healthy 6167572034, key E2E PASS 6167640821. AI Core explicitly excluded by Master."
+  }
+}
