@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Live Vault and cloudflared runtime configuration metadata; no Secret values",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "command": "python3 -c 'import subprocess,json,os;names=[\"libral-vault-libral-vault-1\",\"astera_v8-astera-v8-cloudflared-1\"];p=subprocess.run([\"docker\",\"inspect\",*names],capture_output=True,text=True);j=json.loads(p.stdout) if p.returncode==0 else [];[(print(\"SERVICE\",x[\"Name\"],\"IMAGE\",x[\"Config\"][\"Image\"],\"MOUNTS\",[(m[\"Source\"],m[\"Destination\"],m[\"RW\"]) for m in x[\"Mounts\"]],\"ENV_KEYS\",[v.split(\"=\",1)[0] for v in x[\"Config\"][\"Env\"] if \"VAULT\" in v or \"CLOUDFLARE\" in v])) for x in j];print(\"GPG_DIR_ENTRIES\",os.listdir(\"/home/admin1/projects/GPG-Core\")[:25]);print(\"ASTERA_TOKEN_PATH_CONFIG\",[(line.split(\"=\",1)[0],len(line.split(\"=\",1)[-1])) for line in open(\"/home/admin1/projects/astera_v8/.env\") if line.startswith(\"CLOUDFLARE_TUNNEL_TOKEN_FILE=\")])'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/Libral-Vault/pull/6"
+  }
+}
