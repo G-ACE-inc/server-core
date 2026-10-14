@@ -139,7 +139,7 @@ class HostCommandUmaskTests(unittest.TestCase):
         # Verify the child shell behavior without touching another repository.
         with tempfile.TemporaryDirectory() as directory:
             child = Path(directory) / "created"
-            script = "umask 0022; mkdir " + str(child)
+            script = "umask 0117; umask 0022; mkdir " + str(child)
             subprocess.run(["/bin/bash", "-lc", script], check=True)
             self.assertEqual(child.stat().st_mode & 0o777, 0o755)
         source = (SCRIPTS / "servercore_service_deploy_socket.py").read_text()
