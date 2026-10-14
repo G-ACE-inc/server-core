@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Retry exact SHA Webhook ff-only after corrected expected_sha=server-core Host, repo_sha=Webhook checkout. Previous request 6167362416 SOURCE_SHA_MISMATCH prior to execution. Master allows arbitrary commands through common terminal.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "04747d0d579154827a7db2875d388adbbaaf956b",
+    "command": "cd /home/admin1/projects/webhook-gateway && test \"$(git rev-parse HEAD)\" = 04747d0d579154827a7db2875d388adbbaaf956b && test \"$(git branch --show-current)\" = main && test -z \"$(git status --porcelain=v1 --untracked-files=all)\" && test \"$(git remote get-url origin)\" = https://github.com/seigo-gace/webhook-gateway.git && git fetch --no-tags origin refs/heads/main && test \"$(git rev-parse FETCH_HEAD)\" = e10a0d7606b21c38f0d4f875f7a403cd3d5fe296 && git merge-base --is-ancestor HEAD FETCH_HEAD && git merge --ff-only --no-edit FETCH_HEAD && test \"$(git rev-parse HEAD)\" = e10a0d7606b21c38f0d4f875f7a403cd3d5fe296 && printf 'REFLECTED_HEAD=' && git rev-parse HEAD && printf 'STATUS=' && git status --porcelain=v1 --untracked-files=all"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "#10 receipt 6167362416 demonstrated expected_sha must servercore 7a9..; Host gateway repo 047.. clean issue 6167340989, nested evidence retained 6167023172. Master 11:31 explicitly authorized general serverTerminal actions; Gateway PR26 e10a0d7."
+  }
+}
