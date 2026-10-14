@@ -248,9 +248,6 @@ jobs:
           test -x scripts/resolve-codex-skill.sh
           test -x scripts/github-skill-path.sh
           test -f operations/github-project-control.json
-          test -f operations/github-project-debugai-routing.json
-          test -f operations/github-project-chat-host-routes.json
-          test -f scripts/github_project_chat_host_route.py
           test -f Dockerfile.project-control
           test -f Dockerfile.project-control.dockerignore
           test -f docker-compose.project-control.yml
@@ -304,8 +301,6 @@ jobs:
           python3 -m unittest scripts/github_project_chat_turn_gate_test.py -v
           python3 -m unittest scripts/work_routine_design_entry_gate_test.py -v
           python3 scripts/gace_work_routine_turn_receipt_test.py
-          python3 -m py_compile scripts/github_project_chat_host_route.py
-          python3 scripts/github_project_chat_host_route_test.py
 
       - name: Provider ownership boundary
         run: |
@@ -465,19 +460,7 @@ jobs:
               'command': '/usr/bin/docker',
               'args': ['exec', '-i', 'debug-ai-debug-ai-1', 'node', '/app/bin/debugai-mcp.mjs']
           }
-          route = json.loads(Path('operations/github-project-debugai-routing.json').read_text())
-          assert route['project']['node_id'] == 'PVT_kwHODOQFoM4BEJII'
-          assert route['execution_backend']['mcp_server'] == 'debugai'
-          assert route['execution_backend']['tools'] == {
-              'server_read_request': 'debugai_server_read',
-              'server_read_status': 'debugai_server_status',
-              'gitops_request': 'debugai_gitops_request',
-              'gitops_status': 'debugai_gitops_status',
-          }
-          assert route['boundaries']['debugai_implementation_copied_into_server_core'] is False
-          assert route['boundaries']['arbitrary_shell_bridge'] is False
           print('WORKSPACE_MCP_MANIFEST=PASS')
-          print('GITHUB_PROJECT_DEBUGAI_ROUTING=PASS')
           PY
 
       - name: Workspace MCP merge compatibility

@@ -79,7 +79,6 @@
     "docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md",
     "operations/github-project-bounded-host.json",
     "operations/github-project-rule-plane.json",
-    ".github/chatgpt-live-api-target.json",
     ".github/workflows/chatgpt-live-api-verify.yml",
     "scripts/servercore_bounded_host.py",
     "scripts/servercore_bounded_host_receiver.py",

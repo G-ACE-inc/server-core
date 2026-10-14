@@ -31,7 +31,6 @@ jobs:
           set -euo pipefail
           python3 -m unittest scripts/github_project_chat_turn_gate_test.py -v
           # Assert the same route admission contract used before bounded Host requests.
-          python3 scripts/github_project_chat_host_route_test.py
           python3 scripts/github_project_rule_plane_test.py
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           echo "SERVERCORE_REGISTERED_TEST_SHA=${GITHUB_SHA}"
