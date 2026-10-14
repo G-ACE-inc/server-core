@@ -134,6 +134,26 @@ class SinkTests(unittest.TestCase):
         sink.accept_record(rec(state="RETRYABLE", exit_code=1, host_sha=""), result_dir=self.dir)
         self.assertEqual(sink.pending_ids(self.dir), [])
 
+    def test_durable_publish_retry_backoff_never_abandons_result(self):
+        self.assertEqual([sink.publisher_retry_seconds(n) for n in (1, 2, 3, 40, 41, 500)],
+                         [15, 30, 60, 300, 300, 300])
+        sink.accept_record(rec(), result_dir=self.dir)
+
+        def offline(args, stdin=None, timeout=40):
+            raise sink.SinkError("GH_COMMAND_FAILED")
+
+        with self.assertRaises(sink.SinkError):
+            sink.publish_record(RID, result_dir=self.dir, runner=offline)
+        self.assertIn(RID, sink.pending_ids(self.dir))
+
+        def online(args, stdin=None, timeout=40):
+            if args[:2] == ["api", "--paginate"]:
+                return ""
+            return json.dumps({"id": 77, "html_url": "https://github.com/x/y/issues/10#issuecomment-77"})
+
+        self.assertEqual(sink.publish_record(RID, result_dir=self.dir, runner=online)["comment_id"], 77)
+        self.assertNotIn(RID, sink.pending_ids(self.dir))
+
     def test_fixed_publish_target_matches_contract(self):
         contract = json.loads((ROOT / "operations" / "github-project-bounded-host.json").read_text())
         target = contract["result_return"]

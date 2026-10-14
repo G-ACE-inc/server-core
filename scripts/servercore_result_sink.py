@@ -248,19 +248,27 @@ def pending_ids(result_dir=None):
     return ids
 
 
+def publisher_retry_seconds(failure_count, interval=15):
+    """Bound retries without ever abandoning a durable terminal result."""
+    return min(300, max(interval, 1) * (2 ** min(max(failure_count - 1, 0), 8)))
+
+
 def publisher_loop(result_dir=None, runner=_gh, interval=15):
     failures = {}
+    retry_at = {}
     while True:
         _WAKE.wait(interval)
         _WAKE.clear()
         for request_id in pending_ids(result_dir):
-            if failures.get(request_id, 0) > 40:
+            if time.monotonic() < retry_at.get(request_id, 0):
                 continue
             try:
                 publish_record(request_id, result_dir=result_dir, runner=runner)
                 failures.pop(request_id, None)
+                retry_at.pop(request_id, None)
             except (SinkError, ValueError, KeyError, OSError) as exc:
                 failures[request_id] = failures.get(request_id, 0) + 1
+                retry_at[request_id] = time.monotonic() + publisher_retry_seconds(failures[request_id], interval)
                 print(f"RESULT_PUBLISH_FAILED request_id={request_id} class={type(exc).__name__}:{str(exc)[:60]}",
                       flush=True)
 
