@@ -36,6 +36,25 @@ class ReflectAdmissionTests(unittest.TestCase):
         with self.assertRaisesRegex(mod.AdmissionError, "REFLECT_RUNTIME_NOT_SOURCE_ONLY"):
             mod.require_reflect({"repositories": [bad]}, "G-ACE-inc/server-core", "main", SHA)
 
+    def test_explicit_compose_runtime_can_reflect_only_with_opt_in(self):
+        runtime = {"id": "webhook-gateway.compose", "compose_file": "docker-compose.yml",
+                   "compose_digest": "a" * 64, "services": ["api", "worker", "postgres"],
+                   "source_reflect": True, "deploy_services": ["api"]}
+        registered = entry(runtime_target=runtime)
+        admitted = mod.require_reflect({"repositories": [registered]},
+                                       "G-ACE-inc/server-core", "main", SHA)
+        self.assertEqual(admitted["runtime_target_id"], "webhook-gateway.compose")
+        registered["allowed_operations"] = ["host.command"]
+        with self.assertRaisesRegex(mod.AdmissionError, "REFLECT_OPERATION_NOT_REGISTERED"):
+            mod.require_reflect({"repositories": [registered]}, "G-ACE-inc/server-core", "main", SHA)
+
+    def test_compose_runtime_without_opt_in_remains_denied(self):
+        runtime = {"id": "unregistered.compose", "compose_file": "compose.yml",
+                   "compose_digest": "a" * 64, "services": ["api"]}
+        with self.assertRaisesRegex(mod.AdmissionError, "REFLECT_RUNTIME_NOT_SOURCE_ONLY"):
+            mod.require_reflect({"repositories": [entry(runtime_target=runtime)]},
+                                "G-ACE-inc/server-core", "main", SHA)
+
     def test_branch_must_be_registered(self):
         with self.assertRaisesRegex(mod.AdmissionError, "BRANCH_NOT_ALLOWED"):
             mod.require_reflect({"repositories": [entry()]}, "G-ACE-inc/server-core", "develop", SHA)

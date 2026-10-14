@@ -55,6 +55,13 @@ def require_registered(registry, repository, target_sha, service, *, permission=
         raise AdmissionError("DEPLOY_RUNTIME_NOT_REGISTERED")
     if service not in runtime["services"] or len(set(runtime["services"])) != len(runtime["services"]):
         raise AdmissionError("SERVICE_NOT_REGISTERED")
+    # Deployment can be more restricted than registered Docker read/status.
+    if permission == "deploy" and "deploy_services" in runtime:
+        permitted = runtime["deploy_services"]
+        if (not isinstance(permitted, list) or not permitted
+                or any(not isinstance(item, str) or item not in runtime["services"] for item in permitted)
+                or len(set(permitted)) != len(permitted) or service not in permitted):
+            raise AdmissionError("DEPLOY_SERVICE_NOT_REGISTERED")
     compose = runtime.get("compose_file")
     digest = runtime.get("compose_digest")
     if not isinstance(compose, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+\.ya?ml", compose):

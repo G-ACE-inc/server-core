@@ -50,7 +50,12 @@ def require_reflect(registry, repository, branch, target_sha):
         raise AdmissionError("HOST_REPOSITORY_PATH_DENIED")
     runtime = entry.get("runtime_target") or {}
     if runtime.get("kind") != "source_only":
-        raise AdmissionError("REFLECT_RUNTIME_NOT_SOURCE_ONLY")
+        # Compose source updates require an explicit registry grant; no deploy implied.
+        if not (runtime.get("source_reflect") is True
+                and isinstance(runtime.get("compose_file"), str)
+                and isinstance(runtime.get("compose_digest"), str)
+                and isinstance(runtime.get("services"), list) and runtime["services"]):
+            raise AdmissionError("REFLECT_RUNTIME_NOT_SOURCE_ONLY")
     allowed_origins = frozenset({
         remote,
         "git@github.com:" + repository + ".git",
