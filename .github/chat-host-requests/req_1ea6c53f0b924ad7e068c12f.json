@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Read-only diagnose fresh API health-warmup deploy receipt FAIL after Host source update. Compare on-disk function and resident systemd writer process startup, API/worker/Postgres health, no AI Core/keys printed.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "e343aaff1f52120e07631fbe7f9292342cb1dea0",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "e343aaff1f52120e07631fbe7f9292342cb1dea0",
+    "command": "cd /home/admin1/server-core && echo HOST_HEAD && git rev-parse HEAD && echo SOURCE_FUNC && grep -n 'def wait_for_service_health' scripts/servercore_registered_service_deploy.py && echo DEPLOY_WRITER && systemctl --user show gace-servercore-service-deploy.service -p ActiveState -p MainPID -p ActiveEnterTimestamp -p ExecStart -p CanReload && echo COMPOSE && docker compose -f /home/admin1/projects/webhook-gateway/docker-compose.yml --project-directory /home/admin1/projects/webhook-gateway ps api worker postgres"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "source PR228 merged, Host source reflect e343aaf PASS #10 6168459839, fresh deploy accepted 6168492897 but final ledger FAIL/SERVICE_HEALTH_NOT_READY Issue#10 6168519656; inspect resident writer stale module vs source."
+  }
+}
