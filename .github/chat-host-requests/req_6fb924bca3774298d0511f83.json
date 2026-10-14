@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Issue #10 verify merged receiver logging and publisher source after Host fast-forward",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d3e9b0d288d27f8832bca434636f2b157a20af52",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "d3e9b0d288d27f8832bca434636f2b157a20af52",
+    "command": "sh -c 'cd /home/admin1/server-core; git rev-parse HEAD; git status --porcelain -- scripts; grep -c GACE_RECEIVER_RESULT scripts/servercore_bounded_host_receiver.py; grep -c publisher_retry_seconds scripts/servercore_result_sink.py; docker inspect -f \"{{.State.Running}}\" server-core-bounded-host; systemctl --user is-active gace-servercore-result-sink.service; test -S /run/gace/servercore-docker-logs.sock && echo LOG_SOCKET_READY'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
