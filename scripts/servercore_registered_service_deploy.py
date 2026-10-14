@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import time
 
 from servercore_service_deploy_admission import (
     AdmissionError, REGISTRY, SHA, inspect_host,
@@ -53,11 +54,19 @@ def deploy(registry, repository, target_sha, service, *, apply=False):
     status = command(["docker", "inspect", "--format", "{{.State.Status}}", container_id], timeout=15)
     if label != service or status != "running":
         raise AdmissionError("SERVICE_RUNTIME_MISMATCH")
-    health = command(["docker", "inspect", "--format",
-                      "{{if .State.Health}}{{.State.Health.Status}}{{else}}NONE{{end}}",
-                      container_id], timeout=15)
-    if health not in {"healthy", "NONE"}:
-        raise AdmissionError("SERVICE_HEALTH_NOT_READY")
+    # Compose up --detach may return while a healthy service is still "starting".
+    # Allow the *existing* readiness gate to settle; never record false failure
+    # merely because inspect raced the 20s container start_period.
+    deadline = time.monotonic() + 60
+    while True:
+        health = command(["docker", "inspect", "--format",
+                          "{{if .State.Health}}{{.State.Health.Status}}{{else}}NONE{{end}}",
+                          container_id], timeout=15)
+        if health in {"healthy", "NONE"}:
+            break
+        if time.monotonic() >= deadline:
+            raise AdmissionError("SERVICE_HEALTH_NOT_READY")
+        time.sleep(2)
     return {"state": "SERVICE_DEPLOY_RUNTIME_RUNNING", "repository": repository,
             "service": service, "source_sha": target_sha, "container_id": container_id,
             "health": health, "mutation_performed": True}

@@ -55,5 +55,31 @@ class DeployTests(unittest.TestCase):
         self.assertEqual(out["state"],"SERVICE_DEPLOY_RUNTIME_RUNNING")
         self.assertEqual(out["container_id"],"a"*64)
 
+    def test_starting_health_becomes_healthy_without_false_deploy_failure(self):
+        inspections = iter(["starting", "healthy"])
+        def slow_health(args, timeout=120):
+            if ".State.Health" in " ".join(args):
+                return next(inspections)
+            return cmd(args,timeout)
+        with patch.object(m,"inspect_host",return_value=A), \
+             patch.object(m,"command",side_effect=slow_health), \
+             patch.object(m.time,"sleep") as asleep:
+            result=m.deploy({},"seigo-gace/debug-ai",SHA,"debug-ai",apply=True)
+        self.assertEqual(result["health"],"healthy")
+        asleep.assert_called_once_with(2)
+
+    def test_stuck_health_fails_after_bounded_wait(self):
+        def starting(args,timeout=120):
+            if ".State.Health" in " ".join(args):
+                return "starting"
+            return cmd(args,timeout)
+        with patch.object(m,"inspect_host",return_value=A), \
+             patch.object(m,"command",side_effect=starting), \
+             patch.object(m.time,"monotonic",side_effect=[100,160]), \
+             patch.object(m.time,"sleep") as asleep:
+            with self.assertRaisesRegex(m.AdmissionError,"SERVICE_HEALTH_NOT_READY"):
+                m.deploy({},"seigo-gace/debug-ai",SHA,"debug-ai",apply=True)
+            asleep.assert_not_called()
+
 
 if __name__=="__main__":unittest.main()
