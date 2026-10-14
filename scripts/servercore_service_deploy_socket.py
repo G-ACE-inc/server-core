@@ -331,16 +331,6 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
             run = runner or subprocess.run
             # The socket uses umask 0117; normal Host commands need executable directories.
             # Keep socket masking intact and set the child shell umask only.
-            # Git worktree metadata created under the socket service umask may lack
-            # directory traverse bits. Restore only owner permissions for this
-            # already-registered checkout, never broaden group/other access.
-            gitdir = root / ".git"
-            if gitdir.is_dir():
-                metadata = gitdir / "worktrees"
-                if metadata.is_dir() and not metadata.is_symlink():
-                    st = metadata.stat()
-                    if st.st_uid == os.geteuid() and (st.st_mode & 0o700) != 0o700:
-                        os.chmod(metadata, st.st_mode | 0o700)
             completed = run(["/bin/bash", "-lc", "umask 0022; " + command_text], cwd=str(root),
                             capture_output=True, text=True, timeout=HOST_COMMAND_MAX_SECONDS,
                             check=False)
