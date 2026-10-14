@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Read-only identify nested Git object dirs not writable despite top-level writable; identify minimal chmod/chown needed. Do not change protected system or expose token.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "04747d0d579154827a7db2875d388adbbaaf956b",
+    "command": "cd /home/admin1/projects/webhook-gateway && echo OBJECT_DIR_OWNERS && find .git/objects -mindepth 1 -maxdepth 1 -type d -printf '%u %g %m %f\\n' | sort | head -n 65 && echo DENIED_OBJECT_DIRS && find .git/objects -mindepth 1 -maxdepth 2 -type d ! -writable -printf '%u %g %m %p\\n' | head -n 65 && echo GIT_OBJECT_COUNT && git count-objects -v | head -n 5 && echo SUDO_N_TEST && sudo -n true && echo SUDO_NONINTERACTIVE_OK || echo SUDO_NONINTERACTIVE_DENIED"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Issue #10 Host receipt 6167396189 shows admin1 has writable .git/objects but git fetch failed with insufficient object permissions receipt 6167380549; inspect nested SHA dirs."
+  }
+}
