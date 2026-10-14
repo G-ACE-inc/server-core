@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "G-ACE registered repository real Host write and cleanup acceptance",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/asteria",
+    "repo_sha": "67c8f87fedcd7e39a57d79262e2cdc1a9b4438fd",
+    "command": "set -eu; f=.gace-terminal-write-probe-req_d4e6391a5b720d0000000004; test ! -e \"$f\"; trap 'rm -f \"$f\"' EXIT; printf 'GACE_TERMINAL_WRITE_PASS\\n' > \"$f\"; test \"$(cat \"$f\")\" = GACE_TERMINAL_WRITE_PASS; rm \"$f\"; trap - EXIT; test ! -e \"$f\"; printf 'WRITE_AND_CLEANUP=PASS\\n'; git rev-parse HEAD"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Fresh Manifest and #17 #10 LOAD_SCOPE Workspace §6; 11/11 registered read Host evidence 6167926811; actual reversible write and cleanup is the acceptance target, per explicit Master instruction."
+  }
+}
