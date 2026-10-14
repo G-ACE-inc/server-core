@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Read only protected server-core checkout tracked-dirty count and split SHA to prepare exact preserving ff-only source sync after merged PR221; no secret bytes or mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d3e9b0d288d27f8832bca434636f2b157a20af52",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "d3e9b0d288d27f8832bca434636f2b157a20af52",
+    "command": "cd /home/admin1/server-core && printf 'COUNT=' && git status --porcelain=v1 --untracked-files=no | wc -l && printf 'NONREGISTRY=' && git status --porcelain=v1 --untracked-files=no | grep -v 'operations/master-internal-repositories.json' | wc -l && printf 'B1=' && sha256sum operations/master-internal-repositories.json | cut -c1-32 && printf 'B2=' && sha256sum operations/master-internal-repositories.json | cut -c33-64 && printf 'HEAD_SHORT=' && git rev-parse --short HEAD && printf 'WRITER=' && systemctl --user is-active gace-servercore-service-deploy.service"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "PR221 merged fa822287. Need exact host guarded source sync only if sole tracked dirty is protected registry, otherwise no mutation.",
+    "source_design_aligned": true,
+    "source_evidence": "G-ACE Project #1, #17, Work Routine §6 and #10; Host d3e9b0 receipt 6167099339."
+  }
+}
