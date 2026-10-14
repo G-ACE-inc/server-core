@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Verify live Vault internal API health without printing credentials",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "command": "python3 -c 'import urllib.request,urllib.error,json; p=\"/home/admin1/.config/libral-vault/internal-token\"; k=open(p).read().strip(); u=\"http://127.0.0.1:8791/internal/v1/health\"; req=urllib.request.Request(u,headers={\"Authorization\":\"Bearer \"+k}); r=urllib.request.urlopen(req,timeout=5); j=json.load(r); print(\"HTTP\",r.status,\"VAULT_STATE\",j.get(\"status\",{}).get(\"state\"),\"KEY_READY\",j.get(\"status\",{}).get(\"keyReady\"),\"MANIFEST\",j.get(\"manifest\",{}).get(\"id\"))'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/Libral-Vault/pull/6"
+  }
+}
