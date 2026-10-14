@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core real model warm-up corrected for 54-second cold model load",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "cf81f8174da134340f8168be2516c251282ff3da",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -euo pipefail; cd /home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015; test \"$(git rev-parse HEAD)\" = 1a966e389434a4e81118a0d508c72a1822e30cd2; for c in ai-coder ai-qwen3 ai-granite ai-ministral ai-llama-router; do test \"$(docker inspect -f '{{.State.Running}}' \"$c\")\" = false; done; trap 'docker stop -t 5 ai-coder ai-qwen3 >/dev/null 2>&1 || true' ERR; docker start ai-coder ai-qwen3 >/dev/null; for i in $(seq 1 75); do if curl -fsS --max-time 2 http://127.0.0.1:18084/health >/dev/null 2>&1 && curl -fsS --max-time 2 http://127.0.0.1:18082/health >/dev/null 2>&1; then echo STAGE_B_TWO_BACKENDS_HEALTHY=YES; docker ps --format '{{.Names}} {{.Status}}' | grep '^ai-'; exit 0; fi; sleep 1; done; echo STAGE_B_BASE_NOT_READY; exit 1"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3",
+    "purpose_cu_aligned": true
+  }
+}
