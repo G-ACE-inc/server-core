@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Exact AI Core peer auth config in memory; fixed test harness cwd",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6b541d277dfb1f204e9889699227aa0ecd17ecff",
+    "command": "git -C /home/admin1/projects/ai-core/.worktrees/source-import-20261013 fetch origin feat/per-model-lifecycle-20261013 && python3 -c 'import sys,os,subprocess,types,pathlib,yaml; os.chdir(\"/home/admin1/projects/ai-core/.worktrees/source-import-20261013\"); g=lambda p:subprocess.check_output([\"git\",\"show\",\"FETCH_HEAD:\"+p],text=True); P=pathlib.Path; orig=P.read_text; out=[]; P.read_text=lambda self,*a,**kw:g(\"runtime/model-policy.yaml\" if self.name==\"model-policy.yaml\" else \"compose.runtime.yml\") if self.name in (\"model-policy.yaml\",\"compose.runtime.yml\") else orig(self,*a,**kw); P.mkdir=lambda self,**kw:None; P.write_text=lambda self,s,**kw:out.append(s); m=types.ModuleType(\"gen\"); m.__file__=os.getcwd()+\"/router/scripts/generate_config.py\"; exec(compile(g(\"router/scripts/generate_config.py\"),m.__file__,\"exec\"),m.__dict__); sys.argv=[\"gen\",\"--output\",\"/unused\",\"--peer-target\",\"gate\",\"--exclusive-traffic\"]; m.main(); c=yaml.safe_load(out[0]); assert all(v[\"apiKey\"]==\"${env.LLAMA_SWAP_API_KEY}\" for v in c[\"peers\"].values()); assert c[\"globalConcurrencyLimit\"]==2; print(\"GATE_PEER_AUTH_MACRO=PASS PEERS=4\")'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "PR3 existing-key Gate peer auth regression",
+    "source_design_aligned": true,
+    "source_evidence": "Previous test harness failed due missing os.chdir, not source; commit eae1c870"
+  }
+}
