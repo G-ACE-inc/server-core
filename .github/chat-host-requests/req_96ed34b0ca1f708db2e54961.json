@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Use new arbitrary serverTerminal host.command to submit one live non-destructive project.git_head event through the newly registered server-core private project key, the existing Webhook API /internal/events, and existing bounded-host destination. Do not print any key, do not change Docker or Git tracked files. Subsequent Host result to be checked separately.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "command": "cd /home/admin1/projects/webhook-gateway && docker compose exec -T api node - <<'JS'\nconst crypto=require('node:crypto');\nconst ref='req_7b13d54fe0a64992b82c47d1';\nconst target='7a9ea997f62167946991ecb7734c0859e2d9d57d';\nconst k=JSON.parse(process.env.INTERNAL_EVENT_API_PROJECT_KEYS_JSON)['server-core'];\nif(typeof k!=='string'||k.length<32)process.exit(4);\nconst now=new Date().toISOString();\nconst request={schema:'gace.servercore-bounded-host.request/v1',id:ref,command_id:'project.git_head',expected_sha:target};\nconst event={eventId:ref,eventType:'gace.servercore-bounded-host.requested',sourceId:'server-core-github',destinationId:'server-core-bounded-host',subject:'servercore-bounded-host/project.git_head',time:now,data:request};\nfetch('http://127.0.0.1:7373/internal/events',{method:'POST',headers:{'content-type':'application/json','x-internal-api-token':k},body:JSON.stringify(event)}).then(async r=>{const j=await r.json().catch(()=>({}));console.log(JSON.stringify({eventId:ref,status:r.status,accepted:r.status===202,duplicate:!!j.duplicate,deliveryIdCount:Array.isArray(j.deliveryIds)?j.deliveryIds.length:null}));if(r.status!==202)process.exit(2)}).catch(e=>{console.error('HTTP_FAILED');process.exit(3)});\nJS"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Project Manifest #1, Rule #17, Workspace §6/§9, Issue #10 Current; Host Gateway main e10a0d7 PR26, API running healthy receipt 6167572034, actual newly issued key accepted authenticated HTTP receipt 6167640821. Existing bounded-host project.git_head is a read-only registered command."
+  }
+}
