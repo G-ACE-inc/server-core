@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Webhook project-key true delivery E2E, one read-only project.git_head through established destination, poll DB for delivered; not AI Core, no keys in logs. Previous request command too long and fails pre-dispatch.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "command": "cd /home/admin1/projects/webhook-gateway && docker compose exec -T api node <<'JS'\n(async()=>{\nconst c=await import(\"node:crypto\"),p=await import(\"pg\");\nconst k=JSON.parse(process.env.INTERNAL_EVENT_API_PROJECT_KEYS_JSON)[\"server-core\"];\nconst rid=\"req_\"+c.randomBytes(12).toString(\"hex\");\nconst b={eventId:rid,eventType:\"gace.servercore-bounded-host.requested\",sourceId:\"server-core-github\",destinationId:\"server-core-bounded-host\",data:{schema:\"gace.servercore-bounded-host.request/v1\",id:rid,command_id:\"project.git_head\",expected_sha:\"7a9ea997f62167946991ecb7734c0859e2d9d57d\"}};\nconst a=await fetch(\"http://127.0.0.1:7373/internal/events\",{method:\"POST\",headers:{\"content-type\":\"application/json\",\"x-internal-api-token\":k},body:JSON.stringify(b)});\nconsole.log(\"INGRESS\",rid,a.status);\nif(a.status!==202)throw Error(\"INGRESS_REJECTED\");\nconst d=new p.Client({connectionString:process.env.DATABASE_URL});await d.connect();\nlet state=\"NONE\";\nfor(let i=0;i<15;i++){\nconst q=await d.query(\"SELECT d.status,d.last_status_code FROM events e JOIN deliveries d ON e.id=d.event_id WHERE e.source_id=$1 AND e.provider_event_id=$2\",[\"server-core-github\",rid]);\nstate=q.rows[0]?.status||\"NONE\";\nif([\"delivered\",\"dead\"].includes(state)){console.log(\"DELIVERY\",rid,JSON.stringify(q.rows[0]));break}\nawait new Promise(r=>setTimeout(r,2000));\n}\nawait d.end();\nif(state!==\"delivered\")throw Error(\"NOT_DELIVERED_\"+state);\n})().catch(e=>{console.log(\"ERROR\",e.message);process.exit(2)});\nJS"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Project1 #17 WorkRoutine #10; webhook E2E previous key proof 6167640821, delivery aggregates 6168110310; only one safe project.git_head requested."
+  }
+}
