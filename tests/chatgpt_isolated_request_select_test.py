@@ -19,7 +19,7 @@ class IsolatedRequests(unittest.TestCase):
         self.assertIsNone(m.select([], ["README.md"]))
 
     def test_reject_shared_target_mutation_and_replay(self):
-        for added, changed in [([], [P]), ([P], [P, str(m.TARGET)]),
+        for added, changed in [([], [P]), ([P], [P, m.LEGACY_TARGET]),
                                ([P], [P, P.replace("a" * 24, "c" * 24)]),
                                ([P], [P.replace("req_", "bad_")])]:
             with self.subTest(added=added, changed=changed):
