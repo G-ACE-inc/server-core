@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Inspect production Gateway Host loopback health and all existing Compose service health after API rebuild, and service deploy writer network namespace. Understand async ledger false-negative SERVICE_HEALTH_NOT_READY vs API container healthy, no env/token prints.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "command": "python3 - <<'PY'\nimport urllib.request,subprocess,json\ntry:\n with urllib.request.urlopen(\"http://127.0.0.1:7373/healthz\",timeout=5) as r:\n  print(\"HOST_LOOPBACK_HEALTH\",r.status)\nexcept Exception as e:\n print(\"HOST_LOOPBACK_HEALTH\",type(e).__name__)\nroot=\"/home/admin1/projects/webhook-gateway\"\nr=subprocess.run([\"docker\",\"compose\",\"ps\",\"--format\",\"json\"],cwd=root,capture_output=True,text=True,check=True)\nfor line in r.stdout.splitlines():\n if line.strip():\n  x=json.loads(line)\n  print(\"SERVICE\",x.get(\"Service\"),\"STATE\",x.get(\"State\"),\"HEALTH\",x.get(\"Health\"))\nPY\nsystemctl --user show gace-servercore-service-deploy.service -p PrivateNetwork -p NetworkNamespacePath -p IPAddressDeny -p RestrictAddressFamilies"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Gateway API updated & healthy 6167572034, new/old key live auth E2E 6167640821; deploy Host ledger failure SERVICE_HEALTH_NOT_READY 6167572034. Need clarify writer network."
+  }
+}
