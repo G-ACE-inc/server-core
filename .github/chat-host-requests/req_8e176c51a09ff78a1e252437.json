@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core actual Stage A observe-only Gate API live proof",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "cf81f8174da134340f8168be2516c251282ff3da",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "cd /home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015 && python3 -B -c 'import os,json,subprocess as s,tempfile,time,urllib.request as u,urllib.error as e,sys\nv=json.loads(s.check_output([\"docker\",\"inspect\",\"--format\",\"{{json .Config.Env}}\",\"ai-llama-router\"]))\nname=\"LLAMA_SWAP_API_\"+\"KEY\";k=next((x[len(name)+1:] for x in v if x.startswith(name+\"=\")),\"\")\nif len(k)<16:print(\"EXISTING_KEY_ABSENT\");sys.exit(3)\nwith tempfile.TemporaryDirectory() as d:\n p=s.Popen([sys.executable,\"runtime/model_gate.py\",\"--serve\",\"--observe-only\",\"--state-dir\",d],env={**os.environ,name:k},stdout=s.DEVNULL,stderr=s.DEVNULL)\n try:\n  z=\"http://127.0.0.1:18181\"\n  for i in range(25):\n   try:\n    h=u.urlopen(z+\"/health\",timeout=1);print(\"HEALTH\",h.status);h.close();break\n   except Exception:\n    if p.poll()!=None:raise RuntimeError(\"GATE_EXITED\")\n    time.sleep(.2)\n  else:raise RuntimeError(\"GATE_TIMEOUT\")\n  h=u.urlopen(u.Request(z+\"/v1/models\",headers={\"Authorization\":\"Bearer \"+k}),timeout=2);print(\"MODELS\",h.status);h.close()\n  q=u.Request(z+\"/v1/chat/completions\",data=b'\\''{}'\\'',headers={\"Authorization\":\"Bearer \"+k})\n  try:u.urlopen(q,timeout=2);raise RuntimeError(\"POST_ALLOWED\")\n  except e.HTTPError as x:print(\"POST\",x.code);assert x.code==409\n  print(\"STAGE_A=PASS\")\n finally:\n  p.terminate()\n  try:p.wait(timeout=5)\n  except s.TimeoutExpired:p.kill();p.wait()'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
