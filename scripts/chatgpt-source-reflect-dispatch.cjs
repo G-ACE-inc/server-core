@@ -153,7 +153,12 @@ function validateBoundedHostReflectTarget(request, registry) {
   if (!(delegation.allowed_branches || []).includes(branch)) {
     throw new Error("BOUNDED_HOST_REFLECT_BRANCH_DENIED");
   }
-  if ((delegation.runtime_target || {}).kind !== "source_only") {
+  const runtime = delegation.runtime_target || {};
+  if (runtime.kind !== "source_only" &&
+      !(runtime.source_reflect === true &&
+        typeof runtime.compose_file === "string" &&
+        typeof runtime.compose_digest === "string" &&
+        Array.isArray(runtime.services) && runtime.services.length > 0)) {
     throw new Error("BOUNDED_HOST_REFLECT_RUNTIME_DENIED");
   }
 }
