@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 exact-head complete mock Coordinator and API cross-suite no production mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import subprocess,json,base64,types,sys,unittest\ns=\"62861bfa96de87b5320f554097e799438654875b\"\ndef get(p):\n j=json.loads(subprocess.check_output([\"gh\",\"api\",\"repos/seigo-gace/ai-core/contents/\"+p+\"?ref=\"+s],timeout=20));return base64.b64decode(j[\"content\"]).decode()\nr=types.ModuleType(\"runtime\");r.__path__=[];sys.modules[\"runtime\"]=r\nnames=[\"runtime/model_gate\",\"tests/test_model_gate\",\"tests/test_generic_model_registry\",\"tests/test_generic_core_handoff_deadline\",\"tests/test_generic_handoff_residents\",\"tests/test_sse_stream_contract\"]\nfor p in names:\n n=p.split(\"/\")[-1];n=\"runtime.\"+n if p.startswith(\"runtime/\") else n\n m=types.ModuleType(n);m.__file__=\"/tmp/\"+p+\".py\";sys.modules[n]=m\n exec(compile(get(p+\".py\"),m.__file__,\"exec\"),m.__dict__)\nsuite=unittest.TestSuite()\nfor mod,classes in [(\"test_model_gate\",[\"CoordinatorTests\",\"ExistingContainerTests\",\"GateHttpTests\"]),(\"test_generic_model_registry\",[\"GenericModelRegistryTests\"]),(\"test_generic_core_handoff_deadline\",[\"GenericCoreHandoffDeadlineTests\"]),(\"test_generic_handoff_residents\",[\"GenericHandoffTests\"]),(\"test_sse_stream_contract\",[\"StreamContractTests\"])]:\n for c in classes:suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(getattr(sys.modules[mod],c)))\nv=unittest.TextTestRunner(verbosity=1).run(suite)\nprint(\"AI_CORE_FULL_MOCK_SHA=\"+s+\" CASES=\"+str(v.testsRun)+\" PASS=\"+str(v.wasSuccessful()))\nassert v.wasSuccessful()'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
