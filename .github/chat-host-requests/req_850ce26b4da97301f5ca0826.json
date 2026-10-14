@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Read-only forensic for failed webhook Source reflect after Actions dispatch gate fix. Check Host socket/service and webhook clean checkout (secrets not printed), so replan exact issue.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "command": "cd /home/admin1/server-core; echo SOURCE_REFLECT_SERVICE; systemctl --user is-active gace-servercore-source-reflect.service || true; echo SOURCE_REFLECT_SOCKET; if test -S /run/gace/servercore-source-reflect.sock; then echo PRESENT; else echo ABSENT; fi; echo HOST_HEAD; git rev-parse HEAD; echo REFLECT_REGISTRY; python3 -c 'import json; a=[x for x in json.load(open(\"operations/master-internal-repositories.json\"))[\"repositories\"] if x.get(\"repository\")==\"seigo-gace/webhook-gateway\"]; print(\"count\",len(a),\"ops\",a[0].get(\"allowed_operations\"),\"reflect\",a[0][\"runtime_target\"].get(\"source_reflect\"))'; echo WEBHOOK; git -C /home/admin1/projects/webhook-gateway rev-parse HEAD; git -C /home/admin1/projects/webhook-gateway status --porcelain=v1 --untracked-files=all | head -n 8; echo UNIT_STATUS; systemctl --user show gace-servercore-source-reflect.service -p ActiveState -p SubState -p Result"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "PR223 Host reflected 6167307586; Webhook source request Issue #10 receipt 6167320922 returned FAIL exit1; webhook Host previous 04747d0 clean after local excludes 6167023172."
+  }
+}
