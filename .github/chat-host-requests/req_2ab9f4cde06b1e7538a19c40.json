@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Gateway minimal API-key compatibility: inspect existing Host checkout and presence-only deployment key names. Read-only, never output secrets or mutate running webhook.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d3e9b0d288d27f8832bca434636f2b157a20af52",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "04747d0d579154827a7db2875d388adbbaaf956b",
+    "command": "cd /home/admin1/projects/webhook-gateway && printf 'HEAD=' && git rev-parse HEAD && printf 'BRANCH=' && git branch --show-current && printf 'TRACKED_DIRTY=' && git status --porcelain=v1 --untracked-files=no && printf 'ENV_FILE_PRESENT=' && test -f .env && echo yes || echo no; printf 'LEGACY_TOKEN_KEY_CONFIGURED='; if grep -q '^INTERNAL_EVENT_API_TOKEN=' .env 2>/dev/null; then echo yes; else echo no; fi; printf 'PROJECT_KEY_CONFIGURED='; if grep -q '^INTERNAL_EVENT_API_PROJECT_KEYS_JSON=' .env 2>/dev/null; then echo yes; else echo no; fi"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "Only read existing gateway checkout and environment key names, not values. PR26 already merged; user wants internal entry and preserve running original gateway.",
+    "source_design_aligned": true,
+    "source_evidence": "G-ACE Manifest, GPT_CHAT #17, server-core Workspace §6/9, Issue #10 Current; Gateway main e10a0d7 CI run 38549843273 PASS; Host main receipt 6166384719 old checkout 04747d0; Notion Gateway design §10 updated."
+  }
+}
