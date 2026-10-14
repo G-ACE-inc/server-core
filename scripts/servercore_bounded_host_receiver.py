@@ -4,6 +4,7 @@ import json
 import os
 import re
 import socket
+import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -449,9 +450,18 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
         server_version = "gace-servercore-bounded-host/1"
 
         def log_message(self, _format, *_args):
+            # Do not log raw headers, paths, signatures, tokens or request bodies.
             return
 
         def send_json(self, status, payload, *, accepted=False):
+            # Always expose the bounded admission/result status in Docker logs.
+            # Only authenticated, pattern-verified request ids may be correlated.
+            request_id = getattr(self, "_verified_request_id", None)
+            safe_id = request_id if isinstance(request_id, str) and REQUEST_ID_PATTERN.fullmatch(request_id) else "-"
+            error = payload.get("error") if isinstance(payload, dict) else None
+            safe_error = error if isinstance(error, str) and re.fullmatch(r"[A-Z_]{3,80}", error) else "-"
+            print(f"GACE_RECEIVER_RESULT status={int(status)} request_id={safe_id} error={safe_error} recorded={str(payload.get('result_recorded', '-')).lower() if isinstance(payload, dict) else '-'}",
+                  file=sys.stderr, flush=True)
             data = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
@@ -459,8 +469,14 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
             self.send_header("Cache-Control", "no-store")
             if accepted:
                 self.send_header("x-gace-accepted", "true")
-            self.end_headers()
-            self.wfile.write(data)
+            try:
+                self.end_headers()
+                self.wfile.write(data)
+            except (BrokenPipeError, ConnectionResetError):
+                # The caller disconnected; the Host result is handled by the durable sink,
+                # not by re-running the request or dumping an uncorrelated traceback.
+                print("GACE_RECEIVER_CLIENT_DISCONNECTED status=" + str(status),
+                      file=sys.stderr, flush=True)
 
         def do_GET(self):
             if self.path != HEALTH_PATH:
@@ -507,6 +523,7 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                     hint_id = parsed.get("id") if isinstance(parsed.get("id"), str) \
                         and REQUEST_ID_PATTERN.fullmatch(parsed.get("id")) else None
                     hint_command, hint_sha = parsed.get("command_id"), parsed.get("expected_sha")
+                    self._verified_request_id = hint_id
                 request = validate_request(parsed, contract)
                 if request["command_id"] == "project.source_reflect":
                     result = dispatch_reflect(request)

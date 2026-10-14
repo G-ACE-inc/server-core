@@ -191,6 +191,18 @@ class ReceiverResultTests(unittest.TestCase):
         base.update(kw)
         return base
 
+    def test_receiver_denial_has_redacted_diagnostic_log(self):
+        log = __import__("io").StringIO()
+        with patch.object(receiver.sys, "stderr", log):
+            status, body = self.post(self.serve(), self.request(command_id="not.registered"))
+        self.assertEqual((status, body["error"]), (422, "COMMAND_NOT_REGISTERED"))
+        value = log.getvalue()
+        self.assertIn("GACE_RECEIVER_RESULT status=422", value)
+        self.assertIn("request_id=" + RID, value)
+        self.assertIn("error=COMMAND_NOT_REGISTERED", value)
+        self.assertNotIn("webhook-signature", value)
+        self.assertNotIn("secret", value)
+
     def test_success_is_reported_with_exit_code_sha_and_stdout(self):
         reports = []
         fake = {"command_id": "project.git_head", "source_sha": SHA, "read_only": True}
