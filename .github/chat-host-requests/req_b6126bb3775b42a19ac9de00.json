@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Post-merge host source status and Vault API credential existence audit",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "command": "python3 -c 'import subprocess,os; p=[\"/home/admin1/projects/libral-vault\",\"/home/admin1/projects/astera_v8\",\"/home/admin1/projects/GPG-Core\"];[(print(x,\"HEAD\",subprocess.run([\"git\",\"-C\",x,\"rev-parse\",\"HEAD\"],capture_output=True,text=True).stdout.strip(),\"BRANCH\",subprocess.run([\"git\",\"-C\",x,\"branch\",\"--show-current\"],capture_output=True,text=True).stdout.strip(),\"DIRTY_COUNT\",len(subprocess.run([\"git\",\"-C\",x,\"status\",\"--porcelain\"],capture_output=True,text=True).stdout.splitlines()))) for x in p];print(\"RUNTIME_TMPS\",os.path.isdir(\"/run/user/1000\"));print(\"VAULT_TOKEN_FILE\",os.path.isfile(\"/home/admin1/.config/libral-vault/internal-token\"))'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/Libral-Vault/pull/6"
+  }
+}
