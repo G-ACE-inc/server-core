@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Read-only gateway Compose config key presence without values, to avoid losing existing live token when redeploying optional keys.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d3e9b0d288d27f8832bca434636f2b157a20af52",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "04747d0d579154827a7db2875d388adbbaaf956b",
+    "command": "cd /home/admin1/projects/webhook-gateway; echo FILE_KEY_NAMES; cut -d= -f1 .env | grep INTERNAL_EVENT || true; docker compose -f docker-compose.yml config --format json | jq -e .services.api.environment.INTERNAL_EVENT_API_TOKEN >/dev/null && echo COMPOSE_LEGACY_PRESENT || echo COMPOSE_LEGACY_MISSING; docker compose -f docker-compose.yml config --format json | jq -e .services.api.environment.INTERNAL_EVENT_API_PROJECT_KEYS_JSON >/dev/null && echo COMPOSE_PROJECT_KEYS_PRESENT || echo COMPOSE_PROJECT_KEYS_MISSING"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "Source main merged e10a0d7; Host old checkout and old API process legacy true, project false. Audit effective Compose config without disclosing key values.",
+    "source_design_aligned": true,
+    "source_evidence": "Owner Issue #1 and PR26 CI PASS; Issue #10 Host receipts 6166384719,6166486902,6166526639; current source docker-compose.yml env_file .env."
+  }
+}
