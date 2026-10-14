@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core exact SHA Coordinator and Gate HTTP tests in memory",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "5497d888d8dffca6a608fef740e9c340fc36d074",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import io,tarfile,urllib.request,types,sys,unittest\nsha=\"4a8f3a2aebe5ae3c4328a88c3963ed558e9ba5b3\"\ndata=urllib.request.urlopen(\"https://api.github.com/repos/seigo-gace/ai-core/tarball/\"+sha,timeout=12).read(800001)\nassert len(data)<800001\ntar=tarfile.open(fileobj=io.BytesIO(data),mode=\"r:gz\")\nsrc={f.name.split(\"/\",1)[1]:tar.extractfile(f).read().decode() for f in tar.getmembers() if f.isfile()}\nfor name,body in src.items():\n if name.endswith(\".py\"): compile(body,name,\"exec\")\nruntime=types.ModuleType(\"runtime\");runtime.__path__=[];sys.modules[\"runtime\"]=runtime\nmod=types.ModuleType(\"runtime.model_gate\");mod.__file__=\"/tmp/ai-core/runtime/model_gate.py\";sys.modules[\"runtime.model_gate\"]=mod\nexec(compile(src[\"runtime/model_gate.py\"],mod.__file__,\"exec\"),mod.__dict__)\ntest=types.ModuleType(\"test_model_gate\");test.__file__=\"/tmp/ai-core/tests/test_model_gate.py\";test.__name__=\"test_model_gate\"\nexec(compile(src[\"tests/test_model_gate.py\"],test.__file__,\"exec\"),test.__dict__)\nsuite=unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(getattr(test,c)) for c in (\"CoordinatorTests\",\"ExistingContainerTests\",\"GateHttpTests\")])\nrunner=unittest.TextTestRunner(verbosity=1)\nresult=runner.run(suite)\nprint(\"AI_CORE_COORDINATOR_SOURCE_SHA=\"+sha+\" TESTS=\"+str(result.testsRun)+\" FAIL=\"+str(len(result.failures))+\" ERR=\"+str(len(result.errors)))\nassert result.wasSuccessful()'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
