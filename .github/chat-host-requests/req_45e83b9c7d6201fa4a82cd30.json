@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Read-only before protected server-core source reflection. Pin exact Host HEAD, dirty paths, protected Registry SHA256 and existing Writer sockets. Never print registry content/secrets.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d3e9b0d288d27f8832bca434636f2b157a20af52",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "d3e9b0d288d27f8832bca434636f2b157a20af52",
+    "command": "cd /home/admin1/server-core && printf 'HOST_MAIN=' && git rev-parse HEAD && printf 'GIT_STATUS=' && git status --porcelain=v1 --untracked-files=normal | head -n 30 && printf 'REGISTRY_SHA256=' && sha256sum operations/master-internal-repositories.json | cut -d' ' -f1 && printf 'LATEST_ORIGIN_REF=' && git rev-parse origin/main && printf 'SOURCE_REFLECT_SOCKET=' && test -S /run/gace/servercore-source-reflect.sock && echo PRESENT || echo MISSING; printf 'DEPLOY_WRITER_SOCKET='; test -S /run/gace/servercore-service-deploy.sock && echo PRESENT || echo MISSING"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "PR221 merged fa822287; need exact Host protected Registry state before any reflection or grant. Existing Webhook healthy; no mutation.",
+    "source_design_aligned": true,
+    "source_evidence": "Project #1 Manifest; #17 Current; server-core Workspace §6/9; Issue #10 runtime d3e9b0d receipt 6166819072; #221 CI PASS and merge fa822287."
+  }
+}
