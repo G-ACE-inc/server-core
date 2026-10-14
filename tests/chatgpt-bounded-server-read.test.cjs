@@ -26,6 +26,33 @@ test("Independent bounded Host dispatch does not require DebugAI product route",
     {mode:"bounded_host",commandId:"project.source_reflect"});
   assert.match(wf,/steps\.target\.outputs\.bounded_host_enabled != 'true'/);
 });
+test("Explicit registered Compose source-reflect admitted without granting arbitrary repos",()=>{
+  const entry=registry.repositories.find(item=>item.repository==="seigo-gace/webhook-gateway");
+  assert.equal(entry.runtime_target.source_reflect,true);
+  const request={enabled:true,command_id:"project.source_reflect",
+    expected_sha:"e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    expected_before:"04747d0d579154827a7db2875d388adbbaaf956b",
+    repository:"seigo-gace/webhook-gateway",branch:"main"};
+  assert.deepEqual(d.validateDispatch({
+    target:{...target,mode:"readonly",server_command_id:"",
+      gitops_request:{enabled:false},source_reflect_request:{enabled:false},
+      bounded_host_request:request},
+    route,registry,gitRefName:"main"}),
+    {mode:"bounded_host",commandId:"project.source_reflect"});
+  const missingOptIn=structuredClone(registry);
+  missingOptIn.repositories.find(item=>item.repository===request.repository).runtime_target.source_reflect=false;
+  assert.throws(()=>d.validateDispatch({
+    target:{...target,mode:"readonly",server_command_id:"",
+      gitops_request:{enabled:false},source_reflect_request:{enabled:false},
+      bounded_host_request:request},
+    route,registry:missingOptIn,gitRefName:"main"}),/BOUNDED_HOST_REFLECT_RUNTIME_DENIED/);
+  const wrongRepo={...request,repository:"other/not-registered"};
+  assert.throws(()=>d.validateDispatch({
+    target:{...target,mode:"readonly",server_command_id:"",
+      gitops_request:{enabled:false},source_reflect_request:{enabled:false},
+      bounded_host_request:wrongRepo},
+    route,registry,gitRefName:"main"}),/BOUNDED_HOST_REFLECT_DELEGATION_DENIED/);
+});
 test("Independent Host request is selected only after legacy client checks",()=>{
   const legacy=wf.indexOf("      - name: Verify copied bounded Actions client and CHAT decision gate");
   const select=wf.indexOf("      - name: Select commit-local CHAT request (without shared target mutation)");
