@@ -26,13 +26,12 @@ class IsolatedRequests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     m.select(added, changed)
 
-    def test_isolated_actions_concurrency_keeps_legacy_lane(self):
+    def test_current_terminal_uses_independent_commit_lanes(self):
         workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text()
-        self.assertIn("github.event.head_commit.message", workflow)
-        self.assertIn("[isolated-host-request]", workflow)
-        self.assertNotIn("github.event.head_commit.added", workflow)
-        self.assertIn("github.sha || 'legacy'", workflow)
+        self.assertIn("group: common-host-${{ github.sha }}", workflow)
         self.assertIn("cancel-in-progress: false", workflow)
+        self.assertNotIn("github.sha || 'legacy'", workflow)
+        self.assertNotIn("DEBUGAI_CF_ACCESS_CLIENT_ID", workflow)
 
     def test_receipt_and_effect_admission(self):
         with tempfile.TemporaryDirectory() as d:
