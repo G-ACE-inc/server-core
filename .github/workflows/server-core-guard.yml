@@ -566,6 +566,7 @@ jobs:
         run: |
           set -euo pipefail
           # This archived request contains only a runtime random-key GENERATOR.
+          # The blob pin is not a key; an altered request is scanned in full.
           # Exclude it only while the audited Git blob is byte-identical; any
           # edit restores full scanning, and every other request stays scanned.
           archived_request=".github/chat-host-requests/req_e8a16f43db952c78041ad6b9.json"
