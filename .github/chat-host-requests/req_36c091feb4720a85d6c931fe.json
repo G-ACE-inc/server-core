@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Single safe synthetically generated canonical development event, privacy.redacted true, through existing Gateway internal API using GPT-issued server-core key to existing TGserver development-events destination. Exactly one event, no sensitive payload, verify durable 202 and receipt; worker DB delivery checked separately.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "command": "cd /home/admin1/projects/webhook-gateway && docker compose exec -T api node -e '(async()=>{const k=JSON.parse(process.env.INTERNAL_EVENT_API_PROJECT_KEYS_JSON||\"{}\")[\"server-core\"];if(!k)process.exit(5);const c=require(\"node:crypto\");const e={schema:\"gace.development.event.v1\",event_id:\"\",occurred_at:new Date().toISOString(),source_surface:\"runtime\",session_id:\"gace-e2e-\"+Date.now(),sequence:1,project:{repository:\"seigo-gace/webhook-gateway\",stream:\"default\"},log_domain:\"development\",event_type:\"RUNTIME_VERIFY\",severity:\"info\",summary:\"Synthetic no-personal-data Gateway to TGserver end-to-end verification\",outcome:\"OBSERVED\",privacy:{redacted:true}};e.event_id=c.createHash(\"sha256\").update([e.schema,e.source_surface,e.project.repository,e.project.stream,e.session_id,\"1\"].join(\"\\n\")).digest(\"hex\");const body={eventId:e.event_id,eventType:\"gace.development.event.v1\",sourceId:\"server-core\",destinationId:\"tgserver-development-events\",data:e};const r=await fetch(\"http://127.0.0.1:7373/internal/events\",{method:\"POST\",headers:{\"content-type\":\"application/json\",\"x-internal-api-token\":k},body:JSON.stringify(body)});const x=await r.json().catch(()=>({}));console.log(JSON.stringify({http:r.status,ok:x.ok===true,deliveries:x.deliveries,event_id:e.event_id,duplicate:x.duplicate===true}));if(r.status!==202||x.ok!==true||x.deliveries!==1)process.exit(2)})().catch(e=>{console.log(e.name);process.exit(3)})'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Webhook main e10a0d7 Host 6167434178, key issue 6167518545, auth E2E 6167640821, TGserver authenticated canonical route malformed body 422 expected: https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6167786616. Send one valid synthetic redacted event."
+  }
+}
