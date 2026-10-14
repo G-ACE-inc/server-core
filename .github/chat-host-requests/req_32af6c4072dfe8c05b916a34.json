@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Retry exact ff-only Gateway Source with git pack-preserving fetch mode rather than unpack-objects after all nested object dirs verified admin1 writable. No docker/keys/registry modification.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "04747d0d579154827a7db2875d388adbbaaf956b",
+    "command": "cd /home/admin1/projects/webhook-gateway && test \"$(git rev-parse HEAD)\" = 04747d0d579154827a7db2875d388adbbaaf956b && test -z \"$(git status --porcelain=v1 --untracked-files=all)\" && git -c fetch.unpackLimit=1 fetch --no-tags origin refs/heads/main && test \"$(git rev-parse FETCH_HEAD)\" = e10a0d7606b21c38f0d4f875f7a403cd3d5fe296 && git merge-base --is-ancestor HEAD FETCH_HEAD && git merge --ff-only --no-edit FETCH_HEAD && printf 'WEBHOOK_HEAD=' && git rev-parse HEAD && git status --porcelain=v1 --untracked-files=all"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Source PR26 main e10a0d7; Host Git fetch first failed unpack-objects due object write permission Issue #10 6167380549; object subdirs checked writable Issue #10 6167413434. Try pack storage as existing Git option."
+  }
+}
