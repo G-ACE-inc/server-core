@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Master-directed Host common terminal: reflect latest main containing merged PR228 deploy health warmup using guarded ff-only Git, strict clean repo, registered remote, branch main and byte-preserved protected registry; no Docker, no AI Core.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "command": "cd /home/admin1/server-core && test \"$(git rev-parse HEAD)\" = 7a9ea997f62167946991ecb7734c0859e2d9d57d && test \"$(git branch --show-current)\" = main && test -z \"$(git status --porcelain=v1 --untracked-files=all)\" && test \"$(git remote get-url origin)\" = https://github.com/G-ACE-inc/server-core.git && before=$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1) && git -c fetch.unpackLimit=1 fetch --no-tags origin refs/heads/main && git merge-base --is-ancestor 01aad727eac3f61cb4b9eaf18c521e1962ae89b8 FETCH_HEAD && test -z \"$(git diff --name-only HEAD FETCH_HEAD -- operations/master-internal-repositories.json)\" && git merge-base --is-ancestor HEAD FETCH_HEAD && git merge --ff-only --no-edit FETCH_HEAD && test \"$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1)\" = \"$before\" && printf 'HOST_REFLECT_HEAD=' && git rev-parse HEAD && echo 'PROTECTED_REGISTRY=UNCHANGED' && echo 'WEBHOOK_RUNTIME=UNTOUCHED'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Master directs normal terminal arbitrary commands. PR228 merged exact SHA 01aad727 with 6 CI checks SUCCESS; PR226 scanner fix merged; prior Host registered source_reflect failed REMOTE_BRANCH_SHA_MISMATCH due concurrent main tip https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6168418002. Guarded ff-only to actual remote tip; never mutate protected registry, webhook API, or AI Core."
+  }
+}
