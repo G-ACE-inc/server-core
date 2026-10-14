@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Verify NEW running webhook API project key and existing legacy token through same /internal/events: no key and wrong key ->401, both valid keys ->422 for deliberately unknown destination (no event delivery), health=200. Never output keys. Existing worker/Postgres unchanged.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "7a9ea997f62167946991ecb7734c0859e2d9d57d",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "command": "cd /home/admin1/projects/webhook-gateway && docker compose exec -T api node - <<'JS'\nconst assert=require(\"node:assert/strict\");\nconst keys=JSON.parse(process.env.INTERNAL_EVENT_API_PROJECT_KEYS_JSON||\"{}\");\nassert(keys[\"server-core\"]&&keys[\"server-core\"].length>=32);\nassert(process.env.INTERNAL_EVENT_API_TOKEN);\nconst body=JSON.stringify({eventId:\"gace-key-probe-\"+Date.now(),eventType:\"gace.internal.key.probe\",sourceId:\"server-core\",destinationId:\"gace-probe-unknown-destination\",data:{probe:true}});\n(async()=>{\nconst result={};\nfor(const [name,k] of Object.entries({missing:\"\",wrong:\"invalid-key-negative-case\",legacy:process.env.INTERNAL_EVENT_API_TOKEN,project:keys[\"server-core\"]})){\nconst headers={\"content-type\":\"application/json\"};if(k)headers.authorization=\"Bearer \"+k;\nconst r=await fetch(\"http://127.0.0.1:7373/internal/events\",{method:\"POST\",headers,body});result[name]=r.status;\n}\nconst h=await fetch(\"http://127.0.0.1:7373/healthz\");\nconsole.log(JSON.stringify({health:h.status,auth_status:result,key_values_logged:false}));\nif(h.status!==200||result.missing!==401||result.wrong!==401||result.legacy!==422||result.project!==422)process.exit(2);\n})().catch(()=>process.exit(3));\nJS"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Gateway PR26 Host reflected 6167434178, ProjectKey issued Compose PASS 6167518545; service deploy accepted 6167534603, asynchronous ledger SERVICE_HEALTH_NOT_READY but independent API docker compose ps healthy 6167572034. Probe unknown destination avoids persist/delivery."
+  }
+}
