@@ -131,5 +131,20 @@ class AcceptTests(Fixture):
         self.assertIsNone(m.read_result(REQ["id"], self.dir))
 
 
+
+class HostCommandUmaskTests(unittest.TestCase):
+    def test_socket_umask_does_not_mask_host_child_directories(self):
+        import subprocess
+        from unittest.mock import patch
+        # Verify the child shell behavior without touching another repository.
+        with tempfile.TemporaryDirectory() as directory:
+            child = Path(directory) / "created"
+            script = "umask 0022; mkdir " + str(child)
+            subprocess.run(["/bin/bash", "-lc", script], check=True)
+            self.assertEqual(child.stat().st_mode & 0o777, 0o755)
+        source = (SCRIPTS / "servercore_service_deploy_socket.py").read_text()
+        self.assertIn('"umask 0022; " + command_text', source)
+        self.assertIn("old = os.umask(0o117)", source)
+
 if __name__ == "__main__":
     unittest.main()
