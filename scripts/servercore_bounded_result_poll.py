@@ -163,10 +163,14 @@ def main(argv=None, fetch=gh_api, sleep=time.sleep, clock=time.monotonic):
     since = (datetime.now(timezone.utc) - timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
     path = f"repos/{args.repository}/issues/{args.issue}/comments?per_page=100&since={since}"
     deadline = clock() + max(1, min(args.timeout, 600))
+    api_failures = 0
+    successful_reads = 0
     while True:
         try:
             comment, record = find_result(fetch(path), args.request_id)
+            successful_reads += 1
         except (RuntimeError, ValueError, OSError):
+            api_failures += 1
             comment = record = None
         if record:
             code, verdict = evaluate(record, args.request_id, args.command_id, args.expected_sha)
@@ -176,6 +180,14 @@ def main(argv=None, fetch=gh_api, sleep=time.sleep, clock=time.monotonic):
         if clock() >= deadline:
             print("SERVERCORE_BOUNDED_HOST_RESULT=NOT_RETURNED")
             print(f"SERVERCORE_BOUNDED_HOST_REQUEST_ID={args.request_id}")
+            print(f"SERVERCORE_BOUNDED_HOST_ISSUE_API_READS={successful_reads}")
+            print(f"SERVERCORE_BOUNDED_HOST_ISSUE_API_FAILURES={api_failures}")
+            if api_failures and not successful_reads:
+                print("SERVERCORE_BOUNDED_HOST_FAILURE_CLASS=ISSUE_API_UNAVAILABLE")
+            elif api_failures:
+                print("SERVERCORE_BOUNDED_HOST_FAILURE_CLASS=ISSUE_API_INTERMITTENT")
+            else:
+                print("SERVERCORE_BOUNDED_HOST_FAILURE_CLASS=REQUEST_RESULT_NOT_FOUND")
             write_observation(args.observation_json, args.request_id)
             return 2
         sleep(args.interval)
