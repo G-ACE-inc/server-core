@@ -164,9 +164,8 @@ class DockerRouteTests(unittest.TestCase):
              patch.object(receiver.bounded_host, "head_sha", return_value=SHA), \
              patch.object(receiver, "deploy_socket_call", return_value=reply):
             result = receiver.dispatch_docker_operation(request, Path("/x"))
-        self.assertEqual(len(result["stdout"]), 16000)
-        self.assertTrue(result["stdout"].endswith(":LATEST"))
-        self.assertTrue(result["stdout_truncated"])
+        self.assertEqual(result["stdout"], payload)
+        self.assertFalse(result["stdout_truncated"])
 
 class HostTerminalRouteTests(unittest.TestCase):
     def test_gateway_and_receiver_use_existing_route(self):
