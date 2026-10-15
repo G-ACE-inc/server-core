@@ -26,6 +26,26 @@ class IsolatedRequests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     m.select(added, changed)
 
+    def test_server_core_dispatcher_and_target_sha_must_agree(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "request.json"
+            base = {**BASE, "bounded_host_request": {
+                "enabled": True, "command_id": "host.command",
+                "repository": "G-ACE-inc/server-core",
+                "expected_sha": "a" * 40, "repo_sha": "b" * 40,
+                "command": "git rev-parse HEAD"}}
+            p.write_text(json.dumps(base))
+            with self.assertRaisesRegex(ValueError, "SERVER_CORE_HOST_SHA_PINS_CONFLICT"):
+                m.prepare(p)
+            base["bounded_host_request"]["repo_sha"] = "a" * 40
+            p.write_text(json.dumps(base))
+            self.assertEqual(m.prepare(p)["bounded_host_request"]["repo_sha"], "a" * 40)
+            # Other repositories have distinct registered target checkout SHAs.
+            base["bounded_host_request"]["repository"] = "seigo-gace/ai-core"
+            base["bounded_host_request"]["repo_sha"] = "b" * 40
+            p.write_text(json.dumps(base))
+            self.assertEqual(m.prepare(p)["bounded_host_request"]["repo_sha"], "b" * 40)
+
     def test_current_terminal_uses_independent_commit_lanes(self):
         workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text()
         self.assertIn("group: common-host-${{ github.sha }}", workflow)
