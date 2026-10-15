@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core exact HEAD sync and bounded Gate suite",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "bash -o pipefail -c 'p=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015; test -z \"$(git -C \"$p\" status --porcelain)\" || exit 7; git -C \"$p\" fetch origin 8e72b3b7a964a85102e3d9c6943670f67e33dd9c && git -C \"$p\" checkout --detach 8e72b3b7a964a85102e3d9c6943670f67e33dd9c || exit 8; cd \"$p\"; timeout 35s python3 -m unittest discover -s tests -p \"test_model_gate.py\" -q 2>&1 | tail -c 1100'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
