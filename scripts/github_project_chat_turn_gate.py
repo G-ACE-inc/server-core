@@ -154,7 +154,7 @@ def next_agent_action(state):
         remaining = state.get("remaining_actions")
         if isinstance(remaining, list) and remaining:
             return remaining[0]
-        if state.get("stop_reason") == "VERIFIED_COMPLETE" and state.get("mission_acceptance_verified") is True:
+        if state.get("stop_reason") == "VERIFIED_COMPLETE" and evaluate(state) == "PASS":
             return "MISSION_ACCEPTED"
         return "RECHECK_STOP_EVIDENCE"
     if phase == "START":
