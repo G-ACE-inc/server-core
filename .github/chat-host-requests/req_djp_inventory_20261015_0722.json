@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DJPMCP existing Host data inventory no writes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport json\nroot=Path('/home/admin1/projects/Deterministic-Japanese-Parser-MCP')\nprint('REPO_EXISTS',root.is_dir())\nfor folder in ('work/direct-final-release-input','work/direct-final-compiled/system','dictionaries/system/compiled','work'):\n p=root/folder\n print('LOCATION',folder,'exists',p.is_dir())\n if p.is_dir():\n  for x in sorted(p.iterdir())[:30]:\n   print('ITEM',str(x.relative_to(root)), 'dir' if x.is_dir() else x.stat().st_size)\nfor p in root.glob('work/**/manifest.json'):\n if any(x in p.parts for x in ('node_modules','.git')):continue\n print('MANIFEST',str(p.relative_to(root)), 'bytes',p.stat().st_size)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/Deterministic-Japanese-Parser-MCP/issues/51"
+  }
+}
