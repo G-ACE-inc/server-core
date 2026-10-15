@@ -68,12 +68,6 @@ def main():
     p.add_argument("--notion-page-url")
     args = p.parse_args()
     data = json.loads(args.notion_search_json.read_text(encoding="utf-8"))
-    if isinstance(data, dict):
-        try:
-            from scripts.chat_notion_comment_adapter import parse_comments
-        except ModuleNotFoundError:
-            from chat_notion_comment_adapter import parse_comments
-        data = parse_comments(data.get("structuredContent", data), args.cu_url)
     try:
         from scripts.chat_notion_context_ingest import ingest
     except ModuleNotFoundError:
