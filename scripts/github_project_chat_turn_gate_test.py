@@ -80,6 +80,24 @@ class DecisionTests(unittest.TestCase):
             {"state": "PASS", "exit_code": 0}, "REQUEST_ID_MISMATCH"),
             ("CORRELATION_FAILED", "INSPECT_RESULT_CORRELATION"))
 
+    def test_host_result_poll_emits_machine_readable_continuation(self):
+        import contextlib
+        import importlib.util
+        import io
+        poll_path = module_path.with_name("servercore_bounded_result_poll.py")
+        poll_spec = importlib.util.spec_from_file_location("host_result_poll_emission", poll_path)
+        poll = importlib.util.module_from_spec(poll_spec)
+        poll_spec.loader.exec_module(poll)
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            poll.emit({"request_id": "req_example", "state": "FAIL", "exit_code": 1,
+                       "stderr": "SOURCE_SHA_MISMATCH", "stdout": ""},
+                      {"html_url": "https://github.com/G-ACE-inc/server-core/issues/10"}, "OK")
+        rendered = stdout.getvalue()
+        self.assertIn("CHAT_HOST_OBSERVATION=HOST_SOURCE_SHA_MISMATCH", rendered)
+        self.assertIn("CHAT_NEXT_ACTION=READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION", rendered)
+        self.assertNotIn("MISSION_ACCEPTED", rendered)
+
     def test_live_workflow_has_request_gate_before_host_access(self):
         workflow = (module_path.parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text(encoding="utf-8")
         assert "CHAT_START_GATE_RECEIPT_MISSING" in workflow
