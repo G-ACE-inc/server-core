@@ -5,10 +5,13 @@ authenticated Notion client. Never infer adoption from a free-text comment.
 """
 import json
 
-def ingest(payload, cu_url):
+def ingest(payload, cu_url, page_url=None):
     from scripts.chat_notion_comment_adapter import parse_comments
     if isinstance(payload, list):
         return payload
+    if page_url is not None:
+        from scripts.chat_notion_page_evidence import page_evidence
+        return page_evidence(payload, cu_url, page_url)
     if not isinstance(payload, dict):
         raise ValueError("NOTION_PAYLOAD_INVALID")
     if isinstance(payload.get("structuredContent"), dict):
