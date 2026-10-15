@@ -7,6 +7,23 @@ from scripts import servercore_bounded_result_poll as poll
 
 
 class TerminalOutputTests(unittest.TestCase):
+    def test_clipped_preview_requires_lossless_chunk_readback(self):
+        import contextlib
+        import io
+        partial = dict(request_id="req_" + "b" * 24, command_id="host.command",
+                       state="PASS", exit_code=0, stdout="start",
+                       stdout_preview_truncated=True, stdout_chars=9000,
+                       stdout_sha256="a" * 64, stderr="")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            poll.emit(partial, {"html_url": "https://github.com/G-ACE-inc/server-core/issues/10"}, "OK")
+        out = buf.getvalue()
+        self.assertIn("CHAT_HOST_OBSERVATION=HOST_OUTPUT_PARTIAL", out)
+        self.assertIn("CHAT_NEXT_ACTION=READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE", out)
+        self.assertIn("CHAT_HOST_STDOUT_COMPLETE=FALSE", out)
+        self.assertIn("CHAT_HOST_STDOUT_CHARS=9000", out)
+        self.assertIn("CHAT_HOST_STDOUT_SHA256=" + "a" * 64, out)
+
     def test_host_observation_retains_long_streams(self):
         stdout = "START-" + "a" * 18000 + "-END"
         stderr = "ERR-" + "b" * 5000 + "-END"
