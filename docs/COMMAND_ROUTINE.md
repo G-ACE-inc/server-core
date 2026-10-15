@@ -1,12 +1,12 @@
-# Command Routine — Lightweight Self-Check
+# AI自由コマンド作成・簡易ゲート
 
-Applies immediately before an AI-authored server command is executed. This is an **AI-internal self-check**, not a Master approval, confirmation request, Project Gate, or separate execution service.
+通常の開発実行は、CHAT自身がShellコマンドを作成して既存の `host.command` から実行する。対象Repo・作業ディレクトリ・実行先・現在のSHAを確認し、既存のGitHub Actions → Gateway → Receiver → Hostを使用する。Masterに技術判断やコマンド選択を求めない。
 
-This check applies to commands of any length and to commands with any required input/output volume. Do not impose line, byte, character, token, stdout or stderr limits merely to satisfy this routine. Transport/runtime capacity, secrecy and safety are checked separately; never silently drop output. This is not the Master copy/paste command contract.
+実行直前にAI自身が一度だけ確認する。
+1. **破損**：意図しない削除・上書き・他者の作業への影響がないか。
+2. **誤り**：対象、構文、引数、実行先が正しいか。
+3. **見直し**：完成したコマンド本文を読み直したか。
 
-Check the completed command once:
-1. **Damage:** Will it unintentionally damage or delete existing work?
-2. **Mistake:** Are the target, syntax, and arguments correct?
-3. **Review:** Did I reread the final command before executing it?
+問題なければ即実行。問題があればAI自身で修正して続行する。実行結果を確認して開発を続ける。この簡易ゲートはMasterの承認、独立したテスト工程、逐次報告、入力・出力の恣意的な容量制限を増やさない。権限・認証・機密保護・不可逆操作の既存境界は守る。隔離開発が必要な場合だけ `dev.job` を使用する。
 
-If clear, execute immediately through the existing authorized terminal. If a mistake is found, correct it and recheck without stopping the development task or asking Master. A local syntax check is optional when useful; local testing and an additional approval process are not mandatory. Respect existing protection for genuinely irreversible or unauthorized effects. Verify the actual result and continue. No per-command narrative report, new infrastructure, arbitrary input/output limits, or case-specific rule additions.
+Masterへコマンドを渡す例外的な場合だけ `docs/MASTER_TERMINAL_COMMAND.md` を適用する。
