@@ -144,6 +144,7 @@ jobs:
 
 
       - name: Persist CHAT host observation for cross-chat recovery
+        id: host_observation_artifact
         if: ${{ always() && env.BOUNDED_HOST_REQUEST_ID != '' }}
         uses: actions/upload-artifact@v4
         with:
@@ -151,6 +152,30 @@ jobs:
           path: /tmp/gace-chat-host-observation.json
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Expose Host observation artifact locator
+        if: ${{ always() && env.BOUNDED_HOST_REQUEST_ID != '' }}
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.host_observation_artifact.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.host_observation_artifact.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          echo "CHAT_HOST_OBSERVATION_RUN_ID=$GITHUB_RUN_ID"
+          echo "CHAT_HOST_OBSERVATION_REQUEST_ID=$BOUNDED_HOST_REQUEST_ID"
+          if [[ -z "${ARTIFACT_ID:-}" || -z "${ARTIFACT_URL:-}" ]]; then
+            echo "CHAT_HOST_OBSERVATION_ARTIFACT=UNAVAILABLE"
+            exit 0
+          fi
+          echo "CHAT_HOST_OBSERVATION_ARTIFACT_ID=$ARTIFACT_ID"
+          echo "CHAT_HOST_OBSERVATION_ARTIFACT_URL=$ARTIFACT_URL"
+          {
+            echo "### CHAT Host observation"
+            echo "Request: \`$BOUNDED_HOST_REQUEST_ID\`"
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "Artifact: $ARTIFACT_URL"
+            echo "Artifact ID: \`$ARTIFACT_ID\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   issue-history-export:
     if: ${{ contains(github.event.head_commit.message, '[issue-export]') }}
