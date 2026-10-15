@@ -1,11 +1,14 @@
 """Parse bounded Notion discussion evidence for an existing GitHub CU."""
 import xml.etree.ElementTree as ET
+import json
 
 def parse_comments(envelope, cu_url):
     if isinstance(envelope, dict):
         envelope = envelope.get("text", "")
     if not isinstance(envelope, str) or len(envelope) > 500000:
         raise ValueError("NOTION_INPUT_INVALID")
+    if envelope.lstrip().startswith("{"):
+        envelope = json.loads(envelope).get("text", "")
     root = ET.fromstring(envelope)
     if root.tag != "discussions":
         raise ValueError("NOTION_FORMAT_INVALID")
