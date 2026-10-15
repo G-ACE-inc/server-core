@@ -92,6 +92,39 @@ def persist_receipt(path, payload):
     staged.replace(destination)
 
 
+def assess_diagnostic_context(context, continuation):
+    """Distinguish evidence from hypotheses without overriding Host observations."""
+    if not isinstance(context, dict) or not isinstance(continuation, dict):
+        raise ValueError("DIAGNOSTIC_CONTEXT_INVALID")
+    symptom = context.get("symptom")
+    hypotheses = context.get("hypotheses", [])
+    if not isinstance(symptom, str) or not symptom.strip() or not isinstance(hypotheses, list):
+        raise ValueError("DIAGNOSTIC_CONTEXT_INVALID")
+    if len(hypotheses) > 16:
+        raise ValueError("DIAGNOSTIC_CONTEXT_TOO_LARGE")
+    checked = []
+    for item in hypotheses:
+        if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"].strip():
+            raise ValueError("DIAGNOSTIC_HYPOTHESIS_INVALID")
+        proof = item.get("evidence_url")
+        refutation = item.get("refutation_url")
+        for url in (proof, refutation):
+            if url is not None and (not isinstance(url, str) or not re.fullmatch(
+                r"https://github[.]com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/(?:issues/[1-9][0-9]*(?:#issuecomment-[1-9][0-9]*)?|actions/runs/[1-9][0-9]*|commit/[a-f0-9]{40}|pull/[1-9][0-9]*)", url
+            )):
+                raise ValueError("DIAGNOSTIC_EVIDENCE_URL_INVALID")
+        repeated = item.get("previous_attempt_failed") is True
+        status = ("REFUTED" if refutation else
+                  "REVIEW_BEFORE_REPEAT" if repeated else
+                  "EVIDENCE_REFERENCED_NOT_CAUSE_PROVEN" if proof else "HYPOTHESIS_ONLY")
+        checked.append({"id": item["id"], "status": status,
+                        "evidence_url": proof, "refutation_url": refutation})
+    return {"symptom": symptom, "hypotheses": checked,
+            "observed_action": continuation.get("next_action"),
+            "action_authority": "FRESH_GITHUB_HOST_EVIDENCE_NOT_DIAGNOSTIC_TEXT",
+            "causal_claim_verified": False}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint-json", type=Path, default=None)
@@ -100,6 +133,7 @@ def main():
     parser.add_argument("--request-id")
     parser.add_argument("--cu-issue-url")
     parser.add_argument("--receipt-json", type=Path)
+    parser.add_argument("--diagnostic-context-json", type=Path)
     parser.add_argument("--notion-context-json", type=Path)
     parser.add_argument("--notion-page-url")
     parser.add_argument("--development-evidence-json", type=Path)
@@ -114,6 +148,9 @@ def main():
         checkpoint = continuation_checkpoint(
             restore(args.repository, args.run_id, args.request_id), args.cu_issue_url)
     result = {"checkpoint": checkpoint, "continuation": resume(checkpoint)}
+    if args.diagnostic_context_json:
+        diagnostic = json.loads(args.diagnostic_context_json.read_text(encoding="utf-8"))
+        result["diagnostic_assessment"] = assess_diagnostic_context(diagnostic, result["continuation"])
     if args.notion_context_json:
         try:
             from scripts.chat_notion_cu_context import build, readback_issue

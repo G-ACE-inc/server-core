@@ -31,6 +31,9 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_terminal_unbounded_command_regression.py' -v
           python3 -m unittest discover -s tests -p 'test_host_terminal_full_output.py' -v
 
+      - name: Agent continuation diagnostic regression
+        run: python3 -m unittest scripts/chat_cu_continuation_test.py -v
+
       - name: CU40 design-before-source preflight
         if: github.event_name == 'pull_request'
         env:
