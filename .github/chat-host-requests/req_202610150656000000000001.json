@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core live authenticated real Coder model POST",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -a; source /home/admin1/projects/ai-core/router/.env.router; set +a; echo aW1wb3J0IG9zLGpzb24sdXJsbGliLnJlcXVlc3QKdXJsPSdodHRwOi8vMTI3LjAuMC4xOjE4MTg0L3YxL2NoYXQvY29tcGxldGlvbnMnCmRhdGE9eydtb2RlbCc6Jy9tb2RlbHMvcXdlbjIuNS1jb2Rlci03Yi1pbnN0cnVjdC1xNF9rX20uZ2d1ZicsJ21lc3NhZ2VzJzpbeydyb2xlJzondXNlcicsJ2NvbnRlbnQnOidSZXBseSB3aXRoIE9LLid9XSwnbWF4X3Rva2Vucyc6MTIsJ3N0cmVhbSc6RmFsc2V9CnI9dXJsbGliLnJlcXVlc3QuUmVxdWVzdCh1cmwsZGF0YT1qc29uLmR1bXBzKGRhdGEpLmVuY29kZSgpLGhlYWRlcnM9eydBdXRob3JpemF0aW9uJzonQmVhcmVyICcrb3MuZW52aXJvblsnTExBTUFfU1dBUF9BUElfS0VZJ10sJ0NvbnRlbnQtVHlwZSc6J2FwcGxpY2F0aW9uL2pzb24nfSkKcHJpbnQodXJsbGliLnJlcXVlc3QudXJsb3BlbihyLHRpbWVvdXQ9MTcwKS5yZWFkKCkuZGVjb2RlKClbOjE2MDBdKQo= | base64 -d | python3 -"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
