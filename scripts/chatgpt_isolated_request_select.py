@@ -43,6 +43,12 @@ def prepare(path):
         raise ValueError("CONCURRENT_EFFECT_DENIED")
     if data.get("server_command_id") or data.get("run_id"):
         raise ValueError("OTHER_COMMAND_DENIED")
+    bounded = data["bounded_host_request"]
+    # The dispatcher and target checkout are the same for server-core itself.
+    # Reject contradictory pins before enqueuing a doomed Host operation.
+    if bounded.get("command_id") == "host.command" and bounded.get("repository") == "G-ACE-inc/server-core":
+        if bounded.get("expected_sha") != bounded.get("repo_sha"):
+            raise ValueError("SERVER_CORE_HOST_SHA_PINS_CONFLICT")
     return data
 
 def main():
