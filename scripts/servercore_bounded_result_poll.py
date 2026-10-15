@@ -134,7 +134,7 @@ def write_observation(path, request_id, record=None, comment=None, verdict=None)
                                for stream in ("stdout", "stderr")}}
     dest = Path(path)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\\n", encoding="utf-8")
+    dest.write_text(json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
 
 
 def main(argv=None, fetch=gh_api, sleep=time.sleep, clock=time.monotonic):
