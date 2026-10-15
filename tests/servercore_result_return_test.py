@@ -84,8 +84,11 @@ class SinkTests(unittest.TestCase):
 
         def runner(args, stdin=None, timeout=40):
             calls.append((args, stdin))
-            if args[:2] == ["api", "--paginate"]:
-                return ""
+            if args[:2] == ["api", "-X"]:
+                return json.dumps({"id": 77, "html_url": "https://github.com/x/y/issues/10#issuecomment-77"})
+            if "/comments?" in args[-1]:
+                return "[]"
+            return json.dumps({"comments": 9876})
             return json.dumps({"id": 77, "html_url": "https://github.com/x/y/issues/10#issuecomment-77"})
 
         found = sink.publish_record(RID, result_dir=self.dir, runner=runner)
@@ -104,8 +107,11 @@ class SinkTests(unittest.TestCase):
         sink.accept_record(rec(), result_dir=self.dir)
 
         def runner(args, stdin=None, timeout=40):
-            if args[:2] == ["api", "--paginate"]:
-                return "55\thttps://github.com/x/y/issues/10#issuecomment-55\ttrue\n"
+            if "/comments?" in args[-1]:
+                return json.dumps([{"id": 55, "html_url": "https://github.com/x/y/issues/10#issuecomment-55",
+                                    "body": "<!-- GACE_BOUNDED_HOST_RESULT request_id=" + RID + " -->"}])
+            if args == ["api", f"repos/{sink.RESULT_REPOSITORY}/issues/{sink.RESULT_ISSUE}"]:
+                return json.dumps({"comments": 1})
             raise AssertionError("must not post twice")
 
         self.assertEqual(sink.publish_record(RID, result_dir=self.dir, runner=runner)["comment_id"], 55)
@@ -147,8 +153,11 @@ class SinkTests(unittest.TestCase):
         self.assertIn(RID, sink.pending_ids(self.dir))
 
         def online(args, stdin=None, timeout=40):
-            if args[:2] == ["api", "--paginate"]:
-                return ""
+            if args[:2] == ["api", "-X"]:
+                return json.dumps({"id": 77, "html_url": "https://github.com/x/y/issues/10#issuecomment-77"})
+            if "/comments?" in args[-1]:
+                return "[]"
+            return json.dumps({"comments": 9876})
             return json.dumps({"id": 77, "html_url": "https://github.com/x/y/issues/10#issuecomment-77"})
 
         self.assertEqual(sink.publish_record(RID, result_dir=self.dir, runner=online)["comment_id"], 77)
