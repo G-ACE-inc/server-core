@@ -1,0 +1,115 @@
+{
+  "schema": "gace.notion.efficiency.evidence.v1",
+  "scope": "server-core Notion efficiency design and implementation only",
+  "design": {
+    "url": "https://github.com/G-ACE-inc/server-core/blob/main/docs/GPT_CHAT_PROJECT_AGENT_DESIGN.md",
+    "section": "13",
+    "source": "github main"
+  },
+  "notion": {
+    "minutes_url": "https://app.notion.com/p/3facdcf128e4816793c7c611228e9dad",
+    "observed_source": "Notion fetch"
+  },
+  "cu": {
+    "url": "https://github.com/G-ACE-inc/server-core/issues/40",
+    "role": "GPT CHAT continuation CU; not a new Notion authority"
+  },
+  "pull_requests": [
+    {
+      "pr_number": 263,
+      "title": "design(agent): adopt Notion Free context index and Drive-backed large references",
+      "url": "https://github.com/G-ACE-inc/server-core/pull/263",
+      "merged": true,
+      "merge_sha": "2e97f5e35b9498f68ba4115799676985d23330ad",
+      "head_sha": "a9ed63a853d874aaa6c222b8b39ff968ba4ea3c9"
+    },
+    {
+      "pr_number": 264,
+      "title": "docs(agent): reconcile full lifecycle minutes with actual runtime gaps",
+      "url": "https://github.com/G-ACE-inc/server-core/pull/264",
+      "merged": true,
+      "merge_sha": "3a36ca1f9c6d8b0c5b49e0e60723ee77db1afc5f",
+      "head_sha": "8354657a6db12fa4043dde2db63ea91858c2f305"
+    },
+    {
+      "pr_number": 265,
+      "title": "feat(chat): bounded Notion decision context selection for CU continuation",
+      "url": "https://github.com/G-ACE-inc/server-core/pull/265",
+      "merged": true,
+      "merge_sha": "c9f3d7db24435aacd6e0d2405eeb16f5fae71ae4",
+      "head_sha": "4f543b7c05cc1ac4fc37c6a9939bc1d693cbe778"
+    },
+    {
+      "pr_number": 266,
+      "title": "feat(chat): adapt existing Notion comment tool output to CU context",
+      "url": "https://github.com/G-ACE-inc/server-core/pull/266",
+      "merged": true,
+      "merge_sha": "a94e054721d90159d7a3d20960d712473d27ccba",
+      "head_sha": "0ed5a67b58252b6ed21263c299917cb3eda42edd"
+    },
+    {
+      "pr_number": 267,
+      "title": "feat(chat): fresh GitHub CU readback for Notion context restoration",
+      "url": "https://github.com/G-ACE-inc/server-core/pull/267",
+      "merged": true,
+      "merge_sha": "da899c7ff81022502ee35f2ffb7974d9071e4eaf",
+      "head_sha": "a4dfc75ab10544f755393e14543cb01905d457c6"
+    },
+    {
+      "pr_number": 268,
+      "title": "fix(chat): verify live CU Current when Notion context joins continuation",
+      "url": "https://github.com/G-ACE-inc/server-core/pull/268",
+      "merged": true,
+      "merge_sha": "eff18564cdf3c051a03d521143819f9808417235",
+      "head_sha": "ebfde55ffc391b9a999989d746f1669d837bdb27"
+    },
+    {
+      "pr_number": 269,
+      "title": "feat(chat): connect actual Notion response to existing CU continuation",
+      "url": "https://github.com/G-ACE-inc/server-core/pull/269",
+      "merged": true,
+      "merge_sha": "5d2a3345144d635a7758d6dd4d6ff8ff837905c0",
+      "head_sha": "527965f2a0a1e965eef2d064ac45e9e8e183949f"
+    },
+    {
+      "pr_number": 270,
+      "title": "feat(chat): integrate fetched Notion page evidence into CU continuation",
+      "url": "https://github.com/G-ACE-inc/server-core/pull/270",
+      "merged": true,
+      "merge_sha": "770a6909f57be74150abf813c04b69e23182d629",
+      "head_sha": "8b066684a865d11d8e62302805f8619d661d6bd5"
+    },
+    {
+      "pr_number": 271,
+      "title": "fix(chat): validate Notion page provenance before CU context use",
+      "url": "https://github.com/G-ACE-inc/server-core/pull/271",
+      "merged": true,
+      "merge_sha": "4e5474da2c129ce491484adf307abe33b228c594",
+      "head_sha": "d5c6bec8e54e58e8c4235865af773506578f656f"
+    },
+    {
+      "pr_number": 272,
+      "title": "feat(chat): combine Notion page and minutes evidence into one CU pilot receipt",
+      "url": "https://github.com/G-ACE-inc/server-core/pull/272",
+      "merged": true,
+      "merge_sha": "71a86df4446a78a2ac004cf748919ae45b0d5d27",
+      "head_sha": "3a01db10c78260330fe51b5cb5c2ebada08d3c77"
+    },
+    {
+      "pr_number": 273,
+      "title": "feat(chat): correlate Notion pilot metrics with verified CU run continuation",
+      "url": "https://github.com/G-ACE-inc/server-core/pull/273",
+      "merged": true,
+      "merge_sha": "b268ef4fe64c53f0abc3a95f827e5fbf3aa14ef2",
+      "head_sha": "8bc002fe4746e3fd13b3a5ce150fd39dbae10298"
+    }
+  ],
+  "acceptance": {
+    "design": "ADOPTED",
+    "source": "MERGED",
+    "notion_connector_to_cli_live": "NOT_VERIFIED",
+    "cross_chat_tool_action": "NOT_VERIFIED",
+    "improvement_measurement": "NOT_MEASURED"
+  },
+  "provenance": "PR fields re-fetched from GitHub get_pr_info; no generated run or Host evidence"
+}
