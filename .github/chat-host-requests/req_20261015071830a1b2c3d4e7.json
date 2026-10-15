@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Bounded authorized TGserver project credential swap with backup and API-only recreate",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -euo pipefail\ncd /home/admin1/projects/webhook-gateway\npython3 - <<'PY'\nimport json, os, pathlib, secrets, subprocess, tempfile, time\np=pathlib.Path('.env')\nif not p.is_file(): raise SystemExit('MISSING_GATEWAY_ENV')\norig=p.read_bytes()\nlines=orig.decode().splitlines(keepends=True)\nfound=[i for i,v in enumerate(lines) if v.startswith('INTERNAL_EVENT_API_PROJECT_KEYS_JSON=')]\nif len(found)!=1: raise SystemExit('PROJECT_KEY_ENTRY_COUNT_INVALID')\nraw=lines[found[0]].split('=',1)[1].strip()\ntry: keys=json.loads(raw.strip(\"'\\\"\"))\nexcept Exception: raise SystemExit('PROJECT_KEY_JSON_INVALID')\nif not isinstance(keys,dict) or not keys.get('server-core'): raise SystemExit('SERVERCORE_EXISTING_KEY_MISSING')\nif keys.get('tgserver'): raise SystemExit('TGSERVER_ALREADY_CONFIGURED_ABORT_NO_ROTATION')\nif subprocess.run(['gh','auth','status'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode: raise SystemExit('GH_AUTH_UNAVAILABLE')\nif subprocess.run(['gh','api','repos/seigo-gace/TGserver','--jq','.permissions.admin'],capture_output=True,text=True).stdout.strip()!='true': raise SystemExit('GH_REPO_WRITE_NOT_CONFIRMED')\nkey=secrets.token_hex(32)\nkeys['tgserver']=key\npayload=json.dumps(keys,ensure_ascii=False,separators=(',',':'))\nlines[found[0]]=\"INTERNAL_EVENT_API_PROJECT_KEYS_JSON='\"+payload+\"'\\n\"\nupdated=''.join(lines).encode()\nbackup=pathlib.Path('.env.tgserver-key-before-'+time.strftime('%Y%m%dT%H%M%SZ',time.gmtime()))\nfd=os.open(backup,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)\nwith os.fdopen(fd,'wb') as f: f.write(orig); f.flush();os.fsync(f.fileno())\ndef restore():\n t=p.with_name('.env.tgserver-key-rollback-temp')\n t.write_bytes(orig);os.chmod(t,0o600);os.replace(t,p)\n subprocess.run(['docker','compose','up','-d','--no-deps','--force-recreate','api'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=140)\ndef check_healthy():\n for _ in range(55):\n  z=subprocess.run(['docker','inspect','-f','{{.State.Health.Status}}','webhook-gateway-api-1'],capture_output=True,text=True)\n  if z.returncode==0 and z.stdout.strip()=='healthy': return True\n  time.sleep(2)\n return False\ntry:\n t=p.with_name('.env.tgserver-key-change-temp'); t.write_bytes(updated);os.chmod(t,0o600);os.replace(t,p)\n subprocess.run(['docker','compose','up','-d','--no-deps','--force-recreate','api'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=140)\n if not check_healthy(): raise RuntimeError('API_HEALTH_NOT_READY')\n r=subprocess.run(['gh','secret','set','DEVLOG_GATEWAY_TOKEN','--repo','seigo-gace/TGserver'],input=key+'\\n',text=True,capture_output=True,timeout=30)\n if r.returncode: raise RuntimeError('GH_SECRET_UPDATE_FAILED')\n print('PROJECT_KEY_TGSERVER_REGISTERED=PASS')\n print('SERVERCORE_EXISTING_KEY_PRESERVED=PASS')\n print('GATEWAY_LEGACY_AUTH_PRESERVED=PASS')\n print('GATEWAY_API_HEALTH=PASS')\n print('TGSERVER_ACTION_SECRET_UPDATED=PASS')\n print('BACKUP_FILE='+str(backup))\nexcept Exception as ex:\n print('MIGRATION_FAILED='+type(ex).__name__+':'+str(ex))\n restore()\n print('GATEWAY_CONFIG_ROLLED_BACK=PASS')\n raise SystemExit(2)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "protected_runtime",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "existing_config_only",
+    "source_design_aligned": true,
+    "source_evidence": "Master requested move TGserver to per-project Gateway key; bounded retained legacy and servercore, gh secret, API-only recreate; rollback preserved"
+  }
+}
