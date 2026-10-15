@@ -38,8 +38,8 @@ def main():
     n = 0
     digest = hashlib.sha256()
     with target.open("wb") as dest, records.open("w", encoding="utf-8") as jsonout:
-        header = ("ISSUE=" + repository + "#" + str(number) + "\\nTITLE=" + str(meta.get("title") or "") +
-                  "\\nBODY:\\n" + str(meta.get("body") or "") + "\\n").encode("utf-8")
+        header = ("ISSUE=" + repository + "#" + str(number) + "\nTITLE=" + str(meta.get("title") or "") +
+                  "\nBODY:\n" + str(meta.get("body") or "") + "\n").encode("utf-8")
         dest.write(header)
         digest.update(header)
         for page in range(1, pages + 1):
@@ -71,9 +71,9 @@ def main():
     with zipfile.ZipFile(OUT / "issue-comments.zip", "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as z:
         for name in ("issue-comments.txt", "issue-comments.jsonl", "manifest.json"):
             z.write(OUT / name, name)
-    print("ISSUE10_EXPORT=PASS")
+    print("ISSUE_EXPORT=PASS")
     print("ISSUE_EXPORT_COMMENTS=" + str(n))
-    print("ISSUE10_EXPORT_TEXT_SHA256=" + digest.hexdigest())
-    print("ISSUE10_EXPORT_ZIP_BYTES=" + str((OUT / "issue10-comments.zip").stat().st_size))
+    print("ISSUE_EXPORT_TEXT_SHA256=" + digest.hexdigest())
+    print("ISSUE_EXPORT_ZIP_BYTES=" + str((OUT / "issue-comments.zip").stat().st_size))
 if __name__ == "__main__":
     main()
