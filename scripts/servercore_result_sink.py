@@ -9,6 +9,7 @@ control Issue using the Host's existing GitHub CLI connection. No new token,
 MCP, workflow or network listener.
 """
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -158,10 +159,15 @@ def accept_record(value, *, result_dir=None, now=None):
 def comment_body(record):
     view = public_view(record)
     view.pop("published", None)
+    # Issue is an index/status surface, never a stream delivery channel.
+    # Keep complete redacted streams in the durable Host ledger only.
     for stream in ("stdout", "stderr"):
-        preview, clipped = bound(view.get(stream, ""), STREAM_LIMIT)
-        view[stream] = preview
-        view[stream + "_preview_truncated"] = clipped
+        full = str(record.get(stream) or "")
+        view[stream + "_chars"] = len(full)
+        view[stream + "_bytes"] = len(full.encode("utf-8"))
+        view[stream + "_sha256"] = hashlib.sha256(full.encode("utf-8")).hexdigest()
+        view[stream + "_preview_truncated"] = bool(full)
+        view[stream] = ""
     lines = [
         f"<!-- {MARKER} request_id={record['request_id']} -->",
         f"[{MARKER}] request_id={record['request_id']}",
