@@ -138,5 +138,15 @@ jobs:
             --repository "$GITHUB_REPOSITORY" --issue 10 \
             --request-id "$BOUNDED_HOST_REQUEST_ID" \
             --command-id "$BOUNDED_HOST_COMMAND_ID" \
-            --expected-sha "$BOUNDED_HOST_EXPECTED_SHA"
+            --expected-sha "$BOUNDED_HOST_EXPECTED_SHA" \
+            --observation-json /tmp/gace-chat-host-observation.json
 
+
+      - name: Persist CHAT host observation for cross-chat recovery
+        if: ${{ always() && env.BOUNDED_HOST_REQUEST_ID != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-host-observation-${{ github.sha }}
+          path: /tmp/gace-chat-host-observation.json
+          if-no-files-found: warn
+          retention-days: 30
