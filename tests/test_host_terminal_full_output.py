@@ -25,7 +25,7 @@ class HostOutputChunks(unittest.TestCase):
                 parts = []
                 offset = 0
                 while True:
-                    page = chunk(request_id, stream, offset, 131071, dirname)
+                    page = chunk(request_id, stream, offset, 8192, dirname)
                     parts.append(page["data"])
                     offset = page["next_offset"]
                     if page["complete"]:
