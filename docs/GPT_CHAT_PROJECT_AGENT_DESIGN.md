@@ -120,7 +120,7 @@ F. **No-regression**: 旧固定コマンドの使用、新規Token/MCP/Workflow/
 
 設計採用後のSource実装は既存Ownerや他CHATの変更と衝突しない小さな差分に限定。本文は設計であり、Runtime合格やNotion自動記録の完成宣言ではない。
 
-### 9.7 採用根拠・現状証拠
+### 9.7 採用根拠・現状証拠（設計案の検証入口）
 Notion検討: https://app.notion.com/p/3facdcf128e4816793c7c611228e9dad
 本日のMaster構想復元: https://app.notion.com/p/3facdcf128e481ba9899d003cac95e5c
 既存設計: `docs/SERVER_CORE_DESIGN.md` §16.11 / §17
