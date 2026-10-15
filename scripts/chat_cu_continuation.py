@@ -114,11 +114,12 @@ def main():
     result = {"checkpoint": checkpoint, "continuation": resume(checkpoint)}
     if args.notion_context_json:
         try:
-            from scripts.chat_notion_cu_context import build
+            from scripts.chat_notion_cu_context import build, readback_issue
         except ModuleNotFoundError:
-            from chat_notion_cu_context import build
+            from chat_notion_cu_context import build, readback_issue
         source = json.loads(args.notion_context_json.read_text(encoding="utf-8"))
         context = build(checkpoint["cu_issue_url"], source, checkpoint["cu_issue_url"])
+        context["fresh_github_issue"] = readback_issue(checkpoint["cu_issue_url"])
         result["notion_context"] = context
         # Context augments rationale; only fresh GitHub run verification
         # determines the executable next action.
