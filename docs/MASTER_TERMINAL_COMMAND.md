@@ -9,7 +9,7 @@ Role: G-ACE WorkspaceでAIがMasterへ提示するTerminal Commandの形式・�
 
 本Contractは、Workspace AI / Server AI / Cursor / Codex等がMasterへCopy & Paste用Commandを提示する場合に必ず適用する。
 
-Notion最上位大原則のMaster Terminal Command Contractを弱めてはならない。server-core側では、Workspace / Server AIがNotion本文を直接読まなくても同じ安全境界を守れるよう、実行時に必要なCommand契約を保持する。
+Masterへの手動コマンド引継ぎは、Workspace §6に定める直接実行不能時の最終手段に限る。通常のサーバー操作はserver-core共通 `host.command` 経路を使用する。この文書は最終手段のコマンド形式と安全境界のみを定義し、旧経路や追加のMaster承認手順を復活させない。
 
 ## 2. Master Interface
 
