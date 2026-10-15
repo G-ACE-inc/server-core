@@ -101,11 +101,22 @@ def main():
     parser.add_argument("--run-id", type=int, required=True)
     parser.add_argument("--request-id", required=True)
     parser.add_argument("--cu-issue-url", default=None)
+    parser.add_argument("--checkpoint-json", default=None)
     args = parser.parse_args()
     result = restore(args.repository, args.run_id, args.request_id)
     if args.cu_issue_url:
         result = continuation_checkpoint(result, args.cu_issue_url)
-    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    encoded = json.dumps(result, ensure_ascii=False, sort_keys=True) + "\n"
+    if args.checkpoint_json:
+        if not args.cu_issue_url:
+            parser.error("--checkpoint-json requires --cu-issue-url")
+        destination = Path(args.checkpoint_json)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=destination.parent, delete=False) as temp:
+            temp.write(encoded)
+            staged = Path(temp.name)
+        staged.replace(destination)
+    print(encoded, end="")
 
 
 if __name__ == "__main__":
