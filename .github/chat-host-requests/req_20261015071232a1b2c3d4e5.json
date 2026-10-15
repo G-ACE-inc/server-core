@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "TGserver project-key migration preflight read-only no secret outputs",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -eu; printf 'HOST_USER='; id -un; printf 'GH_AUTH='; if gh auth status >/dev/null 2>&1; then echo AVAILABLE; else echo NOT_AVAILABLE; fi; for p in /home/admin1/projects/webhook-gateway /home/admin1/projects/TGserver /home/admin1/TGserver; do if [ -d \"$p\" ]; then printf 'DIR_PRESENT=%s\\n' \"$p\"; fi; done; docker ps --format '{{.Names}} {{.Status}}' | grep -Ei 'webhook|tgs|tgserver' || true; for n in INTERNAL_EVENT_API_PROJECT_KEYS_JSON INTERNAL_EVENT_API_TOKEN; do if [ -f /home/admin1/projects/webhook-gateway/.env ] && grep -q \"^${n}=\" /home/admin1/projects/webhook-gateway/.env; then printf 'GATEWAY_%s=PRESENT\\n' \"$n\"; else printf 'GATEWAY_%s=ABSENT\\n' \"$n\"; fi; done; printf 'TG_REPO='; gh repo view seigo-gace/TGserver --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo NOT_ACCESSIBLE"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "TGserver existing webhook project-key migration preflight no secrets exposed"
+  }
+}
