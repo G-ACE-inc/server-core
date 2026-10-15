@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CU40 focused Host observation propagation test exact source; no Host checkout mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -eu; tmp=$(mktemp -d); trap 'rm -rf \"$tmp\"' EXIT; curl -fLsS --max-time 40 'https://api.github.com/repos/G-ACE-inc/server-core/tarball/7be72a72b1607e9e09663104615251d377b14e9e' | tar -xz -C \"$tmp\" --strip-components=1; cd \"$tmp\"; python3 -m unittest scripts.github_project_chat_turn_gate_test.DecisionTests.test_host_result_emits_chat_observation_and_next_action scripts.github_project_chat_turn_gate_test.DecisionTests.test_host_result_observation_continues_after_failure_or_pass -v; printf 'CHAT_OBSERVATION_SOURCE_TEST=PASS\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Existing Issue #40 owns Chat continuity; source commit 7be72a72b1607e9e09663104615251d377b14e9e adds output assertion; prior Host SHA 96d01bb confirmed in Issue #10; isolated temporary exact-source test."
+  }
+}
