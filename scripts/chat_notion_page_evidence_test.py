@@ -11,7 +11,10 @@ class PageEvidenceTests(unittest.TestCase):
         self.assertEqual(build(CU,rows,CU)["count"],1)
         self.assertEqual(rows[0]["state"],"UNKNOWN")
     def test_unrelated_page_not_attributed(self):
-        self.assertEqual(page_evidence("<page><content>different CU</content></page>",CU,PAGE),[])
+        self.assertEqual(page_evidence('<page url="'+PAGE+'"><content>different CU</content></page>',CU,PAGE),[])
+    def test_wrong_source_page_rejected(self):
+        with self.assertRaisesRegex(ValueError,"PAGE_SOURCE_MISMATCH"):
+            page_evidence('<page url="https://app.notion.com/p/other"><content>'+CU+'</content></page>',CU,PAGE)
     def test_malformed_page_fails(self):
         with self.assertRaisesRegex(ValueError,"PAGE_FORMAT_INVALID"):
             page_evidence("some text",CU,PAGE)
