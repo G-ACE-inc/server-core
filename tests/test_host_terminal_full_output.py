@@ -11,6 +11,27 @@ from servercore_host_output_read import chunk
 from servercore_service_deploy_socket import host_command_wire_reply
 
 
+class HostOutputExport(unittest.TestCase):
+    def test_full_txt_and_zip_export(self):
+        from servercore_host_output_export import export_output
+        import zipfile
+        rid = "req_" + "c" * 24
+        stdout = "日本語Ω" * 300000
+        stderr = "ERR" * 100000
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, rid + ".json").write_text(json.dumps({
+                "request_id": rid, "stdout": stdout, "stderr": stderr}), encoding="utf-8")
+            target = Path(d, "output.zip")
+            metadata = export_output(rid, target, result_dir=d, zipped=True)
+            with zipfile.ZipFile(target) as archive:
+                self.assertEqual(archive.read("stdout.txt"), stdout.encode())
+                self.assertEqual(archive.read("stderr.txt"), stderr.encode())
+                self.assertEqual(json.loads(archive.read("manifest.json")), metadata)
+            txt = Path(d, "output.txt")
+            export_output(rid, txt, result_dir=d)
+            self.assertEqual(txt.read_bytes(), stdout.encode())
+
+
 class HostOutputChunks(unittest.TestCase):
     def test_multimegabyte_output_persisted_and_retrieved_without_loss(self):
         request_id = "req_" + "a" * 24
