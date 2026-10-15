@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "TGserver dedicated Gateway key: real host credential-name and existing project label preflight",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -eu; echo TG_HEAD=$(git -C /home/admin1/projects/TGserver rev-parse --short HEAD); echo TG_STATUS=$(git -C /home/admin1/projects/TGserver status --porcelain | wc -l); echo TG_ACTION_SECRETS_BEGIN; gh secret list -R seigo-gace/TGserver --json name -q '.[].name' 2>/dev/null | grep -E 'GATEWAY|INTERNAL|DEVLOG|PROJECT' || true; echo TG_ACTION_SECRETS_END; echo GATEWAY_PROJECT_KEY_LABELS_BEGIN; python3 -c 'import json,pathlib; p=pathlib.Path(\"/home/admin1/projects/webhook-gateway/.env\"); d={}; [(d.__setitem__(*l.split(\"=\",1))) for l in p.read_text().splitlines() if \"=\" in l and not l.lstrip().startswith(\"#\")] if p.exists() else None; v=d.get(\"INTERNAL_EVENT_API_PROJECT_KEYS_JSON\",\"\"); print(\"KEY_CONFIG_PRESENT=\"+str(bool(v))); print(\"PROJECT_LABELS=\"+\",\".join(sorted(json.loads(v).keys())) if v else \"PROJECT_LABELS=NONE\")' ; echo TG_PRODUCER_REFERENCES; git -C /home/admin1/projects/TGserver grep -n -E 'DEVLOG_GATEWAY_TOKEN|GATEWAY_INTERNAL_EVENT_API_TOKEN|INTERNAL_EVENT_API_PROJECT|tgserver-development-events' -- collector .github 2>/dev/null | cut -c1-240 | head -30 || true"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "investigation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/TGserver/issues/50#issuecomment-6186429183"
+  }
+}
