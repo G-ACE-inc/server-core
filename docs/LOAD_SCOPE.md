@@ -32,7 +32,7 @@ Treat Tool B, TGserver and other capability inspections as dependencies of the c
 
 ### GPT CHAT work continuity
 
-The owning work procedure is `docs/G_ACE_WORKSPACE.md` §6. Keep the approved Mission fixed; choose efficient task grouping and reuse existing evidence without introducing another checklist, report trigger or stopping boundary. For formal Master reports, follow Rule #17 §7. This router adds no independent execution procedure.
+The owning work procedure is `docs/G_ACE_WORKSPACE.md` §6. Keep the approved Mission fixed; choose efficient task grouping and reuse existing evidence without introducing another checklist, report trigger or stopping boundary. For formal Master reports, follow Rule #17's Master-facing communication contract. This router adds no independent execution procedure.
 
 GPT_CHAT拡張RuleをSERVER_AIへdefault loadしない。
 
