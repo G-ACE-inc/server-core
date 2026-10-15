@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CU40 current exact-source regression of Host observation emission and verified mission completion (no checkout mutation).",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -eu; tmp=$(mktemp -d); trap 'rm -rf \"$tmp\"' EXIT; curl -fLsS --max-time 40 'https://api.github.com/repos/G-ACE-inc/server-core/tarball/34f36f8de0d1d407392b025e74289674348ddc43' | tar -xz -C \"$tmp\" --strip-components=1; cd \"$tmp\"; python3 -m unittest scripts/github_project_chat_turn_gate_test.py -v; printf 'EXACT_TEST_SHA=34f36f8de0d1d407392b025e74289674348ddc43\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Manifest and Rule17, Workspace §6, CU40 ownership reviewed. Test exact source 34f36f8de0d1d407392b025e74289674348ddc43 isolated against registered Host 96d01bb; no Host checkout modification."
+  }
+}
