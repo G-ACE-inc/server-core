@@ -268,6 +268,15 @@ GitHubのPR Merge/Issue Closeに連動するProjects built-in Status=Doneは、*
 ## 12. GitHub Issue大量情報の改善を既存Agentに取り込む（2026-10-15）
 **今回のユーザー決定は「Issueの大量本文・コメントを、GPT CHAT側からTXT/ZIPファイルとしてダウンロードして扱える運用機能を採用する」こと。** Action Artifactをサーバー側で作るだけでは要件を満たさない。Agent側で既存GitHub ConnectorのArtifactダウンロード機能を使用し、必要時だけZIP内のTXT/JSONL/manifestを読んで判断する。変更対象はAgent側の取得選択・CU継続であり、他CHATが完成させたIssue I/O自体は再開発しない。 Project主目的と§11のAgent Loopを変更しない。
 
+### 12.0 採用済みIssue運用の優先順位（§10を正本とする）
+**基本は§10のGitHub Project→Issue→PR→Actions→Artifactsの責務分担。** IssueはCUの目的・受入条件・未解決事項・短いCurrentと証拠URLを保持し、Projectが全体進捗を管理する。Notionは議論の意味、PRはSource変更、Actions/Artifactsは実行事実と大容量データを担当。TXT/ZIP導入を理由にIssueをログDBに戻したり、Agentの目的・Owner・Next Actionの決定順序を変えない。
+
+**通常の読み取り:** Project/CU Currentと採用設計→必要なIssue本文/既知コメントURLの限定取得→PR/Run/Artifactの関連証拠→次Action。この範囲で足りればTXT/ZIPは呼ばない。
+
+**追加の取得手段:** コメントが大きい、全文が必要、部分API取得が欠損する場合のみ、既存のIssue Export TXT/JSONL/ZIPをCHAT側にダウンロード。既存Artifact優先、新規Exportは不足時のみ。全文を会話へ貼らず、必要箇所の検証後、CUの同じ受入条件に戻る。
+
+**例外と継続:** Issue #10への全コメント走査は日常運用禁止。特定Run/Artifactを知っていれば直接使用し、取得障害でも独立したGitHub Source/設計/Notion/Tool操作を続行。大量資料取得は目的ではなく判断の補助手段である。
+
 ### 12.1 実装済みのReuse First
 - PR #250: 既存の`.github/workflows/chatgpt-live-api-verify.yml` の`[issue-export]`要求を使用し、任意の対象`owner/repo#Issue`についてUTF-8全文TXT・JSONL・ZIPを既存Actions Artifactとして発行。Issue本文と全コメント、件数、bytes、SHA-256、重複ID/ページ整合性をmanifest化する。**ただしこの全量ページングはActions内の明示的Exportだけ**。出力したArtifactのIDとRunをCHATが取得し、既存GitHub Connectorの`download_workflow_artifact`からCHAT側へZIPをダウンロードできる方式として利用する。通常CHATのIssueコメントAPI全件呼び出しやIssue本文への巨大な再投稿はしない。
 - PR #253: GitHub TokenのRepo間Issue書込制限を尊重し、Artifact locatorを認可済みProjectのControl Issue #10へ登録。登録先のProject制御Issueと、実際にExportした対象Repo/Issueを混同しない。対象Issueへの横断コメント作成権限を増設しない。
