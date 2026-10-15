@@ -6,7 +6,10 @@ authenticated Notion client. Never infer adoption from a free-text comment.
 import json
 
 def ingest(payload, cu_url, page_url=None):
-    from scripts.chat_notion_comment_adapter import parse_comments
+    try:
+        from scripts.chat_notion_comment_adapter import parse_comments
+    except ModuleNotFoundError:
+        from chat_notion_comment_adapter import parse_comments
     if isinstance(payload, list):
         return payload
     if isinstance(payload, dict) and isinstance(payload.get("sources"), list):
@@ -28,7 +31,10 @@ def ingest(payload, cu_url, page_url=None):
                 records.extend(ingest(item.get("response"), cu_url))
         return records
     if page_url is not None:
-        from scripts.chat_notion_page_evidence import page_evidence
+        try:
+            from scripts.chat_notion_page_evidence import page_evidence
+        except ModuleNotFoundError:
+            from chat_notion_page_evidence import page_evidence
         return page_evidence(payload, cu_url, page_url)
     if not isinstance(payload, dict):
         raise ValueError("NOTION_PAYLOAD_INVALID")
