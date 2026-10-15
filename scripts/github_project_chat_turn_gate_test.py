@@ -98,6 +98,26 @@ class DecisionTests(unittest.TestCase):
         self.assertIn("CHAT_NEXT_ACTION=READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION", rendered)
         self.assertNotIn("MISSION_ACCEPTED", rendered)
 
+    def test_host_result_emits_chat_observation_and_next_action(self):
+        import contextlib
+        import importlib.util
+        import io
+        poll_path = module_path.with_name("servercore_bounded_result_poll.py")
+        spec = importlib.util.spec_from_file_location("host_result_poll", poll_path)
+        poll = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(poll)
+        record = {"request_id": "req_" + "a" * 24,
+                  "command_id": "host.command", "state": "FAIL", "exit_code": 1,
+                  "host_sha": "b" * 40, "expected_sha": "b" * 40,
+                  "stderr": "SOURCE_SHA_MISMATCH", "stdout": ""}
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            poll.emit(record, {"html_url": "https://github.com/G-ACE-inc/server-core/issues/10"}, "OK")
+        output = captured.getvalue()
+        self.assertIn("CHAT_HOST_OBSERVATION=HOST_SOURCE_SHA_MISMATCH", output)
+        self.assertIn("CHAT_NEXT_ACTION=READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION", output)
+        self.assertNotIn("MISSION_ACCEPTED", output)
+
     def test_live_workflow_has_request_gate_before_host_access(self):
         workflow = (module_path.parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text(encoding="utf-8")
         assert "CHAT_START_GATE_RECEIPT_MISSING" in workflow
