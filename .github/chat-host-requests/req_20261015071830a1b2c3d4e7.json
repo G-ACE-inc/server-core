@@ -29,7 +29,7 @@
     "purpose_verified": true,
     "cu_verified": true,
     "purpose_cu_aligned": true,
-    "mutation_scope": "protected_runtime",
+    "mutation_scope": "routine_fix",
     "design_status": "DESIGN_NOT_APPLICABLE",
     "design_adoption": "ADOPTED_MAIN",
     "implementation_context": "existing_config_only",
