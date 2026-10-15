@@ -40,6 +40,22 @@ class DecisionTests(unittest.TestCase):
         self.assertEqual(gate.evaluate({**good, "next_action_evidence": "https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6107486587"}), "PASS")
         self.assertEqual(gate.evaluate({**good, "next_action_evidence": "https://github.com/attacker/other/anything"}), "FAILURE_NEXT_ACTION_NOT_EXECUTED")
 
+    def test_next_action_on_failure_does_not_stop_at_report(self):
+        state = dict(phase="FAILURE", failed_step="test failure",
+                     independent_actions=["Inspect traceback", "Repair source", "Retest"],
+                     completed_actions=["Inspect traceback"])
+        self.assertEqual(gate.next_agent_action(state), "Repair source")
+        self.assertEqual(gate.next_agent_action({**state, "completed_actions": [
+            "Inspect traceback", "Repair source", "Retest"]}), "REASSESS_FAILURE_AND_DESIGN")
+
+    def test_next_action_keeps_unfinished_mission_moving(self):
+        self.assertEqual(gate.next_agent_action(dict(
+            phase="STOP", stop_reason="ALL_ACTIONS_BLOCKED",
+            remaining_actions=["Inspect existing logs"])), "Inspect existing logs")
+        self.assertEqual(gate.next_agent_action(dict(
+            phase="STOP", stop_reason="VERIFIED_COMPLETE",
+            remaining_actions=[], mission_acceptance_verified=True)), "MISSION_ACCEPTED")
+
     def test_live_workflow_has_request_gate_before_host_access(self):
         workflow = (module_path.parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text(encoding="utf-8")
         assert "CHAT_START_GATE_RECEIPT_MISSING" in workflow
