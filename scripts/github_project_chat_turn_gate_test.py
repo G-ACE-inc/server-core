@@ -52,9 +52,14 @@ class DecisionTests(unittest.TestCase):
         self.assertEqual(gate.next_agent_action(dict(
             phase="STOP", stop_reason="ALL_ACTIONS_BLOCKED",
             remaining_actions=["Inspect existing logs"])), "Inspect existing logs")
-        self.assertEqual(gate.next_agent_action(dict(
+        valid_complete = dict(
             phase="STOP", stop_reason="VERIFIED_COMPLETE",
-            remaining_actions=[], mission_acceptance_verified=True)), "MISSION_ACCEPTED")
+            stop_evidence="verified acceptance", remaining_actions=[],
+            same_cu_actions_reviewed=True, next_action_decision="MISSION_ACCEPTED",
+            completion_verified=True, mission_acceptance_verified=True)
+        self.assertEqual(gate.next_agent_action(valid_complete), "MISSION_ACCEPTED")
+        self.assertEqual(gate.next_agent_action({
+            **valid_complete, "completion_verified": False}), "RECHECK_STOP_EVIDENCE")
 
     def test_host_result_observation_continues_after_failure_or_pass(self):
         import importlib.util
