@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPT CHAT Project Agent design section 6 output and host SHA readback for one CU",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c0c24449e053c83da1d4f3b8b2c857c0bd3a7af5",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "b40435e756b762ceab182c754e51c19e21bdd082",
+    "command": "git rev-parse HEAD"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED_MAIN",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "GPT CHAT Project Agent design sections 1-8, G-ACE server-core Issue 10 actual Host readback c0c24449, Issue 40 current"
+  }
+}
