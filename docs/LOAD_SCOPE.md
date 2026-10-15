@@ -37,13 +37,9 @@ At the start of a task, read its owning GitHub Project Current (mission, CU, wri
 
 Work for the maximum feasible part of the same Change Unit per turn. If an action is unavailable, perform independent in-scope actions; if no action can be taken by this executor, consult Master with the precise missing capability and one completed command/instruction (if needed), using the command contract. Master selects product/work priorities; executor handles authorized technical work. Do not treat a GitHub record as completion until the actual Mission acceptance is satisfied.
 
-### Master-commissioned integrated development: mission-first dispatch (existing §6)
+### Integrated G-ACE mission routing
 
-When Master commissions improvement of the **ChatGPT-first G-ACE development platform as one task**, a request to inspect Tool B, TGserver or another capability is a **dependency check within that task**, not a new owner CU or permission to abandon the original commission. The approved project-level outcome and the unsatisfied acceptance rows C01–C09 in `docs/GITHUB_PROJECT_RULE_PLANE.md` remain the reference. Use the existing authority map: #15 owns overall migration/client acceptance, #40 owns ordinary CHAT continuity, #10 owns Tool B and common Host, TGserver #50 owns ZERO. Inspection of another owner's evidence does not transfer their mutation ownership.
-
-After each dependency inspection, **return to the commissioned CU's next executable improvement in the same turn**, rather than reporting that the dependency exists, creating a parallel implementation, or giving Master a redundant Server AI assignment. If a dependency already has a known owner action, record its actual latest result; improve independently owned source/design/test work in the commissioned CU. Never claim an E2E acceptance stage from Project registration, a Source merge, Gateway 202, or search 0 alone.
-
-For a genuine missing access needed to complete the commissioned CU, first exhaust currently available GitHub-native edits/PR/CI/readback; then supply **one** tightly scoped complete Server AI or Master command covering only the inaccessible step and its evidence return. Do not demand a new infrastructure install, arbitrary Host shell, broader registration, or new GPT-side UI hook. A terminal command is an exception, not the default work delegation. This is existing §6 dispatch/iterate semantics applied to the commissioned Mission; it is **not** a separate Work Routine or permission to override owner authorization.
+Treat Tool B, TGserver and other capability inspections as dependencies of the commissioned Mission, not new work objectives. Project acceptance C01–C09 is owned by `docs/GITHUB_PROJECT_RULE_PLANE.md`; authority remains #15 (integration), #40 (CHAT continuity), #10 (common Host), TGserver #50 (ZERO). Preserve each CU's mutation owner and resume the original Mission after dependency checks. Execution/blocked-step decisions follow Workspace §6; Source or CI evidence alone does not prove runtime acceptance.
 
 ### GPT CHAT work continuity
 
