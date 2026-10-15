@@ -76,6 +76,8 @@ def continuation_observation(record, verdict):
     """
     if verdict != "OK":
         return "CORRELATION_FAILED", "INSPECT_RESULT_CORRELATION"
+    if any(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated") for stream in ("stdout", "stderr")):
+        return "HOST_OUTPUT_PARTIAL", "READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE"
     if record.get("state") == "PASS" and record.get("exit_code") == 0:
         return "HOST_OPERATION_PASSED", "RECHECK_MISSION_ACCEPTANCE_AND_CONTINUE"
     stderr = str(record.get("stderr") or "")
@@ -97,6 +99,13 @@ def emit(record, comment, verdict):
     observation, next_action = continuation_observation(record, verdict)
     print(f"CHAT_HOST_OBSERVATION={observation}")
     print(f"CHAT_NEXT_ACTION={next_action}")
+    for stream in ("stdout", "stderr"):
+        partial = bool(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated"))
+        print(f"CHAT_HOST_{stream.upper()}_COMPLETE={str(not partial).upper()}")
+        if stream + "_sha256" in record:
+            print(f"CHAT_HOST_{stream.upper()}_SHA256={record[stream + '_sha256']}")
+        if stream + "_chars" in record:
+            print(f"CHAT_HOST_{stream.upper()}_CHARS={record[stream + '_chars']}")
     for stream in ("stdout", "stderr"):
         text = str(record.get(stream) or "")
         print(f"SERVERCORE_BOUNDED_HOST_{stream.upper()}_BEGIN")
