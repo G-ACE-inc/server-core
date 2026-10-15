@@ -143,7 +143,7 @@ def validate_request(value, contract):
         repo_sha = value["repo_sha"]
         if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
                 or not isinstance(repo_sha, str) or not SHA_PATTERN.fullmatch(repo_sha) \
-                or not isinstance(command, str) or not 1 <= len(command) <= 1600 or "\x00" in command:
+                or not isinstance(command, str) or not command or "\x00" in command:
             fail("HOST_COMMAND_TARGET_INVALID", 422)
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
                 "repository": repository, "repo_sha": repo_sha, "command": command}
@@ -332,8 +332,8 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
         result = reply
     return {"command_id": request["command_id"], "repository": request["repository"],
             "source_sha": sha, "repo_sha": request["repo_sha"], "state": result.get("state"), "exit_code": result.get("exit_code", 1),
-            "stdout": str(result.get("stdout") or "")[:16000],
-            "stderr": str(result.get("stderr") or "")[:1000], "read_only": False}
+            "stdout": str(result.get("stdout") or ""),
+            "stderr": str(result.get("stderr") or ""), "read_only": False}
 
 
 def dispatch_docker_logs(request, root, socket_path=None):
