@@ -13,12 +13,12 @@ RESULT_DIR = Path("/home/admin1/logs/servercore-service-deploy")
 REQUEST_ID = re.compile(r"req_[0-9a-f]{24}")
 
 
-def chunk(request_id, stream, offset=0, count=65536, result_dir=RESULT_DIR):
+def chunk(request_id, stream, offset=0, count=8192, result_dir=RESULT_DIR):
     if not REQUEST_ID.fullmatch(request_id):
         raise ValueError("REQUEST_ID_INVALID")
     if stream not in ("stdout", "stderr"):
         raise ValueError("STREAM_INVALID")
-    if offset < 0 or count < 1:
+    if offset < 0 or not 1 <= count <= 8192:
         raise ValueError("RANGE_INVALID")
     path = Path(result_dir) / (request_id + ".json")
     if path.is_symlink() or not path.is_file():
@@ -44,7 +44,7 @@ def main():
     parser.add_argument("request_id")
     parser.add_argument("stream", choices=("stdout", "stderr"))
     parser.add_argument("offset", type=int)
-    parser.add_argument("count", type=int, nargs="?", default=65536)
+    parser.add_argument("count", type=int, nargs="?", default=8192)
     args = parser.parse_args()
     print(json.dumps(chunk(args.request_id, args.stream, args.offset, args.count),
                      ensure_ascii=False))
