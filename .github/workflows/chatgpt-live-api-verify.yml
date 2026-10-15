@@ -194,6 +194,7 @@ jobs:
           test -n "$ARTIFACT_ID" && test -n "$ARTIFACT_URL"
           gh api -X POST "repos/$EXPORT_REPOSITORY/issues/$EXPORT_ISSUE/comments" \
             -f body="<!-- GACE_ISSUE_EXPORT run_id=$GITHUB_RUN_ID -->
+          Issue export target: $EXPORT_REPOSITORY#$EXPORT_ISSUE
           Issue complete TXT/JSONL/ZIP export: $ARTIFACT_URL
           Artifact ID: $ARTIFACT_ID
           Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
