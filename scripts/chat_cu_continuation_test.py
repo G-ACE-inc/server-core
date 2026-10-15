@@ -1,5 +1,5 @@
 import unittest
-from scripts.chat_cu_continuation import resume
+from scripts.chat_cu_continuation import resume, assess_diagnostic_context
 
 BASE = {
     "schema": "gace.chat.cu.handoff.v1",
@@ -38,6 +38,27 @@ class ContinuationTests(unittest.TestCase):
     def test_failed_action_readback_not_false_pass(self):
         result = resume(BASE, api=lambda path: {"head_sha": "b" * 40, "status": "completed", "conclusion": "failure"})
         self.assertEqual(result["next_action"], "READ_RUN_FAILURE_LOGS")
+
+
+class DiagnosticReasoningTests(unittest.TestCase):
+    def test_repeated_hypothesis_is_not_proven_cause(self):
+        context = {"symptom": "Actions run missing", "hypotheses": [
+            {"id": "token_recursion", "previous_attempt_failed": True,
+             "evidence_url": "https://github.com/G-ACE-inc/server-core/issues/40"}]}
+        result = assess_diagnostic_context(context, {"next_action": "READ_RUN_FAILURE_LOGS"})
+        self.assertEqual(result["hypotheses"][0]["status"], "REVIEW_BEFORE_REPEAT")
+        self.assertFalse(result["causal_claim_verified"])
+        self.assertEqual(result["observed_action"], "READ_RUN_FAILURE_LOGS")
+
+    def test_unsubstantiated_theory_stays_hypothesis(self):
+        result = assess_diagnostic_context(
+            {"symptom": "missing", "hypotheses": [{"id": "suspected_token"}]}, {})
+        self.assertEqual(result["hypotheses"][0]["status"], "HYPOTHESIS_ONLY")
+
+    def test_invalid_evidence_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "DIAGNOSTIC_EVIDENCE_URL_INVALID"):
+            assess_diagnostic_context({"symptom": "missing", "hypotheses": [
+                {"id": "guess", "evidence_url": "https://example.com/fake"}]}, {})
 
 
 if __name__ == "__main__":
