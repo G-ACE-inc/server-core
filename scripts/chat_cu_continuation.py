@@ -10,7 +10,10 @@ import re
 import subprocess
 from pathlib import Path
 
-from scripts.chat_host_observation_gh_restore import continuation_checkpoint, restore
+try:
+    from scripts.chat_host_observation_gh_restore import continuation_checkpoint, restore
+except ModuleNotFoundError:
+    from chat_host_observation_gh_restore import continuation_checkpoint, restore
 
 RUN_URL = re.compile(r"https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/actions/runs/([1-9][0-9]*)\Z")
 
