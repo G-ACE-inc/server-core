@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "TGserver project-key migration preflight final format and effective container variable names without credential values",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -eu; python3 - <<'PY'\nimport pathlib,json,ast\np=pathlib.Path('/home/admin1/projects/webhook-gateway/.env')\nlines=p.read_text().splitlines()\nxs=[l.split('=',1)[1].strip() for l in lines if l.startswith('INTERNAL_EVENT_API_PROJECT_KEYS_JSON=')]\nassert len(xs)==1,'PROJECT_KEY_CONFIG_NOT_UNIQUE'\nv=xs[0]\nif len(v)>1 and v[0]==v[-1] and v[0] in ('\"',\"'\"): v=v[1:-1]\nv=v.replace('\\\\\"','\"')\ntry: o=json.loads(v)\nexcept ValueError: o=ast.literal_eval(v)\nassert isinstance(o,dict)\nfor name,entry in o.items(): print('PROJECT',name,'ENTRY_TYPE',type(entry).__name__,'ENTRY_FIELDS',sorted(entry) if isinstance(entry,dict) else 'scalar','ENTRY_FIELD_TYPES', {k:type(val).__name__ for k,val in entry.items()} if isinstance(entry,dict) else '')\nprint('ENV_QUOTE_STYLE', 'single' if xs[0].startswith(\"'\") else 'double' if xs[0].startswith('\"') else 'bare')\nPY\n echo GATEWAY_ENV_WIRING; docker inspect webhook-gateway-api-1 --format '{{range .Config.Env}}{{println .}}{{end}}' | cut -d= -f1 | grep -E 'PROJECT_KEYS|INTERNAL_EVENT_API' || true; echo TG_SECRET_NAMES; gh secret list -R seigo-gace/TGserver --json name -q '.[].name' | grep -E 'DEVLOG_GATEWAY_TOKEN|GACE_EVENT_GATEWAY_TOKEN' || true"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "investigation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6187550458"
+  }
+}
