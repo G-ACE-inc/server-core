@@ -171,7 +171,7 @@ This register distinguishes an **entrypoint source** from an **effective runtime
 | Capability | Existing source/owner | Execution/verification boundary | Acceptance evidence |
 |---|---|---|---|
 | Stable mission, Master latest intent, project isolation | Project #1 + owning Issue Current | Existing authenticated Project/Host admissions, checked against purpose/CU/owner/effects | Real correct-CU allow + wrong-CU/wrong-scope deny; per-project Current readback |
-| GPT CHAT behavior and formal report triggers | #17 (refer to §§5–7) | Actual active CHAT session actions; no known built-in answer pre-send hook | Independent transcript showing progress explanation **followed by** same-turn work and only legitimate STOP |
+| GPT CHAT behavior and formal report triggers | #17 (current continuation and report contract) | Actual active CHAT session actions; no known built-in answer pre-send hook | Independent transcript showing progress explanation **followed by** same-turn work and only legitimate STOP |
 | Shared development loop | Workspace §6 (single owner) | Existing executor/CI/Host steps, preserving precise scope | Evidence chain of analyze → design/reuse → patch → focused test → failure repair → CI → optional Host readback |
 | Effective rules, adapted per surface | Manifest + #16/#17 + thin adapters | Actual new-session client load; code/static CI only proves stored configuration | Per-surface applied version and behavior; UNKNOWN if not observable |
 | Safe source/deploy operation | Owning repo + authorized Host/Registry | Path/branch/SHA/effect admission; exact source and runtime checks | Allow/deny tests, exact SHA, deployed revision and runtime evidence as applicable |
@@ -210,7 +210,7 @@ The table below is an **implementation backlog against existing owners**, not a 
 
 | Gap ID | Required user-visible change | Reuse/current implementation | Responsible change boundary | Exact trial / completion evidence |
 |---|---|---|---|---|
-| C01 | A development CHAT advances after an interim explanation instead of stopping | #17 §5–7; existing CU40 design and `github_project_chat_turn_gate.py` | Existing CU40 GPT_CHAT behavior owner; **not** #162 | Real same-turn tool action after interim explanation, with verified unfinished CU |
+| C01 | A development CHAT advances after an interim explanation instead of stopping | #17 current continuation/report contract; existing CU40 design and `github_project_chat_turn_gate.py` | Existing CU40 GPT_CHAT behavior owner; **not** #162 | Real same-turn tool action after interim explanation, with verified unfinished CU |
 | C02 | Failure leads to diagnosis and useful action without asking Master for routine debugging | Workspace §6 ITERATE; #40 behavior matrix | Existing CU40, scoped to operator behavior | Failed action evidence, scoped replan, new authorized action and its result |
 | C03 | A green PR/CI does not masquerade as Product/CU completion | GitHub checks + owning Issue acceptance + #17 stop contract | Existing CU40 and per-repo Current owner | Evidence of a post-CI legal next action, or evidence proving actual terminal condition |
 | C04 | New CHAT recovers correct exact work without redoing completed fixes | Project #1 / canonical Issue; `EXECUTION_SNAPSHOT` contract | Existing Project Control / owning Project Current | Across two independent CHAT sessions, same CU/last SHA/next gate rehydrated and deduplicated |

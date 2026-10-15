@@ -198,8 +198,8 @@ routine = (ROOT / "docs/G_ACE_WORKSPACE.md").read_text(encoding="utf-8")
 command_contract = (ROOT / "docs/MASTER_TERMINAL_COMMAND.md").read_text(encoding="utf-8")
 assert "docs/G_ACE_WORKSPACE.md §6 (sole CHAT development Work Routine)" in readme
 assert "docs/MASTER_TERMINAL_COMMAND.md only when issuing Master a terminal command" in readme
-assert "**Single development procedure:** `docs/G_ACE_WORKSPACE.md` §6" in router
-assert "**Only Master-facing command-format contract:** `docs/MASTER_TERMINAL_COMMAND.md`" in router
+assert "**Development procedure owner:** `docs/G_ACE_WORKSPACE.md` §6" in router
+assert "For a genuinely necessary Master terminal handoff use `docs/MASTER_TERMINAL_COMMAND.md`" in router
 assert "## 6. Development Routine" in routine
 assert "6. ITERATE:" in routine
 assert "MASTER TERMINAL COMMAND CONTRACT" in command_contract
@@ -207,7 +207,7 @@ assert "Fetch the COMPLETE canonical Issue #17 body" not in router
 assert "fetch complete Rule Plane #17 body" not in readme
 assert "SERVER_AI" in router  # non-CHAT executor still retains separate bootstrap
 # Router retains GitHub Current state authority; it no longer imposes a second workflow.
-assert "owning GitHub Project Current" in router
+assert "owning GitHub Project/CU Current" in router
 assert "GitHub Project #1 / Control #15" in readme
 
 print("GITHUB_PROJECT_RULE_PLANE=PASS")
