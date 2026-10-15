@@ -392,7 +392,7 @@ class Handler(socketserver.StreamRequestHandler):
             reply = {"ok": False, "error": "REQUEST_INVALID"}
         except Exception:
             reply = {"ok": False, "error": "INTERNAL_ERROR"}
-        self.wfile.write((json.dumps(reply, separators=(",", ":")) + "\n").encode("utf-8"))
+        self.wfile.write((json.dumps(host_command_wire_reply(reply), separators=(",", ":")) + "\n").encode("utf-8"))
 
 
 class Server(socketserver.ThreadingUnixStreamServer):
