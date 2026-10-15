@@ -371,7 +371,7 @@ Notion側の最初の候補は**既存議事録の再利用＋最小の『Decisi
 ### 13.6.1 効果未達時の採用判断とAgent Loop実装への要求（2026-10-16改訂）
 Notionへの記録成功を開発効率改善と同一視しない。現状は DESIGN採用、PILOT部分実施、MEASURE未達、EXPAND不許可。効果未実証の期間は新DB・同期・Notion専用機能を増設しない。
 
-**修正判断は設計優先**：既存CU Currentと採用設計を確認した上で、実測事実（GitHub Actions Run/Host receipt等）・複数の原因仮説・各仮説を否定する観測・過去の既知失敗・次に実施する差別化されたTool Actionを結びつける。同じ症状で以前の仮説に基づく修正が失敗した場合、再度その仮説で修正せず、反証か新しい証拠を求める。Notionは参照・議論の根拠、GitHub Current/Source/Hostが状態と実行事実の正本。証拠なしの原因確定・Host成功宣言は禁止。
+**修正判断は設計優先**：既存CU Currentと採用設計を確認した上で、実測事実（GitHub Actions Run/Host receipt等）・複数の原因仮説・各仮説を否定する観測・過去の既知失敗・次に実施する差別化されたTool Actionを結びつける。同じ症状で以前の仮説に基づく修正が失敗した場合、再度その仮説で修正せず、反証か新しい証拠を求める。Notionは参照・議論の根拠、GitHub Current/Source/Hostが状態と実行事実の正本。証拠なしの原因確定・Host成功宣言は禁止。 実際のGitHub URLが存在するだけでは因果関係の実証としない。参照された証拠から原因と反証の関連性を判断するのはCHAT自身であり、機械処理は状態の明確化に限る。
 
 **実装範囲**：既存 chat_cu_continuation.py の観測→判断に、任意の小さな診断文脈（症状、実測証拠URL、仮説、反証、既知失敗、次Action）を追加できるようにする。新規Gate、別Agent、Token、Workflow、DBを作らない。文脈がなければ従来動作を保つ。次Actionは実Host観測と設計受入条件で選び、Notionの記述のみからHostコマンドやPASSを自動生成しない。
 
