@@ -102,6 +102,7 @@ def main():
     parser.add_argument("--receipt-json", type=Path)
     parser.add_argument("--notion-context-json", type=Path)
     parser.add_argument("--notion-page-url")
+    parser.add_argument("--development-evidence-json", type=Path)
     args = parser.parse_args()
     if args.checkpoint_json:
         if any([args.repository, args.run_id, args.request_id, args.cu_issue_url]):
@@ -140,6 +141,17 @@ def main():
         result["notion_context"] = context
         # Context augments rationale; only fresh GitHub run verification
         # determines the executable next action.
+    if args.development_evidence_json:
+        try:
+            from scripts.chat_notion_development_evidence import audit_evidence
+        except ModuleNotFoundError:
+            from chat_notion_development_evidence import audit_evidence
+        development = audit_evidence(json.loads(
+            args.development_evidence_json.read_text(encoding="utf-8")))
+        if development["cu_url"] != checkpoint["cu_issue_url"]:
+            raise ValueError("DEVELOPMENT_CU_MISMATCH")
+        result["development_evidence"] = development
+        result["development_evidence"]["acceptance"] = "SOURCE_ONLY_NOT_LIVE"
     if args.receipt_json:
         persist_receipt(args.receipt_json, result)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
