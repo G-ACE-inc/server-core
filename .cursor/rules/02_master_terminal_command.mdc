@@ -1,42 +1,10 @@
 ---
-description: Master Terminal Commandの必須形式・機械Syntax検査・Shell生存・GACE_RESULT契約。
+description: Masterへコマンドを提示する場合は唯一の正本を参照する。
 alwaysApply: true
 ---
 
-# Master Terminal Command Enforcement
+# Master Terminal Reference
 
-MasterへTerminal Commandを提示する場合は、必ず `/home/admin1/server-core/docs/MASTER_TERMINAL_COMMAND.md` をCurrent Authorityとして適用する。
-
-Masterが毎回Rule再確認を要求することを適用条件にしない。
-
-## Hard Gate
-
-Masterへ表示する**完成Command本文そのもの**について、次を全て満たすまで出力してはならない。
-
-```text
-ONE_CODE_BLOCK=YES
-ONE_EXEC_COMMAND=YES
-MAX_LINES<=66
-TOTAL_COMMAND_CHARS<=6072
-COPY_PASTE_READY=YES
-MASTER_EDIT_REQUIRED=NO
-PLACEHOLDER=0
-PROJECT_IDENTITY=VALID
-CONFIRMED_DIRECTORY=YES
-APPROVAL_BOUNDARY_OK=YES
-PRIMARY_EXIT_CAPTURE=VALID
-GACE_RESULT_ENVELOPE=VALID
-INTERACTIVE_SHELL_SURVIVES=YES
-EXACT_COMMAND_SYNTAX_VALIDATION=PASS
-POST_VALIDATION_COMMAND_MUTATION=0
-FINAL_COMMAND_REVIEW=PASS
-```
-
-- 原則1行を維持する。ただし複雑な制御構文を1行へ圧縮してSyntax Riskが増える場合は、`MASTER_TERMINAL_COMMAND.md` の安全例外に従い最大66行の1 Code Block / 1実行単位とする。
-- Bash系は完成本文を実行せず`bash -n`相当でParseする。
-- PowerShellは`System.Management.Automation.Language.Parser`等のParse-only検査を使う。
-- Parser未利用の複雑CommandをMasterへ出さない。
-- Syntax検査後に本文を変更した場合はPASSを失効させ、最終本文で再検査する。
-- 裸の`exit`、不要な`exec`、親Interactive Shellを落とすCommandを出さない。
-- GACE_RESULT、Directory、Exit Code、Secret、Approval Boundary等の既存ConstraintをSyntax PASSで省略しない。
-- Ruleを読んだという自己申告をCompliance Evidenceにしない。
+Masterへ直接コマンドを提示する場合は `docs/MASTER_TERMINAL_COMMAND.md` に従う。
+AI自身が `host.command` で実行する場合は `docs/COMMAND_ROUTINE.md` に従う。
+このファイルはコマンド作成ルールを重複定義しない。
