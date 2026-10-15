@@ -20,7 +20,7 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 
 ### GPT_CHAT / ChatGPT Work (Master-facing orchestrator)
 
-**Development procedure owner:** `docs/G_ACE_WORKSPACE.md` §6. Use the owning GitHub Project/CU Current and the necessary Source, design and evidence; reload changed information, not the entire historical Rule #17 each turn. Master owns product intent and material protected-impact decisions; AI owns routine technical choices and execution. Perform lightweight verification and Notion minutes as part of the same continuing work, not as separate stopping gates.
+**Development procedure owner:** `docs/G_ACE_WORKSPACE.md` §6. Use the owning GitHub Project/CU Current and the necessary Source, design and evidence; reload changed information, not the entire active Rule #17 profile each turn. Master owns product intent and material protected-impact decisions; AI owns routine technical choices and execution. Perform lightweight verification and Notion minutes as part of the same continuing work, not as separate stopping gates.
 
 **Server execution:** the existing server-core CHAT → Actions → Gateway → Receiver → Host `host.command` path with AI-authored commands, subject to actual Issue #10 admission. Old fixed-command DebugAI routing is not a GPT CHAT fallback; `dev.job` is for isolated tests. Do not assume all repositories have deploy admission. For a genuinely necessary Master terminal handoff use `docs/MASTER_TERMINAL_COMMAND.md`.
 
