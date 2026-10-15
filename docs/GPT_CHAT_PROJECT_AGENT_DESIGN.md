@@ -125,3 +125,54 @@ Notion検討: https://app.notion.com/p/3facdcf128e4816793c7c611228e9dad
 本日のMaster構想復元: https://app.notion.com/p/3facdcf128e481ba9899d003cac95e5c
 既存設計: `docs/SERVER_CORE_DESIGN.md` §16.11 / §17
 PR #247 Source/CI/Merge: https://github.com/G-ACE-inc/server-core/pull/247 （merge `ec982f86bccbfe0771bb216d24ea60b2e7c3374b`）
+
+
+## 10. GitHubの機能を正しく組み合わせる具体設計（2026-10-15再調査）
+
+### 10.1 現状の問題と責務再配分
+Issue #10には大量のHost結果・履歴が集中しており、Issue #40にもCHATルール・引継ぎ履歴が蓄積する。IssueコメントをログDB、Current、計画、タスク、議事録の代用にしない。他CHATがIssue出力・ページングの不具合を修正中であり、この設計では当該実装に並行変更をかけない。
+
+| GitHub機能 | 正しい責務 | G-ACEの既存状態 / 差分 |
+|---|---|---|
+| **Projects v2** | Portfolio内のEpic/CU/Task一覧、進捗・優先度・Owner・阻害・受入条件を俯瞰するCurrent | Project #1は存在。Items/Fieldの実readbackと更新権限を確認できた範囲で使う。見えない値はUNKNOWN。GitHub Projectが実際の司令塔になっていることは未証明 |
+| **Issue** | 企画目的、CU、要求/受入条件、Blocking、決定の現行スナップショット（短い本文・リンク） | #10は共通Terminal owner、#40はCHAT継続 owner。数百コメントの全取得は禁止。結果本文/巨大ログをIssueコメントへ書かない |
+| **Sub-issues / dependencies** | Epic→CU→Taskの親子関係、BLOCKED BY・阻害解除 | GitHubネイティブ機能を優先。既存Issueを関係付け、新しい巨大な管理Issueや独自タスクリスト基盤を増やさない。API対応は連携権限を確認 |
+| **Issue types / Labels / Milestones** | Feature/Bug/Task、実行状態や波次の分類 | GitHub標準の設定がProject #1で実際に利用可能か確認。無理に新Label体系を量産しない |
+| **Branch/Commit** | 変更隔離、exact SHA、実証可能なSource履歴 | 設計Branch/PRと実装Branch/PRを分離し、CommitをCU/Issue/設計Revisionにリンク |
+| **PR** | Design proposal採否とSource変更審査、CI・影響・証拠、Owner競合回避 | 設計PR #246はDraft（採用前）、実装PR #247はmerge済み。採用済み設計(main)とDraftを取り違えない |
+| **Actions** | 既存CI・承認済みHost request実行とStatus observation | 現行共通Workflowを流用する。Status=successは受入条件完了ではない。実Host、active consumer、ZEROを別確認 |
+| **Artifacts** | stdout/stderr全文、TXT/ZIP、検証材料、観測JSON | PR #247観測ArtifactはSource完成。Run ID / artifact ID / request ID / digestを保持。保持期間切れ・権限・ダウンロード未確認はNOT_VERIFIED |
+| **Releases/Deployments** | 採用済み反映・リリース証拠（実運用がある場合） | 既存の受入資格・反映経路が確認できた場合のみリンク。新しいDeploymentフローは作らない |
+
+GitHub自身の公開推奨パターンを採用する。Docs: https://docs.github.com/en/issues/tracking-your-work-with-issues/learning-about-issues/planning-and-tracking-work-for-your-team-or-project 、https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues.md 。旧Tasklist blocksは廃止方向であるため、現在サポートされるSub-issuesを優先（https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/about-tasklists）。
+
+### 10.2 GitHub標準機能をReuse Firstで適用する順序
+1. **Projects built-in automationを監査**: 既存Project #1 のItem追加・Issue close・PR merge→Status変化の設定をFresh readbackし、採用条件と一致したものだけ利用。GitHubの既定自動化は「PR merged→Done」などを行うが、**CUのRuntime受入完了とは別**。実行完了に偽装する設定があれば無効化/Statusの意味を分離。公開仕様: https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations
+2. **Issueの親子・依存を整理**: 巨大なComment連鎖はTask分解と無関係。既存#10/#40をControl ownerのまま使い、実作業CUと必要なSub-issuesをProject#1へ関連付ける。新Issueは明確な受入条件とOwnerがある時のみ。
+3. **PR連動**: 設計PRは採用の検討・設計差分、実装PRはSource変更/CI、IssueはそのCUの要求・受入・阻害状態を保持。PR本文にDesign SHA、CU/Issue、変更範囲、証拠、残課題を短く記載し、各連携URLで追跡できるようにする。通常の技術判断をMasterへ差戻さない。
+4. **Actions evidence**: 既存Workflowのrun/job/check、exact HEAD、Host request_id、結果SHA/状態を構造化し、CUのCurrentへリンク。Actions成功とHost/Runtime実機合格を混同しない。
+5. **Artifact result contract**: GitHub RESTでrun artifact一覧→特定IDを取得→ダウンロード→manifest SHAを照合し、その観測に基づく次Tool actionを実行。GitHub RESTではArtifact Downloadの短命Redirectと権限が必要（https://docs.github.com/en/rest/actions/artifacts）。コネクタに取得Toolが不足していれば、既存認可済みGitHub Actions/Host routeを使って範囲を埋め、新Tokenを作らない。
+6. **最小Current同期**: Project Item Fieldを読めるToolがある場合はネイティブ項目を更新し、不可ならowning Issueの短いCurrent項目とPR/Actionsへのリンクで補う。Project v2を「運用できる」と主張するには、対象Itemへのread/write/readbackの証拠が要る。
+
+### 10.3 Statusを区別し、GitHubネイティブ自動化による偽完了を防ぐ
+GitHubのPR Merge/Issue Closeに連動するProjects built-in Status=Doneは、**作業項目のGitHub状態**であってMasterの製品要求の受入達成ではない。Source/CI PASS、Merged、Host-Reflected、Live-Verified、TGserver-ZERO-Verifiedは各々独立証拠で表す。既存Status値に過剰な新規フィールドを作らず、既存CU acceptanceとEvidence URLの集合で総合判定する。
+
+### 10.4 GitHub Projectの操作不足と軽量回復
+- 通常GPT CHATでGitHub Project v2 Item/Fieldを操作できるか、既存Plugins/ConnectorとGitHub APIのread/write capabilityを確認。未露出の場合は「GitHub自体ができない」ではなく**このCHATの接続可能Toolが不足**と分類。
+- 代替は既存GitHub Repo/Issue/PRの最小CheckpointとRun Artifact URL。GitHubの組み込みProject自動化が使える場合はそれを優先する。
+- Issue全コメントのページング、巨大全文コメント、同一診断の反復や別Repoへの勝手なWriteを禁止する。Failure時はRepo/CI/Run IDで直接Evidenceへ到達し、下一Actionを明示する。
+- 他CHATがIssue I/Oを担当しているため、このCUではOwner境界を越えない。
+
+### 10.5 公開部品を再利用する場合の採否条件
+**採用**: 既存プロジェクトから直接利用できるGitHub標準機能（sub-issues, dependencies, built-in Projects automation, Issue Forms, Actions artifacts）と、GitHub REST/CLI・既存SDKで提供される操作。API/CLIの成熟したクライアント機能は既存接続Toolができないところに限定して再利用してよい。
+
+**追加実装が必要な時だけ**: 現存Tool/APIを先に動作確認し、同じRepo/CU/Design revisionでSource gap・必要なinput/output・検証可能な受入条件が証明された小部品のみ追加。外部のProjectサーバーやAgentエンジン全体を新設せず、採用元ライセンス/依存/メンテ費をその部品についてだけ評価する。
+
+### 10.6 現場での完成テスト（GitHubの使い方そのものを検証）
+- Project #1の実Itemを1件、Field/関連Issue/Owner/Acceptanceを読取り、CUと設計PR/実装PR/Commit/Check/Host/Artifact/TGserverへの正しいリンクを再構成する。
+- 実CUに既存IssueのSub-issue/Dependencyを使えることと、Status automationが受入条件を誤判定しないことを確認する。
+- 設計PR→実装PR→CI→Hostの各段階で、Project CurrentとIssueに最新状態とNext Actionを残し、別CHATで取得できる。
+- GitHub Actions Artifactが、一覧→識別→ダウンロード→SHA照合→次のCHAT Tool実行までつながる。期限切れ・権限不足・部分欠損でも偽PASSにしない。
+- Notionには議論の採否・設計背景、GitHubにはSourceとCurrent、TGserverには実行イベントを置き、同一の巨大ログを複数箇所へコピーしない。
+
+以上を含む§9までの設計に対する追加章であり、設計提案であって新機能のLive完成を意味しない。
