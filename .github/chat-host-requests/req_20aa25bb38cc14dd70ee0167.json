@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Verify stale production Receiver build against currently mounted source and compose path",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "sh -c 'for c in server-core-bounded-host server-core-bounded-host-stage-96d01bb; do echo INSTANCE=$c; docker inspect -f \"IMAGE={{.Config.Image}} LABELS={{index .Config.Labels \\\"com.docker.compose.project\\\"}} COMPOSE={{index .Config.Labels \\\"com.docker.compose.project.config_files\\\"}}\" \"$c\"; docker exec \"$c\" sh -c \"grep -n -m1 GACE_RECEIVER_CLIENT_DISCONNECTED /app/scripts/servercore_bounded_host_receiver.py || echo STALE_HANDLER\"; done; echo CHECKOUT_HANDLER; grep -n -m1 GACE_RECEIVER_CLIENT_DISCONNECTED /home/admin1/server-core/scripts/servercore_bounded_host_receiver.py || true'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
