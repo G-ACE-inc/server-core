@@ -343,6 +343,31 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         return result
 
 
+def host_command_wire_reply(reply):
+    """Preserve complete output in the Host ledger; bound only socket framing."""
+    if not isinstance(reply, dict):
+        return reply
+    result = reply.get("result") if reply.get("state") == "HOST_COMMAND_DUPLICATE" else reply
+    if not isinstance(result, dict) or "stdout" not in result:
+        return reply
+    import hashlib
+    import json
+    wire = json.dumps(reply, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    if len(wire) <= 8 * 1024 * 1024:
+        return reply
+    out = dict(result)
+    for stream in ("stdout", "stderr"):
+        full = str(out.get(stream) or "")
+        out[stream + "_sha256"] = hashlib.sha256(full.encode("utf-8")).hexdigest()
+        out[stream + "_chars"] = len(full)
+        out[stream + "_stored_complete"] = True
+        out[stream] = ""
+    out["output_record_request_id"] = str(out.get("request_id", ""))
+    if reply.get("state") == "HOST_COMMAND_DUPLICATE":
+        return {**reply, "result": out}
+    return out
+
+
 class Handler(socketserver.StreamRequestHandler):
     def handle(self):
         self.connection.settimeout(60)
