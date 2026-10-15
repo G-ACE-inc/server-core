@@ -18,7 +18,7 @@ server-coreは司令室としてTaskをRouting/Dispatchするが、Project固有
 最終決定者はMaster（Product目的・仕様・重要なUX・公開/Release・費用/Provider/Model方針・Secret権限・不可逆Data・最終受入）。AIは明示された目的・Scope・Current Rule内の通常技術判断と実行を担当する。質問・提案・説明は承認ではない。
 
 ### 明示的Master Gate（維持）
-- main / PR merge、正式Release、Public exposure/公開範囲の拡大・切替
+- 正式Release、Public exposure/公開範囲の拡大・切替、および個別Currentで明示された保護対象のmain / PR merge。承認済みMission/CU内の通常Merge自体はMaster GateではなくAIが実行判断する。ただしBranch Protection、GitHub permission、Host/Secret admissionを迂回しない。
 - Force push、Branch削除、destructive reset/rebase、不可逆/破壊的なpersistent-state変更
 - Secret追加/削除/rotation、Provider resourceの作成/変更/削除やCost/Policy変更
 - 新規Model download / Model方針変更（既存の明示承認Scope外）
