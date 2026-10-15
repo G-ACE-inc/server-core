@@ -8,12 +8,27 @@ packs the retrieved records so a CHAT can resume the Agent Loop.
 import argparse
 import json
 import re
+import subprocess
 from pathlib import Path
 
 ISSUE = re.compile(r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/issues/[1-9][0-9]*\Z")
 KIND = {"IDEA", "RESEARCH", "ALTERNATIVE", "DECISION", "DESIGN", "IMPLEMENTATION",
         "OBSERVATION", "VERIFICATION", "FAILURE_LESSON", "DEPENDENCY", "NEXT"}
 STATE = {"PROPOSED", "ADOPTED", "REJECTED", "SUPERSEDED", "UNKNOWN"}
+
+def readback_issue(cu_url, runner=subprocess.run):
+    """Verify the CU through a fresh GitHub API read, not URL equality alone."""
+    if not isinstance(cu_url, str) or not ISSUE.fullmatch(cu_url):
+        raise ValueError("CU_URL_INVALID")
+    repo, number = cu_url.replace("https://github.com/", "").split("/issues/")
+    response = runner(["gh", "api", "repos/" + repo + "/issues/" + number],
+                      capture_output=True, text=True, check=True, timeout=30)
+    issue = json.loads(response.stdout)
+    if issue.get("html_url") != cu_url or "pull_request" in issue:
+        raise ValueError("GITHUB_CURRENT_MISMATCH")
+    return {"url": cu_url, "state": issue.get("state"),
+            "updated_at": issue.get("updated_at")}
+
 
 def build(cu_url, records, github_current_url, max_records=40):
     if not isinstance(cu_url, str) or not ISSUE.fullmatch(cu_url):
@@ -58,7 +73,9 @@ def main():
         except ModuleNotFoundError:
             from chat_notion_comment_adapter import parse_comments
         data = parse_comments(data.get("structuredContent", data), args.cu_url)
-    print(json.dumps(build(args.cu_url, data, args.github_current_url), ensure_ascii=False))
+    result = build(args.cu_url, data, args.github_current_url)
+    result["fresh_github_issue"] = readback_issue(args.cu_url)
+    print(json.dumps(result, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()
