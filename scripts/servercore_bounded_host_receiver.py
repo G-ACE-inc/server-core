@@ -333,7 +333,14 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
     return {"command_id": request["command_id"], "repository": request["repository"],
             "source_sha": sha, "repo_sha": request["repo_sha"], "state": result.get("state"), "exit_code": result.get("exit_code", 1),
             "stdout": str(result.get("stdout") or ""),
-            "stderr": str(result.get("stderr") or ""), "read_only": False}
+            "stderr": str(result.get("stderr") or ""), "read_only": False,
+            "output_record_request_id": result.get("output_record_request_id"),
+            "stdout_sha256": result.get("stdout_sha256"),
+            "stderr_sha256": result.get("stderr_sha256"),
+            "stdout_chars": result.get("stdout_chars"),
+            "stderr_chars": result.get("stderr_chars"),
+            "stdout_stored_complete": result.get("stdout_stored_complete", False),
+            "stderr_stored_complete": result.get("stderr_stored_complete", False)}
 
 
 def dispatch_docker_logs(request, root, socket_path=None):
