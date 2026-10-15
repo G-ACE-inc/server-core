@@ -118,7 +118,12 @@ def main():
         except ModuleNotFoundError:
             from chat_notion_cu_context import build, readback_issue
         source = json.loads(args.notion_context_json.read_text(encoding="utf-8"))
-        context = build(checkpoint["cu_issue_url"], source, checkpoint["cu_issue_url"])
+        try:
+            from scripts.chat_notion_context_ingest import ingest
+        except ModuleNotFoundError:
+            from chat_notion_context_ingest import ingest
+        records = ingest(source, checkpoint["cu_issue_url"])
+        context = build(checkpoint["cu_issue_url"], records, checkpoint["cu_issue_url"])
         context["fresh_github_issue"] = readback_issue(checkpoint["cu_issue_url"])
         result["notion_context"] = context
         # Context augments rationale; only fresh GitHub run verification
