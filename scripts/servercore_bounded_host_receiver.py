@@ -563,6 +563,16 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                     exit_code = result.get("exit_code", 1)
                     state = "PASS" if result.get("state") == "HOST_COMMAND_PASS" and exit_code == 0 else "FAIL"
                     out, err = str(result.get("stdout") or ""), str(result.get("stderr") or "")
+                    if result.get("stdout_stored_complete") or result.get("stderr_stored_complete"):
+                        receipt = (
+                            "GACE_HOST_OUTPUT_STORED request_id=" + str(request["id"])
+                            + " stdout_chars=" + str(result.get("stdout_chars", 0))
+                            + " stdout_sha256=" + str(result.get("stdout_sha256", ""))
+                            + " stderr_chars=" + str(result.get("stderr_chars", 0))
+                            + " stderr_sha256=" + str(result.get("stderr_sha256", ""))
+                            + " (lossless chunks: scripts/servercore_host_output_read.py)"
+                        )
+                        out = receipt + ("\\n" + out if out else "")
                 recorded = report_result(result_record(
                     request["id"], request["command_id"], request["expected_sha"], state, exit_code,
                     result.get("source_sha"), out, err, started))
