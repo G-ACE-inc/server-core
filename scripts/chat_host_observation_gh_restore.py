@@ -66,7 +66,7 @@ def restore(repository, run_id, request_id, run=subprocess.run):
 def continuation_checkpoint(result, cu_issue_url):
     """Emit a bounded, evidence-backed next step; never mutate Issue/Host here."""
     if not isinstance(cu_issue_url, str) or not re.fullmatch(
-        r"https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/issues/[1-9][0-9]*", cu_issue_url
+        r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/issues/[1-9][0-9]*", cu_issue_url
     ):
         raise ValueError("CU_ISSUE_URL_INVALID")
     if result["result_verified"] is not True:
