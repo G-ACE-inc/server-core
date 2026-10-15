@@ -334,7 +334,7 @@ Node/Python のコマンドをMasterへ提示する場合、Host直実行を想�
 
 ServerはRuntime/Processing環境であり、Project Source履歴・Design・Documentの正本をServerだけに置かない。
 
-Deployはconfirmed GitHub revisionを起点にし、必要なMaster承認後に対象Project/共通Runbookへ従う。
+Deployはconfirmed GitHub revisionを起点にし、対象Project/共通Runbookと実際のHost認可に従う。Master判断が必要なのは現行の保護対象に該当する場合だけであり、通常の反映に新たな承認手順を追加しない。
 
 Authority: `docs/DEPLOY_RUNBOOK.md`。
 
