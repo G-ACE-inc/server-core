@@ -295,8 +295,6 @@ DebugAIは独立Project/runtime。Source mainへのMCP実装反映とWorkspace L
 
 **Common terminal operation:** GPT CHAT authors and executes shell commands via the server-core common `host.command` route. `dev.job` is for isolated development/tests. Routine technical choices and remediation are AI-owned; permissions remain subject to existing Host admission. Verify actual Host results, not just GitHub submission.
 
-
-
 For already registered and explicitly authorized Project repositories, this is the **single operational selection policy**, not a new transport, Gate or repository enrollment procedure. Owning executable contracts and allowlists remain with Issue #10 and the existing Host/Receiver/Registry implementation.
 
 1. **Primary entrypoint = existing common Host terminal** (CHAT → GitHub Actions → Gateway → Receiver → Host Writer → VPS). CHAT identifies the registered Repo, actual checkout, current branch, exact SHA and intended effect, composes the appropriate shell command itself, and dispatches it through admitted `host.command`. Do not start with a separate legacy DebugAI route, ask Master to pick a terminal, or send Master manual commands while the admitted common route is available. The common entrypoint is not an unrestricted Host permission.
