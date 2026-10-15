@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core live authenticated coder inference smoke test",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -a; source /home/admin1/projects/ai-core/router/.env.router; set +a; echo eyJtb2RlbCI6Ii9tb2RlbHMvcXdlbjIuNS1jb2Rlci03Yi1pbnN0cnVjdC1xNF9rX20uZ2d1ZiIsIm1lc3NhZ2VzIjpbeyJyb2xlIjoidXNlciIsImNvbnRlbnQiOiJSZXBseSB3aXRoIHRoZSB3b3JkIE9LLiJ9XSwibWF4X3Rva2VucyI6MTIsInN0cmVhbSI6ZmFsc2V9 | base64 -d | curl -sS -m 180 -H \"Authorization: Bearer $LLAMA_SWAP_API_KEY\" -H Content-Type:application/json --data-binary @- http://127.0.0.1:18184/v1/chat/completions"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
