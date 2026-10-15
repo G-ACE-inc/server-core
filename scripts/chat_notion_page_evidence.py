@@ -20,6 +20,10 @@ def page_evidence(payload, cu_url, page_url, max_chars=1500):
         raw=data.get("text","")
     if not isinstance(raw,str) or "<page " not in raw or "<content>" not in raw:
         raise ValueError("PAGE_FORMAT_INVALID")
+    header=raw.split("<content>",1)[0]
+    page_tag = re.search(r'<page\\s+url="([^"]+)"', header)
+    if not page_tag or unescape(page_tag.group(1)) != page_url:
+        raise ValueError("PAGE_SOURCE_MISMATCH")
     contents=raw.split("<content>",1)[1].split("</content>",1)[0]
     if cu_url not in contents:
         return []
