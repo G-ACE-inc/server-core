@@ -187,7 +187,7 @@ Keep the six existing Workspace §6 stages. **Do not add another workflow merely
 3. After any failure, mark the **failed operation** and its dependency scope, collect direct evidence, replan and execute another legal same-CU action. Authentication refusal must never be bypassed and an unverified step must never be counted PASS.
 4. Treat commit, passing CI, Issue record, and intermediate explanations as **checkpoints**, not completion. Continue legal and independent same-CU work before concluding the response; no unowned switch to a neighboring project.
 5. Persist a compact validated current state at durable checkpoints: canonical purpose; latest Master intent; owning project/CU/writer; adopted design/revision; last verified Source/CI/Host status; pending external run ID; preservation constraints; exact unfinished action and its dependencies. Store it in the **existing** owning Current; do not create a parallel tracker or copy raw logs into policy.
-6. Finish only upon demonstrable CU acceptance, explicit Master stop/report, a proven Master-only input/decision or genuinely exhausted authorized work; do not misclassify tool failure, provider quota, CI wait or missing GPT app answer interceptor as a global blocker.
+6. Finish only upon demonstrable commissioned acceptance, explicit Master stop/pause, a proven Master-only decision preventing remaining in-scope work, or genuinely exhausted authorized work; a report request alone does not end ongoing development; do not misclassify tool failure, provider quota, CI wait or missing GPT app answer interceptor as a global blocker.
 
 ### Acceptance trials before migration cutover
 
