@@ -65,5 +65,35 @@ class HostOutputChunks(unittest.TestCase):
         self.assertEqual(packed["output_record_request_id"], request_id)
         self.assertEqual(packed["stdout_sha256"], hashlib.sha256(stdout.encode()).hexdigest())
 
+
+class HostArtifactAssembler(unittest.TestCase):
+    def test_large_reassembled_artifact_and_missing_page_denial(self):
+        import zipfile
+        from scripts.servercore_host_output_artifact_assemble import assemble
+        rid = "req_" + "f" * 24
+        stdout = "日本語Ω🙂" * 45000
+        stderr = "err" * 10000
+
+        def make_pages(stream, value):
+            digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
+            for offset in range(0, max(1, len(value)), 8192):
+                data = value[offset:offset + 8192]
+                nxt = offset + len(data)
+                yield {"request_id": rid, "stream": stream, "offset": offset,
+                       "next_offset": nxt, "total_chars": len(value),
+                       "complete": nxt == len(value), "sha256": digest, "data": data}
+
+        chunks = [*make_pages("stdout", stdout), *make_pages("stderr", stderr)]
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d, "verified")
+            meta = assemble(chunks, target)
+            self.assertEqual((target / "stdout.txt").read_bytes(), stdout.encode())
+            with zipfile.ZipFile(target / "output.zip") as z:
+                self.assertEqual(z.read("stderr.txt"), stderr.encode())
+                self.assertEqual(json.loads(z.read("manifest.json")), meta)
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                assemble(chunks[1:], Path(d, "missing"))
+
 if __name__ == "__main__":
     unittest.main()
