@@ -25,7 +25,7 @@ def gh_api(path):
     GraphQL's comments(last:100) is bounded independent of Issue age. Normal
     polling happens every few seconds; a missing result is UNKNOWN, not PASS.
     """
-    matched = re.match(r"^repos/([^/]+)/([^/]+)/issues/(\\d+)/comments(?:\\?.*)?$", path)
+    matched = re.match(r"^repos/([^/]+)/([^/]+)/issues/(\d+)/comments(?:\?.*)?$", path)
     if not matched:
         raise RuntimeError("INVALID_ISSUE_COMMENTS_PATH")
     owner, name, issue_number = matched.groups()
