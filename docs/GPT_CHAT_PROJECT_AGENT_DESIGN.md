@@ -176,3 +176,90 @@ GitHubのPR Merge/Issue Closeに連動するProjects built-in Status=Doneは、*
 - Notionには議論の採否・設計背景、GitHubにはSourceとCurrent、TGserverには実行イベントを置き、同一の巨大ログを複数箇所へコピーしない。
 
 以上を含む§9までの設計に対する追加章であり、設計提案であって新機能のLive完成を意味しない。
+
+
+## 11. 実用版アーキテクチャと接続契約 — 近似Codex/Cursor運用の設計完了基準（2026-10-15）
+
+**決定:** 100%同一のIDE/常駐Agentを実現するのではない。MasterがCHATを変更しても説明をやり直さず、既存Toolの組合せで企画・設計・開発の一つのCUを継続できる状態を**実用的な近似完成**と定義する。この章で曖昧な概念を実装可能な入力/出力/失敗経路へ落とす。§16.11/§17のAuthorityおよび既存Ownerを変更しない。
+
+### 11.1 二層制御：CHATとGitHub/Hostの責務
+- **判断層＝通常GPT CHAT**: Project Currentと採用設計を読み、ユーザーの目的・制約から実行手順を選択し、Toolを呼び、結果を読み次のActionを決定。Notion Toolが使用可能な場合、当該ターンの議論差分を保存する。自動的な次CHAT起動、非公開CHAT履歴の収集は担当させない。
+- **耐久制御層＝既存GitHub Project/Issues/PRs/Actions/Artifacts＋TGserver ZERO**: 実行事実（SHA、Run、Result、Status、Artifact）と最小Checkpoint、Owner、受入条件を管理する。既存ActionsはTool送信・検証・観測記録、Hostは任意コマンド/隔離dev.job実行。反復をCHAT側の次Tool呼出とつなぐ。
+- **議論/設計層＝Notion＋Repo設計**: Notionに要求・採否・理由、Repo mainに採用設計、設計PRに未採用の改訂。どちらもHostログDBの代用品にしない。
+- 常駐Agentを新設せず、既存イベントが確定した時点で耐久Checkpointを更新する。CHATが応答を終えても少なくとも次のCHATがSource/Artifactから再開できる。
+
+### 11.2 Tool能力表と実行アダプタの最小契約
+各Toolを同じ巨大なインターフェースに包まず、**実際に公開される既存Toolを呼ぶだけの選択表**をCurrentに置く。
+| 動作 | 第1選択（既存） | 代替/制限 | 記録すべき応答 |
+|---|---|---|---|
+| 現在地読込 | GitHub Projects Item/Issue/PR/Commit API | Projects Field API未露出ならIssueの小さなCurrent | canonical issue URL / design SHA / owner / head SHA |
+| 企画・意思決定 | Notion fetch/create/update | Notion API不可なら`MINUTES_NOT_RECORDED`をCurrentに記載 | Notion page URL + write receipt |
+| 設計変更 | 設計Branch/PR/GitHub API | Draftは採用済みmainを上書きしない | PR URL, diff, proposed SHA |
+| Source変更 | owning Repo GitHub API / admitted dev.job | 別Owner/Repoへの横断書込不可 | commit SHA, paths, PR URL |
+| テスト・Host読取 | 既存Actions→Gateway→Receiver→host.command/dev.job | 旧固定コマンド経路使用禁止 | request_id, run_id, result locator, Host exit |
+| Host長大出力 | Host ledger read/export と既存Artifact/ZIP復元 | Issueコメントにはメタデータのみ | 完全性/bytes/hash/Artifact ref |
+| 進捗証拠 | PR Check Run/Actions Job | 成功をRuntime完成とみなさない | test SHA, conclusion, consumer evidence |
+| 横断ログ | TGserver ZERO既存Reader | Producer不在ならUNKNOWN | event ID, storage/search readback |
+
+**実行前提**: Tool接続の有無を実測して分岐する。Toolが存在してもAPI権限/対象Repo承認/実Host反映資格が無いなら`CAPABILITY_UNVERIFIED`。MASTERに通常のTool選択を求めない。
+
+### 11.3 Checkpoint schema v1（置き場は既存GitHub CU Current）
+これを**最小の論理スキーマ**として固定し、GitHub Issueの既存Currentまたは既存Project Itemで実体化する。新DB、新Workflowを設けない。巨大な履歴はappendせず、現行版を更新し、イベントへの参照だけを残す。
+
+```json
+{
+  "schema": "gace.chat.cu.current.v1",
+  "cu": {"project": "G-ACE Development Platform", "issue_url": "<canonical CU URL>", "repo": "<owner/repo>", "owner": "<owner-id>"},
+  "goal": {"purpose": "<fixed user outcome>", "acceptance": [{"id": "A1", "state": "OPEN|EVIDENCED|BLOCKED", "evidence_url": null}]},
+  "design": {"adopted_url": "<main design URL>", "adopted_sha": "<40-char SHA>", "draft_pr_url": null},
+  "source": {"branch": "<branch>", "head_sha": "<40-char SHA>", "pr_url": null, "ci_url": null},
+  "execution": {"request_id": null, "run_id": null, "artifact_id": null, "result_url": null, "host_sha": null, "result_status": "UNKNOWN", "output_complete": false},
+  "decisions": {"notion_minutes_url": null, "minutes_state": "RECORDED|MISSING|NOT_APPLICABLE", "reason": "<brief>"},
+  "continuation": {"phase": "RESTORE|PLAN|ACT|OBSERVE|DECIDE|VERIFY|CHECKPOINT|STOP", "next_action": {"tool": "<available existing tool>", "target": "<verified target>", "reason": "<linked acceptance>"}, "blockers": []},
+  "version": 1,
+  "updated_at": "<ISO timestamp>"
+}
+```
+
+注意: これは**サンプルの値**でありGitHub Project Itemの取得済み値ではない。Secret/生ログを入れない。採用設計SHAはmainに採用された実コミットのみ。更新競合はProject/CU Ownerと直前version/readbackを照合し、競合時に書込を中止して再読込。新しいCHATは最新CU CurrentとGitHub SHAをFresh比較する。
+
+### 11.4 状態遷移・障害対処（判断表）
+| 現在状態/観測 | 許す次状態 | 復旧動作 |
+|---|---|---|
+| RESTORE / Current一致 | PLAN | Adopted design・Owner・Source HEAD・未完了Acceptanceを選択読込 |
+| RESTORE / stale SHAまたはOwner衝突 | RESTORE/読取調査 | Source/PR Fresh readback。異なるOwner checkoutを保護 |
+| PLAN / 実行可能Taskあり | ACT | Next Actionに具体的Tool、target、目的、Expected evidenceを設定 |
+| ACT / result queued | OBSERVE | 既存run/request IDで結果を追跡。別のHost Requestを重複送信しない |
+| OBSERVE / full PASS | DECIDE | exitとSHA/出力完全性を確認。Acceptance達成は別VERIFY |
+| OBSERVE / output partial | OBSERVE | Host ledger/Artifact全ページ回収。PartialをPASS扱いしない |
+| OBSERVE / API outage, timeout | OBSERVEまたはDECIDE | 送信受理の有無と結果未着を区別し、request IDで安全に再取得 |
+| OBSERVE / FAIL | DECIDE | 原因から別の観測/修正Actionを決める。無意味な同一retry禁止 |
+| DECIDE / 残Acceptanceあり | ACTまたはPLAN | 未達条件へ連続実行。報告/Check成功でSTOPしない |
+| VERIFY / exact CI, live, ZEROが必要な範囲で一致 | CHECKPOINT | 各Evidence URLを別Statusで保存 |
+| CHECKPOINT / Notion失敗 | DECIDE | 失敗をMISSINGとしてCurrentに保持し、独立開発は継続 |
+| STOP / verified acceptance or explicit interrupt or all blocked | STOP | 完成と未完成、復元用next actionと理由を保存 |
+
+**Replay防止**: 既存Request ID / Actions run / committed source SHAから「送信済み」「結果不明」「完了」を識別し、API outageを即座に新規同内容Dispatchへ変えない。独立CUの進行を停止しない。
+
+### 11.5 会話/作業中に管理が抜ける問題の実用策
+1. **発生元で事実を拾う**: GitHub CIとActions Host Resultを既存Workflowが記録。Notionへ無制限の新Tokenを渡さない。
+2. **CHAT側では議論差分だけを追記**: 毎ターンNotion書込の既存ルールは尊重し、採否・判断変更・実行証拠リンク・次Actionを短く保存。記録結果を確認できなければ欠落としてCheckpointへ。
+3. **漏れ検知は次回復元時に行う**: Last PR/Run/HostとCurrent version/Notion URLを比較し、イベントが進んでいるのにCurrentや議事録が古いときだけ必要箇所を補修する。無理な遡及的捏造禁止。
+4. **短い自律Loop**: 可能な限り同一Turnで複数Actionを実施。CHATアプリが一旦停止・中断しても、次TurnでCurrentとEvidenceを読み復帰。ChatGPTが自分自身に将来の任意Turnを送信できると仮定しない。
+5. **タスク進行**: 企画・調査・設計・実装・検証のどの種類も、Purpose・Acceptance・Owner・Current・Next Actionを持つCUとして扱う。
+
+### 11.6 「近いものができた」の判定（100%再現ではなく使い勝手）
+**採用設計の完成**: §11.1〜11.5の契約が既存Toolへ一対一で対応し、実装順・失敗・再開を判断できること。新規Agent製品の導入が不要であり、各段階に実測可能な成果物があること。
+
+**使える運用の最小合格シナリオ**:
+1. **企画→Task**: 一つのProjectの目的・採否をNotionへ記録し、GitHub Issue/CUと設計PRに関連付け、次作業を取り出せる。
+2. **設計→実装**: 採用済み設計SHAを読込んでから、GitHubで変更→CI→Host command→Observation→少なくとももう1回の異なるTool Actionを同一CUで実行できる。
+3. **失敗→継続**: 故意の失敗/巨大ログ/Host API障害のどれかで、実行済みRequestの結果を見失わず、次の有意味なActionへ移れる。
+4. **CHAT引継ぎ**: 別CHATが前CHATの全文やMasterの手書き説明なしに、Current→Notion決定→設計→最新Observation→次Actionを読んで実際に一つ作業を進める。
+5. **事実に基づく完成**: Source/CI/PR mergeとRuntime/consumer/ZEROを対象要求に応じて区別し、完成していないものを完成と言わない。
+
+**運用改善の定量的指標**: 人間による過去CHAT再説明回数、手動コマンド転記回数、Current/Notionの更新欠落数、観測→次Actionまでの実Tool呼出数、設計逸脱による差戻し数、失敗したToolの同一理由再試行回数。比較用Baselineを実測してから改善を判定し、未実測値を捏造しない。
+
+**実装優先**: P0: 現在ある#247〜#249・Host ledger/ZIP結果をCHATへ読戻す。P1: Current schemaを既存Project/Issueで実運用、次CHAT復元、記録漏れ検知。P2: 企画/Task/依存/StatusのネイティブGitHub Projects運用に拡張。各段階で実用テストし、完成を全フェーズ達成まで先延ばしにせず、先に使える最小機能を提供する。
+
+**安全と最小実装**: 製品丸ごと移植や導入はしない。実際のSourceで見つかった不足がGitHub標準機能、既存Plugin、OSSライブラリの小部品で埋まるなら優先的に再利用する。オープンソースのコード流用が必要な場合だけ該当部品のライセンス・更新負担・互換性を確認。既存Issue I/O修正の他CHAT所有領域には手を出さない。
