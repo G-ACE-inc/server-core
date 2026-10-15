@@ -90,7 +90,7 @@ def emit(record, comment, verdict):
     print(f"CHAT_HOST_OBSERVATION={observation}")
     print(f"CHAT_NEXT_ACTION={next_action}")
     for stream in ("stdout", "stderr"):
-        text = str(record.get(stream) or "")[:4000]
+        text = str(record.get(stream) or "")
         print(f"SERVERCORE_BOUNDED_HOST_{stream.upper()}_BEGIN")
         print(text)
         print(f"SERVERCORE_BOUNDED_HOST_{stream.upper()}_END")
