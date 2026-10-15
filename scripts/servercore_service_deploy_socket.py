@@ -29,7 +29,7 @@ from servercore_registered_docker_ops import DockerOperationError, operate, OPS
 SOCKET_PATH = Path("/run/gace/servercore-service-deploy.sock")
 LOCK_PATH = Path("/tmp/gace-servercore-service-deploy.lock")
 RESULT_DIR = Path("/home/admin1/logs/servercore-service-deploy")
-MAX_REQUEST = 2048
+MAX_REQUEST = 1048576
 DEPLOY_SCHEMA = "gace.servercore-service-deploy.request/v1"
 STATUS_SCHEMA = "gace.servercore-service-deploy.status/v1"
 DOCKER_OP_SCHEMA = "gace.servercore-docker-operation.request/v1"
@@ -295,7 +295,7 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         raise AdmissionError("REPOSITORY_INVALID")
     if not isinstance(target_sha, str) or not SHA.fullmatch(target_sha):
         raise AdmissionError("TARGET_SHA_INVALID")
-    if not isinstance(command_text, str) or not 1 <= len(command_text) <= 1600 or "\x00" in command_text:
+    if not isinstance(command_text, str) or not command_text or "\x00" in command_text:
         raise AdmissionError("HOST_COMMAND_INVALID")
     previous = read_result(request_id, result_dir)
     if previous is not None:
@@ -336,11 +336,36 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
                             check=False)
             result = {**base, "state": "HOST_COMMAND_PASS" if completed.returncode == 0 else "FAIL",
                       "exit_code": completed.returncode,
-                      "stdout": completed.stdout[:16000], "stderr": completed.stderr[:1000]}
+                      "stdout": completed.stdout, "stderr": completed.stderr}
         except (OSError, subprocess.TimeoutExpired):
             result = {**base, "state": "FAIL", "failure_class": "HOST_COMMAND_EXECUTION_FAILED"}
         write_result(request_id, result, result_dir)
         return result
+
+
+def host_command_wire_reply(reply):
+    """Preserve complete output in the Host ledger; bound only socket framing."""
+    if not isinstance(reply, dict):
+        return reply
+    result = reply.get("result") if reply.get("state") == "HOST_COMMAND_DUPLICATE" else reply
+    if not isinstance(result, dict) or "stdout" not in result:
+        return reply
+    import hashlib
+    import json
+    wire = json.dumps(reply, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    if len(wire) <= 256 * 1024:
+        return reply
+    out = dict(result)
+    for stream in ("stdout", "stderr"):
+        full = str(out.get(stream) or "")
+        out[stream + "_sha256"] = hashlib.sha256(full.encode("utf-8")).hexdigest()
+        out[stream + "_chars"] = len(full)
+        out[stream + "_stored_complete"] = True
+        out[stream] = ""
+    out["output_record_request_id"] = str(out.get("request_id", ""))
+    if reply.get("state") == "HOST_COMMAND_DUPLICATE":
+        return {**reply, "result": out}
+    return out
 
 
 class Handler(socketserver.StreamRequestHandler):
@@ -367,7 +392,7 @@ class Handler(socketserver.StreamRequestHandler):
             reply = {"ok": False, "error": "REQUEST_INVALID"}
         except Exception:
             reply = {"ok": False, "error": "INTERNAL_ERROR"}
-        self.wfile.write((json.dumps(reply, separators=(",", ":")) + "\n").encode("utf-8"))
+        self.wfile.write((json.dumps(host_command_wire_reply(reply), separators=(",", ":"), ensure_ascii=False) + "\n").encode("utf-8"))
 
 
 class Server(socketserver.ThreadingUnixStreamServer):

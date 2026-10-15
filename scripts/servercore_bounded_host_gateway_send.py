@@ -112,7 +112,7 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, refle
         raise SendError("UNEXPECTED_DEV_JOB_TARGET")
     if command_id == "host.command":
         if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
-                or not isinstance(host_command, str) or not 1 <= len(host_command) <= 1600 or "\x00" in host_command:
+                or not isinstance(host_command, str) or not host_command or "\x00" in host_command:
             raise SendError("HOST_COMMAND_TARGET_INVALID")
         if not isinstance(repo_sha, str) or not SHA_PATTERN.fullmatch(repo_sha):
             raise SendError("HOST_COMMAND_REPO_SHA_INVALID")

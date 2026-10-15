@@ -16,7 +16,7 @@ import servercore_bounded_host as bounded_host
 RECEIVER_PATH = "/internal/servercore-bounded-host"
 HEALTH_PATH = "/healthz"
 EXPECTED_DESTINATION = "server-core-bounded-host"
-MAX_BODY_BYTES = 4096
+MAX_BODY_BYTES = 1048576
 # Deterministic Host preflight denials must not enter infrastructure retry loops.
 TERMINAL_REFLECT_ERRORS = frozenset({
     "BEFORE_SHA_MISMATCH", "DIRTY_CHECKOUT_DENIED", "REMOTE_BRANCH_SHA_MISMATCH",
@@ -143,7 +143,7 @@ def validate_request(value, contract):
         repo_sha = value["repo_sha"]
         if not isinstance(repository, str) or not REPOSITORY_PATTERN.fullmatch(repository) \
                 or not isinstance(repo_sha, str) or not SHA_PATTERN.fullmatch(repo_sha) \
-                or not isinstance(command, str) or not 1 <= len(command) <= 1600 or "\x00" in command:
+                or not isinstance(command, str) or not command or "\x00" in command:
             fail("HOST_COMMAND_TARGET_INVALID", 422)
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
                 "repository": repository, "repo_sha": repo_sha, "command": command}
@@ -222,8 +222,8 @@ def deploy_socket_call(payload, socket_path, timeout=60):
             client.connect(socket_path)
             client.sendall(data)
             with client.makefile("rb") as stream:
-                raw_reply = stream.readline(32768)
-                if not raw_reply.endswith(b"\n") or len(raw_reply) >= 32768:
+                raw_reply = stream.readline(16777217)
+                if not raw_reply.endswith(b"\n") or len(raw_reply) > 16777216:
                     fail("DEPLOY_RESULT_INVALID", 503)
                 result = json.loads(raw_reply)
     except (OSError, ValueError, TypeError):
@@ -321,19 +321,26 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
     }, socket_path, timeout=120)
     if reply.get("ok") is not True:
         fail("HOST_COMMAND_ADMISSION_DENIED", 422)
-    if reply.get("request_id") != request["id"] or reply.get("repository") != request["repository"] \
-            or reply.get("source_sha") != request["repo_sha"]:
-        fail("HOST_COMMAND_RESULT_MISMATCH", 503)
     if reply.get("state") == "HOST_COMMAND_DUPLICATE":
         result = reply.get("result")
         if not isinstance(result, dict):
             fail("HOST_COMMAND_RESULT_INVALID", 503)
     else:
         result = reply
+    if result.get("request_id") != request["id"] or result.get("repository") != request["repository"] \
+            or result.get("source_sha") != request["repo_sha"]:
+        fail("HOST_COMMAND_RESULT_MISMATCH", 503)
     return {"command_id": request["command_id"], "repository": request["repository"],
             "source_sha": sha, "repo_sha": request["repo_sha"], "state": result.get("state"), "exit_code": result.get("exit_code", 1),
-            "stdout": str(result.get("stdout") or "")[:16000],
-            "stderr": str(result.get("stderr") or "")[:1000], "read_only": False}
+            "stdout": str(result.get("stdout") or ""),
+            "stderr": str(result.get("stderr") or ""), "read_only": False,
+            "output_record_request_id": result.get("output_record_request_id"),
+            "stdout_sha256": result.get("stdout_sha256"),
+            "stderr_sha256": result.get("stderr_sha256"),
+            "stdout_chars": result.get("stdout_chars"),
+            "stderr_chars": result.get("stderr_chars"),
+            "stdout_stored_complete": result.get("stdout_stored_complete", False),
+            "stderr_stored_complete": result.get("stderr_stored_complete", False)}
 
 
 def dispatch_docker_logs(request, root, socket_path=None):
@@ -556,6 +563,16 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                     exit_code = result.get("exit_code", 1)
                     state = "PASS" if result.get("state") == "HOST_COMMAND_PASS" and exit_code == 0 else "FAIL"
                     out, err = str(result.get("stdout") or ""), str(result.get("stderr") or "")
+                    if result.get("stdout_stored_complete") or result.get("stderr_stored_complete"):
+                        receipt = (
+                            "GACE_HOST_OUTPUT_STORED request_id=" + str(request["id"])
+                            + " stdout_chars=" + str(result.get("stdout_chars", 0))
+                            + " stdout_sha256=" + str(result.get("stdout_sha256", ""))
+                            + " stderr_chars=" + str(result.get("stderr_chars", 0))
+                            + " stderr_sha256=" + str(result.get("stderr_sha256", ""))
+                            + " (lossless chunks: scripts/servercore_host_output_read.py)"
+                        )
+                        out = receipt + ("\\n" + out if out else "")
                 recorded = report_result(result_record(
                     request["id"], request["command_id"], request["expected_sha"], state, exit_code,
                     result.get("source_sha"), out, err, started))

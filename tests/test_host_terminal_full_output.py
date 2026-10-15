@@ -1,0 +1,48 @@
+"""Lossless host terminal output retrieval regression."""
+import hashlib
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from servercore_host_output_read import chunk
+from servercore_service_deploy_socket import host_command_wire_reply
+
+
+class HostOutputChunks(unittest.TestCase):
+    def test_multimegabyte_output_persisted_and_retrieved_without_loss(self):
+        request_id = "req_" + "a" * 24
+        stdout = "日本語Ω" * 650000
+        stderr = "e" * 300000
+        with tempfile.TemporaryDirectory() as dirname:
+            Path(dirname, request_id + ".json").write_text(
+                json.dumps({"request_id": request_id, "stdout": stdout, "stderr": stderr}),
+                encoding="utf-8",
+            )
+            for stream, original in (("stdout", stdout), ("stderr", stderr)):
+                parts = []
+                offset = 0
+                while True:
+                    page = chunk(request_id, stream, offset, 8192, dirname)
+                    parts.append(page["data"])
+                    offset = page["next_offset"]
+                    if page["complete"]:
+                        break
+                self.assertEqual("".join(parts), original)
+                self.assertEqual(page["sha256"], hashlib.sha256(original.encode()).hexdigest())
+
+    def test_wire_reply_retains_large_result_in_ledger(self):
+        request_id = "req_" + "b" * 24
+        stdout = "x" * (9 * 1024 * 1024)
+        reply = {"ok": True, "request_id": request_id, "stdout": stdout, "stderr": ""}
+        packed = host_command_wire_reply(reply)
+        self.assertEqual(packed["stdout"], "")
+        self.assertEqual(packed["stdout_chars"], len(stdout))
+        self.assertTrue(packed["stdout_stored_complete"])
+        self.assertEqual(packed["output_record_request_id"], request_id)
+        self.assertEqual(packed["stdout_sha256"], hashlib.sha256(stdout.encode()).hexdigest())
+
+if __name__ == "__main__":
+    unittest.main()
