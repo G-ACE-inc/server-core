@@ -56,6 +56,25 @@ class DecisionTests(unittest.TestCase):
             phase="STOP", stop_reason="VERIFIED_COMPLETE",
             remaining_actions=[], mission_acceptance_verified=True)), "MISSION_ACCEPTED")
 
+    def test_host_result_observation_continues_after_failure_or_pass(self):
+        import importlib.util
+        poll_path = module_path.with_name("servercore_bounded_result_poll.py")
+        poll_spec = importlib.util.spec_from_file_location("host_result_poll", poll_path)
+        poll = importlib.util.module_from_spec(poll_spec)
+        poll_spec.loader.exec_module(poll)
+        self.assertEqual(poll.continuation_observation(
+            {"state": "FAIL", "exit_code": 1, "stderr": "SOURCE_SHA_MISMATCH"}, "OK"),
+            ("HOST_SOURCE_SHA_MISMATCH", "READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION"))
+        self.assertEqual(poll.continuation_observation(
+            {"state": "FAIL", "exit_code": 1, "stderr": "TEST_FAILURE"}, "OK"),
+            ("HOST_OPERATION_FAILED", "INSPECT_FAILURE_EVIDENCE_AND_REPLAN"))
+        self.assertEqual(poll.continuation_observation(
+            {"state": "PASS", "exit_code": 0}, "OK"),
+            ("HOST_OPERATION_PASSED", "RECHECK_MISSION_ACCEPTANCE_AND_CONTINUE"))
+        self.assertEqual(poll.continuation_observation(
+            {"state": "PASS", "exit_code": 0}, "REQUEST_ID_MISMATCH"),
+            ("CORRELATION_FAILED", "INSPECT_RESULT_CORRELATION"))
+
     def test_live_workflow_has_request_gate_before_host_access(self):
         workflow = (module_path.parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text(encoding="utf-8")
         assert "CHAT_START_GATE_RECEIPT_MISSING" in workflow
