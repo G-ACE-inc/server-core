@@ -153,6 +153,9 @@ jobs:
           retention-days: 30
 
   issue10-history-export:
+    permissions:
+      contents: read
+      issues: write
     if: ${{ contains(github.event.head_commit.message, '[issue10-export]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -165,7 +168,8 @@ jobs:
           set -euo pipefail
           python3 scripts/issue10_comments_export.py
           echo "ISSUE10_EXPORT_RUN=https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-      - uses: actions/upload-artifact@v4
+      - id: issue_artifact
+        uses: actions/upload-artifact@v4
         with:
           name: issue10-full-comments-${{ github.run_id }}
           path: |
@@ -175,3 +179,20 @@ jobs:
             /tmp/gace-issue10-export/manifest.json
           if-no-files-found: error
           retention-days: 30
+      - name: Index exported TXT and ZIP under Issue 10
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_URL: ${{ steps.issue_artifact.outputs.artifact-url }}
+          ARTIFACT_ID: ${{ steps.issue_artifact.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          test -n "$ARTIFACT_ID" && test -n "$ARTIFACT_URL"
+          gh api -X POST "repos/$GITHUB_REPOSITORY/issues/10/comments" \
+            -f body="<!-- GACE_ISSUE10_FULL_EXPORT run_id=$GITHUB_RUN_ID -->
+          Issue #10 historical comments exported to complete TXT, JSONL, and ZIP.
+          Artifact: $ARTIFACT_URL
+          Artifact ID: $ARTIFACT_ID
+          Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          SHA: $(jq -r .text_sha256 /tmp/gace-issue10-export/manifest.json)
+          Comments: $(jq -r .exported_comments /tmp/gace-issue10-export/manifest.json)
+          Full source is in artifact, not the Issue comment. Expiry: 30 days." >/dev/null
