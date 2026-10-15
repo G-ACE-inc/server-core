@@ -79,6 +79,8 @@ def continuation_observation(record, verdict):
         return "CORRELATION_FAILED", "INSPECT_RESULT_CORRELATION"
     if any(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated") for stream in ("stdout", "stderr")):
         return "HOST_OUTPUT_PARTIAL", "READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE"
+    if any(stream + "_bytes" in record for stream in ("stdout", "stderr")):
+        return "HOST_LEDGER_RECOVERY_REQUIRED", "READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE"
     if record.get("state") == "PASS" and record.get("exit_code") == 0:
         return "HOST_OPERATION_PASSED", "RECHECK_MISSION_ACCEPTANCE_AND_CONTINUE"
     stderr = str(record.get("stderr") or "")
@@ -101,7 +103,7 @@ def emit(record, comment, verdict):
     print(f"CHAT_HOST_OBSERVATION={observation}")
     print(f"CHAT_NEXT_ACTION={next_action}")
     for stream in ("stdout", "stderr"):
-        partial = bool(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated"))
+        partial = bool(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated") or stream + "_bytes" in record)
         print(f"CHAT_HOST_{stream.upper()}_COMPLETE={str(not partial).upper()}")
         if stream + "_sha256" in record:
             print(f"CHAT_HOST_{stream.upper()}_SHA256={record[stream + '_sha256']}")
@@ -139,7 +141,7 @@ def write_observation(path, request_id, record=None, comment=None, verdict=None)
                    "next_action": next_action, "result_verified": verdict == "OK",
                    "streams": {stream: {"chars": record.get(stream + "_chars"),
                                         "sha256": record.get(stream + "_sha256"),
-                                        "complete": not bool(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated"))}
+                                        "complete": not bool(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated") or stream + "_bytes" in record)}
                                for stream in ("stdout", "stderr")}}
     dest = Path(path)
     dest.parent.mkdir(parents=True, exist_ok=True)

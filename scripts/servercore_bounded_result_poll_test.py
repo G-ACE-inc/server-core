@@ -48,6 +48,27 @@ class TerminalOutputTests(unittest.TestCase):
             self.assertFalse(json.loads(path.read_text())["result_verified"])
             self.assertEqual(json.loads(path.read_text())["observation"], "HOST_RESULT_NOT_RETURNED")
 
+    def test_ledger_pointer_requires_payload_recovery(self):
+        record = dict(request_id="req_" + "d" * 24, command_id="host.command",
+                      state="PASS", exit_code=0, expected_sha="a" * 40,
+                      stdout_bytes=10000, stderr_bytes=0,
+                      stdout_sha256="b" * 64)
+        observation, next_action = poll.continuation_observation(record, "OK")
+        self.assertEqual(observation, "HOST_LEDGER_RECOVERY_REQUIRED")
+        self.assertEqual(next_action, "READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE")
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "receipt.json"
+            poll.write_observation(str(dest), record["request_id"], record,
+                                   {"html_url": "https://github.com/G-ACE-inc/server-core/issues/10"}, "OK")
+            receipt = json.loads(dest.read_text())
+            self.assertFalse(receipt["streams"]["stdout"]["complete"])
+            self.assertFalse(receipt["streams"]["stderr"]["complete"])
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            poll.emit(record, {"html_url": "https://github.com/G-ACE-inc/server-core/issues/10"}, "OK")
+        self.assertIn("CHAT_HOST_STDOUT_COMPLETE=FALSE", buf.getvalue())
+        self.assertIn("CHAT_HOST_OUTPUT_TRANSPORT=HOST_LEDGER_ONLY", buf.getvalue())
+
     def test_host_observation_retains_long_streams(self):
         stdout = "START-" + "a" * 18000 + "-END"
         stderr = "ERR-" + "b" * 5000 + "-END"
