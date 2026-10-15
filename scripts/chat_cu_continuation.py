@@ -126,6 +126,14 @@ def main():
         records = ingest(source, checkpoint["cu_issue_url"], args.notion_page_url)
         context = build(checkpoint["cu_issue_url"], records, checkpoint["cu_issue_url"])
         context["fresh_github_issue"] = readback_issue(checkpoint["cu_issue_url"])
+        context["pilot_measure"] = {
+            "source_count": len(source.get("sources", [])) if isinstance(source, dict) else 1,
+            "matched_records": context["count"],
+            "fetched_records": len(records),
+            "unselected_records": max(0, len(records) - context["count"]),
+            "baseline_read_calls": None,
+            "efficiency_improvement": "NOT_MEASURED",
+        }
         result["notion_context"] = context
         # Context augments rationale; only fresh GitHub run verification
         # determines the executable next action.
