@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Approved server-core Host source reflection of merged terminal IO fixes, protect Registry/stashes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "cf81f8174da134340f8168be2516c251282ff3da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "cf81f8174da134340f8168be2516c251282ff3da",
+    "command": "set -euo pipefail; cd /home/admin1/server-core; test \"$(git symbolic-ref --short HEAD)\" = main; test \"$(git rev-parse HEAD)\" = cf81f8174da134340f8168be2516c251282ff3da; f=operations/master-internal-repositories.json; before=\"$(sha256sum \"$f\" | cut -d ' ' -f1)\"; stashes=\"$(git stash list | wc -l)\"; git fetch origin main; git merge-base --is-ancestor HEAD 96d01bb845152569658ccd1187b502bf33649c06; git merge --ff-only 96d01bb845152569658ccd1187b502bf33649c06; test \"$(sha256sum \"$f\" | cut -d ' ' -f1)\" = \"$before\"; test \"$(git stash list | wc -l)\" = \"$stashes\"; printf 'REFLECTED_MAIN_SHA='; git rev-parse HEAD; printf 'REGISTRY_SHA256=%s\\nSTASHES=%s\\n' \"$before\" \"$stashes\""
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/232"
+  }
+}
