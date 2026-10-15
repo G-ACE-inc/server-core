@@ -134,6 +134,9 @@ def main():
             "baseline_read_calls": None,
             "efficiency_improvement": "NOT_MEASURED",
         }
+        context["pilot_measure"]["github_issue_readback_verified"] = True
+        context["pilot_measure"]["run_readback_status"] = result["continuation"]["readback_status"]
+        context["pilot_measure"]["continuation_action"] = result["continuation"]["next_action"]
         result["notion_context"] = context
         # Context augments rationale; only fresh GitHub run verification
         # determines the executable next action.
