@@ -73,7 +73,12 @@ def main():
         except ModuleNotFoundError:
             from chat_notion_comment_adapter import parse_comments
         data = parse_comments(data.get("structuredContent", data), args.cu_url)
-    result = build(args.cu_url, data, args.github_current_url)
+    try:
+        from scripts.chat_notion_context_ingest import ingest
+    except ModuleNotFoundError:
+        from chat_notion_context_ingest import ingest
+    records = ingest(data, args.cu_url)
+    result = build(args.cu_url, records, args.github_current_url)
     result["fresh_github_issue"] = readback_issue(args.cu_url)
     print(json.dumps(result, ensure_ascii=False))
 
