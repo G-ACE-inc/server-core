@@ -65,6 +65,7 @@ def main():
     p.add_argument("--cu-url", required=True)
     p.add_argument("--github-current-url", required=True)
     p.add_argument("--notion-search-json", type=Path, required=True)
+    p.add_argument("--notion-page-url")
     args = p.parse_args()
     data = json.loads(args.notion_search_json.read_text(encoding="utf-8"))
     if isinstance(data, dict):
@@ -77,9 +78,10 @@ def main():
         from scripts.chat_notion_context_ingest import ingest
     except ModuleNotFoundError:
         from chat_notion_context_ingest import ingest
-    records = ingest(data, args.cu_url)
+    records = ingest(data, args.cu_url, args.notion_page_url)
     result = build(args.cu_url, records, args.github_current_url)
     result["fresh_github_issue"] = readback_issue(args.cu_url)
+    result["pilot_metrics"] = {"fetched_records": len(records), "selected_records": result["count"], "efficiency_improvement": "NOT_MEASURED"}
     print(json.dumps(result, ensure_ascii=False))
 
 if __name__ == "__main__":
