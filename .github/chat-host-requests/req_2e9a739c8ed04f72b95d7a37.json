@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Isolated health test updated bounded Host Receiver without replacing live container",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -euo pipefail; cd /home/admin1/server-core; s=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/bounded-host-delivery\"}}{{.Source}}{{end}}{{end}}' server-core-bounded-host)\"; test -f \"$s\"; n=server-core-bounded-host-stage-96d01bb; trap 'docker rm -f \"$n\" >/dev/null 2>&1 || true' EXIT; docker run -d --name \"$n\" --network gace-internal --init --user 1000:1000 --read-only --cap-drop ALL --security-opt no-new-privileges:true --pids-limit 64 --memory 192m --tmpfs /tmp:size=32m,mode=1777 -v /home/admin1/server-core:/home/admin1/server-core:ro -v /run/gace:/run/gace:ro -v \"$s\":/run/secrets/bounded-host-delivery:ro -e GACE_BOUNDED_HOST_HMAC_KEY_FILE=/run/secrets/bounded-host-delivery -e GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS=300 gace-server-core-bounded-host:hostsha-96d01bb >/dev/null; sleep 3; docker exec \"$n\" python3 -c 'import urllib.request; assert urllib.request.urlopen(\"http://127.0.0.1:8789/healthz\",timeout=3).status==200'; docker exec \"$n\" python3 -m py_compile /app/scripts/servercore_bounded_host_receiver.py; echo NEW_RECEIVER_STAGE_HEALTH=PASS"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/232"
+  }
+}
