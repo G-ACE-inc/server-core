@@ -103,6 +103,18 @@ class SinkTests(unittest.TestCase):
         self.assertEqual(len([c for c in calls if c[0][:3] == ["api", "-X", "POST"]]), 1)
         self.assertEqual(sink.pending_ids(self.dir), [])
 
+    def test_issue_comment_contains_metadata_not_output(self):
+        output = "日本語の長文" * 10000
+        sink.accept_record(rec(stdout=output, stderr="private failure details"), result_dir=self.dir)
+        saved = sink.read_record(RID, self.dir)
+        self.assertEqual(saved["stdout"], output)
+        body = sink.comment_body(saved)
+        self.assertNotIn("日本語の長文", body)
+        self.assertNotIn("private failure details", body)
+        self.assertIn(hashlib.sha256(output.encode("utf-8")).hexdigest(), body)
+        self.assertIn('"stdout_chars": ' + str(len(output)), body)
+        self.assertIn('"stdout": ""', body)
+
     def test_crash_between_post_and_save_does_not_duplicate_comment(self):
         sink.accept_record(rec(), result_dir=self.dir)
 
