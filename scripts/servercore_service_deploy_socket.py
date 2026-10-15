@@ -29,7 +29,7 @@ from servercore_registered_docker_ops import DockerOperationError, operate, OPS
 SOCKET_PATH = Path("/run/gace/servercore-service-deploy.sock")
 LOCK_PATH = Path("/tmp/gace-servercore-service-deploy.lock")
 RESULT_DIR = Path("/home/admin1/logs/servercore-service-deploy")
-MAX_REQUEST = 2048
+MAX_REQUEST = 1048576
 DEPLOY_SCHEMA = "gace.servercore-service-deploy.request/v1"
 STATUS_SCHEMA = "gace.servercore-service-deploy.status/v1"
 DOCKER_OP_SCHEMA = "gace.servercore-docker-operation.request/v1"
@@ -295,7 +295,7 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         raise AdmissionError("REPOSITORY_INVALID")
     if not isinstance(target_sha, str) or not SHA.fullmatch(target_sha):
         raise AdmissionError("TARGET_SHA_INVALID")
-    if not isinstance(command_text, str) or not 1 <= len(command_text) <= 1600 or "\x00" in command_text:
+    if not isinstance(command_text, str) or not command_text or "\x00" in command_text:
         raise AdmissionError("HOST_COMMAND_INVALID")
     previous = read_result(request_id, result_dir)
     if previous is not None:
@@ -336,7 +336,7 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
                             check=False)
             result = {**base, "state": "HOST_COMMAND_PASS" if completed.returncode == 0 else "FAIL",
                       "exit_code": completed.returncode,
-                      "stdout": completed.stdout[:16000], "stderr": completed.stderr[:1000]}
+                      "stdout": completed.stdout, "stderr": completed.stderr}
         except (OSError, subprocess.TimeoutExpired):
             result = {**base, "state": "FAIL", "failure_class": "HOST_COMMAND_EXECUTION_FAILED"}
         write_result(request_id, result, result_dir)
