@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Inspect current gateway project-key labels and TGserver action secret names; no values",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -eu; cd /home/admin1/projects/webhook-gateway; echo GATEWAY_PWD_OK; git rev-parse --short HEAD; for f in .env docker-compose.yml; do [ -f \"$f\" ] && printf 'FILE=%s PRESENT\\n' \"$f\"; done; python3 - <<'PY'\nimport pathlib,json,re\np=pathlib.Path('.env'); lines=p.read_text().splitlines() if p.exists() else []\nfor name in ('INTERNAL_EVENT_API_PROJECT_KEYS_JSON','INTERNAL_EVENT_API_TOKEN'):\n values=[line.split('=',1)[1] for line in lines if line.startswith(name+'=')]\n print(name+'_COUNT='+str(len(values)))\n if name.endswith('_JSON') and values:\n  try:\n   obj=json.loads(values[-1].strip().strip(\"'\\\"\")); print('PROJECT_KEY_FORMAT='+type(obj).__name__); print('PROJECT_KEY_LABELS='+','.join(sorted(obj)) if isinstance(obj,dict) else 'NOT_OBJECT')\n  except Exception: print('PROJECT_KEY_FORMAT=UNPARSEABLE')\nfor path in ('docker-compose.yml','compose.yml'):\n p=pathlib.Path(path)\n if p.exists():\n  t=p.read_text(); print('COMPOSE_HAS_PROJECT_KEYS='+str('INTERNAL_EVENT_API_PROJECT_KEYS_JSON' in t))\nPY\nprintf 'TG_ACTION_SECRET_NAMES='; gh secret list --repo seigo-gace/TGserver --json name -q '.[].name' 2>/dev/null | grep -E '^(DEVLOG_GATEWAY_TOKEN|GACE_EVENT_GATEWAY_TOKEN)$' | paste -sd, - || true; printf 'TG_REPO_ACCESS='; gh api repos/seigo-gace/TGserver --jq .permissions.admin 2>/dev/null || echo UNKNOWN; printf 'GATEWAY_API_CONTAINERS='; docker ps --format '{{.Names}}' | grep '^webhook-gateway-api' || true"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Validate existing Gateway env key labels and gh secret metadata before narrow change"
+  }
+}
