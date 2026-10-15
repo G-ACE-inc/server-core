@@ -1,4 +1,6 @@
-# Masterへ渡すコマンドの作成方法
+# MASTER TERMINAL COMMAND CONTRACT
+
+Masterへ渡すコマンドの作成方法
 
 通常はAI自身が `host.command` を用いる。実際の接続経路を利用できない場合に限り、Masterへ貼り付け実行可能な完成コマンドを渡す。この規則はMasterに渡すコマンドだけに適用する。
 
