@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "mutation",
+  "repo": "",
+  "run_id": "",
+  "request": "TGserver dedicated Gateway project key additive registration and DEVLOG_GATEWAY_TOKEN switch, preserve server-core, rollback Gateway on failure; authorized project credential migration",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -euo pipefail\npython3 - <<'PY'\nimport pathlib,json,ast,secrets,subprocess,tempfile,os,shutil,re,time\nroot=pathlib.Path('/home/admin1/projects/webhook-gateway')\nenv=root/'.env'\nassert env.is_file(),'GATEWAY_ENV_MISSING'\noriginal=env.read_bytes()\nlines=original.decode().splitlines(keepends=True)\nmatches=[i for i,line in enumerate(lines) if line.startswith('INTERNAL_EVENT_API_PROJECT_KEYS_JSON=')]\nassert len(matches)==1,'PROJECT_KEYS_LINE_NOT_UNIQUE'\ni=matches[0]; raw=lines[i].split('=',1)[1].strip(); quote=raw[0] if raw and raw[0] in (\"'\",'\"') else ''\nbody=raw[1:-1] if quote and raw.endswith(quote) else raw\nbody=body.replace('\\\\\\\"','\"')\ntry: m=json.loads(body)\nexcept ValueError: m=ast.literal_eval(body)\nassert isinstance(m,dict) and isinstance(m.get('server-core'),str),'EXISTING_SERVER_CORE_KEY_MISSING'\nassert 'tgserver' not in m,'TGSERVER_KEY_ALREADY_EXISTS_VERIFY_BEFORE_MUTATE'\nk=secrets.token_urlsafe(48)\nassert k not in m.values()\nbackup=root/('.env.tgzero-rollback-'+time.strftime('%Y%m%d%H%M%S',time.gmtime()))\nwith open(backup,'xb') as f: os.chmod(backup,0o600);f.write(original)\nm['tgserver']=k\nnewval=json.dumps(m,separators=(',',':'))\nassert \"'\" not in newval and '\\n' not in newval\nnewline='\\n' if lines[i].endswith('\\n') else ''\nlines[i]='INTERNAL_EVENT_API_PROJECT_KEYS_JSON='+(\"'\"+newval+\"'\" if quote==\"'\" else '\"'+newval.replace('\"','\\\\\"')+'\"' if quote=='\"' else \"'\"+newval+\"'\")+newline\nupdated=''.join(lines).encode()\ndef replace(blob):\n fd,tmp=tempfile.mkstemp(prefix='.tgzero-env-',dir=root)\n try:\n  with os.fdopen(fd,'wb') as f: os.fchmod(f.fileno(),0o600);f.write(blob);f.flush();os.fsync(f.fileno())\n  os.replace(tmp,env)\n finally:\n  if os.path.exists(tmp):os.unlink(tmp)\ndef compose():\n p=subprocess.run(['docker','compose','up','-d','--no-deps','--force-recreate','api'],cwd=root,capture_output=True,text=True,timeout=150)\n return p.returncode\nprint('GATEWAY_KEY_BACKUP_CREATED',backup.name)\ntry:\n replace(updated)\n assert compose()==0,'GATEWAY_RECREATE_FAILED'\n check=subprocess.run(['docker','inspect','webhook-gateway-api-1','--format','{{.State.Running}}'],capture_output=True,text=True,timeout=15)\n assert check.returncode==0 and check.stdout.strip()=='true','GATEWAY_CONTAINER_NOT_RUNNING'\n result=subprocess.run(['gh','secret','set','DEVLOG_GATEWAY_TOKEN','-R','seigo-gace/TGserver'],input=k,text=True,capture_output=True,timeout=40)\n assert result.returncode==0,'TG_GITHUB_SECRET_SET_FAILED'\n print('TGZERO_PROJECT_KEY_REGISTERED=TRUE')\n print('GATEWAY_API_RECREATED=TRUE')\n print('TG_GITHUB_SECRET_SWITCHED=TRUE')\n print('EXISTING_SERVER_CORE_KEY_PRESERVED=TRUE')\n print('ROLLBACK_FILE',backup.name)\nexcept Exception as e:\n print('MIGRATION_FAILED',type(e).__name__,str(e)[:100])\n replace(original)\n print('GATEWAY_ROLLBACK_RECREATE',compose())\n raise\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "bounded_host",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6187568177"
+  }
+}
