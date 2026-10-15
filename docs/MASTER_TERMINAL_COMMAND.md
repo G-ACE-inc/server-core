@@ -9,7 +9,7 @@ Role: G-ACE WorkspaceでAIがMasterへ提示するTerminal Commandの形式・�
 
 本Contractは、Workspace AI / Server AI / Cursor / Codex等がMasterへCopy & Paste用Commandを提示する場合に必ず適用する。
 
-Masterへの手動コマンド引継ぎは、Workspace §6に定める直接実行不能時の最終手段に限る。通常のサーバー操作はserver-core共通 `host.command` 経路を使用する。この文書は最終手段のコマンド形式と安全境界のみを定義し、旧経路や追加のMaster承認手順を復活させない。
+Masterへの手動コマンド引継ぎは、Workspace §6に定める直接実行不能時の最終手段に限る。通常のサーバー操作はserver-core共通 `host.command` 経路を使用する。この文書は最終手段のコマンド形式と安全境界のみを定義し、追加のMaster承認手順を設けない。
 
 ## 2. Master Interface
 
