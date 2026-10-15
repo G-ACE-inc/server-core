@@ -204,13 +204,17 @@ def _gh(args, stdin=None, timeout=40):
 
 
 def find_published(request_id, since, runner=_gh):
-    path = f"repos/{RESULT_REPOSITORY}/issues/{RESULT_ISSUE}/comments?per_page=100&since={since}"
-    out = runner(["api", "--paginate", path, "--jq", ".[] | [.id, .html_url, (.body | contains(\"" +
-                  f"<!-- {MARKER} request_id={request_id} -->" + "\"))] | @tsv"])
-    for line in out.splitlines():
-        parts = line.split("\t")
-        if len(parts) == 3 and parts[2] == "true":
-            return {"comment_id": int(parts[0]), "url": parts[1]}
+    """Query only recent comment pages, not the entire growing Issue history."""
+    issue_path = f"repos/{RESULT_REPOSITORY}/issues/{RESULT_ISSUE}"
+    issue = json.loads(runner(["api", issue_path]))
+    count = int(issue.get("comments", 0))
+    last = max(1, (count + 99) // 100)
+    needle = f"<!-- {MARKER} request_id={request_id} -->"
+    for page in range(last, max(0, last - 2), -1):
+        comments = json.loads(runner(["api", f"{issue_path}/comments?per_page=100&page={page}"]))
+        for item in reversed(comments):
+            if needle in str(item.get("body") or ""):
+                return {"comment_id": int(item["id"]), "url": str(item["html_url"])}
     return None
 
 
