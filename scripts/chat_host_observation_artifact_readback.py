@@ -51,6 +51,24 @@ def validate(receipt, expected_request_id):
                 raise ValueError("STREAM_DIGEST_INVALID")
         if obs == "HOST_OUTPUT_PARTIAL" and all(info["complete"] for info in stream_data.values()):
             raise ValueError("PARTIAL_FLAG_MISMATCH")
+    # Issue #10 metadata-only results contain Host ledger locators rather than
+    # stdout/stderr bytes. The poller's 'complete' flag alone MUST NOT prove that
+    # the CHAT received full output. Require verified digest + byte/char evidence.
+    streams = receipt.get("streams") or {}
+    stream_metadata_complete = (
+        verified is True
+        and set(streams) == STREAM_KEYS
+        and all(
+            info.get("complete") is True
+            and isinstance(info.get("sha256"), str)
+            and DIGEST.fullmatch(info["sha256"])
+            and type(info.get("chars")) is int
+            and info["chars"] >= 0
+            for info in streams.values()
+        )
+    )
+    if obs == "HOST_OPERATION_PASSED":
+        action = "INSPECT_HOST_LEDGER_OUTPUT_COMPLETENESS_AND_CONTINUE"
     # Do not return unchecked free-form data, plaintext Host output, or credentials.
     return {
         "request_id": expected_request_id,
@@ -58,8 +76,8 @@ def validate(receipt, expected_request_id):
         "observation": obs,
         "next_action": action,
         "result_url": receipt.get("result_url") if isinstance(receipt.get("result_url"), str) else None,
-        "output_complete": bool(receipt.get("streams")) and all(
-            x["complete"] for x in receipt["streams"].values()),
+        "output_complete": False,  # This artifact contains metadata, never the Host payload.
+        "stream_metadata_complete": stream_metadata_complete,
     }
 
 

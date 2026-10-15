@@ -56,5 +56,25 @@ class ObservationReadbackTests(unittest.TestCase):
                 from_artifact(path, RID)
 
 
+    def test_metadata_only_must_not_claim_full_payload(self):
+        record = self.record()
+        record["observation"] = "HOST_OPERATION_PASSED"
+        record["next_action"] = "RECHECK_MISSION_ACCEPTANCE_AND_CONTINUE"
+        record["streams"] = {
+            "stdout": {"complete": True, "sha256": None, "chars": None},
+            "stderr": {"complete": True, "sha256": None, "chars": None},
+        }
+        result = validate(record, RID)
+        self.assertFalse(result["output_complete"])
+        self.assertEqual(result["next_action"], "INSPECT_HOST_LEDGER_OUTPUT_COMPLETENESS_AND_CONTINUE")
+
+    def test_full_hashes_can_validate_stream_metadata(self):
+        record = self.record()
+        record["streams"]["stdout"] = {"complete": True, "sha256": DIGEST, "chars": 100}
+        result = validate(record, RID)
+        self.assertFalse(result["output_complete"])
+        self.assertTrue(result["stream_metadata_complete"])
+
+
 if __name__ == "__main__":
     unittest.main()
