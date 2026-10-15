@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Inspect staged receiver loaded HTTP command budget and health before activation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "docker exec server-core-bounded-host-stage-96d01bb python3 -c 'import sys;sys.path.insert(0,\"/app\");import servercore_bounded_host_receiver as r;print(\"STAGE_HTTP_MAX=\"+str(r.MAX_BODY_BYTES))' ; docker inspect --format 'STAGE_HEALTH={{json .State.Health}} STAGE_IMAGE={{.Config.Image}}' server-core-bounded-host-stage-96d01bb; docker inspect --format 'ACTIVE_HEALTH={{json .State.Health}} ACTIVE_IMAGE={{.Config.Image}}' server-core-bounded-host"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/232"
+  }
+}
