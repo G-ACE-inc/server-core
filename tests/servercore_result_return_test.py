@@ -89,7 +89,6 @@ class SinkTests(unittest.TestCase):
             if "/comments?" in args[-1]:
                 return "[]"
             return json.dumps({"comments": 9876})
-            return json.dumps({"id": 77, "html_url": "https://github.com/x/y/issues/10#issuecomment-77"})
 
         found = sink.publish_record(RID, result_dir=self.dir, runner=runner)
         self.assertEqual(found["comment_id"], 77)
@@ -158,7 +157,6 @@ class SinkTests(unittest.TestCase):
             if "/comments?" in args[-1]:
                 return "[]"
             return json.dumps({"comments": 9876})
-            return json.dumps({"id": 77, "html_url": "https://github.com/x/y/issues/10#issuecomment-77"})
 
         self.assertEqual(sink.publish_record(RID, result_dir=self.dir, runner=online)["comment_id"], 77)
         self.assertNotIn(RID, sink.pending_ids(self.dir))
