@@ -217,6 +217,9 @@ chat_actions = (ROOT / ".github/workflows/chatgpt-live-api-verify.yml").read_tex
 assert 'if [[ "$command_id" == "host.command" ]]' in chat_actions
 assert 'elif [[ "$command_id" == "dev.job" ]]' in chat_actions
 assert 'RETIRED_FIXED_COMMAND_DENIED' in chat_actions
+selector = (ROOT / "scripts/chatgpt_isolated_request_select.py").read_text(encoding="utf-8")
+assert 'LEGACY_TARGET = ".github/chatgpt-live-api-target.json"' in selector
+assert "LEGACY_TARGET in changed" in selector
 for retired_id in ("project.source_reflect", "service.deploy", "service.deploy_status",
                    "project.file_inspect", "docker.logs", "docker.operation"):
     assert f'"$command_id" == "{retired_id}"' not in chat_actions
