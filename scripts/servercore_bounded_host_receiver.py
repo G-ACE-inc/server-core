@@ -321,15 +321,15 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
     }, socket_path, timeout=120)
     if reply.get("ok") is not True:
         fail("HOST_COMMAND_ADMISSION_DENIED", 422)
-    if reply.get("request_id") != request["id"] or reply.get("repository") != request["repository"] \
-            or reply.get("source_sha") != request["repo_sha"]:
-        fail("HOST_COMMAND_RESULT_MISMATCH", 503)
     if reply.get("state") == "HOST_COMMAND_DUPLICATE":
         result = reply.get("result")
         if not isinstance(result, dict):
             fail("HOST_COMMAND_RESULT_INVALID", 503)
     else:
         result = reply
+    if result.get("request_id") != request["id"] or result.get("repository") != request["repository"] \
+            or result.get("source_sha") != request["repo_sha"]:
+        fail("HOST_COMMAND_RESULT_MISMATCH", 503)
     return {"command_id": request["command_id"], "repository": request["repository"],
             "source_sha": sha, "repo_sha": request["repo_sha"], "state": result.get("state"), "exit_code": result.get("exit_code", 1),
             "stdout": str(result.get("stdout") or ""),
