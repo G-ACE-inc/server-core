@@ -16,7 +16,7 @@ import servercore_bounded_host as bounded_host
 RECEIVER_PATH = "/internal/servercore-bounded-host"
 HEALTH_PATH = "/healthz"
 EXPECTED_DESTINATION = "server-core-bounded-host"
-MAX_BODY_BYTES = 4096
+MAX_BODY_BYTES = 1048576
 # Deterministic Host preflight denials must not enter infrastructure retry loops.
 TERMINAL_REFLECT_ERRORS = frozenset({
     "BEFORE_SHA_MISMATCH", "DIRTY_CHECKOUT_DENIED", "REMOTE_BRANCH_SHA_MISMATCH",
