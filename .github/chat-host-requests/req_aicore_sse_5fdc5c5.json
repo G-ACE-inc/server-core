@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core SSE interruption follow-up exact SHA source verification",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "python3 -c 'import io,tarfile,urllib.request,types,sys,unittest\ns=\"5fdc5c5273d0f3b6529bf804658cb88f494cebbc\"\nb=urllib.request.urlopen(\"https://api.github.com/repos/seigo-gace/ai-core/tarball/\"+s,timeout=25).read(2000001)\nt=tarfile.open(fileobj=io.BytesIO(b),mode=\"r:gz\")\nd={f.name.split(\"/\",1)[1]:t.extractfile(f).read().decode() for f in t.getmembers() if f.isfile() and f.name.endswith(\".py\")}\nr=types.ModuleType(\"runtime\");r.__path__=[];sys.modules[\"runtime\"]=r\ng=types.ModuleType(\"runtime.model_gate\");g.__file__=\"/tmp/runtime/model_gate.py\";sys.modules[g.__name__]=g\nexec(d[\"runtime/model_gate.py\"],g.__dict__)\na=types.ModuleType(\"test_model_gate\");a.__file__=\"/tmp/tests/test_model_gate.py\";sys.modules[a.__name__]=a\nexec(d[\"tests/test_model_gate.py\"],a.__dict__)\nz=unittest.TestSuite()\nfor n in (\"CoordinatorTests.test_slow_cold_start_does_not_consume_ready_inference_capacity\",\"CoordinatorTests.test_two_leased_models_do_not_allow_third_request\",\"GateHttpTests.test_stream_text_done_is_not_terminal_event\",\"GateHttpTests.test_stream_sse_under_shared_lease\"):\n z.addTest(unittest.defaultTestLoader.loadTestsFromName(n,a))\nv=unittest.TextTestRunner().run(z)\nprint(\"AI_CORE_SHA=\"+s+\" PASS=\"+str(v.wasSuccessful())+\" N=\"+str(v.testsRun))\nassert v.wasSuccessful()'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
