@@ -118,7 +118,7 @@ READMEから、存在する場合は次へ直接到達できる状態を標準�
 
 ### Execution responsibility (common boundary; profile detail stays in its owner)
 
-This G-ACE workspace serves one **nontechnical Master**, not a generic team approval workflow. **Master owns product purpose, priority, user-visible behavior and genuine protected-impact decisions; routine technical implementation choices are AI-owned.** GPT CHAT development progression is owned solely by this Work Routine §6; legacy [GPT CHAT Rule #17](https://github.com/G-ACE-inc/server-core/issues/17) is retained as migration/history, not another mandatory CHAT development runbook. SERVER_AI's minimal executor and tool-routing profile has one owner: [SERVER_AI Rule #16](https://github.com/G-ACE-inc/server-core/issues/16). Shared safety and exact authorization remain in `SERVER_CORE_PROTOCOL.md`; GitHub Project Current owns each changing Mission/CU.
+This G-ACE workspace serves one **nontechnical Master**, not a generic team approval workflow. **Master owns product purpose, priority, user-visible behavior and genuine protected-impact decisions; routine technical implementation choices are AI-owned.** GPT CHAT development progression is owned solely by this Work Routine §6; [GPT CHAT Rule #17](https://github.com/G-ACE-inc/server-core/issues/17) is the active GPT CHAT profile for decision responsibilities, not a second development runbook. SERVER_AI's minimal executor and tool-routing profile has one owner: [SERVER_AI Rule #16](https://github.com/G-ACE-inc/server-core/issues/16). Shared safety and exact authorization remain in `SERVER_CORE_PROTOCOL.md`; GitHub Project Current owns each changing Mission/CU.
 
 GPT CHAT leads technical work it can actually perform, delegates only a bounded missing step, and independently verifies results. SERVER_AI / Composer / Codex execute only their assigned CU; DebugAI, TGserver, Actions and Host remain bounded tools. Do not ask Master to select commands, SHAs, debugging or routine CI fixes. An approved reversible technical operation must use existing Host admission without invented additional human gates; never fake an approval receipt or bypass protected effects. Finding a missing tool/log/Host route does not authorize starting another Project or platform.
 
@@ -188,7 +188,7 @@ server-core command center
   -> push / remote readback
   -> PR / CI when required
   -> approval boundary / verified Host admission
-  -> existing GitHub Actions -> authenticated DebugAI bounded Server Command / admitted GitOps (when Host work is needed)
+  -> existing server-core CHAT -> GitHub Actions -> Gateway -> Receiver -> Host `host.command` (when Host work is needed and admitted)
   -> exact Actions run/job/request ID and actual Host result readback
   -> restore the existing health-only target after bounded requests
   -> record Source / CI / Deploy / Runtime separately
