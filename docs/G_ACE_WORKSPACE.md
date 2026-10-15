@@ -146,9 +146,7 @@ Use the existing verified Notion destination and ownership; do not create an arb
 - **Blocked action does not stop the Mission:** identify the exact denied action, responsible authorized writer, smallest safe correction and readback; keep other owned Source/Test/CI work moving. If the executor truly cannot take another action, give Master one complete copy-ready command or bounded Composer instruction using the existing command contract, rather than an open-ended technical question.
 - **No silent intent changes:** if Source/Design work would alter Master-owned functionality or cross a protected-impact boundary, prepare the evidence and alternatives before seeking the specific intent/impact decision. Suspend only that action, not independent authorized work. Consent to discuss, a progress response or a GitHub comment is not a Runtime credential.
 
-### Terminal command preflight (GPT CHAT / executor)
-
-Before Host execution: (1) confirm target Repo/checkout, intended effect and dependencies; (2) compose the complete command; (3) run syntax validation and a local isolated test or dry-run **when technically reproducible**; (4) check the exact final command, quoting, working directory, mutation scope and rollback before dispatch; (5) execute once and verify actual exit/status/output against the intended effect. Local validation is not Host success. If local reproduction is unavailable, state that limitation and use the smallest safe Host read-only preflight before a mutating command where appropriate. On failure, diagnose and correct the cause before retrying; never blindly repeat or drop required behavior just to make a command pass. Do not add arbitrary limits or new approval steps.
+Before executing an AI-authored server command, apply the lightweight AI-only self-check in `docs/COMMAND_ROUTINE.md`; it never requests routine Master confirmation or suspends the development CU.
 
 ### Mandatory executable handoff when GPT CHAT cannot proceed (no explanation-only stop)
 
