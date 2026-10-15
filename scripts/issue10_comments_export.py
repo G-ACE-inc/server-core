@@ -4,10 +4,8 @@ import argparse
 import re
 import hashlib
 import json
-import os
 from pathlib import Path
 import subprocess
-import sys
 import zipfile
 
 OUT = Path("/tmp/gace-issue-export")
