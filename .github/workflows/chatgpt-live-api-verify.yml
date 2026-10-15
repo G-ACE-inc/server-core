@@ -184,7 +184,7 @@ jobs:
           path: /tmp/gace-issue-export/
           if-no-files-found: error
           retention-days: 30
-      - name: Index artifact on owning Issue
+      - name: Index artifact on Project control Issue
         env:
           GH_TOKEN: ${{ github.token }}
           ARTIFACT_URL: ${{ steps.issue_artifact.outputs.artifact-url }}
@@ -192,8 +192,9 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$ARTIFACT_ID" && test -n "$ARTIFACT_URL"
-          gh api -X POST "repos/$EXPORT_REPOSITORY/issues/$EXPORT_ISSUE/comments" \
+          gh api -X POST "repos/$GITHUB_REPOSITORY/issues/10/comments" \
             -f body="<!-- GACE_ISSUE_EXPORT run_id=$GITHUB_RUN_ID -->
+          Issue export target: $EXPORT_REPOSITORY#$EXPORT_ISSUE
           Issue complete TXT/JSONL/ZIP export: $ARTIFACT_URL
           Artifact ID: $ARTIFACT_ID
           Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
