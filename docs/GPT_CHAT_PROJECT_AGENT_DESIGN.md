@@ -345,7 +345,7 @@ Notion側の最初の候補は**既存議事録の再利用＋最小の『Decisi
 2. 現在のCU URL／Project／設計変更テーマをキーにNotionから**必要範囲だけ**判断記録を検索。最新レコードの日付だけでなく、採否・正本リンク・更新元を確認。全議事録や全DBを毎回読み込まない。
 3. `RESTORE`: GitHub CurrentのOwner/Acceptance/Next ActionとNotionの採用理由・依存・既知失敗を併記。競合時は自動上書きしない。Notion古いSnapshotはSTALEとして扱う。
 4. `PLAN→ACT→OBSERVE→VERIFY`: 既存のGitHub/Host/TGserver Toolを実行し、SHA/Run/ResultのFresh evidenceを得る。
-5. `CHECKPOINT`: 採否理由・未解決リスク・新たな学びのみNotionに増分記録。正式タスク状態とCIはGithub、Raw LogはTGserver/Artifactへ。NotionにRunの巨大本文を貼らない。
+5. `CHECKPOINT`: §13.7の全開発工程（アイデア・調査事実・比較案/不採用理由・採用設計・実装変更・障害分析・検証・次Action）について、そのTurnで新たに生じた有意味な差分をNotion議事録へ増分記録する。初期からの経緯を毎回全量複写する必要はないが、採否結論やPR日報だけに省略しない。正式タスク状態とCIはGitHub、Raw LogはTGserver/Artifactへ。NotionにRunの巨大本文を貼らない。
 6. 次CHATはCurrentから最小Notion文脈レコードを復元し、**少なくとも一つ実際のTool Action**を続行。Issue #10の全コメント取得を前提にしない。
 
 ### 13.5 無料プラン制約とGoogle Drive補完
@@ -383,3 +383,11 @@ Masterは非技術の企画・要求・優先順位・最終完成判断を担�
 記録は**作業を毎回1件で止めるGateではない**。同一Turnで可能な限り実作業を進め、意味のある設計変更・判断変更・失敗原因・完成単位の都度Notionへ増分追記する。通常のツール出力や重複ログを逐語的に貼り付けないが、Masterの訂正やGPTの却下案・設計の理由を意図的に削らない。メモの記録だけではタスク完了にしない。
 
 **復元の完成条件**：別CHATがGitHub Currentを正本として読み、Notionのアイデア→比較→採否→設計→実装履歴→未実証→次Actionを再構成して、Masterに前提説明を求めず、実際の異なるTool Actionを1件以上続けられること。記録が欠けている場合、過去の判断を推測で補完せず欠落として追記対象にする。
+
+### 13.8 自己監査（2026-10-16、実装と設計を分離）
+- 設計の整合性：§13.4の省略的な議事録記述を§13.7のアイデア→完成までの全工程に整合させた。GitHub Project/IssuesをCurrent正本とする従来の役割分担は不変。
+- 実装状況：PR #247/#251/#252/#254/#255/#256/#259/#260/#261/#262はHost metadata読戻し・CU JSON・GitHub Run照合・ローカルReceipt出力の一部分を実装した。ただし`output_complete`はmetadata-onlyでは意図的にfalse固定であり、Host Ledger本文回収→検証済みtrueへの経路は**未完成**。
+- Notion：既存議事録へのComment追加成功は実証済み。ただし構造化DBの作成/既存DB属性の実運用、索引検索→根拠復元→別CHAT続行は**未検証**。GitHub正式設計SHAとNotion記録の相互リンクは一部あり、無欠落は保証できない。
+- Google Drive：利用可能な保存先として採用されたが、指定アカウント接続・共有権限・容量・実ZIP/PDF保存は**未検証**。
+- 3つのCI成功はそのワークフローの成功であり、追加したPython単体テスト全件の実行やHost→CHAT→次Tool本番E2Eの証拠ではない。
+- 最優先の残件：(1)既存Host Ledgerから原文を取得して検証する実経路、(2)CU Receiptの別CHATから発見可能な耐久リンク、(3)既存Notion議事録のコンテキスト検索→GitHub Current照合→1件の実Tool操作、(4)1 CUで一連の回帰検証。追加ルール/別DB/新Workflowを増やすことは目的にしない。
