@@ -7,6 +7,7 @@ on:
       - feat/chat-actions-client-migration-20261011
     paths:
       - '.github/chat-host-requests/**'
+      - '.github/issue-export-requests/**'
       - .github/workflows/chatgpt-live-api-verify.yml
 
 permissions:
@@ -150,3 +151,52 @@ jobs:
           path: /tmp/gace-chat-host-observation.json
           if-no-files-found: warn
           retention-days: 30
+
+  issue-history-export:
+    if: ${{ contains(github.event.head_commit.message, '[issue-export]') }}
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve exact committed Issue export request
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="$(git diff-tree --root --no-commit-id --name-only --diff-filter=A -r HEAD | grep -E '^.github/issue-export-requests/req_[a-f0-9]{24}.json$' || true)"
+          test -n "$file" && test "$(printf '%s\n' "$file" | wc -l)" -eq 1
+          jq -e '.repository | type == "string"' "$file" >/dev/null
+          jq -e '.issue | type == "number"' "$file" >/dev/null
+          echo "EXPORT_REPOSITORY=$(jq -r .repository "$file")" >> "$GITHUB_ENV"
+          echo "EXPORT_ISSUE=$(jq -r .issue "$file")" >> "$GITHUB_ENV"
+      - name: Export full Issue body and comments to TXT and ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/issue10_comments_export.py --repository "$EXPORT_REPOSITORY" --issue "$EXPORT_ISSUE"
+      - id: issue_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-issue-full-export-${{ github.run_id }}
+          path: /tmp/gace-issue-export/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Index artifact on owning Issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_URL: ${{ steps.issue_artifact.outputs.artifact-url }}
+          ARTIFACT_ID: ${{ steps.issue_artifact.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          test -n "$ARTIFACT_ID" && test -n "$ARTIFACT_URL"
+          gh api -X POST "repos/$EXPORT_REPOSITORY/issues/$EXPORT_ISSUE/comments" \
+            -f body="<!-- GACE_ISSUE_EXPORT run_id=$GITHUB_RUN_ID -->
+          Issue complete TXT/JSONL/ZIP export: $ARTIFACT_URL
+          Artifact ID: $ARTIFACT_ID
+          Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          SHA: $(jq -r .text_sha256 /tmp/gace-issue-export/manifest.json)
+          Exported comments: $(jq -r .exported_comments /tmp/gace-issue-export/manifest.json)
+          Artifact retention: 30 days." >/dev/null
