@@ -17,7 +17,7 @@ def parse_comments(envelope, cu_url):
             continue
         records.append({"cu_url": cu_url, "kind": "OBSERVATION",
                         "state": "UNKNOWN", "summary": content[:1500],
-                        "notion_url": url})
+                        "notion_url": url + "&comment_id=" + comment.attrib.get("id", "")})
         if len(records) >= 40:
             break
     return records
