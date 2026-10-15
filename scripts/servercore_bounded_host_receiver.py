@@ -306,10 +306,10 @@ def dispatch_docker_operation(request, root, socket_path=DEPLOY_SOCKET):
     return {"command_id": request["command_id"], "source_sha": sha,
             "service": value["service"], "repository": value["repository"],
             "operation": value["operation"],
-            "stdout": str(value.get("stdout") or "")[-16000:],
-            "stderr": str(value.get("stderr") or "")[-1000:],
-            "stdout_truncated": bool(value.get("stdout_truncated")) or len(str(value.get("stdout") or "")) > 16000,
-            "stderr_truncated": bool(value.get("stderr_truncated")) or len(str(value.get("stderr") or "")) > 1000,
+            "stdout": str(value.get("stdout") or ""),
+            "stderr": str(value.get("stderr") or ""),
+            "stdout_truncated": bool(value.get("stdout_truncated")),
+            "stderr_truncated": bool(value.get("stderr_truncated")),
             "read_only": read_only, "exit_code": 0, "state": "DOCKER_OPERATION_PASS"}
 
 def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
