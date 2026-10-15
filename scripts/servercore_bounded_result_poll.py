@@ -8,6 +8,7 @@ Exit codes: 0 PASS, 1 Host FAIL, 2 result not returned in time, 3 correlation mi
 import argparse
 import json
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
@@ -113,6 +114,29 @@ def emit(record, comment, verdict):
         print(f"SERVERCORE_BOUNDED_HOST_{stream.upper()}_END")
 
 
+def write_observation(path, request_id, record=None, comment=None, verdict=None):
+    """Durable, secret-free receipt; never include stdout/stderr or private command text."""
+    if not path:
+        return
+    if record is None:
+        receipt = {"request_id": request_id, "observation": "HOST_RESULT_NOT_RETURNED",
+                   "next_action": "INSPECT_HOST_DISPATCH_AND_REPLAN", "result_verified": False}
+    else:
+        observation, next_action = continuation_observation(record, verdict)
+        receipt = {"request_id": request_id, "command_id": record.get("command_id"),
+                   "state": record.get("state"), "exit_code": record.get("exit_code"),
+                   "expected_sha": record.get("expected_sha"), "host_sha": record.get("host_sha"),
+                   "result_url": (comment or {}).get("html_url"), "observation": observation,
+                   "next_action": next_action, "result_verified": verdict == "OK",
+                   "streams": {stream: {"chars": record.get(stream + "_chars"),
+                                        "sha256": record.get(stream + "_sha256"),
+                                        "complete": not bool(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated"))}
+                               for stream in ("stdout", "stderr")}}
+    dest = Path(path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\\n", encoding="utf-8")
+
+
 def main(argv=None, fetch=gh_api, sleep=time.sleep, clock=time.monotonic):
     parser = argparse.ArgumentParser()
     parser.add_argument("--repository", required=True)
@@ -120,6 +144,7 @@ def main(argv=None, fetch=gh_api, sleep=time.sleep, clock=time.monotonic):
     parser.add_argument("--request-id", required=True)
     parser.add_argument("--command-id", required=True)
     parser.add_argument("--expected-sha", required=True)
+    parser.add_argument("--observation-json", default=None)
     parser.add_argument("--timeout", type=int, default=240)
     parser.add_argument("--interval", type=int, default=6)
     args = parser.parse_args(argv)
@@ -137,10 +162,12 @@ def main(argv=None, fetch=gh_api, sleep=time.sleep, clock=time.monotonic):
         if record:
             code, verdict = evaluate(record, args.request_id, args.command_id, args.expected_sha)
             emit(record, comment, verdict)
+            write_observation(args.observation_json, args.request_id, record, comment, verdict)
             return code
         if clock() >= deadline:
             print("SERVERCORE_BOUNDED_HOST_RESULT=NOT_RETURNED")
             print(f"SERVERCORE_BOUNDED_HOST_REQUEST_ID={args.request_id}")
+            write_observation(args.observation_json, args.request_id)
             return 2
         sleep(args.interval)
 
