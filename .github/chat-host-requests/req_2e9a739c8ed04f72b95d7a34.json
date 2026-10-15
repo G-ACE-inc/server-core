@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Inspect active bounded Host receiver/writer versions after terminal source reflection",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -e; cd /home/admin1/server-core; printf 'HEAD='; git rev-parse HEAD; printf 'WRITER='; systemctl --user is-active gace-servercore-service-deploy.service || true; printf 'SINK='; systemctl --user is-active gace-servercore-result-sink.service || true; docker inspect --format 'RECEIVER={{.Name}} IMAGE={{.Config.Image}} STATUS={{.State.Status}}' server-core-bounded-host; printf 'RECEIVER_PY_DIGEST='; docker exec server-core-bounded-host sha256sum /app/scripts/servercore_bounded_host_receiver.py | cut -d ' ' -f1; printf 'HOST_PY_DIGEST='; sha256sum scripts/servercore_bounded_host_receiver.py | cut -d ' ' -f1; ls -la .env .env.project-control 2>/dev/null | awk '{print $9}' || true"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/232"
+  }
+}
