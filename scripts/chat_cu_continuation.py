@@ -100,6 +100,7 @@ def main():
     parser.add_argument("--request-id")
     parser.add_argument("--cu-issue-url")
     parser.add_argument("--receipt-json", type=Path)
+    parser.add_argument("--notion-context-json", type=Path)
     args = parser.parse_args()
     if args.checkpoint_json:
         if any([args.repository, args.run_id, args.request_id, args.cu_issue_url]):
@@ -111,6 +112,16 @@ def main():
         checkpoint = continuation_checkpoint(
             restore(args.repository, args.run_id, args.request_id), args.cu_issue_url)
     result = {"checkpoint": checkpoint, "continuation": resume(checkpoint)}
+    if args.notion_context_json:
+        try:
+            from scripts.chat_notion_cu_context import build
+        except ModuleNotFoundError:
+            from chat_notion_cu_context import build
+        source = json.loads(args.notion_context_json.read_text(encoding="utf-8"))
+        context = build(checkpoint["cu_issue_url"], source, checkpoint["cu_issue_url"])
+        result["notion_context"] = context
+        # Context augments rationale; only fresh GitHub run verification
+        # determines the executable next action.
     if args.receipt_json:
         persist_receipt(args.receipt_json, result)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
