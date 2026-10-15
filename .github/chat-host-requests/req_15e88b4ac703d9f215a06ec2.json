@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Read-only PostgreSQL verification for exactly one live new project-key event ID req_52ac76d410b2e8a99fa630c5: event, delivery status, last downstream HTTP, attempts, outbox. Receiver Host executed PASS issue 6185906597. No credentials, other rows, or payload printed.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "command": "set -e\ncd /home/admin1/projects/webhook-gateway\ndocker compose exec -T api node - <<'JS'\nconst {Client}=require('pg');\n(async()=>{\n const client=new Client({connectionString:process.env.DATABASE_URL});\n await client.connect();\n try {\n  const q=await client.query(\n   'SELECT e.provider_event_id,d.destination_id,d.status,d.attempt_count,d.last_status_code,(d.delivered_at IS NOT NULL) AS delivered,o.status AS outbox_status FROM events e JOIN deliveries d ON d.event_id=e.id LEFT JOIN delivery_outbox o ON o.delivery_id=d.id WHERE e.provider_event_id=$1 AND e.source_id=$2',\n   ['req_52ac76d410b2e8a99fa630c5','server-core-github']\n  );\n  console.log(JSON.stringify({count:q.rowCount,deliveries:q.rows}));\n  if(q.rowCount!==1 || q.rows[0].status!=='delivered'||q.rows[0].delivered!==true)process.exitCode=2;\n }finally{await client.end();}\n})().catch(e=>{console.log('DB_QUERY_FAILED',e.code||e.message);process.exitCode=3});\nJS"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Gateway test event durable acceptance 202 https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6185906198 ; Receiver Host PASS https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6185906597 ; Gate API healthy new+old keys https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6185864122."
+  }
+}
