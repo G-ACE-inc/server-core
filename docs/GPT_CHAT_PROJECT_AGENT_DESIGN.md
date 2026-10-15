@@ -312,3 +312,57 @@ GitHubのPR Merge/Issue Closeに連動するProjects built-in Status=Doneは、*
 2. Target IssueとControl Index #10が異なるケースでも、誤ったSourceに意思決定を関連付けない。
 3. IssueメタデータとHost Observationを別Artifact契約でCUに結び、次CHATがCurrentから目的/設計/次Toolを復元し実行する。
 4. Issue Export作業の成功だけでAgent CU/Host Runtimeが完成したとは判定しない。必要な他作業は同一Turnで継続する。
+
+
+## 13. 採用設計：Notion無料枠の文脈DB活用（2026-10-16）
+
+### 13.1 最上位の決定と既存資産
+Masterが「Notionを議事録を含む判断・設計・知識・引継ぎ・関連タスクのDBとして効率的に利用する」を採用。ただし**すべてをNotionに寄せる指示ではない**。既存GitHub Project/Issueの正式なOwner・進捗・Acceptance、Repoの正式設計/Source、CI/Host/Runtimeの実証、TGserverのRaw Log、VaultのSecretを**変更・移管・廃止しない**。新DB・有料プラン・自動化・Token・Workflowは必須条件にしない。
+
+既存Notion PageをReuse First：`01 議事録・Continuity Log`、`02 Architecture・Authority`、`03 Lifecycle`、`05 Current State`、`06 並列CHAT Ownership`、`07 新CHAT Handoff`。古いNotion SnapshotのStatusはLive正本ではなくGitHub Project Currentへの参照とする。運用前に既存データベースと属性を探索し、同等のものを追加作成しない。
+
+### 13.2 責務分担と二重管理禁止
+| データ | Authority | Notionでの扱い |
+|---|---|---|
+| Project Task Status / CU Owner / Acceptance | GitHub Project/Issue | URLと判断理由、依存関係の表示のみ。独立した可変Statusを重複管理しない |
+| 正式設計 / 実装 / 採用SHA | GitHub Repository / PR | 判断の採否理由・設計比較・影響Project・Source permalinkを索引 |
+| Raw Host結果 / CI / Runtime PASS | Actions Artifact / Host / TGserver | 証拠URLと最終照合時刻、検証不足・次に確認すべき事項 |
+| 議事録・意思決定・研究比較・既知失敗の意味 | Notion | Notionを主管理先として構造化・検索可能にする |
+| 大容量PDF/参考資料・長期保管ZIP | GitHub ArtifactまたはGoogle Drive（容量・保持期間・用途で選択） | ファイル本体を複製せず、Drive/Artifactの実URLとhash、対象CUへの関係を表示 |
+| Secrets / Credentials | 既存Vault | 記録しない |
+
+### 13.3 初期データモデル（概念契約）
+Notion側の最初の候補は**既存議事録の再利用＋最小の『Decision/Context Index』**。DB新設前に既存Notion構造で検索・Relationが不足することを確認する。必要属性：
+- `context_id`（Notion側識別子）・`cu_url`（GitHub正本の照合キー）・`project`・`topic`・`summary`
+- `record_kind`（DECISION / DESIGN_RATIONALE / RISK / DEPENDENCY / FAILURE_LESSON / RESEARCH / HANDOFF）
+- `decision_state`（PROPOSED / ADOPTED / REJECTED / SUPERSEDED）と`decision_reason`、決定した人・日時
+- `github_design_url` / `design_sha` / `pr_url` / `issue_url` / `run_url` / `artifact_url`
+- `depends_on`（関連CU URL）・`next_action_rationale`・`last_checked_at`・`evidence_confidence`（VERIFIED / STALE / UNKNOWN）
+採用/却下の履歴は削除・上書きせず、後続決定からSUPERSEDEDを示す。Notionの多重Relation/巨大全文は設計上の必須条件にしない。CurrentやNext Actionの**実行可否**は最新GitHub/Runtimeの読戻しで決める。
+
+### 13.4 Agent Loop統合手順
+1. `Manifest→Rule #17→GitHub Project Current/Issue CU→採用Repo Design SHA` の現行起動順を維持。
+2. 現在のCU URL／Project／設計変更テーマをキーにNotionから**必要範囲だけ**判断記録を検索。最新レコードの日付だけでなく、採否・正本リンク・更新元を確認。全議事録や全DBを毎回読み込まない。
+3. `RESTORE`: GitHub CurrentのOwner/Acceptance/Next ActionとNotionの採用理由・依存・既知失敗を併記。競合時は自動上書きしない。Notion古いSnapshotはSTALEとして扱う。
+4. `PLAN→ACT→OBSERVE→VERIFY`: 既存のGitHub/Host/TGserver Toolを実行し、SHA/Run/ResultのFresh evidenceを得る。
+5. `CHECKPOINT`: 採否理由・未解決リスク・新たな学びのみNotionに増分記録。正式タスク状態とCIはGithub、Raw LogはTGserver/Artifactへ。NotionにRunの巨大本文を貼らない。
+6. 次CHATはCurrentから最小Notion文脈レコードを復元し、**少なくとも一つ実際のTool Action**を続行。Issue #10の全コメント取得を前提にしない。
+
+### 13.5 無料プラン制約とGoogle Drive補完
+- Notion Free：DBと基本属性は利用可、ファイル1個最大5MB、個人利用のページ/ブロックは原則無制限、複数Memberはブロック上限が適用され得る。公式 https://www.notion.com/pricing 。現在の実ワークスペース人数・接続権限は未確認のため`UNKNOWN`。
+- Notion有料のDB自動化、Notion AI常用、Custom Agentや有料同期を**依存機能にしない**。既存CHAT/Pluginから必要時に読書き、連続実行可能な範囲で対応。
+- 5MB超ファイルはMasterが指定した `asterav8@gmail.com` 側Google Driveを**利用候補として許可**。ただし対象接続アカウント・実アクセス権・空き容量・保存フォルダが確認できた場合に限る。ユーザー指定外アカウントへ誤保存しない。
+- Storage routing：一時CI証拠→Actions Artifact、Raw開発Log→TGserver、正式Source→GitHub、長期研究PDF/参照ZIP→Drive優先候補、Notion→小さなContext Index・リンク。不要な重複コピー・自動全量同期は行わない。権限/秘匿性が担保できないものは移さず既存場所に残す。
+
+### 13.6 比較評価と導入順
+優先度A（採用して詳細化）：決定・採否理由、設計変更の影響、CHAT引継ぎの文脈、障害原因/再発防止、DependencyとAcceptance未実証の**索引**。既存議事録と正本リンクを使用。
+優先度B（実測後に判断）：技術比較・研究文献の索引、日報の理由付け、横断リポジトリ資産台帳。管理増加が上回るなら拡張しない。
+不採用：NotionへGitHub Task Statusを移管、二重設計Source、Raw Log全文とCI Artifactのコピー、Vault Secretsの保存、Notion Freeにない自動化に依存、既存DBの破壊的移行。
+
+段階的受入：
+- `DESIGN`: 責務境界・保存先・検索キー・無料枠・失敗時Fallbackを合意してGitHub設計PRへ記録（この段階）。
+- `PILOT`: 既存CU 1件の議事録→採用理由→設計Source URL→証拠リンクをNotion検索で復元。GitHubのCurrentと突合し、実Toolを1回以上継続。DB新設は検索不能が確認できたときのみ。
+- `MEASURE`: ベースラインと比較して、新CHAT復元時の読取件数・検索回数・再調査回数・重複/矛盾数・記録失敗数・呼出回数・無料枠負担を記録。改善率を測定前に宣言しない。
+- `EXPAND`: 効果が確認された種類だけ対象Projectへ広げる。現状を壊す移行は行わない。
+
+この節の反映は**設計採用**であり、Notion DB新設、Google Drive移動、Host反映、CHAT引継ぎの本番E2E達成を意味しない。
