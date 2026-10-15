@@ -59,6 +59,24 @@ def evaluate(record, request_id, command_id, expected_sha):
     return (0 if record.get("state") == "PASS" and record.get("exit_code") == 0 else 1), "OK"
 
 
+
+def continuation_observation(record, verdict):
+    """Translate one verified Host result into a CHAT-visible observation.
+
+    This is not automatic ChatGPT invocation, a permission grant, or a
+    declaration that the user's development mission is finished.
+    """
+    if verdict != "OK":
+        return "CORRELATION_FAILED", "INSPECT_RESULT_CORRELATION"
+    if record.get("state") == "PASS" and record.get("exit_code") == 0:
+        return "HOST_OPERATION_PASSED", "RECHECK_MISSION_ACCEPTANCE_AND_CONTINUE"
+    stderr = str(record.get("stderr") or "")
+    if "SOURCE_SHA_MISMATCH" in stderr:
+        return "HOST_SOURCE_SHA_MISMATCH", "READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION"
+    if record.get("state") == "FAIL":
+        return "HOST_OPERATION_FAILED", "INSPECT_FAILURE_EVIDENCE_AND_REPLAN"
+    return "HOST_RESULT_UNVERIFIED", "INSPECT_HOST_RESULT_AND_REPLAN"
+
 def emit(record, comment, verdict):
     print(f"SERVERCORE_BOUNDED_HOST_RESULT={'RETURNED' if verdict == 'OK' else verdict}")
     print(f"SERVERCORE_BOUNDED_HOST_REQUEST_ID={record.get('request_id')}")
@@ -68,6 +86,9 @@ def emit(record, comment, verdict):
     print(f"SERVERCORE_BOUNDED_HOST_SHA={record.get('host_sha') or 'NONE'}")
     print(f"SERVERCORE_BOUNDED_HOST_EXPECTED_SHA={record.get('expected_sha') or 'NONE'}")
     print(f"SERVERCORE_BOUNDED_HOST_RESULT_URL={comment.get('html_url')}")
+    observation, next_action = continuation_observation(record, verdict)
+    print(f"CHAT_HOST_OBSERVATION={observation}")
+    print(f"CHAT_NEXT_ACTION={next_action}")
     for stream in ("stdout", "stderr"):
         text = str(record.get(stream) or "")[:4000]
         print(f"SERVERCORE_BOUNDED_HOST_{stream.upper()}_BEGIN")
