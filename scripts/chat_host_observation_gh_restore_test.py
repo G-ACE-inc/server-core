@@ -65,6 +65,11 @@ class RestoreTests(unittest.TestCase):
         self.assertEqual(checkpoint["next_tool_target"], "https://github.com/G-ACE-inc/server-core/actions/runs/123")
         self.assertEqual(checkpoint["cu_issue_url"], "https://github.com/G-ACE-inc/server-core/issues/40")
 
+    def test_checkpoint_accepts_canonical_issue_url(self):
+        result = restore("G-ACE-inc/server-core", 123, RID, run=self.fake_run)
+        checkpoint = continuation_checkpoint(result, "https://github.com/G-ACE-inc/server-core/issues/40")
+        self.assertEqual(checkpoint["cu_issue_url"], "https://github.com/G-ACE-inc/server-core/issues/40")
+
     def test_checkpoint_requires_real_issue_url(self):
         result = restore("G-ACE-inc/server-core", 123, RID, run=self.fake_run)
         with self.assertRaisesRegex(ValueError, "CU_ISSUE_URL_INVALID"):
