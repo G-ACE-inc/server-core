@@ -20,18 +20,35 @@ SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
 def gh_api(path):
-    result = subprocess.run(["gh", "api", "--paginate", path], capture_output=True, text=True, timeout=60, check=False)
+    """Fetch only the newest 100 Issue comments, never the entire Issue history.
+
+    GraphQL's comments(last:100) is bounded independent of Issue age. Normal
+    polling happens every few seconds; a missing result is UNKNOWN, not PASS.
+    """
+    matched = re.match(r"^repos/([^/]+)/([^/]+)/issues/(\d+)/comments(?:\?.*)?$", path)
+    if not matched:
+        raise RuntimeError("INVALID_ISSUE_COMMENTS_PATH")
+    owner, name, issue_number = matched.groups()
+    query = (
+        "query($owner:String!,$name:String!,$number:Int!){"
+        "repository(owner:$owner,name:$name){"
+        "issue(number:$number){comments(last:100){nodes{body url}}}}}"
+    )
+    result = subprocess.run(
+        ["gh", "api", "graphql", "-f", "query=" + query,
+         "-F", "owner=" + owner, "-F", "name=" + name,
+         "-F", "number=" + issue_number],
+        capture_output=True, text=True, timeout=60, check=False,
+    )
     if result.returncode:
-        raise RuntimeError("GH_API_FAILED")
-    # --paginate on arrays emits concatenated JSON arrays
-    text, items, decoder, pos = result.stdout.strip(), [], json.JSONDecoder(), 0
-    while pos < len(text):
-        value, end = decoder.raw_decode(text, pos)
-        items.extend(value if isinstance(value, list) else [value])
-        pos = end
-        while pos < len(text) and text[pos].isspace():
-            pos += 1
-    return items
+        raise RuntimeError("GH_GRAPHQL_FAILED")
+    try:
+        payload = json.loads(result.stdout)
+        nodes = payload["data"]["repository"]["issue"]["comments"]["nodes"]
+        return [{"body": node.get("body") or "", "html_url": node.get("url") or ""}
+                for node in nodes]
+    except (KeyError, TypeError, ValueError) as exc:
+        raise RuntimeError("GH_GRAPHQL_RESULT_INVALID") from exc
 
 
 def find_result(comments, request_id):
