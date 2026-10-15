@@ -152,34 +152,39 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-  issue10-history-export:
+  issue-history-export:
+    if: ${{ contains(github.event.head_commit.message, '[issue-export]') }}
     permissions:
       contents: read
       issues: write
-    if: ${{ contains(github.event.head_commit.message, '[issue10-export]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
-      - name: Export full historical Issue 10 comments to TXT and ZIP
+      - name: Resolve exact committed Issue export request
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="$(git diff-tree --root --no-commit-id --name-only --diff-filter=A -r HEAD | grep -E '^.github/issue-export-requests/req_[a-f0-9]{24}.json$' || true)"
+          test -n "$file" && test "$(printf '%s\n' "$file" | wc -l)" -eq 1
+          jq -e '.repository | type == "string"' "$file" >/dev/null
+          jq -e '.issue | type == "number"' "$file" >/dev/null
+          echo "EXPORT_REPOSITORY=$(jq -r .repository "$file")" >> "$GITHUB_ENV"
+          echo "EXPORT_ISSUE=$(jq -r .issue "$file")" >> "$GITHUB_ENV"
+      - name: Export full Issue body and comments to TXT and ZIP
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          python3 scripts/issue10_comments_export.py
-          echo "ISSUE10_EXPORT_RUN=https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          python3 scripts/issue10_comments_export.py --repository "$EXPORT_REPOSITORY" --issue "$EXPORT_ISSUE"
       - id: issue_artifact
         uses: actions/upload-artifact@v4
         with:
-          name: issue10-full-comments-${{ github.run_id }}
-          path: |
-            /tmp/gace-issue10-export/issue10-comments.txt
-            /tmp/gace-issue10-export/issue10-comments.jsonl
-            /tmp/gace-issue10-export/issue10-comments.zip
-            /tmp/gace-issue10-export/manifest.json
+          name: github-issue-full-export-${{ github.run_id }}
+          path: /tmp/gace-issue-export/
           if-no-files-found: error
           retention-days: 30
-      - name: Index exported TXT and ZIP under Issue 10
+      - name: Index artifact on owning Issue
         env:
           GH_TOKEN: ${{ github.token }}
           ARTIFACT_URL: ${{ steps.issue_artifact.outputs.artifact-url }}
@@ -187,12 +192,11 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$ARTIFACT_ID" && test -n "$ARTIFACT_URL"
-          gh api -X POST "repos/$GITHUB_REPOSITORY/issues/10/comments" \
-            -f body="<!-- GACE_ISSUE10_FULL_EXPORT run_id=$GITHUB_RUN_ID -->
-          Issue #10 historical comments exported to complete TXT, JSONL, and ZIP.
-          Artifact: $ARTIFACT_URL
+          gh api -X POST "repos/$EXPORT_REPOSITORY/issues/$EXPORT_ISSUE/comments" \
+            -f body="<!-- GACE_ISSUE_EXPORT run_id=$GITHUB_RUN_ID -->
+          Issue complete TXT/JSONL/ZIP export: $ARTIFACT_URL
           Artifact ID: $ARTIFACT_ID
           Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
-          SHA: $(jq -r .text_sha256 /tmp/gace-issue10-export/manifest.json)
-          Comments: $(jq -r .exported_comments /tmp/gace-issue10-export/manifest.json)
-          Full source is in artifact, not the Issue comment. Expiry: 30 days." >/dev/null
+          SHA: $(jq -r .text_sha256 /tmp/gace-issue-export/manifest.json)
+          Exported comments: $(jq -r .exported_comments /tmp/gace-issue-export/manifest.json)
+          Artifact retention: 30 days." >/dev/null
