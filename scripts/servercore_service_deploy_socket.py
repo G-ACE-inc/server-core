@@ -353,7 +353,7 @@ def host_command_wire_reply(reply):
     import hashlib
     import json
     wire = json.dumps(reply, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-    if len(wire) <= 8 * 1024 * 1024:
+    if len(wire) <= 256 * 1024:
         return reply
     out = dict(result)
     for stream in ("stdout", "stderr"):
