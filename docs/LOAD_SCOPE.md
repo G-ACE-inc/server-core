@@ -33,6 +33,8 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 
 At the start of a task, read its owning GitHub Project Current (mission, CU, writer, acceptance and next action) and the exact repository evidence required by Work Routine §6. Recheck changed Current/HEAD when the state changes. Do **not** require the full GPT CHAT Rule Plane #17 on every turn, run a second START/STOP prose checklist, or turn a routine progress explanation/CI success into a stopping condition. Historical #17 remains available for migration and audit, not a second mandatory development procedure. SERVER_AI may continue its existing machine-admission/permissions bootstrap; this change does not relax any Host, approval or effect guard.
 
+**Goal-led efficiency:** Keep the original approved outcome fixed. Use judgment to select efficient task grouping, reuse prior evidence, avoid repeated setup and unnecessary fragmentation, and split only where beneficial. Subtasks and checkpoints do not replace the outcome or justify stopping. Follow the existing Workspace §6 continuation rules; do not add mandatory step counts, new gates or Master confirmations.
+
 Work for the maximum feasible part of the same Change Unit per turn. If an action is unavailable, perform independent in-scope actions; if no action can be taken by this executor, consult Master with the precise missing capability and one completed command/instruction (if needed), using the command contract. Master selects product/work priorities; executor handles authorized technical work. Do not treat a GitHub record as completion until the actual Mission acceptance is satisfied.
 
 ### Master-commissioned integrated development: mission-first dispatch (existing §6)
