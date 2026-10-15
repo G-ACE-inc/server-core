@@ -8,6 +8,7 @@ import argparse
 import json
 import re
 import subprocess
+import tempfile
 from pathlib import Path
 
 try:
@@ -74,6 +75,23 @@ def resume(checkpoint, api=api_read):
     }
 
 
+def persist_receipt(path, payload):
+    """Write small safe continuation evidence atomically for existing Artifact upload."""
+    destination = Path(path)
+    if destination.is_symlink():
+        raise ValueError("RECEIPT_SYMLINK_DENIED")
+    if not isinstance(payload, dict) or "continuation" not in payload:
+        raise ValueError("RECEIPT_INVALID")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
+    if len(encoded.encode("utf-8")) > 32768:
+        raise ValueError("RECEIPT_TOO_LARGE")
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=destination.parent, delete=False) as tmp:
+        tmp.write(encoded)
+        staged = Path(tmp.name)
+    staged.replace(destination)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint-json", type=Path, default=None)
@@ -81,6 +99,7 @@ def main():
     parser.add_argument("--run-id", type=int)
     parser.add_argument("--request-id")
     parser.add_argument("--cu-issue-url")
+    parser.add_argument("--receipt-json", type=Path)
     args = parser.parse_args()
     if args.checkpoint_json:
         if any([args.repository, args.run_id, args.request_id, args.cu_issue_url]):
@@ -91,8 +110,10 @@ def main():
             parser.error("supply checkpoint file or all exact identifiers")
         checkpoint = continuation_checkpoint(
             restore(args.repository, args.run_id, args.request_id), args.cu_issue_url)
-    print(json.dumps({"checkpoint": checkpoint, "continuation": resume(checkpoint)},
-                     ensure_ascii=False, sort_keys=True))
+    result = {"checkpoint": checkpoint, "continuation": resume(checkpoint)}
+    if args.receipt_json:
+        persist_receipt(args.receipt_json, result)
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
 if __name__ == "__main__":
