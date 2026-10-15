@@ -1,0 +1,39 @@
+{
+  "base_url": "https://debugai.asterav8.jp",
+  "mode": "readonly",
+  "repo": "/workspace/debug-ai",
+  "run_id": "",
+  "request": "Resume webhook-gateway direct runtime incident: inspect source SHA, API/worker/Postgres Compose state, API health history, only boolean current old/project keys, and prior failed deploy ledger. Read-only. Do not output credentials or full environment.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "e10a0d7606b21c38f0d4f875f7a403cd3d5fe296",
+    "command": "set -e\ncd /home/admin1/projects/webhook-gateway\necho WEBHOOK_HEAD\ngit rev-parse HEAD\necho COMPOSE_STATUS\ndocker compose ps --format json\necho API_RUNTIME\ndocker inspect webhook-gateway-api-1 --format '{{json .State}}' | python3 -c 'import json,sys; x=json.load(sys.stdin); h=x.get(\"Health\") or {}; print(json.dumps({\"status\":x.get(\"Status\"),\"started\":x.get(\"StartedAt\"),\"health\":h.get(\"Status\"),\"health_history\":[{\"exit\":v.get(\"ExitCode\"),\"start\":v.get(\"Start\"),\"end\":v.get(\"End\")} for v in h.get(\"Log\",[])[-3:]]}))'\necho INTERNAL_KEY_PRESENT\ndocker compose exec -T api node -e 'const a=JSON.parse(process.env.INTERNAL_EVENT_API_PROJECT_KEYS_JSON||\"{}\");console.log(JSON.stringify({legacy:!!process.env.INTERNAL_EVENT_API_TOKEN,project:!!a[\"server-core\"]}))'\necho RECENT_DEPLOY_LEDGER\npython3 - <<'PY'\nimport json\nfrom pathlib import Path\np=Path(\"/home/admin1/logs/servercore-service-deploy/req_4fc402b49fbe8c8279c2b5d8.json\")\nif p.is_file():\n x=json.loads(p.read_text())\n print(json.dumps({k:x.get(k) for k in (\"state\",\"failure_class\",\"service\",\"source_sha\",\"health\",\"http_health\",\"container_id\")}))\nelse:\n print(\"NOT_FOUND\")\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "Rule#17 updated 2026-10-15, Work Routine§6/9; #10 recent Host command receipt 6183226906 current host 96d01bb; Gateway PR26 main e10a0d7, internal keys E2E https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6167640821; prior deploy failure class SERVICE_HEALTH_NOT_READY https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6167572034."
+  }
+}
