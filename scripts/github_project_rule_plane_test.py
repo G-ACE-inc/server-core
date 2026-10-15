@@ -210,4 +210,15 @@ assert "SERVER_AI" in router  # non-CHAT executor still retains separate bootstr
 assert "owning GitHub Project/CU Current" in router
 assert "GitHub Project #1 / Control #15" in readme
 
+# Only AI-authored host.command may mutate the VPS through ordinary CHAT Actions.
+# dev.job stays an independent isolated-test facility. Old fixed dispatch branches
+# are not a selectable CHAT route, even if shared Host contracts retain consumers.
+chat_actions = (ROOT / ".github/workflows/chatgpt-live-api-verify.yml").read_text(encoding="utf-8")
+assert 'if [[ "$command_id" == "host.command" ]]' in chat_actions
+assert 'elif [[ "$command_id" == "dev.job" ]]' in chat_actions
+assert 'RETIRED_FIXED_COMMAND_DENIED' in chat_actions
+for retired_id in ("project.source_reflect", "service.deploy", "service.deploy_status",
+                   "project.file_inspect", "docker.logs", "docker.operation"):
+    assert f'"$command_id" == "{retired_id}"' not in chat_actions
+
 print("GITHUB_PROJECT_RULE_PLANE=PASS")
