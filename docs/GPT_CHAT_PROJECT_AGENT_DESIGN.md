@@ -266,10 +266,10 @@ GitHubのPR Merge/Issue Closeに連動するProjects built-in Status=Doneは、*
 
 
 ## 12. GitHub Issue大量情報の改善を既存Agentに取り込む（2026-10-15）
-**変更対象はAgent側のデータ取得選択・CU継続であり、他CHATが完成させつつあるIssue I/O実装の再開発ではない。** Project主目的と§11のAgent Loopを変更しない。
+**今回のユーザー決定は「Issueの大量本文・コメントを、GPT CHAT側からTXT/ZIPファイルとしてダウンロードして扱える運用機能を採用する」こと。** Action Artifactをサーバー側で作るだけでは要件を満たさない。Agent側で既存GitHub ConnectorのArtifactダウンロード機能を使用し、必要時だけZIP内のTXT/JSONL/manifestを読んで判断する。変更対象はAgent側の取得選択・CU継続であり、他CHATが完成させたIssue I/O自体は再開発しない。 Project主目的と§11のAgent Loopを変更しない。
 
 ### 12.1 実装済みのReuse First
-- PR #250: 既存の`.github/workflows/chatgpt-live-api-verify.yml` の`[issue-export]`要求を使用し、任意の対象`owner/repo#Issue`についてUTF-8全文TXT・JSONL・ZIPを既存Actions Artifactとして発行。Issue本文と全コメント、件数、bytes、SHA-256、重複ID/ページ整合性をmanifest化する。**ただしこの全量ページングはActions内の明示的Exportだけ**。通常CHATのIssueコメントAPI全件呼び出しやIssue本文への巨大な再投稿はしない。
+- PR #250: 既存の`.github/workflows/chatgpt-live-api-verify.yml` の`[issue-export]`要求を使用し、任意の対象`owner/repo#Issue`についてUTF-8全文TXT・JSONL・ZIPを既存Actions Artifactとして発行。Issue本文と全コメント、件数、bytes、SHA-256、重複ID/ページ整合性をmanifest化する。**ただしこの全量ページングはActions内の明示的Exportだけ**。出力したArtifactのIDとRunをCHATが取得し、既存GitHub Connectorの`download_workflow_artifact`からCHAT側へZIPをダウンロードできる方式として利用する。通常CHATのIssueコメントAPI全件呼び出しやIssue本文への巨大な再投稿はしない。
 - PR #253: GitHub TokenのRepo間Issue書込制限を尊重し、Artifact locatorを認可済みProjectのControl Issue #10へ登録。登録先のProject制御Issueと、実際にExportした対象Repo/Issueを混同しない。対象Issueへの横断コメント作成権限を増設しない。
 - Issue #10はHostの制御/Indexとして維持。最新メタデータ/Project Current/Run ID/Request IDを優先し、Issue #10の約1000件コメントを日常処理で再読込しない。
 - 既存PR #247, #251, #252, #254, #255, #256: Host observation／Actions Artifact／run-specific restore／CU next-action handoffが別系統で存在。**Issue全文Export ArtifactとHost Observation Artifactを混同しない**。
@@ -290,7 +290,15 @@ GitHubのPR Merge/Issue Closeに連動するProjects built-in Status=Doneは、*
 - Cross-repo Indexに記録された`Issue #10`は**artifactの登録場所**。内容の所有者はmanifestのTarget Issue。対応付けを変えない。
 - API障害、Artifact期限切れ、Permission不足は`UNVERIFIED`として扱い、誤った新規DispatchやIssue全文再取得を連打しない。
 
-### 12.4 受入条件
+### 12.4 CHAT側での具体的な操作契約
+1. CHATが対象Issueを最小メタデータで特定し、必要なら既存Project Controlに記録済みの `Issue Export Run ID / Artifact ID / target_repo#issue` を取得する。
+2. 既存Artifactがなく全文が必要な場合のみ、既存 `[issue-export]` Requestを使う。生成済みなら再Exportしない。
+3. **CHATからGitHub Connector `fetch_workflow_run_artifacts` → `download_workflow_artifact` を呼んでZIPファイルを取得**する。ここが今回の利用可能範囲拡張の中心であり、Actions Upload成功だけではCHATで取得成功とは判定しない。
+4. ZIPの `manifest.json` と `issue-comments.txt` / `issue-comments.jsonl` のTarget、byte数、SHA-256、件数を確認する。ダウンロードした大容量ファイルをGPT CHATへ文字列全量貼付しない。必要箇所を分割して分析・要約し、元の意味/証拠を保持する。
+5. 結果は既存CUの目的・採用設計・Next Actionへ反映してAgent Loopを続行する。TXTとZIPは**追加の資料取得手段**であり、プロジェクト目的も優先順位も変えない。
+6. Connector側の返却がファイル参照に留まる場合は、利用できる既存ファイル読取経路で内容を検証する。ファイル実体を読めていない状態で `CHAT_DOWNLOADED_AND_ANALYZED` を宣言しない。
+
+### 12.5 受入条件
 1. 既存のIssue Exportを再利用し、GitHub Project登録Repoの特定IssueをTXT/ZIPで取得。stdout巨大貼付をせずmanifest照合する。
 2. Target IssueとControl Index #10が異なるケースでも、誤ったSourceに意思決定を関連付けない。
 3. IssueメタデータとHost Observationを別Artifact契約でCUに結び、次CHATがCurrentから目的/設計/次Toolを復元し実行する。
