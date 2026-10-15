@@ -46,6 +46,7 @@ class TerminalOutputTests(unittest.TestCase):
             self.assertNotIn("PRIVATE_ERROR", raw)
             poll.write_observation(str(path), record["request_id"])
             self.assertFalse(json.loads(path.read_text())["result_verified"])
+            self.assertEqual(json.loads(path.read_text())["observation"], "HOST_RESULT_NOT_RETURNED")
 
     def test_host_observation_retains_long_streams(self):
         stdout = "START-" + "a" * 18000 + "-END"
