@@ -13,7 +13,7 @@ def parse_comments(envelope, cu_url):
     if root.tag != "discussions":
         raise ValueError("NOTION_FORMAT_INVALID")
     records = []
-    for comment in root.iter("comment"):
+    for comment in sorted(root.iter("comment"), key=lambda x: x.attrib.get("datetime", ""), reverse=True):
         content = "".join(comment.itertext()).strip()
         url = comment.attrib.get("url", "")
         if cu_url not in content or not url.startswith("https://app.notion.com/"):
