@@ -101,6 +101,7 @@ def main():
     parser.add_argument("--cu-issue-url")
     parser.add_argument("--receipt-json", type=Path)
     parser.add_argument("--notion-context-json", type=Path)
+    parser.add_argument("--notion-page-url")
     args = parser.parse_args()
     if args.checkpoint_json:
         if any([args.repository, args.run_id, args.request_id, args.cu_issue_url]):
@@ -122,7 +123,7 @@ def main():
             from scripts.chat_notion_context_ingest import ingest
         except ModuleNotFoundError:
             from chat_notion_context_ingest import ingest
-        records = ingest(source, checkpoint["cu_issue_url"])
+        records = ingest(source, checkpoint["cu_issue_url"], args.notion_page_url)
         context = build(checkpoint["cu_issue_url"], records, checkpoint["cu_issue_url"])
         context["fresh_github_issue"] = readback_issue(checkpoint["cu_issue_url"])
         result["notion_context"] = context
