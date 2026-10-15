@@ -107,6 +107,15 @@ def emit(record, comment, verdict):
             print(f"CHAT_HOST_{stream.upper()}_SHA256={record[stream + '_sha256']}")
         if stream + "_chars" in record:
             print(f"CHAT_HOST_{stream.upper()}_CHARS={record[stream + '_chars']}")
+    # A metadata-only Issue record is a pointer to the Host ledger, not an
+    # empty stdout/stderr result. Never misrepresent it as the full payload.
+    metadata_only = any(stream + "_bytes" in record for stream in ("stdout", "stderr"))
+    if metadata_only:
+        print("CHAT_HOST_OUTPUT_TRANSPORT=HOST_LEDGER_ONLY")
+        print(f"CHAT_HOST_OUTPUT_RECORD_REQUEST_ID={record.get('request_id')}")
+        for stream in ("stdout", "stderr"):
+            print(f"CHAT_HOST_{stream.upper()}_BYTES={record.get(stream + '_bytes', 'UNKNOWN')}")
+        return
     for stream in ("stdout", "stderr"):
         text = str(record.get(stream) or "")
         print(f"SERVERCORE_BOUNDED_HOST_{stream.upper()}_BEGIN")
