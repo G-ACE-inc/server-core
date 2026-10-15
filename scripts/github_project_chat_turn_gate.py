@@ -132,10 +132,40 @@ def evaluate(state):
         return "STOP_MISSION_ACCEPTANCE_CONTRADICTORY"
     return "PASS"
 
+
+def next_agent_action(state):
+    """Recommend the next in-scope action from existing evidence, without executing it.
+
+    Action/observation separation follows the public OpenHands agent pattern.
+    The owning CHAT or existing admitted tool route performs the actual action.
+    """
+    if not isinstance(state, dict):
+        return "RECHECK_CURRENT"
+    phase = state.get("phase")
+    if phase == "FAILURE":
+        actions = state.get("independent_actions")
+        if not isinstance(actions, list):
+            return "INSPECT_FAILURE_EVIDENCE"
+        completed = state.get("completed_actions")
+        completed = completed if isinstance(completed, list) else []
+        remaining = [a for a in actions if isinstance(a, str) and a.strip() and a not in completed]
+        return remaining[0] if remaining else "REASSESS_FAILURE_AND_DESIGN"
+    if phase == "STOP":
+        remaining = state.get("remaining_actions")
+        if isinstance(remaining, list) and remaining:
+            return remaining[0]
+        if state.get("stop_reason") == "VERIFIED_COMPLETE" and state.get("mission_acceptance_verified") is True:
+            return "MISSION_ACCEPTED"
+        return "RECHECK_STOP_EVIDENCE"
+    if phase == "START":
+        return "CONTINUE_OWNED_CU" if evaluate(state) == "PASS" else "RECHECK_CURRENT_AND_DESIGN"
+    return "RECHECK_CURRENT"
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--state", required=True)
     args = ap.parse_args()
+    state = None
     try:
         with open(args.state, encoding="utf-8") as f:
             state = json.load(f)
@@ -143,6 +173,7 @@ def main():
     except (OSError, ValueError):
         outcome = "GATE_INPUT_UNREADABLE"
     print("CHAT_WORKFLOW_DECISION_GATE=" + outcome)
+    print("CHAT_NEXT_ACTION=" + next_agent_action(state) if isinstance(state, dict) else "CHAT_NEXT_ACTION=RECHECK_CURRENT")
     return 0 if outcome == "PASS" else 2
 
 if __name__ == "__main__":
