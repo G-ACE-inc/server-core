@@ -55,7 +55,7 @@ def validate(receipt, expected_request_id):
     # stdout/stderr bytes. The poller's 'complete' flag alone MUST NOT prove that
     # the CHAT received full output. Require verified digest + byte/char evidence.
     streams = receipt.get("streams") or {}
-    output_complete = (
+    stream_metadata_complete = (
         verified is True
         and set(streams) == STREAM_KEYS
         and all(
@@ -67,7 +67,7 @@ def validate(receipt, expected_request_id):
             for info in streams.values()
         )
     )
-    if not output_complete and obs == "HOST_OPERATION_PASSED":
+    if obs == "HOST_OPERATION_PASSED":
         action = "INSPECT_HOST_LEDGER_OUTPUT_COMPLETENESS_AND_CONTINUE"
     # Do not return unchecked free-form data, plaintext Host output, or credentials.
     return {
@@ -76,7 +76,8 @@ def validate(receipt, expected_request_id):
         "observation": obs,
         "next_action": action,
         "result_url": receipt.get("result_url") if isinstance(receipt.get("result_url"), str) else None,
-        "output_complete": output_complete,
+        "output_complete": False,  # This artifact contains metadata, never the Host payload.
+        "stream_metadata_complete": stream_metadata_complete,
     }
 
 
