@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.chat_host_observation_gh_restore import restore
+from scripts.chat_host_observation_gh_restore import restore, continuation_checkpoint
 
 RID = "req_" + "a" * 24
 SHA = "b" * 40
@@ -56,6 +56,27 @@ class RestoreTests(unittest.TestCase):
             return self.fake_run(cmd, **kwargs)
         with self.assertRaisesRegex(ValueError, "ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS"):
             restore("G-ACE-inc/server-core", 123, RID, run=expired)
+
+    def test_checkpoint_reuses_existing_run_without_new_dispatch(self):
+        result = restore("G-ACE-inc/server-core", 123, RID, run=self.fake_run)
+        checkpoint = continuation_checkpoint(result, "https://github.com/G-ACE-inc/server-core/issues/40")
+        self.assertEqual(checkpoint["phase"], "OBSERVE")
+        self.assertEqual(checkpoint["next_action"], "RECHECK_EXISTING_RUN_AND_HOST_RESULT")
+        self.assertEqual(checkpoint["next_tool_target"], "https://github.com/G-ACE-inc/server-core/actions/runs/123")
+        self.assertEqual(checkpoint["cu_issue_url"], "https://github.com/G-ACE-inc/server-core/issues/40")
+
+    def test_checkpoint_requires_real_issue_url(self):
+        result = restore("G-ACE-inc/server-core", 123, RID, run=self.fake_run)
+        with self.assertRaisesRegex(ValueError, "CU_ISSUE_URL_INVALID"):
+            continuation_checkpoint(result, "https://invalid.example/issue")
+
+    def test_metadata_only_success_chooses_ledger_not_acceptance(self):
+        result = restore("G-ACE-inc/server-core", 123, RID, run=self.fake_run)
+        result["result_verified"] = True
+        result["observation"] = "HOST_OPERATION_PASSED"
+        checkpoint = continuation_checkpoint(result, "https://github.com/G-ACE-inc/server-core/issues/40")
+        self.assertEqual(checkpoint["next_action"], "RECOVER_HOST_LEDGER_PAYLOAD")
+        self.assertEqual(checkpoint["phase"], "OBSERVE")
 
 
 if __name__ == "__main__":

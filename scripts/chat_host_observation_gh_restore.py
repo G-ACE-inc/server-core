@@ -63,14 +63,49 @@ def restore(repository, run_id, request_id, run=subprocess.run):
             "source_sha": source_sha, **observation}
 
 
+def continuation_checkpoint(result, cu_issue_url):
+    """Emit a bounded, evidence-backed next step; never mutate Issue/Host here."""
+    if not isinstance(cu_issue_url, str) or not re.fullmatch(
+        r"https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/issues/[1-9][0-9]*", cu_issue_url
+    ):
+        raise ValueError("CU_ISSUE_URL_INVALID")
+    if result["result_verified"] is not True:
+        phase, next_action = "OBSERVE", "RECHECK_EXISTING_RUN_AND_HOST_RESULT"
+    elif result["output_complete"] is not True:
+        phase, next_action = "OBSERVE", "RECOVER_HOST_LEDGER_PAYLOAD"
+    else:
+        phase, next_action = "VERIFY", "RECHECK_ACCEPTANCE_AND_EXECUTE_NEXT_TOOL"
+    return {
+        "schema": "gace.chat.cu.handoff.v1",
+        "cu_issue_url": cu_issue_url,
+        "phase": phase,
+        "repository": result["repository"],
+        "run_id": result["run_id"],
+        "artifact_id": result["artifact_id"],
+        "source_sha": result["source_sha"],
+        "request_id": result["request_id"],
+        "observation": result["observation"],
+        "result_verified": result["result_verified"],
+        "output_complete": result["output_complete"],
+        "result_url": result["result_url"],
+        "next_action": next_action,
+        "next_tool_target": (
+            f"https://github.com/{result['repository']}/actions/runs/{result['run_id']}"
+        ),
+    }
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repository", required=True)
     parser.add_argument("--run-id", type=int, required=True)
     parser.add_argument("--request-id", required=True)
+    parser.add_argument("--cu-issue-url", default=None)
     args = parser.parse_args()
-    print(json.dumps(restore(args.repository, args.run_id, args.request_id),
-                     ensure_ascii=False, sort_keys=True))
+    result = restore(args.repository, args.run_id, args.request_id)
+    if args.cu_issue_url:
+        result = continuation_checkpoint(result, args.cu_issue_url)
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
 if __name__ == "__main__":
