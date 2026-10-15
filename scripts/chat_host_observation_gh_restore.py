@@ -106,7 +106,7 @@ def main():
     result = restore(args.repository, args.run_id, args.request_id)
     if args.cu_issue_url:
         result = continuation_checkpoint(result, args.cu_issue_url)
-    encoded = json.dumps(result, ensure_ascii=False, sort_keys=True) + "\\n"
+    encoded = json.dumps(result, ensure_ascii=False, sort_keys=True) + "\n"
     if args.checkpoint_json:
         if not args.cu_issue_url:
             parser.error("--checkpoint-json requires --cu-issue-url")
