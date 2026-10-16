@@ -31,6 +31,8 @@ def validate(receipt, expected_request_id):
     if obs not in OBSERVATIONS or not isinstance(action, str) or not action or len(action) > 120:
         raise ValueError("OBSERVATION_INVALID")
     verified = receipt.get("result_verified")
+    if type(receipt.get("source_truncated", False)) is not bool:
+        raise ValueError("SOURCE_TRUNCATION_INVALID")
     if type(verified) is not bool:
         raise ValueError("VERIFICATION_INVALID")
     if obs == "HOST_RESULT_NOT_RETURNED":
@@ -121,6 +123,8 @@ def validate(receipt, expected_request_id):
     # Do not return unchecked free-form data, plaintext Host output, or credentials.
     return {
         "request_id": expected_request_id,
+        "command_id": receipt.get("command_id") if verified else None,
+        "source_truncated": receipt.get("source_truncated", False),
         "result_verified": verified,
         "observation": obs,
         "next_action": action,
