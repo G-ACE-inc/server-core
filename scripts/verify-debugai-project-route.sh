@@ -4,6 +4,10 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 manifest="$root/operations/workspace-mcp.json"
 route="$root/operations/github-project-debugai-routing.json"
+if [[ ! -f "$route" ]]; then
+  printf '%s\n' 'LEGACY_DEBUGAI_ROUTE_RETIRED: use docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md; no current route verified' >&2
+  exit 2
+fi
 jq -e '.servers.debugai.command == "/usr/bin/docker" and
   .servers.debugai.args == ["exec","-i","debug-ai-debug-ai-1","node","/app/bin/debugai-mcp.mjs"]' "$manifest" >/dev/null
 jq -e '.project.node_id == "PVT_kwHODOQFoM4BEJII" and

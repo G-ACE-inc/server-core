@@ -150,12 +150,7 @@ The verification command checks:
 
 A valid config is not equivalent to a live connection.
 
-For the existing local DebugAI route, run `bash scripts/verify-debugai-project-route.sh`.
-The client checks thirteen tools, health, rejection of an unapproved GitOps
-request, and a real `project.git_head` request/status lifecycle against the Host
-checkout. Fast operations may complete between polls; `started_at` and
-`finished_at` bind actual execution even when a RUNNING poll is not observed.
-This check grants no deploy approval and does not test a remote CHAT connection.
+The legacy `scripts/verify-debugai-project-route.sh` depends on a fixed-command catalog removed in `b1081a1`; it is not a current common-Host verification entry. Missing retired contract returns `LEGACY_DEBUGAI_ROUTE_RETIRED` before jq/Docker execution. Use [the common CHAT Host route](GITHUB_PROJECT_CHAT_HOST_ROUTE.md) for server-core development, and owner-specific current verification for DebugAI product MCP. This source-level retirement check is not a live MCP/Host result.
 
 ```text
 CONFIG_PRESENT / CONFIG_REGISTERED
@@ -176,45 +171,17 @@ If a Project has the same server name as a global shared MCP, the Project defini
 
 ## DebugAI / private MCP boundary
 
-DebugAI MCP **is implemented**. Current DebugAI authority records stdio source/unit/real-protocol verification, 9 MCP tools, health, and durable continuation surfaces as PASS. Master also reports prior successful Codex use of DebugAI, so server-core must not classify DebugAI MCP as `NOT_IMPLEMENTED`, `NOT_REGISTERED`, or as having no usage history.
-
-The shared control-path verification is bound to the explicitly reflected revision,
-not an arbitrary future DebugAI HEAD. Live stdio discovery/health and real Server
-Command request/status/Host HEAD readback passed on reflected
-`cc3462ddb07fb1379d61dc7c2321a776794800c1`. The owning repository's unrelated
-workflow, benchmark, durable-continuation and Strict Completion qualifications
-remain separate from this bounded control route. The existing guarded GitOps deploy
-completed PASS under a new single-use exact-SHA Host receipt. The existing watcher
-runs both bounded Bash runners with authorized Docker group access; no new executor
-or queue was introduced.
-
-Use the following distinction:
-
-```text
-MCP_IMPLEMENTATION=VERIFIED
-MCP_PROTOCOL=VERIFIED
-PRIOR_CODEX_USAGE=CONFIRMED_BY_MASTER
-REFLECTED_SERVER_HEAD=cc3462ddb07fb1379d61dc7c2321a776794800c1
-REFLECTED_SOURCE_IMAGE_PARITY=PASS_263_PACKAGED_FILES
-WORKSPACE_REGISTRATION_READBACK=PASS
-REPRESENTATIVE_SERVER_COMMAND_MCP_CALL=PASS
-GUARDED_GITOPS_COMPLETION=PASS
-GUARDED_GITOPS_DEPLOY_ID=gitops_7f181b2e296bb0cace801248
-REPRESENTATIVE_SERVER_COMMAND_ID=cmd_01cb05dfdc1e107505c660bf
-HOST_APPROVAL_REJECTION=PASS
-PROJECT_COMMON_SERVER_E2E=PASS
-REMOTE_CHATGPT_DIRECT_MCP_CONNECTOR=NOT_VERIFIED
-```
+DebugAI MCP is implemented and has prior qualified use; historical results are retained in this document's explicitly historical sections. They are not today's Source/Runtime authorization. Product authority remains the owning DebugAI Current; common CHAT Host development is server-core-owned.
 
 Do not downgrade an already implemented/previously used MCP to `NOT_IMPLEMENTED` merely because the latest exact HEAD has not yet been re-verified live. Conversely, prior use is not proof that the current in-progress HEAD is live and identical; current-head availability remains a separate verification state.
 
 Do not invent a new local path or endpoint while DebugAI is being changed. server-core owns the discovery/registration/verification contract; DebugAI owns its implementation body.
 
-Current registration runs the existing `/app/bin/debugai-mcp.mjs` inside the existing `debug-ai-debug-ai-1` Compose container through `operations/workspace-mcp.json`. Host Node/Python is not required for MCP execution. No TTY is allocated, preserving stdio JSON-RPC. Container name is bound to the current Compose deployment; if it changes, update and reverify the contract rather than selecting an arbitrary container.
+The Source manifest declares the existing `/app/bin/debugai-mcp.mjs` inside the existing `debug-ai-debug-ai-1` Compose container through `operations/workspace-mcp.json`. Host Node/Python is not required for MCP execution. No TTY is allocated, preserving stdio JSON-RPC. Container name is bound to the current Compose deployment; if it changes, update and reverify the contract rather than selecting an arbitrary container.
 
 The installer permits migration only from the manifest's explicit prior DebugAI command definition, preserving covered auth containers and backing up the existing file. Unknown transport collisions still fail closed. Host environment fields are preserved in the client config; `docker exec` does not forward them automatically. The existing container's runtime environment remains authoritative.
 
-GitHub Project server-operation routing is fixed separately in `operations/github-project-debugai-routing.json`; server-core owns that routing contract, while DebugAI retains all MCP/Server Command/GitOps implementation. Cursor global registration does not configure a remote ChatGPT connector; CHAT-side tool availability must be verified on that execution surface separately.
+Common GitHub Project server operations use `operations/github-project-bounded-host.json` and [the server-core Host route](GITHUB_PROJECT_CHAT_HOST_ROUTE.md). The former DebugAI fixed-command catalog was removed in `b1081a1`; do not load or recreate it as a current dependency. DebugAI owns its product MCP; Cursor registration still does not establish a remote ChatGPT connector.
 
 ## Deterministic Japanese Parser MCP
 
@@ -232,11 +199,7 @@ The current server-core manifest does not own or rewrite that pre-existing entry
 
 ## Standing Delegation routing
 
-Existing `debugai_gitops_request/status` supports the Host-installed Standing
-Delegation reference for bounded `deploy` / `debugai.compose.reflect`. Routing
-contract: `operations/github-project-debugai-routing.json`. Implementation and
-trust/receipt/revocation contract stay in owning DebugAI
-`docs/GITOPS_STANDING_DELEGATION.md`. No extra MCP approval tool or transport exists.
+Product-specific Standing delegation, when actually installed/admitted, is owned by DebugAI's `docs/GITOPS_STANDING_DELEGATION.md`. The former shared fixed-command catalog is retired. Current common Host operations follow their existing server-core contract and exact Host admission; there is no extra MCP approval transport.
 
 Master may preauthorize this narrow technical scope. CHAT/Codex then decides and
 requests reflection; the Host verifies its installed issuer/policy, exact target,
@@ -247,7 +210,9 @@ DebugAI patch approval are not granted by this route. Remote ChatGPT direct
 connector registration remains a separate availability boundary. Source/CI
 qualification does not imply delegated Runtime E2E.
 
-Standing Delegation live qualification is bound to reflected `cc3462ddb07fb1379d61dc7c2321a776794800c1`,
+### Historical finite Standing qualification (recorded, not current authorization)
+
+Standing Delegation historical qualification is bound to reflected `cc3462ddb07fb1379d61dc7c2321a776794800c1`,
 not future source. Delegated MCP deploy `gitops_7f181b2e296bb0cace801248` showed
 QUEUED -> RUNNING -> PASS without a manually created per-operation receipt.
 Status returns the installed Master delegation `dlg_debugai_reflect_v1`, issuer,
@@ -261,39 +226,13 @@ remote ChatGPT app connector installation or broader PR #40 product completion.
 
 ## Master Internal Persistent Delegation
 
-Purpose is fixed: preserve the existing sales/customer full approval path and
-extend only Master's own development to persistent delegation for verified
-GitHub Project #1 repositories. Canonical Workspace registry/mapping:
-`operations/master-internal-repositories.json`; routing:
-`operations/github-project-debugai-routing.json`. This extends the existing
-Workspace registry, not a new control plane. DebugAI owns validation/admission
-implementation: `docs/MASTER_INTERNAL_PERSISTENT_DELEGATION.md` in its repository.
-
-Each entry has verified GitHub repo numeric/node/owner/Project-item identity,
-server project/path, default/allowed branches, operations/scopes, pinned Compose
-runtime/services/private health/digest, effect/path policy, enabled/revoked state
-and audit identity. Initial entry is DebugAI; other registered repos receive no
-automatic grant. Trusted Host admission verifies and reads back an exact private
-copy in the existing delegation trust root. Every execution rechecks GitHub
-owner/admin/principal, Project item, mapping and exact target before a short
-single-use receipt. Repo delegation has no expiry; disable/revoke is immediate.
-
-Design delta: optional Master Internal registry lookup on the existing MCP/Host
-lane. Legacy manual and finite Standing modes remain compatible; no Commercial,
-licensing, Customer authentication, new executor/queue/transport/service or shell
-endpoint. Source/CI and real Runtime qualification remain separate; this source
-checkpoint does not claim live persistent-mode PASS. Protected product/spec/public/
-provider/model/Secret/destructive persistent decisions remain Master-owned.
-
-Master internal runtime uses the registered `master-internal-runtime-20261008`
-branch so concurrent shared-feature work is not implicitly reflected. Legacy and
-finite Standing branch pinning remain unchanged. The initial verifier source
-preparation is a trusted exact-qualified-source action; formal reflection and
-Runtime acceptance still use the existing MCP/Host automatic receipt cycle.
+Shared safety/delegation authority is [SERVER_CORE_PROTOCOL](../SERVER_CORE_PROTOCOL.md#authority--approval). Canonical enrollment is `operations/master-internal-repositories.json`; each operation still needs actual trusted Host admission and exact identity/Source/receipt checks. DebugAI owns its product implementation, not the current common server-core terminal. Project membership and Source metadata are not credentials; no extension to customer/commercial effects is implied. Use owning Current and direct runtime readback; the following dated record is historical only.
 
 ---
 
 > **Archived runtime qualification only (2026-10-08).** Kept for historical evidence; it is not a live authorization or today's runtime Current.
+
+<a id="master-internal-persistent-delegation-runtime-verified-2026-10-08"></a>
 
 ## Master Internal Persistent Delegation — Runtime verified (2026-10-08)
 

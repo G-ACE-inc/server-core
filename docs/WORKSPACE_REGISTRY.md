@@ -102,7 +102,7 @@ MCPの利用可能性は「文書にある」だけでは成立しない。
 | MCP | Owner / authority | Config authority | Purpose | Current boundary |
 |---|---|---|---|---|
 | Cloudflare API MCP | Cloudflare / Workspace config | `~/.cursor/mcp.json` via `operations/workspace-mcp.json` | Cloudflare操作入口 | GLOBAL_CONFIG_SOURCE_VERIFIED; live use pending |
-| DebugAI MCP | `seigo-gace/debug-ai` | implementation/runtime=`seigo-gace/debug-ai`; Workspace registration/routing=`operations/workspace-mcp.json` + `operations/github-project-debugai-routing.json` | GitHub Project / 親AIから既存DebugAI MCP経由でbounded Server Command / guarded GitOpsを共通利用 | Workspace config / 13 tools / Server Command / guarded deploy / Master Internal persistent E2E PASS at recorded 2695a0d; other Repo/product/client paths remain separate |
+| DebugAI MCP | `seigo-gace/debug-ai` | product implementation/runtime in owning Repo; optional client registration=`operations/workspace-mcp.json` | Product-specific MCP usage; common Host development uses server-core route below | Prior implementation/qualification recorded in `docs/WORKSPACE_MCP.md`; current client/Runtime requires fresh verification |
 | Reuse KB MCP | future F: KB bridge owner | future verified global config | F: reusable-development KB検索/登録 | NOT_IMPLEMENTED |
 | Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | global MCP after runtime readback | deterministic Japanese parser | repository DISCOVERED; GLOBAL_REGISTRATION_PENDING / LIVE availability NOT_VERIFIED |
 
@@ -112,34 +112,9 @@ Cloudflare API and Hugging Face official MCP are registered in the Workspace-glo
 
 ### DebugAI source / usage boundary
 
-DebugAIは既存9 tools + bounded control4 toolsの計13 tools、Server Command、guarded GitOps、Master Internal Persistentの実Host E2Eが指定Revisionで確認済み。Owner Projectの最新SourceとLive Runtimeは別々にFresh照合する。
+DebugAI MCP has implemented and previously qualified Source/Runtime history; do not relabel it NOT_IMPLEMENTED merely because today's client/HEAD is unverified. Keep its product implementation in `seigo-gace/debug-ai`. Historical qualification has one location: [WORKSPACE_MCP](WORKSPACE_MCP.md#master-internal-persistent-delegation-runtime-verified-2026-10-08); actual current use needs owner/client/Host readback.
 
-Recorded qualified runtime (2026-10-08; not an automatic claim about future HEAD):
-
-```text
-repository = seigo-gace/debug-ai
-MCP discovery = 13 tools VERIFIED
-bounded Server Command / guarded GitOps = REAL E2E PASS
-Master Internal Persistent enrollment = DebugAI ONLY, enabled/unrevoked/no expiry
-recorded reflected Host SHA = 2695a0d3714d25593de16dd0f0a21deba7c29f43
-packaged source/image parity = 266/266
-automatic single-use receipt / replay reject / health = LIVE PASS
-legacy manual approval / finite Standing = PRESERVED
-other repos = NOT_ENROLLED
-remote ChatGPT direct MCP connector = NOT_VERIFIED
-broader DebugAI product / Unified Development Log = NOT_QUALIFIED_BY_THIS_CU
-```
-
-Runtime判断にはOwner Current・実Host readbackを用い、Registry記載だけで別RevisionをPASS扱いしない。歴史的なfinite Standing成功記録は後段に保持する。
-
-GitHub Project #1のserver操作は、server-coreで別executorを複製せず、`operations/github-project-debugai-routing.json` に従い既存DebugAI MCPへdispatchする。server-coreはCurrent/control/routing/approval契約を所有し、DebugAIはMCP/Server Command/GitOps実装本体を所有する。
-
-Workspace stdio uses the existing Compose container, as specified by
-`operations/workspace-mcp.json`. `scripts/verify-debugai-project-route.sh` is a
-bounded verification client: it checks discovery/health, unapproved GitOps
-rejection and exact Host git-head readback through the existing MCP request/status
-path. It never performs a deploy or creates another executor. Cursor registration
-does not by itself establish a remote ChatGPT connector.
+Common CHAT server development uses the server-core-owned [Host route](GITHUB_PROJECT_CHAT_HOST_ROUTE.md) and `operations/github-project-bounded-host.json`, not the retired DebugAI fixed-command catalog (removed in `b1081a1`). Optional DebugAI stdio registration remains in `operations/workspace-mcp.json`; it does not configure the remote ChatGPT connector. The legacy `scripts/verify-debugai-project-route.sh` depends on that retired contract and is unavailable for current common-route verification. It fails before Docker when the contract is absent. Use the owning route's existing checks rather than restoring retired clients or claiming MCP/runtime PASS.
 
 ## 5. Shared Tool / Skill Registry
 
@@ -252,42 +227,6 @@ FAILURE_BEHAVIOR_KNOWN=YES
 
 Registryは作業日誌ではない。時系列履歴はGitHub commit / PRへ残す。
 
-## Historical finite Standing Delegation qualification (preserved)
+## Delegation references
 
-This earlier Standing Delegation E2E is bound to reflected `cc3462ddb07fb1379d61dc7c2321a776794800c1`,
-not future source. Delegated MCP deploy `gitops_7f181b2e296bb0cace801248` showed
-QUEUED -> RUNNING -> PASS without a manually created per-operation receipt.
-Status returns the installed Master delegation `dlg_debugai_reflect_v1`, issuer,
-exact operation/SHA/scope and receipt consumption timestamp. Duplicate replay
-was rejected without changing its original terminal status or recreating the
-container. A missing-policy live request was rejected before receipt issuance.
-The installed narrow reflection policy expires 2026-10-15 14:03:30 JST; it grants
-no destructive/persistent/Secret/provider/model/public-exposure mutation.
-CLI/MCP availability in this Codex execution environment does not prove direct
-remote ChatGPT app connector installation or broader PR #40 product completion.
-
-## Master Internal Persistent Delegation
-
-Purpose is fixed: preserve the existing sales/customer full approval path and
-extend only Master's own development to persistent delegation for verified
-GitHub Project #1 repositories. Canonical Workspace registry/mapping:
-`operations/master-internal-repositories.json`; routing:
-`operations/github-project-debugai-routing.json`. This extends the existing
-Workspace registry, not a new control plane. DebugAI owns validation/admission
-implementation: `docs/MASTER_INTERNAL_PERSISTENT_DELEGATION.md` in its repository.
-
-Each entry has verified GitHub repo numeric/node/owner/Project-item identity,
-server project/path, default/allowed branches, operations/scopes, pinned Compose
-runtime/services/private health/digest, effect/path policy, enabled/revoked state
-and audit identity. Initial entry is DebugAI; other registered repos receive no
-automatic grant. Trusted Host admission verifies and reads back an exact private
-copy in the existing delegation trust root. Every execution rechecks GitHub
-owner/admin/principal, Project item, mapping and exact target before a short
-single-use receipt. Repo delegation has no expiry; disable/revoke is immediate.
-
-Design delta: optional Master Internal registry lookup on the existing MCP/Host
-lane. Legacy manual and finite Standing modes remain compatible; no Commercial,
-licensing, Customer authentication, new executor/queue/transport/service or shell
-endpoint. Source/CI and real Runtime qualification remain separate; this source
-checkpoint is complemented by the separate actual 2695a0d Host persistent-mode E2E PASS. Protected product/spec/public/
-provider/model/Secret/destructive persistent decisions remain Master-owned.
+Shared authority is [SERVER_CORE_PROTOCOL](../SERVER_CORE_PROTOCOL.md#authority--approval); canonical enrollment/mapping is `operations/master-internal-repositories.json`, with trusted Host admission required per execution. Project registration alone grants nothing. DebugAI owns its product-specific Standing/Master Internal implementation and revocation/receipt contracts; server-core owns the common Host route. Historical finite/persistent evidence stays in [WORKSPACE_MCP](WORKSPACE_MCP.md#standing-delegation-routing), not another current registry snapshot.

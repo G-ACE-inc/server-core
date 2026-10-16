@@ -27,11 +27,11 @@ server-coreは司令室としてTaskをRouting/Dispatchするが、Project固有
 ### Runtime委任の判定
 Production deploy、restart/recreate、reflection、rollback等は操作名だけで無条件にMaster Gateとしない。ただし委任が未検証のProduction操作・稼働Service変更は既存Master承認を要求し、承認を推測しない。
 
-Master Internalに限り、Current GitHub Project #1の登録に加えて operations/master-internal-repositories.json の明示entryとHost private admissionの一致、Repo immutable ID/owner/admin、Project item、server project/path、runtime/Compose、allowed branch/operation/scope/paths、enabled/unrevoked、Protected effectsの全検証が成立する場合にのみ MASTER_INTERNAL_PERSISTENT を認める。現在の登録はDebugAI 1 Repoだけ。他Repoは登録済みと仮定しない。
+Master Internalに限り、Current GitHub Project #1の登録に加えて operations/master-internal-repositories.json の明示entryとHost private admissionの一致、Repo immutable ID/owner/admin、Project item、server project/path、runtime/Compose、allowed branch/operation/scope/paths、enabled/unrevoked、Protected effectsの全検証が成立する場合にのみ MASTER_INTERNAL_PERSISTENT を認める。対象は正本Registryの実entryを確認し、Source上の登録状態とHost private admissionを分けて照合する。過去の登録件数や特定Repoのみという記録を現在の許可一覧として使わない。
 
 永続なのはRepo委任だけ。各実行でFresh exact SHA/remote/ancestry、Scope、request identity、target/healthを検証し、Hostが短命single-use receiptを発行・消費する。CHAT本文・human_approved=true・GitHub Project item単独はRuntime credentialではない。無効・不一致・未登録・失効・revokeはfail-closed。Registry変更・Repo追加は既存のreviewed registration/Host admission/readback/auditを通す。
 
-旧manual完全承認経路と有限Standing Delegationを維持する。外部顧客・販売・License・Subscription・AsteraAPPへMaster Internal権限を継承しない。将来販売用の経路はこのChange Unitでは変更しない。Host実装のOwnerはDebugAI、server-coreは登録/経路/共通境界のみを所有する。
+旧manual完全承認経路と有限Standing Delegationを維持する。外部顧客・販売・License・Subscription・AsteraAPPへMaster Internal権限を継承しない。将来販売用の経路はこのChange Unitでは変更しない。DebugAIは自製品MCP/GitOps実装を所有し、共通Host実装・経路はserver-coreが所有する。RepositoryごとのSource/Runtime所有権を保つ。
 
 ## Workspace Entry / Command Dispatch
 
