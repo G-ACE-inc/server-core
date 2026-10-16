@@ -27,6 +27,10 @@ class TerminalOutputTests(unittest.TestCase):
             self.assertEqual(receipt["streams"]["stdout"]["chars"], len(text))
             self.assertEqual(receipt["streams"]["stdout"]["bytes"], len(text.encode("utf-8")))
             self.assertEqual(receipt["streams"]["stderr"]["chars"], 0)
+            self.assertFalse(receipt["source_truncated"])
+            poll.write_observation(str(path), rid, {**record, "stdout_truncated": True},
+                                   {"html_url": "https://github.com/G-ACE-inc/server-core/issues/10"}, "OK")
+            self.assertTrue(json.loads(path.read_text())["source_truncated"])
             self.assertNotIn(text, output)
         # A metadata-only publisher must NEVER hash its empty preview.
         pointer = {**record, "stdout": "", "stdout_bytes": 1000,
