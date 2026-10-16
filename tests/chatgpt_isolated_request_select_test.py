@@ -68,13 +68,13 @@ class IsolatedRequests(unittest.TestCase):
             prepared = m.prepare(path)["bounded_host_request"]
             script = prepared["command"]
             self.assertNotIn("source_context", prepared)
-            self.assertTrue(script.startswith("(\\ncd /home/admin1/projects/ai-core/"))
+            self.assertTrue(script.startswith("(\ncd /home/admin1/projects/ai-core/"))
             self.assertIn('git rev-parse HEAD', script)
             self.assertIn('CHAT_SOURCE_SHA_MISMATCH', script)
             self.assertIn('CHAT_SOURCE_REQUIRED_FILE_MISSING', script)
             self.assertIn('test -f tests/test_model_gate.py', script)
             self.assertIn('python3 -m unittest discover', script)
-            self.assertTrue(script.endswith("\\n)"))
+            self.assertTrue(script.endswith("\n)"))
 
     def test_source_bound_diagnostic_rejects_misrouted_repo_and_escape(self):
         target = {
