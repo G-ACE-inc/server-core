@@ -10,6 +10,33 @@ from scripts import servercore_bounded_result_poll as poll
 
 
 class TerminalOutputTests(unittest.TestCase):
+    def test_legacy_complete_preview_fills_missing_hash_without_text_leak(self):
+        import hashlib
+        rid = "req_" + "e" * 24
+        text = "日本語Ω🙂\\n"
+        record = {"request_id": rid, "command_id": "host.command",
+                  "state": "PASS", "exit_code": 0, "expected_sha": "a" * 40,
+                  "stdout": text, "stderr": "",
+                  "stdout_truncated": False, "stderr_truncated": False}
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, "observation.json")
+            poll.write_observation(str(path), rid, record, {"html_url": "https://github.com/G-ACE-inc/server-core/issues/10"}, "OK")
+            output = path.read_text()
+            receipt = json.loads(output)
+            self.assertEqual(receipt["streams"]["stdout"]["sha256"], hashlib.sha256(text.encode()).hexdigest())
+            self.assertEqual(receipt["streams"]["stdout"]["chars"], len(text))
+            self.assertEqual(receipt["streams"]["stderr"]["chars"], 0)
+            self.assertNotIn(text, output)
+        # A metadata-only publisher must NEVER hash its empty preview.
+        pointer = {**record, "stdout": "", "stdout_bytes": 1000,
+                   "stdout_preview_truncated": True}
+        self.assertIsNone(poll.stream_receipt_metadata(pointer, "stdout")["sha256"])
+        # Full-ledger source hashes are preserved even if the preview is hidden.
+        pointer["stdout_sha256"] = "b" * 64
+        pointer["stdout_chars"] = 777
+        self.assertEqual(poll.stream_receipt_metadata(pointer, "stdout")["sha256"], "b" * 64)
+        self.assertFalse(poll.stream_receipt_metadata(pointer, "stdout")["complete"])
+
     def test_clipped_preview_requires_lossless_chunk_readback(self):
         import contextlib
         import io

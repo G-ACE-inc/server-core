@@ -33,7 +33,7 @@ class ContinuationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             target = Path(d, "artifact")
             manifest = assemble([*pages("stdout", stdout), *pages("stderr", stderr)], target)
-            cp = {**BASE, "observation": "HOST_OPERATION_PASSED", "stream_metadata": {
+            cp = {**BASE, "observation": "HOST_OPERATION_PASSED", "exit_code": 0, "stream_metadata": {
                 name: {"sha256": manifest["streams"][name + ".txt"]["sha256"],
                        "chars": len(data)}
                 for name, data in (("stdout", stdout), ("stderr", stderr))}}
@@ -53,6 +53,14 @@ class ContinuationTests(unittest.TestCase):
                     target / "output.zip")
             with self.assertRaisesRegex(ValueError, "OUTPUT_VERIFICATION_STATE_INVALID"):
                 verified_output_evidence({**cp, "result_verified": False}, target / "output.zip")
+
+    def test_failed_ledger_pointer_must_not_promote_even_with_matching_zip(self):
+        cp = {**BASE, "observation": "HOST_LEDGER_RECOVERY_REQUIRED",
+              "exit_code": 1, "stream_metadata": {
+                 "stdout": {"sha256": "0" * 64, "chars": 0},
+                 "stderr": {"sha256": "0" * 64, "chars": 0}}}
+        with self.assertRaisesRegex(ValueError, "OUTPUT_VERIFICATION_STATE_INVALID"):
+            verified_output_evidence(cp, Path("irrelevant.zip"))
 
     def test_forged_cached_complete_flag_does_not_skip_actual_zip_verification(self):
         cp = {**BASE, "output_complete": True,

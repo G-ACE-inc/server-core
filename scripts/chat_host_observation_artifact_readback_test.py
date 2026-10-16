@@ -82,6 +82,20 @@ class ObservationReadbackTests(unittest.TestCase):
         self.assertFalse(result["output_complete"])
         self.assertEqual(result["next_action"], "INSPECT_HOST_LEDGER_OUTPUT_COMPLETENESS_AND_CONTINUE")
 
+    def test_ledger_pointer_digest_is_available_despite_truncated_preview(self):
+        record = self.record()
+        record["observation"] = "HOST_LEDGER_RECOVERY_REQUIRED"
+        record["next_action"] = "READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE"
+        record["streams"] = {
+            "stdout": {"complete": False, "sha256": DIGEST, "chars": 900000},
+            "stderr": {"complete": False, "sha256": DIGEST, "chars": 0},
+        }
+        result = validate(record, RID)
+        self.assertTrue(result["stream_digests_available"])
+        self.assertFalse(result["stream_metadata_complete"])
+        self.assertFalse(result["output_complete"])
+        self.assertEqual(result["stream_metadata"]["stdout"], {"sha256": DIGEST, "chars": 900000})
+
     def test_full_hashes_can_validate_stream_metadata(self):
         record = self.record()
         record["streams"]["stdout"] = {"complete": True, "sha256": DIGEST, "chars": 100}

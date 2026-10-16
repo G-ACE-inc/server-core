@@ -6,6 +6,7 @@ CHAT-visible job log carries exact result markers correlated by request id.
 Exit codes: 0 PASS, 1 Host FAIL, 2 result not returned in time, 3 correlation mismatch.
 """
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -125,6 +126,27 @@ def emit(record, comment, verdict):
         print(f"SERVERCORE_BOUNDED_HOST_{stream.upper()}_END")
 
 
+def stream_receipt_metadata(record, stream):
+    """Prefer Host-ledger digests, fall back ONLY to complete legacy previews."""
+    raw = record.get(stream)
+    digest = record.get(stream + "_sha256")
+    chars = record.get(stream + "_chars")
+    # Older Host publishers supplied complete small text previews but no SHA.
+    # Never hash an empty preview for a metadata-only ledger pointer or a
+    # truncated preview: it would misrepresent the actual Host output.
+    if (digest is None and chars is None and isinstance(raw, str)
+            and stream + "_bytes" not in record
+            and not record.get(stream + "_preview_truncated")
+            and not record.get(stream + "_truncated")):
+        digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+        chars = len(raw)
+    return {"chars": chars, "sha256": digest,
+            "complete": not bool(
+                record.get(stream + "_preview_truncated") or
+                record.get(stream + "_truncated") or
+                stream + "_bytes" in record)}
+
+
 def write_observation(path, request_id, record=None, comment=None, verdict=None):
     """Durable, secret-free receipt; never include stdout/stderr or private command text."""
     if not path:
@@ -139,9 +161,7 @@ def write_observation(path, request_id, record=None, comment=None, verdict=None)
                    "expected_sha": record.get("expected_sha"), "host_sha": record.get("host_sha"),
                    "result_url": (comment or {}).get("html_url"), "observation": observation,
                    "next_action": next_action, "result_verified": verdict == "OK",
-                   "streams": {stream: {"chars": record.get(stream + "_chars"),
-                                        "sha256": record.get(stream + "_sha256"),
-                                        "complete": not bool(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated") or stream + "_bytes" in record)}
+                   "streams": {stream: stream_receipt_metadata(record, stream)
                                for stream in ("stdout", "stderr")}}
     dest = Path(path)
     dest.parent.mkdir(parents=True, exist_ok=True)

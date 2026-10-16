@@ -16,7 +16,7 @@ DIGEST = re.compile(r"[a-f0-9]{64}\Z")
 OBSERVATIONS = {
     "HOST_RESULT_NOT_RETURNED", "HOST_OUTPUT_PARTIAL", "HOST_OPERATION_PASSED",
     "HOST_SOURCE_SHA_MISMATCH", "HOST_OPERATION_FAILED", "HOST_RESULT_UNVERIFIED",
-    "CORRELATION_FAILED",
+    "CORRELATION_FAILED", "HOST_LEDGER_RECOVERY_REQUIRED",
 }
 STREAM_KEYS = {"stdout", "stderr"}
 
@@ -67,6 +67,18 @@ def validate(receipt, expected_request_id):
     # stdout/stderr bytes. The poller's 'complete' flag alone MUST NOT prove that
     # the CHAT received full output. Require verified digest + byte/char evidence.
     streams = receipt.get("streams") or {}
+    # Ledger hashes remain authoritative even when Issue/Job previews are
+    # truncated. Distinguish digest availability from payload completeness.
+    stream_digests_available = (
+        verified is True and set(streams) == STREAM_KEYS
+        and all(
+            isinstance(info.get("sha256"), str)
+            and DIGEST.fullmatch(info["sha256"])
+            and type(info.get("chars")) is int
+            and info["chars"] >= 0
+            for info in streams.values()
+        )
+    )
     stream_metadata_complete = (
         verified is True
         and set(streams) == STREAM_KEYS
@@ -90,10 +102,11 @@ def validate(receipt, expected_request_id):
         "result_url": receipt.get("result_url") if isinstance(receipt.get("result_url"), str) else None,
         "output_complete": False,  # This artifact contains metadata, never the Host payload.
         "stream_metadata_complete": stream_metadata_complete,
+        "stream_digests_available": stream_digests_available,
         "stream_metadata": ({name: {"sha256": streams[name]["sha256"],
                                    "chars": streams[name]["chars"]}
                             for name in ("stdout", "stderr")}
-                            if stream_metadata_complete else None),
+                            if stream_digests_available else None),
         "expected_sha": receipt.get("expected_sha") if verified else None,
         "host_sha": host_sha if verified else None,
         "exit_code": exit_code if verified else None,
