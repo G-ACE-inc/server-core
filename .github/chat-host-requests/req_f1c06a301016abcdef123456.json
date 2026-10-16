@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Check existing private Gateway/Vault/registered secure output destination presence for CU40 without reading secret values",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport json, pathlib, urllib.request\nfrom pathlib import Path\nroot=Path('/home/admin1/projects/webhook-gateway')\nf=root/'.env'\npresent=f.is_file() and not f.is_symlink()\nprint('GATEWAY_ENV_PRESENT='+str(present))\nif present:\n labels=[]\n for l in f.read_text(encoding='utf-8').splitlines():\n  if l.startswith('INTERNAL_EVENT_API_PROJECT_KEYS_JSON='):\n   try:\n    x=json.loads(l.partition('=')[2].strip().strip(\"'\"))\n    if isinstance(x,dict): labels=sorted(str(k) for k in x)\n   except Exception: print('PROJECT_KEY_FORMAT=UNVERIFIED')\n print('SERVER_CORE_PROJECT_KEY_REGISTERED='+str('server-core' in labels))\ncfg=root/'config/webhooks.json'\nif cfg.is_file():\n obj=json.loads(cfg.read_text())\n destinations=[str(x.get('id','')) for x in obj.get('destinations',[])]\n print('HOST_OUTPUT_DESTINATION_REGISTERED='+str(any('host-output' in n for n in destinations)))\nfor k, url in [('GATEWAY_HEALTH','http://127.0.0.1:7373/healthz'),('VAULT_HEALTH','http://127.0.0.1:8791/internal/v1/health')]:\n try:\n  req=urllib.request.Request(url,method='GET')\n  with urllib.request.urlopen(req,timeout=2) as r: print(k+'_HTTP='+str(r.status))\n except Exception as e: print(k+'_HTTP=UNAVAILABLE')\nprint('VAULT_TOKEN_FILE_PRESENT='+str(Path('/home/admin1/.config/libral-vault/internal-token').is_file()))\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/301"
+  }
+}
