@@ -82,7 +82,8 @@ def restore(repository, run_id, request_id, run=subprocess.run):
     if (not isinstance(info, dict) or info.get("id") != run_id
             or not isinstance(info.get("repository"), dict)
             or info["repository"].get("full_name", "").lower() != repository.lower()
-            or info.get("path") != ".github/workflows/chatgpt-live-api-verify.yml"):
+            or not isinstance(info.get("path"), str)
+            or info["path"].split("@", 1)[0] != ".github/workflows/chatgpt-live-api-verify.yml"):
         raise ValueError("RUN_PROVENANCE_MISMATCH")
     source_sha = info.get("head_sha")
     if not isinstance(source_sha, str) or not ARTIFACT_SHA.fullmatch(source_sha):
