@@ -23,6 +23,7 @@ from datetime import datetime, timedelta, timezone
 
 SOCKET_PATH = Path("/run/gace/servercore-result.sock")
 RESULT_DIR = Path("/home/admin1/logs/servercore-bounded-results")
+HOST_WRITER_RESULT_DIR = Path("/home/admin1/logs/servercore-service-deploy")
 RESULT_REPOSITORY = "G-ACE-inc/server-core"
 RESULT_ISSUE = 10
 MARKER = "GACE_BOUNDED_HOST_RESULT"
@@ -156,17 +157,64 @@ def accept_record(value, *, result_dir=None, now=None):
     return {"state": "RECORDED", "recorded_state": record["state"], "attempts": attempts}
 
 
-def comment_body(record):
+def trusted_writer_metadata(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
+    """Read exact Host writer ledger for stream hashes, never public raw text.
+
+    The Receiver replaces multi-MB data with a *locator string*, so hashing
+    the Result Sink's stdout produces a hash of the locator, not the output.
+    Only the separately persisted same-request Writer ledger is authoritative.
+    """
+    if record.get("command_id") != "host.command":
+        return None
+    rid = record.get("request_id")
+    if not isinstance(rid, str) or not REQ_ID.fullmatch(rid):
+        raise SinkError("WRITER_REQUEST_INVALID")
+    path = Path(writer_dir) / (rid + ".json")
+    if path.is_symlink():
+        raise SinkError("WRITER_LEDGER_SYMLINK")
+    if not path.is_file():
+        return None  # e.g. denied admission: no Writer execution occurred.
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise SinkError("WRITER_LEDGER_UNREADABLE") from None
+    if (not isinstance(raw, dict) or raw.get("request_id") != rid
+            or raw.get("source_sha") != record.get("host_sha")
+            or raw.get("exit_code") != record.get("exit_code")
+            or (raw.get("state") == "HOST_COMMAND_PASS") != (record.get("state") == "PASS")):
+        raise SinkError("WRITER_LEDGER_CORRELATION_MISMATCH")
+    meta = {}
+    for name in ("stdout", "stderr"):
+        value = raw.get(name)
+        if not isinstance(value, str):
+            raise SinkError("WRITER_LEDGER_STREAM_INVALID")
+        data = value.encode("utf-8")
+        meta[name] = {"bytes": len(data), "chars": len(value),
+                      "sha256": hashlib.sha256(data).hexdigest()}
+    return meta
+
+
+def comment_body(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
     view = public_view(record)
     view.pop("published", None)
-    # Issue is an index/status surface, never a stream delivery channel.
-    # Keep complete redacted streams in the durable Host ledger only.
+    # The authorized Host Writer ledger is the source of full Host stream
+    # digest/length, not the Receiver's GACE_HOST_OUTPUT_STORED locator.
+    writer = trusted_writer_metadata(record, writer_dir=writer_dir)
+    # Issue is an index/status surface; never include any Host output text.
     for stream in ("stdout", "stderr"):
         full = str(record.get(stream) or "")
-        view[stream + "_chars"] = len(full)
-        view[stream + "_bytes"] = len(full.encode("utf-8"))
-        view[stream + "_sha256"] = hashlib.sha256(full.encode("utf-8")).hexdigest()
-        view[stream + "_preview_truncated"] = bool(full)
+        evidence = (writer or {}).get(stream)
+        if evidence is not None:
+            view[stream + "_chars"] = evidence["chars"]
+            view[stream + "_bytes"] = evidence["bytes"]
+            view[stream + "_sha256"] = evidence["sha256"]
+            view[stream + "_origin"] = "HOST_WRITER_LEDGER_RAW"
+            view[stream + "_preview_truncated"] = evidence["bytes"] != 0
+        else:
+            view[stream + "_chars"] = len(full)
+            view[stream + "_bytes"] = len(full.encode("utf-8"))
+            view[stream + "_sha256"] = hashlib.sha256(full.encode("utf-8")).hexdigest()
+            view[stream + "_preview_truncated"] = bool(full)
         view[stream] = ""
     lines = [
         f"<!-- {MARKER} request_id={record['request_id']} -->",
