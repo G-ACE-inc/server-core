@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core already-provisioned Gate bearer source existence only, no secret values and no Secret mutations",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess,re\nfrom pathlib import Path\nroot=Path('/home/admin1/projects/ai-core')\nsources=[root/'.env',root/'.env.local',root/'router/.env',root/'runtime/.env',Path('/home/admin1/projects/debug-ai/.env'),Path('/home/admin1/projects/debug-ai/.env.local'),Path('/home/admin1/.config/ai-core/.env')]\nwant=('LLAMA_SWAP_API_KEY','AI_CORE_API_KEY')\nfiles=[]\nfor fp in sources:\n entry={'path':str(fp),'exists':fp.is_file()}\n if fp.is_file() and not fp.is_symlink():\n  names=set()\n  try:\n   for line in fp.read_text(errors='replace').splitlines()[:500]:\n    m=re.match(r'^\\s*(?:export\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*=',line)\n    if m:names.add(m.group(1))\n   entry['matching_secret_names']=[s for s in want if s in names]\n   if fp==root/'.env':entry['other_env_variable_names']=sorted(names)[:40]\n  except OSError:entry['readable']=False\n files.append(entry)\nservices=['debug-ai','ai-llama-router','ai-core-model-gate','ai-qwen3','ai-coder']\ncontainers=[]\nfor name in services:\n p=subprocess.run(['docker','inspect','--format','{{json .Config.Env}}',name],capture_output=True,text=True,timeout=8)\n row={'name':name,'present':p.returncode==0}\n if p.returncode==0:\n  try:\n   names={v.split('=',1)[0] for v in json.loads(p.stdout)}\n   row['matching_secret_names']=[s for s in want if s in names]\n  except (ValueError,TypeError):row['env_parse_failed']=True\n containers.append(row)\nout={'file_sources':files,'container_env_name_presence':containers,'secret_values_collected':False}\nbody='AI_CORE_EXISTING_BEARER_SOURCE_DISCOVERY\\n'+json.dumps(out,ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('AI_CORE_BEARER_DISCOVERY='+('PASS '+p.stdout.strip() if p.returncode==0 else 'FAILED'))\nraise SystemExit(0 if p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 source 0c61ebe, built Docker image available. Find only existing intended LLAMA_SWAP_API_KEY identity without any values."
+  }
+}
