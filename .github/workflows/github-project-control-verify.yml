@@ -42,6 +42,7 @@ jobs:
           python3 -m unittest discover -s tests -p chatgpt_isolated_request_select_test.py -v
           python3 -m unittest scripts.chat_cu_continuation_test scripts.chat_host_observation_artifact_readback_test scripts.chat_host_observation_gh_restore_test -v
           python3 -m unittest scripts.servercore_host_output_artifact_assemble_test -v
+          python3 -m unittest scripts.servercore_bounded_result_poll_test -v
       - name: Server-core independent bounded Host unit tests
         run: |
           python3 -m py_compile scripts/servercore_bounded_host.py tests/servercore_bounded_host_test.py
