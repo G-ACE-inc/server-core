@@ -148,6 +148,7 @@ def continuation_checkpoint(result, cu_issue_url):
         "host_sha": result.get("host_sha"),
         "exit_code": result.get("exit_code"),
         "output_complete": result["output_complete"],
+        "stream_metadata": result.get("stream_metadata"),
         "result_url": result["result_url"],
         "next_action": next_action,
         "next_tool_target": (
