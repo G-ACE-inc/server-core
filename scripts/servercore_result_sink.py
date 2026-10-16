@@ -384,6 +384,9 @@ def publisher_loop(result_dir=None, runner=_gh, interval=15):
                       flush=True)
 
 
+from servercore_host_output_cipher_inbox import InboxError, SCHEMA as CIPHER_SCHEMA, store as store_cipher_chunk
+
+
 class Handler(socketserver.StreamRequestHandler):
     def handle(self):
         self.connection.settimeout(30)
@@ -392,11 +395,15 @@ class Handler(socketserver.StreamRequestHandler):
             if not raw or len(raw) > MAX_REQUEST or not raw.endswith(b"\n"):
                 raise SinkError("REQUEST_SIZE_DENIED")
             value = json.loads(raw.decode("utf-8"))
-            if isinstance(value, dict) and value.get("schema") == QUERY_SCHEMA and set(value) == {"schema", "request_id"}:
+            if isinstance(value, dict) and value.get("schema") == CIPHER_SCHEMA:
+                reply = {"ok": True, **store_cipher_chunk(value)}
+            elif isinstance(value, dict) and value.get("schema") == QUERY_SCHEMA and set(value) == {"schema", "request_id"}:
                 record = read_record(value["request_id"])
                 reply = {"ok": True, "found": bool(record), "record": public_view(record) if record else None}
             else:
                 reply = {"ok": True, **accept_record(value)}
+        except InboxError as exc:
+            reply = {"ok": False, "error": str(exc)[:80]}
         except SinkError as exc:
             reply = {"ok": False, "error": str(exc)[:80]}
         except (ValueError, UnicodeError, TypeError, KeyError):

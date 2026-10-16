@@ -34,6 +34,15 @@ jobs:
       - name: Agent continuation diagnostic regression
         run: python3 -m unittest scripts/chat_cu_continuation_test.py -v
 
+      - name: Confidential Host ZIP existing API integration
+        run: python3 -m unittest scripts.servercore_host_output_gateway_relay_test -v
+
+      - name: Encrypted Host output inbox existing UNIX socket regression
+        run: python3 -m unittest scripts.servercore_host_output_cipher_inbox_test -v
+
+      - name: Authenticated private ZIP Artifact publisher regression
+        run: python3 -m unittest scripts.servercore_host_output_private_artifact_publish_test -v
+
       - name: CU40 design-before-source preflight
         if: github.event_name == 'pull_request'
         env:
