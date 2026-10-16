@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Host-network access and existing credential name presence for real DebugAI and Astera-v8 Docker products to AI Core Gate; no values",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess\ntargets=['debug-ai-debug-ai-1','astera-v8']\nout={}\nfor name in targets:\n cmd=subprocess.run(['docker','inspect','--format','{{json .Config.Env}}',name],capture_output=True,text=True,timeout=10)\n names=set()\n if cmd.returncode==0:\n  try:names={x.partition('=')[0] for x in json.loads(cmd.stdout)}\n  except Exception:pass\n probe=(\"if command -v python3 >/dev/null 2>&1; then python3 -c 'import urllib.request; print(urllib.request.urlopen(\\\"http://127.0.0.1:18184/health\\\",timeout=4).status)'; \"\n        \"elif command -v node >/dev/null 2>&1; then node -e 'fetch(\\\"http://127.0.0.1:18184/health\\\").then(r=>console.log(r.status)).catch(()=>process.exit(1))'; \"\n        \"elif command -v curl >/dev/null 2>&1; then curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18184/health; \"\n        \"else echo NO_HTTP_CLIENT; exit 3; fi\")\n r=subprocess.run(['docker','exec',name,'sh','-c',probe],capture_output=True,text=True,timeout=16)\n out[name]={'key_name_present':'AI_CORE_API_KEY' in names,'llama_name_present':'LLAMA_SWAP_API_KEY' in names,\n            'health_probe_exit':r.returncode,'health_response':r.stdout.strip()[:60],\n            'probe_error_type':r.stderr.splitlines()[-1][:80] if r.returncode else ''}\nbody='AI_CORE_TWO_PRODUCTS_HOST_ACCESS\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('AI_CORE_TWO_PRODUCT_DIAG='+('PASS '+r.stdout.strip() if r.returncode==0 else 'UNAVAILABLE'))\nraise SystemExit(0 if r.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209252628"
+  }
+}
