@@ -159,10 +159,10 @@ def accept_record(value, *, result_dir=None, now=None):
 # Only the admitted Host writer emits this exact metadata pointer. Preserve
 # its original stream digests separately from the Sink's own receipt stdout.
 HOST_LEDGER_RECEIPT = re.compile(
-    r"\\AGACE_HOST_OUTPUT_STORED request_id=(req_[0-9a-f]{24}) "
+    r"\AGACE_HOST_OUTPUT_STORED request_id=(req_[0-9a-f]{24}) "
     r"stdout_chars=([0-9]{1,12}) stdout_sha256=([0-9a-f]{64}) "
     r"stderr_chars=([0-9]{1,12}) stderr_sha256=([0-9a-f]{64}) "
-    r"\\(lossless chunks: scripts/servercore_host_output_read\\.py\\)\\Z"
+    r"\(lossless chunks: scripts/servercore_host_output_read\.py\)\Z"
 )
 
 
