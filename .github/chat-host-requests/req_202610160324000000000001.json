@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPT CHAT #40 verify post-runtime-refresh 2.92MB Unicode exact Host Writer persisted bytes+sha; compare Sink receipt length only, never expose raw",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "command": "python3 - <<'PY'\nimport json, hashlib\nfrom pathlib import Path\nrid=\"req_67bc7d72e656247c6b586a02\"\norig=json.loads((Path(\"/home/admin1/logs/servercore-service-deploy\")/(rid+\".json\")).read_text(encoding=\"utf-8\"))\nsinkpath=Path(\"/home/admin1/logs/servercore-bounded-results\")/(rid+\".json\")\nsink=json.loads(sinkpath.read_text(encoding=\"utf-8\")) if sinkpath.is_file() else {}\nexpect={\"stdout\":(720000,1920000,\"dc45652c424e94f87d27d7ab9605c545fbdbaf0b2300dcc4a47dd881ee15664f\"),\"stderr\":(400000,1000000,\"d9fa711c814b5c5c43cb789349e112b62fe0add88473a9ccc17dc30881c13778\")}\nresult={\"request_id\":rid,\"writer_state\":orig.get(\"state\"),\"sink_state\":sink.get(\"state\",\"ABSENT\"),\"sink_receipt_len\":len(sink.get(\"stdout\",\"\"))}\nfor name in (\"stdout\",\"stderr\"):\n    value=orig.get(name,\"\")\n    observed=(len(value),len(value.encode(\"utf-8\")),hashlib.sha256(value.encode(\"utf-8\")).hexdigest())\n    result[name]={\"chars\":observed[0],\"bytes\":observed[1],\"sha256\":observed[2],\"matches_independent_expected\":observed==expect[name]}\nprint(json.dumps(result,separators=(\",\",\":\")))\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "Post-refresh real Run 38841046792 PASS, request req_67bc7d72e656247c6b586a02, Issue receipt indicates Host ledger pointer, need original stream SHA; former stale-runtime Run 38839646085 stored 16000/1000 chars."
+  }
+}
