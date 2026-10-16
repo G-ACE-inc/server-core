@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "On clean exact PR3 branch run only new handoff idle TTL regression and bash syntax, build offline updated Gate image reusing admitted image; do not change live Gate/model until PASS, do not modify DebugAI or Gateway.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\nb=$(git -C \"$w\" rev-parse HEAD)\ncase \"$b\" in f2349553d0c3250e865c20b30251393b427bcd92|da4f94a60975699d3a8191cc3e3064275fd4ff7e|01ef4da9ac2b468805179f74925858e6764ef68e) : ;; *) exit 72 ;; esac\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\" || exit 73\ngit -C \"$w\" fetch --no-tags origin feat/per-model-lifecycle-20261013 >/dev/null 2>&1\ntest \"$(git -C \"$w\" rev-parse FETCH_HEAD)\" = 01ef4da9ac2b468805179f74925858e6764ef68e || exit 74\ntest \"$b\" = 01ef4da9ac2b468805179f74925858e6764ef68e || git -C \"$w\" checkout --detach -q 01ef4da9ac2b468805179f74925858e6764ef68e\ntest \"$(git -C \"$w\" hash-object \"$w/runtime/model_gate.py\")\" = dc8c4609f04d611a56b135d9470cdd4fc2f32925\nbash -n \"$w/scripts/host_gate_refresh.sh\"\ndocker run --rm --network none --cpus 0.5 --memory 256m -v \"$w:/src:ro\" -w /src -e PYTHONPATH=/src --entrypoint python3 ai-core-model-gate:offline-cd8442c3 -m unittest discover -s tests -p test_model_gate.py -k handoff_target_without_inference -v\ndocker build --pull=false --network none -f \"$w/Dockerfile.gate.refresh\" --build-arg GATE_BASE_IMAGE=ai-core-model-gate:offline-cd8442c3 -t ai-core-model-gate:offline-01ef4da9 \"$w/runtime\" >/dev/null 2>&1\ndocker image inspect ai-core-model-gate:offline-01ef4da9 >/dev/null\necho AI_CORE_TTL_SOURCE_TEST_AND_OFFLINE_IMAGE=PASS\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "PR3 latest 01ef4da9 changes Core handoff target idle TTL, focused regression and safe rollback script; previous 2→3→2 PASS Issue#1 6223763756 but after several minutes Ministral was still resident Issue#1 6223858700; build offline using already-valid Gate image, no live change before test."
+  }
+}
