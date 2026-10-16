@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Reversibly activate exactly PR3 idle-TTL repair into existing shared AI Core Gate, only when current resident backend slots idle, no active leases/queue/handoff. Automatic rollback on failure; do not modify DebugAI Source or Gateway.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 01ef4da9ac2b468805179f74925858e6764ef68e\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\nbash \"$w/scripts/host_gate_refresh.sh\" 01ef4da9ac2b468805179f74925858e6764ef68e ai-core-model-gate:offline-01ef4da9\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "PR3 exact 01ef4da9 with TTL fix and idle inherited model guard; new targeted regression and offline image stage PASS Issue#10 6223916948; prior Gate UDS handoff PASS Issue#1 6223763756; DebugAI concurrency preserved by quiescence and slots guards."
+  }
+}
