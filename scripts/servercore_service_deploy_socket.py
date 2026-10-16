@@ -287,7 +287,9 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
     result ledger. No caller-provided cwd, uid, Docker socket, or registry path.
     """
     import subprocess
-    if not isinstance(value, dict) or set(value) != HOST_COMMAND_KEYS or value.get("schema") != HOST_COMMAND_SCHEMA:
+    if (not isinstance(value, dict) or
+            set(value) not in (HOST_COMMAND_KEYS, HOST_COMMAND_KEYS - {"source_preflight"})
+            or value.get("schema") != HOST_COMMAND_SCHEMA):
         raise AdmissionError("HOST_COMMAND_KEYS_INVALID")
     request_id = _req_id(value["id"])
     repository, target_sha, command_text = value["repository"], value["target_sha"], value["command"]
@@ -297,7 +299,7 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         raise AdmissionError("TARGET_SHA_INVALID")
     if not isinstance(command_text, str) or not command_text or "\x00" in command_text:
         raise AdmissionError("HOST_COMMAND_INVALID")
-    if type(value["source_preflight"]) is not bool:
+    if type(value.get("source_preflight", False)) is not bool:
         raise AdmissionError("HOST_SOURCE_PREFLIGHT_INVALID")
     previous = read_result(request_id, result_dir)
     if previous is not None:
@@ -328,7 +330,7 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         if previous is not None:
             return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
         base = {"request_id": request_id, "repository": repository, "source_sha": target_sha,
-                "source_preflight": value["source_preflight"]}
+                "source_preflight": value.get("source_preflight", False)}
         write_result(request_id, {**base, "state": "RUNNING"}, result_dir)
         try:
             run = runner or subprocess.run
