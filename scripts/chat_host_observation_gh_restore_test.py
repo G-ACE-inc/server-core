@@ -294,6 +294,7 @@ class PrivateOutputTests(unittest.TestCase):
             self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
             self.assertEqual(proof["streams"], self.expected)
             self.assertEqual(proof["artifact_id"], 19)
+            self.assertEqual(proof["zip_sha256"], hashlib.sha256(self.payload).hexdigest())
             self.assertNotIn("private 日本語", json.dumps(proof, ensure_ascii=False))
             self.assertTrue(path.exists())
         self.assertFalse(path.exists())
@@ -394,8 +395,8 @@ class PrivateOutputTests(unittest.TestCase):
         self.assertEqual(self.downloads, [])
 
     def test_auto_lookup_missing_expired_or_malformed_run_reference_never_downloads(self):
-        for items, error in (([], "ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS"),
-                ([{**self.item, "expired": True}], "ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS"),
+        for items, error in (([], "PRIVATE_ARTIFACT_NOT_FOUND"),
+                ([{**self.item, "expired": True}], "PRIVATE_ARTIFACT_EXPIRED"),
                 ([{**self.item, "workflow_run": {"id": True}}], "ARTIFACT_RUN_PROVENANCE_MISMATCH"),
                 ([{**self.item, "workflow_run": {"id": 123, "head_sha": "c" * 40}}],
                  "ARTIFACT_RUN_PROVENANCE_MISMATCH")):
@@ -404,6 +405,12 @@ class PrivateOutputTests(unittest.TestCase):
                 with reader.private_host_output(None, RID, self.expected, run=self.fake_run):
                     self.fail("must not yield")
         self.assertEqual(self.downloads, [])
+
+    def test_auto_lookup_ignores_expired_copy_but_never_chooses_between_two_live_copies(self):
+        self.items = [{**self.item, "id": 20, "expired": True}, self.item]
+        with reader.private_host_output(None, RID, self.expected, run=self.fake_run) as (_, proof):
+            self.assertEqual(proof["artifact_id"], 19)
+        self.assert_no_files()
 
 
 if __name__ == "__main__":
