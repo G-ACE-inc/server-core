@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core read-only preflight for gate unprivileged UID and existing firewall: state volume ownership, uid collision, docker socket access, OUTPUT rules; no mutations",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json\nqueries={\n'gate_state_dir':['docker','exec','ai-core-model-gate','stat','-c','%a %u:%g %n','/run/ai-core','/run/ai-core/active-leases.json','/run/ai-core/handoff-state.json'],\n'candidate_uid':['sh','-c',\"getent passwd 23456 || true; getent group 988 || true\"],\n'existing_filter':['sh','-c','iptables -S OUTPUT 2>&1 | tail -n 30'],\n'existing_nft':['sh','-c','nft list ruleset 2>&1 | grep -E \"(hook output|dport (1808|1818))\" | head -n 25'],\n'gate_caps':['docker','inspect','-f','{{json .HostConfig.CapDrop}}|{{json .HostConfig.GroupAdd}}|{{json .Config.User}}','ai-core-model-gate'],\n'volume':['docker','volume','inspect','ai-core-gate_gate_state','-f','{{.Mountpoint}}']\n}\nout={}\nfor k,v in queries.items():\n try:\n  p=subprocess.run(v,capture_output=True,text=True,timeout=12)\n  out[k]={'rc':p.returncode,'out':(p.stdout+p.stderr)[-1200:]}\n except Exception as e:out[k]={'error':type(e).__name__}\nbody='AI_CORE_GATE_UID_FIREWALL_PREFLIGHT\\n'+json.dumps(out,ensure_ascii=False)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('EVIDENCE='+p.stdout.strip() if p.returncode==0 else 'WRITE_FAILED')\nraise SystemExit(0 if p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6219512822"
+  }
+}
