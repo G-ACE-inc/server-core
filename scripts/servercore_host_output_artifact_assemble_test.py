@@ -5,7 +5,8 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from scripts.servercore_host_output_artifact_assemble import assemble, verify_artifact_zip
+from scripts.servercore_host_output_artifact_assemble import (
+    MAX_VERIFIED_STREAM_BYTES, assemble, verify_artifact_zip)
 
 
 RID = "req_" + "d" * 24
@@ -48,8 +49,8 @@ class AssembleTests(unittest.TestCase):
             target = Path(directory, "artifact")
             meta = assemble([*pages("stdout", stdout), *pages("stderr", stderr)], target)
             expected = {
-                "stdout": {"sha256": meta["streams"]["stdout.txt"]["sha256"], "chars": len(stdout)},
-                "stderr": {"sha256": meta["streams"]["stderr.txt"]["sha256"], "chars": len(stderr)},
+                "stdout": {"sha256": meta["streams"]["stdout.txt"]["sha256"], "chars": len(stdout), "bytes": len(stdout.encode("utf-8"))},
+                "stderr": {"sha256": meta["streams"]["stderr.txt"]["sha256"], "chars": len(stderr), "bytes": len(stderr.encode("utf-8"))},
             }
             result = verify_artifact_zip(target / "output.zip", RID, expected)
             self.assertTrue(result["output_complete"])
@@ -63,6 +64,43 @@ class AssembleTests(unittest.TestCase):
                                     {**expected, "stdout": {**expected["stdout"], "chars": len(stdout) + 1}})
             with self.assertRaisesRegex(ValueError, "EXPECTED_HOST_STREAM_METADATA_REQUIRED"):
                 verify_artifact_zip(target / "output.zip", RID, None)
+            # A matching ZIP-internal manifest cannot substitute the trusted
+            # Writer's independent expected byte count.
+            with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_MANIFEST_MISMATCH"):
+                verify_artifact_zip(target / "output.zip", RID,
+                    {**expected, "stdout": {**expected["stdout"], "bytes": expected["stdout"]["bytes"] + 1}})
+            with self.assertRaisesRegex(ValueError, "EXPECTED_HOST_STREAM_METADATA_INVALID"):
+                verify_artifact_zip(target / "output.zip", RID,
+                    {**expected, "stdout": {**expected["stdout"], "bytes": None}})
+
+    def test_authenticated_expected_size_limit_rejected_before_extracting(self):
+        stdout, stderr = "safe", ""
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory, "artifact")
+            meta = assemble([*pages("stdout", stdout), *pages("stderr", stderr)], target)
+            expected = {
+                name: {"sha256": meta["streams"][name + ".txt"]["sha256"],
+                       "chars": len(data), "bytes": len(data.encode("utf-8"))}
+                for name, data in (("stdout", stdout), ("stderr", stderr))
+            }
+            oversize = {**expected, "stdout": {**expected["stdout"],
+                         "bytes": MAX_VERIFIED_STREAM_BYTES + 1}}
+            with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_UNCOMPRESSED_SIZE_LIMIT"):
+                verify_artifact_zip(target / "output.zip", RID, oversize)
+
+    def test_valid_high_compression_output_is_verified_without_clipping(self):
+        stdout, stderr = "A" * 2_000_000, ""
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory, "artifact")
+            meta = assemble([*pages("stdout", stdout), *pages("stderr", stderr)], target)
+            expected = {
+                name: {"sha256": meta["streams"][name + ".txt"]["sha256"],
+                       "chars": len(data), "bytes": len(data.encode("utf-8"))}
+                for name, data in (("stdout", stdout), ("stderr", stderr))
+            }
+            result = verify_artifact_zip(target / "output.zip", RID, expected)
+            self.assertTrue(result["output_complete"])
+            self.assertEqual(result["streams"]["stdout"]["bytes"], len(stdout))
 
     def test_host_archive_tamper_duplicate_and_missing_denied(self):
         stdout, stderr = "x日本語" * 20, "error"
@@ -70,7 +108,7 @@ class AssembleTests(unittest.TestCase):
             target = Path(directory, "artifact")
             meta = assemble([*pages("stdout", stdout), *pages("stderr", stderr)], target)
             expected = {name: {"sha256": meta["streams"][name + ".txt"]["sha256"],
-                                "chars": len(value)}
+                                "chars": len(value), "bytes": len(value.encode("utf-8"))}
                         for name, value in (("stdout", stdout), ("stderr", stderr))}
             original = json.loads((target / "manifest.json").read_text())
             cases = [

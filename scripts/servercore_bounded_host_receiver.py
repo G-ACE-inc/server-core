@@ -137,7 +137,8 @@ def validate_request(value, contract):
                 "repository": repo, "service": service, "operation": operation,
                 "argv": argv, "tail": tail}
     if command_id == "host.command":
-        if set(value) != {"schema", "id", "command_id", "expected_sha", "repository", "repo_sha", "command"}:
+        if set(value) not in ({"schema", "id", "command_id", "expected_sha", "repository", "repo_sha", "command"},
+                              {"schema", "id", "command_id", "expected_sha", "repository", "repo_sha", "command", "source_preflight"}):
             fail("HOST_COMMAND_KEYS_INVALID", 422)
         repository, command = value["repository"], value["command"]
         repo_sha = value["repo_sha"]
@@ -145,8 +146,11 @@ def validate_request(value, contract):
                 or not isinstance(repo_sha, str) or not SHA_PATTERN.fullmatch(repo_sha) \
                 or not isinstance(command, str) or not command or "\x00" in command:
             fail("HOST_COMMAND_TARGET_INVALID", 422)
+        if "source_preflight" in value and value["source_preflight"] is not True:
+            fail("HOST_SOURCE_PREFLIGHT_INVALID", 422)
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
-                "repository": repository, "repo_sha": repo_sha, "command": command}
+                "repository": repository, "repo_sha": repo_sha, "command": command,
+                "source_preflight": value.get("source_preflight") is True}
     if command_id == "docker.logs":
         if set(value) != {"schema", "id", "command_id", "expected_sha", "container", "tail"}:
             fail("DOCKER_LOGS_KEYS_INVALID", 422)
@@ -314,11 +318,14 @@ def dispatch_docker_operation(request, root, socket_path=DEPLOY_SOCKET):
 
 def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
     sha = bounded_host.head_sha(bounded_host.checked_root(root), request["expected_sha"])
-    reply = deploy_socket_call({
+    writer_request = {
         "schema": "gace.servercore-host-command.request/v1", "id": request["id"],
         "repository": request["repository"], "target_sha": request["repo_sha"],
-        "command": request["command"]
-    }, socket_path, timeout=120)
+        "command": request["command"],
+    }
+    if request.get("source_preflight") is True:
+        writer_request["source_preflight"] = True
+    reply = deploy_socket_call(writer_request, socket_path, timeout=120)
     if reply.get("ok") is not True:
         fail("HOST_COMMAND_ADMISSION_DENIED", 422)
     if reply.get("state") == "HOST_COMMAND_DUPLICATE":

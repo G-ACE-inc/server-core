@@ -173,7 +173,12 @@ def trusted_writer_metadata(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
     if path.is_symlink():
         raise SinkError("WRITER_LEDGER_SYMLINK")
     if not path.is_file():
-        return None  # e.g. denied admission: no Writer execution occurred.
+        # A stored-output locator proves that the Receiver did not carry the
+        # original bytes; publishing its digest would forge output evidence.
+        if any("GACE_HOST_OUTPUT_STORED" in str(record.get(stream) or "")
+               for stream in ("stdout", "stderr")):
+            raise SinkError("WRITER_LEDGER_REQUIRED_FOR_STORED_OUTPUT")
+        return None  # Pre-execution admission rejection has no Writer ledger.
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -187,14 +192,22 @@ def trusted_writer_metadata(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
     # and target SHA against the original admitted request before Sink write.
     target_repo = raw.get("repository") if isinstance(raw, dict) else None
     target_sha = raw.get("source_sha") if isinstance(raw, dict) else None
+    writer_execution_failed = bool(
+        isinstance(raw, dict) and raw.get("state") == "FAIL"
+        and raw.get("failure_class") == "HOST_COMMAND_EXECUTION_FAILED"
+        and raw.get("exit_code") is None
+        and "stdout" not in raw and "stderr" not in raw
+        and record.get("state") == "FAIL" and record.get("exit_code") == 1)
     if (not isinstance(raw, dict) or raw.get("request_id") != rid
             or not isinstance(target_repo, str)
             or not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", target_repo)
             or not isinstance(target_sha, str) or not SHA.fullmatch(target_sha)
             or (target_repo == RESULT_REPOSITORY and target_sha != record.get("host_sha"))
-            or raw.get("exit_code") != record.get("exit_code")
+            or (not writer_execution_failed and raw.get("exit_code") != record.get("exit_code"))
             or (raw.get("state") == "HOST_COMMAND_PASS") != (record.get("state") == "PASS")):
         raise SinkError("WRITER_LEDGER_CORRELATION_MISMATCH")
+    if writer_execution_failed:
+        return {"unavailable": True}  # timeout/OS error: original streams unknown
     meta = {}
     for name in ("stdout", "stderr"):
         value = raw.get(name)
@@ -212,9 +225,13 @@ def trusted_writer_metadata(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
         73: "CHAT_SOURCE_SHA_UNAVAILABLE",
         74: "CHAT_SOURCE_SHA_MISMATCH",
         75: "CHAT_SOURCE_REQUIRED_FILE_MISSING",
+        76: "CHAT_SOURCE_DIRTY_WORKTREE",
     }
     marker = source_errors.get(raw.get("exit_code"))
-    if raw.get("state") == "FAIL" and marker and str(raw.get("stderr") or "").strip() == marker:
+    if (raw.get("source_preflight") is True
+            and raw.get("source_preflight_failure") is True
+            and raw.get("state") == "FAIL"
+            and marker and str(raw.get("stderr") or "").strip() == marker):
         meta["diagnostic_hint"] = marker
     return meta
 
@@ -230,6 +247,15 @@ def comment_body(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
     # Issue is an index/status surface; never include any Host output text.
     for stream in ("stdout", "stderr"):
         full = str(record.get(stream) or "")
+        if writer and writer.get("unavailable") is True:
+            # Never invent a zero-byte stdout/stderr digest for a Writer crash
+            # or timeout where original output is unavailable.
+            view[stream + "_chars"] = None
+            view[stream + "_bytes"] = None
+            view[stream + "_sha256"] = None
+            view[stream + "_preview_truncated"] = True
+            view[stream] = ""
+            continue
         evidence = (writer or {}).get(stream)
         if evidence is not None:
             view[stream + "_chars"] = evidence["chars"]

@@ -10,6 +10,12 @@ import json
 import zipfile
 from pathlib import Path
 
+# Verification admission limits, never silent truncation. These are separate
+# from the Host Writer's lossless storage and can be revised with evidence.
+MAX_VERIFIED_STREAM_BYTES = 512 * 1024 * 1024
+MAX_VERIFIED_TOTAL_BYTES = 1024 * 1024 * 1024
+MAX_VERIFIED_ARCHIVE_BYTES = 512 * 1024 * 1024
+
 
 def assemble(pages, output_dir):
     output_dir = Path(output_dir)
@@ -80,16 +86,28 @@ def verify_artifact_zip(zip_path, request_id, expected_streams):
         raise ValueError("REQUEST_ID_INVALID")
     if not isinstance(expected_streams, dict) or set(expected_streams) != {"stdout", "stderr"}:
         raise ValueError("EXPECTED_HOST_STREAM_METADATA_REQUIRED")
+    total_expected_bytes = 0
     for info in expected_streams.values():
         if (not isinstance(info, dict) or
                 not isinstance(info.get("sha256"), str) or
                 not re.fullmatch(r"[a-f0-9]{64}", info["sha256"]) or
-                type(info.get("chars")) is not int or info["chars"] < 0):
+                type(info.get("chars")) is not int or info["chars"] < 0 or
+                type(info.get("bytes")) is not int or info["bytes"] < 0):
             raise ValueError("EXPECTED_HOST_STREAM_METADATA_INVALID")
+        if info["bytes"] > MAX_VERIFIED_STREAM_BYTES:
+            raise ValueError("HOST_OUTPUT_UNCOMPRESSED_SIZE_LIMIT")
+        total_expected_bytes += info["bytes"]
+    if total_expected_bytes > MAX_VERIFIED_TOTAL_BYTES:
+        raise ValueError("HOST_OUTPUT_UNCOMPRESSED_SIZE_LIMIT")
+    if Path(zip_path).stat().st_size > MAX_VERIFIED_ARCHIVE_BYTES:
+        raise ValueError("HOST_OUTPUT_ARCHIVE_SIZE_LIMIT")
     with zipfile.ZipFile(zip_path) as archive:
         names = archive.namelist()
         if len(names) != 3 or set(names) != {"stdout.txt", "stderr.txt", "manifest.json"}:
             raise ValueError("HOST_OUTPUT_ARCHIVE_MEMBERS_INVALID")
+        if any(item.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED)
+               for item in archive.infolist()):
+            raise ValueError("HOST_OUTPUT_COMPRESSION_UNSUPPORTED")
         if archive.getinfo("manifest.json").file_size > 32768:
             raise ValueError("HOST_OUTPUT_MANIFEST_TOO_LARGE")
         manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
@@ -101,12 +119,16 @@ def verify_artifact_zip(zip_path, request_id, expected_streams):
         verified = {}
         for stream in ("stdout", "stderr"):
             name = stream + ".txt"
+            zip_entry = archive.getinfo(name)
+            if zip_entry.file_size > MAX_VERIFIED_STREAM_BYTES:
+                raise ValueError("HOST_OUTPUT_EXPANSION_LIMIT")
             item = specs[name]
             expect = expected_streams[stream]
             if (not isinstance(item, dict) or
                     type(item.get("bytes")) is not int or item["bytes"] < 0 or
                     item.get("sha256") != expect["sha256"] or
-                    archive.getinfo(name).file_size != item["bytes"]):
+                    archive.getinfo(name).file_size != item["bytes"] or
+                    expect["bytes"] != item["bytes"]):
                 raise ValueError("HOST_OUTPUT_MANIFEST_MISMATCH")
             digest = hashlib.sha256()
             decoder = codecs.getincrementaldecoder("utf-8")("strict")

@@ -92,7 +92,7 @@ def continuation_observation(record, verdict):
         if hint in {
                 "CHAT_SOURCE_WORKDIR_MISSING", "CHAT_SOURCE_GIT_UNAVAILABLE",
                 "CHAT_SOURCE_ROOT_MISMATCH", "CHAT_SOURCE_SHA_UNAVAILABLE",
-                "CHAT_SOURCE_REQUIRED_FILE_MISSING"}:
+                "CHAT_SOURCE_REQUIRED_FILE_MISSING", "CHAT_SOURCE_DIRTY_WORKTREE"}:
             return "HOST_SOURCE_CONTEXT_INVALID", "CHECK_TARGET_WORKDIR_AND_SOURCE_FILES"
         host_sha = record.get("host_sha")
         expected_sha = record.get("expected_sha")
@@ -157,6 +157,7 @@ def stream_receipt_metadata(record, stream):
     raw = record.get(stream)
     digest = record.get(stream + "_sha256")
     chars = record.get(stream + "_chars")
+    count = record.get(stream + "_bytes")
     # Older Host publishers supplied complete small text previews but no SHA.
     # Never hash an empty preview for a metadata-only ledger pointer or a
     # truncated preview: it would misrepresent the actual Host output.
@@ -166,7 +167,10 @@ def stream_receipt_metadata(record, stream):
             and not record.get(stream + "_truncated")):
         digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
         chars = len(raw)
-    return {"chars": chars, "sha256": digest,
+        count = len(raw.encode("utf-8"))
+    if type(count) is not int or count < 0:
+        count = None
+    return {"chars": chars, "bytes": count, "sha256": digest,
             "complete": not bool(
                 record.get(stream + "_preview_truncated") or
                 record.get(stream + "_truncated") or
@@ -188,6 +192,8 @@ def write_observation(path, request_id, record=None, comment=None, verdict=None)
                    "result_url": (comment or {}).get("html_url"), "observation": observation,
                    "next_action": next_action, "result_verified": verdict == "OK",
                    "diagnostic_hint": record.get("diagnostic_hint"),
+                   "source_truncated": any(bool(record.get(k + "_truncated"))
+                                           for k in ("stdout", "stderr")),
                    "streams": {stream: stream_receipt_metadata(record, stream)
                                for stream in ("stdout", "stderr")}}
     dest = Path(path)

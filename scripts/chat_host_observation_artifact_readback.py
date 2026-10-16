@@ -31,6 +31,8 @@ def validate(receipt, expected_request_id):
     if obs not in OBSERVATIONS or not isinstance(action, str) or not action or len(action) > 120:
         raise ValueError("OBSERVATION_INVALID")
     verified = receipt.get("result_verified")
+    if type(receipt.get("source_truncated", False)) is not bool:
+        raise ValueError("SOURCE_TRUNCATION_INVALID")
     if type(verified) is not bool:
         raise ValueError("VERIFICATION_INVALID")
     if obs == "HOST_RESULT_NOT_RETURNED":
@@ -50,6 +52,9 @@ def validate(receipt, expected_request_id):
             digest = info.get("sha256")
             if digest is not None and (not isinstance(digest, str) or not DIGEST.fullmatch(digest)):
                 raise ValueError("STREAM_DIGEST_INVALID")
+            byte_count = info.get("bytes")
+            if byte_count is not None and (type(byte_count) is not int or byte_count < 0):
+                raise ValueError("STREAM_BYTES_INVALID")
         if obs == "HOST_OUTPUT_PARTIAL" and all(info["complete"] for info in stream_data.values()):
             raise ValueError("PARTIAL_FLAG_MISMATCH")
     # Preserve authenticated, correlated diagnostic primitives for the next
@@ -60,6 +65,8 @@ def validate(receipt, expected_request_id):
     exit_code = receipt.get("exit_code")
     if exit_code is not None and (type(exit_code) is not int or not -1 <= exit_code <= 255):
         raise ValueError("HOST_EXIT_CODE_INVALID")
+    # Source-context hints require the correlated Writer's structured
+    # preflight provenance; the public receipt alone is not a trust root.
     # Source-context hints originate only from matching Writer stderr and
     # exit; an unverified hint or guessed exit must never drive another Tool.
     hints = {
@@ -69,6 +76,7 @@ def validate(receipt, expected_request_id):
         73: "CHAT_SOURCE_SHA_UNAVAILABLE",
         74: "CHAT_SOURCE_SHA_MISMATCH",
         75: "CHAT_SOURCE_REQUIRED_FILE_MISSING",
+        76: "CHAT_SOURCE_DIRTY_WORKTREE",
     }
     hint = receipt.get("diagnostic_hint")
     if obs in ("HOST_SOURCE_CONTEXT_STALE", "HOST_SOURCE_CONTEXT_INVALID"):
@@ -115,6 +123,8 @@ def validate(receipt, expected_request_id):
     # Do not return unchecked free-form data, plaintext Host output, or credentials.
     return {
         "request_id": expected_request_id,
+        "command_id": receipt.get("command_id") if verified else None,
+        "source_truncated": receipt.get("source_truncated", False),
         "result_verified": verified,
         "observation": obs,
         "next_action": action,
@@ -123,7 +133,8 @@ def validate(receipt, expected_request_id):
         "stream_metadata_complete": stream_metadata_complete,
         "stream_digests_available": stream_digests_available,
         "stream_metadata": ({name: {"sha256": streams[name]["sha256"],
-                                   "chars": streams[name]["chars"]}
+                                   "chars": streams[name]["chars"],
+                                   "bytes": streams[name].get("bytes")}
                             for name in ("stdout", "stderr")}
                             if stream_digests_available else None),
         "expected_sha": receipt.get("expected_sha") if verified else None,

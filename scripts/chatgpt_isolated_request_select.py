@@ -91,18 +91,28 @@ def bind_source_context(bounded, context):
     if not isinstance(original, str) or not original.strip():
         raise ValueError("SOURCE_CONTEXT_COMMAND_INVALID")
     quoted_root, quoted_sha = shlex.quote(target_str), shlex.quote(sha)
+    quoted_registered = shlex.quote(root_str)
     preflight = [
         "(",
-        "cd " + quoted_root + " || { echo CHAT_SOURCE_WORKDIR_MISSING >&2; exit 70; }",
+        "cd " + quoted_root + " 2>/dev/null || { echo CHAT_SOURCE_WORKDIR_MISSING >&2; exit 70; }",
         '_gace_source_root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo CHAT_SOURCE_GIT_UNAVAILABLE >&2; exit 71; }',
         '[ "$_gace_source_root" = ' + quoted_root + ' ] || { echo CHAT_SOURCE_ROOT_MISMATCH >&2; exit 72; }',
+        '_gace_registered_common="$(git -C ' + quoted_registered + ' rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || { echo CHAT_SOURCE_GIT_UNAVAILABLE >&2; exit 71; }',
+        '_gace_actual_common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || { echo CHAT_SOURCE_GIT_UNAVAILABLE >&2; exit 71; }',
+        '_gace_registered_real="$(realpath -e "$_gace_registered_common" 2>/dev/null)" || { echo CHAT_SOURCE_GIT_UNAVAILABLE >&2; exit 71; }',
+        '_gace_actual_real="$(realpath -e "$_gace_actual_common" 2>/dev/null)" || { echo CHAT_SOURCE_GIT_UNAVAILABLE >&2; exit 71; }',
+        '[ "$_gace_actual_real" = "$_gace_registered_real" ] || { echo CHAT_SOURCE_ROOT_MISMATCH >&2; exit 72; }',
         '_gace_source_sha="$(git rev-parse HEAD 2>/dev/null)" || { echo CHAT_SOURCE_SHA_UNAVAILABLE >&2; exit 73; }',
         '[ "$_gace_source_sha" = ' + quoted_sha + ' ] || { echo CHAT_SOURCE_SHA_MISMATCH >&2; exit 74; }',
+        '_gace_dirty="$(git status --porcelain --untracked-files=all 2>/dev/null)" || { echo CHAT_SOURCE_GIT_UNAVAILABLE >&2; exit 71; }',
+        '[ -z "$_gace_dirty" ] || { echo CHAT_SOURCE_DIRTY_WORKTREE >&2; exit 76; }',
     ]
     for path in files:
         preflight.append("test -f " + shlex.quote(path) +
                          " || { echo CHAT_SOURCE_REQUIRED_FILE_MISSING >&2; exit 75; }")
-    preflight += [original, ")"]
+    # Writer strips this protected-prefix from the captured stdout. Its
+    # presence proves the source checks passed before the user command ran.
+    preflight += ["printf '__GACE_SOURCE_PREFLIGHT_OK__\\n'", original, ")"]
     return {**bounded, "command": "\n".join(preflight)}
 
 
@@ -119,12 +129,15 @@ def prepare(path):
     if data.get("server_command_id") or data.get("run_id"):
         raise ValueError("OTHER_COMMAND_DENIED")
     bounded = data["bounded_host_request"]
+    if "source_preflight" in bounded:
+        raise ValueError("SOURCE_PREFLIGHT_INTERNAL_ONLY")
     if "source_context" in bounded:
         data["bounded_host_request"] = bounded = bind_source_context(
             bounded, bounded["source_context"])
         # Source context is a planning input; Host receives only freeform
         # command, repo, and both authenticated independent SHA pins.
         bounded.pop("source_context", None)
+        bounded["source_preflight"] = True
     # The dispatcher and target checkout are the same for server-core itself.
     # Reject contradictory pins before enqueuing a doomed Host operation.
     if bounded.get("command_id") == "host.command" and bounded.get("repository") == "G-ACE-inc/server-core":

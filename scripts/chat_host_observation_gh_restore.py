@@ -82,7 +82,8 @@ def restore(repository, run_id, request_id, run=subprocess.run):
     if (not isinstance(info, dict) or info.get("id") != run_id
             or not isinstance(info.get("repository"), dict)
             or info["repository"].get("full_name", "").lower() != repository.lower()
-            or info.get("path") != ".github/workflows/chatgpt-live-api-verify.yml"):
+            or not isinstance(info.get("path"), str)
+            or info["path"].split("@", 1)[0] != ".github/workflows/chatgpt-live-api-verify.yml"):
         raise ValueError("RUN_PROVENANCE_MISMATCH")
     source_sha = info.get("head_sha")
     if not isinstance(source_sha, str) or not ARTIFACT_SHA.fullmatch(source_sha):
@@ -142,6 +143,8 @@ def continuation_checkpoint(result, cu_issue_url):
         "artifact_id": result["artifact_id"],
         "source_sha": result["source_sha"],
         "request_id": result["request_id"],
+        "command_id": result.get("command_id"),
+        "source_truncated": result.get("source_truncated", False),
         "observation": result["observation"],
         "result_verified": result["result_verified"],
         "expected_sha": result.get("expected_sha"),

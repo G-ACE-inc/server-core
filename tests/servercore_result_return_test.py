@@ -138,8 +138,13 @@ class SinkTests(unittest.TestCase):
         with self.assertRaisesRegex(sink.SinkError, "WRITER_LEDGER_CORRELATION_MISMATCH"):
             sink.comment_body(actual, writer_dir=ledger)
         (ledger / (RID + ".json")).unlink()
-        # When no Writer result exists (admission denial), never invent it.
-        fallback = sink.comment_body(actual, writer_dir=ledger)
+        # Missing Writer ledger after a large-output locator is a recoverable
+        # publication error, not evidence for the locator's own digest.
+        with self.assertRaisesRegex(sink.SinkError, "WRITER_LEDGER_REQUIRED_FOR_STORED_OUTPUT"):
+            sink.comment_body(actual, writer_dir=ledger)
+        # Genuine admission denial (no stored-output locator) still falls back.
+        direct = {**actual, "stdout": "", "stderr": ""}
+        fallback = sink.comment_body(direct, writer_dir=ledger)
         self.assertNotIn("HOST_WRITER_LEDGER_RAW", fallback)
 
     def test_cross_repository_target_sha_is_not_dispatcher_sha_and_publishes(self):
@@ -195,11 +200,30 @@ class SinkTests(unittest.TestCase):
         return sink.trusted_writer_metadata(
             sink.read_record(RID, self.dir), writer_dir=ledger)
 
+    def test_host_writer_execution_failure_keeps_unknown_stream_digests(self):
+        ledger = self.dir / "writer"
+        ledger.mkdir(parents=True)
+        writer = {"request_id": RID, "repository": sink.RESULT_REPOSITORY,
+                  "source_sha": SHA, "state": "FAIL",
+                  "failure_class": "HOST_COMMAND_EXECUTION_FAILED"}
+        (ledger / (RID + ".json")).write_text(json.dumps(writer), encoding="utf-8")
+        sink.accept_record(rec(command_id="host.command", state="FAIL", exit_code=1,
+                               stdout="", stderr=""), result_dir=self.dir)
+        stored = sink.read_record(RID, self.dir)
+        body = sink.comment_body(stored, writer_dir=ledger)
+        data = json.loads(body.split("```json\n", 1)[1].split("\n```", 1)[0])
+        for stream in ("stdout", "stderr"):
+            self.assertIsNone(data[stream + "_sha256"])
+            self.assertIsNone(data[stream + "_bytes"])
+            self.assertTrue(data[stream + "_preview_truncated"])
+        self.assertNotIn(hashlib.sha256(b"").hexdigest(), body)
+
     def test_source_context_mismatch_publishes_only_verified_safe_hint(self):
         ledger = self.dir / "writer"
         ledger.mkdir(parents=True)
         writer = {"request_id": RID, "repository": "seigo-gace/ai-core",
                   "source_sha": "b" * 40, "state": "FAIL", "exit_code": 74,
+                  "source_preflight": True, "source_preflight_failure": True,
                   "stdout": "", "stderr": "CHAT_SOURCE_SHA_MISMATCH\n"}
         p = ledger / (RID + ".json")
         p.write_text(json.dumps(writer), encoding="utf-8")
@@ -218,6 +242,19 @@ class SinkTests(unittest.TestCase):
         without = sink.comment_body(record, writer_dir=ledger)
         self.assertNotIn("diagnostic_hint", without)
         self.assertNotIn("private stderr details", without)
+        writer["stderr"] = "CHAT_SOURCE_SHA_MISMATCH\\n"
+        writer["source_preflight"] = False
+        p.write_text(json.dumps(writer), encoding="utf-8")
+        generic = sink.comment_body(record, writer_dir=ledger)
+        self.assertNotIn("diagnostic_hint", generic)
+        # An authenticated source-context wrapper may succeed, then its
+        # original command may coincidentally emit a reserved marker.
+        writer["source_preflight"] = True
+        writer["source_preflight_failure"] = False
+        writer["stderr"] = "CHAT_SOURCE_SHA_MISMATCH\\n"
+        p.write_text(json.dumps(writer), encoding="utf-8")
+        self.assertNotIn("diagnostic_hint",
+                         sink.comment_body(record, writer_dir=ledger))
 
     def test_issue_comment_contains_metadata_not_output(self):
         output = "日本語の長文" * 10000

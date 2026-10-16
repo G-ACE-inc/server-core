@@ -35,7 +35,7 @@ class ContinuationTests(unittest.TestCase):
             manifest = assemble([*pages("stdout", stdout), *pages("stderr", stderr)], target)
             cp = {**BASE, "observation": "HOST_OPERATION_PASSED", "exit_code": 0, "stream_metadata": {
                 name: {"sha256": manifest["streams"][name + ".txt"]["sha256"],
-                       "chars": len(data)}
+                       "chars": len(data), "bytes": len(data.encode("utf-8"))}
                 for name, data in (("stdout", stdout), ("stderr", stderr))}}
             api = lambda path: {"head_sha": BASE["source_sha"], "status": "completed",
                                 "conclusion": "success"}
@@ -49,7 +49,7 @@ class ContinuationTests(unittest.TestCase):
                 resume(cp, api=api, output_verified=True)  # old bypass parameter removed
             with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_MANIFEST_MISMATCH"):
                 resume({**cp, "stream_metadata": {**cp["stream_metadata"],
-                         "stdout": {"sha256": "f" * 64, "chars": len(stdout)}}},
+                         "stdout": {**cp["stream_metadata"]["stdout"], "sha256": "f" * 64}}},
                        api=api, host_output_zip=target / "output.zip")
             with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_RUN_NOT_SUCCESS"):
                 resume(cp, api=lambda p: {"head_sha": BASE["source_sha"],
@@ -59,10 +59,14 @@ class ContinuationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_MANIFEST_MISMATCH"):
                 verified_output_evidence(
                     {**cp, "stream_metadata": {**cp["stream_metadata"],
-                     "stdout": {"sha256": "0"*64, "chars": len(stdout)}}},
+                     "stdout": {**cp["stream_metadata"]["stdout"], "sha256": "0"*64}}},
                     target / "output.zip")
             with self.assertRaisesRegex(ValueError, "OUTPUT_VERIFICATION_STATE_INVALID"):
                 verified_output_evidence({**cp, "result_verified": False}, target / "output.zip")
+            with self.assertRaisesRegex(ValueError, "OUTPUT_VERIFICATION_STATE_INVALID"):
+                verified_output_evidence({**cp, "source_truncated": True}, target / "output.zip")
+            with self.assertRaisesRegex(ValueError, "OUTPUT_VERIFICATION_STATE_INVALID"):
+                verified_output_evidence({**cp, "command_id": "dev.job"}, target / "output.zip")
 
     def test_failed_ledger_pointer_must_not_promote_even_with_matching_zip(self):
         cp = {**BASE, "observation": "HOST_LEDGER_RECOVERY_REQUIRED",
@@ -115,7 +119,7 @@ class ContinuationTests(unittest.TestCase):
             calls.append(path)
             return {"total_count": 5, "workflow_runs": [
                 {"id": 42, "head_sha": sha, "event": "push",
-                 "path": ".github/workflows/chatgpt-live-api-verify.yml",
+                 "path": ".github/workflows/chatgpt-live-api-verify.yml@main",
                  "status": "completed", "conclusion": "failure"},
                 *[{"id": i, "head_sha": sha, "event": "push",
                    "path": ".github/workflows/other.yml"} for i in range(43, 47)]]}
@@ -243,6 +247,34 @@ class ContinuationTests(unittest.TestCase):
             if "/jobs?" in p else {"head_sha": BASE["source_sha"], "status": "completed",
                                      "conclusion": "failure"}))
         self.assertEqual(result2["observation"], "RUN_FAILED_OR_INCOMPLETE")
+
+
+    def test_checkpoint_mismatched_source_hint_and_exit_never_replans_pr(self):
+        def api(path):
+            if "/jobs?" in path:
+                return {"total_count": 1, "jobs": [{"steps": [
+                    {"name": "Bounded Host result return (request id correlated)",
+                     "conclusion": "failure"}]}]}
+            return {"head_sha": BASE["source_sha"], "status": "completed",
+                    "conclusion": "failure"}
+        cases = [
+            ("HOST_SOURCE_CONTEXT_STALE", 70, "CHAT_SOURCE_WORKDIR_MISSING"),
+            ("HOST_SOURCE_CONTEXT_STALE", 74, "CHAT_SOURCE_WORKDIR_MISSING"),
+            ("HOST_SOURCE_CONTEXT_INVALID", 74, "CHAT_SOURCE_SHA_MISMATCH"),
+            ("HOST_SOURCE_CONTEXT_INVALID", 76, "CHAT_SOURCE_SHA_MISMATCH"),
+        ]
+        for observation, exit_code, hint in cases:
+            with self.subTest(observation=observation, exit_code=exit_code):
+                cp = {**BASE, "observation": observation, "exit_code": exit_code,
+                      "diagnostic_hint": hint}
+                result = resume(cp, api=api)
+                self.assertEqual(result["observation"], "RUN_FAILED_OR_INCOMPLETE")
+                self.assertEqual(result["next_action"], "READ_RUN_FAILURE_LOGS")
+        valid = {**BASE, "observation": "HOST_SOURCE_CONTEXT_INVALID",
+                 "exit_code": 76, "diagnostic_hint": "CHAT_SOURCE_DIRTY_WORKTREE"}
+        actual = resume(valid, api=api)
+        self.assertEqual(actual["observation"], "CORRELATED_SOURCE_CONTEXT_INVALID")
+        self.assertEqual(actual["next_action"], "CHECK_TARGET_WORKTREE_AND_REQUIRED_FILES")
 
     def test_correlated_absent_host_receipt_points_at_existing_delivery(self):
         checkpoint = {**BASE, "observation": "HOST_RESULT_NOT_RETURNED",

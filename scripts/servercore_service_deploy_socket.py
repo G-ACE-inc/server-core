@@ -276,8 +276,32 @@ def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, 
 
 
 HOST_COMMAND_SCHEMA = "gace.servercore-host-command.request/v1"
-HOST_COMMAND_KEYS = {"schema", "id", "repository", "target_sha", "command"}
+HOST_COMMAND_KEYS = {"schema", "id", "repository", "target_sha", "command", "source_preflight"}
 HOST_COMMAND_MAX_SECONDS = 90
+SOURCE_PREFLIGHT_OK = "__GACE_SOURCE_PREFLIGHT_OK__\n"
+SOURCE_FAILURE_MARKERS = {
+    70: "CHAT_SOURCE_WORKDIR_MISSING",
+    71: "CHAT_SOURCE_GIT_UNAVAILABLE",
+    72: "CHAT_SOURCE_ROOT_MISMATCH",
+    73: "CHAT_SOURCE_SHA_UNAVAILABLE",
+    74: "CHAT_SOURCE_SHA_MISMATCH",
+    75: "CHAT_SOURCE_REQUIRED_FILE_MISSING",
+    76: "CHAT_SOURCE_DIRTY_WORKTREE",
+}
+
+def attest_source_preflight(stdout, stderr, exit_code, enabled):
+    """Separate the trusted preflight phase from arbitrary command stderr.
+
+    The selector emits its success prefix before the original command;
+    remove only that prefix so captured user stdout stays exact.
+    """
+    passed = bool(enabled and stdout.startswith(SOURCE_PREFLIGHT_OK))
+    clean_stdout = stdout[len(SOURCE_PREFLIGHT_OK):] if passed else stdout
+    failed = bool(enabled and not passed and exit_code in SOURCE_FAILURE_MARKERS
+                  and stderr.strip() == SOURCE_FAILURE_MARKERS[exit_code]
+                  and not clean_stdout)
+    return clean_stdout, failed
+
 
 def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, result_dir=None,
                      runner=None):
@@ -287,7 +311,9 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
     result ledger. No caller-provided cwd, uid, Docker socket, or registry path.
     """
     import subprocess
-    if not isinstance(value, dict) or set(value) != HOST_COMMAND_KEYS or value.get("schema") != HOST_COMMAND_SCHEMA:
+    if (not isinstance(value, dict) or
+            set(value) not in (HOST_COMMAND_KEYS, HOST_COMMAND_KEYS - {"source_preflight"})
+            or value.get("schema") != HOST_COMMAND_SCHEMA):
         raise AdmissionError("HOST_COMMAND_KEYS_INVALID")
     request_id = _req_id(value["id"])
     repository, target_sha, command_text = value["repository"], value["target_sha"], value["command"]
@@ -297,6 +323,8 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         raise AdmissionError("TARGET_SHA_INVALID")
     if not isinstance(command_text, str) or not command_text or "\x00" in command_text:
         raise AdmissionError("HOST_COMMAND_INVALID")
+    if type(value.get("source_preflight", False)) is not bool:
+        raise AdmissionError("HOST_SOURCE_PREFLIGHT_INVALID")
     previous = read_result(request_id, result_dir)
     if previous is not None:
         return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
@@ -325,7 +353,8 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         previous = read_result(request_id, result_dir)
         if previous is not None:
             return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
-        base = {"request_id": request_id, "repository": repository, "source_sha": target_sha}
+        base = {"request_id": request_id, "repository": repository, "source_sha": target_sha,
+                "source_preflight": value.get("source_preflight", False)}
         write_result(request_id, {**base, "state": "RUNNING"}, result_dir)
         try:
             run = runner or subprocess.run
@@ -334,9 +363,13 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
             completed = run(["/bin/bash", "-lc", "umask 0022; " + command_text], cwd=str(root),
                             capture_output=True, text=True, timeout=HOST_COMMAND_MAX_SECONDS,
                             check=False)
+            output, preflight_failure = attest_source_preflight(
+                completed.stdout, completed.stderr, completed.returncode,
+                value.get("source_preflight", False))
             result = {**base, "state": "HOST_COMMAND_PASS" if completed.returncode == 0 else "FAIL",
                       "exit_code": completed.returncode,
-                      "stdout": completed.stdout, "stderr": completed.stderr}
+                      "stdout": output, "stderr": completed.stderr,
+                      "source_preflight_failure": preflight_failure}
         except (OSError, subprocess.TimeoutExpired):
             result = {**base, "state": "FAIL", "failure_class": "HOST_COMMAND_EXECUTION_FAILED"}
         write_result(request_id, result, result_dir)
