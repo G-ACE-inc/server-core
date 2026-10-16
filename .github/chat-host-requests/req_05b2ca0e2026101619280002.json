@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "After failed warmup with no model error, read exact Host checkout and AI Core existing PR3 worktree SHA, dirty status, Gate running. No model calls, no fetch/checkouts, avoid duplicate pressure on DebugAI.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\na=$(git -C /home/admin1/server-core rev-parse HEAD)\nb=$(git -C \"$w\" rev-parse HEAD)\ndirty=$(git -C \"$w\" status --porcelain --untracked-files=all | wc -l)\ngate=$(docker inspect -f '{{.State.Status}}' ai-core-model-gate)\nmsg=\"AI_CORE_UDS_PREP_FAILURE_READONLY HOST=$a WORKTREE=$b DIRTY=$dirty GATE=$gate\"\nprintf '%s\\n' \"$msg\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$msg\" --jq '.html_url' >/dev/null\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Host request req_e6d821b00b216ec776019202 failed exit1 in 6ms, before model operation; do not rerun inference. AI Core PR3 latest 48df992; DebugAI unaffected."
+  }
+}
