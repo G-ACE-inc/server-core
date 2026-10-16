@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "AI Core Issue #1; PR #3 HEAD 75778b66afcd397da5225466aadcc20fcd0df991; design main §15; read-only current Host SHA inventory before Unix-socket cutover."
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "8d5751dc3a211708b0d54a8a8a5a1b3eb1f0630e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "8d5751dc3a211708b0d54a8a8a5a1b3eb1f0630e",
+    "command": "set -eu\nprintf 'DISPATCHER_HEAD='; git -C /home/admin1/server-core rev-parse HEAD\nprintf 'AICORE_PARENT_HEAD='; git -C /home/admin1/projects/ai-core rev-parse HEAD\nprintf 'AICORE_PR3_WORKTREE_HEAD='; git -C /home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015 rev-parse HEAD\nprintf 'AICORE_PR3_DIRTY='; git -C /home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015 status --porcelain | wc -l\nprintf 'GATE_AND_BACKEND_STATE\\n'; docker ps -a --format '{{.Names}} {{.Status}}' --filter name=ai-core-model-gate --filter name=ai-coder --filter name=ai-qwen3 --filter name=ai-granite --filter name=ai-ministral\nprintf 'OLD_ROUTER='; docker inspect -f '{{.State.Running}}' ai-llama-router 2>/dev/null || echo absent"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
