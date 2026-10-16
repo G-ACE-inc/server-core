@@ -202,6 +202,60 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertIn("jobs?per_page=100", calls[1])
 
+    def test_host_exit_failure_preserves_correlated_non_sha_diagnosis(self):
+        checkpoint = {**BASE, "observation": "HOST_OPERATION_FAILED",
+                      "exit_code": 42, "result_verified": True}
+        calls = []
+        def api(path):
+            calls.append(path)
+            if path.endswith("/jobs?per_page=100"):
+                return {"total_count": 1, "jobs": [{"id": 400, "steps": [
+                    {"name": "Bounded Host result return (request id correlated)",
+                     "conclusion": "failure"}]}]}
+            return {"head_sha": BASE["source_sha"], "status": "completed",
+                    "conclusion": "failure"}
+        result = resume(checkpoint, api=api)
+        self.assertEqual(result["observation"], "CORRELATED_HOST_OPERATION_FAILED")
+        self.assertEqual(result["next_action"], "INSPECT_CORRELATED_HOST_FAILURE_AND_REPLAN")
+        self.assertEqual(len(calls), 2)
+
+    def test_correlated_absent_host_receipt_points_at_existing_delivery(self):
+        checkpoint = {**BASE, "observation": "HOST_RESULT_NOT_RETURNED",
+                      "result_verified": False, "exit_code": None}
+        def api(path):
+            if "/jobs?" in path:
+                return {"total_count": 1, "jobs": [{"id": 99, "steps": [
+                    {"name": "Bounded Host result return (request id correlated)",
+                     "conclusion": "failure"}]}]}
+            return {"head_sha": BASE["source_sha"], "status": "completed",
+                    "conclusion": "failure"}
+        result = resume(checkpoint, api=api)
+        self.assertEqual(result["observation"], "CORRELATED_HOST_RESULT_MISSING")
+        self.assertEqual(result["next_action"], "TRACE_ORIGINAL_REQUEST_AND_RESULT_SINK")
+
+    def test_other_failing_step_must_not_be_called_host_failure(self):
+        checkpoint = {**BASE, "observation": "HOST_OPERATION_FAILED",
+                      "exit_code": 42, "result_verified": True}
+        def api(path):
+            if "/jobs?" in path:
+                return {"total_count": 1, "jobs": [{"id": 99, "steps": [
+                    {"name": "Unrelated PR CI", "conclusion": "failure"}]}]}
+            return {"head_sha": BASE["source_sha"], "status": "completed",
+                    "conclusion": "failure"}
+        self.assertEqual(resume(checkpoint, api=api)["observation"],
+                         "RUN_FAILED_OR_INCOMPLETE")
+
+    def test_incomplete_failed_job_collection_does_not_claim_correlated_cause(self):
+        checkpoint = {**BASE, "observation": "HOST_OPERATION_FAILED",
+                      "exit_code": 42, "result_verified": True}
+        def api(path):
+            if "/jobs?" in path:
+                return {"total_count": 2, "jobs": [{"id": 1, "steps": []}]}
+            return {"head_sha": BASE["source_sha"], "status": "completed",
+                    "conclusion": "failure"}
+        with self.assertRaisesRegex(ValueError, "FAILED_RUN_JOBS_INCOMPLETE"):
+            resume(checkpoint, api=api)
+
     def test_unverified_host_mismatch_cannot_override_actions_failure(self):
         checkpoint = {**BASE, "observation": "HOST_SOURCE_SHA_MISMATCH",
             "expected_sha": "a" * 40, "host_sha": "c" * 40,
