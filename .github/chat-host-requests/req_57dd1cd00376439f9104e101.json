@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Gateway28 validate prior private output source file paths and hashes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "4847811c7508da508fe210312d5e8bcaafcdc83a",
+    "command": "set -eu\ncd /home/admin1/server-core\npython3 - <<'PY'\nfrom scripts.servercore_host_output_read import chunk\nv=chunk('req_a8ed40c560828386fcdd6731','stdout',0,8192)\nassert v['total_chars']==700\nassert v['sha256']=='3b90d4a3edccd616ce10065d52d7b7c90293db45c4012b608d9472e7c1c1e7a6'\npaths=[s.partition('=')[2] for s in v['data'].splitlines() if s.startswith('WRITER_SCHEMA_PATH=')]\nassert paths\nassert any('writer' in p.lower() or 'server-core' in p.lower() for p in paths)\nprint('WRITER_PATHS_VALIDATED='+str(len(paths)))\nfor p in paths: print('WRITER_SCHEMA_PATH='+p)\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/webhook-gateway/pull/29"
+  }
+}
