@@ -1,0 +1,45 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Agent Pool CU40 real cross-repo source-bound diagnostic: registered AI Core main differs from existing PR3 HEAD; execute only PR3 exact worktree targeted regression, never use old main source",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p test_model_gate.py -k test_cold_start_after_wait_deadline_releases_inference_slot -q && echo CHAT_AGENT_SOURCE_CONTEXT_TEST_PASS",
+    "source_context": {
+      "repository": "seigo-gace/ai-core",
+      "workdir": "/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015",
+      "source_sha": "898a23ea2ba47ded90951900a26508057521c9dd",
+      "required_files": [
+        "tests/test_model_gate.py"
+      ]
+    }
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Agent Pool PR297 merged fa777b08435e929631b940cd5b9ac9a0960b7db7; fresh real Host Run38852168692 PASS verified registered AI Core and PR3 worktree reachable; source root prior Git Source 2955d728 and PR3 898a23ea from Run38850004560. Context guards perform actual in-Host worktree and HEAD checks and fail with distinct error if stale."
+  }
+}
