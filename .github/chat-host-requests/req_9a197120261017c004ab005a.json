@@ -1,0 +1,34 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/115"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "repository": "seigo-gace/debug-ai",
+    "repo_sha": "0864b04a7d394d69e52d09d39b58cc41c0bfb109",
+    "command": "set -eu\ndocker exec debug-ai-debug-ai-1 node -e 'const m=process.env.DEBUG_AI_CORE_GATE_DISPATCH_MODE||\"legacy\";const names=[\"CODER\",\"QWEN3\",\"GRANITE\",\"MINISTRAL\"];const cfg=names.every(x=>typeof process.env[\"DEBUG_AI_CORE_GATE_\"+x+\"_URL\"]===\"string\"&&process.env[\"DEBUG_AI_CORE_GATE_\"+x+\"_URL\"].startsWith(\"http\"));process.exit(m===\"model_gates\"?(cfg?0:12):(m===\"legacy\"?11:13))'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
