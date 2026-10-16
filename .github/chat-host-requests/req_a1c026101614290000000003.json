@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core Gate source-ready Host diagnosis and existing secret source presence, no values and no Docker changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport os,json,subprocess\nfrom pathlib import Path\ndef run(*args):\n try:\n  p=subprocess.run(args,capture_output=True,text=True,timeout=10)\n  return {'exit':p.returncode,'text':p.stdout.strip()[:220]}\n except Exception as e:return {'error':type(e).__name__}\nroot=Path('/home/admin1/projects/ai-core')\nwt=root/'.worktrees/pr3-verification-20261015'\nfiles=[root/'.env',wt/'.env',root/'runtime/.env',Path('/home/admin1/server-core/.env'),Path('/etc/ai-core.env')]\nout={'gate':run('docker','inspect','-f','{{.State.Status}}', 'ai-core-model-gate'),'gate_listeners':run('ss','-ltn','( sport = :18181 or sport = :18182 or sport = :18183 or sport = :18184 )'),'gate_process':run('pgrep','-af','[m]odel_gate.py.*--serve'),'worktree_head':run('git','-C',str(wt),'rev-parse','HEAD'),'worktree_status':run('git','-C',str(wt),'status','--short'),'host_cgroup':run('systemctl','show','ai-core.slice','-p','ControlGroup','--value'),'cgroup_mount_present':Path('/sys/fs/cgroup/ai-core.slice').exists(),'docker_socket':Path('/var/run/docker.sock').is_socket(),'api_key_in_shell':bool(os.environ.get('AI_CORE_API_KEY')),'env_candidate_presence':{str(p):p.is_file() for p in files},'backend_status':run('docker','ps','-a','--format','{{.Names}}:{{.State}}','--filter','name=^ai-')}\nbody='AI_CORE_GATE_DIAG_20261016\\n```json\\n'+json.dumps(out,indent=2)+'\\n```'\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('HOST_GATE_DIAG_UPLOAD='+('PASS '+p.stdout.strip() if p.returncode==0 else 'FAIL '+p.stderr[:120]))\nraise SystemExit(0 if p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR#3 HEAD a5c4501 and host gate empty 4/4 ports; root-cause retry after shell parse error."
+  }
+}
