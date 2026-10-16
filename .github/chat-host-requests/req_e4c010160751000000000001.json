@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CU40 rapid runtime activation: inspect Compose ownership and user-level Writer/Sink units for precise reload of merged Agent Pool code only",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "0ec4261ee4e134ed18834b2dca7943bf9808f950",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "0ec4261ee4e134ed18834b2dca7943bf9808f950",
+    "command": "python3 - <<'PY'\nimport json,subprocess,os\ndef run(argv,timeout=12):\n try:\n  p=subprocess.run(argv,capture_output=True,text=True,timeout=timeout)\n  return {\"code\":p.returncode,\"value\":p.stdout.strip()[:400]}\n except Exception as e:return {\"error\":type(e).__name__}\np=subprocess.run([\"docker\",\"inspect\",\"server-core-bounded-host\"],capture_output=True,text=True,timeout=12)\nd=json.loads(p.stdout)[0] if p.returncode==0 else {}\nlab=d.get(\"Config\",{}).get(\"Labels\",{}) or {}\nout={\"tag\":\"AGENT_POOL_CU40_RUNTIME_RELOAD_PLAN\",\n\"head\":run([\"git\",\"-C\",\"/home/admin1/server-core\",\"rev-parse\",\"HEAD\"]),\n\"compose_labels\":{k:v for k,v in lab.items() if \"compose\" in k},\n\"image\":d.get(\"Config\",{}).get(\"Image\"),\n\"entrypoint\":d.get(\"Config\",{}).get(\"Entrypoint\"),\n\"user_services\":{n:run([\"systemctl\",\"--user\",\"is-active\",n]) for n in (\"gace-servercore-service-deploy.service\",\"gace-servercore-result-sink.service\")},\n\"compose_config_available\":os.path.exists(\"/home/admin1/server-core/docker-compose.project-control.yml\")}\ng=subprocess.run([\"gh\",\"api\",\"-X\",\"POST\",\"repos/G-ACE-inc/server-core/issues/40/comments\",\"--input\",\"-\",\"--jq\",\".html_url\"],input=json.dumps({\"body\":\"AGENT_POOL_CU40_RUNTIME_RELOAD_PLAN\\n\"+json.dumps(out,indent=2)}),text=True,capture_output=True,timeout=20)\nprint(\"AGENT_POOL_RUNTIME_RELOAD_PLAN=\"+(\"POSTED\" if g.returncode==0 else \"FAILED\"))\nraise SystemExit(0 if g.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/299"
+  }
+}
