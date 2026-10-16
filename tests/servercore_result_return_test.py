@@ -199,7 +199,7 @@ class SinkTests(unittest.TestCase):
         ledger = self.dir / "writer"
         ledger.mkdir(parents=True)
         writer = {"request_id": RID, "repository": "seigo-gace/ai-core",
-                  "source_sha": "b" * 40, "state": "FAIL", "exit_code": 74,
+                  "source_sha": "b" * 40, "state": "FAIL", "exit_code": 74, "source_preflight": True,
                   "stdout": "", "stderr": "CHAT_SOURCE_SHA_MISMATCH\n"}
         p = ledger / (RID + ".json")
         p.write_text(json.dumps(writer), encoding="utf-8")
