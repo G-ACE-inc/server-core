@@ -199,7 +199,8 @@ class SinkTests(unittest.TestCase):
         ledger = self.dir / "writer"
         ledger.mkdir(parents=True)
         writer = {"request_id": RID, "repository": "seigo-gace/ai-core",
-                  "source_sha": "b" * 40, "state": "FAIL", "exit_code": 74, "source_preflight": True,
+                  "source_sha": "b" * 40, "state": "FAIL", "exit_code": 74,
+                  "source_preflight": True, "source_preflight_failure": True,
                   "stdout": "", "stderr": "CHAT_SOURCE_SHA_MISMATCH\n"}
         p = ledger / (RID + ".json")
         p.write_text(json.dumps(writer), encoding="utf-8")
@@ -223,6 +224,14 @@ class SinkTests(unittest.TestCase):
         p.write_text(json.dumps(writer), encoding="utf-8")
         generic = sink.comment_body(record, writer_dir=ledger)
         self.assertNotIn("diagnostic_hint", generic)
+        # An authenticated source-context wrapper may succeed, then its
+        # original command may coincidentally emit a reserved marker.
+        writer["source_preflight"] = True
+        writer["source_preflight_failure"] = False
+        writer["stderr"] = "CHAT_SOURCE_SHA_MISMATCH\\n"
+        p.write_text(json.dumps(writer), encoding="utf-8")
+        self.assertNotIn("diagnostic_hint",
+                         sink.comment_body(record, writer_dir=ledger))
 
     def test_issue_comment_contains_metadata_not_output(self):
         output = "日本語の長文" * 10000
