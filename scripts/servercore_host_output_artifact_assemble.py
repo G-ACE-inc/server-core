@@ -84,7 +84,8 @@ def verify_artifact_zip(zip_path, request_id, expected_streams):
         if (not isinstance(info, dict) or
                 not isinstance(info.get("sha256"), str) or
                 not re.fullmatch(r"[a-f0-9]{64}", info["sha256"]) or
-                type(info.get("chars")) is not int or info["chars"] < 0):
+                type(info.get("chars")) is not int or info["chars"] < 0 or
+                type(info.get("bytes")) is not int or info["bytes"] < 0):
             raise ValueError("EXPECTED_HOST_STREAM_METADATA_INVALID")
     with zipfile.ZipFile(zip_path) as archive:
         names = archive.namelist()
@@ -106,7 +107,8 @@ def verify_artifact_zip(zip_path, request_id, expected_streams):
             if (not isinstance(item, dict) or
                     type(item.get("bytes")) is not int or item["bytes"] < 0 or
                     item.get("sha256") != expect["sha256"] or
-                    archive.getinfo(name).file_size != item["bytes"]):
+                    archive.getinfo(name).file_size != item["bytes"] or
+                    expect["bytes"] != item["bytes"]):
                 raise ValueError("HOST_OUTPUT_MANIFEST_MISMATCH")
             digest = hashlib.sha256()
             decoder = codecs.getincrementaldecoder("utf-8")("strict")
