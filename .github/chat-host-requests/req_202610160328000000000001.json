@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPT CHAT #40 PR295 output metadata source integration main fast-forward without touching Registry/stashes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "command": "set -e\ntest \"$(git rev-parse HEAD)\" = \"e657645085b725271095bcf2521d2f13ba45009e\"\ntest \"$(git branch --show-current)\" = main\ntest -z \"$(git status --porcelain --untracked-files=no)\"\ntest \"$(git stash list | wc -l)\" -eq 3\nbefore=\"$(sha256sum operations/master-internal-repositories.json | awk '{print $1}')\"\ngit fetch --no-tags origin main\ngit merge-base --is-ancestor HEAD \"2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10\"\ngit merge-base --is-ancestor \"2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10\" FETCH_HEAD\ntest -z \"$(git diff --name-only HEAD \"2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10\" -- operations/master-internal-repositories.json)\"\ngit merge --ff-only \"2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10\" >/tmp/gace-reflect-chat-295.log\ntest \"$(git rev-parse HEAD)\" = \"2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10\"\ntest \"$(sha256sum operations/master-internal-repositories.json | awk '{print $1}')\" = \"$before\"\ntest \"$(git stash list | wc -l)\" -eq 3\ntest -z \"$(git status --porcelain --untracked-files=no)\"\necho CHAT_HOST_SOURCE_PR295_FF_PASS\ngit rev-parse --short=12 HEAD\nprintf 'REGISTRY_HASH_PREFIX='; printf '%s\\n' \"$before\" | cut -c1-12\necho STASH_COUNT=3"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Verified run 38842876252 exact 2.92MB full Host Writer sink correlation, observed actions artifact 12020528262 wrongly hashed locator; PR295 Source merged 2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10 CI6/6; prior Host HEAD e657645 and protected state 3 stashes."
+  }
+}
