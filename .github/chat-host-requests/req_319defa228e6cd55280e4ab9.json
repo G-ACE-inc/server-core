@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core real queue 4 logical callers: fix prior test code transfer using percent encoding and Host AST validation, Docker-only model inference, no product mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport ast,subprocess,json,urllib.parse\ncode=urllib.parse.unquote(\"import%20json%2Cos%2Ctime%2Cthreading%2Curllib.request%2Curllib.error%2Cstatistics%0Akey%3Dos.environ%5B'AI_CORE_API_KEY'%5D%0Aurl%3D'http%3A%2F%2F127.0.0.1%3A18184'%0Aheaders%3D%7B'Authorization'%3A'Bearer%20'%2Bkey%2C'Content-Type'%3A'application%2Fjson'%7D%0Adef%20get(path)%3A%0A%20r%3Durllib.request.Request(url%2Bpath%2Cheaders%3Dheaders)%0A%20with%20urllib.request.urlopen(r%2Ctimeout%3D10)%20as%20q%3Areturn%20json.load(q)%0Adef%20infer(client%2Cwait%3D0%2Cmax_tokens%3D8)%3A%0A%20model%3Dget('%2Fv1%2Fmodels')%5B'data'%5D%5B0%5D%5B'id'%5D%0A%20body%3Djson.dumps(%7B'model'%3Amodel%2C'messages'%3A%5B%7B'role'%3A'user'%2C'content'%3A'Reply%20OK.'%7D%5D%2C'max_tokens'%3Amax_tokens%2C'temperature'%3A0%7D).encode()%0A%20h%3D%7B**headers%2C'X-AI-Core-Client'%3Aclient%2C'X-AI-Core-Wait-Ms'%3Astr(wait)%7D%0A%20t%3Dtime.monotonic()%0A%20try%3A%0A%20%20with%20urllib.request.urlopen(urllib.request.Request(url%2B'%2Fv1%2Fchat%2Fcompletions'%2Cdata%3Dbody%2Cheaders%3Dh)%2Ctimeout%3D220)%20as%20r%3A%0A%20%20%20d%3Djson.load(r)%0A%20%20%20return%20%7B'client'%3Aclient%2C'status'%3Ar.status%2C'elapsed_s'%3Around(time.monotonic()-t%2C2)%2C'choices'%3Alen(d.get('choices'%2C%5B%5D))%7D%0A%20except%20urllib.error.HTTPError%20as%20e%3A%0A%20%20try%3Aerr%3Djson.load(e).get('error'%2C%7B%7D).get('code')%0A%20%20except%20Exception%3Aerr%3D'UNKNOWN'%0A%20%20return%20%7B'client'%3Aclient%2C'status'%3Ae.code%2C'code'%3Aerr%2C'elapsed_s'%3Around(time.monotonic()-t%2C2)%7D%0Adef%20state()%3A%0A%20h%3Dget('%2Finternal%2Fhandoff%2Fstatus')%3Br%3Dget('%2Finternal%2Fresources%2Fstatus')%0A%20return%20%7B'resident'%3Ah%5B'resident'%5D%2C'active'%3Ah%5B'active'%5D%2C'handoff'%3Ah%5B'handoff'%5D%2C'pending'%3Ah%5B'recovery_pending'%5D%2C'queued'%3Ar%5B'queued'%5D%2C'memory'%3Aint(r%5B'memory'%5D%5B'memory.current'%5D)%2C'cpu_usage'%3Aint(r%5B'cpu_stat'%5D.get('usage_usec'%2C0))%2C'throttle'%3Aint(r%5B'cpu_stat'%5D.get('throttled_usec'%2C0))%2C'events'%3Ar%5B'memory_events'%5D%2C'psi'%3Ar%5B'pressure'%5D%7D%0Atry%3A%0A%20before%3Dstate()%0A%20if%20before%5B'handoff'%5D%20is%20not%20None%20or%20before%5B'pending'%5D%20or%20before%5B'queued'%5D%20or%20any(before%5B'active'%5D.values())%20or%20len(before%5B'resident'%5D)%3E2%3A%0A%20%20raise%20RuntimeError('BUSY_PRECHECK_NO_REQUEST')%0A%20warm%3Dinfer('warm-coder'%2C0%2C8)%0A%20if%20warm%5B'status'%5D!%3D200%3Araise%20RuntimeError('WARM_REQUEST_FAILED%3A'%2Bstr(warm))%0A%20start%3Dstate()%0A%20results%3D%5BNone%5D*4%0A%20labels%3D%5B'a-1'%2C'a-2'%2C'b-1'%2C'c-1'%5D%0A%20def%20worker(i)%3Aresults%5Bi%5D%3Dinfer(labels%5Bi%5D%5B0%5D%20if%20i%3C2%20else%20labels%5Bi%5D%5B0%5D%2C30000%2C8)%0A%20threads%3D%5B%5D%0A%20for%20i%20in%20range(4)%3A%0A%20%20t%3Dthreading.Thread(target%3Dworker%2Cargs%3D(i%2C)%2Cdaemon%3DTrue)%3Bt.start()%3Bthreads.append(t)%3Btime.sleep(0.12)%0A%20for%20t%20in%20threads%3At.join(timeout%3D220)%0A%20after%3Dstate()%0A%20out%3D%7B'phase'%3A'REAL_QUEUE_ADMISSION'%2C'warm'%3Awarm%2C'calls'%3Aresults%2C'before'%3Abefore%2C'after_warm'%3Astart%2C'after'%3Aafter%2C'all_finished'%3Aall(x%20is%20not%20None%20for%20x%20in%20results)%2C'released'%3Anot%20any(after%5B'active'%5D.values())%20and%20after%5B'queued'%5D%3D%3D0%2C'oom_delta'%3Aafter%5B'events'%5D.get('oom_kill'%2C0)-before%5B'events'%5D.get('oom_kill'%2C0)%2C'cpu_used_usec'%3Aafter%5B'cpu_usage'%5D-start%5B'cpu_usage'%5D%2C'throttle_usec_delta'%3Aafter%5B'throttle'%5D-start%5B'throttle'%5D%7D%0A%20print(json.dumps(out%2Censure_ascii%3DFalse%2Cseparators%3D('%2C'%2C'%3A')))%0Aexcept%20Exception%20as%20exc%3A%0A%20print(json.dumps(%7B'error'%3Atype(exc).__name__%2B'%3A'%2Bstr(exc)%5B%3A230%5D%7D%2Censure_ascii%3DFalse))%0A%20raise\")\nout={'phase':'SOURCE_VALIDATE','encoding':'percent-exact'}\ntry:\n ast.parse(code)\n out['phase']='REAL_GATE_TEST'\n p=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',code],capture_output=True,text=True,timeout=350)\n out['exit']=p.returncode\n out['stdout']=p.stdout[-3300:]\n out['stderr']=p.stderr[-800:]\nexcept Exception as e:\n out['error']=type(e).__name__+':'+str(e)[:260]\nbody='AI_CORE_QUEUE_RETRY_CODE_EXACT\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=25)\nprint('GATE_QUEUE_TEST_PHASE='+out['phase'])\nprint('GATE_QUEUE_TEST_EXIT='+str(out.get('exit','UNKNOWN')))\nprint('RESULT_URL='+r.stdout.strip() if r.returncode==0 else 'RESULT_NOT_RECORDED')\nraise SystemExit(0 if r.returncode==0 and out.get('exit')==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6219326262"
+  }
+}
