@@ -38,12 +38,12 @@ class Fixture(unittest.TestCase):
 class PreflightAttestationTests(unittest.TestCase):
     def test_original_stdout_is_lossless_and_cannot_spoof_a_preflight_failure(self):
         clean, failed = m.attest_source_preflight(
-            m.SOURCE_PREFLIGHT_OK + "日本語Ω🙂\\n", "", 0, True)
+            m.SOURCE_PREFLIGHT_OK + "日本語Ω🙂\n", "", 0, True)
         self.assertEqual(clean, "日本語Ω🙂\\n")
         self.assertFalse(failed)
         clean, failed = m.attest_source_preflight(
             m.SOURCE_PREFLIGHT_OK,
-            "CHAT_SOURCE_SHA_MISMATCH\\n", 74, True)
+            "CHAT_SOURCE_SHA_MISMATCH\n", 74, True)
         self.assertEqual(clean, "")
         self.assertFalse(failed)
 
