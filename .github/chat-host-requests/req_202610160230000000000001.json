@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPT CHAT #40 inspect runtime container names and actual Host Writer source mismatch after synthetic ledger was 16000/1000 vs expected 720000/400000",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -e\nprintf 'HOST_SERVERCORE_HEAD='; git rev-parse HEAD\nprintf 'RELEVANT_CONTAINERS_BEGIN\\n'\ndocker ps --format '{{.Names}}' | grep -E 'server-core-bounded-host|servercore.*|bounded-host|result-sink' || true\nprintf 'RELEVANT_CONTAINERS_END\\n'\npython3 - <<'PY'\nfrom pathlib import Path\nimport hashlib\npath=Path(\"/home/admin1/server-core/scripts/servercore_service_deploy_socket.py\")\ntext=path.read_text(encoding=\"utf-8\")\nprint(\"CHECKOUT_WRITER_FILE_SHA256=\"+hashlib.sha256(text.encode(\"utf-8\")).hexdigest())\nprint(\"CHECKOUT_HAS_TRUNCATE_16000=\"+str(\"16000\" in text))\nprint(\"CHECKOUT_HAS_TRUNCATE_1000=\"+str(\"1000\" in text))\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED_MAIN",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "Host stored source req_85ae... PASS but len16000/1000 not original expected 720000/400000 as Run 38839646085; suspected running version mismatch"
+  }
+}
