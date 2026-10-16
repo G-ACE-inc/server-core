@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core failed diagnostic command exit2: verify server-core-only Host output read helper, absent AI Core path, and historical SHA mismatch request stored only in Sink not Writer (read-only)",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "set -e\ntest -f scripts/servercore_host_output_read.py\ntest ! -e /home/admin1/logs/servercore-service-deploy/req_b35e22a9c7a5e231ebd6743b.json\ntest -f /home/admin1/logs/servercore-bounded-results/req_b35e22a9c7a5e231ebd6743b.json\ntest ! -e /home/admin1/projects/ai-core/scripts/servercore_host_output_read.py\necho AI_CORE_FAILED_DIAGNOSTIC_WRONG_ROOT_AND_PRE_ADMISSION_NO_WRITER_LEDGER_CONFIRMED"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Wrong AI Core host root attempt Run 38846122327 exit2, original req_b35e... from Run38844963000 SOURCE_SHA_MISMATCH before admitted writer. PR3 test on exact worktree Run38850004560 already PASS."
+  }
+}
