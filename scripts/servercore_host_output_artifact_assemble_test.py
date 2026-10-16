@@ -5,7 +5,8 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from scripts.servercore_host_output_artifact_assemble import assemble, verify_artifact_zip
+from scripts.servercore_host_output_artifact_assemble import (
+    MAX_VERIFIED_STREAM_BYTES, assemble, verify_artifact_zip)
 
 
 RID = "req_" + "d" * 24
@@ -71,6 +72,34 @@ class AssembleTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "EXPECTED_HOST_STREAM_METADATA_INVALID"):
                 verify_artifact_zip(target / "output.zip", RID,
                     {**expected, "stdout": {**expected["stdout"], "bytes": None}})
+
+    def test_authenticated_expected_size_limit_rejected_before_extracting(self):
+        stdout, stderr = "safe", ""
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory, "artifact")
+            meta = assemble([*pages("stdout", stdout), *pages("stderr", stderr)], target)
+            expected = {
+                name: {"sha256": meta["streams"][name + ".txt"]["sha256"],
+                       "chars": len(data), "bytes": len(data.encode("utf-8"))}
+                for name, data in (("stdout", stdout), ("stderr", stderr))
+            }
+            oversize = {**expected, "stdout": {**expected["stdout"],
+                         "bytes": MAX_VERIFIED_STREAM_BYTES + 1}}
+            with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_UNCOMPRESSED_SIZE_LIMIT"):
+                verify_artifact_zip(target / "output.zip", RID, oversize)
+
+    def test_high_ratio_archive_denied_but_ordinary_unicode_allowed(self):
+        stdout, stderr = "A" * 2_000_000, ""
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory, "artifact")
+            meta = assemble([*pages("stdout", stdout), *pages("stderr", stderr)], target)
+            expected = {
+                name: {"sha256": meta["streams"][name + ".txt"]["sha256"],
+                       "chars": len(data), "bytes": len(data.encode("utf-8"))}
+                for name, data in (("stdout", stdout), ("stderr", stderr))
+            }
+            with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_EXPANSION_LIMIT"):
+                verify_artifact_zip(target / "output.zip", RID, expected)
 
     def test_host_archive_tamper_duplicate_and_missing_denied(self):
         stdout, stderr = "x日本語" * 20, "error"
