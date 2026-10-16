@@ -1,6 +1,6 @@
 # PROJECT INTEGRATION RULES
 
-Version: 2026-09-30
+Version: 2026-10-17
 Role: Projectへ共通基盤を導入するときの接続・利用ルール。
 
 ## Purpose
@@ -39,6 +39,15 @@ webhook gatewayはEvent連携入口として利用する。
 - Authentication method
 - Retry behavior
 - Failure handling
+
+### Internal Event API 利用契約
+
+内部Producerは既存の `POST /internal/events` を使用する。API仕様の正本は [webhook-gateway / INTERNAL_EVENT_API.md](https://github.com/seigo-gace/webhook-gateway/blob/main/docs/INTERNAL_EVENT_API.md)、実装は同Repositoryの `src/system/internal-event-api.ts` と配送先設定とする。導入・変更時だけ該当範囲を確認し、Sourceの対応を稼働環境へ推測で適用しない。
+
+- **認証**：既存 `INTERNAL_EVENT_API_TOKEN` と任意の `INTERNAL_EVENT_API_PROJECT_KEYS_JSON` に登録したプロジェクト別キーを、同じ `Authorization: Bearer ...` または `x-internal-api-token` で利用する。既存 `npm run secret` で生成し、実値はprivate deployment環境へ注入する。キー名は運用ラベルであり、プロジェクト別の宛先権限・scope・bodyの本人性を保証しない。新しいログイン・承認・キー発行HTTP APIは作らない。環境変更の反映には既存APIプロセスの再起動／再デプロイが必要で、旧共通キーは別途廃止するまで有効。
+- **宛先とdata**：呼出側は登録・有効化済み `destinationId` とAPI schemaのevent/dataを指定する。URL・credential・outbound header・retry policyはdeployment所有とする。`payloadMode=json` は `data` のみを配送するが、原文保持を意味しない。`internalDataPolicy` 省略／`sanitize` は従来の秘匿置換・文字列制限、`preserve` は完全な内部data保持であり、JSON配送・private-network許可・署名付き配送先への明示設定が必要。callerはこのpolicyを選べず、ログ・audit・errorの秘匿は維持する。コマンドへcredential実値を埋め込まない。
+- **受領と重複**：`202` はEvent／Delivery／OutboxのDB commit済み受領であり、配送・Host実行・TGserver保存完了ではない。`sourceId + eventId` を重複キーとし、新規受付のfingerprintはその宛先policy適用後の意味内容を対象とする。同一キー・同一内容はduplicate、異なる内容は `409 IDEMPOTENCY_KEY_PAYLOAD_CONFLICT`。fingerprintのない旧行は旧duplicate動作を維持する。policy変更後の409を新IDの自動再送で回避せず、元操作の実行状態を確認する。
+- **反映証拠**：Source／CI／Runtimeを分離し、適用済みimage・設定・env注入を対象環境で確認する。実機だけの配送先を保存し、Sourceだけの配送先を意図せず有効化しない。利用可否・原文一致・最終結果は対象Currentと実配送証拠で確認し、仕様追記だけでAVAILABLE_VERIFIEDへ昇格しない。
 
 ## Libral Vault Usage
 
