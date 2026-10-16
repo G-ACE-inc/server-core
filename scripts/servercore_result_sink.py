@@ -173,7 +173,12 @@ def trusted_writer_metadata(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
     if path.is_symlink():
         raise SinkError("WRITER_LEDGER_SYMLINK")
     if not path.is_file():
-        return None  # e.g. denied admission: no Writer execution occurred.
+        # A stored-output locator proves that the Receiver did not carry the
+        # original bytes; publishing its digest would forge output evidence.
+        if any("GACE_HOST_OUTPUT_STORED" in str(record.get(stream) or "")
+               for stream in ("stdout", "stderr")):
+            raise SinkError("WRITER_LEDGER_REQUIRED_FOR_STORED_OUTPUT")
+        return None  # Pre-execution admission rejection has no Writer ledger.
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
