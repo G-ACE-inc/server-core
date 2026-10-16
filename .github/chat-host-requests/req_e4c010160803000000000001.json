@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CU40 activate prepared verified Agent Pool Receiver stage after current Host response, switch same Docker service name with reversible old backup, restart only existing bounded Host Writer and Result Sink user units, verify health and Gateway route, never touch AI Core.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "0ec4261ee4e134ed18834b2dca7943bf9808f950",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "0ec4261ee4e134ed18834b2dca7943bf9808f950",
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport subprocess,sys,os\nsource=\"import json,os,subprocess,time\\nOLD=\\\"server-core-bounded-host\\\"\\nSTAGE=\\\"server-core-bounded-host-cu40-stage\\\"\\nBACKUP=\\\"server-core-bounded-host-pr299-rollback\\\"\\nTAG=\\\"gace-server-core-bounded-host:cu40-0ec4261ee4e1\\\"\\nresult={\\\"tag\\\":\\\"AGENT_POOL_CU40_RUNTIME_SWITCH\\\",\\\"old_backup\\\":BACKUP,\\\"target_image\\\":TAG,\\\"status\\\":\\\"STARTED\\\"}\\ndef run(argv,timeout=50):\\n p=subprocess.run(argv,text=True,capture_output=True,timeout=timeout)\\n if p.returncode:raise RuntimeError(\\\"STEP_\\\"+argv[1]+\\\"_FAILED_\\\"+str(p.returncode))\\n return p.stdout.strip()\\ndef health():\\n p=subprocess.run([\\\"docker\\\",\\\"exec\\\",OLD,\\\"python3\\\",\\\"-c\\\",\\n \\\"import urllib.request; assert urllib.request.urlopen('http://127.0.0.1:8789/healthz',timeout=3).status==200\\\"],\\n capture_output=True,timeout=8)\\n return p.returncode==0\\ntry:\\n old=json.loads(run([\\\"docker\\\",\\\"inspect\\\",OLD]))[0]\\n stage=json.loads(run([\\\"docker\\\",\\\"inspect\\\",STAGE]))[0]\\n if not old[\\\"State\\\"][\\\"Running\\\"] or not stage[\\\"State\\\"][\\\"Running\\\"]:raise RuntimeError(\\\"CONTAINER_STATE_MOVED\\\")\\n if stage[\\\"Config\\\"][\\\"Image\\\"]!=TAG:raise RuntimeError(\\\"STAGE_IMAGE_MOVED\\\")\\n if old[\\\"Config\\\"][\\\"Image\\\"]!=\\\"gace-server-core-bounded-host:hostsha-96d01bb\\\":raise RuntimeError(\\\"OLD_IMAGE_MOVED\\\")\\n run([\\\"docker\\\",\\\"stop\\\",\\\"-t\\\",\\\"8\\\",OLD],timeout=18)\\n run([\\\"docker\\\",\\\"rename\\\",OLD,BACKUP])\\n run([\\\"docker\\\",\\\"rename\\\",STAGE,OLD])\\n if not health():raise RuntimeError(\\\"NEW_RECEIVER_HEALTH_FAILED\\\")\\n result[\\\"receiver_switched\\\"]=True\\n run([\\\"systemctl\\\",\\\"--user\\\",\\\"restart\\\",\\\"gace-servercore-service-deploy.service\\\"],timeout=25)\\n run([\\\"systemctl\\\",\\\"--user\\\",\\\"restart\\\",\\\"gace-servercore-result-sink.service\\\"],timeout=25)\\n result[\\\"writer_sink_restarted\\\"]=True\\n for _ in range(16):\\n  s1=subprocess.run([\\\"systemctl\\\",\\\"--user\\\",\\\"is-active\\\",\\\"gace-servercore-service-deploy.service\\\"],capture_output=True,text=True,timeout=4)\\n  s2=subprocess.run([\\\"systemctl\\\",\\\"--user\\\",\\\"is-active\\\",\\\"gace-servercore-result-sink.service\\\"],capture_output=True,text=True,timeout=4)\\n  if s1.returncode==0 and s2.returncode==0 and health():break\\n  time.sleep(1)\\n else:raise RuntimeError(\\\"SOCKET_OR_UNIT_HEALTH_FAILED\\\")\\n result[\\\"services_active\\\"]=True\\n gateway=subprocess.run([\\\"docker\\\",\\\"exec\\\",\\\"webhook-gateway-api-1\\\",\\\"node\\\",\\\"-e\\\",\\n \\\"fetch('http://server-core-bounded-host:8789/healthz').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))\\\"],\\n capture_output=True,timeout=10)\\n result[\\\"gateway_to_receiver\\\"]=gateway.returncode==0\\n if gateway.returncode:raise RuntimeError(\\\"GATEWAY_TO_RECEIVER_CONNECT_FAILED\\\")\\n result[\\\"status\\\"]=\\\"PASS\\\"\\nexcept Exception as e:\\n result[\\\"status\\\"]=\\\"FAIL\\\"\\n result[\\\"failure_class\\\"]=str(e)[:125]\\n try:\\n  names=run([\\\"docker\\\",\\\"ps\\\",\\\"-a\\\",\\\"--format\\\",\\\"{{.Names}}\\\"]).splitlines()\\n  if BACKUP in names:\\n   if OLD in names:\\n    subprocess.run([\\\"docker\\\",\\\"stop\\\",\\\"-t\\\",\\\"6\\\",OLD],capture_output=True,timeout=15)\\n    subprocess.run([\\\"docker\\\",\\\"rename\\\",OLD,\\\"server-core-bounded-host-cu40-failed\\\"],capture_output=True,timeout=8)\\n   subprocess.run([\\\"docker\\\",\\\"rename\\\",BACKUP,OLD],capture_output=True,timeout=8)\\n   subprocess.run([\\\"docker\\\",\\\"start\\\",OLD],capture_output=True,timeout=20)\\n   result[\\\"rollback\\\"]=\\\"OLD_RECEIVER_RESTORED\\\"\\n except Exception as rollback:\\n  result[\\\"rollback\\\"]=\\\"ROLLBACK_ERROR_\\\"+type(rollback).__name__\\nfinally:\\n try:\\n  p=subprocess.run([\\\"gh\\\",\\\"api\\\",\\\"-X\\\",\\\"POST\\\",\\\"repos/G-ACE-inc/server-core/issues/40/comments\\\",\\\"--input\\\",\\\"-\\\",\\\"--jq\\\",\\\".html_url\\\"],\\n   input=json.dumps({\\\"body\\\":\\\"AGENT_POOL_CU40_RUNTIME_SWITCH\\\\n\\\"+json.dumps(result,indent=2,ensure_ascii=False)}),capture_output=True,text=True,timeout=15)\\n  result[\\\"record_posted\\\"]=p.returncode==0\\n except Exception:result[\\\"record_posted\\\"]=False\\n try:os.unlink(\\\"/tmp/gace-cu40-pr299-switchover.py\\\")\\n except OSError:pass\\n print(json.dumps(result,sort_keys=True))\\n\"\npath=Path('/tmp/gace-cu40-pr299-switchover.py')\ntry:\n if path.exists():raise RuntimeError(\"PENDING_ACTIVATION_EXISTS\")\n fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o700)\n with os.fdopen(fd,\"w\") as f:f.write(source)\n p=subprocess.run([\"systemd-run\",\"--user\",\"--on-active=12s\",\"--unit=gace-cu40-pr299-switchover\",\"--collect\",\n       \"/usr/bin/sg\",\"docker\",\"-c\",\"/usr/bin/python3 \"+str(path)],capture_output=True,text=True,timeout=12)\n if p.returncode:raise RuntimeError(\"TRANSIENT_ACTIVATION_SCHEDULE_FAILED\")\n print(\"AGENT_POOL_ACTIVATION_SCHEDULED=YES\")\nexcept Exception as e:\n try:path.unlink()\n except OSError:pass\n print(\"AGENT_POOL_ACTIVATION_SCHEDULE_FAILED=\"+str(e)[:130])\n sys.exit(1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/299"
+  }
+}
