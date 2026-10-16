@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only determine whether approved original 18080 legacy entrypoint is actually live and which existing router container owns it. No router startup, port publication, Docker mutation or direct backend access.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nnames=$(docker ps -a --format '{{.Names}}={{.State}}' | grep -Ei 'llama.router|llama.swap|ai.router' | head -8 | tr '\\n' ';' || :)\nif ss -H -ltn 'sport = :18080' | grep -q LISTEN; then listener=YES; else listener=NO; fi\nmsg=\"AI_CORE_LEGACY_18080_DISCOVERY ROUTER_CONTAINERS=$names PORT_18080_LISTEN=$listener DIRECT_BACKEND_TCP=NOT_REOPENED\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$msg\" --jq .html_url >/dev/null\necho AI_CORE_LEGACY_ROUTER_DISCOVERY=POSTED"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Current#1 updated with actual Astera independent adapter inference PASS #6225180527 and post-inference resource #6225204612; adopted design §8/§11 still expects legacy 18080 compatibility and rollback, whereas current Gate Source docstring retires legacy. Need observe actual 18080 listener and container without starting it; last Host SHA ee6002 #6225205321."
+  }
+}
