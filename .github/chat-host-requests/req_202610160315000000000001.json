@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPT CHAT #40 exact controlled 2.92MB Unicode stdout/stderr comparison after existing Sink/Writer runtime restart; require both PIDs rotated",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "command": "set -e\ntest \"$(systemctl --user show gace-servercore-service-deploy.service -p MainPID --value)\" != 3045495\ntest \"$(systemctl --user show gace-servercore-result-sink.service -p MainPID --value)\" != 2191216\npython3 -c 'import sys;sys.stdout.write(\"日本語Ω🙂\\n\"*120000);sys.stderr.write(\"警告⚠\\n\"*100000)'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "Run 38840945096 verified 25s deferred restart of two existing user systemd units after Host main ff e657645; known before PIDs 3045495 and 2191216; previous same synthetic test req_85ae... had truncated ledger 16000/1000 and no Sink record."
+  }
+}
