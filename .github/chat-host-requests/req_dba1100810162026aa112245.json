@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Protected reversible DebugAI PR112 Stage-B rollout for genuine six-role product E2E: exact verified Source, current volume inventory, rollback image preserved, only existing debug-ai Compose app recreated; four model Gate origins, health/mount/env readback, auto-rollback on failure. No AI Core/sidecar/old router mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu; r=/home/admin1/projects/debug-ai; w=$r/.worktrees/debugai-pr112-gates-20261016; test \"$(git -C \"$w\" rev-parse HEAD)\" = bb08aef1d92271d1fb4ab9f37309535811d48180; c=$(docker ps -q --filter label=com.docker.compose.service=debug-ai); b=$(docker inspect -f '{{range .Mounts}}{{.Source}}={{.Destination}};{{end}}' \"$c\"); test \"$(docker inspect -f '{{.Image}}' \"$c\")\" = \"$(docker image inspect -f '{{.Id}}' debug-ai:rollback-pr112-20261016)\"; cd \"$w\"; export DEBUG_AI_CORE_GATE_DISPATCH_MODE=model_gates DEBUG_AI_CORE_GATE_CODER_URL=http://127.0.0.1:18184 DEBUG_AI_CORE_GATE_QWEN3_URL=http://127.0.0.1:18182 DEBUG_AI_CORE_GATE_GRANITE_URL=http://127.0.0.1:18181 DEBUG_AI_CORE_GATE_MINISTRAL_URL=http://127.0.0.1:18183; restore(){ docker image tag debug-ai:rollback-pr112-20261016 debug-ai-debug-ai:latest; cd \"$r\"; docker compose -p debug-ai --env-file \"$r/.env\" -f compose.yaml up -d --no-deps debug-ai >/dev/null 2>&1; }; if ! docker compose -p debug-ai --env-file \"$r/.env\" -f compose.yaml up -d --no-deps debug-ai >/dev/null 2>&1; then restore; exit 20; fi; sleep 3; n=$(docker ps -q --filter label=com.docker.compose.service=debug-ai); if test -z \"$n\" || test \"$b\" != \"$(docker inspect -f '{{range .Mounts}}{{.Source}}={{.Destination}};{{end}}' \"$n\")\" || ! docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' \"$n\" | grep -qx DEBUG_AI_CORE_GATE_DISPATCH_MODE=model_gates || ! curl -fsS --max-time 4 http://127.0.0.1:8787/health >/dev/null; then restore; exit 21; fi"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
