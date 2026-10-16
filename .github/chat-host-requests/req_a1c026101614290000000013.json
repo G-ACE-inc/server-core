@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core authorized four Gate /v1/models check with original existing DebugAI consumer key, do not print key or launch models",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,urllib.request,urllib.error,subprocess\nfrom pathlib import Path\nsecret=''\nneedle=''.join(('AI_','CORE_','API_','KEY'))\np=Path('/home/admin1/projects/debug-ai/.env')\nfor raw in p.read_text(errors='replace').splitlines():\n t=raw.strip()\n if t.startswith('export '):t=t[7:].strip()\n k,sep,val=t.partition('=')\n if sep and k.strip()==needle:\n  secret=val.strip().strip('\"').strip(\"'\")\n  break\nout={'credential_name_found':bool(secret),'credential_length_valid':len(secret)>=16}\nmodels={}\nif len(secret)>=16:\n for label,port in [('granite',18181),('qwen3',18182),('ministral',18183),('coder',18184)]:\n  req=urllib.request.Request('http://127.0.0.1:'+str(port)+'/v1/models',headers={'Authorization':'Bearer '+secret})\n  try:\n   with urllib.request.urlopen(req,timeout=8) as r:\n    data=json.load(r)\n    models[label]={'http':r.status,'model_ids':[x['id'] for x in data.get('data',[])]}\n  except urllib.error.HTTPError as e:models[label]={'http':e.code}\n  except Exception as e:models[label]={'error':type(e).__name__}\nout['models']=models\ncg=Path('/sys/fs/cgroup/ai.slice/ai-core.slice')\nif (cg/'memory.current').is_file():out['parent_memory_current']=int((cg/'memory.current').read_text())\nz=subprocess.run(['docker','inspect','-f','{{.State.Status}}|{{.State.Health.Status}}|{{.HostConfig.CgroupParent}}','ai-core-model-gate'],text=True,capture_output=True,timeout=10)\nout['gate_container']=z.stdout.strip() if z.returncode==0 else 'UNAVAILABLE'\nbody='AI_CORE_AUTHENTICATED_FOUR_MODEL_LIST\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('AI_CORE_MODELS_AUTH_PROBE='+('PASS '+r.stdout.strip() if r.returncode==0 else 'POST_FAILED'))\nraise SystemExit(0 if r.returncode==0 and len(models)==4 and all(x.get('http')==200 for x in models.values()) else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Gate actual Host four /health 200, container running with parent cgroup and API Key provisioned existing DebugAI .env. Now verify authenticated model IDs 4."
+  }
+}
