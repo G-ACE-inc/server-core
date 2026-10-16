@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core real guarded 2→3→Gate restart→2 abort, durable handoff owner recovery and cgroup metrics; existing model/Gate only; no 18080",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport json,subprocess,time,urllib.request,hashlib\nfrom pathlib import Path\nSRC='46eab06f455a96579676f08e0242b209588c19c88f0fe6f35e509b092c53a559'\nGATE=\"import sys,os,json,urllib.request\\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']}\\np=sys.argv[1]\\nraw=sys.argv[2]\\ndata=None if raw=='-' else raw.encode()\\nif data:h['Content-Type']='application/json'\\nreq=urllib.request.Request('http://127.0.0.1:18181'+p,headers=h,data=data)\\nwith urllib.request.urlopen(req,timeout=185) as r:print(r.read(50000).decode())\\n\"\nmodels={'granite':('ai-granite',18081),'qwen3':('ai-qwen3',18082),'coder':('ai-coder',18084),'ministral':('ai-ministral',18083)}\nout={'target_source':SRC,'stage':'preflight'}\nstarted=[]\nticket=None\nsettled=False\ndef run(argv,timeout=25):\n p=subprocess.run(argv,capture_output=True,text=True,timeout=timeout)\n if p.returncode:raise RuntimeError('CMD_FAILED:'+argv[0]+' '+argv[1]+':'+p.stderr[-180:])\n return p.stdout.strip()\ndef gate(path,payload=None,timeout=190):\n raw='-' if payload is None else json.dumps(payload,separators=(',',':'))\n return json.loads(run(['docker','exec','ai-core-model-gate','python3','-c',GATE,path,raw],timeout))\ndef state():\n return gate('/internal/handoff/status'),gate('/internal/resources/status')\ndef resident():\n return {name for name,(container,_) in models.items() if run(['docker','inspect','-f','{{.State.Running}}',container])=='true'}\ndef idle(name):\n try:\n  with urllib.request.urlopen('http://127.0.0.1:'+str(models[name][1])+'/slots',timeout=4) as r:a=json.load(r)\n  return isinstance(a,list) and bool(a) and all(isinstance(s,dict) and s.get('is_processing') is False for s in a)\n except Exception:return False\ndef sample():\n h,r=state();return {'resident':h['resident'],'active':h['active'],'recovery_pending':h['recovery_pending'],'handoff':h['handoff'],'queued':r['queued'],'memory_current':int(r['memory']['memory.current']),'memory_high':r['memory']['memory.high'],'memory_max':r['memory']['memory.max'],'cpu_max':r['cpu_max'],'cpu_stat':r['cpu_stat'],'pressure':r['pressure'],'memory_events':r['memory_events']}\ntry:\n sha=run(['docker','exec','ai-core-model-gate','python3','-c',\"import hashlib;from pathlib import Path;print(hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest())\"])\n if sha!=SRC:raise RuntimeError('SOURCE_MISMATCH')\n router=subprocess.run(['docker','inspect','-f','{{.State.Running}}','ai-llama-router'],capture_output=True,text=True)\n if router.returncode==0 and router.stdout.strip()=='true':raise RuntimeError('RETIRED_ROUTER_RUNNING')\n before=sample();out['before']=before\n if resident() or any(before['active'].values()) or before['handoff'] or before['recovery_pending'] or before['queued']:raise RuntimeError('OTHER_TRAFFIC_OR_RESIDENTS')\n if before['cpu_max'].split()[0]=='max' or int(before['memory_max'])!=36*1024**3 or int(before['memory_high'])!=34*1024**3:raise RuntimeError('RESOURCE_POLICY_MISMATCH')\n for m in ('granite','qwen3'):\n  run(['docker','start',models[m][0]],60);started.append(m)\n deadline=time.monotonic()+150\n while time.monotonic()<deadline:\n  if all(urllib.request.urlopen('http://127.0.0.1:'+str(models[m][1])+'/health',timeout=3).status==200 for m in started):break\n  time.sleep(3)\n else:raise RuntimeError('BASELINE_MODEL_NOT_READY')\n out['two']=sample()\n if set(out['two']['resident'])!={'granite','qwen3'}:raise RuntimeError('EXPECTED_TWO_MISSING')\n owner='ai-core-host-restart-test-20261017'\n begin=gate('/internal/handoff/begin',{'target':'coder','owner':owner,'ttl':180},230)\n ticket=begin['ticket']\n third=sample();out['third']=third\n if set(third['resident'])!={'granite','qwen3','coder'} or third['handoff'] is None:raise RuntimeError('THIRD_MODEL_NOT_CONFIRMED')\n run(['docker','restart','--time','10','ai-core-model-gate'],70)\n out['stage']='restarted'\n deadline=time.monotonic()+80\n while time.monotonic()<deadline:\n  try:\n   post=sample();out['restart_first']=post;break\n  except Exception:time.sleep(2)\n else:raise RuntimeError('GATE_HEALTH_AFTER_RESTART_FAILED')\n if set(post['resident'])!={'granite','qwen3','coder'} or post['handoff'] is None:raise RuntimeError('HANDOFF_JOURNAL_LOST_ON_RESTART')\n out['journal_survived']=True\n deadline=time.monotonic()+65\n while time.monotonic()<deadline:\n  post=sample()\n  if not post['recovery_pending']:break\n  time.sleep(3)\n if post['recovery_pending']:raise RuntimeError('ORPHAN_RECOVERY_NOT_CONVERGED')\n out['recovered']=post\n gate('/internal/handoff/abort',{'owner':owner,'ticket':ticket},40)\n settled=True;ticket=None\n out['after_abort']=sample()\n if set(out['after_abort']['resident'])!={'granite','qwen3'} or out['after_abort']['handoff']:raise RuntimeError('HANDOFF_ABORT_NOT_RECLAIMED')\n out['stage']='physical_3_restart_2_pass'\nexcept Exception as e:\n out['error']=type(e).__name__+':'+str(e)[:190]\nfinally:\n if ticket is not None:\n  try:\n   h,r=state()\n   if not h['recovery_pending'] and not any(h['active'].values()):\n    gate('/internal/handoff/abort',{'owner':'ai-core-host-restart-test-20261017','ticket':ticket},35)\n    settled=True;out['recovery_abort']='PASS'\n  except Exception as e:out['recovery_abort']='DENIED_'+type(e).__name__\n try:\n  h,r=state()\n  safe=(h['handoff'] is None and not h['recovery_pending'] and not any(h['active'].values()) and not r['queued'] and all(idle(m) for m in started))\n  if safe:\n   for m in reversed(started):run(['docker','stop','-t','12',models[m][0]],30)\n   out['cleanup']='PASS'\n  else:out['cleanup']='FAIL_CLOSED_BUSY'\n  out['final']=sample()\n except Exception as e:out['cleanup']='ERROR_'+type(e).__name__\nbody='AI_CORE_DURABLE_HANDOFF_PHYSICAL_RESTART\\n'+json.dumps(out,ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=30)\nprint('AI_CORE_PHYSICAL_RESTART='+('PASS' if out.get('stage')=='physical_3_restart_2_pass' and out.get('cleanup')=='PASS' else 'FAIL'))\nprint('EVIDENCE_URL='+(p.stdout.strip() if p.returncode==0 else 'NOT_POSTED'))\nraise SystemExit(0 if p.returncode==0 and out.get('stage')=='physical_3_restart_2_pass' and out.get('cleanup')=='PASS' else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6218720051"
+  }
+}
