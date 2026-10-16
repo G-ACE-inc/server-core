@@ -303,6 +303,13 @@ def attest_source_preflight(stdout, stderr, exit_code, enabled):
     return clean_stdout, failed
 
 
+def command_ingress_fingerprint(command_text):
+    """Private evidence for exact admitted command bytes, without plaintext logging."""
+    encoded = command_text.encode("utf-8")
+    return {"command_sha256": hashlib.sha256(encoded).hexdigest(),
+            "command_bytes": len(encoded)}
+
+
 def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, result_dir=None,
                      runner=None):
     """Run a Master-delegated Host command inside an existing, registered checkout.
@@ -356,8 +363,7 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         base = {"request_id": request_id, "repository": repository, "source_sha": target_sha,
                 "source_preflight": value.get("source_preflight", False),
                 # Hash only the admitted writer-side UTF-8 command; never log its text.
-                "command_sha256": hashlib.sha256(command_text.encode("utf-8")).hexdigest(),
-                "command_bytes": len(command_text.encode("utf-8"))}
+                **command_ingress_fingerprint(command_text)
         write_result(request_id, {**base, "state": "RUNNING"}, result_dir)
         try:
             run = runner or subprocess.run
