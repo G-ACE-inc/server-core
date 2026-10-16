@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CU40 Agent Pool baseline read-only host version & existing Writer/Sink availability; posts only nonsecret SHA/active status to owning Current #40; no Source, Docker or process mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport hashlib,json,pathlib,subprocess\nroot=pathlib.Path('/home/admin1/server-core')\ndef run(argv,timeout=9):\n    try:\n        p=subprocess.run(argv,cwd=str(root),capture_output=True,text=True,timeout=timeout)\n        return {\"exit\":p.returncode,\"value\":p.stdout.strip()[:200] if p.returncode==0 else \"\"}\n    except Exception as exc:\n        return {\"exit\":-1,\"error_class\":type(exc).__name__}\ndef files():\n    out={}\n    for name in ('scripts/servercore_service_deploy_socket.py','scripts/servercore_result_sink.py','scripts/servercore_bounded_host_receiver.py','scripts/chatgpt_isolated_request_select.py'):\n        path=root/name\n        out[name]={\"present\":path.is_file(),\"sha256\":hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None}\n    return out\ndata={\"marker\":\"AGENT_POOL_HOST_BASELINE\",\"server_core_host_git_head\":run([\"git\",\"rev-parse\",\"HEAD\"]),\"server_core_git_status\":run([\"git\",\"status\",\"--porcelain\",\"--untracked-files=no\"]),\"server_core_source_files\":files(),\"bounded_host_service\":run([\"systemctl\",\"is-active\",\"server-core-bounded-host.service\"]),\"result_sink_service\":run([\"systemctl\",\"is-active\",\"servercore-result-sink.service\"]),\"host_writer_process_count\":run([\"pgrep\",\"-fc\",\"servercore_service_deploy_socket.py\"]),\"sink_process_count\":run([\"pgrep\",\"-fc\",\"servercore_result_sink.py\"])}\nbody=\"AGENT_POOL_CU40_HOST_BASELINE\\n\"+json.dumps(data,ensure_ascii=False,sort_keys=True,indent=2)\ntry:\n    p=subprocess.run([\"gh\",\"api\",\"-X\",\"POST\",\"repos/G-ACE-inc/server-core/issues/40/comments\",\"--input\",\"-\",\"--jq\",\".html_url\"],input=json.dumps({\"body\":body},ensure_ascii=False),capture_output=True,text=True,timeout=20)\n    print(\"HOST_BASELINE_PUBLISHED=\"+(p.stdout.strip() if p.returncode==0 else \"NO\"))\n    raise SystemExit(0 if p.returncode==0 else 1)\nexcept Exception as exc:\n    print(\"HOST_BASELINE_PUBLISHED=NO \"+type(exc).__name__)\n    raise SystemExit(1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6209802786"
+  }
+}
