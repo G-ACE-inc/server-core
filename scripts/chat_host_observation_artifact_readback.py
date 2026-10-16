@@ -16,7 +16,7 @@ DIGEST = re.compile(r"[a-f0-9]{64}\Z")
 OBSERVATIONS = {
     "HOST_RESULT_NOT_RETURNED", "HOST_OUTPUT_PARTIAL", "HOST_OPERATION_PASSED",
     "HOST_SOURCE_SHA_MISMATCH", "HOST_OPERATION_FAILED", "HOST_RESULT_UNVERIFIED",
-    "CORRELATION_FAILED", "HOST_LEDGER_RECOVERY_REQUIRED",
+    "CORRELATION_FAILED", "HOST_LEDGER_RECOVERY_REQUIRED", "HOST_OPERATION_RETRYABLE",
 }
 STREAM_KEYS = {"stdout", "stderr"}
 
@@ -57,7 +57,7 @@ def validate(receipt, expected_request_id):
     if host_sha is not None and (not isinstance(host_sha, str) or not SHA.fullmatch(host_sha)):
         raise ValueError("HOST_SHA_INVALID")
     exit_code = receipt.get("exit_code")
-    if exit_code is not None and (type(exit_code) is not int or not 0 <= exit_code <= 255):
+    if exit_code is not None and (type(exit_code) is not int or not -1 <= exit_code <= 255):
         raise ValueError("HOST_EXIT_CODE_INVALID")
     if obs == "HOST_SOURCE_SHA_MISMATCH":
         if (verified is not True or not host_sha or

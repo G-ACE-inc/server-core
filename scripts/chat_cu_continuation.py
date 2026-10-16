@@ -110,21 +110,25 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
         if status != "completed" or conclusion != "success":
             raise ValueError("HOST_OUTPUT_RUN_NOT_SUCCESS")
         proof = verified_output_evidence(checkpoint, host_output_zip)
-    # Preserve a verified Host failure instead of losing it under Actions failure.
+    # Distinguish an actual correlated Host-stage failure from an unrelated
+    # Workflow failure. Result artifact is already matched by Run and request,
+    # and the exact failing Job step must also corroborate that classification.
     host_failure_step = None
-    if (status == "completed" and conclusion != "success"
-            and checkpoint.get("observation") == "HOST_SOURCE_SHA_MISMATCH"
-            and checkpoint.get("result_verified") is True
-            and isinstance(checkpoint.get("host_sha"), str)
-            and re.fullmatch(r"[a-f0-9]{40}", checkpoint["host_sha"])
-            and isinstance(checkpoint.get("expected_sha"), str)
-            and re.fullmatch(r"[a-f0-9]{40}", checkpoint["expected_sha"])
-            and checkpoint["host_sha"] != checkpoint["expected_sha"]
-            and type(checkpoint.get("exit_code")) is int
-            and checkpoint["exit_code"] != 0):
+    host_observation = checkpoint.get("observation")
+    inspect_host_step = (
+        status == "completed" and conclusion == "failure"
+        and host_observation in {
+            "HOST_SOURCE_SHA_MISMATCH", "HOST_OPERATION_FAILED",
+            "HOST_OPERATION_RETRYABLE", "HOST_RESULT_NOT_RETURNED"}
+        and (checkpoint.get("result_verified") is True
+             or host_observation == "HOST_RESULT_NOT_RETURNED")
+    )
+    if inspect_host_step:
         jobs = api(f"repos/{repository}/actions/runs/{run_id}/jobs?per_page=100")
         if not isinstance(jobs, dict) or not isinstance(jobs.get("jobs"), list):
             raise ValueError("FAILED_RUN_JOBS_UNVERIFIED")
+        if type(jobs.get("total_count")) is int and len(jobs["jobs"]) != jobs["total_count"]:
+            raise ValueError("FAILED_RUN_JOBS_INCOMPLETE")
         for job in jobs["jobs"]:
             if not isinstance(job, dict):
                 continue
@@ -133,10 +137,40 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
                         and step.get("name") == "Bounded Host result return (request id correlated)"):
                     host_failure_step = step["name"]
                     break
+    sha_mismatch = (
+        host_failure_step is not None and host_observation == "HOST_SOURCE_SHA_MISMATCH"
+        and checkpoint.get("result_verified") is True
+        and isinstance(checkpoint.get("host_sha"), str)
+        and re.fullmatch(r"[a-f0-9]{40}", checkpoint["host_sha"])
+        and isinstance(checkpoint.get("expected_sha"), str)
+        and re.fullmatch(r"[a-f0-9]{40}", checkpoint["expected_sha"])
+        and checkpoint["host_sha"] != checkpoint["expected_sha"]
+        and type(checkpoint.get("exit_code")) is int
+        and checkpoint["exit_code"] != 0
+    )
+    correlated_failure = (
+        host_failure_step is not None and host_observation == "HOST_OPERATION_FAILED"
+        and checkpoint.get("result_verified") is True
+        and type(checkpoint.get("exit_code")) is int and checkpoint["exit_code"] != 0
+    )
+    correlated_retry = (
+        host_failure_step is not None and host_observation == "HOST_OPERATION_RETRYABLE"
+        and checkpoint.get("result_verified") is True
+    )
+    correlated_missing = (
+        host_failure_step is not None and host_observation == "HOST_RESULT_NOT_RETURNED"
+        and checkpoint.get("result_verified") is False
+    )
     if status != "completed":
         observed = "RUN_NOT_FINISHED"
-    elif host_failure_step:
+    elif sha_mismatch:
         observed = "CORRELATED_HOST_SHA_MISMATCH"
+    elif correlated_failure:
+        observed = "CORRELATED_HOST_OPERATION_FAILED"
+    elif correlated_retry:
+        observed = "CORRELATED_HOST_RETRYABLE"
+    elif correlated_missing:
+        observed = "CORRELATED_HOST_RESULT_MISSING"
     elif conclusion != "success":
         observed = "RUN_FAILED_OR_INCOMPLETE"
     elif checkpoint.get("result_verified") is not True:
@@ -155,6 +189,9 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
             "RUN_NOT_FINISHED": "POLL_EXISTING_RUN",
             "RUN_FAILED_OR_INCOMPLETE": "READ_RUN_FAILURE_LOGS",
             "CORRELATED_HOST_SHA_MISMATCH": "RECHECK_REGISTERED_TARGET_REPO_SHA_AND_REPLAN_HOST_REQUEST",
+            "CORRELATED_HOST_OPERATION_FAILED": "INSPECT_CORRELATED_HOST_FAILURE_AND_REPLAN",
+            "CORRELATED_HOST_RETRYABLE": "TRACE_EXISTING_DELIVERY_AND_RESULT_SINK",
+            "CORRELATED_HOST_RESULT_MISSING": "TRACE_ORIGINAL_REQUEST_AND_RESULT_SINK",
             "HOST_RESULT_UNVERIFIED": "RECHECK_HOST_OBSERVATION",
             "HOST_LEDGER_RECOVERY_REQUIRED": "RECOVER_HOST_LEDGER_PAYLOAD",
             "READY_FOR_ACCEPTANCE_VERIFICATION": "VERIFY_CU_ACCEPTANCE",
@@ -162,8 +199,8 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
         "evidence_url": url,
         "verified_host_output": proof,
         "host_failure_step": host_failure_step,
-        "observed_host_sha": checkpoint.get("host_sha") if host_failure_step else None,
-        "stale_expected_host_sha": checkpoint.get("expected_sha") if host_failure_step else None,
+        "observed_host_sha": checkpoint.get("host_sha") if sha_mismatch else None,
+        "stale_expected_host_sha": checkpoint.get("expected_sha") if sha_mismatch else None,
     }
 
 

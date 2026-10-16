@@ -37,6 +37,24 @@ class TerminalOutputTests(unittest.TestCase):
         self.assertEqual(poll.stream_receipt_metadata(pointer, "stdout")["sha256"], "b" * 64)
         self.assertFalse(poll.stream_receipt_metadata(pointer, "stdout")["complete"])
 
+    def test_failed_host_result_is_not_mislabeled_as_partial(self):
+        record = {"request_id": "req_" + "d" * 24,
+                  "state": "FAIL", "exit_code": 23,
+                  "expected_sha": "a" * 40, "host_sha": "a" * 40,
+                  "stdout": "", "stderr": "",
+                  "stdout_bytes": 999999, "stderr_bytes": 200,
+                  "stdout_preview_truncated": True}
+        self.assertEqual(poll.continuation_observation(record, "OK"),
+                         ("HOST_OPERATION_FAILED", "INSPECT_FAILURE_EVIDENCE_AND_REPLAN"))
+        record["host_sha"] = "b" * 40
+        self.assertEqual(poll.continuation_observation(record, "OK"),
+                         ("HOST_SOURCE_SHA_MISMATCH",
+                          "READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION"))
+        record["state"] = "RETRYABLE"
+        record["exit_code"] = -1
+        self.assertEqual(poll.continuation_observation(record, "OK"),
+                         ("HOST_OPERATION_RETRYABLE", "TRACE_EXISTING_HOST_DELIVERY_AND_RESULT_SINK"))
+
     def test_clipped_preview_requires_lossless_chunk_readback(self):
         import contextlib
         import io
@@ -66,8 +84,8 @@ class TerminalOutputTests(unittest.TestCase):
                                    {"html_url": "https://github.com/G-ACE-inc/server-core/issues/10"}, "OK")
             raw = path.read_text(encoding="utf-8")
             receipt = json.loads(raw)
-            self.assertEqual(receipt["next_action"], "READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE")
-            self.assertEqual(receipt["observation"], "HOST_OUTPUT_PARTIAL")
+            self.assertEqual(receipt["next_action"], "INSPECT_FAILURE_EVIDENCE_AND_REPLAN")
+            self.assertEqual(receipt["observation"], "HOST_OPERATION_FAILED")
             self.assertFalse(receipt["streams"]["stdout"]["complete"])
             self.assertNotIn("PRIVATE_OUTPUT", raw)
             self.assertNotIn("PRIVATE_ERROR", raw)
