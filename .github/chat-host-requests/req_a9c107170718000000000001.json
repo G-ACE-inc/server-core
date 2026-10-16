@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPG to Vault cutover read-only prerequisites, never print secret values or sensitive file paths",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nv=/home/admin1/projects/astera_v8\nl=/home/admin1/projects/libral-vault\nbody=VAULT_TUNNEL_CUTOVER_INVENTORY\nfor n in libral-vault-libral-vault-1 astera-v8-cloudflared; do\n if docker inspect \"$n\" >/dev/null 2>&1; then\n  body=\"$body\n$n=$(docker inspect \"$n\" --format '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')\"\n else body=\"$body\n$n=NOT_FOUND\"; fi\ndone\nfor key in LIBRAL_VAULT_ASTERA_V8_TUNNEL_SECRET_ID LIBRAL_VAULT_ASTERA_V8_TUNNEL_RUNTIME_DIR; do\n if docker inspect libral-vault-libral-vault-1 --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -q \"^$key=\"; then val=PRESENT; else val=ABSENT; fi\n body=\"$body\n$key=$val\"\ndone\nbody=\"$body\nVAULT_TUNNEL_API_IN_CHECKOUT=$(if grep -q 'astera-tunnel/materialize' \"$l/src/server.ts\"; then echo YES; else echo NO; fi)\"\nbody=\"$body\nLEGACY_FILE_REFERENCES=$(grep -Eil 'gpg-core|secure_up.sh|env.gpg' \"$v/docker-compose.yml\" \"$v/scripts/prepare-vault-tunnel-secret.js\" 2>/dev/null | wc -l)\"\nbody=\"$body\nV8_TOKEN_FILE_SETTING=$(if grep -q '^CLOUDFLARE_TUNNEL_TOKEN_FILE=' \"$v/.env\" 2>/dev/null; then echo PRESENT; else echo ABSENT; fi)\"\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"$body\" --jq '.html_url'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Vault 2026-10-16 migration contract is SOURCE PREPARATION ONLY; v8 Host healthy after rebuild issuecomment6225616043; assess running secret source and Vault API readiness."
+  }
+}
