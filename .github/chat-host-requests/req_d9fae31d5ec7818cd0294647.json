@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core read-only investigate why guarded cutover stops after quiescence; inspect existing Gate key presence/transfer length without revealing its value, model state no mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "command": "set -u\necho \"GATE_RUNNING=$(docker inspect -f '{{.State.Running}}' ai-core-model-gate)\"\ndocker exec ai-core-model-gate python3 -c 'import os; print(\"IN_CONTAINER_KEY_PRESENT=\"+str(bool(os.environ.get(\"AI_CORE_API_KEY\"))))'\nvalue=\"$(docker exec ai-core-model-gate python3 -c 'import os;print(os.environ[\"AI_CORE_API_KEY\"],end=\"\")' 2>/dev/null)\"\ncode=$?\necho \"KEY_TRANSFER_RETURN=$code KEY_LENGTH=${#value}\"\nunset value\nfor name in granite qwen3 ministral coder; do echo \"MODEL_$name=$(docker inspect -f '{{.State.Running}}' \"ai-$name\")\"; done\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f \"body=AI_CORE_UDS_KEY_TRANSFER_DIAG Gate/4model read-only; see correlated command stdout for only booleans and key length\" --jq .html_url"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6221095479"
+  }
+}
