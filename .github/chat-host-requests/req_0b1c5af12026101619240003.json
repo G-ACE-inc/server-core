@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Run only first needed Granite resident warmup through authenticated Gate to prepare UDS 2-to-3-to-2 acceptance. Guard exact source, no DebugAI Source writes, fail closed when concurrent product active.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\nbefore=$(git -C \"$w\" rev-parse HEAD)\ncase \"$before\" in e2d7a508d477225bfcae1d3979e9a6575db39c69|d9fdcd536250060a841ca1f72b23dc17213f9880) :;; *) exit 72;; esac\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\" || exit 73\ngit -C \"$w\" fetch --no-tags origin feat/per-model-lifecycle-20261013 >/dev/null 2>&1\ntest \"$(git -C \"$w\" rev-parse FETCH_HEAD)\" = d9fdcd536250060a841ca1f72b23dc17213f9880 || exit 74\ntest \"$before\" = d9fdcd536250060a841ca1f72b23dc17213f9880 || git -C \"$w\" checkout --detach -q d9fdcd536250060a841ca1f72b23dc17213f9880\ndocker exec -i ai-core-model-gate python3 -c 'import sys;compile(sys.stdin.read(),\"<uds_probe>\",\"exec\")' < \"$w/scripts/host_uds_inference_probe.py\"\ndocker exec ai-core-model-gate python3 -c 'import os,json,urllib.request;h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]};u=urllib.request.Request(\"http://127.0.0.1:18184/internal/handoff/status\",headers=h);a=json.load(urllib.request.urlopen(u,timeout=8));assert not any(a[\"active\"].values()) and not a[\"handoff\"] and not a[\"recovery_pending\"]'\nrc=0\nout=$(docker exec -i ai-core-model-gate python3 - granite < \"$w/scripts/host_uds_inference_probe.py\") || rc=$?\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"AI_CORE_UDS_HANDOFF_PREP_GRANITE HEAD=d9fdcd536250060a841ca1f72b23dc17213f9880 EXIT=$rc $out\" --jq '.html_url' >/dev/null\nprintf 'AI_CORE_GRANITE_PREP_EXIT=%s\\n' \"$rc\"\nexit \"$rc\"\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 latest d9fdcd53, Host worktree e2d7a508 clean, parent CPU6/RAM36 and resident0 observed issue 6222983430; DebugAI healthy as of issue41 6222998228 but does not own AI Core. Granite Gate inference previously PASS; new warmup necessary for handoff and client timeout aligned with Coordinator."
+  }
+}
