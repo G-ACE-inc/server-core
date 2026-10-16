@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Verify Vault integrated source and health before runtime deploy, nonsecret metadata.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "command": "set -eu\np=/home/admin1/projects/libral-vault\nsha=$(git -C \"$p\" rev-parse HEAD)\nhealth=$(docker inspect libral-vault-libral-vault-1 --format '{{.State.Health.Status}}')\nbody=$(printf 'VAULT_INTEGRATION_HOST_READBACK\\nsha=%s\\nhealth=%s\\n' \"$sha\" \"$health\")\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"$body\" --jq '.html_url'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Vault #9 merge 89997938 CI PASS, prior host req_f1ee5e58484edf8e8b7582ff PASS; verify checkout to avoid guesses."
+  }
+}
