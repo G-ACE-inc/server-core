@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "Pair load req_6e5f... in Issue #10 comment6222875031 exited code1 in 9ms; separate readback Issue #1 comment6222899078 proves clean exact HEAD d48, Gate true, resident0. Narrow failure by capturing one model's full sanitized JSON and Coordinator state in owning Issue."
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "command": "w=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\nstate=\"$(docker exec ai-core-model-gate python3 -c 'import os,json,urllib.request;u=\"http://127.0.0.1:18184/internal/handoff/status\";h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]};d=json.load(urllib.request.urlopen(urllib.request.Request(u,headers=h),timeout=8));print(\"RESIDENT=\"+str(len(d[\"resident\"]))+\" RECOVERY=\"+str(len(d[\"recovery_pending\"]))+\" ACTIVE=\"+str(sum(d[\"active\"].values())))' 2>/dev/null)\"\nbefore=$?\nout=\"$(docker exec -i ai-core-model-gate python3 - coder < \"$w/scripts/host_uds_inference_probe.py\" 2>/dev/null)\"\nrc=$?\nreport=\"AI_CORE_UDS_SINGLE_PAIR_DIAG STATE_RC=$before STATE=$state CODER_RC=$rc BODY=$out\"\nprintf '%s\\n' \"$report\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f \"body=$report\" --jq .html_url || :\nexit \"$rc\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
