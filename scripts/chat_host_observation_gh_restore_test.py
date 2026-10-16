@@ -19,12 +19,18 @@ class RestoreTests(unittest.TestCase):
 
     def artifact(self, artifact_id=19):
         return {"id": artifact_id, "name": "chat-host-observation-" + SHA,
-                "expired": False, "workflow_run": {"id": 123, "head_sha": SHA}}
+                "expired": False, "size_in_bytes": 500,
+                "workflow_run": {"id": 123, "head_sha": SHA}}
 
-    def archive(self, cmd, receipt):
+    def archive(self, cmd, receipt, **kwargs):
         data = io.BytesIO()
         with zipfile.ZipFile(data, "w") as archive:
             archive.writestr("gace-chat-host-observation.json", json.dumps(receipt))
+        if "stdout" in kwargs:
+            self.assertNotIn("capture_output", kwargs)
+            self.assertTrue(callable(kwargs.get("preexec_fn")))
+            kwargs["stdout"].write(data.getvalue())
+            return subprocess.CompletedProcess(cmd, 0)
         return subprocess.CompletedProcess(cmd, 0, stdout=data.getvalue())
 
     def fake_run(self, cmd, **kwargs):
@@ -36,7 +42,7 @@ class RestoreTests(unittest.TestCase):
             return subprocess.CompletedProcess(cmd, 0, stdout="")
         if cmd[2].endswith("/zip"):
             self.assertEqual(cmd[2], "repos/G-ACE-inc/server-core/actions/artifacts/19/zip")
-            return self.archive(cmd, self.receipt())
+            return self.archive(cmd, self.receipt(), **kwargs)
         if "/artifacts?" in cmd[2]:
             payload = {"total_count": 1, "artifacts": [self.artifact()]}
         else:
@@ -55,7 +61,7 @@ class RestoreTests(unittest.TestCase):
     def test_request_mismatch_denied(self):
         def wrong_run(cmd, **kwargs):
             if cmd[2].endswith("/zip"):
-                return self.archive(cmd, {**self.receipt(), "request_id": "req_" + "f" * 24})
+                return self.archive(cmd, {**self.receipt(), "request_id": "req_" + "f" * 24}, **kwargs)
             return self.fake_run(cmd, **kwargs)
         with self.assertRaisesRegex(ValueError, "REQUEST_MISMATCH"):
             restore("G-ACE-inc/server-core", 123, RID, run=wrong_run)
@@ -68,11 +74,46 @@ class RestoreTests(unittest.TestCase):
         def expired(cmd, **kwargs):
             if cmd[1] == "api" and "/artifacts?" in cmd[2]:
                 return subprocess.CompletedProcess(cmd, 0, stdout=json.dumps({"total_count": 1, "artifacts": [{
-                    "id": 19, "name": "chat-host-observation-" + SHA, "expired": True
+                    "id": 19, "name": "chat-host-observation-" + SHA,
+                    "size_in_bytes": 500, "expired": True
                 }]}))
             return self.fake_run(cmd, **kwargs)
         with self.assertRaisesRegex(ValueError, "ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS"):
             restore("G-ACE-inc/server-core", 123, RID, run=expired)
+
+    def test_zip_size_preflight_refuses_missing_oversized_or_invalid_metadata(self):
+        from scripts.chat_host_observation_gh_restore import MAX_OBSERVATION_ZIP_BYTES
+        for size in (None, 0, True, -1, MAX_OBSERVATION_ZIP_BYTES + 1):
+            calls = []
+            def fake(cmd, **kwargs):
+                calls.append(cmd[2])
+                if "/artifacts?" in cmd[2]:
+                    bad = self.artifact()
+                    if size is None:
+                        bad.pop("size_in_bytes")
+                    else:
+                        bad["size_in_bytes"] = size
+                    return subprocess.CompletedProcess(cmd, 0, stdout=json.dumps({
+                        "total_count": 1, "artifacts": [bad]}))
+                return self.fake_run(cmd, **kwargs)
+            with self.subTest(size=size), self.assertRaisesRegex(
+                    ValueError, "ARTIFACT_ZIP_SIZE_INVALID_OR_TOO_LARGE"):
+                restore("G-ACE-inc/server-core", 123, RID, run=fake)
+            self.assertFalse(any(path.endswith("/zip") for path in calls))
+
+    def test_exact_artifact_zip_is_streamed_to_file(self):
+        seen = []
+        def fake(cmd, **kwargs):
+            if cmd[2].endswith("/zip"):
+                seen.append((kwargs.get("stdout"), kwargs.get("capture_output"),
+                             kwargs.get("preexec_fn")))
+            return self.fake_run(cmd, **kwargs)
+        result = restore("G-ACE-inc/server-core", 123, RID, run=fake)
+        self.assertEqual(result["artifact_id"], 19)
+        self.assertEqual(len(seen), 1)
+        self.assertTrue(callable(seen[0][2]))
+        self.assertIsNotNone(seen[0][0])
+        self.assertIsNone(seen[0][1])
 
     def test_missing_artifact_denied(self):
         def missing(cmd, **kwargs):
