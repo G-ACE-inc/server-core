@@ -156,9 +156,37 @@ def accept_record(value, *, result_dir=None, now=None):
     return {"state": "RECORDED", "recorded_state": record["state"], "attempts": attempts}
 
 
+# Only the admitted Host writer emits this exact metadata pointer. Preserve
+# its original stream digests separately from the Sink's own receipt stdout.
+HOST_LEDGER_RECEIPT = re.compile(
+    r"\\AGACE_HOST_OUTPUT_STORED request_id=(req_[0-9a-f]{24}) "
+    r"stdout_chars=([0-9]{1,12}) stdout_sha256=([0-9a-f]{64}) "
+    r"stderr_chars=([0-9]{1,12}) stderr_sha256=([0-9a-f]{64}) "
+    r"\\(lossless chunks: scripts/servercore_host_output_read\\.py\\)\\Z"
+)
+
+
+def parse_host_ledger_pointer(record):
+    if record.get("command_id") != "host.command" or record.get("stderr"):
+        return None
+    stdout = record.get("stdout")
+    m = HOST_LEDGER_RECEIPT.fullmatch(stdout) if isinstance(stdout, str) else None
+    if not m or m.group(1) != record.get("request_id"):
+        return None
+    return {"request_id": m.group(1), "streams": {
+        "stdout": {"chars": int(m.group(2)), "sha256": m.group(3)},
+        "stderr": {"chars": int(m.group(4)), "sha256": m.group(5)},
+    }}
+
+
 def comment_body(record):
     view = public_view(record)
     view.pop("published", None)
+    # Distinguish the original Host ledger digest from the short receipt text
+    # used as Sink stdout; Issue remains metadata-only.
+    ledger = parse_host_ledger_pointer(record)
+    if ledger is not None:
+        view["host_ledger"] = ledger
     # Issue is an index/status surface, never a stream delivery channel.
     # Keep complete redacted streams in the durable Host ledger only.
     for stream in ("stdout", "stderr"):
