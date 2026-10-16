@@ -148,6 +148,7 @@ Secret / Token値をoperationsへ保存しない。
 
 ### GPT CHAT decision checkpoint implementation (CU #40)
 
+- `scripts/gace_project_current_recovery.py` / `scripts/gace_project_current_recovery_test.py`: read-only Project registration and owning Current recovery; exact `--issue-url` selection and optional `--include-body` avoid unrelated body reads and duplicate fetching; no dispatch grant
 - `scripts/github_project_chat_turn_gate.py`: bounded START/FAILURE/STOP **supplied-receipt** evaluator; not native ChatGPT send interception
 - `scripts/github_project_chat_turn_gate_test.py`: positive/negative receipt regression; does not prove an actual CHAT turn continued
 - `scripts/servercore_bounded_result_poll.py` / `scripts/servercore_bounded_result_poll_test.py`: request-correlated Host-result wait, bounded backoff and logical lookup/wait diagnostics; existing verify workflow runs regression tests

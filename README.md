@@ -94,6 +94,8 @@ The mandatory Work Routine (design baseline → change assessment → source/tes
 
 The existing Host-result poller now reads immediately, then backs off from 6 to at most 30 seconds while pending, with a final deadline read. Deterministic 240-second pending tests require 11 logical lookups rather than 41; `RESULT_LOOKUPS`, `FAILED_LOOKUPS` and `WAIT_SECONDS` markers expose the actual wait. A lookup can issue multiple GitHub HTTP requests and is not a ChatGPT tool call. Live CHAT request reduction and client freeze/rate-limit improvement remain **NOT_VERIFIED**. Work Routine §6 consolidates continuation/handoff instructions and requires a durable checkpoint before capacity exhaustion.
 
+The existing read-only Current recovery tool supports exact `--issue-url` selection and scoped `--include-body` output. It verifies complete Project registration, reads only the selected Current bodies and returns their text with hashes/timestamps, avoiding a second fetch for the same evidence. Its GraphQL query was repaired after actual GitHub rejected the old syntax; live Control #15 recovery and unregistered #40 rejection were verified before #40 enrollment. This is local/CLI capability evidence, not automatic native CHAT adoption. See [minimal Current loading](docs/LOAD_SCOPE.md).
+
 ## Current Documentation State
 
 司令室MDとして現在の正本セットは以下。
