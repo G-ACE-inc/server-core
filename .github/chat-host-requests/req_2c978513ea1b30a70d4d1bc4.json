@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core narrow diagnose Docker-internal authorized real queue test wrapper after failed Host result req_a25da4fbf015e8fb6f08c4d8",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json\ncommands=[['docker','inspect','-f','{{.State.Running}}','ai-core-model-gate'],\n ['docker','exec','ai-core-model-gate','python3','-c','print(\"IN_CONTAINER=PASS\")'],\n ['docker','exec','ai-core-model-gate','python3','-c',\"import os,urllib.request;h={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']};r=urllib.request.Request('http://127.0.0.1:18184/v1/models',headers=h);print('MODEL_STATUS='+str(urllib.request.urlopen(r,timeout=6).status))\"]]\nresults=[]\nfor c in commands:\n r=subprocess.run(c,capture_output=True,text=True,timeout=12)\n results.append({'step':c[1],'exit':r.returncode,'stdout':r.stdout.strip()[-180:],'stderr':r.stderr.strip()[-230:]})\nprint(json.dumps(results,ensure_ascii=False))\nraise SystemExit(0 if all(item['exit']==0 for item in results) else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6219266833"
+  }
+}
