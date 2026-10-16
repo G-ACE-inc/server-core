@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core staged-only existing Gate Docker image build at fully tested PR3 source, compare runtime SHA, do not change running Gate or model containers",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "command": "python3 - <<'PY'\nimport json,subprocess,hashlib\nfrom pathlib import Path\nw=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\nh='75778b66afcd397da5225466aadcc20fcd0df991'\ntag='ai-core-model-gate:uds-stage-75778b66'\nout={'expected_head':h,'staged_image':tag}\ndef run(args,limit=20):\n return subprocess.run(args,capture_output=True,text=True,timeout=limit)\ntry:\n current=run(['git','-C',str(w),'rev-parse','HEAD']).stdout.strip()\n clean=run(['git','-C',str(w),'status','--porcelain']).stdout.strip()==''\n out.update(actual_head=current,clean=clean)\n if current!=h or not clean:\n  out['error']='SOURCE_WORKTREE_HEAD_OR_DIRTY'\n else:\n  original=run(['docker','image','inspect','ai-core-model-gate:local','--format','{{.Id}}'])\n  out['previous_image_present']=original.returncode==0\n  if original.returncode:\n   out['error']='OLD_GATE_IMAGE_MISSING'\n  else:\n   expected=hashlib.sha256((w/'runtime/model_gate.py').read_bytes()).hexdigest()\n   out['source_sha256']=expected\n   b=run(['docker','build','--pull=false','-t',tag,'-f',str(w/'Dockerfile.gate'),str(w)],180)\n   out['build_exit']=b.returncode\n   if b.returncode:\n    out['error']='STAGE_BUILD_FAILED'\n    out['build_error']=b.stderr[-450:]\n   else:\n    q=run(['docker','run','--rm','--network','none',tag,\n      'python3','-c',\"import hashlib;from pathlib import Path;print(hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest())\"],20)\n    out['stage_source_match']=q.returncode==0 and q.stdout.strip()==expected\n    if not out['stage_source_match']:out['error']='STAGED_IMAGE_SOURCE_MISMATCH'\nexcept Exception as e:out['error']=type(e).__name__+':'+str(e)[:220]\nreport='AI_CORE_PRIVATE_GATE_IMAGE_STAGE\\n'+json.dumps(out,ensure_ascii=False)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':report}),capture_output=True,text=True,timeout=20)\nprint('GATE_IMAGE_STAGE='+('PASS' if out.get('stage_source_match') else 'FAIL'))\nprint('RECEIPT='+r.stdout.strip() if r.returncode==0 else 'UNRECORDED')\nraise SystemExit(0 if r.returncode==0 and out.get('stage_source_match') else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6220878412"
+  }
+}
