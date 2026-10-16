@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only Vault Docker status and report bounded nonsecret metadata to existing Issue10; no secret or container mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nstate=$(docker ps -a --filter name=libral-vault --format '{{.Names}}|{{.Status}}|{{.Image}}' | head -n 3)\nif [ -z \"$state\" ]; then state=NOT_FOUND; fi\nif docker container inspect libral-vault >/dev/null 2>&1; then health=$(docker inspect libral-vault --format '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}'); else health=NOT_FOUND; fi\nbody=$(printf 'VAULT_HOST_READBACK\\ncontainer=%s\\nstate_health=%s\\n' \"$state\" \"$health\")\nprintf '%s\\n' \"$body\"\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"$body\" --jq '.html_url'\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Vault main CI 38564475099 success; previous read-only Vault Host observation 38970063099 PASS but stdout withheld; extract minimal nonsecret Docker status to existing canonical result sink."
+  }
+}
