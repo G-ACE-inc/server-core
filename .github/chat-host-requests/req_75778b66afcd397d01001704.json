@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "AI Core Issue #1 and Source PR #3 HEAD 75778b66; live readback https://github.com/seigo-gace/ai-core/issues/1#issuecomment-6222440936 verified clean PR3 worktree, Gate running, four backends stopped, private bus exists. Need Docker Compose ownership and image before reversible UDS cutover."
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "8d5751dc3a211708b0d54a8a8a5a1b3eb1f0630e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "8d5751dc3a211708b0d54a8a8a5a1b3eb1f0630e",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 75778b66afcd397da5225466aadcc20fcd0df991\nreport=\"AI_CORE_UDS_DOCKER_CONTRACT\nSOURCE_EXACT=YES\"\nfor n in ai-core-model-gate ai-coder ai-qwen3 ai-granite ai-ministral; do\n v=$(docker inspect -f '{{.Name}} project={{index .Config.Labels \"com.docker.compose.project\"}} svc={{index .Config.Labels \"com.docker.compose.service\"}} running={{.State.Running}} cgroup={{.HostConfig.CgroupParent}} cpu={{.HostConfig.NanoCpus}} mem={{.HostConfig.Memory}} binds={{json .HostConfig.PortBindings}} mounts={{range .Mounts}}{{.Destination}};{{end}}' \"$n\" 2>/dev/null || true)\n report=\"$report\n$n: ${v:-MISSING}\"\ndone\nimages=$(docker image ls --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep -E '(ai-core-model-gate|ghcr.io/ggml-org/llama.cpp)' | head -12 || true)\nreport=\"$report\nIMAGES:\n$images\"\nprintf '%s\\n' \"$report\"\nif gh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f \"body=$report\" --jq .html_url; then echo 'DOCKER_CONTRACT_PUBLISHED=YES'; else echo 'DOCKER_CONTRACT_PUBLISHED=NO'; fi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
