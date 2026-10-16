@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Source state readback for Vault/v8 deployment; report branch/sha/dirty count only.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nbody=VAULT_V8_SOURCE_CHECK\nfor d in /home/admin1/projects/libral-vault /home/admin1/projects/astera_v8; do\n if [ ! -d \"$d/.git\" ] && [ ! -f \"$d/.git\" ]; then body=\"$body\n$d|NO_GIT\"; continue; fi\n sha=$(git -C \"$d\" rev-parse HEAD)\n br=$(git -C \"$d\" branch --show-current)\n dirty=$(git -C \"$d\" status --porcelain | wc -l)\n body=\"$body\n$d|$br|$sha|dirty=$dirty\"\ndone\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"$body\" --jq '.html_url'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Host issue #10 comment6225387128 confirms actual healthy Vault /home/admin1/projects/libral-vault and v8 /home/admin1/projects/astera_v8; source HEAD predeploy check."
+  }
+}
