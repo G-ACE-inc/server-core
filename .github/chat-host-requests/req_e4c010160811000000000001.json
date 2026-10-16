@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CU40 switch tested Agent Pool Receiver from verified stage to original name, preserve stopped original for rollback; no other product restart and report result.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "0ec4261ee4e134ed18834b2dca7943bf9808f950",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "0ec4261ee4e134ed18834b2dca7943bf9808f950",
+    "command": "python3 - <<'PY'\nimport subprocess,json,sys\nold=\"server-core-bounded-host\"\nstage=\"server-core-bounded-host-cu40-stage\"\nbackup=\"server-core-bounded-host-pr299-rollback\"\ndef step(args):\n p=subprocess.run(args,text=True,capture_output=True,timeout=25)\n if p.returncode:raise RuntimeError(args[1]+\"_FAILED\")\n return p.stdout.strip()\ntry:\n a=json.loads(step([\"docker\",\"inspect\",old]))[0]\n b=json.loads(step([\"docker\",\"inspect\",stage]))[0]\n if not a[\"State\"][\"Running\"] or not b[\"State\"][\"Running\"]:raise RuntimeError(\"CONTAINER_NOT_RUNNING\")\n if b[\"Config\"][\"Image\"]!=\"gace-server-core-bounded-host:cu40-0ec4261ee4e1\":raise RuntimeError(\"IMAGE_MISMATCH\")\n step([\"docker\",\"stop\",\"-t\",\"6\",old])\n step([\"docker\",\"rename\",old,backup])\n step([\"docker\",\"rename\",stage,old])\n step([\"docker\",\"exec\",old,\"python3\",\"-c\",\"import urllib.request;assert urllib.request.urlopen('http://127.0.0.1:8789/healthz',timeout=3).status==200\"])\n print(\"AGENT_POOL_RECEIVER_SWITCH=PASS\")\nexcept Exception as e:\n print(\"AGENT_POOL_RECEIVER_SWITCH_FAILED=\"+str(e)[:100])\n try:\n  names=step([\"docker\",\"ps\",\"-a\",\"--format\",\"{{.Names}}\"]).splitlines()\n  if backup in names:\n   if old in names:\n    subprocess.run([\"docker\",\"stop\",old],capture_output=True,timeout=15)\n    subprocess.run([\"docker\",\"rename\",old,\"server-core-bounded-host-cu40-failed\"],capture_output=True,timeout=10)\n   subprocess.run([\"docker\",\"rename\",backup,old],capture_output=True,timeout=10)\n   subprocess.run([\"docker\",\"start\",old],capture_output=True,timeout=15)\n except Exception:pass\n sys.exit(1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/299"
+  }
+}
