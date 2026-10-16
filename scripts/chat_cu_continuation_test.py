@@ -63,6 +63,10 @@ class ContinuationTests(unittest.TestCase):
                     target / "output.zip")
             with self.assertRaisesRegex(ValueError, "OUTPUT_VERIFICATION_STATE_INVALID"):
                 verified_output_evidence({**cp, "result_verified": False}, target / "output.zip")
+            with self.assertRaisesRegex(ValueError, "OUTPUT_VERIFICATION_STATE_INVALID"):
+                verified_output_evidence({**cp, "source_truncated": True}, target / "output.zip")
+            with self.assertRaisesRegex(ValueError, "OUTPUT_VERIFICATION_STATE_INVALID"):
+                verified_output_evidence({**cp, "command_id": "dev.job"}, target / "output.zip")
 
     def test_failed_ledger_pointer_must_not_promote_even_with_matching_zip(self):
         cp = {**BASE, "observation": "HOST_LEDGER_RECOVERY_REQUIRED",
