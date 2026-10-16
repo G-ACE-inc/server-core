@@ -52,10 +52,17 @@ def independently_expected(request_id, *, writer_dir=DEFAULT_WRITER):
 
 
 def reconstruct(request_id, target, *, vault_base, vault_token,
-                cipher_root, writer_dir=DEFAULT_WRITER, opener=None):
+                cipher_root, expected_key_ref, expected_consumer,
+                writer_dir=DEFAULT_WRITER, opener=None):
     if not RID.fullmatch(request_id):
         raise PublishError("REQUEST_ID_INVALID")
     parts=collect(request_id,root=cipher_root)
+    # Project/key/consumer are locally authorized inputs, never selected by
+    # an arbitrary Gateway event. Gateway keys are not role-scoped.
+    if not expected_key_ref or not expected_consumer or any(
+        p["vault_ref"] != expected_key_ref or p["consumer"] != expected_consumer for p in parts
+    ):
+        raise PublishError("VAULT_CONSUMER_CONTRACT_MISMATCH")
     url=private_endpoint(vault_base,"/internal/v1/crypto/unseal")
     path=Path(target)
     if path.exists() or path.is_symlink():
@@ -120,11 +127,14 @@ def private_release(request_id, path, *, runner=subprocess.run):
 
 
 def run(request_id, *, cipher_root, writer_dir, vault_base, vault_token,
+        expected_key_ref, expected_consumer,
         verify_only=False, opener=None, runner=subprocess.run):
     with tempfile.TemporaryDirectory(prefix="gace-private-output-") as temp:
         archive=Path(temp,"output.zip")
         status=reconstruct(request_id,archive,vault_base=vault_base,
                            vault_token=vault_token,cipher_root=cipher_root,
+                           expected_key_ref=expected_key_ref,
+                           expected_consumer=expected_consumer,
                            writer_dir=writer_dir,opener=opener)
         if verify_only:
             return status
@@ -137,13 +147,17 @@ def main():
     parser.add_argument("--cipher-root",default="/run/gace/host-output-inbox")
     parser.add_argument("--writer-dir",default=str(DEFAULT_WRITER))
     parser.add_argument("--vault-base",default="http://127.0.0.1:8791")
+    parser.add_argument("--vault-key-ref",required=True,help="existing approved crypto ref")
+    parser.add_argument("--vault-consumer",required=True,help="approved consumer")
     parser.add_argument("--vault-token-file",default="/home/admin1/.config/libral-vault/internal-token")
     parser.add_argument("--verify-only",action="store_true")
     x=parser.parse_args()
     try:
         token=Path(x.vault_token_file).read_text().strip()
         result=run(x.request_id,cipher_root=x.cipher_root,writer_dir=x.writer_dir,
-                   vault_base=x.vault_base,vault_token=token,verify_only=x.verify_only)
+                   vault_base=x.vault_base,vault_token=token,
+                   expected_key_ref=x.vault_key_ref,expected_consumer=x.vault_consumer,
+                   verify_only=x.verify_only)
         print(json.dumps(result,sort_keys=True))
     except (PublishError,InboxError,RelayError,ValueError,OSError) as exc:
         print("CU40_PRIVATE_OUTPUT_HANDOFF=FAILED")
