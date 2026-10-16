@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Diagnose actual AI Core cgroup memory.current, inactive_file/file_dirty/shmem, pressure/events and running models after third-model handoff 429; no cgroup or Docker mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport subprocess,json\ncg=Path('/sys/fs/cgroup/ai.slice/ai-core.slice')\nout={}\nfor name in ('memory.current','memory.high','memory.max','memory.swap.current','memory.pressure','memory.events','memory.stat'):\n p=cg/name\n if not p.is_file():continue\n raw=p.read_text()\n if name=='memory.stat':\n  keep=('anon','file','shmem','inactive_file','active_file','file_dirty','file_writeback','file_mapped','unevictable','slab','kernel','anon_thp','file_thp')\n  out[name]={parts[0]:int(parts[1]) for line in raw.splitlines() if len(parts:=line.split())==2 and parts[0] in keep}\n else:out[name]=raw.strip()\np=subprocess.run(['docker','ps','-a','--format','{{.Names}}|{{.State}}','--filter','name=^ai-'],text=True,capture_output=True,timeout=12)\nout['ai_containers']=p.stdout.strip().splitlines()\nbody='AI_CORE_HANDOFF_RECLAIMABLE_CACHE_DIAG\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('RECLAIMABLE_CACHE_DIAG='+('PASS '+r.stdout.strip() if r.returncode==0 else 'POST_FAILED'))\nraise SystemExit(0 if r.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209750823"
+  }
+}
