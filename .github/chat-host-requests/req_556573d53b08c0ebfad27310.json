@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Apply one small corrected stream-finish metric fix to existing running four AI Core Gate via authorized reversible image refresh only if all client leases idle. No model starts, no 18080, no product Source edits, safe rollback preserved.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 13c0cb2079aab87aa5db4ef27c0f1f9adcc8886d\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\nbash \"$w/scripts/host_gate_refresh.sh\" 13c0cb2079aab87aa5db4ef27c0f1f9adcc8886d ai-core-model-gate:offline-13c0cb20"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core #1 owned PR3 13c0cb2 (stream success flag only after flush). Focused real-data TTFT/failed SSE regression and offline exact Gate image Host #10 6225748044 PASS, full preceding suite PR3 d6a11e7 Host#10 6225698940 PASS. Existing guarded host_gate_refresh checks no active/queue/handoff and retains rollback image; no model inference or product Source."
+  }
+}
