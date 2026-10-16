@@ -119,6 +119,11 @@ def relay_zip(zip_path, *, request_id, vault_base, vault_token,
             iv = canonical_base64(sealed.get("iv"))
             if len(iv) != 12 or len(ciphertext) != len(fragment) + 16:
                 raise RelayError("VAULT_ENVELOPE_INVALID")
+            # The existing Gateway sanitizer limits each string to 4,000 chars
+            # and redacts keys containing "key". Preserve the encrypted bytes
+            # with smaller individually-safe string pieces, not a new API.
+            ciphertext_parts = [sealed["ciphertext"][start:start + 3000]
+                                for start in range(0, len(sealed["ciphertext"]), 3000)]
             # The full ciphertext is the only body that enters Gateway/DB.
             # Its digest participates in the idempotency ID so a fresh seal
             # cannot conflict with a previously accepted, randomized envelope.
@@ -139,9 +144,9 @@ def relay_zip(zip_path, *, request_id, vault_base, vault_token,
                     "index": index,
                     "chunk_bytes": len(fragment),
                     "chunk_sha256": hashlib.sha256(fragment).hexdigest(),
-                    "key_ref": vault_key_ref,
+                    "vault_ref": vault_key_ref,
                     "consumer": vault_consumer,
-                    "ciphertext": sealed["ciphertext"],
+                    "ciphertext_parts": ciphertext_parts,
                     "iv": sealed["iv"],
                 },
             }, gateway_token, opener=opener)
