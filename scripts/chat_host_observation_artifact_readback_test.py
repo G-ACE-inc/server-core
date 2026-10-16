@@ -70,6 +70,18 @@ class ObservationReadbackTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate({**record, **change}, RID)
 
+    def test_host_writer_expected_byte_count_is_preserved_and_validated(self):
+        record = self.record()
+        record["streams"]["stdout"]["bytes"] = 175000
+        record["streams"]["stderr"]["bytes"] = 0
+        result = validate(record, RID)
+        self.assertEqual(result["stream_metadata"]["stdout"]["bytes"], 175000)
+        self.assertEqual(result["stream_metadata"]["stderr"]["bytes"], 0)
+        for invalid in (True, -1, "175000"):
+            record["streams"]["stdout"]["bytes"] = invalid
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError, "STREAM_BYTES_INVALID"):
+                validate(record, RID)
+
     def test_request_mismatch_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "REQUEST_MISMATCH"):
             validate(self.record(), "req_" + "d" * 24)
@@ -120,7 +132,7 @@ class ObservationReadbackTests(unittest.TestCase):
         self.assertTrue(result["stream_digests_available"])
         self.assertFalse(result["stream_metadata_complete"])
         self.assertFalse(result["output_complete"])
-        self.assertEqual(result["stream_metadata"]["stdout"], {"sha256": DIGEST, "chars": 900000})
+        self.assertEqual(result["stream_metadata"]["stdout"], {"sha256": DIGEST, "chars": 900000, "bytes": None})
 
     def test_full_hashes_can_validate_stream_metadata(self):
         record = self.record()
@@ -129,8 +141,8 @@ class ObservationReadbackTests(unittest.TestCase):
         result = validate(record, RID)
         self.assertFalse(result["output_complete"])
         self.assertTrue(result["stream_metadata_complete"])
-        self.assertEqual(result["stream_metadata"]["stdout"], {"sha256": DIGEST, "chars": 100})
-        self.assertEqual(result["stream_metadata"]["stderr"], {"sha256": DIGEST, "chars": 0})
+        self.assertEqual(result["stream_metadata"]["stdout"], {"sha256": DIGEST, "chars": 100, "bytes": None})
+        self.assertEqual(result["stream_metadata"]["stderr"], {"sha256": DIGEST, "chars": 0, "bytes": None})
 
 
 if __name__ == "__main__":
