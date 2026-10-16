@@ -82,6 +82,16 @@ class ObservationReadbackTests(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError, "STREAM_BYTES_INVALID"):
                 validate(record, RID)
 
+    def test_original_source_truncation_survives_checkpoint_readback(self):
+        record = self.record()
+        record["source_truncated"] = True
+        validated = validate(record, RID)
+        self.assertTrue(validated["source_truncated"])
+        self.assertEqual(validated["command_id"], "host.command")
+        for invalid in ("true", 1, None):
+            with self.subTest(value=invalid), self.assertRaisesRegex(ValueError, "SOURCE_TRUNCATION_INVALID"):
+                validate({**record, "source_truncated": invalid}, RID)
+
     def test_request_mismatch_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "REQUEST_MISMATCH"):
             validate(self.record(), "req_" + "d" * 24)
