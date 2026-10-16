@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read only DebugAI PR112 owning worktree and four local Gate health statuses; repinned to verified 10:15 Host SHA; no mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "w=0; git -C /home/admin1/projects/debug-ai worktree list --porcelain | grep -Fq 'branch refs/heads/feat/debugai-core-gate-preflight-20261014' || w=1; g=0; for p in 18181 18182 18183 18184; do curl --silent --fail --max-time 2 http://127.0.0.1:$p/health >/dev/null || g=2; done; exit $((w+g))"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
