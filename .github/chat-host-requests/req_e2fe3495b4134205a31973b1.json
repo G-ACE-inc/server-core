@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Inspect saved DebugAI real Unicode search defect run, retained failure stage and exact admitted original source tree before replay; no mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,subprocess,urllib.request\nrid='run_mv5agtgf_96b706c70a'\nwith urllib.request.urlopen('http://127.0.0.1:8787/v1/inspect/'+rid,timeout=8) as r:data=json.load(r)\nrecords=data.get('artifacts') or {}\nroot=data.get('run',{}).get('project_dir')\np=subprocess.run(['docker','exec','debug-ai-debug-ai-1','test','-d',root],capture_output=True,timeout=8)\nview={'run_id':rid,'original_repro_repo_exists':p.returncode==0,'original_repro_repo':root,'source_types_available':list(records),'last_execution_failure':(records.get('execution_failure') or {}).get('payload'),'workflow_step':((data.get('durable') or {}).get('workflow_cursor') or {}).get('step_id'),'recovery_used':((data.get('durable') or {}).get('policy_refs') or {}).get('g3_causal_manual_recovery_used')}\nmsg='DEBUGAI_ORIGINAL_DEFECT_REPRO_EVIDENCE\\n'+json.dumps(view,ensure_ascii=False,indent=2)\nq=subprocess.run(['gh','api','-X','POST','repos/seigo-gace/debug-ai/issues/41/comments','-f','body='+msg],capture_output=True,text=True,timeout=25)\nif q.returncode:raise SystemExit('GH_ERROR')\nprint('ORIGINAL_DEFECT_EVIDENCE_COMMENT='+json.loads(q.stdout)['html_url'])\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
