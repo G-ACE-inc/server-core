@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Verify source-only v8 fast-forward and Vault runtime public API boundary after Host action. No modifications.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nv=/home/admin1/projects/astera_v8\nl=/home/admin1/projects/libral-vault\nsha=$(git -C \"$v\" rev-parse HEAD)\nbranch=$(git -C \"$l\" branch --show-current)\nif git -C \"$l\" show HEAD:src/index.ts | grep -q 'export.*materializeRuntimeSecret'; then direct=YES; else direct=NO; fi\nhealthy=$(docker inspect astera-v8 --format '{{.State.Health.Status}}')\nbody=$(printf 'API_ONLY_HOST_REFLECT_READBACK\\nv8_sha=%s\\nv8_health=%s\\nvault_branch=%s\\nvault_direct_export=%s\\n' \"$sha\" \"$healthy\" \"$branch\" \"$direct\")\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"$body\" --jq '.html_url'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Host run 38972459629 PASS after guarded v8 source merge; verify v8 SHA and Vault branch direct export."
+  }
+}
