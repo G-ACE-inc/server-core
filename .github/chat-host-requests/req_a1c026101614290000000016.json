@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core own Gate container self-authenticated loopback /v1/models smoke; uses preconfigured container environment, no credential readback",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nprobe=\"\"\"import os,json,urllib.request,urllib.error\nk=os.environ.get('AI_CORE_API_KEY','')\nout={'configured':len(k)>=16,'gate_models':{}}\nfor name,port in [('granite',18181),('qwen3',18182),('ministral',18183),('coder',18184)]:\n try:\n  r=urllib.request.Request('http://127.0.0.1:'+str(port)+'/v1/models',headers={'Authorization':'Bearer '+k})\n  with urllib.request.urlopen(r,timeout=5) as f:\n   data=json.load(f)\n   out['gate_models'][name]={'status':f.status,'count':len(data.get('data',[]))}\n except urllib.error.HTTPError as e:out['gate_models'][name]={'status':e.code}\n except Exception as e:out['gate_models'][name]={'error':type(e).__name__}\nprint(json.dumps(out))\n\"\"\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',probe],text=True,capture_output=True,timeout=40)\nresult={'container_exec_exit':p.returncode,'probe':json.loads(p.stdout) if p.returncode==0 else {'error_class':p.stderr.split(':',1)[0][:100]}}\nbody='AI_CORE_GATE_SELF_AUTH_SMOKE\\n'+json.dumps(result,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),text=True,capture_output=True,timeout=20)\nprint('GATE_SELF_AUTH_REPORT='+('PASS '+r.stdout.strip() if r.returncode==0 else 'FAILED'))\nraise SystemExit(0 if r.returncode==0 and p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Docker Gate now running four /health HTTP 200, read authenticated own Gate endpoint from within its existing container, never read other project env file."
+  }
+}
