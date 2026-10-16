@@ -195,6 +195,30 @@ class SinkTests(unittest.TestCase):
         return sink.trusted_writer_metadata(
             sink.read_record(RID, self.dir), writer_dir=ledger)
 
+    def test_source_context_mismatch_publishes_only_verified_safe_hint(self):
+        ledger = self.dir / "writer"
+        ledger.mkdir(parents=True)
+        writer = {"request_id": RID, "repository": "seigo-gace/ai-core",
+                  "source_sha": "b" * 40, "state": "FAIL", "exit_code": 74,
+                  "stdout": "", "stderr": "CHAT_SOURCE_SHA_MISMATCH\\n"}
+        p = ledger / (RID + ".json")
+        p.write_text(json.dumps(writer), encoding="utf-8")
+        sink.accept_record(rec(command_id="host.command", state="FAIL", exit_code=74,
+                               stdout="", stderr="GACE_HOST_OUTPUT_STORED"),
+                           result_dir=self.dir)
+        record = sink.read_record(RID, self.dir)
+        comment = sink.comment_body(record, writer_dir=ledger)
+        data = json.loads(comment.split("```json\\n", 1)[1].split("\\n```", 1)[0])
+        self.assertEqual(data["diagnostic_hint"], "CHAT_SOURCE_SHA_MISMATCH")
+        self.assertEqual(data["stderr"], "")
+        self.assertNotIn("CHAT_SOURCE_SHA_MISMATCH\\n", comment)
+        # A matching exit alone is not evidence of the specific preflight.
+        writer["stderr"] = "private stderr details"
+        p.write_text(json.dumps(writer), encoding="utf-8")
+        without = sink.comment_body(record, writer_dir=ledger)
+        self.assertNotIn("diagnostic_hint", without)
+        self.assertNotIn("private stderr details", without)
+
     def test_issue_comment_contains_metadata_not_output(self):
         output = "日本語の長文" * 10000
         sink.accept_record(rec(stdout=output, stderr="private failure details"), result_dir=self.dir)
