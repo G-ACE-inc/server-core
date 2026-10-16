@@ -157,6 +157,7 @@ def stream_receipt_metadata(record, stream):
     raw = record.get(stream)
     digest = record.get(stream + "_sha256")
     chars = record.get(stream + "_chars")
+    count = record.get(stream + "_bytes")
     # Older Host publishers supplied complete small text previews but no SHA.
     # Never hash an empty preview for a metadata-only ledger pointer or a
     # truncated preview: it would misrepresent the actual Host output.
@@ -166,7 +167,10 @@ def stream_receipt_metadata(record, stream):
             and not record.get(stream + "_truncated")):
         digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
         chars = len(raw)
-    return {"chars": chars, "sha256": digest,
+        count = len(raw.encode("utf-8"))
+    if type(count) is not int or count < 0:
+        count = None
+    return {"chars": chars, "bytes": count, "sha256": digest,
             "complete": not bool(
                 record.get(stream + "_preview_truncated") or
                 record.get(stream + "_truncated") or
