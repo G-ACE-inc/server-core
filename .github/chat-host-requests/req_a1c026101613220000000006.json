@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 guarded real Coder SSE crash-restart recovery: only with zero other active leases, no handoff, exact running Gate SHA; collect journal and /slots evidence and four health; test script is the only interruptible client.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport subprocess,json,time,urllib.request,hashlib\ngate='ai-core-model-gate'\nexpected='4e3a62e40387c771e40e5945624bd10ae406d62bd8336e7e7ce171f1d2dc4de7'\ndef execp(src,timeout=25):\n return subprocess.run(['docker','exec',gate,'python3','-c',src],capture_output=True,text=True,timeout=timeout)\nstatuspy=\"\"\"import json,os,urllib.request,hashlib\nfrom pathlib import Path\nr=urllib.request.Request('http://127.0.0.1:18184/internal/handoff/status',headers={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']})\nwith urllib.request.urlopen(r,timeout=8) as s:d=json.load(s)\nj=json.loads(Path('/run/ai-core/active-leases.json').read_text())\nprint(json.dumps({'source':hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest(),'active':d['active'],'handoff':d['handoff'],'recovery_pending':d.get('recovery_pending',[]),'journal':j['active']}))\n\"\"\"\nworker=\"\"\"import os,json,urllib.request\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY'],'Content-Type':'application/json'}\nm=json.load(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:18184/v1/models',headers=h),timeout=8))['data'][0]['id']\nb={'model':m,'stream':True,'max_tokens':800,'temperature':0,'messages':[{'role':'user','content':'Produce 1000 numbered items with eight English words in every item. Continue without stopping early.'}]}\nreq=urllib.request.Request('http://127.0.0.1:18184/v1/chat/completions',headers=h,data=json.dumps(b).encode())\nwith urllib.request.urlopen(req,timeout=160) as r:\n while r.read(64):pass\n\"\"\"\nout={'test':'controlled SSE lease crash recovery'}\nchild=None\ntry:\n start=execp(statuspy)\n if start.returncode:raise RuntimeError('INITIAL_STATUS_UNAVAILABLE')\n state=json.loads(start.stdout);out['before']=state\n if state['source']!=expected or sum(state['active'].values())!=0 or state['handoff'] is not None or state['recovery_pending']:raise RuntimeError('GATE_NOT_IDLE_OR_SOURCE_MISMATCH')\n child=subprocess.Popen(['docker','exec',gate,'python3','-c',worker],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\n seen=False\n for _ in range(120):\n  s=execp(statuspy,12)\n  if s.returncode==0:\n   st=json.loads(s.stdout)\n   if st['active'].get('coder')==1 and st['journal'].get('coder')==1:\n    if sum(st['active'].values())!=1 or st['handoff'] is not None:raise RuntimeError('ANOTHER_CLIENT_INFERENCE_DETECTED')\n    try:\n     with urllib.request.urlopen('http://127.0.0.1:18084/slots',timeout=4) as r:\n      slots=json.load(r)\n     if isinstance(slots,list) and any(z.get('is_processing') is True for z in slots if isinstance(z,dict)):\n      seen=True;out['during']={'active':st['active'],'journal':st['journal'],'busy_slot':True};break\n    except Exception:pass\n  if child.poll() is not None:break\n  time.sleep(.5)\n if not seen:raise RuntimeError('NO_CONFIRMED_ACTIVE_TEST_STREAM')\n restart=subprocess.run(['docker','restart','-t','1',gate],capture_output=True,text=True,timeout=80)\n out['restart_exit']=restart.returncode\n if restart.returncode:raise RuntimeError('GATE_RESTART_FAILED')\n trail=[]\n for _ in range(16):\n  try:\n   p=execp(statuspy,20)\n   if p.returncode==0:\n    z=json.loads(p.stdout)\n    trail.append({'active':z['active'],'orphan':z['recovery_pending'],'journal':z['journal']})\n    if len(trail)>=3 and not z['recovery_pending']:break\n  except Exception:pass\n  time.sleep(2)\n out['post_restart_samples']=trail[:16]\n out['health']={}\n for port in (18181,18182,18183,18184):\n  try:\n   with urllib.request.urlopen('http://127.0.0.1:'+str(port)+'/health',timeout=3) as r:out['health'][str(port)]=r.status\n  except Exception as e:out['health'][str(port)]=type(e).__name__\n out['recovered']=restart.returncode==0 and any('coder' in z['orphan'] for z in trail) and all(x==200 for x in out['health'].values())\nexcept Exception as e:\n out['error']=type(e).__name__+': '+str(e)[:220]\nfinally:\n if child is not None and child.poll() is None:\n  child.terminate()\n  try:child.wait(timeout=3)\n  except subprocess.TimeoutExpired:child.kill()\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_REAL_SSE_CRASH_RECOVERY\\n'+json.dumps(out,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=25)\nprint('AI_CORE_CRASH_RECOVERY='+('RECORDED '+r.stdout.strip() if r.returncode==0 else 'RECORD_FAILED'))\nprint('AI_CORE_CRASH_RECOVERY_RESULT='+('PASS' if out.get('recovered') else 'NOT_VERIFIED'))\nraise SystemExit(0 if r.returncode==0 and out.get('recovered') else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6216589813"
+  }
+}
