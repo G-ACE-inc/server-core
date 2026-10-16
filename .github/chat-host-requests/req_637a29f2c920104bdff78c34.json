@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Verify actual deployed AI Core four-Gate Source parity and authenticated content-free bounded inference metrics status after repaired reversible Gate rollout. Record concise observations in existing Current, no generated inference.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 1b93dd5e0b2514ad7d3bb7e89b6a0f502b94d3c9\nwant=$(sha256sum \"$w/runtime/model_gate.py\" | cut -d ' ' -f1)\ngot=$(docker exec ai-core-model-gate sha256sum /app/runtime/model_gate.py | cut -d ' ' -f1)\ntest \"$want\" = \"$got\"\nmetric=$(docker exec ai-core-model-gate python3 -c 'import os,json,urllib.request;key=os.environ[\"AI_CORE_API_KEY\"];headers={\"Authorization\":\"Bearer \"+key};g=lambda p:json.load(urllib.request.urlopen(urllib.request.Request(\"http://127.0.0.1:18184\"+p,headers=headers),timeout=8));m=g(\"/internal/metrics/status\");r=g(\"/internal/resources/status\");assert m[\"window_capacity\"]==256 and set(m[\"model_metrics\"])=={\"coder\",\"granite\",\"qwen3\",\"ministral\"};print(\"METRICS=PASS MODELS=4 SAMPLES=\"+str(m[\"window_completed\"])+\" ACTIVE=\"+str(sum(r[\"active\"].values()))+\" QUEUE=\"+str(r[\"queued\"]))')\nif ss -H -ltn 'sport = :18080' | grep -q LISTEN; then exit 81; fi\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"AI_CORE_METRICS_LIVE_ACCEPTANCE SOURCE_HEAD=1b93dd5e0b2514ad7d3bb7e89b6a0f502b94d3c9 SOURCE_PARITY=PASS $metric PORT18080=CLOSED\" --jq .html_url >/dev/null\necho AI_CORE_METRICS_LIVE_ACCEPTANCE_POSTED=PASS"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core #1 PR3 1b93dd5 corrects host_gate_refresh readiness race, Core Runtime file at Source 13c0cb20 and existing Gate receipt Host #10 6225794234 PASS exit0. Read only live authenticated metrics endpoint and source-parity; 18080 remains retired; no inference."
+  }
+}
