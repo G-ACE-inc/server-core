@@ -19,6 +19,17 @@ except ModuleNotFoundError:
 REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 REQUEST_ID = re.compile(r"req_[a-f0-9]{24}\Z")
 ARTIFACT_SHA = re.compile(r"[a-f0-9]{40}\Z")
+# This limit applies only to small observation metadata ZIPs, not Host ledger
+# stdout/stderr transport. GitHub's actual two ZIPs are ~0.5 KiB.
+MAX_OBSERVATION_ZIP_BYTES = 1024 * 1024
+
+
+def _enforce_zip_file_limit():
+    """Bound child stdout writes on the existing Linux execution path."""
+    import resource
+    resource.setrlimit(resource.RLIMIT_FSIZE, (
+        MAX_OBSERVATION_ZIP_BYTES, MAX_OBSERVATION_ZIP_BYTES))
+
 
 
 def paginated_list(path, key, api):
@@ -87,13 +98,24 @@ def restore(repository, run_id, request_id, run=subprocess.run):
     if (not isinstance(provenance, dict) or provenance.get("id") != run_id
             or provenance.get("head_sha") != source_sha):
         raise ValueError("ARTIFACT_RUN_PROVENANCE_MISMATCH")
+    # Reject oversized or missing GitHub size metadata before any download.
+    size = artifact.get("size_in_bytes")
+    if type(size) is not int or size <= 0 or size > MAX_OBSERVATION_ZIP_BYTES:
+        raise ValueError("ARTIFACT_ZIP_SIZE_INVALID_OR_TOO_LARGE")
     artifact_id = artifact["id"]
     with tempfile.TemporaryDirectory(prefix="gace-observation-") as directory:
-        # Download the exact validated ID, rather than selecting again by name.
-        archive = run(["gh", "api", f"repos/{repository}/actions/artifacts/{artifact_id}/zip"],
-                      capture_output=True, timeout=90, check=True)
         path = Path(directory) / "observation.zip"
-        path.write_bytes(archive.stdout)
+        # Never capture ZIP bytes in process memory. Linux RLIMIT_FSIZE caps
+        # the actual received bytes even if GitHub metadata is inaccurate.
+        import os
+        if os.name != "posix":
+            raise RuntimeError("BOUNDED_ARTIFACT_DOWNLOAD_UNSUPPORTED_PLATFORM")
+        with path.open("wb") as output:
+            run(["gh", "api", f"repos/{repository}/actions/artifacts/{artifact_id}/zip"],
+                stdout=output, stderr=subprocess.PIPE, timeout=90,
+                check=True, preexec_fn=_enforce_zip_file_limit)
+        if path.stat().st_size > MAX_OBSERVATION_ZIP_BYTES:
+            raise ValueError("ARTIFACT_ZIP_SIZE_EXCEEDED")
         observation = from_artifact(path, request_id)
     return {"repository": repository, "run_id": run_id, "artifact_id": artifact_id,
             "source_sha": source_sha, **observation}
