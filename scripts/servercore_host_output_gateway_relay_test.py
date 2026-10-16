@@ -76,9 +76,9 @@ class ConfidentialRelayTests(unittest.TestCase):
             api = ExistingApi()
             result = export_and_relay(
                 RID, result_dir=directory, vault_base="http://127.0.0.1:8791",
-                vault_token="private-token", vault_key_ref="configured-existing-ref",
+                vault_token="x", vault_key_ref="configured-existing-ref",
                 vault_consumer="g-ace-workspace", gateway_base="https://gateway.example",
-                gateway_token="private-token", destination_id="registered-output-target",
+                gateway_token="x", destination_id="registered-output-target",
                 opener=api,
             )
             assert result["parts_enqueued"] > 1
@@ -111,9 +111,9 @@ class ConfidentialRelayTests(unittest.TestCase):
             with self.assertRaisesRegex(RelayError, "INTERNAL_API_HTTP_403"):
                 export_and_relay(
                     RID, result_dir=directory, vault_base="http://127.0.0.1:8791",
-                    vault_token="private", vault_key_ref="configured-existing-ref",
+                    vault_token="x", vault_key_ref="configured-existing-ref",
                     vault_consumer="g-ace-workspace", gateway_base="https://gateway.example",
-                    gateway_token="private", destination_id="registered-output-target",
+                    gateway_token="x", destination_id="registered-output-target",
                     opener=api,
                 )
             self.assertEqual(api.gateway, [])
