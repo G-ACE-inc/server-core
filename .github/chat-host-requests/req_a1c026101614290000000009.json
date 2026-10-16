@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 exact current Docker build, verify image; do not start Router or model containers",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nfrom pathlib import Path\nwt=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\ntarget='0c61ebe8556401f9fbe52dff2f9a63e03fc0f42c'\nout={'target_sha':target}\ndef run(argv,seconds=15):\n try:\n  p=subprocess.run(argv,text=True,capture_output=True,timeout=seconds)\n  return (p.returncode,(p.stdout+'\\n'+p.stderr)[-500:])\n except Exception as exc:return (-999,type(exc).__name__+':'+str(exc)[:100])\nh=run(['git','-C',str(wt),'rev-parse','HEAD'])\nout['source_sha']=h[1].strip()\ns=run(['git','-C',str(wt),'status','--porcelain'])\nout['clean_source']=s[0]==0 and not s[1].strip()\nif out['source_sha']==target and out['clean_source']:\n b=run(['docker','build','--pull=false','-f',str(wt/'Dockerfile.gate'),'-t','ai-core-model-gate:local',str(wt)],seconds=180)\n out['docker_build_exit']=b[0]\n out['docker_build_tail']=b[1]\n out['image']=run(['docker','image','inspect','ai-core-model-gate:local','--format','{{.Id}}'])\nelse:out['docker_build_exit']='SKIPPED_SOURCE_MISMATCH'\nbody='AI_CORE_IMAGE_BUILD_REAL\\n'+json.dumps(out,ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),text=True,capture_output=True,timeout=22)\nprint('AI_CORE_IMAGE_BUILD_RECORD='+('PASS '+p.stdout.strip() if p.returncode==0 else 'POST_FAILED'))\nraise SystemExit(0 if p.returncode==0 and out.get('docker_build_exit')==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 source test 111/111 at 0c61ebe. Prior failed Host request had source command malformed after key:return sanitizer. New command performs image build only."
+  }
+}
