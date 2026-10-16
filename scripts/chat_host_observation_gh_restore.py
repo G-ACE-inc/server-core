@@ -143,7 +143,7 @@ def private_host_output(run_id, request_id, expected_streams, run=subprocess.run
     expected stream digests must come from independent common-Host observation,
     never from this private ZIP's own manifest. No new Host work is dispatched.
     """
-    if type(run_id) is not int or run_id <= 0:
+    if run_id is not None and (type(run_id) is not int or run_id <= 0):
         raise ValueError("PRIVATE_RUN_ID_INVALID")
     if not isinstance(request_id, str) or not REQUEST_ID.fullmatch(request_id):
         raise ValueError("REQUEST_ID_INVALID")
@@ -159,6 +159,23 @@ def private_host_output(run_id, request_id, expected_streams, run=subprocess.run
     if (not isinstance(recipient, dict) or recipient.get("private") is not True
             or recipient.get("full_name", "").lower() != repository.lower()):
         raise ValueError("PRIVATE_REPOSITORY_NOT_VERIFIED")
+    artifact = None
+    artifact_name = "gace-host-output-" + request_id
+    if run_id is None:
+        # Exact server-side name filter; never enumerate all Runs or choose
+        # an arbitrary latest result when the same request was exported twice.
+        artifacts = paginated_list(
+            f"repos/{repository}/actions/artifacts?name={artifact_name}&per_page=100",
+            "artifacts", api)
+        matching = [a for a in artifacts if a.get("name") == artifact_name]
+        if len(matching) != 1 or matching[0].get("expired") is not False:
+            raise ValueError("ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS")
+        artifact = matching[0]
+        provenance = artifact.get("workflow_run")
+        if (not isinstance(provenance, dict) or type(provenance.get("id")) is not int
+                or provenance["id"] <= 0):
+            raise ValueError("ARTIFACT_RUN_PROVENANCE_MISMATCH")
+        run_id = provenance["id"]
     info = api(f"repos/{repository}/actions/runs/{run_id}")
     if (not isinstance(info, dict) or info.get("id") != run_id
             or not isinstance(info.get("repository"), dict)
@@ -170,12 +187,13 @@ def private_host_output(run_id, request_id, expected_streams, run=subprocess.run
             or not isinstance(info.get("head_sha"), str)
             or not ARTIFACT_SHA.fullmatch(info["head_sha"])):
         raise ValueError("PRIVATE_RUN_PROVENANCE_MISMATCH")
-    artifacts = paginated_list(
-        f"repos/{repository}/actions/runs/{run_id}/artifacts?per_page=100", "artifacts", api)
-    matches = [a for a in artifacts if a.get("name") == "gace-host-output-" + request_id]
-    if len(matches) != 1 or matches[0].get("expired") is not False:
-        raise ValueError("ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS")
-    artifact = matches[0]
+    if artifact is None:
+        artifacts = paginated_list(
+            f"repos/{repository}/actions/runs/{run_id}/artifacts?per_page=100", "artifacts", api)
+        matches = [a for a in artifacts if a.get("name") == artifact_name]
+        if len(matches) != 1 or matches[0].get("expired") is not False:
+            raise ValueError("ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS")
+        artifact = matches[0]
     provenance = artifact.get("workflow_run")
     if (not isinstance(provenance, dict) or provenance.get("id") != run_id
             or provenance.get("head_sha") != info["head_sha"]):

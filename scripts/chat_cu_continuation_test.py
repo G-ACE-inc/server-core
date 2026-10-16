@@ -75,6 +75,29 @@ class ContinuationTests(unittest.TestCase):
                 resume(cp, api=lambda path: self.fail("NO_API"), private_output_run_id=rid)
         with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_INPUTS_MUTUALLY_EXCLUSIVE"):
             resume(cp, api=lambda path: self.fail("NO_API"), host_output_zip="local.zip", private_output_run_id=456)
+        for kwargs, error in (({"recover_private_output": True, "private_output_run_id": 456},
+                               "HOST_OUTPUT_INPUTS_MUTUALLY_EXCLUSIVE"),
+                              ({"recover_private_output": True, "host_output_zip": "local.zip"},
+                               "HOST_OUTPUT_INPUTS_MUTUALLY_EXCLUSIVE"),
+                              ({"recover_private_output": "yes"}, "PRIVATE_RECOVERY_FLAG_INVALID")):
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, error):
+                resume(cp, api=lambda path: self.fail("NO_API"), **kwargs)
+
+    def test_private_auto_lookup_uses_the_original_request_only(self):
+        cp = self.private_checkpoint()
+        @contextmanager
+        def recovered(run_id, request_id, expected):
+            self.assertIsNone(run_id)
+            self.assertEqual(request_id, cp["request_id"])
+            self.assertEqual(expected, cp["stream_metadata"])
+            yield Path("temporary"), {"request_id": request_id, "streams": expected,
+                "output_complete": True, "repository": "seigo-gace/TGserver", "run_id": 456,
+                "artifact_id": 789, "source_sha": "d" * 40}
+        with patch.object(continuation, "private_host_output", recovered):
+            result = resume(cp, api=lambda path: {"head_sha": cp["source_sha"],
+                            "status": "completed", "conclusion": "success"}, recover_private_output=True)
+        self.assertEqual(result["next_action"], "VERIFY_CU_ACCEPTANCE")
+        self.assertEqual(result["private_output_artifact"]["run_id"], 456)
 
     def test_private_payload_error_is_not_reinterpreted_as_acceptance(self):
         cp = self.private_checkpoint()

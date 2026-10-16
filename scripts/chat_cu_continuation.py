@@ -86,10 +86,14 @@ def verified_output_evidence(checkpoint, archive):
         path, checkpoint.get("request_id"), checkpoint.get("stream_metadata"))
 
 
-def resume(checkpoint, api=api_read, host_output_zip=None, private_output_run_id=None):
+def resume(checkpoint, api=api_read, host_output_zip=None, private_output_run_id=None,
+           recover_private_output=False):
+    if type(recover_private_output) is not bool:
+        raise ValueError("PRIVATE_RECOVERY_FLAG_INVALID")
+    if sum((host_output_zip is not None, private_output_run_id is not None,
+            recover_private_output)) > 1:
+        raise ValueError("HOST_OUTPUT_INPUTS_MUTUALLY_EXCLUSIVE")
     if private_output_run_id is not None:
-        if host_output_zip is not None:
-            raise ValueError("HOST_OUTPUT_INPUTS_MUTUALLY_EXCLUSIVE")
         if type(private_output_run_id) is not int or private_output_run_id <= 0:
             raise ValueError("PRIVATE_RUN_ID_INVALID")
     if not isinstance(checkpoint, dict) or checkpoint.get("schema") != "gace.chat.cu.handoff.v1":
@@ -119,10 +123,10 @@ def resume(checkpoint, api=api_read, host_output_zip=None, private_output_run_id
     # against correlated stream digests *after* fresh GitHub Run readback.
     proof = None
     private_artifact = None
-    if host_output_zip is not None or private_output_run_id is not None:
+    if host_output_zip is not None or private_output_run_id is not None or recover_private_output:
         if status != "completed" or conclusion != "success":
             raise ValueError("HOST_OUTPUT_RUN_NOT_SUCCESS")
-        if private_output_run_id is None:
+        if host_output_zip is not None:
             proof = verified_output_evidence(checkpoint, host_output_zip)
         else:
             _validate_output_state(checkpoint)
@@ -322,6 +326,8 @@ def main():
                         help="Locally downloaded existing verified Host output ZIP")
     output_input.add_argument("--private-output-run-id", type=int, default=None,
                         help="Exact existing private TGserver CI run holding the original request output")
+    output_input.add_argument("--recover-private-output", action="store_true",
+                        help="Find the unique private Artifact by the original request ID")
     parser.add_argument("--diagnostic-context-json", type=Path)
     parser.add_argument("--notion-context-json", type=Path)
     parser.add_argument("--notion-page-url")
@@ -339,13 +345,14 @@ def main():
                 raise ValueError("DISCOVERY_RESTORE_SHA_MISMATCH")
             checkpoint = continuation_checkpoint(restored, args.cu_issue_url)
             continuation = resume(checkpoint, host_output_zip=args.host_output_zip,
-                                  private_output_run_id=args.private_output_run_id)
+                                  private_output_run_id=args.private_output_run_id,
+                                  recover_private_output=args.recover_private_output)
             result = {"discovery": discovery, "checkpoint": checkpoint,
                       "continuation": continuation}
             if continuation["verified_host_output"] is not None:
                 result["verified_host_output"] = continuation["verified_host_output"]
         else:
-            if args.host_output_zip or args.private_output_run_id is not None:
+            if args.host_output_zip or args.private_output_run_id is not None or args.recover_private_output:
                 parser.error("host output ZIP requires correlated request recovery")
             result = {"discovery": discovery}
         if args.receipt_json and "continuation" in result:
@@ -364,7 +371,8 @@ def main():
         checkpoint = continuation_checkpoint(
             restore(args.repository, args.run_id, args.request_id), args.cu_issue_url)
     continuation = resume(checkpoint, host_output_zip=args.host_output_zip,
-                          private_output_run_id=args.private_output_run_id)
+                          private_output_run_id=args.private_output_run_id,
+                          recover_private_output=args.recover_private_output)
     result = {"checkpoint": checkpoint, "continuation": continuation}
     if continuation["verified_host_output"] is not None:
         result["verified_host_output"] = continuation["verified_host_output"]
