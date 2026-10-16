@@ -138,8 +138,13 @@ class SinkTests(unittest.TestCase):
         with self.assertRaisesRegex(sink.SinkError, "WRITER_LEDGER_CORRELATION_MISMATCH"):
             sink.comment_body(actual, writer_dir=ledger)
         (ledger / (RID + ".json")).unlink()
-        # When no Writer result exists (admission denial), never invent it.
-        fallback = sink.comment_body(actual, writer_dir=ledger)
+        # Missing Writer ledger after a large-output locator is a recoverable
+        # publication error, not evidence for the locator's own digest.
+        with self.assertRaisesRegex(sink.SinkError, "WRITER_LEDGER_REQUIRED_FOR_STORED_OUTPUT"):
+            sink.comment_body(actual, writer_dir=ledger)
+        # Genuine admission denial (no stored-output locator) still falls back.
+        direct = {**actual, "stdout": "", "stderr": ""}
+        fallback = sink.comment_body(direct, writer_dir=ledger)
         self.assertNotIn("HOST_WRITER_LEDGER_RAW", fallback)
 
     def test_cross_repository_target_sha_is_not_dispatcher_sha_and_publishes(self):
