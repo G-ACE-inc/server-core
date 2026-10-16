@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Discover actual Astera v8 separately registered product runtime and availability of its existing OpenAI-compatible LLM adapter as potential second AI Core consumer; no inference, no code change, no secret output.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nmsg=\"AI_CORE_SECOND_CONSUMER_ASTERA_DISCOVERY\"\nsrc=/home/admin1/projects/astera_v8\nif test -d \"$src/.git\"; then\n v=$(git -C \"$src\" rev-parse HEAD)\n msg=\"$msg SOURCE_HEAD=$v\"\nelse msg=\"$msg SOURCE_HEAD=UNAVAILABLE\"; fi\nitems=$(docker ps --format '{{.Names}}' | grep -Ei 'astera|ast[e]?ria' | head -20 | tr '\\n' ',' || :)\nmsg=\"$msg CONTAINERS=$items\"\nfor n in $(docker ps --format '{{.Names}}' | grep -Ei 'astera|ast[e]?ria' | head -7); do\n if docker exec \"$n\" sh -c 'test -f /app/src/llm/providers/openai-compatible.js || test -f /app/src/llm/llm-client.js' >/dev/null 2>&1; then\n   msg=\"$msg $n=ADAPTER_PRESENT\"\n else msg=\"$msg $n=ADAPTER_NOT_AT_STANDARD_PATH\"; fi\ndone\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$msg\" --jq '.html_url' >/dev/null\necho ASTERA_DISCOVERY=POSTED\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Issue1 Current PR3 01ef, DebugAI separate. Second potential registered Astera v8 exists in Workspace Registry; Astera v8 main src/llm/providers/openai-compatible.js accepts configurable base URL/model and existing key; Source-only verified; need Host runtime discovery without product modifications."
+  }
+}
