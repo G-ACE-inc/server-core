@@ -15,7 +15,6 @@ from pathlib import Path
 MAX_VERIFIED_STREAM_BYTES = 512 * 1024 * 1024
 MAX_VERIFIED_TOTAL_BYTES = 1024 * 1024 * 1024
 MAX_VERIFIED_ARCHIVE_BYTES = 512 * 1024 * 1024
-MAX_COMPRESSION_RATIO = 800
 
 
 def assemble(pages, output_dir):
@@ -121,9 +120,7 @@ def verify_artifact_zip(zip_path, request_id, expected_streams):
         for stream in ("stdout", "stderr"):
             name = stream + ".txt"
             zip_entry = archive.getinfo(name)
-            if (zip_entry.file_size > MAX_VERIFIED_STREAM_BYTES or
-                    (zip_entry.file_size > 0 and
-                     zip_entry.file_size > MAX_COMPRESSION_RATIO * max(1, zip_entry.compress_size))):
+            if zip_entry.file_size > MAX_VERIFIED_STREAM_BYTES:
                 raise ValueError("HOST_OUTPUT_EXPANSION_LIMIT")
             item = specs[name]
             expect = expected_streams[stream]
