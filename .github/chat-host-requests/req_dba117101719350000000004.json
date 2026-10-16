@@ -1,0 +1,34 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/115"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "seigo-gace/debug-ai",
+    "repo_sha": "0864b04a7d394d69e52d09d39b58cc41c0bfb109",
+    "command": "docker exec debug-ai-debug-ai-1 node -e '(async()=>{try{const e=process.env;const m=require(\"/app/server/adapters/ai-core.js\");const u={coder:e.DEBUG_AI_CORE_GATE_CODER_URL,qwen3:e.DEBUG_AI_CORE_GATE_QWEN3_URL,granite:e.DEBUG_AI_CORE_GATE_GRANITE_URL,ministral:e.DEBUG_AI_CORE_GATE_MINISTRAL_URL};const a=m.createAiCoreAdapter({baseUrl:e.DEBUG_AI_CORE_URL,apiKey:e.AI_CORE_API_KEY,modelGateBaseUrls:u,dispatchMode:\"model_gates\"});await a.preflightConfiguredGates({probeTimeoutMs:3500});process.exit(0)}catch(x){if(x.code===\"AI_CORE_GATE_HTTP\")process.exit(x.meta?.status===401?41:x.meta?.status===503?43:42);process.exit(({AI_CORE_GATE_UNREACHABLE:45,AI_CORE_GATE_MODEL_MISMATCH:46,AI_CORE_GATE_PREFLIGHT_TIMEOUT:47,AI_CORE_GATE_BODY_INVALID:48,AI_CORE_GATE_CONFIG_INVALID:49})[x.code]||59)}})().catch(()=>process.exit(60));' >/dev/null 2>&1"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
