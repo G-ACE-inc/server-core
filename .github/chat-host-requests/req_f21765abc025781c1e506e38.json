@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Launch one bounded independent Astera v8 existing OpenAICompatAdapter actual 1-question inference through AI Core Granite Gate in a transient running Node process. Check shared no-active-lease; run asynchronously with ephemeral FIFO (no key file), no product edits/credentials persistence, no duplicate model tests. Source exact PR3.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\nb=$(git -C \"$w\" rev-parse HEAD)\ncase \"$b\" in 687c312aa71c25a884b4c7598b076238f994288b|8f867b68f2522beefdecfc795408377c2eeda159|53838af6ea54357daf328157cb603b54fc4e0eac) :;; *) exit 72;; esac\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\" || exit 73\ngit -C \"$w\" fetch --no-tags origin feat/per-model-lifecycle-20261013 >/dev/null 2>&1\ntest \"$(git -C \"$w\" rev-parse FETCH_HEAD)\" = 53838af6ea54357daf328157cb603b54fc4e0eac || exit 74\ntest \"$b\" = 53838af6ea54357daf328157cb603b54fc4e0eac || git -C \"$w\" checkout --detach -q 53838af6ea54357daf328157cb603b54fc4e0eac\nbash -n \"$w/scripts/host_astera_second_consumer_acceptance.sh\"\nbash \"$w/scripts/host_astera_second_consumer_acceptance.sh\" 53838af6ea54357daf328157cb603b54fc4e0eac inference"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Owned AI Core Current#1, PR3 exact 53838af6; existing real Astera Node GET passed HTTP200 Issue#1 6225097471; latest Host real SHA ee6002 as Issue#10 6225135838 (GitHub main newer concurrent); start one async Astera own OpenAICompatAdapter invocation with FIFO-only ephemeral secret, no product code/config change and active leases/queue precheck. No duplicate heavy Core tests."
+  }
+}
