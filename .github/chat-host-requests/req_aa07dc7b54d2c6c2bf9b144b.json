@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core read-only exact current private Compose rendered model weights bind, parent cgroup and shared Gate socket volume; no backend restarts or credential exposure",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "command": "python3 - <<'PY'\nimport json,os,subprocess\nw='/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015'\nparent='/home/admin1/projects/ai-core'\nout={}\ndef run(args,env=None):\n return subprocess.run(args,capture_output=True,text=True,timeout=30,env=env)\ntry:\n r=run(['docker','compose','-p','ai-core','--project-directory',parent,'-f',w+'/compose.runtime.yml','config','--format','json'])\n out['backend_config_exit']=r.returncode\n if r.returncode:\n  out['backend_error']=r.stderr[-300:]\n else:\n  c=json.loads(r.stdout)\n  out['backends']={}\n  for name in ('granite','qwen3','ministral','coder'):\n   svc=c['services'][name];mounts=svc.get('volumes',[])\n   out['backends'][name]={\n    'tcp_port_count':len(svc.get('ports') or []),\n    'parent_cgroup':svc.get('cgroup_parent'),\n    'parent_models_bind':any(v.get('target')=='/models' and v.get('source')==parent+'/models' for v in mounts),\n    'socket_bus':any(v.get('target')=='/run/ai-core-backend' for v in mounts)}\n inspect=run(['docker','inspect','ai-core-model-gate'])\n if inspect.returncode:raise RuntimeError('EXISTING_GATE_NOT_INSPECTABLE')\n envs=json.loads(inspect.stdout)[0]['Config']['Env']\n key=next((v.split('=',1)[1] for v in envs if v.startswith('AI_CORE_API_KEY=')),None)\n if not key:raise RuntimeError('EXISTING_GATE_API_KEY_UNAVAILABLE')\n env=os.environ.copy();env['AI_CORE_API_KEY']=key\n gate=run(['docker','compose','-p','ai-core-gate','--project-directory',w,'-f',w+'/compose.gate.yml','config','--format','json'],env)\n out['gate_config_exit']=gate.returncode\n if not gate.returncode:\n  cfg=json.loads(gate.stdout);gs=cfg['services']['gate']\n  out['gate_bus_mount']=any(v.get('target')=='/run/ai-core-backend' and v.get('source')=='ai-core-backend-bus' for v in gs.get('volumes',[]))\n else:out['gate_error']=gate.stderr[-300:]\nexcept Exception as e:out['error']=type(e).__name__+':'+str(e)[:180]\nreceipt=run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','-f','body=AI_CORE_PRIVATE_COMPOSE_PREFLIGHT\\n'+json.dumps(out)])\nprint('PREFLIGHT='+json.dumps(out,ensure_ascii=False))\nraise SystemExit(0 if receipt.returncode==0 and out.get('backend_config_exit')==0 and out.get('gate_config_exit')==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/commit/75778b66afcd397da5225466aadcc20fcd0df991"
+  }
+}
