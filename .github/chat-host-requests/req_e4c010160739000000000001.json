@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Agent Pool CU40 release PR299 validated Source to main via authenticated GitHub merge endpoint without ready-for-review transition, no AI Core source mutation. Existing authorized main merge must enforce repository branch protection.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json, subprocess, sys\nREPO=\"G-ACE-inc/server-core\"\nEXPECTED=\"7648bd2da2e30fc985139d635ef4eba4b7e6848c\"\ndef gh(method,path,data=None):\n    args=[\"gh\",\"api\", \"-X\",method,\"repos/\"+REPO+\"/\"+path]\n    if data is not None:\n        args += [\"--input\",\"-\"]\n    p=subprocess.run(args,input=json.dumps(data) if data is not None else None,\n                     capture_output=True,text=True,timeout=45)\n    if p.returncode:\n        raise RuntimeError(\"GITHUB_\"+path.split(\"/\")[0]+\"_\"+str(p.returncode))\n    return json.loads(p.stdout) if p.stdout.strip() else {}\ntry:\n    pr=gh(\"GET\",\"pulls/299\")\n    branch=gh(\"GET\",\"branches/main\")\n    head=pr.get(\"head\",{}).get(\"sha\")\n    if head != EXPECTED or pr.get(\"state\")!=\"open\" or pr.get(\"draft\") is not True:\n        raise RuntimeError(\"PR_HEAD_OR_STATE_CHANGED\")\n    result=gh(\"POST\",\"merges\",{\n        \"base\":\"main\",\"head\":\"agent-pool/review-provenance-20261016\",\n        \"commit_message\":\"Agent Pool CU40: merge validated PR299 implementation without enabling Codex auto-review\"\n    })\n    new=gh(\"GET\",\"branches/main\")\n    print(\"AGENT_POOL_MAIN_MERGE=\"+json.dumps({\n        \"pr\":299,\"old_main\":branch.get(\"commit\",{}).get(\"sha\"),\n        \"new_main\":new.get(\"commit\",{}).get(\"sha\"),\n        \"merge_sha\":result.get(\"sha\"),\"pr_head\":head,\n        \"merge_operation\":\"github_authenticated_merges_api\",\n        \"ready_review_transition\":False\n    },sort_keys=True))\nexcept Exception as exc:\n    print(\"AGENT_POOL_MAIN_MERGE_FAILED=\"+str(exc)[:100])\n    sys.exit(1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/299"
+  }
+}
