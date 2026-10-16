@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Build updated Debian docker-cli AI Core Gate image and restart current Gate only; four host-local 18181-18184 health, old 18080 absent",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess,time,urllib.request\nfrom pathlib import Path\nwt=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\nenvfile=Path('/home/admin1/projects/debug-ai/.env')\ntarget='84ee18e95d578c59fd33ff776353e10df5519c90'\nout={'target':target,'legacy_router_start':False,'secret_value_export':False}\ndef run(argv,seconds=20):\n try:\n  p=subprocess.run(argv,capture_output=True,text=True,timeout=seconds)\n  return {'exit':p.returncode,'tail':(p.stdout+'\\n'+p.stderr)[-320:]}\n except Exception as e:return {'error':type(e).__name__}\ngit=['git','-C',str(wt)]\nout['initial_head']=run(git+['rev-parse','HEAD']).get('tail','').strip()\nstat=run(git+['status','--porcelain'])\nif stat.get('exit')==0 and not stat.get('tail','').strip():\n out['fetch']=run(git+['fetch','origin','feat/per-model-lifecycle-20261013'],seconds=50).get('exit')\n if out['fetch']==0:out['checkout']=run(git+['checkout','--detach',target]).get('exit')\nelse:out['checkout']='SKIPPED_DIRTY'\nout['current_head']=run(git+['rev-parse','HEAD']).get('tail','').strip()\nif out['current_head']==target and envfile.is_file():\n base=['docker','compose','--env-file',str(envfile),'-p','ai-core-gate','-f',str(wt/'compose.gate.yml')]\n out['config']=run(base+['config','--quiet']).get('exit')\n if out['config']==0:\n  b=run(base+['up','-d','--build','--no-deps','gate'],seconds=170)\n  out['up_exit']=b.get('exit',b.get('error'))\n  out['up_tail']=b.get('tail','')[-240:]\n  for attempt in range(15):\n   time.sleep(0.8)\n   try:\n    with urllib.request.urlopen('http://127.0.0.1:18181/health',timeout=2) as res:\n     if res.status==200:break\n   except Exception:pass\n  ports={}\n  for port in (18181,18182,18183,18184):\n   try:\n    with urllib.request.urlopen('http://127.0.0.1:'+str(port)+'/health',timeout=3) as res:ports[str(port)]=res.status\n   except Exception as e:ports[str(port)]=type(e).__name__\n  out['ports']=ports\n  out['status']=run(['docker','inspect','-f','{{.State.Status}}|{{.State.Health.Status}}|{{.HostConfig.CgroupParent}}','ai-core-model-gate']).get('tail','').strip()\n  if any(v!=200 for v in ports.values()):\n   logs=run(['docker','logs','--tail','20','ai-core-model-gate'])\n   out['failed_log_codes']=[line.split('MODEL_GATE=FAIL|',1)[-1][:60] for line in logs.get('tail','').splitlines() if 'MODEL_GATE=FAIL|' in line]\nbody='AI_CORE_GATE_CLI_FIXED_STARTUP\\n'+json.dumps(out,ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('GATE_DOCKER_CLI_FIX_REPORT='+('PASS '+p.stdout.strip() if p.returncode==0 else 'FAIL'))\nraise SystemExit(0 if p.returncode==0 and out.get('up_exit')==0 and len(out.get('ports',{}))==4 and all(v==200 for v in out.get('ports',{}).values()) else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "PR3 84ee18e Dockerfile now installs Debian 13 docker-cli from verified package split. Existing Gate restarts missing executable; same original envfile supplies existing AI_CORE_API_KEY, no 18080."
+  }
+}
