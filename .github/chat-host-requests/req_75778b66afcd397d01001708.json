@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "Exact PR3 head cfa5ee22b05d8932e26eb195e4f5ba76581d6e90; cutover https://github.com/seigo-gace/ai-core/issues/1#issuecomment-6222622365. Previous model probe request req_f130217f483dcbf8e539b651 was denied before Host shell for SHA mismatch; independently observed actual Host d632c605... in https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6222652459; new command pins observed Host SHA, never reuses failed request."
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d632c605b7f61e3baecba31b0bea2fc9cb54a3e8",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "d632c605b7f61e3baecba31b0bea2fc9cb54a3e8",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\nt=cfa5ee22b05d8932e26eb195e4f5ba76581d6e90\ntest -z \"$(git -C \"$w\" status --porcelain)\"\ngit -C \"$w\" fetch --no-tags origin feat/per-model-lifecycle-20261013 >/dev/null\ngit -C \"$w\" checkout --detach \"$t\" >/dev/null\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = \"$t\"\ndocker exec -i ai-core-model-gate python3 -c 'import ast,sys;ast.parse(sys.stdin.read())' < \"$w/scripts/host_uds_inference_probe.py\"\nset +e\nout=\"$(docker exec -i ai-core-model-gate python3 - coder < \"$w/scripts/host_uds_inference_probe.py\" 2>/dev/null)\"\nrc=$?\nset -e\nprintf '%s\\n' \"$out\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f \"body=AI_CORE_UDS_CODER_RESULT HEAD=$t EXIT=$rc $out\" --jq .html_url || :\nexit \"$rc\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
