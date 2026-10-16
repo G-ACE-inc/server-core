@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Gateway28 inspect actual Writer ledger fields to correct digest verifier",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6ab1b4dce10c684cfd3f7e15462a6c54fd05af58",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6ab1b4dce10c684cfd3f7e15462a6c54fd05af58",
+    "command": "python3 - <<'PY'\nimport json,pathlib\nd=pathlib.Path('/home/admin1/logs/servercore-service-deploy')\nfor rid in ('req_1714c8d700e41b187170885b','req_4f80086c170701aef3b22e39','req_4b7e4e4f872a8d64321cdb33'):\n p=d/(rid+'.json')\n print('ID='+rid,'LEDGER_EXISTS='+str(p.is_file()))\n if p.is_file():\n  try:\n   x=json.loads(p.read_text())\n   print('FIELDS='+','.join(k for k in ('command_sha256','command_bytes','state','request_id') if k in x))\n   print('COMMAND_BYTES='+str(x.get('command_bytes','MISSING')))\n   print('COMMAND_DIGEST_PREFIX='+str(x.get('command_sha256','MISSING'))[:12])\n   print('STATE='+str(x.get('state','MISSING')))\n  except (OSError,ValueError,TypeError): print('LEDGER_PARSE=FAILED')\nprint('GATEWAY28_LEDGER_INSPECTION_COMPLETE')\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/315"
+  }
+}
