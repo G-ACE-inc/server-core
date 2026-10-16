@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Inspect only existence (not values) of Astera v8 preconfigured OpenAI-compatible base URL, bearer, model, timeout and network mode; no model requests, credential transfer, modifications, or DebugAI interference.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nbody=AI_CORE_SECOND_CONSUMER_ASTERA_PREFLIGHT\nfor n in astera-v8 astera-v8-evaluator astera-v8-evidence-search; do\n mode=$(docker inspect -f '{{.HostConfig.NetworkMode}}' \"$n\")\n fields=$(docker exec \"$n\" node -e 'for(const k of [\"OPENAI_COMPAT_BASE_URL\",\"OPENAI_COMPAT_API_KEY\",\"OPENAI_COMPAT_MODEL\",\"LLM_CHAIN\",\"ASTERA_LLM_TIMEOUT_MS\"])console.log(k+\"=\"+(process.env[k]?\"SET\":\"MISSING\"))' | tr '\\n' ',')\n body=\"$body $n NETWORK=$mode ENV=$fields\"\ndone\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$body\" --jq '.html_url' >/dev/null\nprintf 'ASTERA_ADAPTER_PREFLIGHT=POSTED\\n'\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Issue1 #6224120752 established real astera-v8, -evaluator, -evidence-search app containers have existing OpenAI compatible adapter; read only credential presence and network mode to avoid unapproved sharing. No source change."
+  }
+}
