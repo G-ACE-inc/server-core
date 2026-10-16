@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core minimal controlled one-owned inference SSE restart and durable orphan recovery; no unrelated task and no product modification",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json,time,threading,urllib.request as u\nout={}\ndef sh(x,t=20):return subprocess.run(x,capture_output=True,text=True,timeout=t)\ntry:\n e=json.loads(sh(['docker','inspect','ai-core-model-gate']).stdout)[0]['Config']['Env']\n credential=next(s.partition(chr(61))[2] for s in e if s.partition(chr(61))[0]=='AI_CORE_API_KEY')\n h={'Authorization':'Bearer '+credential,'Content-Type':'application/json'}\n base='http://127.0.0.1:18184'\n def get(path):\n  with u.urlopen(u.Request(base+path,headers=h),timeout=6) as r:return json.load(r)\n state=get('/internal/handoff/status')\n assert sum(state['active'].values())==0 and state['handoff'] is None\n mid=get('/v1/models')['data'][0]['id']\n started=threading.Event();done=threading.Event()\n def send():\n  try:\n   b={'model':mid,'stream':True,'messages':[{'role':'user','content':'List 300 numbered tips with details.'}],'max_tokens':750}\n   req=u.Request(base+'/v1/chat/completions',headers=h,data=json.dumps(b).encode())\n   with u.urlopen(req,timeout=140) as r:\n    started.set()\n    while r.read1(8192):pass\n  except Exception:pass\n  finally:done.set()\n th=threading.Thread(target=send,daemon=True);th.start()\n owned=False\n for _ in range(150):\n  if done.is_set():break\n  if started.is_set() and get('/internal/handoff/status')['active']['coder']==1:\n   f=sh(['docker','exec','ai-core-model-gate','cat','/run/ai-core/active-leases.json'])\n   if f.returncode==0 and json.loads(f.stdout)['active']['coder']==1:\n    owned=True;break\n  time.sleep(.2)\n out['owned']=owned\n if owned and not done.is_set():\n  p=sh(['docker','restart','-t','1','ai-core-model-gate'],35)\n  out['restart_exit']=p.returncode\n  history=[]\n  if p.returncode==0:\n   for _ in range(65):\n    try:\n     s=get('/internal/resources/status')\n     history.append(s.get('recovery_pending'))\n     if len(history)>1 and not history[-1]:break\n    except Exception:pass\n    time.sleep(2)\n  out['recovery_pending_first']=history[0] if history else None\n  out['recovery_pending_last']=history[-1] if history else None\n  out['observations']=len(history)\n  out['four_healthy']=all(u.urlopen('http://127.0.0.1:%d/health'%p,timeout=4).status==200 for p in (18181,18182,18183,18184))\nexcept Exception as exc:out['error']=type(exc).__name__+': '+str(exc)[:100]\nok=out.get('owned') and out.get('restart_exit')==0 and out.get('four_healthy') and out.get('observations',0)>1 and not out.get('recovery_pending_last')\nq=sh(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','-f','body=AI_CORE_REAL_SSE_RESTART '+json.dumps(out),'--jq','.html_url'],25)\nprint('AI_CORE_REAL_SSE_RESTART='+str(bool(ok))+' '+q.stdout.strip())\nraise SystemExit(0 if ok and q.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6217420530"
+  }
+}
