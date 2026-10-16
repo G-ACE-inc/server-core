@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Postmortem only: did VS Code Codex keep running model calls after #286 completion? Inspect Codex session JSONL metadata/time series and current process count, never execute codex or print prompts, secrets or conversation text.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,hashlib,re,os\nfrom pathlib import Path\nfrom datetime import datetime,timezone\nfrom collections import Counter\nhome=Path(\"/home/admin1\")\nstarts=[(\"original_report\",\"2026-10-16T00:44:37Z\"),(\"resumed_report\",\"2026-10-16T01:04:02Z\"),(\"pr_merged\",\"2026-10-16T01:23:53Z\"),(\"copilot_review_report\",\"2026-10-16T01:25:11Z\")]\nthreshold={name:datetime.fromisoformat(when.replace(\"Z\",\"+00:00\")) for name,when in starts}\ncut=datetime.fromisoformat(\"2026-10-15T00:00:00+00:00\")\nend=datetime.fromisoformat(\"2026-10-16T06:00:00+00:00\")\nroots=[home/\".codex\"/\"sessions\",home/\".codex\"/\"archived_sessions\",home/\".codex\"/\"log\",home/\".vscode-server\"/\"data\"/\"logs\"]\ndef ts(s):\n try: return datetime.fromisoformat(str(s).replace(\"Z\",\"+00:00\")).astimezone(timezone.utc)\n except (ValueError,TypeError): return None\nproc=[]\nfor p in Path(\"/proc\").iterdir():\n if not p.name.isdigit():continue\n try:\n  name=(p/\"comm\").read_text().strip()\n  if \"codex\" in name.lower():proc.append({\"name\":name[:38]})\n except (OSError,UnicodeError):pass\nprint(\"CODEX_CURRENT_PROCESS_COUNT=\"+str(len(proc)))\nprint(\"CODEX_CURRENT_PROCESS_NAMES=\"+json.dumps(dict(Counter(x[\"name\"] for x in proc))))\nfiles=[]\nfor root in roots:\n if not root.exists():\n  print(\"CODEX_LOG_ROOT=\"+str(root.relative_to(home))+\" ABSENT\")\n  continue\n allc=0;matches=0\n for p in root.rglob(\"*\"):\n  if not p.is_file():continue\n  allc+=1\n  try: st=p.stat()\n  except OSError:continue\n  if st.st_mtime >= cut.timestamp():\n   matches+=1\n   if root.name in (\"sessions\",\"archived_sessions\") and p.suffix==\".jsonl\":\n    files.append((p,st))\n print(\"CODEX_LOG_ROOT=\"+str(root.relative_to(home))+\" FILES=\"+str(allc)+\" RECENT=\"+str(matches))\nprint(\"CODEX_SESSION_JSONL_RECENT=\"+str(len(files)))\nfor path,stat in sorted(files,key=lambda x:x[1].st_mtime,reverse=True)[:70]:\n count=Counter();byhour=Counter();after={k:Counter() for k in threshold};min_seen=None;max_seen=None\n last_total=None;sample_events=0\n try:\n  with path.open(encoding=\"utf-8\",errors=\"replace\") as f:\n   for lineno,line in enumerate(f):\n    if lineno>160000:break\n    try:j=json.loads(line)\n    except ValueError:continue\n    at=ts(j.get(\"timestamp\"))\n    if at is None or not cut<=at<=end:continue\n    min_seen=min(min_seen,at) if min_seen else at\n    max_seen=max(max_seen,at) if max_seen else at\n    p=j.get(\"payload\") or {}\n    typ=j.get(\"type\",\"unknown\")\n    kind=p.get(\"type\",\"\") if isinstance(p,dict) else \"\"\n    count[typ+\"/\"+kind]+=1\n    metric=(\"token_count\" if kind==\"token_count\" else \"tool_call\" if typ==\"response_item\" and kind==\"function_call\" else \"model_message\" if typ==\"response_item\" and kind==\"message\" else \"\")\n    if metric:\n     byhour[at.strftime(\"%m-%dT%H\")+\"/\"+metric]+=1\n     for name,lower in threshold.items():\n      if at>lower:after[name][metric]+=1\n    if kind==\"token_count\":\n     sample_events+=1\n     info=p.get(\"info\") or {}\n     total=info.get(\"total_token_usage\") or {}\n     if isinstance(total,dict) and isinstance(total.get(\"total_tokens\"),int):\n      last_total=total.get(\"total_tokens\")\n except Exception:continue\n h=hashlib.sha256(str(path).encode()).hexdigest()[:10]\n print(\"CODEX_SESSION_SUMMARY=\"+json.dumps({\"session_path_hash\":h,\"size_bytes\":stat.st_size,\"mtime_utc\":datetime.fromtimestamp(stat.st_mtime,timezone.utc).isoformat(),\"first\":min_seen.isoformat() if min_seen else None,\"last\":max_seen.isoformat() if max_seen else None,\"token_count_events\":sample_events,\"last_reported_cumulative_tokens\":last_total,\"after\":{x:dict(y) for x,y in after.items()},\"hour_activity\":dict(sorted(byhour.items())),\"type_count\":dict(count.most_common(6))},separators=(\",\",\":\")))\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Master suspects Codex continued after user-visible completed debug (first report Issue286 2026-10-16 00:44:37 UTC, resumed Codex report 01:04:02Z, PR287 merged 01:23:53Z, final review 01:25:11Z). Server five Codex processes previously stopped to zero. Need actual session event time/usage, not process presence alone."
+  }
+}
