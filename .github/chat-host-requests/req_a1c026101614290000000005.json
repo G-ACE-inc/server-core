@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR#3 exact existing clean nested worktree fast-forward to current source, source tests, key presence and Docker Compose config no production container operation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,os,re,subprocess\nfrom pathlib import Path\nwt=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\nenvpath=Path('/home/admin1/projects/ai-core/.env')\nold='8484c9b2682845e53be24742cefc283913fef5ff'\nnew='0c61ebe8556401f9fbe52dff2f9a63e03fc0f42c'\ndef run(args,timeout=70,**kw):\n try:\n  r=subprocess.run(args,capture_output=True,text=True,timeout=timeout,**kw)\n  return {'exit':r.returncode,'tail':(r.stdout+'\\n'+r.stderr)[-800:]}\n except Exception as e:return {'error':type(e).__name__+': '+str(e)[:100]}\ndef head():\n r=run(['git','-C',str(wt),'rev-parse','HEAD'])\n return r.get('tail','').strip()\nresult={'expected_old':old,'target_source_sha':new,'initial_head':head(),'branch_source_verified':False}\ns=run(['git','-C',str(wt),'status','--porcelain'])\nresult['clean']=s.get('exit')==0 and not s.get('tail','').strip()\nif result['initial_head']==old and result['clean']:\n f=run(['git','-C',str(wt),'fetch','origin','feat/per-model-lifecycle-20261013'],timeout=50)\n result['fetch_status']=f.get('exit',f.get('error'))\n if f.get('exit')==0:\n  ck=run(['git','-C',str(wt),'cat-file','-e',new+'^{commit}'])\n  if ck.get('exit')==0:\n   co=run(['git','-C',str(wt),'checkout','--detach',new])\n   result['checkout_status']=co.get('exit',co.get('error'))\nelif result['initial_head']==new and result['clean']:\n result['checkout_status']='ALREADY_CURRENT'\nelse:result['source_change_skipped']='UNEXPECTED_DIRTY_OR_HEAD'\nresult['final_head']=head()\nif result['final_head']==new:\n result['branch_source_verified']=True\n tests=run(['python3','-m','unittest','discover','-s','tests','-p','test_*.py','-q'],timeout=115,cwd=str(wt),env={**os.environ,'PYTHONDONTWRITEBYTECODE':'1'})\n result['unit_test_exit']=tests.get('exit',tests.get('error'))\n result['unit_test_tail']=tests.get('tail','')[-460:]\nif envpath.is_file():\n keys={m.group(1) for line in envpath.read_text(errors='replace').splitlines() if (m:=re.match(r'^\\s*(?:export\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*=',line))}\nelse:keys=set()\nresult['existing_bearer_key_declared']='LLAMA_SWAP_API_KEY' in keys\nif result['branch_source_verified'] and result['existing_bearer_key_declared']:\n cfg=run(['docker','compose','--env-file',str(envpath),'-f',str(wt/'compose.gate.yml'),'config','--quiet'])\n result['compose_config_exit']=cfg.get('exit',cfg.get('error'))\nbody='AI_CORE_PR3_SOURCE_REFLECT_TEST_PREFLIGHT\\n```json\\n'+json.dumps(result,ensure_ascii=False,indent=2)+'\\n```'\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('AI_CORE_SOURCE_CHECK_REPORT='+('PASS '+p.stdout.strip() if p.returncode==0 else 'REPORT_FAILED'))\nraise SystemExit(0 if p.returncode==0 and result['branch_source_verified'] else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "bounded_runtime_reflection",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core owned PR3 current head 0c61ebe, existing clean PR3 nested worktree old 8484c9b, authorized Host terminal source-exact test and config preflight; no old Router or new token."
+  }
+}
