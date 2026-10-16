@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Start one genuine DebugAI six-role durable dogfood investigation of observed CI sandbox SIGKILL reliability defect against mounted repository, using live model-specific Gates; persist run ID without leaking output.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu; c=$(docker ps -q --filter label=com.docker.compose.service=debug-ai); test -n \"$c\" || exit 31; docker exec \"$c\" test -f /workspace/debug-ai/server/tests/helpers/sandbox-signal-client.cjs || exit 32; raw=$(curl -fsS --max-time 30 -H 'content-type: application/json' -d '{\"repo\":\"/workspace/debug-ai\",\"projectId\":\"debugai-live-four-gates-20261016\",\"rawRequest\":\"Investigate the actual DebugAI supervised SIGKILL sandbox reliability failure in Core Verify run 38869278560. Trace real source, failure mechanism and evidence, build the smallest safe fix candidate without weakening isolation, run isolated tests, preserve durable evidence and independent local review. Do not claim complete without actual criteria.\",\"failure\":{\"message\":\"Core Verify first run 38869278560 failed SANDBOX_SIGNAL_RESPONSE_TIMEOUT in real SIGKILL restart preserves A/B and resumes C; identical source rerun passed. Exact root cause unresolved.\"},\"localEvidence\":[{\"id\":\"CI_INITIAL_FAILURE\",\"observation\":\"GitHub Actions run 38869278560 initial sandbox full-suite failure: SANDBOX_SIGNAL_RESPONSE_TIMEOUT after supervised SIGKILL request; rerun 116870362105 PASS on identical source. Treat as non-deterministic, not fixed.\"}]}' http://127.0.0.1:8787/v1/runs/start) || exit 33; printf '%s' \"$raw\" | jq -e '.schema==\"debugai.run-accepted/v1\" and .state==\"RUNNING\"' >/dev/null || exit 34; printf '%s' \"$raw\" | jq -er '.run_id' >/tmp/debugai-pr112-e2e-run-id; test -s /tmp/debugai-pr112-e2e-run-id"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
