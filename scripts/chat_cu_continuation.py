@@ -16,6 +16,11 @@ try:
 except ModuleNotFoundError:
     from chat_host_observation_gh_restore import continuation_checkpoint, restore, paginated_list, valid_repository
 
+try:
+    from scripts.servercore_host_output_artifact_assemble import verify_artifact_zip
+except ModuleNotFoundError:
+    from servercore_host_output_artifact_assemble import verify_artifact_zip
+
 RUN_URL = re.compile(r"https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/actions/runs/([1-9][0-9]*)\Z")
 
 
@@ -57,7 +62,21 @@ def discover_common_host_run(repository, head_sha, api=api_read):
             "evidence_url": f"https://github.com/{repository}/actions/runs/{run['id']}",
             "other_run_count": len(runs) - 1}
 
-def resume(checkpoint, api=api_read):
+def verified_output_evidence(checkpoint, archive):
+    """Read every byte before advancing CU; never accept metadata as payload."""
+    if (not isinstance(checkpoint, dict) or
+            checkpoint.get("result_verified") is not True or
+            checkpoint.get("observation") != "HOST_OPERATION_PASSED" or
+            checkpoint.get("output_complete") is True):
+        raise ValueError("OUTPUT_VERIFICATION_STATE_INVALID")
+    path = Path(archive)
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("HOST_OUTPUT_ZIP_UNAVAILABLE")
+    return verify_artifact_zip(
+        path, checkpoint.get("request_id"), checkpoint.get("stream_metadata"))
+
+
+def resume(checkpoint, api=api_read, output_verified=False):
     if not isinstance(checkpoint, dict) or checkpoint.get("schema") != "gace.chat.cu.handoff.v1":
         raise ValueError("INVALID_CHECKPOINT_SCHEMA")
     run_id = checkpoint.get("run_id")
@@ -112,7 +131,7 @@ def resume(checkpoint, api=api_read):
         observed = "RUN_FAILED_OR_INCOMPLETE"
     elif checkpoint.get("result_verified") is not True:
         observed = "HOST_RESULT_UNVERIFIED"
-    elif checkpoint.get("output_complete") is not True:
+    elif output_verified is not True:
         observed = "HOST_LEDGER_RECOVERY_REQUIRED"
     else:
         observed = "READY_FOR_ACCEPTANCE_VERIFICATION"
@@ -196,6 +215,8 @@ def main():
     parser.add_argument("--request-id")
     parser.add_argument("--cu-issue-url")
     parser.add_argument("--receipt-json", type=Path)
+    parser.add_argument("--host-output-zip", type=Path, default=None,
+                        help="Locally downloaded existing verified Host output ZIP")
     parser.add_argument("--diagnostic-context-json", type=Path)
     parser.add_argument("--notion-context-json", type=Path)
     parser.add_argument("--notion-page-url")
@@ -212,9 +233,14 @@ def main():
             if restored["source_sha"] != discovery["source_sha"]:
                 raise ValueError("DISCOVERY_RESTORE_SHA_MISMATCH")
             checkpoint = continuation_checkpoint(restored, args.cu_issue_url)
+            proof = verified_output_evidence(checkpoint, args.host_output_zip) if args.host_output_zip else None
             result = {"discovery": discovery, "checkpoint": checkpoint,
-                      "continuation": resume(checkpoint)}
+                      "continuation": resume(checkpoint, output_verified=proof is not None)}
+            if proof is not None:
+                result["verified_host_output"] = proof
         else:
+            if args.host_output_zip:
+                parser.error("host output ZIP requires correlated request recovery")
             result = {"discovery": discovery}
         if args.receipt_json and "continuation" in result:
             persist_receipt(args.receipt_json, result)
@@ -231,7 +257,11 @@ def main():
             parser.error("supply checkpoint file or all exact identifiers")
         checkpoint = continuation_checkpoint(
             restore(args.repository, args.run_id, args.request_id), args.cu_issue_url)
-    result = {"checkpoint": checkpoint, "continuation": resume(checkpoint)}
+    proof = verified_output_evidence(checkpoint, args.host_output_zip) if args.host_output_zip else None
+    result = {"checkpoint": checkpoint,
+              "continuation": resume(checkpoint, output_verified=proof is not None)}
+    if proof is not None:
+        result["verified_host_output"] = proof
     if args.diagnostic_context_json:
         diagnostic = json.loads(args.diagnostic_context_json.read_text(encoding="utf-8"))
         result["diagnostic_assessment"] = assess_diagnostic_context(diagnostic, result["continuation"])
