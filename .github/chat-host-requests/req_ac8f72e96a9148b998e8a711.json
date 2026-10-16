@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Gateway28 verify first post-activation writer digest locally; diagnose prior isolated verifier failure",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6ab1b4dce10c684cfd3f7e15462a6c54fd05af58",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6ab1b4dce10c684cfd3f7e15462a6c54fd05af58",
+    "command": "set -eu\npython3 - <<'PY'\nimport json\nfrom pathlib import Path\nroot=Path('/home/admin1/logs/servercore-service-deploy')\nold=json.loads((root/'req_1714c8d700e41b187170885b.json').read_text())\nassert old['request_id']=='req_1714c8d700e41b187170885b'\nassert old['state']=='HOST_COMMAND_PASS'\nassert old['command_bytes']==626\nassert old['command_sha256']=='f503bba2fb95716648b37e75e4d117477421a3d029656742eda217bef2c2e792'\nprint('GATEWAY28_FIRST_INGRESS_EXACT_HASH=PASS')\nfailed=json.loads((root/'req_4f80086c170701aef3b22e39.json').read_text())\nline=failed.get('stderr','').strip().splitlines()[-1]\nif any(x in line for x in ('Traceback','Error','Assertion','HTTP','Not Found')):\n print('LAST_FAILURE_CLASS='+line[:110])\nelse:\n print('LAST_FAILURE_CLASS=REDACTED')\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/315"
+  }
+}
