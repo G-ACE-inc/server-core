@@ -93,9 +93,14 @@ def continuation_observation(record, verdict):
                 and re.fullmatch(r"[a-f0-9]{40}", expected_sha)
                 and host_sha != expected_sha):
             return "HOST_SOURCE_SHA_MISMATCH", "READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION"
+        # Legacy complete stderr may explicitly say SOURCE_SHA_MISMATCH while
+        # its old receipt lacks the true Host SHA. Keep the diagnostic hint,
+        # but never treat it as proved: artifact restore/continuation demands
+        # independently different authenticated Host and expected SHAs.
+        if (str(record.get("stderr") or "").strip() == "SOURCE_SHA_MISMATCH"
+                and not any(k + "_bytes" in record for k in ("stdout", "stderr"))):
+            return "HOST_SOURCE_SHA_MISMATCH", "READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION"
         return "HOST_OPERATION_FAILED", "INSPECT_FAILURE_EVIDENCE_AND_REPLAN"
-    if record.get("state") == "RETRYABLE":
-        return "HOST_OPERATION_RETRYABLE", "TRACE_EXISTING_HOST_DELIVERY_AND_RESULT_SINK"
     if any(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated") for stream in ("stdout", "stderr")):
         return "HOST_OUTPUT_PARTIAL", "READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE"
     if any(stream + "_bytes" in record for stream in ("stdout", "stderr")):
