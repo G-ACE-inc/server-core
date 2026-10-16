@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Safely activate offline-refreshed AI Core Gate using exact PR#3 script with automatic rollback, source parity, 4/4 health and no active/resident models. No DebugAI source update or Gateway restart; refused when any model active.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\nbefore=$(git -C \"$w\" rev-parse HEAD)\ncase \"$before\" in cd8442c302ad00225f555fcfbcc181b103d5858a|406d79c7aa60a13e05dd08e85b581604b9418a6d) : ;; *) echo AI_CORE_SOURCE_DRIFT; exit 72 ;; esac\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\" || exit 73\ngit -C \"$w\" fetch --no-tags origin feat/per-model-lifecycle-20261013 >/dev/null 2>&1\ntest \"$(git -C \"$w\" rev-parse FETCH_HEAD)\" = 406d79c7aa60a13e05dd08e85b581604b9418a6d || exit 74\ntest \"$before\" = 406d79c7aa60a13e05dd08e85b581604b9418a6d || git -C \"$w\" checkout --detach -q 406d79c7aa60a13e05dd08e85b581604b9418a6d\nbash -n \"$w/scripts/host_gate_refresh.sh\"\nbash \"$w/scripts/host_gate_refresh.sh\" 406d79c7aa60a13e05dd08e85b581604b9418a6d\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 HEAD 406d79c7 owned script host_gate_refresh.sh; private offline image refresh PASS #10 6223629085; stale AF_UNIX sockets connect errno111, existing model cold starts exit1. Script only changes Gate after idle/zero models and retains former image for automatic rollback. DebugAI PR115 remains separate."
+  }
+}
