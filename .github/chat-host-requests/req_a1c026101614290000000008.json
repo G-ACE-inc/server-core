@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read previous failed AI Core Docker build command raw Host stderr only, diagnostic",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport sys,json,subprocess\nsys.path.insert(0,'/home/admin1/server-core/scripts')\nfrom servercore_host_output_read import chunk\nrid='req_a0d14eed63eaa7f6990ff126'\nout={}\nfor stream in ('stdout','stderr'):\n try:out[stream]=chunk(rid,stream,0,4096)['data']\n except Exception as e:out[stream]=type(e).__name__+':'+str(e)\nbody='AI_CORE_BUILD_FAILURE_RAW_DIAG\\n'+json.dumps(out,ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),text=True,capture_output=True,timeout=20)\nprint('BUILD_FAILURE_LEDGER='+('PASS '+p.stdout.strip() if p.returncode==0 else 'POST_FAILED'))\nraise SystemExit(0 if p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core build request req_a0d14eed63eaa7f6990ff126 Host exit1, diagnose actual stderr before reattempt."
+  }
+}
