@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "AI Core Issue #1 and PR3 exact HEAD cfa5ee22b05d8932e26eb195e4f5ba76581d6e90; physical UDS cutover PASS https://github.com/seigo-gace/ai-core/issues/1#issuecomment-6222622365; run real one-token Coder inference with safe sanitized resource evidence."
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "8d5751dc3a211708b0d54a8a8a5a1b3eb1f0630e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "8d5751dc3a211708b0d54a8a8a5a1b3eb1f0630e",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\nt=cfa5ee22b05d8932e26eb195e4f5ba76581d6e90\ntest -z \"$(git -C \"$w\" status --porcelain)\"\ngit -C \"$w\" fetch --no-tags origin feat/per-model-lifecycle-20261013 >/dev/null\ngit -C \"$w\" checkout --detach \"$t\" >/dev/null\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = \"$t\"\ndocker exec -i ai-core-model-gate python3 -c 'import ast,sys;ast.parse(sys.stdin.read())' < \"$w/scripts/host_uds_inference_probe.py\"\nset +e\nout=\"$(docker exec -i ai-core-model-gate python3 - coder < \"$w/scripts/host_uds_inference_probe.py\" 2>/dev/null)\"\nrc=$?\nset -e\nprintf '%s\\n' \"$out\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f \"body=AI_CORE_UDS_CODER_RESULT HEAD=$t EXIT=$rc $out\" --jq .html_url || :\nexit \"$rc\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
