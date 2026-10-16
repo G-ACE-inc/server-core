@@ -90,6 +90,10 @@ def validate(receipt, expected_request_id):
         "result_url": receipt.get("result_url") if isinstance(receipt.get("result_url"), str) else None,
         "output_complete": False,  # This artifact contains metadata, never the Host payload.
         "stream_metadata_complete": stream_metadata_complete,
+        "stream_metadata": ({name: {"sha256": streams[name]["sha256"],
+                                   "chars": streams[name]["chars"]}
+                            for name in ("stdout", "stderr")}
+                            if stream_metadata_complete else None),
         "expected_sha": receipt.get("expected_sha") if verified else None,
         "host_sha": host_sha if verified else None,
         "exit_code": exit_code if verified else None,
