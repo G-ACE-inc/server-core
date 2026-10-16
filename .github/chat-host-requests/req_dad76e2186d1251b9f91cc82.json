@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core short realistic Coder 4-caller bounded queue fair-share and memory/CPU snapshot; use existing Gate only, no products changed",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "tmp=$(mktemp)\ndocker exec -i ai-core-model-gate python3 - <<'PY' > \"$tmp\" 2>&1\nimport os,json,time,threading,urllib.request,urllib.error\nbase='http://127.0.0.1:18184'\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']}\ndef get(p):\n with urllib.request.urlopen(urllib.request.Request(base+p,headers=h),timeout=10) as r:return json.load(r)\ndef call(name,wait):\n d={'model':model,'messages':[{'role':'user','content':'Reply OK.'}],'max_tokens':8}\n hs={**h,'Content-Type':'application/json','X-AI-Core-Client':name,'X-AI-Core-Wait-Ms':str(wait)}\n t=time.monotonic()\n try:\n  with urllib.request.urlopen(urllib.request.Request(base+'/v1/chat/completions',headers=hs,data=json.dumps(d).encode()),timeout=200) as r:\n   out=json.load(r);return [name,r.status,round(time.monotonic()-t,2),len(out.get('choices',[]))]\n except urllib.error.HTTPError as e:return [name,e.code,round(time.monotonic()-t,2)]\nmodel=get('/v1/models')['data'][0]['id']\ninitial=get('/internal/handoff/status')\nif any(initial['active'].values()) or initial['handoff'] or initial['recovery_pending']:raise RuntimeError('GATE_NOT_QUIESCENT')\nwarm=call('warm',0)\nresults=[None]*4\ndef run(i,name):results[i]=call(name,30000)\nthreads=[]\nfor i,name in enumerate(['a','a','b','c']):\n t=threading.Thread(target=run,args=(i,name));threads.append(t);t.start();time.sleep(.08)\nfor t in threads:t.join(210)\nafter=get('/internal/handoff/status')\nresources=get('/internal/resources/status')\nprint(json.dumps({'warm':warm,'calls':results,'released':not any(after['active'].values()),'queued':resources['queued'],'memory_current':resources['memory']['memory.current'],'cpu_stat':resources['cpu_stat'],'psi':resources['pressure']},ensure_ascii=False))\nPY\nrc=$?\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f \"body=AI_CORE_REAL_QUEUE_COMPACT\n$(tail -c 2400 \"$tmp\")\" --jq .html_url\ncat \"$tmp\"\nrm -f \"$tmp\"\nexit \"$rc\""
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6219326262"
+  }
+}
