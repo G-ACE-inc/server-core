@@ -115,11 +115,14 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
     # and the exact failing Job step must also corroborate that classification.
     host_failure_step = None
     host_observation = checkpoint.get("observation")
-    inspect_host_step = (status == "completed" and conclusion == "failure"
-                         and host_observation in {
-                             "HOST_SOURCE_SHA_MISMATCH", "HOST_OPERATION_FAILED",
-                             "HOST_OPERATION_RETRYABLE", "HOST_RESULT_NOT_RETURNED"
-                         })
+    inspect_host_step = (
+        status == "completed" and conclusion == "failure"
+        and host_observation in {
+            "HOST_SOURCE_SHA_MISMATCH", "HOST_OPERATION_FAILED",
+            "HOST_OPERATION_RETRYABLE", "HOST_RESULT_NOT_RETURNED"}
+        and (checkpoint.get("result_verified") is True
+             or host_observation == "HOST_RESULT_NOT_RETURNED")
+    )
     if inspect_host_step:
         jobs = api(f"repos/{repository}/actions/runs/{run_id}/jobs?per_page=100")
         if not isinstance(jobs, dict) or not isinstance(jobs.get("jobs"), list):
