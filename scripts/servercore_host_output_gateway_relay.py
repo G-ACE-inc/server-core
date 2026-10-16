@@ -59,8 +59,8 @@ def post_json(url, payload, token, *, opener=None):
         with response:
             if response.status not in (200, 201, 202):
                 raise RelayError("INTERNAL_API_REJECTED")
-            raw = response.read(65537)
-            if len(raw) > 65536:
+            raw = response.read(1_048_577)
+            if len(raw) > 1_048_576:
                 raise RelayError("INTERNAL_RESPONSE_TOO_LARGE")
             return response.status, json.loads(raw)
     except urllib.error.HTTPError as exc:
