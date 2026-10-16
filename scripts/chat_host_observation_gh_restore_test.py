@@ -371,6 +371,40 @@ class PrivateOutputTests(unittest.TestCase):
                 self.fail("must not yield")
         self.assertEqual(self.calls, [])
 
+    def test_original_request_finds_one_artifact_without_run_scan_or_redundant_listing(self):
+        with reader.private_host_output(None, RID, self.expected, run=self.fake_run) as (_, proof):
+            self.assertEqual(proof["run_id"], 123)
+        self.assertEqual(self.calls, [
+            f"repos/{reader.PRIVATE_OUTPUT_REPOSITORY}",
+            f"repos/{reader.PRIVATE_OUTPUT_REPOSITORY}/actions/artifacts?name=gace-host-output-{RID}&per_page=100",
+            f"repos/{reader.PRIVATE_OUTPUT_REPOSITORY}/actions/runs/123",
+            f"repos/{reader.PRIVATE_OUTPUT_REPOSITORY}/actions/artifacts/19/zip"])
+        self.assert_no_files()
+
+    def test_auto_lookup_reads_later_pages_and_rejects_duplicate_candidates(self):
+        def paged(cmd, **kwargs):
+            if "/artifacts?name=" in cmd[2]:
+                item = {**self.item, "id": 20} if "&page=2" in cmd[2] else self.item
+                return subprocess.CompletedProcess(cmd, 0, stdout=json.dumps({
+                    "total_count": 2, "artifacts": [item]}))
+            return self.fake_run(cmd, **kwargs)
+        with self.assertRaisesRegex(ValueError, "ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS"):
+            with reader.private_host_output(None, RID, self.expected, run=paged):
+                self.fail("must not select latest candidate")
+        self.assertEqual(self.downloads, [])
+
+    def test_auto_lookup_missing_expired_or_malformed_run_reference_never_downloads(self):
+        for items, error in (([], "ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS"),
+                ([{**self.item, "expired": True}], "ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS"),
+                ([{**self.item, "workflow_run": {"id": True}}], "ARTIFACT_RUN_PROVENANCE_MISMATCH"),
+                ([{**self.item, "workflow_run": {"id": 123, "head_sha": "c" * 40}}],
+                 "ARTIFACT_RUN_PROVENANCE_MISMATCH")):
+            self.items = items
+            with self.subTest(error=error), self.assertRaisesRegex(ValueError, error):
+                with reader.private_host_output(None, RID, self.expected, run=self.fake_run):
+                    self.fail("must not yield")
+        self.assertEqual(self.downloads, [])
+
 
 if __name__ == "__main__":
     unittest.main()
