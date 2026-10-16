@@ -1,7 +1,11 @@
 import unittest
+import hashlib
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 from scripts import chat_cu_continuation as continuation
-from scripts.chat_cu_continuation import resume, assess_diagnostic_context, discover_common_host_run
+from scripts.chat_cu_continuation import resume, assess_diagnostic_context, discover_common_host_run, verified_output_evidence
+from scripts.servercore_host_output_artifact_assemble import assemble
 
 BASE = {
     "schema": "gace.chat.cu.handoff.v1",
@@ -14,6 +18,49 @@ BASE = {
 
 
 class ContinuationTests(unittest.TestCase):
+    def test_verified_large_unicode_host_output_enables_next_acceptance_step(self):
+        stdout = "日本語Ω🙂\n" * 22000
+        stderr = "stderr 日本語\n" * 7500
+        rid = BASE["request_id"]
+        def pages(name, data):
+            sha = hashlib.sha256(data.encode("utf-8")).hexdigest()
+            for offset in range(0, max(len(data), 1), 8192):
+                part = data[offset:offset + 8192]
+                yield {"request_id": rid, "stream": name, "offset": offset,
+                       "next_offset": offset + len(part), "total_chars": len(data),
+                       "complete": offset + len(part) == len(data),
+                       "sha256": sha, "data": part}
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d, "artifact")
+            manifest = assemble([*pages("stdout", stdout), *pages("stderr", stderr)], target)
+            cp = {**BASE, "observation": "HOST_OPERATION_PASSED", "stream_metadata": {
+                name: {"sha256": manifest["streams"][name + ".txt"]["sha256"],
+                       "chars": len(data)}
+                for name, data in (("stdout", stdout), ("stderr", stderr))}}
+            api = lambda path: {"head_sha": BASE["source_sha"], "status": "completed",
+                                "conclusion": "success"}
+            self.assertEqual(resume(cp, api=api)["next_action"], "RECOVER_HOST_LEDGER_PAYLOAD")
+            evidence = verified_output_evidence(cp, target / "output.zip")
+            self.assertTrue(evidence["output_complete"])
+            self.assertEqual(evidence["streams"]["stdout"]["bytes"], len(stdout.encode("utf-8")))
+            self.assertEqual(resume(cp, api=api, output_verified=True)["next_action"],
+                             "VERIFY_CU_ACCEPTANCE")
+            self.assertEqual(cp["output_complete"], False)
+            with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_MANIFEST_MISMATCH"):
+                verified_output_evidence(
+                    {**cp, "stream_metadata": {**cp["stream_metadata"],
+                     "stdout": {"sha256": "0"*64, "chars": len(stdout)}}},
+                    target / "output.zip")
+            with self.assertRaisesRegex(ValueError, "OUTPUT_VERIFICATION_STATE_INVALID"):
+                verified_output_evidence({**cp, "result_verified": False}, target / "output.zip")
+
+    def test_forged_cached_complete_flag_does_not_skip_actual_zip_verification(self):
+        cp = {**BASE, "output_complete": True,
+              "next_action": "RECHECK_ACCEPTANCE_AND_EXECUTE_NEXT_TOOL"}
+        result = resume(cp, api=lambda path: {"head_sha": BASE["source_sha"],
+                      "status": "completed", "conclusion": "success"})
+        self.assertEqual(result["next_action"], "RECOVER_HOST_LEDGER_PAYLOAD")
+
     def test_actual_readback_selects_next_step(self):
         called = []
         def api(path):

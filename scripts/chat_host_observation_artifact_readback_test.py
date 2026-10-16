@@ -89,6 +89,8 @@ class ObservationReadbackTests(unittest.TestCase):
         result = validate(record, RID)
         self.assertFalse(result["output_complete"])
         self.assertTrue(result["stream_metadata_complete"])
+        self.assertEqual(result["stream_metadata"]["stdout"], {"sha256": DIGEST, "chars": 100})
+        self.assertEqual(result["stream_metadata"]["stderr"], {"sha256": DIGEST, "chars": 0})
 
 
 if __name__ == "__main__":

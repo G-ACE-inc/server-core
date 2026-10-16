@@ -65,6 +65,69 @@ def assemble(pages, output_dir):
     return manifest
 
 
+
+def verify_artifact_zip(zip_path, request_id, expected_streams):
+    """Verify every byte of an existing Host output ZIP against correlated metadata.
+
+    Never trust the ZIP's self-declared digest alone, and never return plaintext
+    Host output in a CHAT checkpoint. The source of expected_streams must be the
+    separately validated observation Artifact for the same request id.
+    """
+    import codecs
+    import re
+
+    if not isinstance(request_id, str) or not re.fullmatch(r"req_[a-f0-9]{24}", request_id):
+        raise ValueError("REQUEST_ID_INVALID")
+    if not isinstance(expected_streams, dict) or set(expected_streams) != {"stdout", "stderr"}:
+        raise ValueError("EXPECTED_HOST_STREAM_METADATA_REQUIRED")
+    for info in expected_streams.values():
+        if (not isinstance(info, dict) or
+                not isinstance(info.get("sha256"), str) or
+                not re.fullmatch(r"[a-f0-9]{64}", info["sha256"]) or
+                type(info.get("chars")) is not int or info["chars"] < 0):
+            raise ValueError("EXPECTED_HOST_STREAM_METADATA_INVALID")
+    with zipfile.ZipFile(zip_path) as archive:
+        names = archive.namelist()
+        if len(names) != 3 or set(names) != {"stdout.txt", "stderr.txt", "manifest.json"}:
+            raise ValueError("HOST_OUTPUT_ARCHIVE_MEMBERS_INVALID")
+        if archive.getinfo("manifest.json").file_size > 32768:
+            raise ValueError("HOST_OUTPUT_MANIFEST_TOO_LARGE")
+        manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
+        if not isinstance(manifest, dict) or manifest.get("request_id") != request_id:
+            raise ValueError("HOST_OUTPUT_REQUEST_MISMATCH")
+        specs = manifest.get("streams")
+        if not isinstance(specs, dict) or set(specs) != {"stdout.txt", "stderr.txt"}:
+            raise ValueError("HOST_OUTPUT_MANIFEST_STREAMS_INVALID")
+        verified = {}
+        for stream in ("stdout", "stderr"):
+            name = stream + ".txt"
+            item = specs[name]
+            expect = expected_streams[stream]
+            if (not isinstance(item, dict) or
+                    type(item.get("bytes")) is not int or item["bytes"] < 0 or
+                    item.get("sha256") != expect["sha256"] or
+                    archive.getinfo(name).file_size != item["bytes"]):
+                raise ValueError("HOST_OUTPUT_MANIFEST_MISMATCH")
+            digest = hashlib.sha256()
+            decoder = codecs.getincrementaldecoder("utf-8")("strict")
+            count = chars = 0
+            with archive.open(name, "r") as source:
+                while True:
+                    data = source.read(65536)
+                    if not data:
+                        break
+                    count += len(data)
+                    if count > item["bytes"]:
+                        raise ValueError("HOST_OUTPUT_BYTE_COUNT_MISMATCH")
+                    digest.update(data)
+                    chars += len(decoder.decode(data))
+                chars += len(decoder.decode(b"", final=True))
+            if (count != item["bytes"] or digest.hexdigest() != item["sha256"] or
+                    chars != expect["chars"]):
+                raise ValueError("HOST_OUTPUT_DIGEST_OR_LENGTH_MISMATCH")
+            verified[stream] = {"bytes": count, "chars": chars, "sha256": digest.hexdigest()}
+    return {"request_id": request_id, "streams": verified, "output_complete": True}
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("jsonl", help="Collected pages from existing admitted host.command read")
