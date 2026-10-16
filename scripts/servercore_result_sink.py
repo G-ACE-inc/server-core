@@ -178,8 +178,20 @@ def trusted_writer_metadata(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         raise SinkError("WRITER_LEDGER_UNREADABLE") from None
+    # The Writer executes the *target repository*, so raw.source_sha is
+    # request.repo_sha. The Result Sink receipt's record.host_sha instead
+    # identifies the shared server-core Dispatcher checkout. Equating these
+    # two SHAs worked only when the target was server-core itself; for every
+    # other registered repository it permanently blocked result publication.
+    # Receiver already verifies the immutable writer request id, repository
+    # and target SHA against the original admitted request before Sink write.
+    target_repo = raw.get("repository") if isinstance(raw, dict) else None
+    target_sha = raw.get("source_sha") if isinstance(raw, dict) else None
     if (not isinstance(raw, dict) or raw.get("request_id") != rid
-            or raw.get("source_sha") != record.get("host_sha")
+            or not isinstance(target_repo, str)
+            or not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", target_repo)
+            or not isinstance(target_sha, str) or not SHA.fullmatch(target_sha)
+            or (target_repo == RESULT_REPOSITORY and target_sha != record.get("host_sha"))
             or raw.get("exit_code") != record.get("exit_code")
             or (raw.get("state") == "HOST_COMMAND_PASS") != (record.get("state") == "PASS")):
         raise SinkError("WRITER_LEDGER_CORRELATION_MISMATCH")
