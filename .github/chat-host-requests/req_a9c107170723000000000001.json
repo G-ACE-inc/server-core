@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read only Vault/GPG migration sources and tmpfs readiness with no sensitive values.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nl=/home/admin1/projects/libral-vault; v=/home/admin1/projects/astera_v8\nbody=VAULT_MIGRATION_READY_SCAN\nfor x in \"$l\" \"$v\"; do body=\"$body\nSOURCE=$(basename \"$x\")|$(git -C \"$x\" branch --show-current)|$(git -C \"$x\" rev-parse HEAD)\"; done\nfor x in /run/user/1000 /run/secrets /run/astera-v8; do if [ -d \"$x\" ]; then body=\"$body\nRUN_DIR=$(basename \"$x\")|exists|$(stat -f -c '%T' \"$x\")\"; fi; done\nfor x in /home/admin1/projects/gpg-core /home/admin1/gpg-core; do if [ -e \"$x\" ]; then body=\"$body\nGPG_CORE_PATH_EXISTS=YES\"; fi; done\nbody=\"$body\nCLOUDFLARED_COUNT=$(docker ps -a --format '{{.Names}}' | grep -ic cloudflare || true)\"\nbody=\"$body\nVAULT_TUNNEL_API_SOURCE=$(grep -c 'astera-tunnel/materialize' \"$l/src/server.ts\" || true)\"\nbody=\"$body\nV8_ENV_TUNNEL_PATH=$(awk -F= '/^CLOUDFLARE_TUNNEL_TOKEN_FILE=/{if ($2 ~ /^\\/run\\//) print \"TMP_PATH\";else if ($2 == \"/dev/null\") print \"NULL\";else print \"OTHER\"}' \"$v/.env\")\"\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"$body\" --jq '.html_url'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "GitHub latest Vault main 0fc65, v8 57dee; migration contract docs/ASTERA_V8_TUNNEL_VAULT_MIGRATION.md and control Issue #17. Runtime prior missing API settings. Inventory prerequisites."
+  }
+}
