@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core live recovery preflight: verify llama.cpp existing backend /slots contract after a single bounded Coder inference; keep existing Gate running",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json\nscript=\"\"\"import os,json,urllib.request,urllib.error\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY'],'Content-Type':'application/json'}\nu='http://127.0.0.1:18184'\nwith urllib.request.urlopen(urllib.request.Request(u+'/internal/handoff/status',headers=h),timeout=8) as r: state=json.load(r)\nassert sum(state['active'].values())==0 and state['handoff'] is None\nwith urllib.request.urlopen(urllib.request.Request(u+'/v1/models',headers=h),timeout=8) as r: mid=json.load(r)['data'][0]['id']\nbody={'model':mid,'stream':False,'messages':[{'role':'user','content':'Reply OK'}],'max_tokens':12}\nq=urllib.request.Request(u+'/v1/chat/completions',data=json.dumps(body).encode(),headers=h)\nwith urllib.request.urlopen(q,timeout=160) as r: result=json.load(r); code=r.status\nout={'inference_http':code,'choices':len(result.get('choices',[]))}\ntry:\n with urllib.request.urlopen('http://127.0.0.1:18084/slots',timeout=6) as r:\n  slots=json.load(r)\n  out['slots_http']=r.status\n  out['slots_count']=len(slots) if isinstance(slots,list) else -1\n  out['slots_is_processing_types']=[type(s.get('is_processing')).__name__ for s in slots if isinstance(s,dict)] if isinstance(slots,list) else []\nexcept urllib.error.HTTPError as e:out['slots_http']=e.code\nexcept Exception as e:out['slots_error']=type(e).__name__\nprint(json.dumps(out))\n\"\"\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',script],capture_output=True,text=True,timeout=205)\nout={'exit':p.returncode,'result':json.loads(p.stdout) if p.returncode==0 and p.stdout.strip().startswith('{') else {'error':p.stderr[-500:]}}\nc=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_LIVE_CRASH_RECOVERY_SLOTS_PREFLIGHT\\n'+json.dumps(out,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=25)\nprint('RECOVERY_SLOTS_RESULT='+('RECORDED '+c.stdout.strip() if c.returncode==0 else 'RECORD_FAILED'))\nraise SystemExit(0 if p.returncode==0 and c.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6217372498"
+  }
+}
