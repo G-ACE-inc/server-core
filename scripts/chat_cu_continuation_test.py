@@ -1,4 +1,6 @@
 import unittest
+from unittest.mock import patch
+from scripts import chat_cu_continuation as continuation
 from scripts.chat_cu_continuation import resume, assess_diagnostic_context, discover_common_host_run
 
 BASE = {
@@ -65,9 +67,57 @@ class ContinuationTests(unittest.TestCase):
         self.assertFalse(result["actions_trigger_verified"])
 
     def test_incomplete_run_page_does_not_invent_absence(self):
-        with self.assertRaisesRegex(ValueError, "RUN_LIST_PAGINATION_REQUIRED"):
+        with self.assertRaisesRegex(ValueError, "GITHUB_LIST_INCOMPLETE"):
             discover_common_host_run("G-ACE-inc/server-core", "b" * 40,
                 api=lambda path: {"total_count": 101, "workflow_runs": []})
+
+    def test_complete_paginated_run_discovery(self):
+        calls = []
+        def api(path):
+            calls.append(path)
+            runs = [{"id": i, "head_sha": "b" * 40, "event": "push",
+                     "path": ".github/workflows/other.yml"} for i in range(1, 101)]
+            if "&page=2" in path:
+                runs = [{"id": 101, "head_sha": "b" * 40, "event": "push",
+                         "path": ".github/workflows/chatgpt-live-api-verify.yml"}]
+            return {"total_count": 101, "workflow_runs": runs}
+        self.assertEqual(discover_common_host_run("G-ACE-inc/server-core", "b" * 40, api=api)["run_id"], 101)
+        self.assertEqual(len(calls), 2)
+
+    def test_discovered_sha_must_match_restored_sha_before_resume(self):
+        argv = ["continuation", "--repository", BASE["repository"],
+                "--discover-head-sha", BASE["source_sha"],
+                "--request-id", BASE["request_id"], "--cu-issue-url", BASE["cu_issue_url"]]
+        with patch("sys.argv", argv), patch.object(continuation, "discover_common_host_run", return_value={
+                "run_id": 123, "source_sha": BASE["source_sha"]}), patch.object(
+                continuation, "restore", return_value={"source_sha": "c" * 40}), patch.object(
+                continuation, "resume") as resume_mock:
+            with self.assertRaisesRegex(ValueError, "DISCOVERY_RESTORE_SHA_MISMATCH"):
+                continuation.main()
+            resume_mock.assert_not_called()
+
+    def test_paginated_ambiguity_is_rejected(self):
+        def api(path):
+            return {"total_count": 2, "workflow_runs": [{
+                "id": 2 if "&page=2" in path else 1, "head_sha": "b" * 40,
+                "event": "push", "path": ".github/workflows/chatgpt-live-api-verify.yml"}]}
+        with self.assertRaisesRegex(ValueError, "MULTIPLE_COMMON_HOST_RUNS"):
+            discover_common_host_run("G-ACE-inc/server-core", "b" * 40, api=api)
+
+    def test_incomplete_unstable_or_duplicate_pages_rejected(self):
+        first = {"total_count": 2, "workflow_runs": [{"id": 1}]}
+        for second, error in [
+                ({"total_count": 2, "workflow_runs": []}, "GITHUB_LIST_INCOMPLETE"),
+                ({"total_count": 3, "workflow_runs": [{"id": 2}]}, "GITHUB_LIST_CHANGED"),
+                (first, "GITHUB_LIST_ID_INVALID_OR_DUPLICATE")]:
+            with self.subTest(second=second), self.assertRaisesRegex(ValueError, error):
+                discover_common_host_run("G-ACE-inc/server-core", "b" * 40,
+                    api=lambda path: second if "&page=2" in path else first)
+
+    def test_repository_dot_segments_rejected_without_api(self):
+        for repository in ("../other", "owner/..", "./repo", "owner/."):
+            with self.subTest(repository=repository), self.assertRaisesRegex(ValueError, "DISCOVERY_REPOSITORY_INVALID"):
+                discover_common_host_run(repository, "b" * 40, api=lambda path: self.fail("MUST_NOT_CALL_API"))
 
     def test_verified_host_mismatch_triggers_second_tool_read_and_replan(self):
         checkpoint = {**BASE, "observation": "HOST_SOURCE_SHA_MISMATCH",

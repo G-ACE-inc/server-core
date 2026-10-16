@@ -12,9 +12,9 @@ import tempfile
 from pathlib import Path
 
 try:
-    from scripts.chat_host_observation_gh_restore import continuation_checkpoint, restore
+    from scripts.chat_host_observation_gh_restore import continuation_checkpoint, restore, paginated_list, valid_repository
 except ModuleNotFoundError:
-    from chat_host_observation_gh_restore import continuation_checkpoint, restore
+    from chat_host_observation_gh_restore import continuation_checkpoint, restore, paginated_list, valid_repository
 
 RUN_URL = re.compile(r"https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/actions/runs/([1-9][0-9]*)\Z")
 
@@ -27,16 +27,13 @@ def api_read(path, run=subprocess.run):
 
 def discover_common_host_run(repository, head_sha, api=api_read):
     """Find existing common Host workflow across ALL GitHub event types."""
-    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository or ""):
+    if not valid_repository(repository):
         raise ValueError("DISCOVERY_REPOSITORY_INVALID")
     if not re.fullmatch(r"[a-f0-9]{40}", head_sha or ""):
         raise ValueError("DISCOVERY_SHA_INVALID")
-    response = api(f"repos/{repository}/actions/runs?head_sha={head_sha}&per_page=100")
-    if not isinstance(response, dict) or type(response.get("total_count")) is not int or not isinstance(response.get("workflow_runs"), list):
-        raise ValueError("RUN_LIST_INVALID")
-    if response["total_count"] > len(response["workflow_runs"]):
-        raise ValueError("RUN_LIST_PAGINATION_REQUIRED")
-    matches = [run for run in response["workflow_runs"]
+    runs = paginated_list(
+        f"repos/{repository}/actions/runs?head_sha={head_sha}&per_page=100", "workflow_runs", api)
+    matches = [run for run in runs
                if isinstance(run, dict)
                and run.get("head_sha") == head_sha
                and run.get("path") == ".github/workflows/chatgpt-live-api-verify.yml"
@@ -48,7 +45,7 @@ def discover_common_host_run(repository, head_sha, api=api_read):
                 "observation": "NO_MATCHING_COMMON_HOST_RUN_IN_COMPLETE_LIST",
                 "actions_trigger_verified": False,
                 "next_action": "INSPECT_WORKFLOW_TRIGGER_AND_COMMIT_PROVENANCE",
-                "other_run_count": response["total_count"]}
+                "other_run_count": len(runs)}
     run = matches[0]
     if type(run.get("id")) is not int or run["id"] <= 0:
         raise ValueError("RUN_ID_INVALID")
@@ -58,7 +55,7 @@ def discover_common_host_run(repository, head_sha, api=api_read):
             "observation": "EXISTING_COMMON_HOST_RUN_FOUND",
             "next_action": "RESTORE_CORRELATED_HOST_OBSERVATION",
             "evidence_url": f"https://github.com/{repository}/actions/runs/{run['id']}",
-            "other_run_count": response["total_count"] - 1}
+            "other_run_count": len(runs) - 1}
 
 def resume(checkpoint, api=api_read):
     if not isinstance(checkpoint, dict) or checkpoint.get("schema") != "gace.chat.cu.handoff.v1":
@@ -211,9 +208,10 @@ def main():
         if args.request_id or args.cu_issue_url:
             if not args.request_id or not args.cu_issue_url or "run_id" not in discovery:
                 parser.error("correlated recovery requires discovered run, request id and CU issue")
-            checkpoint = continuation_checkpoint(
-                restore(args.repository, discovery["run_id"], args.request_id),
-                args.cu_issue_url)
+            restored = restore(args.repository, discovery["run_id"], args.request_id)
+            if restored["source_sha"] != discovery["source_sha"]:
+                raise ValueError("DISCOVERY_RESTORE_SHA_MISMATCH")
+            checkpoint = continuation_checkpoint(restored, args.cu_issue_url)
             result = {"discovery": discovery, "checkpoint": checkpoint,
                       "continuation": resume(checkpoint)}
         else:
