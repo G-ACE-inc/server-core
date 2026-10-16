@@ -110,7 +110,9 @@ def bind_source_context(bounded, context):
     for path in files:
         preflight.append("test -f " + shlex.quote(path) +
                          " || { echo CHAT_SOURCE_REQUIRED_FILE_MISSING >&2; exit 75; }")
-    preflight += [original, ")"]
+    # Writer strips this protected-prefix from the captured stdout. Its
+    # presence proves the source checks passed before the user command ran.
+    preflight += ["printf '__GACE_SOURCE_PREFLIGHT_OK__\\n'", original, ")"]
     return {**bounded, "command": "\n".join(preflight)}
 
 
