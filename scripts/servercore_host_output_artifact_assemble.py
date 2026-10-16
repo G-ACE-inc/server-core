@@ -72,18 +72,9 @@ def assemble(pages, output_dir):
 
 
 
-def verify_artifact_zip(zip_path, request_id, expected_streams):
-    """Verify every byte of an existing Host output ZIP against correlated metadata.
-
-    Never trust the ZIP's self-declared digest alone, and never return plaintext
-    Host output in a CHAT checkpoint. The source of expected_streams must be the
-    separately validated observation Artifact for the same request id.
-    """
-    import codecs
+def validate_expected_streams(expected_streams):
+    """Apply the same independent metadata admission before download or unzip."""
     import re
-
-    if not isinstance(request_id, str) or not re.fullmatch(r"req_[a-f0-9]{24}", request_id):
-        raise ValueError("REQUEST_ID_INVALID")
     if not isinstance(expected_streams, dict) or set(expected_streams) != {"stdout", "stderr"}:
         raise ValueError("EXPECTED_HOST_STREAM_METADATA_REQUIRED")
     total_expected_bytes = 0
@@ -99,6 +90,21 @@ def verify_artifact_zip(zip_path, request_id, expected_streams):
         total_expected_bytes += info["bytes"]
     if total_expected_bytes > MAX_VERIFIED_TOTAL_BYTES:
         raise ValueError("HOST_OUTPUT_UNCOMPRESSED_SIZE_LIMIT")
+
+
+def verify_artifact_zip(zip_path, request_id, expected_streams):
+    """Verify every byte of an existing Host output ZIP against correlated metadata.
+
+    Never trust the ZIP's self-declared digest alone, and never return plaintext
+    Host output in a CHAT checkpoint. The source of expected_streams must be the
+    separately validated observation Artifact for the same request id.
+    """
+    import codecs
+    import re
+
+    if not isinstance(request_id, str) or not re.fullmatch(r"req_[a-f0-9]{24}", request_id):
+        raise ValueError("REQUEST_ID_INVALID")
+    validate_expected_streams(expected_streams)
     if Path(zip_path).stat().st_size > MAX_VERIFIED_ARCHIVE_BYTES:
         raise ValueError("HOST_OUTPUT_ARCHIVE_SIZE_LIMIT")
     with zipfile.ZipFile(zip_path) as archive:

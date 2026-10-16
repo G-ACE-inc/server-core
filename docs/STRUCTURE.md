@@ -152,6 +152,8 @@ Secret / Token値をoperationsへ保存しない。
 - `scripts/github_project_chat_turn_gate.py`: bounded START/FAILURE/STOP **supplied-receipt** evaluator; not native ChatGPT send interception
 - `scripts/github_project_chat_turn_gate_test.py`: positive/negative receipt regression; does not prove an actual CHAT turn continued
 - `scripts/servercore_bounded_result_poll.py` / `scripts/servercore_bounded_result_poll_test.py`: request-correlated Host-result wait, bounded backoff and logical lookup/wait diagnostics; existing verify workflow runs regression tests
+- `scripts/chat_host_observation_gh_restore.py` / `scripts/chat_cu_continuation.py`: exact existing Run/request recovery, private Artifact download/verification and next-action receipts; existing tests cover provenance, bounded ZIP handling and cleanup
+- `scripts/servercore_host_output_private_artifact_publish.py` / `scripts/servercore_host_output_export.py`: protected Writer/Vault input to existing private CI Artifact, independent output verification and owner-only temporary exports; no new Host admission
 - `.github/workflows/server-core-guard.yml`: existing deterministic test invocation; scoped CU #40 design/documentation PR preflight; on `main` push, rejects CU #40 gate-path changes without an exact main-target merged PR SHA when native branch protection is unavailable (private GitHub Free)
 - `.github/workflows/chatgpt-live-api-verify.yml`: existing live bounded Host lane, explicit START admission before Host credentials and commands
 - `.github/chatgpt-live-api-target.json`: existing bounded trigger; keep idle configuration after tests

@@ -54,4 +54,8 @@ Host観測の `streams[].complete` はIssue/Jobに見える**プレビューの�
 
 受取側はprivate Run/Artifact/request IDと独立した元出力メタデータを照合し、既存`--host-output-zip`で継続判断へ渡す。正常・失敗の分類をexit codeに埋めて再実行を重ねたり、候補コミットを総当たりして本文の代わりにしない。相関済みのHost失敗は本文が未取得でもまず元Run/失敗Stepを再確認し、その後に必要な範囲の回収・修正へ進む。回収ZIPの自己整合やprivate CI成功は、元Hostコマンドの成功・Source truncation不存在・実CHATの受信成功を証明しない。ブラウザの接続断・フリーズ解消も別途未検証。
 
+**private Artifact→継続判断の接続（2026-10-17）**：CLIを使用できる実行面では、既存`chat_cu_continuation.py`の元の`--repository / --run-id / --request-id / --cu-issue-url`に`--private-output-run-id <回収済みprivate CIの実Run ID>`を加える。元Host Runの成功と出力検証状態をFresh確認してから、固定private宛先のRepository・releaseイベント・既存CI Workflow・Run SHA・Artifact ID/期限/request名を照合する。全ページ一覧の一意性を確認し、ZIPをメモリ一括取得せず一時privateファイルへ受信する。外側は`output.zip`だけを許容し、内側の全bytes/chars/SHAを独立した元Host観測と照合した場合だけ`VERIFY_CU_ACCEPTANCE`へ進む。一時ファイルは成功・失敗の両方で削除し、Receiptには相関IDと検証メタデータだけを残す。ローカル`--host-output-zip`とは排他的であり、期限切れからの新Host実行や自動再発行はしない。
+
+通常CHATの既存GitHubコネクタには`download_workflow_artifact`がある。このセッションではprivate Artifact `12063644111`を取得し、返されたファイル参照から同一の41-byte出力を検証できた。自然言語の「Action completed」だけで本文取得済みと判断せず、構造化されたファイル参照と実バイトを確認する。コネクタのRun/Artifact一覧が先頭ページだけの場合は、完全性を推測せず既存APIのページング可能な取得経路を使う。短命のdownload URLをCurrent/Issue/Receiptへ保存しない。これは現セッションのコネクタ取得証拠であり、新しい通常CHATのCU継続やブラウザ症状の改善証拠ではない。
+
 実行依頼のファイル形式、必要な署名・認証・SHA・登録Repo制約は既存の実装と `operations/github-project-bounded-host.json` に従う。結果は既存ActionsとHost返却で確認する。失敗時は原因を修正して作業を続ける。通常CHATでの新たなMaster承認は要求しない。

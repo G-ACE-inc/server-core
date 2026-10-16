@@ -2,11 +2,15 @@ import io
 import zipfile
 import json
 import subprocess
+import hashlib
+import stat
 import tempfile
 import unittest
 from pathlib import Path
 
 from scripts.chat_host_observation_gh_restore import restore, continuation_checkpoint
+from scripts import chat_host_observation_gh_restore as reader
+from unittest.mock import patch
 
 RID = "req_" + "a" * 24
 SHA = "b" * 40
@@ -224,6 +228,148 @@ class RestoreTests(unittest.TestCase):
                         result, "https://github.com/G-ACE-inc/server-core/issues/40")
                     self.assertEqual(checkpoint["phase"], "OBSERVE")
                     self.assertEqual(checkpoint["next_action"], "RECHECK_EXISTING_RUN_AND_HOST_RESULT")
+
+
+class PrivateOutputTests(unittest.TestCase):
+    def setUp(self):
+        self.streams = {"stdout": "private 日本語🙂\n" * 18000, "stderr": "error\n"}
+        self.expected = {name: {"bytes": len(text.encode()), "chars": len(text),
+                               "sha256": hashlib.sha256(text.encode()).hexdigest()}
+                         for name, text in self.streams.items()}
+        manifest = {"request_id": RID, "streams": {
+            name + ".txt": {k: value[k] for k in ("bytes", "sha256")}
+            for name, value in self.expected.items()}}
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w", zipfile.ZIP_DEFLATED) as z:
+            for name, text in self.streams.items():
+                z.writestr(name + ".txt", text)
+            z.writestr("manifest.json", json.dumps(manifest))
+        self.payload = data.getvalue()
+        self.wrapper = self.wrap([("output.zip", self.payload)])
+        self.recipient = {"private": True, "full_name": reader.PRIVATE_OUTPUT_REPOSITORY}
+        self.info = {"id": 123, "repository": {"full_name": reader.PRIVATE_OUTPUT_REPOSITORY},
+                     "head_sha": SHA, "path": ".github/workflows/ci.yml@main", "event": "release",
+                     "status": "completed", "conclusion": "success"}
+        self.item = {"id": 19, "name": "gace-host-output-" + RID, "expired": False,
+                     "size_in_bytes": len(self.wrapper),
+                     "workflow_run": {"id": 123, "head_sha": SHA}}
+        self.items = [self.item]
+        self.downloads = []
+        self.calls = []
+
+    def wrap(self, members):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as z:
+            for name, data in members:
+                z.writestr(name, data)
+        return buffer.getvalue()
+
+    def fake_run(self, cmd, **kwargs):
+        path = cmd[2]
+        self.calls.append(path)
+        if path.endswith("/zip"):
+            self.assertEqual(path, f"repos/{reader.PRIVATE_OUTPUT_REPOSITORY}/actions/artifacts/19/zip")
+            self.assertNotIn("capture_output", kwargs)
+            self.assertTrue(callable(kwargs["preexec_fn"]))
+            self.assertEqual(kwargs["preexec_fn"].args, (reader.MAX_VERIFIED_ARCHIVE_BYTES,))
+            self.downloads.append(Path(kwargs["stdout"].name))
+            kwargs["stdout"].write(self.wrapper)
+            return subprocess.CompletedProcess(cmd, 0)
+        if "/artifacts?" in path:
+            value = {"total_count": len(self.items), "artifacts": self.items}
+        elif "/runs/" in path:
+            value = self.info
+        else:
+            value = self.recipient
+        return subprocess.CompletedProcess(cmd, 0, stdout=json.dumps(value))
+
+    def recover(self, expected=None):
+        return reader.private_host_output(123, RID, expected or self.expected, run=self.fake_run)
+
+    def assert_no_files(self):
+        self.assertTrue(all(not path.parent.exists() for path in self.downloads))
+
+    def test_private_unicode_payload_verified_and_removed_after_consumption(self):
+        with self.recover() as (path, proof):
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+            self.assertEqual(proof["streams"], self.expected)
+            self.assertEqual(proof["artifact_id"], 19)
+            self.assertNotIn("private 日本語", json.dumps(proof, ensure_ascii=False))
+            self.assertTrue(path.exists())
+        self.assertFalse(path.exists())
+        self.assert_no_files()
+
+    def test_consumer_exception_also_removes_plaintext(self):
+        with self.assertRaisesRegex(RuntimeError, "CONSUMER_FAILED"):
+            with self.recover():
+                raise RuntimeError("CONSUMER_FAILED")
+        self.assert_no_files()
+
+    def test_public_or_wrong_recipient_never_downloaded(self):
+        for recipient in ({**self.recipient, "private": False},
+                          {**self.recipient, "full_name": "other/repo"}):
+            self.recipient = recipient
+            with self.subTest(recipient=recipient), self.assertRaisesRegex(
+                    ValueError, "PRIVATE_REPOSITORY_NOT_VERIFIED"), self.recover():
+                self.fail("must not yield")
+        self.assertEqual(self.downloads, [])
+
+    def test_wrong_or_incomplete_private_run_never_downloaded(self):
+        original = dict(self.info)
+        for change in ({"id": 124}, {"event": "push"}, {"head_sha": "invalid"},
+                       {"status": "in_progress"}, {"conclusion": "failure"},
+                       {"repository": {"full_name": "other/repo"}}, {"path": "other.yml"}):
+            self.info = {**original, **change}
+            with self.subTest(change=change), self.assertRaisesRegex(
+                    ValueError, "PRIVATE_RUN_PROVENANCE_MISMATCH"), self.recover():
+                self.fail("must not yield")
+        self.assertEqual(self.downloads, [])
+
+    def test_missing_expired_ambiguous_or_wrong_provenance_artifact(self):
+        for items, error in (([], "ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS"),
+                ([{**self.item, "expired": True}], "ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS"),
+                ([self.item, {**self.item, "id": 20}], "ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS"),
+                ([{**self.item, "workflow_run": {"id": 124, "head_sha": SHA}}], "ARTIFACT_RUN_PROVENANCE_MISMATCH"),
+                ([{**self.item, "size_in_bytes": True}], "ARTIFACT_ZIP_SIZE_INVALID_OR_TOO_LARGE")):
+            self.items = items
+            with self.subTest(error=error), self.assertRaisesRegex(ValueError, error), self.recover():
+                self.fail("must not yield")
+        self.assertEqual(self.downloads, [])
+
+    def test_independent_digest_mismatch_refused_and_download_cleaned(self):
+        bad = {**self.expected, "stdout": {**self.expected["stdout"], "sha256": "f" * 64}}
+        with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_MANIFEST_MISMATCH"), self.recover(bad):
+            self.fail("must not yield")
+        self.assert_no_files()
+
+    def test_wrapper_does_not_extract_arbitrary_members(self):
+        for members in ([("../escape", self.payload)], [("output.zip", self.payload), ("extra", b"x")]):
+            self.wrapper = self.wrap(members)
+            with self.assertRaisesRegex(ValueError, "PRIVATE_ARTIFACT_MEMBERS_INVALID"), self.recover():
+                self.fail("must not yield")
+            self.assert_no_files()
+
+    def test_compressed_oversized_wrapper_refused_before_unwrapping(self):
+        self.wrapper = self.wrap([("output.zip", b"x" * 100000)])
+        self.item["size_in_bytes"] = len(self.wrapper)
+        with patch.object(reader, "MAX_VERIFIED_ARCHIVE_BYTES", 1000):
+            with self.assertRaisesRegex(ValueError, "PRIVATE_ARTIFACT_PAYLOAD_SIZE_OR_COMPRESSION_INVALID"), self.recover():
+                self.fail("must not yield")
+        self.assert_no_files()
+
+    def test_actual_download_cap_enforced_even_if_size_metadata_lies(self):
+        self.wrapper = b"x" * 2000
+        self.item["size_in_bytes"] = 100
+        with patch.object(reader, "MAX_VERIFIED_ARCHIVE_BYTES", 1000):
+            with self.assertRaisesRegex(ValueError, "ARTIFACT_ZIP_SIZE_EXCEEDED"), self.recover():
+                self.fail("must not yield")
+        self.assert_no_files()
+
+    def test_invalid_expectations_rejected_before_github_access(self):
+        with self.assertRaisesRegex(ValueError, "EXPECTED_HOST_STREAM_METADATA_REQUIRED"):
+            with reader.private_host_output(123, RID, None, run=self.fake_run):
+                self.fail("must not yield")
+        self.assertEqual(self.calls, [])
 
 
 if __name__ == "__main__":
