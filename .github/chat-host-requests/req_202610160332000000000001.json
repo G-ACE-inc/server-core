@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPT CHAT #40 assert via actual Host process exit that refreshed 2.92MB Writer ledger matches independent Unicode chars/bytes/digests and old ledger does not, no raw data output",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "command": "python3 - <<'PY'\nimport json,hashlib\nfrom pathlib import Path\nroot=Path(\"/home/admin1/logs/servercore-service-deploy\")\nids={\"before\":\"req_85ae9fe6ef8fd49252b37385\",\"after\":\"req_67bc7d72e656247c6b586a02\"}\nexpected={\"stdout\":(720000,1920000,\"dc45652c424e94f87d27d7ab9605c545fbdbaf0b2300dcc4a47dd881ee15664f\"),\"stderr\":(400000,1000000,\"d9fa711c814b5c5c43cb789349e112b62fe0add88473a9ccc17dc30881c13778\")}\ndef match(r):\n    return r.get(\"state\")==\"HOST_COMMAND_PASS\" and all((len(r.get(k,\"\")),len(r.get(k,\"\").encode(\"utf-8\")),hashlib.sha256(r.get(k,\"\").encode(\"utf-8\")).hexdigest())==expected[k] for k in expected)\nold=json.loads((root/(ids[\"before\"]+\".json\")).read_text(encoding=\"utf-8\"))\nnew=json.loads((root/(ids[\"after\"]+\".json\")).read_text(encoding=\"utf-8\"))\nassert not match(old),\"OLD_CLIPPED_RECORD_UNEXPECTEDLY_COMPLETE\"\nassert match(new),\"REFRESHED_HOST_LEDGER_BYTE_OR_SHA_MISMATCH\"\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "Post Writer/Sink service refresh Run 38841046792 PASS exact synthetic 2.92MB request req_67bc7d72e656247c6b586a02; Source now metadata-only, so prove independent parity by Host command exit rather than absent preview."
+  }
+}
