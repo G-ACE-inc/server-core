@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read only already-failed AI Core Gate refresh protected Writer ledger categorized fault and actual live Gate image/source fingerprint, record sanitized evidence in existing Current; do not rerun Gate deployment.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\ninfo=$(python3 -c 'import json;d=json.load(open(\"/home/admin1/logs/servercore-service-deploy/req_acb53cae06da9e1864dcea4e.json\"));s=str(d.get(\"stderr\") or \"\").lower();out=str(d.get(\"stdout\") or \"\").lower();keys=(\"connection refused\",\"traceback\",\"error response from daemon\",\"failed\",\"health\",\"no such image\",\"rollback\",\"no such file\",\"timed out\");print(\"FAILURE_CLASSES=\"+\",\".join(k.replace(\" \",\"_\") for k in keys if k in s or k in out)+\" STDERR_BYTES=\"+str(len(s))+\" STDOUT_BYTES=\"+str(len(out)))')\ncurrent=$(docker inspect ai-core-model-gate --format '{{.State.Status}}|{{.Image}}')\nold=$(docker image inspect ai-core-model-gate:rollback-before-13c0cb20 --format '{{.Id}}' 2>/dev/null || echo ABSENT)\nactive=$(docker exec ai-core-model-gate sha256sum /app/runtime/model_gate.py | cut -d ' ' -f1)\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ndesired=$(sha256sum \"$w/runtime/model_gate.py\" | cut -d ' ' -f1)\nmsg=\"AI_CORE_METRICS_REFRESH_FAULT $info CURRENT=$current ROLLBACK_ID=$old SOURCE_MATCH=$([ \"$active\" = \"$desired\" ] && echo YES || echo NO)\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$msg\" --jq .html_url >/dev/null\necho METRICS_REFRESH_FAULT=RECORDED"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Core PR3 13c0cb20 stream metric targeted + offline image Host#10 6225748044 PASS, live Gate refresh request req_acb53cae06da9e1864dcea4e failed exit1 stderr3033 #6225757843, Host SHA match. Diagnose original protected stderr categories and current Gate image/actual Source before retry. No repeat infer or unsafe restart."
+  }
+}
