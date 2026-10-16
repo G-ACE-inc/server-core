@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core diagnose/fix failed real 4-caller test: parse exact test code, execute via Docker python3 -c, preserve stderr evidence, no product source mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport ast,subprocess,json\ncode=\"import json,os,time,threading,urllib.request,urllib.error,statistics\\nkey=os.environ['AI_CORE_API_KEY']\\nurl='http://127.0.0.1:18184'\\nheaders={'Authorization':'Bearer '+key,'Content-Type':'application/json'}\\ndef get(path):\\n r=urllib.request.Request(url+path,headers=headers)\\n with urllib.request.urlopen(r,timeout=10) as q:return json.load(q)\\ndef infer(client,wait=0,max_tokens=8):\\n model=get('/v1/models')['data'][0]['id']\\n body=json.dumps({'model':model,'messages':[{'role':'user','content':'Reply OK.'}],'max_tokens':max_tokens,'temperature':0}).encode()\\n h={**headers,'X-AI-Core-Client':client,'X-AI-Core-Wait-Ms':str(wait)}\\n t=time.monotonic()\\n try:\\n  with urllib.request.urlopen(urllib.request.Request(url+'/v1/chat/completions',data=body,headers=h),timeout=220) as r:\\n   d=json.load(r)\\n   return {'client':client,'status':r.status,'elapsed_s':round(time.monotonic()-t,2),'choices':len(d.get('choices',[]))}\\n except urllib.error.HTTPError as e:\\n  try:err=json.load(e).get('error',{}).get('code')\\n  except Exception:err='UNKNOWN'\\n  return {'client':client,'status':e.code,'code':err,'elapsed_s':round(time.monotonic()-t,2)}\\ndef state():\\n h=get('/internal/handoff/status');r=get('/internal/resources/status')\\n return {'resident':h['resident'],'active':h['active'],'handoff':h['handoff'],'pending':h['recovery_pending'],'queued':r['queued'],'memory':int(r['memory']['memory.current']),'cpu_usage':int(r['cpu_stat'].get('usage_usec',0)),'throttle':int(r['cpu_stat'].get('throttled_usec',0)),'events':r['memory_events'],'psi':r['pressure']}\\ntry:\\n before=state()\\n if before['handoff'] is not None or before['pending'] or before['queued'] or any(before['active'].values()) or len(before['resident'])>2:\\n  raise RuntimeError('BUSY_PRECHECK_NO_REQUEST')\\n warm=infer('warm-coder',0,8)\\n if warm['status']!=200:raise RuntimeError('WARM_REQUEST_FAILED:'+str(warm))\\n start=state()\\n results=[None]*4\\n labels=['a-1','a-2','b-1','c-1']\\n def worker(i):results[i]=infer(labels[i][0] if i<2 else labels[i][0],30000,8)\\n threads=[]\\n for i in range(4):\\n  t=threading.Thread(target=worker,args=(i,),daemon=True);t.start();threads.append(t);time.sleep(0.12)\\n for t in threads:t.join(timeout=220)\\n after=state()\\n out={'phase':'REAL_QUEUE_ADMISSION','warm':warm,'calls':results,'before':before,'after_warm':start,'after':after,'all_finished':all(x is not None for x in results),'released':not any(after['active'].values()) and after['queued']==0,'oom_delta':after['events'].get('oom_kill',0)-before['events'].get('oom_kill',0),'cpu_used_usec':after['cpu_usage']-start['cpu_usage'],'throttle_usec_delta':after['throttle']-start['throttle']}\\n print(json.dumps(out,ensure_ascii=False,separators=(',',':')))\\nexcept Exception as exc:\\n print(json.dumps({'error':type(exc).__name__+':'+str(exc)[:230]},ensure_ascii=False))\\n raise\"\nout={'stage':'AST_PARSE','request':'retry correct Docker -c invocation'}\ntry:\n ast.parse(code)\n out['stage']='DOCKER_EXEC'\n p=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',code],capture_output=True,text=True,timeout=350)\n out['exit']=p.returncode;out['stdout']=p.stdout[-3300:];out['stderr']=p.stderr[-1000:]\nexcept Exception as e:\n out['error']=type(e).__name__+':'+str(e)[:290]\nbody='AI_CORE_REAL_QUEUE_EXEC_DIAG\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nq=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=25)\nprint('TEST_STAGE='+out['stage'])\nprint('RETURN='+str(out.get('exit','unknown')))\nprint('RECEIPT='+q.stdout.strip() if q.returncode==0 else 'NOT_SAVED')\nraise SystemExit(0 if q.returncode==0 and out.get('exit')==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6219266833"
+  }
+}
