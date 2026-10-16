@@ -363,7 +363,7 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         base = {"request_id": request_id, "repository": repository, "source_sha": target_sha,
                 "source_preflight": value.get("source_preflight", False),
                 # Hash only the admitted writer-side UTF-8 command; never log its text.
-                **command_ingress_fingerprint(command_text)
+                **command_ingress_fingerprint(command_text)}
         write_result(request_id, {**base, "state": "RUNNING"}, result_dir)
         try:
             run = runner or subprocess.run
