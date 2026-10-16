@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Run exact latest AI Core PR3 84ee18e all source tests on existing verified nested worktree; no backend changes, no old Router",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess,os\nfrom pathlib import Path\nwt=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\nwant='84ee18e95d578c59fd33ff776353e10df5519c90'\np=subprocess.run(['git','-C',str(wt),'rev-parse','HEAD'],text=True,capture_output=True,timeout=15)\nout={'expected_sha':want,'actual_sha':p.stdout.strip(),'suite':'tests/test_*.py','source_match':p.returncode==0 and p.stdout.strip()==want}\nif out['source_match']:\n t=subprocess.run(['python3','-m','unittest','discover','-s','tests','-p','test_*.py','-q'],cwd=str(wt),env={**os.environ,'PYTHONDONTWRITEBYTECODE':'1'},text=True,capture_output=True,timeout=170)\n out['exit_code']=t.returncode\n out['last_test_lines']=[line for line in t.stderr.splitlines() if line.startswith('Ran ') or line.strip() in ('OK','FAILED') or line.startswith('FAILED (')][-5:]\n out['stderr_tail']=t.stderr[-700:] if t.returncode else ''\nbody='AI_CORE_EXACT_84EE_FULL_SOURCE_SUITE\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('EXACT_SOURCE_TEST_RECORD='+('PASS '+r.stdout.strip() if r.returncode==0 else 'FAILED'))\nraise SystemExit(0 if r.returncode==0 and out.get('exit_code')==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
