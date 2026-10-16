@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Reversible AI Core Gate-only source reflection after exact HEAD and zero backend/lease/queue/handoff guards; backed up existing live image; 4 health checks and exact SHA readback. No backend recreate, no DebugAI change.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -Eeuo pipefail\nr=/home/admin1/projects/ai-core\nw=\"$r/.worktrees/pr3-verification-20261015\"\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = cd5255bb9f7fd4f6f8eb2db119e7bfcf2c413863\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\nstage=ai-core-model-gate:uds-stale-guard-cd5255\nbackup=ai-core-model-gate:rollback-before-stale-cd5255\ndocker image inspect \"$stage\" >/dev/null\nfor n in ai-coder ai-qwen3 ai-granite ai-ministral; do test \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = false; done\ndocker exec ai-core-model-gate python3 -c 'import os,json,urllib.request;h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]};f=lambda p:json.load(urllib.request.urlopen(urllib.request.Request(\"http://127.0.0.1:18184\"+p,headers=h),timeout=8));a=f(\"/internal/handoff/status\");b=f(\"/internal/resources/status\");assert not a[\"resident\"] and not any(a[\"active\"].values()) and not a[\"handoff\"] and not a[\"recovery_pending\"] and not b[\"queued\"]'\ndocker image tag \"$(docker inspect -f '{{.Image}}' ai-core-model-gate)\" \"$backup\"\nexport AI_CORE_API_KEY=\"$(docker exec ai-core-model-gate sh -c 'printf %s \"$AI_CORE_API_KEY\"')\"\ntest \"${#AI_CORE_API_KEY}\" -ge 16\ndocker compose -p ai-core-gate -f \"$w/compose.gate.yml\" --project-directory \"$r\" --env-file \"$r/.env\" config -q\nrollback() { code=$?; trap - ERR; set +e; docker image tag \"$backup\" ai-core-model-gate:local; docker compose -p ai-core-gate -f \"$w/compose.gate.yml\" --project-directory \"$r\" --env-file \"$r/.env\" up -d --no-build --force-recreate gate; echo \"STALE_GUARD_ROLLBACK_REQUESTED original_exit=$code\"; exit \"$code\"; }\ntrap rollback ERR\ndocker image tag \"$stage\" ai-core-model-gate:local\ndocker compose -p ai-core-gate -f \"$w/compose.gate.yml\" --project-directory \"$r\" --env-file \"$r/.env\" up -d --no-build --force-recreate gate >/dev/null\nexpected=$(sha256sum \"$w/runtime/model_gate.py\" | cut -d' ' -f1)\nactual=$(docker exec ai-core-model-gate sha256sum /app/runtime/model_gate.py | cut -d' ' -f1)\ntest \"$expected\" = \"$actual\"\ndocker exec ai-core-model-gate python3 -c 'import urllib.request;[urllib.request.urlopen(\"http://127.0.0.1:%d/health\"%p,timeout=8).close() for p in (18181,18182,18183,18184)]'\ntrap - ERR\nprintf 'AI_CORE_UDS_STALE_GUARD_LIVE=PASS SOURCE_SHA256=%s BACKUP=%s\\n' \"$actual\" \"$backup\"\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 cd525 focused tests Host Issue10 6223396196 PASS, staged source parity Issue10 6223490204 PASS, quiescent current Gate required; latest DebugAI independent PR c5f, do not modify product. Rollback tagged previous live image before restart."
+  }
+}
