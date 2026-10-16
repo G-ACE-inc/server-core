@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Inspect current Gate image installed Docker CLI PATH inside isolated nonnetwork container, no keys or models started",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nimage='ai-core-model-gate:local'\nargv=['docker','run','--rm','--network','none','--entrypoint','/bin/sh',image,'-c',\"printf 'PATH=%s\\n' \\\"$PATH\\\"; command -v docker || true; ls -l /usr/bin/docker /usr/local/bin/docker 2>&1 || true; dpkg-query -W docker.io 2>&1 || true\"]\np=subprocess.run(argv,capture_output=True,text=True,timeout=25)\nout={'exit':p.returncode,'output':(p.stdout+'\\n'+p.stderr)[-1000:]}\nbody='AI_CORE_IMAGE_DOCKER_CLI_INSPECTION\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('AI_CORE_DOCKER_CLI_READ='+('PASS '+r.stdout.strip() if r.returncode==0 else 'FAIL'))\nraise SystemExit(0 if r.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Gate Docker container failed FileNotFoundError docker at preflight, PR3 source Dockerfile installs docker.io but actual image missing executable, inspect image contents before repair."
+  }
+}
