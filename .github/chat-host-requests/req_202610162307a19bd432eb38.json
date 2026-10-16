@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read only actual Core parent CPU/memory/swap/PSI/OOM/lease status after qualifying shared two-client inference, to close A-E resource acceptance; preserve all services/consumer Source, record exact evidence.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "command": "set -eu\nreport=$(docker exec ai-core-model-gate python3 -c '\nimport json,os,urllib.request\nh={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]}\ndef get(p):\n q=urllib.request.Request(\"http://127.0.0.1:18184\"+p,headers=h)\n return json.load(urllib.request.urlopen(q,timeout=8))\na=get(\"/internal/handoff/status\")\nr=get(\"/internal/resources/status\")\nm=get(\"/internal/metrics/status\")\ne=r[\"memory_events\"]\nprint(json.dumps({\"residents\":a[\"resident\"],\"active\":sum(a[\"active\"].values()),\"queue\":r[\"queued\"],\"handoff\":bool(a[\"handoff\"]),\"recovery_pending\":a[\"recovery_pending\"],\"cpu_max\":r[\"cpu_max\"],\"mem_current\":r[\"memory\"][\"memory.current\"],\"mem_high\":r[\"memory\"][\"memory.high\"],\"mem_max\":r[\"memory\"][\"memory.max\"],\"swap\":r[\"memory\"][\"memory.swap.current\"],\"oom\":e.get(\"oom\"),\"oom_kill\":e.get(\"oom_kill\"),\"psi\":r[\"pressure\"][\"memory\"].splitlines()[0].split()[1],\"samples\":m[\"window_completed\"],\"persistence\":m[\"persistence\"]},separators=(\",\",\":\")))\n')\ntest \"$(docker inspect ai-core-model-gate --format '{{.State.Running}}')\" = true\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"AI_CORE_POST_CONCURRENT_RUNTIME SOURCE=81d75017d0fd0ddc631e0c6de862c1cc0d4d662d $report\" --jq .html_url >/dev/null\necho AI_CORE_POST_CONCURRENT_RESOURCE_CHECK=RECORDED"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Core Current#1 two-client READY shared inference PASSED real Host #6226334557, 2 successful clients, full metrics and persistence=READY, actual Gate Source 81d75017 with only script test PR#3 HEAD9c4c36. Need actual parent CPU6/RAM36GiB/oom/swap/PSI, active zero and no handoff before PR completion review. Host sha4fe86475."
+  }
+}
