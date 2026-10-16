@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core only: bounded real SSE crash-recovery check using own Coder inference under idle-only guard, reuse DebugAI Gate results; preserve other product traffic",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json,time,urllib.request\ndef run(a,t=20):return subprocess.run(a,capture_output=True,text=True,timeout=t)\nprobe=\"\"\"import os,json,urllib.request,hashlib\nfrom pathlib import Path\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']}\nr=urllib.request.Request('http://127.0.0.1:18184/internal/handoff/status',headers=h)\nwith urllib.request.urlopen(r,timeout=8) as q:s=json.load(q)\ntry:\n with urllib.request.urlopen('http://127.0.0.1:18084/slots',timeout=3) as q:d=json.load(q)\n busy=any(v.get('is_processing') is True for v in d)\nexcept Exception:busy=False\nprint(json.dumps({'active':s['active'],'pending':s['recovery_pending'],'handoff':s['handoff'],'resident':s['resident'],'busy':busy,'sha':hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest()}))\n\"\"\"\nwork=\"\"\"import os,json,urllib.request\nu='http://127.0.0.1:18184';h={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY'],'Content-Type':'application/json'}\nwith urllib.request.urlopen(urllib.request.Request(u+'/v1/models',headers=h),timeout=7) as q:m=json.load(q)['data'][0]['id']\nd={'model':m,'stream':True,'messages':[{'role':'user','content':'Write integers from 1 through 400 separated by commas.'}],'max_tokens':500}\nwith urllib.request.urlopen(urllib.request.Request(u+'/v1/chat/completions',headers=h,data=json.dumps(d).encode()),timeout=180) as q:\n for line in q:\n  if b'[DONE]' in line:break\n\"\"\"\ndef state():\n r=run(['docker','exec','ai-core-model-gate','python3','-c',probe],24)\n return json.loads(r.stdout) if r.returncode==0 else {'error':r.stderr[-120:]}\no={};w=None\ntry:\n s=state();o['start']=s\n if s.get('sha')!='24f72194632439f7666248e1ea790f9b69921683f03f9976bf984767b999ff3f' or s.get('pending')!=[] or s.get('handoff') is not None or sum(s.get('active',{}).values()) or s.get('resident'):raise ValueError('NOT_IDLE')\n w=subprocess.Popen(['docker','exec','ai-core-model-gate','python3','-c',work],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\n for _ in range(90):\n  s=state()\n  if s.get('busy') and s.get('active',{}).get('coder')==1 and sum(s['active'].values())==1 and s.get('handoff') is None:break\n  if w.poll() is not None:raise ValueError('STREAM_ENDED_BEFORE_BUSY')\n  time.sleep(1)\n else:raise ValueError('BUSY_NOT_OBSERVED')\n o['busy_before_restart']=True\n s=state()\n if not s.get('busy') or s.get('active',{}).get('coder')!=1 or sum(s['active'].values())!=1:raise ValueError('CONCURRENT_TRAFFIC')\n x=run(['docker','restart','--time','1','ai-core-model-gate'],70)\n o['restart_exit']=x.returncode\n if x.returncode:raise ValueError('RESTART_FAILED')\n for _ in range(16):\n  s=state()\n  if s.get('pending')==[] and sum(s.get('active',{}).values())==0:break\n  time.sleep(1)\n o['recovered']=s.get('pending')==[] and sum(s.get('active',{}).values())==0\n o['end']=s\nexcept Exception as e:o['error']=type(e).__name__+': '+str(e)[:120]\nfinally:\n if w and w.poll() is None:w.terminate()\no['ports']={}\nfor p in (18181,18182,18183,18184):\n try:\n  with urllib.request.urlopen('http://127.0.0.1:'+str(p)+'/health',timeout=3) as q:o['ports'][p]=q.status\n except Exception as e:o['ports'][p]=type(e).__name__\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_REAL_CRASH_RECOVERY_E2E\\n'+json.dumps(o,ensure_ascii=False)}),capture_output=True,text=True,timeout=25)\nprint('RECEIPT='+r.stdout.strip())\nprint('RECOVERY='+('PASS' if o.get('recovered') and all(v==200 for v in o['ports'].values()) else 'FAIL'))\nraise SystemExit(0 if r.returncode==0 and o.get('recovered') and all(v==200 for v in o['ports'].values()) else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6217892644"
+  }
+}
