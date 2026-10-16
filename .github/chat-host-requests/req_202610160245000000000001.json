@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPT CHAT #40 check live admin1 writer/result sink user services start timestamp versus checkout source and preserve dirty/stash before any runtime restart",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -e\necho WRITER_UNIT_BEGIN\nsystemctl --user show gace-servercore-service-deploy.service --property=LoadState,ActiveState,MainPID,ExecMainStartTimestamp --no-pager\necho WRITER_UNIT_END\necho SINK_UNIT_BEGIN\nsystemctl --user show gace-servercore-result-sink.service --property=LoadState,ActiveState,MainPID,ExecMainStartTimestamp --no-pager\necho SINK_UNIT_END\necho SOURCE_STATE_BEGIN\ngit status --porcelain --untracked-files=no | head -15\nprintf 'stash_count='; git stash list | wc -l\nstat -c 'writer_source_mtime=%y' scripts/servercore_service_deploy_socket.py\necho SOURCE_STATE_END"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED_MAIN",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "Writer is admin1 user systemd service per scripts/servercore_service_deploy_host_bootstrap.py, separate from bounded Host receiver Docker; output clipped despite checkout source unbounded."
+  }
+}
