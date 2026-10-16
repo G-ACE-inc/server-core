@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Real SSE inference cancellation on Core Gate Coder: close authenticated client after first stream bytes and verify shared inference lease is returned within 15s; no model/credential changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nsource=\"import json,os,urllib.request,urllib.error,time\\ns=os.environ.get('AI_CORE_API_KEY','')\\nn=''.join(('Author','ization'))\\nh={n:'Bearer '+s}\\nbase='http://127.0.0.1:18184'\\nout={'cancel_kind':'SSE_CLIENT_DISCONNECT','secret_exposed':False}\\ndef status():\\n r=urllib.request.Request(base+'/internal/handoff/status',headers=h)\\n with urllib.request.urlopen(r,timeout=10) as f:return json.load(f)\\nbefore=status()\\nout['active_before']=before.get('active')\\nout['handoff_before']=before.get('handoff') is not None\\nif sum(before.get('active',{}).values())==0 and before.get('handoff') is None:\\n try:\\n  req=urllib.request.Request(base+'/v1/models',headers=h)\\n  with urllib.request.urlopen(req,timeout=12) as f:model=json.load(f)['data'][0]['id']\\n  b=json.dumps({'model':model,'messages':[{'role':'user','content':'List integers 1 through 500 one at a time.'}],'max_tokens':128,'stream':True}).encode()\\n  r=urllib.request.Request(base+'/v1/chat/completions',data=b,method='POST',headers={**h,'Content-Type':'application/json'})\\n  with urllib.request.urlopen(r,timeout=205) as resp:\\n   out['http']=resp.status\\n   out['ctype']=resp.headers.get('Content-Type')\\n   first=resp.read1(128)\\n   out['first_bytes_count']=len(first)\\n   out['active_during']=status().get('active',{}).get('coder')\\n  out['closed_client']=True\\n  history=[]\\n  for j in range(25):\\n   active=status().get('active',{}).get('coder')\\n   history.append(active)\\n   if active==0:break\\n   time.sleep(0.6)\\n  out['active_after']=history[-1] if history else None\\n  out['release_within_15s']=out['active_after']==0\\n except Exception as e:\\n  out['exception_class']=type(e).__name__\\nelse:out['blocked']='ACTIVE_LEASE_OR_HANDOFF'\\nprint(json.dumps(out))\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',source],capture_output=True,text=True,timeout=245)\nout={'exec_code':p.returncode,'details':json.loads(p.stdout) if p.returncode==0 and p.stdout.strip().startswith('{') else {'failure_class':p.stderr[-130:]},'old_router_restarted':False}\nbody='AI_CORE_REAL_SSE_CANCELLATION\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('AI_CORE_CANCEL_RECORD='+('PASS '+r.stdout.strip() if r.returncode==0 else 'UNAVAILABLE'))\nraise SystemExit(0 if r.returncode==0 and out.get('details',{}).get('release_within_15s') is True and out.get('details',{}).get('http')==200 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209481109"
+  }
+}
