@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only compare seven exact PR112 Source files against live DebugAI Docker image SHA256 and current /health; publish signed observable digests to DebugAI Current; no Host mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\npython3 - <<'PY'\nimport hashlib,json,subprocess\nroot='/home/admin1/projects/debug-ai/.worktrees/debugai-pr112-gates-20261016'\npaths=['server/main.js','server/adapters/ai-core.js','server/workflow.js','server/control/durable-workflow-stage.js','server/control/role-work-item/adapter.js','server/control/role-work-item/continuation.js','server/roles.js']\ndef command(args):\n p=subprocess.run(args,capture_output=True,text=True,timeout=35)\n return {'exit':p.returncode,'stdout':p.stdout,'stderr':p.stderr[-140:]}\nout={}\nfor f in paths:\n local=command(['sha256sum',root+'/'+f])\n inside=command(['docker','exec','debug-ai-debug-ai-1','sha256sum','/app/'+f])\n if local['exit'] or inside['exit']: out[f]={'comparison':'FAILED','host_exit':local['exit'],'docker_exit':inside['exit']}\n else: out[f]={'comparison':'MATCH' if local['stdout'].split()[0]==inside['stdout'].split()[0] else 'MISMATCH','host_sha256':local['stdout'].split()[0],'container_sha256':inside['stdout'].split()[0]}\nh=command(['docker','exec','debug-ai-debug-ai-1','node','-e',\"fetch('http://127.0.0.1:8787/health').then(r=>console.log(r.status)).catch(()=>process.exit(1))\"])\nout['_live_health']={'exit':h['exit'],'http_status':h['stdout'].strip()}\nbody='DEBUGAI_LIVE_IMAGE_SOURCE_PARITY\\n'+json.dumps(out,indent=2)\nx=command(['gh','api','-X','POST','repos/seigo-gace/debug-ai/issues/41/comments','-f','body='+body])\nif x['exit']: raise SystemExit('GITHUB_CURRENT_WRITE_FAILED')\nprint('SOURCE_PARITY_COMMENT='+json.loads(x['stdout'])['html_url'])\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
