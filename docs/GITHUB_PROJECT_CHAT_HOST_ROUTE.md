@@ -4,6 +4,8 @@
 
 コマンド作成時の軽い自己確認は `docs/COMMAND_ROUTINE.md`、Masterへ直接コマンドを提示する場合は `docs/MASTER_TERMINAL_COMMAND.md` を唯一の作成規則とする。このページに別のコマンド選択規則やゲートは設けない。
 
+**2026-10-16 横断Repoの結果未着を修正した条件**：`Host Writer ledger.source_sha` は**実行対象Repo**の`repo_sha`であり、`Result Sink receipt.host_sha` は共通**Dispatcher/server-core**の`expected_sha`である。別Repo（例：`seigo-gace/ai-core`）なら異なるのが正常。以前のSink Sourceはこの2値を同一と誤判断して、Writer/Sinkの保存が完了していてもIssue #10への公開を失敗させ、Actionsが240秒待っていた。[PR #296](https://github.com/G-ACE-inc/server-core/pull/296)で、Receiverの既存「実Writer request ID＋対象Repo＋target SHA照合」を維持し、SinkではWriterの実Repo/target SHAを形式検証した上で同Request ID・exit・stateを照合する。同一Repo server-coreを実行した場合は引き続きDispatcher SHAとも完全一致を要求する。別Repoの古い`expected_sha`/古いRequest JSONをテンプレとして再送しない。SHA整合に失敗したら**その時の実Hostと対象Repo HEAD**を独立取得し、新規requestで正しく指定する。過去Requestは履歴証拠でありSelectorは新規追加された単一Requestだけを実行する。Source Merge後も既存Sinkの稼働プロセス更新と未公開結果の実回収を別途検証する。
+
 `host.command` の `expected_sha` は**共通Dispatcher（server-core Host checkout）の実測SHA**、`repo_sha` は**実行先の登録済みRepo checkoutの実測SHA**を示す。GitHub上の最新CommitやIssueに残った過去のHost SHAで両者を代用しない。同じ `G-ACE-inc/server-core` checkoutが実行対象なら両SHAは同一でなければならない。GitHubの先行CommitからHost反映を推定せず、相関済みHost結果のSHAを確認する。`SOURCE_SHA_MISMATCH` の場合は結果が返した実Host SHAを観測して原因・対象Repo HEADを再評価し、**新しいrequest_idと実測ピン**で再送する。照合無効化、事実確認なしの無限リトライ、古いRequestの再利用は行わない。
 
 ## 観測から次Actionまで（既存CU継続処理）
