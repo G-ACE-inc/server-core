@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Gateway28 distinguish ledger path/schema/digest failures by exact exit code",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6ab1b4dce10c684cfd3f7e15462a6c54fd05af58",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6ab1b4dce10c684cfd3f7e15462a6c54fd05af58",
+    "command": "python3 - <<'PY'\nimport json\nfrom pathlib import Path\np=Path('/home/admin1/logs/servercore-service-deploy/req_1714c8d700e41b187170885b.json')\nif not p.is_file(): raise SystemExit(21)\nr=json.loads(p.read_text())\nif 'command_sha256' not in r or 'command_bytes' not in r: raise SystemExit(22)\nif r['command_sha256']!='f503bba2fb95716648b37e75e4d117477421a3d029656742eda217bef2c2e792': raise SystemExit(23)\nif r['command_bytes']!=626: raise SystemExit(24)\nif r['state']!='HOST_COMMAND_PASS': raise SystemExit(25)\nprint('GATEWAY28_EXACT_WRITER_DIGEST=PASS')\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/315"
+  }
+}
