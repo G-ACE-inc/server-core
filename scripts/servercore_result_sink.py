@@ -192,14 +192,22 @@ def trusted_writer_metadata(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
     # and target SHA against the original admitted request before Sink write.
     target_repo = raw.get("repository") if isinstance(raw, dict) else None
     target_sha = raw.get("source_sha") if isinstance(raw, dict) else None
+    writer_execution_failed = bool(
+        isinstance(raw, dict) and raw.get("state") == "FAIL"
+        and raw.get("failure_class") == "HOST_COMMAND_EXECUTION_FAILED"
+        and raw.get("exit_code") is None
+        and "stdout" not in raw and "stderr" not in raw
+        and record.get("state") == "FAIL" and record.get("exit_code") == 1)
     if (not isinstance(raw, dict) or raw.get("request_id") != rid
             or not isinstance(target_repo, str)
             or not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", target_repo)
             or not isinstance(target_sha, str) or not SHA.fullmatch(target_sha)
             or (target_repo == RESULT_REPOSITORY and target_sha != record.get("host_sha"))
-            or raw.get("exit_code") != record.get("exit_code")
+            or (not writer_execution_failed and raw.get("exit_code") != record.get("exit_code"))
             or (raw.get("state") == "HOST_COMMAND_PASS") != (record.get("state") == "PASS")):
         raise SinkError("WRITER_LEDGER_CORRELATION_MISMATCH")
+    if writer_execution_failed:
+        return {"unavailable": True}  # timeout/OS error: original streams unknown
     meta = {}
     for name in ("stdout", "stderr"):
         value = raw.get(name)
@@ -239,6 +247,15 @@ def comment_body(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
     # Issue is an index/status surface; never include any Host output text.
     for stream in ("stdout", "stderr"):
         full = str(record.get(stream) or "")
+        if writer and writer.get("unavailable") is True:
+            # Never invent a zero-byte stdout/stderr digest for a Writer crash
+            # or timeout where original output is unavailable.
+            view[stream + "_chars"] = None
+            view[stream + "_bytes"] = None
+            view[stream + "_sha256"] = None
+            view[stream + "_preview_truncated"] = True
+            view[stream] = ""
+            continue
         evidence = (writer or {}).get(stream)
         if evidence is not None:
             view[stream + "_chars"] = evidence["chars"]
