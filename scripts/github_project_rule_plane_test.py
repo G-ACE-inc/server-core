@@ -201,7 +201,9 @@ assert "docs/MASTER_TERMINAL_COMMAND.md only when issuing Master a terminal comm
 assert "**Development procedure owner:** `docs/G_ACE_WORKSPACE.md` §6" in router
 assert "For a genuinely necessary Master terminal handoff use `docs/MASTER_TERMINAL_COMMAND.md`" in router
 assert "## 6. Development Routine" in routine
-assert "6. ITERATE:" in routine
+assert "**Continue after results:**" in routine
+assert "execute the next feasible action if one remains" in routine
+assert "**Capacity-safe continuity:**" in routine
 assert "MASTER TERMINAL COMMAND CONTRACT" in command_contract
 assert "Fetch the COMPLETE canonical Issue #17 body" not in router
 assert "fetch complete Rule Plane #17 body" not in readme

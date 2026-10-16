@@ -157,5 +157,95 @@ class TerminalOutputTests(unittest.TestCase):
         self.assertIn("CHAT_NEXT_ACTION=INSPECT_FAILURE_EVIDENCE_AND_REPLAN", output)
 
 
+class PendingRequestTests(unittest.TestCase):
+    """Exercise the real CLI loop without network calls or wall-clock sleeps."""
+
+    def run_pending(self, fetch_result, timeout=240, interval=6):
+        now = [0.0]
+        calls, sleeps = [], []
+
+        def fetch(path):
+            calls.append((now[0], path))
+            return fetch_result(len(calls))
+
+        def sleep(seconds):
+            self.assertGreater(seconds, 0)
+            sleeps.append(seconds)
+            now[0] += seconds
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = poll.main([
+                "--repository", "G-ACE-inc/server-core", "--issue", "10",
+                "--request-id", "req_" + "a" * 24,
+                "--command-id", "host.command", "--expected-sha", "b" * 40,
+                "--timeout", str(timeout), "--interval", str(interval),
+            ], fetch=fetch, sleep=sleep, clock=lambda: now[0])
+        return code, output.getvalue(), calls, sleeps
+
+    def result(self, **overrides):
+        record = dict(request_id="req_" + "a" * 24, command_id="host.command",
+                      expected_sha="b" * 40, state="PASS", exit_code=0,
+                      stdout="result", stderr="")
+        record.update(overrides)
+        return [{"body": "<!-- GACE_BOUNDED_HOST_RESULT request_id=req_" +
+                 "a" * 24 + " -->\n```json\n" + json.dumps(record) + "\n```",
+                 "html_url": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-1"}]
+
+    def test_pending_wait_uses_11_lookups_instead_of_41_and_keeps_deadline(self):
+        code, output, calls, sleeps = self.run_pending(lambda _: [])
+        self.assertEqual(code, 2)
+        self.assertEqual(len(calls), 11)
+        self.assertEqual([t for t, _ in calls[:4]], [0, 6, 18, 42])
+        self.assertEqual(calls[-1][0], 240)
+        self.assertEqual(sum(sleeps), 240)
+        self.assertLessEqual(max(sleeps), 30)
+        self.assertEqual(len({p for _, p in calls}), 1)
+        self.assertIn("RESULT_LOOKUPS=11", output)
+        self.assertIn("RESULT=NOT_RETURNED", output)
+
+    def test_immediate_result_never_sleeps(self):
+        code, output, calls, sleeps = self.run_pending(lambda _: self.result())
+        self.assertEqual((code, len(calls), sleeps), (0, 1, []))
+        self.assertIn("RESULT=RETURNED", output)
+
+    def test_delayed_result_and_host_failure_preserve_verdict(self):
+        for record, expected in [({}, 0), ({"state": "FAIL", "exit_code": 17}, 1),
+                                 ({"expected_sha": "c" * 40}, 3)]:
+            with self.subTest(record=record):
+                code, output, calls, sleeps = self.run_pending(
+                    lambda n: self.result(**record) if n == 3 else [])
+                self.assertEqual(code, expected)
+                self.assertEqual(len(calls), 3)
+                self.assertEqual(sleeps, [6, 12])
+                self.assertIn("RESULT_LOOKUPS=3", output)
+
+    def test_transient_api_timeout_recovers_without_reexecution(self):
+        def transient(n):
+            if n == 1:
+                raise poll.subprocess.TimeoutExpired("gh", 20)
+            return self.result()
+        code, output, calls, sleeps = self.run_pending(transient)
+        self.assertEqual(code, 0)
+        self.assertEqual(sleeps, [6])
+        self.assertIn("FAILED_LOOKUPS=1", output)
+
+    def test_api_outage_and_short_timeout_remain_distinct_from_host_failure(self):
+        def unavailable(_):
+            raise RuntimeError("GH_API_FAILED")
+        code, output, calls, sleeps = self.run_pending(unavailable, timeout=2)
+        self.assertEqual(code, 2)
+        self.assertEqual(sleeps, [2])
+        self.assertIn("FAILURE_CLASS=ISSUE_API_UNAVAILABLE", output)
+        self.assertIn("FAILED_LOOKUPS=2", output)
+
+    def test_invalid_interval_cannot_create_busy_loop(self):
+        for interval in (0, -1, 61):
+            with self.subTest(interval=interval), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as error:
+                    self.run_pending(lambda _: self.fail("must not fetch"), interval=interval)
+                self.assertEqual(error.exception.code, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

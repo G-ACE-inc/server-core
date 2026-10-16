@@ -92,6 +92,8 @@ For CU #40 source PRs affecting the existing CHAT Gate evaluator/tests or live H
 
 The mandatory Work Routine (design baseline → change assessment → source/test → focused verification → Documentation Gate → GitHub Current/Evidence → actual continuation decision) remains in [G_ACE_WORKSPACE](docs/G_ACE_WORKSPACE.md) §6–§7. README is only a verified entry and status index; the architecture baseline remains [SERVER_CORE_DESIGN](docs/SERVER_CORE_DESIGN.md) and intentional changes are append-only in [DESIGN_DELTA](docs/DESIGN_DELTA.md).
 
+The existing Host-result poller now reads immediately, then backs off from 6 to at most 30 seconds while pending, with a final deadline read. Deterministic 240-second pending tests require 11 logical lookups rather than 41; `RESULT_LOOKUPS`, `FAILED_LOOKUPS` and `WAIT_SECONDS` markers expose the actual wait. A lookup can issue multiple GitHub HTTP requests and is not a ChatGPT tool call. Live CHAT request reduction and client freeze/rate-limit improvement remain **NOT_VERIFIED**. Work Routine §6 consolidates continuation/handoff instructions and requires a durable checkpoint before capacity exhaustion.
+
 ## Current Documentation State
 
 司令室MDとして現在の正本セットは以下。

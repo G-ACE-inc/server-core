@@ -212,25 +212,38 @@ def main(argv=None, fetch=gh_api, sleep=time.sleep, clock=time.monotonic):
     parser.add_argument("--timeout", type=int, default=240)
     parser.add_argument("--interval", type=int, default=6)
     args = parser.parse_args(argv)
+    if not 1 <= args.interval <= 60:
+        parser.error("--interval must be between 1 and 60 seconds")
     if not REQ_ID.fullmatch(args.request_id) or not SHA.fullmatch(args.expected_sha):
         print("SERVERCORE_BOUNDED_HOST_RESULT=INPUT_INVALID")
         return 3
     since = (datetime.now(timezone.utc) - timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
     path = f"repos/{args.repository}/issues/{args.issue}/comments?per_page=100&since={since}"
-    deadline = clock() + max(1, min(args.timeout, 600))
+    started = clock()
+    deadline = started + max(1, min(args.timeout, 600))
+    delay = args.interval
+    max_delay = max(30, delay)
     api_failures = 0
     successful_reads = 0
+
+    def emit_lookup_stats():
+        # These count logical lookups, not HTTP requests or CHAT tool calls.
+        print(f"SERVERCORE_BOUNDED_HOST_RESULT_LOOKUPS={successful_reads + api_failures}")
+        print(f"SERVERCORE_BOUNDED_HOST_FAILED_LOOKUPS={api_failures}")
+        print(f"SERVERCORE_BOUNDED_HOST_WAIT_SECONDS={max(0, clock() - started):.3f}")
+
     while True:
         try:
             comment, record = find_result(fetch(path), args.request_id)
             successful_reads += 1
-        except (RuntimeError, ValueError, OSError):
+        except (RuntimeError, ValueError, OSError, subprocess.TimeoutExpired):
             api_failures += 1
             comment = record = None
         if record:
             code, verdict = evaluate(record, args.request_id, args.command_id, args.expected_sha)
             emit(record, comment, verdict)
             write_observation(args.observation_json, args.request_id, record, comment, verdict)
+            emit_lookup_stats()
             return code
         if clock() >= deadline:
             print("SERVERCORE_BOUNDED_HOST_RESULT=NOT_RETURNED")
@@ -244,8 +257,12 @@ def main(argv=None, fetch=gh_api, sleep=time.sleep, clock=time.monotonic):
             else:
                 print("SERVERCORE_BOUNDED_HOST_FAILURE_CLASS=REQUEST_RESULT_NOT_FOUND")
             write_observation(args.observation_json, args.request_id)
+            emit_lookup_stats()
             return 2
-        sleep(args.interval)
+        # Read immediately, then back off while the same request is pending.
+        # Bound the final sleep by the deadline; never resubmit the operation.
+        sleep(min(delay, max(0, deadline - clock())))
+        delay = min(delay * 2, max_delay)
 
 
 if __name__ == "__main__":
