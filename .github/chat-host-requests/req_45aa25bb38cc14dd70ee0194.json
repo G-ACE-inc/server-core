@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core probe diagnostics: classify stored stderr exact error without unbounded logs",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 -c 'import json; p=\"/home/admin1/logs/servercore-service-deploy/req_896979eea6d05ddddf89d9dc.json\"; r=json.load(open(p)); s=r.get(\"stderr\",\"\"); print(\"GATE_PROBE_EXCEPTION_CLASS\", \"CONNECTION_REFUSED\" if \"Connection refused\" in s else \"TIMEOUT\" if \"timed out\" in s else \"HTTP_ERROR\" if \"HTTP Error\" in s else \"OTHER\"); print(\"GATE_PROBE_STDERR_CHARS\",len(s))'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
