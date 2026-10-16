@@ -88,7 +88,7 @@ class AssembleTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_UNCOMPRESSED_SIZE_LIMIT"):
                 verify_artifact_zip(target / "output.zip", RID, oversize)
 
-    def test_high_ratio_archive_denied_but_ordinary_unicode_allowed(self):
+    def test_valid_high_compression_output_is_verified_without_clipping(self):
         stdout, stderr = "A" * 2_000_000, ""
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory, "artifact")
@@ -98,8 +98,9 @@ class AssembleTests(unittest.TestCase):
                        "chars": len(data), "bytes": len(data.encode("utf-8"))}
                 for name, data in (("stdout", stdout), ("stderr", stderr))
             }
-            with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_EXPANSION_LIMIT"):
-                verify_artifact_zip(target / "output.zip", RID, expected)
+            result = verify_artifact_zip(target / "output.zip", RID, expected)
+            self.assertTrue(result["output_complete"])
+            self.assertEqual(result["streams"]["stdout"]["bytes"], len(stdout))
 
     def test_host_archive_tamper_duplicate_and_missing_denied(self):
         stdout, stderr = "x日本語" * 20, "error"
