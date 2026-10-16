@@ -278,7 +278,7 @@ def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, 
 HOST_COMMAND_SCHEMA = "gace.servercore-host-command.request/v1"
 HOST_COMMAND_KEYS = {"schema", "id", "repository", "target_sha", "command", "source_preflight"}
 HOST_COMMAND_MAX_SECONDS = 90
-SOURCE_PREFLIGHT_OK = "__GACE_SOURCE_PREFLIGHT_OK__\\n"
+SOURCE_PREFLIGHT_OK = "__GACE_SOURCE_PREFLIGHT_OK__\n"
 SOURCE_FAILURE_MARKERS = {
     70: "CHAT_SOURCE_WORKDIR_MISSING",
     71: "CHAT_SOURCE_GIT_UNAVAILABLE",
