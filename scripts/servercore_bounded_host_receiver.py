@@ -318,12 +318,14 @@ def dispatch_docker_operation(request, root, socket_path=DEPLOY_SOCKET):
 
 def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
     sha = bounded_host.head_sha(bounded_host.checked_root(root), request["expected_sha"])
-    reply = deploy_socket_call({
+    writer_request = {
         "schema": "gace.servercore-host-command.request/v1", "id": request["id"],
         "repository": request["repository"], "target_sha": request["repo_sha"],
         "command": request["command"],
-        "source_preflight": request.get("source_preflight", False)
-    }, socket_path, timeout=120)
+    }
+    if request.get("source_preflight") is True:
+        writer_request["source_preflight"] = True
+    reply = deploy_socket_call(writer_request, socket_path, timeout=120)
     if reply.get("ok") is not True:
         fail("HOST_COMMAND_ADMISSION_DENIED", 422)
     if reply.get("state") == "HOST_COMMAND_DUPLICATE":
