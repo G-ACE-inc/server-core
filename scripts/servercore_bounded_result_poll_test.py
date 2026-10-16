@@ -37,6 +37,46 @@ class TerminalOutputTests(unittest.TestCase):
         self.assertEqual(poll.stream_receipt_metadata(pointer, "stdout")["sha256"], "b" * 64)
         self.assertFalse(poll.stream_receipt_metadata(pointer, "stdout")["complete"])
 
+    def test_writer_ledger_provenance_beats_sink_receipt_digests(self):
+        rid = "req_" + "f" * 24
+        old = {"request_id": rid, "command_id": "host.command",
+               "state": "PASS", "exit_code": 0, "expected_sha": "a" * 40,
+               "stdout_sha256": "a" * 64, "stdout_chars": 183,
+               "stderr_sha256": "b" * 64, "stderr_chars": 0,
+               "stdout": "", "stderr": "", "stdout_bytes": 183, "stderr_bytes": 0,
+               "stdout_preview_truncated": True}
+        record = {**old, "host_ledger": {
+            "request_id": rid, "streams": {
+                "stdout": {"sha256": "c" * 64, "chars": 720000},
+                "stderr": {"sha256": "d" * 64, "chars": 400000}}}}
+        self.assertEqual(poll.continuation_observation(record, "OK")[0],
+                         "HOST_LEDGER_RECOVERY_REQUIRED")
+        self.assertEqual(poll.stream_receipt_metadata(record, "stdout"),
+                         {"chars": 720000, "sha256": "c" * 64,
+                          "complete": False, "origin": "HOST_WRITER_LEDGER"})
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, "receipt.json")
+            poll.write_observation(str(path), rid, record,
+                                   {"html_url": "https://github.com/G-ACE-inc/server-core/issues/10"}, "OK")
+            receipt = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(receipt["streams"]["stderr"]["sha256"], "d" * 64)
+            self.assertEqual(receipt["streams"]["stdout"]["chars"], 720000)
+            self.assertEqual(receipt["observation"], "HOST_LEDGER_RECOVERY_REQUIRED")
+            self.assertFalse(receipt["streams"]["stdout"]["complete"])
+            self.assertNotIn("PRIVATE", path.read_text(encoding="utf-8"))
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            poll.emit(record, {"html_url": "https://github.com/G-ACE-inc/server-core/issues/10"}, "OK")
+        self.assertIn("CHAT_HOST_STDOUT_SHA256=" + "c" * 64, buf.getvalue())
+        self.assertNotIn("CHAT_HOST_STDOUT_SHA256=" + "a" * 64, buf.getvalue())
+        self.assertIn("CHAT_HOST_STDOUT_BYTES=UNKNOWN", buf.getvalue())
+        bad = {**record, "host_ledger": {**record["host_ledger"],
+                                       "request_id": "req_" + "e" * 24}}
+        self.assertIsNone(poll.stream_receipt_metadata(bad, "stdout")["sha256"])
+        self.assertEqual(poll.continuation_observation(
+            {**record, "state": "FAIL", "exit_code": 1}, "OK")[0],
+            "HOST_OPERATION_FAILED")
+
     def test_clipped_preview_requires_lossless_chunk_readback(self):
         import contextlib
         import io

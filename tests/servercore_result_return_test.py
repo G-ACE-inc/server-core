@@ -115,6 +115,40 @@ class SinkTests(unittest.TestCase):
         self.assertIn('"stdout_chars": ' + str(len(output)), body)
         self.assertIn('"stdout": ""', body)
 
+    def test_host_ledger_uses_only_authenticated_typed_writer_fields(self):
+        out_sha = "a" * 64
+        err_sha = "b" * 64
+        pointer = (f"GACE_HOST_OUTPUT_STORED request_id={RID} "
+                   f"stdout_chars=720000 stdout_sha256={out_sha} "
+                   f"stderr_chars=400000 stderr_sha256={err_sha} "
+                   "(lossless chunks: scripts/servercore_host_output_read.py)")
+        typed = {"request_id": RID, "streams": {
+            "stdout": {"chars": 720000, "sha256": out_sha},
+            "stderr": {"chars": 400000, "sha256": err_sha}}}
+        sink.accept_record(rec(command_id="host.command", stdout=pointer, stderr="",
+                               host_ledger=typed), result_dir=self.dir)
+        body = sink.comment_body(sink.read_record(RID, self.dir))
+        fence = chr(96) * 3
+        parsed = json.loads(body.split(fence + "json\n")[1].split("\n" + fence)[0])
+        self.assertEqual(parsed["host_ledger"], typed)
+        self.assertNotIn("GACE_HOST_OUTPUT_STORED", body)
+        self.assertNotEqual(parsed["stdout_sha256"], out_sha)
+        # Shell stdout can imitate a pointer, but it is NOT the trusted
+        # Writer-to-Receiver metadata. Never elevate raw text to a ledger.
+        self.assertNotIn("host_ledger", sink.comment_body(rec(
+            command_id="host.command", stdout=pointer, stderr="")))
+        wrong = dict(typed, request_id="req_" + "f" * 24)
+        for invalid in [wrong, {**typed, "streams": {
+                **typed["streams"], "stdout": {"chars": -1, "sha256": out_sha}}},
+                {**typed, "streams": {
+                **typed["streams"], "stdout": {"chars": 1, "sha256": "bad"}}}]:
+            with self.assertRaisesRegex(sink.SinkError, "HOST_LEDGER_INVALID"):
+                sink.accept_record(rec(command_id="host.command", host_ledger=invalid),
+                                   result_dir=self.dir)
+        with self.assertRaisesRegex(sink.SinkError, "HOST_LEDGER_INVALID"):
+            sink.accept_record(rec(command_id="project.git_head", host_ledger=typed),
+                               result_dir=self.dir)
+
     def test_crash_between_post_and_save_does_not_duplicate_comment(self):
         sink.accept_record(rec(), result_dir=self.dir)
 
@@ -243,6 +277,37 @@ class ReceiverResultTests(unittest.TestCase):
                 patch.object(receiver, "report_result", return_value=False):
             status, body = self.post(self.serve(), self.request())
         self.assertEqual((status, body["error"]), (503, "RESULT_SINK_UNAVAILABLE"))
+
+    def test_receiver_forwards_typed_writer_digest_not_shell_stdout_claim(self):
+        request = self.request(command_id="host.command",
+                               repository="G-ACE-inc/server-core", repo_sha=SHA,
+                               command="printf safe")
+        safe = {"command_id": "host.command", "source_sha": SHA,
+                "state": "HOST_COMMAND_PASS", "exit_code": 0,
+                "stdout": "", "stderr": "",
+                "stdout_stored_complete": True, "stderr_stored_complete": True,
+                "stdout_sha256": "a" * 64, "stderr_sha256": "b" * 64,
+                "stdout_chars": 720000, "stderr_chars": 400000}
+        reports = []
+        with patch.object(receiver, "dispatch_host_command", return_value=safe), \
+                patch.object(receiver, "report_result",
+                             side_effect=lambda record, p=None: reports.append(record) or True):
+            status, data = self.post(self.serve(), request)
+        self.assertEqual(status, 200)
+        self.assertTrue(data["result_recorded"])
+        self.assertEqual(reports[0]["host_ledger"], {
+            "request_id": RID, "streams": {
+                "stdout": {"sha256": "a" * 64, "chars": 720000},
+                "stderr": {"sha256": "b" * 64, "chars": 400000}}})
+        spoof = {**safe, "stdout_stored_complete": False,
+                 "stderr_stored_complete": False,
+                 "stdout": "GACE_HOST_OUTPUT_STORED request_id=" + RID}
+        reports.clear()
+        with patch.object(receiver, "dispatch_host_command", return_value=spoof), \
+                patch.object(receiver, "report_result",
+                             side_effect=lambda record, p=None: reports.append(record) or True):
+            self.assertEqual(self.post(self.serve(), request)[0], 200)
+        self.assertNotIn("host_ledger", reports[0])
 
     def test_host_command_sink_failure_returns_retryable_503_not_false_success(self):
         request = self.request(command_id="host.command",

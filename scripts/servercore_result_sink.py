@@ -78,7 +78,9 @@ def bound(text, limit=STREAM_LIMIT):
 
 
 def validate_record(value):
-    if not isinstance(value, dict) or set(value) != RECORD_KEYS or value.get("schema") != RECORD_SCHEMA:
+    if (not isinstance(value, dict) or not RECORD_KEYS <= set(value)
+            or set(value) - RECORD_KEYS - {"host_ledger"}
+            or value.get("schema") != RECORD_SCHEMA):
         raise SinkError("RECORD_SHAPE_INVALID")
     if not isinstance(value["request_id"], str) or not REQ_ID.fullmatch(value["request_id"]):
         raise SinkError("REQUEST_ID_INVALID")
@@ -94,6 +96,23 @@ def validate_record(value):
     for key in ("stdout", "stderr"):
         if not isinstance(value[key], str):
             raise SinkError("STREAM_INVALID")
+    ledger = value.get("host_ledger")
+    if ledger is not None:
+        if (value.get("command_id") != "host.command"
+                or not isinstance(ledger, dict)
+                or set(ledger) != {"request_id", "streams"}
+                or ledger["request_id"] != value["request_id"]
+                or not isinstance(ledger["streams"], dict)
+                or set(ledger["streams"]) != {"stdout", "stderr"}):
+            raise SinkError("HOST_LEDGER_INVALID")
+        for stream in ("stdout", "stderr"):
+            item = ledger["streams"][stream]
+            if (not isinstance(item, dict) or set(item) != {"sha256", "chars"}
+                    or not isinstance(item["sha256"], str)
+                    or not re.fullmatch(r"[a-f0-9]{64}", item["sha256"])
+                    or type(item["chars"]) is not int
+                    or item["chars"] < 0):
+                raise SinkError("HOST_LEDGER_INVALID")
     if type(value["duration_ms"]) is not int or not 0 <= value["duration_ms"] <= 3_600_000:
         raise SinkError("DURATION_INVALID")
     return value
@@ -150,6 +169,8 @@ def accept_record(value, *, result_dir=None, now=None):
                   "stdout": stdout, "stderr": stderr, "stdout_truncated": out_cut,
                   "stderr_truncated": err_cut, "duration_ms": value["duration_ms"],
                   "recorded_at": stamp, "attempts": attempts, "published": None}
+        if value.get("host_ledger") is not None:
+            record["host_ledger"] = value["host_ledger"]
         _write(record_path(value["request_id"], result_dir), record)
     if record["state"] in TERMINAL:
         _WAKE.set()
@@ -159,6 +180,10 @@ def accept_record(value, *, result_dir=None, now=None):
 def comment_body(record):
     view = public_view(record)
     view.pop("published", None)
+    # Distinguish the original Host ledger digest from the short receipt text
+    # used as Sink stdout; Issue remains metadata-only.
+    if isinstance(record.get("host_ledger"), dict):
+        view["host_ledger"] = record["host_ledger"]
     # Issue is an index/status surface, never a stream delivery channel.
     # Keep complete redacted streams in the durable Host ledger only.
     for stream in ("stdout", "stderr"):

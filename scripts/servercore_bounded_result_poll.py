@@ -78,6 +78,13 @@ def continuation_observation(record, verdict):
     """
     if verdict != "OK":
         return "CORRELATION_FAILED", "INSPECT_RESULT_CORRELATION"
+    if record.get("state") == "FAIL" or record.get("exit_code", 0) != 0:
+        stderr = str(record.get("stderr") or "")
+        if "SOURCE_SHA_MISMATCH" in stderr:
+            return "HOST_SOURCE_SHA_MISMATCH", "READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION"
+        return "HOST_OPERATION_FAILED", "INSPECT_FAILURE_EVIDENCE_AND_REPLAN"
+    if isinstance(record.get("host_ledger"), dict):
+        return "HOST_LEDGER_RECOVERY_REQUIRED", "READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE"
     if any(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated") for stream in ("stdout", "stderr")):
         return "HOST_OUTPUT_PARTIAL", "READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE"
     if any(stream + "_bytes" in record for stream in ("stdout", "stderr")):
@@ -106,10 +113,13 @@ def emit(record, comment, verdict):
     for stream in ("stdout", "stderr"):
         partial = bool(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated") or stream + "_bytes" in record)
         print(f"CHAT_HOST_{stream.upper()}_COMPLETE={str(not partial).upper()}")
-        if stream + "_sha256" in record:
-            print(f"CHAT_HOST_{stream.upper()}_SHA256={record[stream + '_sha256']}")
-        if stream + "_chars" in record:
-            print(f"CHAT_HOST_{stream.upper()}_CHARS={record[stream + '_chars']}")
+        evidence = stream_receipt_metadata(record, stream)
+        if evidence["sha256"] is not None:
+            print(f"CHAT_HOST_{stream.upper()}_SHA256={evidence['sha256']}")
+        if evidence["chars"] is not None:
+            print(f"CHAT_HOST_{stream.upper()}_CHARS={evidence['chars']}")
+        if evidence.get("origin"):
+            print(f"CHAT_HOST_{stream.upper()}_EVIDENCE_ORIGIN={evidence['origin']}")
     # A metadata-only Issue record is a pointer to the Host ledger, not an
     # empty stdout/stderr result. Never misrepresent it as the full payload.
     metadata_only = any(stream + "_bytes" in record for stream in ("stdout", "stderr"))
@@ -117,7 +127,9 @@ def emit(record, comment, verdict):
         print("CHAT_HOST_OUTPUT_TRANSPORT=HOST_LEDGER_ONLY")
         print(f"CHAT_HOST_OUTPUT_RECORD_REQUEST_ID={record.get('request_id')}")
         for stream in ("stdout", "stderr"):
-            print(f"CHAT_HOST_{stream.upper()}_BYTES={record.get(stream + '_bytes', 'UNKNOWN')}")
+            # Sink receipt bytes are NOT original Host ledger bytes.
+            value = "UNKNOWN" if record.get("host_ledger") else record.get(stream + "_bytes", "UNKNOWN")
+            print(f"CHAT_HOST_{stream.upper()}_BYTES={value}")
         return
     for stream in ("stdout", "stderr"):
         text = str(record.get(stream) or "")
@@ -127,7 +139,24 @@ def emit(record, comment, verdict):
 
 
 def stream_receipt_metadata(record, stream):
-    """Prefer Host-ledger digests, fall back ONLY to complete legacy previews."""
+    """Prefer original Host Writer hashes over public Sink pointer-text hashes."""
+    import re
+    ledger = record.get("host_ledger")
+    if ledger is not None:
+        data = ledger.get("streams") if isinstance(ledger, dict) else None
+        info = data.get(stream) if isinstance(data, dict) else None
+        if (isinstance(ledger, dict)
+                and ledger.get("request_id") == record.get("request_id")
+                and isinstance(info, dict)
+                and type(info.get("chars")) is int and info["chars"] >= 0
+                and isinstance(info.get("sha256"), str)
+                and re.fullmatch(r"[a-f0-9]{64}", info["sha256"])):
+            return {"chars": info["chars"], "sha256": info["sha256"],
+                    "complete": False, "origin": "HOST_WRITER_LEDGER"}
+        # A forged or malformed ledger pointer must never fall back to
+        # the SHA of the public transport receipt text.
+        return {"chars": None, "sha256": None, "complete": False,
+                "origin": "UNVERIFIED_LEDGER_POINTER"}
     raw = record.get(stream)
     digest = record.get(stream + "_sha256")
     chars = record.get(stream + "_chars")

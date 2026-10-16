@@ -435,8 +435,8 @@ def report_result(record, socket_path=None):
     return isinstance(reply, dict) and reply.get("ok") is True
 
 
-def result_record(request_id, command_id, expected_sha, state, exit_code, host_sha, stdout, stderr, started):
-    return {
+def result_record(request_id, command_id, expected_sha, state, exit_code, host_sha, stdout, stderr, started, host_ledger=None):
+    record = {
         "request_id": request_id,
         "command_id": command_id if isinstance(command_id, str) and COMMAND_PATTERN.fullmatch(command_id)
         else "invalid.request",
@@ -448,6 +448,9 @@ def result_record(request_id, command_id, expected_sha, state, exit_code, host_s
         "stderr": stderr,
         "duration_ms": max(0, min(int((time.monotonic() - started) * 1000), 3_600_000)),
     }
+    if host_ledger is not None:
+        record["host_ledger"] = host_ledger
+    return record
 
 
 def make_handler(contract, *, delivery_key=None, now_fn=None):
@@ -573,9 +576,25 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                             + " (lossless chunks: scripts/servercore_host_output_read.py)"
                         )
                         out = receipt + ("\\n" + out if out else "")
+                # Forward authoritative digests only from the authenticated
+                # Writer's typed socket result, NOT by parsing command stdout.
+                # An arbitrary shell can print GACE_HOST_OUTPUT_STORED, so the
+                # pointer text alone cannot prove ledger provenance.
+                ledger = None
+                if request["command_id"] == "host.command" and all(
+                        result.get(name + "_stored_complete") is True
+                        for name in ("stdout", "stderr")):
+                    ledger = {
+                        "request_id": request["id"],
+                        "streams": {
+                            name: {"sha256": result.get(name + "_sha256"),
+                                   "chars": result.get(name + "_chars")}
+                            for name in ("stdout", "stderr")
+                        }
+                    }
                 recorded = report_result(result_record(
                     request["id"], request["command_id"], request["expected_sha"], state, exit_code,
-                    result.get("source_sha"), out, err, started))
+                    result.get("source_sha"), out, err, started, host_ledger=ledger))
                 # A failed Sink handoff is NEVER a successful Host result delivery.
                 # For host.command the Host writer persists the exact request ID
                 # before execution and de-duplicates re-delivery, so signalling
