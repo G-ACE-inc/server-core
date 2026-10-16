@@ -39,7 +39,7 @@ class PreflightAttestationTests(unittest.TestCase):
     def test_original_stdout_is_lossless_and_cannot_spoof_a_preflight_failure(self):
         clean, failed = m.attest_source_preflight(
             m.SOURCE_PREFLIGHT_OK + "日本語Ω🙂\n", "", 0, True)
-        self.assertEqual(clean, "日本語Ω🙂\\n")
+        self.assertEqual(clean, "日本語Ω🙂\n")
         self.assertFalse(failed)
         clean, failed = m.attest_source_preflight(
             m.SOURCE_PREFLIGHT_OK,
@@ -49,13 +49,13 @@ class PreflightAttestationTests(unittest.TestCase):
 
     def test_actual_preflight_failure_and_regular_unbound_error(self):
         clean, failed = m.attest_source_preflight(
-            "", "CHAT_SOURCE_SHA_MISMATCH\\n", 74, True)
+            "", "CHAT_SOURCE_SHA_MISMATCH\n", 74, True)
         self.assertEqual(clean, "")
         self.assertTrue(failed)
         self.assertFalse(m.attest_source_preflight(
-            "", "CHAT_SOURCE_SHA_MISMATCH\\n", 74, False)[1])
+            "", "CHAT_SOURCE_SHA_MISMATCH\n", 74, False)[1])
         self.assertFalse(m.attest_source_preflight(
-            "some output", "CHAT_SOURCE_SHA_MISMATCH\\n", 74, True)[1])
+            "some output", "CHAT_SOURCE_SHA_MISMATCH\n", 74, True)[1])
 
 
 class ValidationTests(unittest.TestCase):
