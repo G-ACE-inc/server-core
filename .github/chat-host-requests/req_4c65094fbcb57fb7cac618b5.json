@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core read-only Host direct-backend exposure and consumer env route hints; no credentials/raw env printed, no model start",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport json,subprocess\ndef cmd(a):\n p=subprocess.run(a,text=True,capture_output=True,timeout=15)\n return p.stdout if p.returncode==0 else ''\nnames=[n for n in cmd(['docker','ps','-a','--format','{{.Names}}']).splitlines() if n]\nout={'schema':'ai-core-route-audit/v1','gate':{},'backends':{},'consumers':[],'established_backend_connections':0}\nfor name in names:\n if name.startswith('ai-') and name not in ('ai-core-model-gate','ai-llama-router','ai-granite','ai-qwen3','ai-ministral','ai-coder'):continue\n raw=cmd(['docker','inspect',name])\n if not raw:continue\n d=json.loads(raw)[0];c=d.get('Config') or {};h=d.get('HostConfig') or {}\n env=c.get('Env') or []\n current=d.get('State') or {}\n refs=[(v.split('=',1)[0],v.split('=',1)[1]) for v in env if '=' in v]\n obj={'running':current.get('Running'),'network':h.get('NetworkMode')}\n if name=='ai-core-model-gate':out['gate']=obj\n elif name.startswith('ai-') and name!='ai-llama-router':\n  obj['loopback_port']=(h.get('PortBindings') or {}).get('8080/tcp')\n  obj['model_auth_flag']=any(y in (c.get('Cmd') or []) for y in ('--api-key','--api-key-file'))\n  out['backends'][name]=obj\n elif name=='ai-llama-router':out['old_router']=obj\n else:\n  evidence={'name':name,'network':obj['network'],'running':obj['running']}\n  evidence['env_route_hints']=[k for k,v in refs if any(p in v for p in ('18081','18082','18083','18084','18181','18182','18183','18184'))][:8]\n  evidence['ai_core_vars']=[k for k,v in refs if k.startswith('AI_CORE_') and not any(w in k.upper() for w in ('KEY','TOKEN','SECRET','PASSWORD'))][:8]\n  if evidence['env_route_hints'] or evidence['ai_core_vars'] or obj['network']=='host':out['consumers'].append(evidence)\nraw=cmd(['ss','-tnH','state','established'])\nout['established_backend_connections']=sum(any(':'+str(p) in l for p in (18081,18082,18083,18084)) for l in raw.splitlines())\nout['consumer_scan_count']=len(names)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_DIRECT_BACKEND_OWNER_INVENTORY\\n'+json.dumps(out,ensure_ascii=False,indent=2)}),text=True,capture_output=True,timeout=20)\nprint('INVENTORY_EVIDENCE_URL='+r.stdout.strip() if r.returncode==0 else 'NOT_POSTED')\nraise SystemExit(r.returncode)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6219039137"
+  }
+}
