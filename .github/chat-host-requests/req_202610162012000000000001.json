@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Targeted exact AI Core stale Unix socket lifecycle tests in isolated Docker; previous request START rejected solely because omitted purpose_cu_aligned field and did not execute Host. No changes to model runtime.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 406d79c7aa60a13e05dd08e85b581604b9418a6d\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\ndocker run --rm --network none --cpus 1 --memory 256m -v \"$w:/src:ro\" -w /src -e PYTHONPATH=/src --entrypoint python3 ai-core-model-gate:offline-cd8442c3 -m unittest discover -s tests -p test_private_transport_policy.py -v\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR#3 Source HEAD406d79c7; UDS Source activation Host PASS #10 6223678279; first request Actions38959593397 had START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED before Host due missing purpose_cu_aligned; correcting request context only."
+  }
+}
