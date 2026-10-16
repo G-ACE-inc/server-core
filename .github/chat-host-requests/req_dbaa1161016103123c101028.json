@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Check production DebugAI Compose Gate opt-in render against existing credentials, current service project and exact PR112 source; no deployment.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu; r=/home/admin1/projects/debug-ai; p=\"$r/.worktrees/pr112-gates-20261016\"; test \"$(git -C \"$p\" rev-parse HEAD)\" = \"bb08aef1d92271d1fb4ab9f37309535811d48180\" || exit 23; test -z \"$(git -C \"$p\" status --porcelain)\" || exit 24; test -f \"$r/.env\" || exit 25; c=$(docker ps -q --filter label=com.docker.compose.service=debug-ai); test \"$(printf '%s\\n' \"$c\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 31; proj=$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$c\"); test -n \"$proj\"; export DEBUG_AI_CORE_GATE_DISPATCH_MODE=model_gates DEBUG_AI_CORE_GATE_GRANITE_URL=http://127.0.0.1:18181 DEBUG_AI_CORE_GATE_QWEN3_URL=http://127.0.0.1:18182 DEBUG_AI_CORE_GATE_MINISTRAL_URL=http://127.0.0.1:18183 DEBUG_AI_CORE_GATE_CODER_URL=http://127.0.0.1:18184; docker compose -p \"$proj\" --env-file \"$r/.env\" -f \"$p/compose.yaml\" config --quiet"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
