@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "AI Core UDS four model inference PASS; handoff precheck refused NO_TWO_IDLE_RESIDENTS with actual empty residents #6222830897 (idle unload correct). Rebuild temporary two-resident starting pair strictly via Coordinator-owned Gate inference, then 2->3->2 test. Host actual SHA in #10 latest."
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = d48d1b7a46727ae0608f086473618f82276ac029\ntest -z \"$(git -C \"$w\" status --porcelain)\"\ndocker exec -i ai-core-model-gate python3 - coder < \"$w/scripts/host_uds_inference_probe.py\"\ndocker exec -i ai-core-model-gate python3 - qwen3 < \"$w/scripts/host_uds_inference_probe.py\"\nout=\"$(docker exec ai-core-model-gate python3 -c 'import os,json,urllib.request,sys;u=\"http://127.0.0.1:18184/internal/handoff/status\";h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]};d=json.load(urllib.request.urlopen(urllib.request.Request(u,headers=h),timeout=9));print(\"HANDOFF_PAIR_PREPARED=\"+str(len(d[\"resident\"]))+\" RESIDENT=\"+\",\".join(d[\"resident\"]));sys.exit(0 if len(d[\"resident\"])==2 and d[\"handoff\"] is None and not d[\"recovery_pending\"] else 5)')\"\nprintf '%s\\n' \"$out\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f \"body=AI_CORE_UDS_HANDOFF_PAIR $out SOURCE_HEAD=d48d1b7a46727ae0608f086473618f82276ac029\" --jq .html_url || :"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
