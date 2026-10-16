@@ -1,0 +1,34 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/115"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "repository": "seigo-gace/debug-ai",
+    "repo_sha": "70689ec0fdb9201742625d5d8a0054feeb31320d",
+    "command": "python3 - <<'PY'\nimport os,re,stat,tempfile\nfrom pathlib import Path\np=Path(\"/home/admin1/projects/debug-ai/.env\")\nst=p.lstat()\nif not stat.S_ISREG(st.st_mode) or st.st_nlink!=1: raise SystemExit(61)\nvalues={\"DEBUG_AI_CORE_GATE_DISPATCH_MODE\":\"model_gates\",\"DEBUG_AI_CORE_GATE_GRANITE_URL\":\"http://127.0.0.1:18181\",\"DEBUG_AI_CORE_GATE_QWEN3_URL\":\"http://127.0.0.1:18182\",\"DEBUG_AI_CORE_GATE_MINISTRAL_URL\":\"http://127.0.0.1:18183\",\"DEBUG_AI_CORE_GATE_CODER_URL\":\"http://127.0.0.1:18184\"}\nrows=p.read_text().splitlines(keepends=True)\nseen=set()\nfor i,row in enumerate(rows):\n m=re.match(r\"^\\s*(?:export\\s+)?([A-Z_][A-Z0-9_]*)\\s*=\",row)\n if m and m.group(1) in values:\n  k=m.group(1)\n  if k in seen: raise SystemExit(62)\n  seen.add(k);rows[i]=k+\"=\"+values[k]+(\"\\r\\n\" if row.endswith(\"\\r\\n\") else \"\\n\")\nfor k,v in values.items():\n if k not in seen: rows.append(k+\"=\"+v+\"\\n\")\nif (p.stat().st_mtime_ns,p.stat().st_size)!=(st.st_mtime_ns,st.st_size):raise SystemExit(63)\nfd,tmp=tempfile.mkstemp(dir=p.parent,prefix=\".env-gates-\")\ntry:\n os.fchmod(fd,0o600)\n with os.fdopen(fd,\"w\") as f:f.write(\"\".join(rows))\n os.replace(tmp,p)\nfinally:\n if os.path.exists(tmp):os.unlink(tmp)\nPY\ndocker compose --project-directory /home/admin1/projects/debug-ai -f /home/admin1/projects/debug-ai/compose.yaml up -d --no-deps --no-build debug-ai >/dev/null || exit 64\ncurl -fsS --retry 8 --retry-delay 2 --max-time 5 http://127.0.0.1:8787/health >/dev/null || exit 65\ndocker exec debug-ai-debug-ai-1 sh -c 'test \"$DEBUG_AI_CORE_GATE_DISPATCH_MODE\" = model_gates' || exit 66\nexit 0"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
