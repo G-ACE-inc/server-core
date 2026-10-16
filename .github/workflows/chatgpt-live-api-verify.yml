@@ -109,7 +109,7 @@ jobs:
           if [[ "$command_id" == "host.command" ]]; then
             # jq emits the command exactly; a sentinel protects trailing newlines
             # from Bash command substitution (ordinary $(jq -r ...) drops them).
-            host_command="$(jq -jer '.bounded_host_request.command' "$target" && printf '\\037')"
+            host_command="$(jq -jer '.bounded_host_request.command' "$target" && printf '__GACE_EOF_SENTINEL__')"
             host_command="${host_command%
             if [[ "$(jq -r '.bounded_host_request.source_preflight // false' "$target")" == "true" ]]; then send+=(--source-preflight); fi
           elif [[ "$command_id" == "dev.job" ]]; then
