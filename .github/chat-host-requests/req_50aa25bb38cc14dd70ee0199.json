@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core check latest PR3 preflight before Gate launch",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 /home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015/runtime/model_gate.py --preflight"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
