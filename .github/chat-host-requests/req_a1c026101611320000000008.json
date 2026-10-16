@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core generic independent caller E2E: actual two distinct model per-model Gate APIs via client labels, verify both run under shared capacity. No DebugAI/Astera product code changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport subprocess,json\nscript=\"\"\"import os,json,urllib.request,concurrent.futures,time\nkey=os.environ['AI_CORE_API_KEY']\nheaders={'Authorization':'Bearer '+key,'Content-Type':'application/json'}\nbase='http://127.0.0.1:'\ndef call(model,label,limit=6):\n port={'coder':18184,'granite':18181}[model]\n with urllib.request.urlopen(urllib.request.Request(base+str(port)+'/v1/models',headers=headers),timeout=6) as r:mid=json.load(r)['data'][0]['id']\n body={'model':mid,'stream':False,'messages':[{'role':'system','content':'Answer using a single short English word. No reasoning.'},{'role':'user','content':'Say OK.'}],'max_tokens':limit,'temperature':0}\n h={**headers,'X-AI-Core-Client':label,'X-AI-Core-Wait-Ms':'30000'}\n start=time.monotonic()\n req=urllib.request.Request(base+str(port)+'/v1/chat/completions',data=json.dumps(body).encode(),headers=h)\n with urllib.request.urlopen(req,timeout=180) as r:\n  data=json.load(r)\n  return {'model':model,'client':label,'http':r.status,'choices':len(data.get('choices',[])),'elapsed':round(time.monotonic()-start,2),'content_size':len(str(data.get('choices',[{}])[0].get('message',{}).get('content') or ''))}\nout={'warmup':[]}\nfor model in ('granite','coder'):\n try:out['warmup'].append(call(model,'warmup-'+model))\n except Exception as e:out['warmup'].append({'model':model,'error':type(e).__name__+': '+str(e)[:150]})\nif all(x.get('http')==200 for x in out['warmup']):\n with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:\n  fs=[executor.submit(call,m,'independent-'+m) for m in ('granite','coder')]\n  out['parallel']=[]\n  for f in fs:\n   try:out['parallel'].append(f.result(timeout=180))\n   except Exception as e:out['parallel'].append({'error':type(e).__name__+': '+str(e)[:150]})\nprint(json.dumps(out))\n\"\"\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',script],capture_output=True,text=True,timeout=320)\nout={'exit':p.returncode,'result':json.loads(p.stdout) if p.returncode==0 and p.stdout.strip().startswith('{') else {'stderr_tail':p.stderr[-400:],'stdout_tail':p.stdout[-400:]}}\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_TWO_INDEPENDENT_CALLERS_REAL_E2E\\n'+json.dumps(out,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=25)\nprint('AI_CORE_E2E='+('RECORD '+r.stdout.strip() if r.returncode==0 else 'RECORD_FAILED'))\ns=out.get('result',{})\nok=p.returncode==0 and all(x.get('http')==200 and x.get('choices',0)>0 for x in s.get('warmup',[])+s.get('parallel',[])) and len(s.get('parallel',[]))==2\nprint('AI_CORE_INDEPENDENT_CALLERS='+('PASS' if ok else 'FAIL'))\nraise SystemExit(0 if ok and r.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6214765730"
+  }
+}
