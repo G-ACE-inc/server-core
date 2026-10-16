@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 import importlib.util
+import contextlib
+import hashlib
+import io
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 path=Path(__file__).with_name("gace_project_current_recovery.py")
@@ -77,5 +81,87 @@ class RecoveryTests(unittest.TestCase):
     def test_wrong_project_id_denied(self):
         with self.assertRaisesRegex(ValueError,"PROJECT_ID_INVALID"):
             mod.recover("bad",lambda q,v:packet([]))
+
+    def test_scoped_recovery_reads_one_current_and_returns_same_body(self):
+        nodes = [issue(str(n), f"https://github.com/x/y/issues/{n}") for n in range(1, 12)]
+        calls = []
+        body = "## Purpose\n実際の目的\n" + "evidence\n" * 2000
+        def current(repo, number):
+            calls.append((repo, number))
+            return {"html_url": f"https://github.com/{repo}/issues/{number}",
+                    "state": "open", "body": body, "updated_at": "2026-10-17T00:00:00Z"}
+        out = mod.recover(P, lambda q,v: packet(nodes), current,
+                          issue_urls=["https://github.com/x/y/issues/7"], include_body=True)
+        self.assertEqual(calls, [("x/y", 7)])
+        self.assertEqual((out["issue_count"], out["registered_issue_count"]), (1, 11))
+        self.assertEqual(out["issue_items"][0]["current_body"], body)
+        self.assertEqual(out["issue_items"][0]["current_body_sha256"], hashlib.sha256(body.encode()).hexdigest())
+        self.assertFalse(out["dispatch_authorized"])
+
+    def test_default_inventory_remains_compatible_and_omits_bodies(self):
+        nodes = [issue(str(n), f"https://github.com/x/y/issues/{n}") for n in (1, 2)]
+        calls = []
+        def current(repo, number):
+            calls.append(number)
+            return {"html_url": f"https://github.com/{repo}/issues/{number}", "state": "open", "body": "Current"}
+        out = mod.recover(P, lambda q,v: packet(nodes), current)
+        self.assertEqual(calls, [1, 2])
+        self.assertEqual(out["issue_count"], 2)
+        self.assertTrue(all("current_body" not in row for row in out["issue_items"]))
+
+    def test_selected_missing_issue_never_fetches_any_current(self):
+        with self.assertRaisesRegex(RuntimeError, "SELECTED_ISSUE_NOT_REGISTERED"):
+            mod.recover(P, lambda q,v: packet([issue("a", "https://github.com/x/y/issues/1")]),
+                        lambda *args: self.fail("must not read an unregistered or partial selection"),
+                        issue_urls=["https://github.com/x/y/issues/1", "https://github.com/x/y/issues/40"])
+
+    def test_validate_complete_registration_before_scoped_read(self):
+        calls = []
+        url = "https://github.com/x/y/issues/1"
+        def fetch(query, variables):
+            calls.append(variables["cursor"])
+            return packet([issue("a", url)], "next") if len(calls) == 1 else packet([issue("b", url)])
+        with self.assertRaisesRegex(RuntimeError, "DUPLICATE_ISSUE_REGISTRATION"):
+            mod.recover(P, fetch, lambda *args: self.fail("must finish registration checks first"), issue_urls=[url])
+        self.assertEqual(calls, [None, "next"])
+
+    def test_selected_later_page_and_duplicate_selectors_read_once(self):
+        url = "https://github.com/x/y/issues/2"
+        events = []
+        def fetch(query, variables):
+            events.append(variables["cursor"])
+            return packet([issue("a", "https://github.com/x/y/issues/1")], "next") if variables["cursor"] is None else packet([issue("b", url)])
+        def current(repo, number):
+            events.append((repo, number))
+            return {"html_url": url, "state": "closed", "body": "Current"}
+        out = mod.recover(P, fetch, current, issue_urls=[url, url])
+        self.assertEqual(events, [None, "next", ("x/y", 2)])
+        self.assertEqual(out["issue_items"][0]["recovery"], "CLOSED_NO_DISPATCH")
+
+    def test_invalid_selector_or_unscoped_body_denied_before_network(self):
+        for selector in ([], "https://github.com/x/y/issues/1", [None],
+                         ["https://github.com/x/y/pull/1"],
+                         ["https://github.com/x/y/issues/1#issuecomment-2"]):
+            with self.subTest(selector=selector), self.assertRaisesRegex(ValueError, "SELECTED_ISSUE_URL_INVALID"):
+                mod.recover(P, lambda *args: self.fail("must not read"), issue_urls=selector)
+        for kwargs in ({"include_body": True}, {"include_body": True, "issue_urls": ["https://github.com/x/y/issues/1"]}):
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "CURRENT_BODY_REQUIRES_SCOPED_LIVE_READ"):
+                mod.recover(P, lambda *args: self.fail("must not read"), **kwargs)
+
+    def test_multi_cursor_cycle_is_rejected(self):
+        cursors = iter(("a", "b", "a"))
+        with self.assertRaisesRegex(RuntimeError, "PROJECT_PAGINATION_INVALID"):
+            mod.recover(P, lambda q,v: packet([], next(cursors)))
+
+    def test_cli_passes_selection_and_fails_closed(self):
+        url = "https://github.com/x/y/issues/40"
+        with patch.object(mod, "recover", side_effect=RuntimeError("SELECTED_ISSUE_NOT_REGISTERED")) as recover:
+            with contextlib.redirect_stderr(io.StringIO()) as err, contextlib.redirect_stdout(io.StringIO()) as out:
+                code = mod.main(["--project-id", P, "--issue-url", url, "--include-body"])
+        self.assertEqual(code, 2)
+        self.assertEqual(out.getvalue(), "")
+        self.assertIn("SELECTED_ISSUE_NOT_REGISTERED", err.getvalue())
+        self.assertEqual(recover.call_args.kwargs["issue_urls"], [url])
+        self.assertTrue(recover.call_args.kwargs["include_body"])
 if __name__=="__main__":
     unittest.main()
