@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read actual result or still-running state of single restart-during-handoff/abort acceptance from already-running bounded Docker test. Sanitize results to structural fields, no secret/output dump, no models restart.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nname=ai-core-handoff-restart-01ef\ns=$(docker inspect -f '{{.State.Status}}' \"$name\")\nif test \"$s\" = exited; then\n rc=$(docker inspect -f '{{.State.ExitCode}}' \"$name\")\n out=$(docker logs --tail 1 \"$name\" 2>/dev/null | docker exec -i ai-core-model-gate python3 -c 'import sys,json; d=json.loads(sys.stdin.read()); fields=(\"step\",\"cleanup\",\"emergency_abort\"); a={k:d.get(k) for k in fields}; a[\"error_type\"]=str(d.get(\"error\",\"\")).split(\":\")[0]; a[\"two\"]=d.get(\"two\",{}).get(\"resident\"); a[\"three\"]=d.get(\"three\",{}).get(\"resident\"); a[\"restart\"]=d.get(\"after_restart\",{}).get(\"resident\"); a[\"abort\"]=d.get(\"after_abort\",{}).get(\"resident\"); a[\"final\"]=d.get(\"final\",{}).get(\"resident\"); a[\"active\"]=sum(d.get(\"final\",{}).get(\"active\",{}).values()); a[\"queue\"]=d.get(\"final\",{}).get(\"queued\"); print(json.dumps(a))')\n msg=\"AI_CORE_UDS_GATE_RESTART_ACCEPTANCE FINAL_EXIT=$rc RESULT=$out\"\nelse\n msg=\"AI_CORE_UDS_GATE_RESTART_ACCEPTANCE PROCESS_STATUS=$s NO_RETRY=YES\"\nfi\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$msg\" --jq '.html_url' >/dev/null\necho CORE_GATE_RESTART_READBACK=RECORDED\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Issue1 #6223964281 confirms once-only isolated bounded physical restart test started on PR3 Source 01ef4da9 after true zero-model/idle preflight. Readback only, do not duplicate inference; DebugAI separate."
+  }
+}
