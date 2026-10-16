@@ -22,7 +22,9 @@ ARTIFACT_SHA = re.compile(r"[a-f0-9]{40}\Z")
 
 
 def restore(repository, run_id, request_id, run=subprocess.run):
-    if not REPOSITORY.fullmatch(repository) or type(run_id) is not int or run_id <= 0:
+    if (not isinstance(repository, str) or not REPOSITORY.fullmatch(repository)
+            or any(part in {".", ".."} for part in repository.split("/"))
+            or type(run_id) is not int or run_id <= 0):
         raise ValueError("RUN_ID_OR_REPOSITORY_INVALID")
     if not REQUEST_ID.fullmatch(request_id):
         raise ValueError("REQUEST_ID_INVALID")
