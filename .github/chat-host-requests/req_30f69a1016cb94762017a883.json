@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CU40 read existing Gateway and Vault connector presence and verify Host gh private TGserver access without printing secrets",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport os,json,subprocess,urllib.request\nfrom pathlib import Path\nreport={}\ndef flag(k,v):report[k]=bool(v)\nroot=Path(\"/home/admin1/projects/webhook-gateway\")\ntry:\n c=json.loads((root/\"config/webhooks.json\").read_text())\n flag(\"GATEWAY_RECEIVER_DESTINATION\",any(isinstance(x,dict) and x.get(\"id\")==\"server-core-host-output\" for x in c.get(\"destinations\",[])))\nexcept Exception:flag(\"GATEWAY_RECEIVER_DESTINATION\",False)\ntry:\n p=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/TGserver\",\"-q\",\".private\"],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,timeout=12)\n flag(\"GH_PRIVATE_TGSERVER_READ\",p.returncode==0 and p.stdout.strip()==\"true\")\nexcept Exception:flag(\"GH_PRIVATE_TGSERVER_READ\",False)\nf=Path(\"/home/admin1/.config/libral-vault/internal-token\")\nflag(\"VAULT_TOKEN_FILE\",f.is_file() and not f.is_symlink())\nif report[\"VAULT_TOKEN_FILE\"]:\n try:\n  req=urllib.request.Request(\"http://127.0.0.1:8791/internal/v1/health\",headers={\"Authorization\":\"Bearer \"+f.read_text().strip()})\n  with urllib.request.urlopen(req,timeout=3) as r:flag(\"VAULT_INTERNAL_API_READY\",r.status==200)\n except Exception:flag(\"VAULT_INTERNAL_API_READY\",False)\nelse:flag(\"VAULT_INTERNAL_API_READY\",False)\nflag(\"GATEWAY_DOTENV\", (root/\".env\").is_file())\nprint(\"CU40_SAFE_FLAGS=\"+json.dumps(report,sort_keys=True,separators=(\",\",\":\")))\n# print does not become CHAT content by default; send flags using preexisting Issue comment\ntry:\n msg=\"CU40 Host integration presence flags (no credentials): \"+json.dumps(report,sort_keys=True)\n p=subprocess.run([\"gh\",\"api\",\"-X\",\"POST\",\"repos/G-ACE-inc/server-core/issues/40/comments\",\"-f\",\"body=\"+msg],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=12)\n print(\"CU40_SAFE_FLAGS_PUBLISHED=\"+str(p.returncode==0))\nexcept Exception: print(\"CU40_SAFE_FLAGS_PUBLISHED=False\")\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/301"
+  }
+}
