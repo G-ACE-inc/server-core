@@ -41,7 +41,8 @@ def discover_common_host_run(repository, head_sha, api=api_read):
     matches = [run for run in runs
                if isinstance(run, dict)
                and run.get("head_sha") == head_sha
-               and run.get("path") == ".github/workflows/chatgpt-live-api-verify.yml"
+               and isinstance(run.get("path"), str)
+               and run["path"].split("@", 1)[0] == ".github/workflows/chatgpt-live-api-verify.yml"
                and run.get("event") == "push"]
     if len(matches) > 1:
         raise ValueError("MULTIPLE_COMMON_HOST_RUNS_REQUIRE_EXACT_SELECTION")
@@ -165,9 +166,20 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
         and checkpoint.get("diagnostic_hint") in {
             "CHAT_SOURCE_SHA_MISMATCH", "CHAT_SOURCE_ROOT_MISMATCH",
             "CHAT_SOURCE_WORKDIR_MISSING", "CHAT_SOURCE_GIT_UNAVAILABLE",
-            "CHAT_SOURCE_SHA_UNAVAILABLE", "CHAT_SOURCE_REQUIRED_FILE_MISSING"}
+            "CHAT_SOURCE_SHA_UNAVAILABLE", "CHAT_SOURCE_REQUIRED_FILE_MISSING",
+            "CHAT_SOURCE_DIRTY_WORKTREE"}
         and type(checkpoint.get("exit_code")) is int
-        and checkpoint["exit_code"] in range(70, 76)
+        and checkpoint["exit_code"] in range(70, 77)
+        and checkpoint["diagnostic_hint"] == {
+            70: "CHAT_SOURCE_WORKDIR_MISSING",
+            71: "CHAT_SOURCE_GIT_UNAVAILABLE",
+            72: "CHAT_SOURCE_ROOT_MISMATCH",
+            73: "CHAT_SOURCE_SHA_UNAVAILABLE",
+            74: "CHAT_SOURCE_SHA_MISMATCH",
+            75: "CHAT_SOURCE_REQUIRED_FILE_MISSING",
+            76: "CHAT_SOURCE_DIRTY_WORKTREE",
+        }.get(checkpoint["exit_code"])
+        and (host_observation == "HOST_SOURCE_CONTEXT_STALE") == (checkpoint["exit_code"] == 74)
     )
     correlated_missing = (
         host_failure_step is not None and host_observation == "HOST_RESULT_NOT_RETURNED"
