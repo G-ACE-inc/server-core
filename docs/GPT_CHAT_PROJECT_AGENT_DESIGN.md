@@ -51,13 +51,14 @@ Masterの追加要件は **design-first**: 着手時・再開時・主要変更�
 
 ## 6. 検証と段階的受入（偽の「完成」を防ぐ）
 A. **Source baseline**: 今日の既存コミット（例: `28ca07d`、`a4f6a52`、PR #238-245）を照合し、重複実装を避ける。変更箇所・owner/branchを特定。
-B. **Output roundtrip**: Unicodeを含む長いstdout/stderrについて、Host ledger→既存経路→Actions→CHATでbyte長/hash/終端一致を確認。TXT/ZIP作成のみでは合格しない。
-C. **Single-CU continuity**: 採用設計/受入条件を与えた一つの実Projectで、故意の失敗を含む2回以上の `ACT→OBSERVE→DECIDE→ACT` をMasterのコマンド手貼りなしで実行し、exact SHAと相関requestを残す。
+B. **Output roundtrip**: Unicodeを含む長いstdout/stderrについて、Host ledger→既存経路→Actions→CHATでbyte長/hash/終端・Unicode文字数を、独立した信頼できる期待値と照合。原始出力とredact後の保存値を区別し、観測metadataだけ・TXT/ZIP生成だけ・短出力Host PASSだけでは合格としない。§14.2参照。
+C. **Single-CU continuity**: 採用設計/受入条件を与えた一つの実Projectで、故意の失敗を含む2回以上の `ACT→OBSERVE→DECIDE→ACT` をMasterのコマンド手貼りなしで実行。`next_action`の表示だけでなく、前と異なる実Tool呼出、相関Run/Requestと再観測を記録する。§14.3参照。
 D. **Cross-CHAT restore**: 別CHATにおいて、元の全文会話の再説明なしに同じCU、設計、次Action、失敗原因、直近証拠を復元し、有意な次操作を実行する。
 E. **End-to-end acceptance**: PR/CI成功だけでなく、必要なHost reflect/稼働consumer/回復、TGserver ZERO保存→検索のreadbackを同一CUに紐付ける。未接続Repoは明示的`NOT_QUALIFIED`。
 F. **No-regression**: 旧固定コマンドの使用、新規Token/MCP/Workflow/親兄弟ディレクトリ、他Owner編集、無限リトライ、未検証完了宣言を防ぐ。
 
 ## 7. 設計段階の実装優先順
+2026-10-16の第三者レビューとPR #287～#289を含む実Source/Host証拠との照合結果は§14を最新差分として適用する。1～5は長期の方向であり、既解決の100件超Runページングを再実装する指示ではない。
 1. **既存機能の棚卸しと断線点確定**: 既存設計/変更/CI/Host登録を見て、作るべき箇所を最小化。
 2. **観測データの欠損を解消**: Issueに全文を投稿するのでなく、保存済みHost ledgerと既存経路で完全な結果をCHATへ渡す。出力アセンブル/ZIPだけで終了しない。
 3. **結果に基づく反復処理をE2E化**: 実Tool呼出を伴う連続CU、FAIL→別Action→再観測を実証。
@@ -65,6 +66,7 @@ F. **No-regression**: 旧固定コマンドの使用、新規Token/MCP/Workflow/
 5. **登録Project拡張・実機検証・ZERO検索**: 範囲・owner・Host権限を確認して段階展開。
 
 ## 8. 現時点の厳密な結論
+以下の原初設計判断は維持するが、その後のPR #287～#289/実Host/Artifactの部分実証と未達境界は§14を最新の差分として参照する。
 既存SourceにはRule Plane、設計Entry Gate、CHAT checkpoint/next_action、Host経路、Host result ledger、ログ復元スクリプト等が存在する。しかし**Codex/Cursor型の一貫した自律開発機能が通常CHATからLiveで完成**した証拠はない。実装済み部品の重複開発を避け、つなぎ込みとProject/CU単位の実証を行う。Source PASS、CI PASS、Host Live PASS、ZERO readback、Cross-CHAT continuityは別々に報告する。
 
 
@@ -400,3 +402,104 @@ Masterは非技術の企画・要求・優先順位・最終完成判断を担�
 - Google Drive：利用可能な保存先として採用されたが、指定アカウント接続・共有権限・容量・実ZIP/PDF保存は**未検証**。
 - 3つのCI成功はそのワークフローの成功であり、追加したPython単体テスト全件の実行やHost→CHAT→次Tool本番E2Eの証拠ではない。
 - 最優先の残件：(1)既存Host Ledgerから原文を取得して検証する実経路、(2)CU Receiptの別CHATから発見可能な耐久リンク、(3)既存Notion議事録のコンテキスト検索→GitHub Current照合→1件の実Tool操作、(4)1 CUで一連の回帰検証。追加ルール/別DB/新Workflowを増やすことは目的にしない。
+
+
+
+## 14. 第三者外部レビュー全10章との照合と設計改善（2026-10-16）
+
+**適用対象**：Master添付「G-ACE 総合エージェントループ 第三者技術レビュー」（全10章、原文 [Issue #40 comment 6205088258](https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6205088258)）。GitHub Project #1 / Current #40、採用済み§1～§13とWorkspace §6の単一Work Routine、旧固定コマンド排除、現行Host認可を維持する。第三者レビューのSource前提は**PR #285直後**であるため、最新のPR #287～#289・実Actions/Hostに基づいて指摘を再判定する。本節は既存設計への差分であり、新Agent/ルーティン/Gate/Token/Workflow/MCP/DBを追加するものではない。
+
+### 14.1 原文の全指摘の判定（原文§1～§3、§7～§10）
+
+| 論点 | 最新の確認結果 | 設計判断 |
+|---|---|---|
+| 全体構成は維持、総合性能未認定 | GitHub Project/Current、Actions→Host、Notion等は動作。通常CHATに常駐Agentの強制継続Hookはない | **採用**。既存二層構造を保持し、通常CHATのTool連続実行と引継ぎを実測して受入 |
+| A：成功でも完全出力→VERIFYが断絶（P0） | [PR #288](https://github.com/G-ACE-inc/server-core/pull/288)で受信ZIP全byte/sha256/Unicode文字数/Requestの実検査とVERIFY遷移を追加。[PR #289](https://github.com/G-ACE-inc/server-core/pull/289)で旧短出力ハッシュ欠落とLedger pointer判定を補修 | **部分解決**。Host ledger→既存安全な輸送→Actionsの**全文**Output Artifact→CHAT実受領は多MB本番未達。メタデータArtifact受信は代替にならない |
+| B：next_action≠次の実Tool（P0） | [PR #285](https://github.com/G-ACE-inc/server-core/pull/285)は障害判断とRun再取得を改善。[Host FAIL 38828475106](https://github.com/G-ACE-inc/server-core/actions/runs/38828475106)→[新Request PASS 38828541482](https://github.com/G-ACE-inc/server-core/actions/runs/38828541482)は実行済み | **未達**。通常CHATの一つのCUで観測→判断→異なるTool呼出→再観測という連続した実行証拠が別途必要 |
+| C：SHA以外の障害分類が一般FAILに縮退（P1） | Pollerには相関失敗/未着/Partial/Host FAILが存在。`chat_cu_continuation.py:resume`はSHA以外を`RUN_FAILED_OR_INCOMPLETE`にまとめ得る | **未達**。既存分類を欠落なく引継ぎ、実故障層に応じた次の異なるActionを選択 |
+| D：100件超のRun検索が停止（P1） | **PR #287で既に修正**：Run/Artifact全ページ取得、件数変動、重複、相関・期限照合、テスト | **Source解決済み**。重複開発禁止。認証済みの大量履歴/実期限切れなどのLive確認とは分離 |
+| E：URLの存在を因果根拠と誤認（P1） | `assess_diagnostic_context()`は形式・反証区分まで。現行`causal_claim_verified=False`は妥当 | **採用/未達**。内容・反証を実読したときだけ原因特定と扱う |
+| F：別CHAT/並列CUの精度未測定（P2） | Checkpoint/Current/Notionはあるが別CHATが元会話手貼りなしに実Toolを続けたE2E未立証 | **未達**。Owner・Revision・Request/Run/SHAを維持して実継続で受入 |
+| 原文§4：故障層を分けて原因特定 | Commit→Run→Job→Gateway/Host/Artifactの各境界の観測品質に差 | **採用**。§14.3を既存§4/§11.4の判断へ反映、新しいルーティンを作らない |
+| 原文§5：効率/速度/並行 | 118秒と数秒は同負荷・同条件ではなく改善率は未測定。過剰なIssue読み返し・Host再実行は非効率 | **採用**。§14.5で最小Tool選択と区間測定 |
+| 原文§6：Root cause精度、完成率、再開率の測定 | CI緑/PR数だけでは精度を測れない | **採用**。§14.6で実測分母と既存受入10ケースを明示 |
+| 原文§7：P0→P1→P2 | DとAの一部は後日解消。残るP0は本番全文安全輸送と実Action連鎖 | **一部更新して採用**。§14.7の順で続行 |
+| 原文§8：新Agent/Gateと安全機構緩和を不採用 | Host SHA照合・Registry・Mutation Ownerは必要な技術保護 | **維持**。追加承認や別Agentは入れず、権限は拡張しない |
+| 原文§9・§10：総合未認定、記録 | 外部レビュー原文はGitHub #40/Notionに記録済み。PR設計変更はHost全機能の証拠でない | **完成未認定のまま**。Source/CI/Merge/Runtime/別CHAT/ZEROを分けて管理 |
+
+**最新の実機境界**：[Run 38836389407](https://github.com/G-ACE-inc/server-core/actions/runs/38836389407)で過去RequestのHost ledgerから41文字stdoutと空stderrを取得。[Run 38836909514](https://github.com/G-ACE-inc/server-core/actions/runs/38836909514)の小さい観測Artifactを通常CHATでダウンロードしZIP内の両ハッシュ・文字数を確認。これは**短いHost出力と観測metadataの実証**であって、多MBのHost全文ZIPのActions公開・CHAT受信は未実証。GitHub Source最新SHAとHost実checkout SHA（最後の実観測`96d01bb845152569658ccd1187b502bf33649c06`）も別物。
+
+### 14.2 Host出力の信頼元と完全性（原文§3A、§6B）
+
+次は**独立した受入状態**とする。各段の証拠が欠ければ下流をPASSにしない。
+
+1. `HOST_PRODUCED`：相関Host request/exit/実Host SHAを確認。
+2. `LEDGER_PERSISTED`：Requestに紐づくstdout/stderrの実保存値・byte・SHA-256・Unicode文字数・終端を確認。**生コマンド出力**とHostによるredact/制御文字除去後の**保存値**を明確に分ける。保存値と一致しただけでは生原文のbyte保存を証明できない。
+3. `ARTIFACT_PUBLISHED`：既存の認可済み経路で**全文**stdout/stderrのZIPをActionsへ渡し、Run/Request/Host SHA/Artifact ID/期待digestを結合。小型の観測metadata ZIPと混同しない。
+4. `CHAT_RECEIVED`：通常CHATの既存GitHub Connector/既存ghが**全文の実ZIP**を受領。Artifact URLだけでは不合格。
+5. `OUTPUT_VERIFIED`：ZIPのrequest/2-stream/byte数/sha256/Unicode文字数/終端を、ZIP自身のmanifest以外の**検証済みHost期待値**と突合する。`output_complete=true`や`resume(..., output_verified=True)`というフラグのみでは証拠としない。
+6. `ACCEPTANCE_ELIGIBLE`：fresh Run・exit・実Host SHA・残りの開発目的を確認して次のTool選択へ移行。Output Verifiedと製品完成は別。
+
+安全境界：公開RepositoryのIssueコメント/Releaseやログへ秘密を含み得るHost原文を無条件公開しない。既存Actions Artifactの実アクセス権、保持期間、Host出力の秘匿化位置、適用される認可境界を**実Sourceで確認**する。安全なbinary返却が既存経路に無ければ`TRANSPORT_NOT_QUALIFIED`と報告し、新Token/Workflow/公開ファイル化を即断しない。受信ZIPの重複entry、path traversal、不正UTF-8、圧縮爆弾、改ざん、request ID不一致は拒否。容量保護を「ログを途中で切り詰め成功とする制限」にすり替えない。**数MB以上のUnicode stdoutとstderrの双方**で独立Hash/bytes一致が§6Bの本番合格条件。
+
+### 14.3 根拠に応じた障害分類と実Tool呼出（原文§3B/C・§4）
+
+実行の証拠はCommit→Run→Job→Request→Gateway送受理→Receiver/Host→Result Sink/ledger→Actions/Artifact→CHAT読取→次Toolの**最後に確認済みの段階と最初の未確認段階**で考える。事実不明の段階はUNKNOWNのままとし、`RUN_FAILED_OR_INCOMPLETE`へ無意味に縮退させない。
+
+| 観測 | 次の最小で異なる操作 | 混同禁止 |
+|---|---|---|
+| 完結したall-event検索でRunなし | Commit・push・Workflow trigger/pathを確認 | PR限定検索0≠Actions未起動 |
+| Runあり、Selector/START失敗 | 該当StepとRequest/branch/権限を調査 | Gateway故障とは限らない |
+| Gateway送信拒否 | 既存送信契約・認証結果を安全に確認 | Token追加で即解決しない |
+| Gateway受理/Host結果なし | Event ID、配送、Receiver、Result Sinkを相関追跡 | 新Requestを無条件に再発行しない |
+| Host SHA不一致 | Dispatcher SHAとTarget checkout SHAを独立再取得、新しい正しいRequestで再計画 | SHA保護の無効化や古いSHA反復なし |
+| Host exit非0/失敗Step | stderr/Host class/認可/実行器を分類して別の修正を実行 | Actions failureを根本原因扱いしない |
+| Host exit0、プレビュー欠損/ledger pointer | request ID指定のHost ledger→許可された全文ZIP→byte/hash照合 | metadataのcomplete≠本文の取得 |
+| Artifact期限切れ/重複/API応答途中欠落 | 正しいRun/Artifact ID、許可されたHost ledger再読込 | 無関係のArtifactで補完しない |
+| PR/CI PASS、製品未完成 | 採用設計の次受入へ異なる実Toolを発行 | CI PASS≠Host/製品完成 |
+
+**§6Cの実証**：`next_action`の生成やCLIによる既存Run再読込のみでは不合格。同一CU内の故意失敗→観測→判断→**違う実Tool呼出**→そのActionのrequest/Run/Host結果を連続して紐付ける。専用Agent Runtimeや通常CHATの自動送信Hookを存在すると仮定せず、判断/Tool実行は通常CHAT自身の責務。権限不足時は同CUの独立作業を継続し他OwnerのSourceを引き取らない。
+
+### 14.4 仮説と因果関係の判定（原文§3E・§4）
+
+- `FACT`：Source・GitHub API・Host実ログ等の**内容を読んだ**事実。URL文字列/AI報告の存在だけでは因果証明なし。
+- `HYPOTHESIS`：説明候補・反証できる実観測・足りない情報・最小確認Action。
+- `REFUTED`：実観測で否定。新証拠なく別名で同じ仮説・修正を反復しない。
+- `ROOT_CAUSE_CONFIRMED`：故障層を再現/比較し修正後の別条件実行を観測して支持された原因のみ。
+- `UNKNOWN`：証拠欠損・権限制限・未観測。憶測で補完せず別の安全な同CU作業を継続。
+
+元の「Actionsが動いていない」誤診にはPR-only検索の誤選択と、実Hostでの古いSHA指定という**異なる問題**がある。これらを一つの原因に潰さない。レビューが示した診断順「症状→相関事実→故障地点→反証候補→差別化観測→修正→再実行」を既存Work Routine §6に適用し、新Gateは作らない。
+
+### 14.5 時間/情報負荷/有限の外部AI枠の扱い（原文§2・§5・§8）
+
+最新Current/設計revision/Owner/実SHAを必要範囲で復元し、既知のRun/Request/Artifactの直接読取を優先。通常用途でIssue #10の数百～千コメントを全文取得しない。GitHub APIで読めるものをわざわざHostコマンドで往復しない。独立した**読取のみ**必要なら並行、同一CUへの書込はOwnerと正確なRevision/SHAを再確認して直列化。118秒事例と数秒事例を同負荷の改善として宣言しない。測るなら、Gateway受理→配送→Host処理→Result Sink→Actions poll→Artifact受取→CHAT次Toolの各時刻を同じrequestに結び付ける。
+
+Codexは通常CHATで未解決な限定DebugやローカルIDE認証が有意な場合、Copilot Freeは認証・共通基盤・データ保護など重要修正の**必要な**独立レビューだけに使用。Codexを使ったらCopilotも必須という固定手続きにはしない。両者の利用可能枠は有限（上限の具体的数値は未検証）。新課金/多人数Agent固定化なし。Notionは意味/採否の履歴、GitHub Currentは実行状態、IssueとArtifactsの責務は§10～§13のまま。
+
+外部参考の採用範囲： [Codex loop](https://openai.com/index/unrolling-the-codex-agent-loop/)のTool/結果/再推論、[OpenHands SDK](https://github.com/OpenHands/software-agent-sdk)のTool/Agent/Workspace/Event分離、[LangGraph persistence](https://langchain-ai.github.io/langgraph/concepts/durable_execution/)のcheckpoint、[Anthropic agent evals](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents)の実行過程評価を参考にする。**概念の借用のみ**でSDK/常駐Runnerを導入せず、外部ベンチマークの点数を現場の開発速度に転換しない。
+
+### 14.6 受入試験・定量評価の分母（原文§6）
+
+PR成功率/CI緑だけでは誤診・開発継続性を測れない。同じCU・同じ観測面・実Host/Run証拠を対象にBaselineを取る。数値根拠のない改善率や他社比較を記入しない。未確認=`NOT_MEASURED`。失敗・Timeout・部分出力も分母から除外しない。
+
+| 指標 | 計測分母と判定 | 現在 |
+|---|---|---|
+| 原因確認率・誤診率 | 原因を断定した障害件数を分母、後日実反証で維持/否定された件数を区別。未知件数別記 | Baseline未測定 |
+| 故障後の実復旧率 | 実故障があったCUを分母、必要なSource/CI/Host/consumer受入に戻れたCUのみ分子 | 未測定 |
+| 観測→有意な次Tool時間 | 同じCUのObservation時刻→別の意味あるTool実行時刻 | 未測定 |
+| 重複診断率 | 同じ症状への診断操作を分母、新しい証拠/反証を生まなかった繰返しが分子 | 未測定 |
+| 設計一致率 | 実変更件数を分母、採用設計RevisionとOwner/目的/変更の整合を確認した件数 | 未測定 |
+| Output完全性 | stdout/stderr両方のHost実出力要求を分母、実受信bytes/hash/文字数/終端一致のみ合格 | **多MB live未達** |
+| 別CHAT成功率 | 対象引継ぎCUを分母、元会話手貼りなしで次の実Toolを起動した件数 | 未測定 |
+| 実完成率 | 開始CUを分母、必要なSource/CI/Runtime/ZERO/設計受入をすべて満たしたCU | 未測定 |
+
+原文の10検証ケースを既存Toolsで扱う：①push Run存在だがPR検索0/100件超、②SHA不一致からの再計画、③API遅延/未着/二重送信防止、④SHA以外のHost実失敗、⑤数MBのUnicode stdout/stderr実ZIP往復、⑥Artifact期限切れ/重複/途中欠落、⑦CI成功とRuntime未反映の区別、⑧並列CHATによるOwner/Revision保護、⑨別CHATの元会話不要の再開と次Tool実行、⑩同一CU/Requestに紐づくTGserver ZERO保存→検索。すでに修正されたページングのUnit testを重複開発しない。A～Fの既存合否を維持し、SOURCE/CI/HOST_LIVE/CHAT_OUTPUT/CROSS_CHAT/ZEROそれぞれの実証を別々に報告する。
+
+### 14.7 設計改訂後に中断していたCUへ戻る順序（原文§7・§9～§10）
+
+1. **P0** 現在の中断位置へ戻り、既存Host ledger/既存Gateway・Receiver・Actionsの**安全な**binary/全文経路をSourceと権限から特定。Host→Actions全文ZIP→CHAT実受領→多MBの両stream hash parityを実証。安全な通路がなければ`TRANSPORT_NOT_QUALIFIED`と明示して代案と保護影響を評価し、無断の新Workflow/Token/公開アップロードには進まない。
+2. **P0** §6Cの同一CUで失敗→Observation→根拠あるDecision→異なるACT→再Observationの本物のTool実行連鎖を完成させる。
+3. **P1** SHA以外の既存Poller分類をContinuationに伝達し、反証付きで具体的な次Toolを選ぶ。既存部品を重複構築しない。
+4. **P1/P2** GitHub Current/Notion/Source SHA/Ownerの整合、別CHAT実継続、ZERO検索、実測の改善率を扱う。
+
+**不変の境界**：Master最終判断、Project/Current、#10のHost/ターミナルOwner、#40 CU、#16/#17、Host admission、SHA/Registry保護、Notion議事録の役割、Docker原則、他Repo・他CHATのSource責務。§13.8は当時の実装監査であり今回の進捗によって新解釈が生じた。**本設計PRをMergeしてもAgent全体・§6B/C/D/EがPASSになるわけではない**。
