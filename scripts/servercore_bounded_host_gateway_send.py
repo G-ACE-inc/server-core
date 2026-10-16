@@ -61,7 +61,7 @@ def build_event(request, contract):
 def validate_cli(command_id, expected_sha, contract, expected_before=None, reflect_repository=None, reflect_branch=None, repository=None,
                  service=None, deploy_request_id=None, path=None, offset=None, container=None, tail=None,
                  session=None, argv=None, timeout_s=None, fresh=None, repo_sha=None,
-                 docker_operation=None, host_command=None):
+                 docker_operation=None, host_command=None, source_preflight=False):
     allowed = contract.get("allowed_command_ids") or []
     if command_id not in allowed:
         raise SendError("COMMAND_NOT_REGISTERED")
@@ -117,7 +117,9 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, refle
         if not isinstance(repo_sha, str) or not SHA_PATTERN.fullmatch(repo_sha):
             raise SendError("HOST_COMMAND_REPO_SHA_INVALID")
         request.update({"repository": repository, "repo_sha": repo_sha, "command": host_command})
-    elif host_command is not None:
+        if source_preflight is True:
+            request["source_preflight"] = True
+    elif host_command is not None or source_preflight:
         raise SendError("UNEXPECTED_HOST_COMMAND")
     if command_id == "docker.operation":
         if docker_operation not in {"ps", "inspect", "logs", "stats", "start", "stop",
@@ -229,6 +231,7 @@ def main():
     parser.add_argument("--timeout-s", type=int)
     parser.add_argument("--fresh", choices=("true", "false"))
     parser.add_argument("--repo-sha")
+    parser.add_argument("--source-preflight", action="store_true")
     parser.add_argument("--contract", default=str(DEFAULT_CONTRACT))
     args = parser.parse_args()
     contract = load_contract(args.contract)
@@ -242,7 +245,8 @@ def main():
                            timeout_s=args.timeout_s,
                            fresh=None if args.fresh is None else args.fresh == "true",
                            repo_sha=args.repo_sha, docker_operation=args.docker_operation,
-                           host_command=args.host_command)
+                           host_command=args.host_command,
+                           source_preflight=args.source_preflight)
     try:
         receipt = send(request, contract)
         print(json.dumps({"state": "QUEUED", "request_id": request["id"], "gateway": receipt}, sort_keys=True))
