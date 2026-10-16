@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Gateway28 compare exact original committed command bytes against Writer private digest",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6ab1b4dce10c684cfd3f7e15462a6c54fd05af58",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6ab1b4dce10c684cfd3f7e15462a6c54fd05af58",
+    "command": "python3 - <<'PY'\nimport subprocess, json,hashlib\nfrom pathlib import Path\nroot='/home/admin1/server-core'\nsha='ea174c75b9d9501dddbeca947a9ceb7e57af7aec'\npath='.github/chat-host-requests/req_d0fd2be4648242b8b197a440.json'\np=subprocess.run(['git','-C',root,'fetch','--no-tags','origin','main'],capture_output=True,timeout=25)\nif p.returncode: raise SystemExit(44)\ng=subprocess.run(['git','-C',root,'show',sha+':'+path],capture_output=True,timeout=15)\nif g.returncode: raise SystemExit(45)\nsent=json.loads(g.stdout)['bounded_host_request']['command'].encode('utf-8')\nif len(sent)!=626 or hashlib.sha256(sent).hexdigest()!='f503bba2fb95716648b37e75e4d117477421a3d029656742eda217bef2c2e792': raise SystemExit(46)\nrecord=json.loads(Path('/home/admin1/logs/servercore-service-deploy/req_1714c8d700e41b187170885b.json').read_text())\nif record['command_sha256']==hashlib.sha256(sent).hexdigest() and record['command_bytes']==len(sent):\n print('GATEWAY28_CANONICAL_SENT_VS_WRITER_INBOUND=PASS')\nelif record['command_bytes']==len(sent):\n raise SystemExit(61)\nelse: raise SystemExit(62)\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/315"
+  }
+}
