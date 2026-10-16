@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Audit Cloudflare container status and existing token file metadata without revealing paths or tokens.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "command": "set -eu\ns=$(docker ps -a --format '{{.Names}}|{{.Status}}' | grep -i cloudflare || true)\nif [ -z \"$s\" ]; then s=NONE; fi\np=/home/admin1/projects/astera_v8\nf=$(sed -n 's/^CLOUDFLARE_TUNNEL_TOKEN_FILE=//p' \"$p/.env\" | head -n1)\ncase \"$f\" in /*) if [ -f \"$f\" ]; then statv=$(stat -c '%a|%u|%g|%s' \"$f\"); else statv=MISSING; fi;; *) statv=NONABSOLUTE;; esac\nbody=$(printf 'TUNNEL_SAFE_AUDIT\\ncontainers=%s\\nsecret_file_metadata=%s\\n' \"$s\" \"$statv\")\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"$body\" --jq '.html_url'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Vault PR9 deployed and healthy Issue10 #6226212418; assess existing consumer and Secret file metadata before Vault import."
+  }
+}
