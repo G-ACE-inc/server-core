@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI owner read-only Host parent/worktree, actual Docker container and Gate health inventory; no credentials or mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\nprintf 'DISPATCHER_SHA='; git rev-parse HEAD\nprintf 'DEBUGAI_PARENT_SHA='; git -C /home/admin1/projects/debug-ai rev-parse HEAD\nprintf 'DEBUGAI_PARENT_BRANCH='; git -C /home/admin1/projects/debug-ai branch --show-current\nprintf 'DEBUGAI_PARENT_STATUS_BEGIN\\n'; git -C /home/admin1/projects/debug-ai status --short --untracked-files=normal | head -25\nprintf 'DEBUGAI_WORKTREES_BEGIN\\n'; git -C /home/admin1/projects/debug-ai worktree list --porcelain | head -90\nprintf 'DEBUGAI_CONTAINERS_BEGIN\\n'; docker ps --filter label=com.docker.compose.service=debug-ai --format '{{.Names}} {{.Status}} {{.Image}}'\nprintf 'GATES_HEALTH_BEGIN\\n'; python3 - <<'PY'\nfrom urllib.request import urlopen\nfrom urllib.error import HTTPError, URLError\nfor p in (18181,18182,18183,18184):\n try:\n  with urlopen(f'http://127.0.0.1:{p}/health', timeout=3) as r: print(p,r.status)\n except HTTPError as e: print(p,e.code)\n except (URLError,TimeoutError) as e: print(p,type(e).__name__)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
