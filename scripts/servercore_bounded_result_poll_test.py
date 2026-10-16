@@ -37,6 +37,27 @@ class TerminalOutputTests(unittest.TestCase):
         self.assertEqual(poll.stream_receipt_metadata(pointer, "stdout")["sha256"], "b" * 64)
         self.assertFalse(poll.stream_receipt_metadata(pointer, "stdout")["complete"])
 
+    def test_failed_host_result_is_not_mislabeled_as_partial(self):
+        record = {"request_id": "req_" + "d" * 24,
+                  "state": "FAIL", "exit_code": 23,
+                  "expected_sha": "a" * 40, "host_sha": "a" * 40,
+                  "stdout": "", "stderr": "",
+                  "stdout_bytes": 999999, "stderr_bytes": 200,
+                  "stdout_preview_truncated": True}
+        self.assertEqual(poll.continuation_observation(record, "OK"),
+                         ("HOST_OPERATION_FAILED", "INSPECT_FAILURE_EVIDENCE_AND_REPLAN"))
+        record["host_sha"] = "b" * 40
+        self.assertEqual(poll.continuation_observation(record, "OK"),
+                         ("HOST_SOURCE_SHA_MISMATCH",
+                          "READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION"))
+        record["state"] = "RETRYABLE"
+        record["exit_code"] = -1
+        self.assertEqual(poll.continuation_observation(record, "OK"),
+                         ("HOST_OPERATION_FAILED", "INSPECT_FAILURE_EVIDENCE_AND_REPLAN"))
+        record["exit_code"] = 0
+        self.assertEqual(poll.continuation_observation(record, "OK"),
+                         ("HOST_OPERATION_RETRYABLE", "TRACE_EXISTING_HOST_DELIVERY_AND_RESULT_SINK"))
+
     def test_clipped_preview_requires_lossless_chunk_readback(self):
         import contextlib
         import io
