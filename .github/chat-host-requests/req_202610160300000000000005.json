@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "#40 verify refreshed Host Writer full Unicode bytes independent of live Actions truncated observation with stdout stderr only SHA counts",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "command": "python3 - <<'PY'\nimport json,hashlib\nfrom pathlib import Path\nrid=\"req_67bc7d72e656247c6b586a02\"\np=Path(\"/home/admin1/logs/servercore-service-deploy\")/(rid+\".json\")\nq=Path(\"/home/admin1/logs/servercore-bounded-results\")/(rid+\".json\")\na=json.loads(p.read_text(encoding=\"utf-8\"))\nb=json.loads(q.read_text(encoding=\"utf-8\")) if q.is_file() else {}\nexpected={\"stdout\":(720000,1920000,\"dc45652c424e94f87d27d7ab9605c545fbdbaf0b2300dcc4a47dd881ee15664f\"),\"stderr\":(400000,1000000,\"d9fa711c814b5c5c43cb789349e112b62fe0add88473a9ccc17dc30881c13778\")}\nout={\"rid\":rid,\"writer\":a.get(\"state\"),\"sink\":b.get(\"state\",\"MISSING\"),\"sink_output_length\":len(b.get(\"stdout\",\"\"))}\nfor k in (\"stdout\",\"stderr\"):\n t=a.get(k,\"\")\n obs=(len(t),len(t.encode()),hashlib.sha256(t.encode()).hexdigest())\n out[k]={\"chars\":obs[0],\"bytes\":obs[1],\"sha256\":obs[2],\"expected_match\":obs==expected[k]}\nprint(\"HOST_FULL_LEDGER_AUDIT=\"+json.dumps(out,separators=(\",\",\":\")))\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Writer and Sink refreshed Run 38840945096 after main ff; synthetic two stream Run 38841046792 completed; first audit Run 38841140130 no public plaintext; explicitly no raw readout, verify exact Writer SHA via metadata."
+  }
+}
