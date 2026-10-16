@@ -79,7 +79,7 @@ def verified_output_evidence(checkpoint, archive):
         path, checkpoint.get("request_id"), checkpoint.get("stream_metadata"))
 
 
-def resume(checkpoint, api=api_read, output_verified=False):
+def resume(checkpoint, api=api_read, host_output_zip=None):
     if not isinstance(checkpoint, dict) or checkpoint.get("schema") != "gace.chat.cu.handoff.v1":
         raise ValueError("INVALID_CHECKPOINT_SCHEMA")
     run_id = checkpoint.get("run_id")
@@ -103,6 +103,13 @@ def resume(checkpoint, api=api_read, output_verified=False):
         raise ValueError("UNSUPPORTED_ACTION")
     status = current.get("status")
     conclusion = current.get("conclusion")
+    # Never accept caller-supplied booleans as proof. Verify the actual ZIP
+    # against correlated stream digests *after* fresh GitHub Run readback.
+    proof = None
+    if host_output_zip is not None:
+        if status != "completed" or conclusion != "success":
+            raise ValueError("HOST_OUTPUT_RUN_NOT_SUCCESS")
+        proof = verified_output_evidence(checkpoint, host_output_zip)
     # Preserve a verified Host failure instead of losing it under Actions failure.
     host_failure_step = None
     if (status == "completed" and conclusion != "success"
@@ -134,7 +141,7 @@ def resume(checkpoint, api=api_read, output_verified=False):
         observed = "RUN_FAILED_OR_INCOMPLETE"
     elif checkpoint.get("result_verified") is not True:
         observed = "HOST_RESULT_UNVERIFIED"
-    elif output_verified is not True:
+    elif proof is None:
         observed = "HOST_LEDGER_RECOVERY_REQUIRED"
     else:
         observed = "READY_FOR_ACCEPTANCE_VERIFICATION"
@@ -153,6 +160,7 @@ def resume(checkpoint, api=api_read, output_verified=False):
             "READY_FOR_ACCEPTANCE_VERIFICATION": "VERIFY_CU_ACCEPTANCE",
         }[observed],
         "evidence_url": url,
+        "verified_host_output": proof,
         "host_failure_step": host_failure_step,
         "observed_host_sha": checkpoint.get("host_sha") if host_failure_step else None,
         "stale_expected_host_sha": checkpoint.get("expected_sha") if host_failure_step else None,
@@ -236,11 +244,11 @@ def main():
             if restored["source_sha"] != discovery["source_sha"]:
                 raise ValueError("DISCOVERY_RESTORE_SHA_MISMATCH")
             checkpoint = continuation_checkpoint(restored, args.cu_issue_url)
-            proof = verified_output_evidence(checkpoint, args.host_output_zip) if args.host_output_zip else None
+            continuation = resume(checkpoint, host_output_zip=args.host_output_zip)
             result = {"discovery": discovery, "checkpoint": checkpoint,
-                      "continuation": resume(checkpoint, output_verified=proof is not None)}
-            if proof is not None:
-                result["verified_host_output"] = proof
+                      "continuation": continuation}
+            if continuation["verified_host_output"] is not None:
+                result["verified_host_output"] = continuation["verified_host_output"]
         else:
             if args.host_output_zip:
                 parser.error("host output ZIP requires correlated request recovery")
@@ -260,11 +268,10 @@ def main():
             parser.error("supply checkpoint file or all exact identifiers")
         checkpoint = continuation_checkpoint(
             restore(args.repository, args.run_id, args.request_id), args.cu_issue_url)
-    proof = verified_output_evidence(checkpoint, args.host_output_zip) if args.host_output_zip else None
-    result = {"checkpoint": checkpoint,
-              "continuation": resume(checkpoint, output_verified=proof is not None)}
-    if proof is not None:
-        result["verified_host_output"] = proof
+    continuation = resume(checkpoint, host_output_zip=args.host_output_zip)
+    result = {"checkpoint": checkpoint, "continuation": continuation}
+    if continuation["verified_host_output"] is not None:
+        result["verified_host_output"] = continuation["verified_host_output"]
     if args.diagnostic_context_json:
         diagnostic = json.loads(args.diagnostic_context_json.read_text(encoding="utf-8"))
         result["diagnostic_assessment"] = assess_diagnostic_context(diagnostic, result["continuation"])
