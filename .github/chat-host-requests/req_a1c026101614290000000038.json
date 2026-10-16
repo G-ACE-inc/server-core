@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 exact SHA6d02767d 112/112 tested source rebuild and Docker Gate deploy only after no active leases/handoff; retain existing cgroup/credential, no legacy Router",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess,time,urllib.request\nfrom pathlib import Path\nroot=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\ntarget='6d02767dca6d03e47e1a263b18a16e2413626311'\nenvfile=Path('/home/admin1/projects/debug-ai/.env')\nout={'source_target':target,'legacy_router_started':False,'credential_values_reported':False,'gate_recreation':False}\ndef run(argv,timeout=30):\n try:\n  p=subprocess.run(argv,capture_output=True,text=True,timeout=timeout)\n  return {'code':p.returncode,'tail':(p.stdout+'\\n'+p.stderr)[-310:]}\n except Exception as e:return {'code':-99,'error_class':type(e).__name__}\ngit=['git','-C',str(root)]\nout['git_head']=run(git+['rev-parse','HEAD']).get('tail','').strip()\nst=run(git+['status','--porcelain'])\nout['clean']=st['code']==0 and not st['tail'].strip()\nprobe=\"\"\"import os,json,urllib.request\nk=os.environ.get('AI_CORE_API_KEY','')\nr=urllib.request.Request('http://127.0.0.1:18184/internal/handoff/status',headers={''.join(('Author','ization')):'Bearer '+k})\nwith urllib.request.urlopen(r,timeout=8) as f:\n d=json.load(f)\n print(json.dumps({'http':f.status,'active':d.get('active',{}),'handoff':d.get('handoff'),'resident':d.get('resident',[])}))\n\"\"\"\nbefore=run(['docker','exec','ai-core-model-gate','python3','-c',probe],timeout=15)\ntry:out['before']=json.loads(before['tail'])\nexcept Exception:out['before']={'readback_failed':before['code']}\nsafe=(out['git_head']==target and out['clean'] and envfile.is_file() and out['before'].get('http')==200 and not out['before'].get('handoff') and sum(out['before'].get('active',{}).values())==0)\nout['safe_to_recreate']=bool(safe)\nif safe:\n base=['docker','compose','--env-file',str(envfile),'-p','ai-core-gate','-f',str(root/'compose.gate.yml')]\n config=run(base+['config','--quiet'],timeout=25)\n out['config_code']=config['code']\n if config['code']==0:\n  build=run(base+['up','-d','--build','--no-deps','gate'],timeout=190)\n  out['up_code']=build['code']\n  out['up_tail']=build.get('tail','')\n  out['gate_recreation']=build['code']==0\n  if out['gate_recreation']:\n   for attempt in range(22):\n    try:\n     with urllib.request.urlopen('http://127.0.0.1:18181/health',timeout=2) as f:\n      if f.status==200:break\n    except Exception:time.sleep(.7)\n   out['health_ports']={}\n   for port in (18181,18182,18183,18184):\n    try:\n     with urllib.request.urlopen('http://127.0.0.1:'+str(port)+'/health',timeout=3) as f:out['health_ports'][str(port)]=f.status\n    except Exception as e:out['health_ports'][str(port)]=type(e).__name__\n   out['gate_status']=run(['docker','inspect','-f','{{.State.Status}}|{{.State.Health.Status}}|{{.HostConfig.CgroupParent}}|{{.HostConfig.RestartPolicy.Name}}','ai-core-model-gate']).get('tail','').strip()\n   current=run(['docker','exec','ai-core-model-gate','python3','-c',probe],timeout=15)\n   try:out['after']=json.loads(current['tail'])\n   except Exception:out['after']={'probe_failed':current['code']}\nbody='AI_CORE_CLEAN_CACHE_CURRENT_GATE_DEPLOY\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nresult=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('AI_CORE_CURRENT_GATE_DEPLOY='+('PASS '+result.stdout.strip() if result.returncode==0 else 'RECORD_FAILED'))\nraise SystemExit(0 if result.returncode==0 and out.get('gate_recreation') and len(out.get('health_ports',{}))==4 and all(v==200 for v in out['health_ports'].values()) and out.get('after',{}).get('http')==200 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209873531"
+  }
+}
