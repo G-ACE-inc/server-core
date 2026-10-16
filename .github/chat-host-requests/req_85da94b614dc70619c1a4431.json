@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Deploy tested AI Core four-Gate exact offline-81d75017 image with bounded durable performance samples, using existing reversible Gate refresh and idle-lease admission. No product code, no Router/18080, no model starts or extra services.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 81d75017d0fd0ddc631e0c6de862c1cc0d4d662d\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\nbash -n \"$w/scripts/host_gate_refresh.sh\"\nbash \"$w/scripts/host_gate_refresh.sh\" 81d75017d0fd0ddc631e0c6de862c1cc0d4d662d ai-core-model-gate:offline-81d75017"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core #1 owning PR#3 head81d75017, complete Source suite and offline exact image PASS Issue#1 6226102900. Existing live Gate before new durable persistence 1b93dd5, host_gate_refresh guarded lease/handoff/queue and rollback readiness. New metrics journal in existing private state dir, no new service/token/product changes. Latest Host sha4fe86475 in Issue#10 6226091989."
+  }
+}
