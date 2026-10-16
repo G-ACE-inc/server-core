@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read actual failed Docker crash diagnosis command output from Host ledger, never disclose secret",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport sys,json,subprocess\nsys.path.insert(0,'/home/admin1/server-core/scripts')\nfrom servercore_host_output_read import chunk\nrid='req_2076aab5befae03bd22a26bf'\nout={}\nfor name in ('stdout','stderr'):\n try:out[name]=chunk(rid,name,0,4096)['data']\n except Exception as e:out[name]=type(e).__name__+':'+str(e)\nbody='AI_CORE_GATE_CRASH_DIAGNOSTIC_ERROR\\n'+json.dumps(out,ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),text=True,capture_output=True,timeout=20)\nprint('GATE_ERROR_READ='+('PASS '+p.stdout.strip() if p.returncode==0 else 'FAIL'))\nraise SystemExit(0 if p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Gate container crash diagnosis previous Host request req_2076aab5befae03bd22a26bf exit1; get raw error and correct command."
+  }
+}
