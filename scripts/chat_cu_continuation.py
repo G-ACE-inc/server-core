@@ -24,6 +24,42 @@ def api_read(path, run=subprocess.run):
     return json.loads(p.stdout)
 
 
+
+def discover_common_host_run(repository, head_sha, api=api_read):
+    """Find existing common Host workflow across ALL GitHub event types."""
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository or ""):
+        raise ValueError("DISCOVERY_REPOSITORY_INVALID")
+    if not re.fullmatch(r"[a-f0-9]{40}", head_sha or ""):
+        raise ValueError("DISCOVERY_SHA_INVALID")
+    response = api(f"repos/{repository}/actions/runs?head_sha={head_sha}&per_page=100")
+    if not isinstance(response, dict) or type(response.get("total_count")) is not int or not isinstance(response.get("workflow_runs"), list):
+        raise ValueError("RUN_LIST_INVALID")
+    if response["total_count"] > len(response["workflow_runs"]):
+        raise ValueError("RUN_LIST_PAGINATION_REQUIRED")
+    matches = [run for run in response["workflow_runs"]
+               if isinstance(run, dict)
+               and run.get("head_sha") == head_sha
+               and run.get("path") == ".github/workflows/chatgpt-live-api-verify.yml"
+               and run.get("event") == "push"]
+    if len(matches) > 1:
+        raise ValueError("MULTIPLE_COMMON_HOST_RUNS_REQUIRE_EXACT_SELECTION")
+    if not matches:
+        return {"repository": repository, "source_sha": head_sha,
+                "observation": "NO_MATCHING_COMMON_HOST_RUN_IN_COMPLETE_LIST",
+                "actions_trigger_verified": False,
+                "next_action": "INSPECT_WORKFLOW_TRIGGER_AND_COMMIT_PROVENANCE",
+                "other_run_count": response["total_count"]}
+    run = matches[0]
+    if type(run.get("id")) is not int or run["id"] <= 0:
+        raise ValueError("RUN_ID_INVALID")
+    return {"repository": repository, "source_sha": head_sha,
+            "run_id": run["id"], "status": run.get("status"),
+            "conclusion": run.get("conclusion"), "actions_trigger_verified": True,
+            "observation": "EXISTING_COMMON_HOST_RUN_FOUND",
+            "next_action": "RESTORE_CORRELATED_HOST_OBSERVATION",
+            "evidence_url": f"https://github.com/{repository}/actions/runs/{run['id']}",
+            "other_run_count": response["total_count"] - 1}
+
 def resume(checkpoint, api=api_read):
     if not isinstance(checkpoint, dict) or checkpoint.get("schema") != "gace.chat.cu.handoff.v1":
         raise ValueError("INVALID_CHECKPOINT_SCHEMA")
@@ -48,8 +84,33 @@ def resume(checkpoint, api=api_read):
         raise ValueError("UNSUPPORTED_ACTION")
     status = current.get("status")
     conclusion = current.get("conclusion")
+    # Preserve a verified Host failure instead of losing it under Actions failure.
+    host_failure_step = None
+    if (status == "completed" and conclusion != "success"
+            and checkpoint.get("observation") == "HOST_SOURCE_SHA_MISMATCH"
+            and checkpoint.get("result_verified") is True
+            and isinstance(checkpoint.get("host_sha"), str)
+            and re.fullmatch(r"[a-f0-9]{40}", checkpoint["host_sha"])
+            and isinstance(checkpoint.get("expected_sha"), str)
+            and re.fullmatch(r"[a-f0-9]{40}", checkpoint["expected_sha"])
+            and checkpoint["host_sha"] != checkpoint["expected_sha"]
+            and type(checkpoint.get("exit_code")) is int
+            and checkpoint["exit_code"] != 0):
+        jobs = api(f"repos/{repository}/actions/runs/{run_id}/jobs?per_page=100")
+        if not isinstance(jobs, dict) or not isinstance(jobs.get("jobs"), list):
+            raise ValueError("FAILED_RUN_JOBS_UNVERIFIED")
+        for job in jobs["jobs"]:
+            if not isinstance(job, dict):
+                continue
+            for step in job.get("steps") or []:
+                if (isinstance(step, dict) and step.get("conclusion") == "failure"
+                        and step.get("name") == "Bounded Host result return (request id correlated)"):
+                    host_failure_step = step["name"]
+                    break
     if status != "completed":
         observed = "RUN_NOT_FINISHED"
+    elif host_failure_step:
+        observed = "CORRELATED_HOST_SHA_MISMATCH"
     elif conclusion != "success":
         observed = "RUN_FAILED_OR_INCOMPLETE"
     elif checkpoint.get("result_verified") is not True:
@@ -67,11 +128,15 @@ def resume(checkpoint, api=api_read):
         "next_action": {
             "RUN_NOT_FINISHED": "POLL_EXISTING_RUN",
             "RUN_FAILED_OR_INCOMPLETE": "READ_RUN_FAILURE_LOGS",
+            "CORRELATED_HOST_SHA_MISMATCH": "RECHECK_REGISTERED_TARGET_REPO_SHA_AND_REPLAN_HOST_REQUEST",
             "HOST_RESULT_UNVERIFIED": "RECHECK_HOST_OBSERVATION",
             "HOST_LEDGER_RECOVERY_REQUIRED": "RECOVER_HOST_LEDGER_PAYLOAD",
             "READY_FOR_ACCEPTANCE_VERIFICATION": "VERIFY_CU_ACCEPTANCE",
         }[observed],
         "evidence_url": url,
+        "host_failure_step": host_failure_step,
+        "observed_host_sha": checkpoint.get("host_sha") if host_failure_step else None,
+        "stale_expected_host_sha": checkpoint.get("expected_sha") if host_failure_step else None,
     }
 
 
@@ -129,6 +194,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint-json", type=Path, default=None)
     parser.add_argument("--repository")
+    parser.add_argument("--discover-head-sha")
     parser.add_argument("--run-id", type=int)
     parser.add_argument("--request-id")
     parser.add_argument("--cu-issue-url")
@@ -138,6 +204,26 @@ def main():
     parser.add_argument("--notion-page-url")
     parser.add_argument("--development-evidence-json", type=Path)
     args = parser.parse_args()
+    if args.discover_head_sha:
+        if args.checkpoint_json or args.run_id or not args.repository:
+            parser.error("discovery requires repository and no checkpoint/run-id")
+        discovery = discover_common_host_run(args.repository, args.discover_head_sha)
+        if args.request_id or args.cu_issue_url:
+            if not args.request_id or not args.cu_issue_url or "run_id" not in discovery:
+                parser.error("correlated recovery requires discovered run, request id and CU issue")
+            checkpoint = continuation_checkpoint(
+                restore(args.repository, discovery["run_id"], args.request_id),
+                args.cu_issue_url)
+            result = {"discovery": discovery, "checkpoint": checkpoint,
+                      "continuation": resume(checkpoint)}
+        else:
+            result = {"discovery": discovery}
+        if args.receipt_json and "continuation" in result:
+            persist_receipt(args.receipt_json, result)
+        elif args.receipt_json:
+            parser.error("receipt requires correlated recovery")
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return
     if args.checkpoint_json:
         if any([args.repository, args.run_id, args.request_id, args.cu_issue_url]):
             parser.error("--checkpoint-json cannot be combined with discovery flags")
