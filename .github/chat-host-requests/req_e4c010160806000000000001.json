@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CU40 classify failed activation Host Writer stderr safely (error category and final two lines only), verify original and staged Receiver untouched.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "0ec4261ee4e134ed18834b2dca7943bf9808f950",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "0ec4261ee4e134ed18834b2dca7943bf9808f950",
+    "command": "python3 - <<'PY'\nimport json,pathlib,re,subprocess\nrid=\"req_a120540b7cc31fa67f4a1be7\"\np=pathlib.Path(\"/home/admin1/logs/servercore-service-deploy\")/(rid+\".json\")\nif not p.is_file():raise SystemExit(\"WRITER_LEDGER_MISSING\")\nd=json.loads(p.read_text())\nerr=str(d.get(\"stderr\") or \"\")\ninfo={\"marker\":\"AGENT_POOL_ACTIVATION_ERROR_CLASS\",\n\"writer_state\":d.get(\"state\"),\"writer_exit_code\":d.get(\"exit_code\"),\n\"failure_class\":d.get(\"failure_class\"),\n\"stdout_tail\":str(d.get(\"stdout\") or \"\")[-180:],\n\"stderr_lines\":err.splitlines()[-2:],\n\"python_line_numbers\":re.findall(r'File \"<stdin>\", line (\\d+)',err)[-3:],\n\"staged_running\":subprocess.run([\"docker\",\"inspect\",\"-f\",\"{{.State.Running}}\",\"server-core-bounded-host-cu40-stage\"],capture_output=True,text=True,timeout=8).stdout.strip(),\n\"old_running\":subprocess.run([\"docker\",\"inspect\",\"-f\",\"{{.State.Running}}\",\"server-core-bounded-host\"],capture_output=True,text=True,timeout=8).stdout.strip()}\ng=subprocess.run([\"gh\",\"api\",\"-X\",\"POST\",\"repos/G-ACE-inc/server-core/issues/40/comments\",\"--input\",\"-\",\"--jq\",\".html_url\"],input=json.dumps({\"body\":\"AGENT_POOL_ACTIVATION_ERROR_CLASS\\n\"+json.dumps(info,indent=2)}),capture_output=True,text=True,timeout=14)\nprint(\"AGENT_POOL_ACTIVATION_ERROR_CLASS=\"+(\"POSTED\" if g.returncode==0 else \"FAILED\"))\nraise SystemExit(0 if g.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/299"
+  }
+}
