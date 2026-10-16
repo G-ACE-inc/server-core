@@ -276,7 +276,7 @@ def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, 
 
 
 HOST_COMMAND_SCHEMA = "gace.servercore-host-command.request/v1"
-HOST_COMMAND_KEYS = {"schema", "id", "repository", "target_sha", "command"}
+HOST_COMMAND_KEYS = {"schema", "id", "repository", "target_sha", "command", "source_preflight"}
 HOST_COMMAND_MAX_SECONDS = 90
 
 def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, result_dir=None,
@@ -297,6 +297,8 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         raise AdmissionError("TARGET_SHA_INVALID")
     if not isinstance(command_text, str) or not command_text or "\x00" in command_text:
         raise AdmissionError("HOST_COMMAND_INVALID")
+    if type(value["source_preflight"]) is not bool:
+        raise AdmissionError("HOST_SOURCE_PREFLIGHT_INVALID")
     previous = read_result(request_id, result_dir)
     if previous is not None:
         return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
@@ -325,7 +327,8 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         previous = read_result(request_id, result_dir)
         if previous is not None:
             return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
-        base = {"request_id": request_id, "repository": repository, "source_sha": target_sha}
+        base = {"request_id": request_id, "repository": repository, "source_sha": target_sha,
+                "source_preflight": value["source_preflight"]}
         write_result(request_id, {**base, "state": "RUNNING"}, result_dir)
         try:
             run = runner or subprocess.run
