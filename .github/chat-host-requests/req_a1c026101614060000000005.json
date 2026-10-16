@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core controlled real SSE mid-inference Gate restart; only test-own leased Coder when all baseline leases idle, verify persisted crash orphan reaper and four healthy Gates; no product code changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json,urllib.request,urllib.error,time,threading,hashlib\nfrom pathlib import Path\nout={'phase':'initial'}\ndef run(cmd,timeout=20):\n return subprocess.run(cmd,capture_output=True,text=True,timeout=timeout)\ntry:\n inspect=run(['docker','inspect','ai-core-model-gate'])\n assert inspect.returncode==0\n config=json.loads(inspect.stdout)[0]\n values=config['Config']['Env']\n auth=next(v[16:] for v in values if v.startswith('AI_CORE_API_KEY='))\n header={'Authorization':'Bearer '+auth,'Content-Type':'application/json'}\n base='http://127.0.0.1:18184'\n def query(path):\n  with urllib.request.urlopen(urllib.request.Request(base+path,headers=header),timeout=7) as r:\n   return json.load(r)\n before=query('/internal/handoff/status')\n assert not any(before['active'].values()) and before['handoff'] is None\n out['baseline']={'active':before['active'],'resident':before.get('resident')}\n expected='a6ff076f735a0b3f0a2f69e1033ed24a034c4e5d217463c175679c5e40f71319'\n checksum=run(['docker','exec','ai-core-model-gate','sha256sum','/app/runtime/model_gate.py'])\n assert checksum.returncode==0 and checksum.stdout.split()[0]==expected\n mid=query('/v1/models')['data'][0]['id']\n started=threading.Event()\n finished=threading.Event()\n client_result={}\n def worker():\n  try:\n   body={'model':mid,'stream':True,'messages':[{'role':'system','content':'Continue generating without stopping until the token limit.'},{'role':'user','content':'List 300 numbered software maintenance precautions, each on its own line.'}],'max_tokens':750}\n   request=urllib.request.Request(base+'/v1/chat/completions',data=json.dumps(body).encode(),headers={**header,'X-AI-Core-Client':'recovery-owned-probe','X-AI-Core-Wait-Ms':'30000'})\n   with urllib.request.urlopen(request,timeout=155) as r:\n    client_result['http']=r.status\n    started.set()\n    while r.read1(8192):\n     pass\n    client_result['ended']='normal'\n  except Exception as e:client_result['ended']=type(e).__name__\n  finally:finished.set()\n thread=threading.Thread(target=worker,daemon=True)\n thread.start()\n out['phase']='await_owned_active_lease'\n owned=False\n for _ in range(130):\n  if finished.is_set():break\n  if started.is_set():\n   state=query('/internal/handoff/status')\n   if state['active'].get('coder')==1 and sum(state['active'].values())==1 and state['handoff'] is None:\n    check=run(['docker','exec','ai-core-model-gate','cat','/run/ai-core/active-leases.json'])\n    if check.returncode==0 and json.loads(check.stdout)['active'].get('coder')==1:\n     owned=True;break\n  time.sleep(0.2)\n out['owned_active_verified']=owned\n if owned and not finished.is_set():\n  out['phase']='restart'\n  restart=run(['docker','restart','-t','1','ai-core-model-gate'],40)\n  out['restart_exit']=restart.returncode\n  if restart.returncode==0:\n   states=[]\n   for n in range(95):\n    try:\n     status=query('/internal/handoff/status')\n     health=[urllib.request.urlopen('http://127.0.0.1:%d/health'%p,timeout=3).status for p in (18181,18182,18183,18184)]\n     assert all(x==200 for x in health)\n     recovery=query('/internal/resources/status')\n     pending=recovery.get('recovery_pending',[])\n     states.append({'pending':pending,'resident':status.get('resident'),'active':status['active']})\n     if not pending and not any(status['active'].values()):\n      if len(states)>=2:break\n    except (OSError,KeyError,ValueError):\n     pass\n    time.sleep(2)\n   out['first_readback']=states[0] if states else None\n   out['final_readback']=states[-1] if states else None\n   out['readback_count']=len(states)\n   out['eventual_empty_pending']=bool(states and not states[-1]['pending'])\n else:out['phase']='skipped_no_test_owned_inference'\n thread.join(timeout=5)\n out['test_client']=client_result\nexcept Exception as e:out['error']=type(e).__name__+': '+str(e)[:180]\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_CRASH_DURING_OWNED_REAL_SSE\\n'+json.dumps(out,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=25)\nprint('AI_CORE_REAL_CRASH_EVIDENCE='+('RECORDED '+r.stdout.strip() if r.returncode==0 else 'RECORD_FAILED'))\ngood=(out.get('owned_active_verified') and out.get('restart_exit')==0 and out.get('eventual_empty_pending') and not out.get('error'))\nprint('AI_CORE_REAL_CRASH='+('PASS' if good else 'NOT_ACCEPTED'))\nraise SystemExit(0 if good and r.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6217420530"
+  }
+}
