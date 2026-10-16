@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read only real ongoing DebugAI run status after Gate live deployment, record three bounded per-stage snapshots to current; no source change or repeated inference.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,subprocess,time,urllib.request\nrunid='run_mvaxg8be_1099f77b3b'\nobservations=[]\nfor i in range(3):\n try:\n  with urllib.request.urlopen('http://127.0.0.1:8787/v1/status/'+runid,timeout=6) as q:v=json.load(q)\n  d=v.get('durable') or {}\n  c=d.get('workflow_cursor') or {}\n  observations.append({'step':i+1,'state':v.get('state'),'job_status':d.get('job_status'),'generation':d.get('generation'),'workflow':c.get('step_id'),'phase':c.get('step_phase'),'active_execution':bool(c.get('active_role_execution_id'))})\n  if d.get('job_status') in ('BLOCKED','DONE','FAILED','CANCELLED'):break\n except Exception as e:observations.append({'step':i+1,'error':type(e).__name__})\n if i<2: time.sleep(8)\nbody='DEBUGAI_REAL_E2E_PROGRESS_WINDOW\\n'+json.dumps({'run_id':runid,'observations':observations},ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/seigo-gace/debug-ai/issues/41/comments','-f','body='+body],capture_output=True,text=True,timeout=28)\nif p.returncode:raise SystemExit('PROGRESS_POST_FAILED')\nprint('E2E_PROGRESS_COMMENT='+json.loads(p.stdout)['html_url'])\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
