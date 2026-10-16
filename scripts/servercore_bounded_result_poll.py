@@ -92,7 +92,7 @@ def continuation_observation(record, verdict):
         if hint in {
                 "CHAT_SOURCE_WORKDIR_MISSING", "CHAT_SOURCE_GIT_UNAVAILABLE",
                 "CHAT_SOURCE_ROOT_MISMATCH", "CHAT_SOURCE_SHA_UNAVAILABLE",
-                "CHAT_SOURCE_REQUIRED_FILE_MISSING"}:
+                "CHAT_SOURCE_REQUIRED_FILE_MISSING", "CHAT_SOURCE_DIRTY_WORKTREE"}:
             return "HOST_SOURCE_CONTEXT_INVALID", "CHECK_TARGET_WORKDIR_AND_SOURCE_FILES"
         host_sha = record.get("host_sha")
         expected_sha = record.get("expected_sha")
