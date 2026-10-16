@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 SSE design§10.4 exact running-gate image cutover after idle source admission; compact guarded Compose and rollback",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -euo pipefail\nWT=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ncd \"$WT\"\ntest \"$(git rev-parse HEAD)\" = 3d7f15f3a5e9a39ca084d2e656b9ba554e04a28e\ntest -z \"$(git status --porcelain)\"\ndocker exec ai-core-model-gate python3 -c \"import os,json,urllib.request,hashlib;from pathlib import Path;u='http://127.0.0.1:18184/internal/handoff/status';r=urllib.request.Request(u,headers={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']});s=json.load(urllib.request.urlopen(r,timeout=12));h=hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest();assert h=='3d5f6eed6ad7c07a5da0ca68db5eeeadec1ad9b414b3b58ff81ce80bdcd99a12' and s['handoff'] is None and sum(s['active'].values())==0\"\ndocker tag ai-core-model-gate:local ai-core-model-gate:rollback-20261016-sse\nrollback(){ docker tag ai-core-model-gate:rollback-20261016-sse ai-core-model-gate:local; docker compose -p ai-core-gate -f \"$WT/compose.gate.yml\" --env-file /home/admin1/projects/debug-ai/.env up -d --no-deps gate; }\ntrap rollback ERR\ndocker compose -p ai-core-gate -f \"$WT/compose.gate.yml\" --env-file /home/admin1/projects/debug-ai/.env up -d --build --no-deps gate\ndocker exec ai-core-model-gate python3 -c \"from pathlib import Path;import hashlib;assert hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest()=='8a23254a22e7475081f34b8f1cacf87e9bd2b97bf68c52c7d96421c5204614a1'\"\npython3 -c \"import urllib.request;[urllib.request.urlopen('http://127.0.0.1:%d/health'%p,timeout=4).close() for p in (18181,18182,18183,18184)]\"\ntrap - ERR\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"AI_CORE_PR3_SSE_GATE_RUNTIME_PASS source=3d7f15f3a5e9a39ca084d2e656b9ba554e04a28e image_sha256=8a23254a22e7475081f34b8f1cacf87e9bd2b97bf68c52c7d96421c5204614a1 gate_ports=18181-18184\" --jq .html_url"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/commit/3d7f15f3a5e9a39ca084d2e656b9ba554e04a28e"
+  }
+}
