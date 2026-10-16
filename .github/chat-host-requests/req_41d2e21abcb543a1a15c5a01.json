@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Identify admitted actual DebugAI production repository input and preserved historical blocked defect run status, with only bounded metadata; no model inference or mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\npython3 - <<'PY'\nimport subprocess,json,urllib.request\ndef run(a):\n p=subprocess.run(a,capture_output=True,text=True,timeout=20)\n return {'code':p.returncode,'stdout':p.stdout[:1500],'stderr':p.stderr[-150:]}\ntop=run(['docker','exec','debug-ai-debug-ai-1','find','/workspace','-mindepth','1','-maxdepth','1','-type','d','-printf','%f\\n'])\nresult={'workspace_repos':top['stdout'].splitlines() if top['code']==0 else [],'workspace_exit':top['code']}\ntry:\n with urllib.request.urlopen('http://127.0.0.1:8787/v1/status/run_mv5agtgf_96b706c70a',timeout=6) as r: \n  o=json.load(r)\n result['prior_run']={'http':r.status,'run_id':o.get('run_id'),'state':o.get('state'),'project_dir':o.get('project_dir'),'durable':{k:v for k,v in (o.get('durable') or {}).items() if k in ('job_status','workflow_cursor','generation','state')}}\nexcept Exception as e: result['prior_run']={'error':type(e).__name__}\nbody='DEBUGAI_EXISTING_E2E_INPUT_AND_REPLAY_READBACK\\n'+json.dumps(result,ensure_ascii=False,indent=2)\np=run(['gh','api','-X','POST','repos/seigo-gace/debug-ai/issues/41/comments','-f','body='+body])\nif p['code']:raise SystemExit('GH_CURRENT_WRITE_FAILED')\nprint('E2E_INPUT_COMMENT='+json.loads(p['stdout'])['html_url'])\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
