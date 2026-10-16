@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Run existing Astera running Node product HTTP client against AI Core authenticated models list with AI-Core-owned exact JS probe and stdin-only existing key, no expensive inference, no product Source/env change.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 266f59805552cf77732fae92c683a6a1cd01b7c6\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\ntest \"$(docker inspect -f '{{.State.Running}}' ai-core-model-gate)\" = true\ndocker exec -i astera-v8 sh -c 'umask 077; cat >/tmp/gace_second_consumer_266f.js' < \"$w/scripts/host_astera_second_consumer_probe.js\"\nkey=$(docker exec ai-core-model-gate sh -c 'printf \"%s\" \"$AI_CORE_API_KEY\"')\ntest \"${#key}\" -ge 16\nrc=0\nout=$(printf '%s' \"$key\" | docker exec -i astera-v8 node /tmp/gace_second_consumer_266f.js 2>&1) || rc=$?\nunset key\ncase \"$out\" in *\"AI_CORE_SECOND_PRODUCT_PROBE_FAILURE=\"*) outcome=NODE_PROBE_FAILED;; *'\"authenticated\":true'*) outcome=AUTHENTICATED;; *) outcome=UNKNOWN;; esac\nprintf 'ASTERA_SECOND_CONSUMER_RC=%s OUTCOME=%s\\n' \"$rc\" \"$outcome\"\nif test \"$outcome\" = AUTHENTICATED && test \"$rc\" -eq 0; then\n gh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"AI_CORE_SECOND_CONSUMER_ASTERA_RUNTIME $out\" --jq .html_url >/dev/null\nelse\n gh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"AI_CORE_SECOND_CONSUMER_ASTERA_PROBE_FAIL EXIT=$rc CLASS=$outcome STDOUT_BYTES=${#out}\" --jq .html_url >/dev/null\nfi\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core owning Current Issue1 PR3 exact 266f598, existing Astera registered second product container + OpenAI-compatible adapter verified Host #6224120752; existing Gate secret only fed once to in-memory process via stdin, no persistent credentials. Prior failed test exit2 before product HTTP #6224262482, remove unnecessary node --check for this already valid JS file. Source design adopted main 8 A-D, no product Source mutation."
+  }
+}
