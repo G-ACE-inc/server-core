@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "#40 post-PR295 live exact Host stdout/stderr synthetic 2.92MB to verify Sink publishing original Writer hash in correlated Actions artifact",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10",
+    "command": "set -e\ntest \"$(git rev-parse HEAD)\" = \"2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10\"\nsystemctl --user is-active --quiet gace-servercore-result-sink.service\n/usr/bin/docker inspect -f '{{.State.Running}}' server-core-bounded-host | grep -qx true\npython3 -c 'import sys;sys.stdout.write(\"日本語Ω🙂\\n\"*120000);sys.stderr.write(\"警告⚠\\n\"*100000)'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "PR295 merged 2d9b34 with CI6/6; Host ff Run 38844646733 PASS and existing Sink Receiver refresh scheduled Run 38844748528 PASS; prior 2.92MB Writer parity Run 38842876252 PASS while Observation Artifact 12020528262 incorrectly hashed locator; exact same synthetic input for causal replay."
+  }
+}
