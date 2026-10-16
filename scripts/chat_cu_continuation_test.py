@@ -115,7 +115,7 @@ class ContinuationTests(unittest.TestCase):
             calls.append(path)
             return {"total_count": 5, "workflow_runs": [
                 {"id": 42, "head_sha": sha, "event": "push",
-                 "path": ".github/workflows/chatgpt-live-api-verify.yml",
+                 "path": ".github/workflows/chatgpt-live-api-verify.yml@main",
                  "status": "completed", "conclusion": "failure"},
                 *[{"id": i, "head_sha": sha, "event": "push",
                    "path": ".github/workflows/other.yml"} for i in range(43, 47)]]}
