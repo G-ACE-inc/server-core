@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Gate root-cause bitmask for systemd definition, key presence and Docker backends",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 -c 'import subprocess,os,sys; r=subprocess.run([\"systemctl\",\"list-unit-files\",\"--no-pager\",\"--type=service\"],capture_output=True,text=True,timeout=10); n=subprocess.run([\"docker\",\"ps\",\"--format\",\"{{.Names}}\"],capture_output=True,text=True,timeout=10).stdout; mask=int(not any(\"ai-core\" in t or \"model-gate\" in t for t in r.stdout.splitlines()))+2*int(not bool(os.environ.get(\"AI_CORE_API_KEY\")))+4*int(n.count(\"ai-\")==0); print(\"STARTUP_MASK\",mask);sys.exit(mask)'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
