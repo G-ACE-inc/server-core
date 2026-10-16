@@ -215,7 +215,9 @@ def trusted_writer_metadata(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
         76: "CHAT_SOURCE_DIRTY_WORKTREE",
     }
     marker = source_errors.get(raw.get("exit_code"))
-    if (raw.get("source_preflight") is True and raw.get("state") == "FAIL"
+    if (raw.get("source_preflight") is True
+            and raw.get("source_preflight_failure") is True
+            and raw.get("state") == "FAIL"
             and marker and str(raw.get("stderr") or "").strip() == marker):
         meta["diagnostic_hint"] = marker
     return meta
