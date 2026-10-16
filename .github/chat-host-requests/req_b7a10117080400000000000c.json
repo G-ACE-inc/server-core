@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only identify existing service units to reuse for API-only Secret materialization boot, without dumping secrets.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "command": "set -eu\nunits=$(systemctl list-unit-files --no-legend --no-pager | awk 'tolower($1) ~ /astera|cloudflare|vault|gpg/ {print $1}' | tr '\\n' ',' || true)\nrefs=$(grep -RIlE 'secure_up.sh|gpg-core|CLOUDFLARE_TUNNEL_TOKEN_FILE' /etc/systemd/system --include='*.service' --include='*.timer' 2>/dev/null | sed 's|.*/||' | tr '\\n' ',' || true)\nbody=$(printf 'GPG_RETIREMENT_SYSTEMD_AUDIT\\nunits=%s\\nlegacy_refs=%s\\n' \"$units\" \"$refs\")\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"$body\" --jq '.html_url'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Vault main 3e0c06 applied Host healthy shared mount Issue10 comment6226260039. Discover existing boot hook to preserve restart reliability."
+  }
+}
