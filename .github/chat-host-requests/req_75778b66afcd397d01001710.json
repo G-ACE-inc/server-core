@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "Pair preparation req_6e5f241ce77c5fdfde394c1a failed exit1 duration9ms without model command executed, see https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6222875031. Need targeted read-only HEAD, cleanliness, Gate liveness and resident state before any retry."
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "command": "w=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\nh=$(git -C \"$w\" rev-parse HEAD 2>/dev/null || echo UNAVAILABLE)\ndirty=$(git -C \"$w\" status --porcelain 2>/dev/null | wc -l)\ngate=$(docker inspect -f '{{.State.Running}}' ai-core-model-gate 2>/dev/null || echo MISSING)\nscript=$(test -f \"$w/scripts/host_uds_inference_probe.py\" && echo YES || echo NO)\nstate=$(docker exec ai-core-model-gate python3 -c 'import os,json,urllib.request;h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]};d=json.load(urllib.request.urlopen(urllib.request.Request(\"http://127.0.0.1:18184/internal/handoff/status\",headers=h),timeout=8));print(\",\".join(d[\"resident\"]))' 2>/dev/null || echo ERROR)\nreport=\"AI_CORE_UDS_PAIR_PREP_DIAG HEAD=$h DIRTY=$dirty GATE=$gate PROBE_FILE=$script RESIDENT=$state\"\nprintf '%s\\n' \"$report\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f \"body=$report\" --jq .html_url || :"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
