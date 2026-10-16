@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Classify own failed v8 Docker build from protected Host ledger with pattern-only error reporting, no secret logs.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\np=/home/admin1/logs/servercore-service-deploy/req_998d0bad911a9837d2e36e16.json\ntest -r \"$p\"\nerrs=$(jq -r '[.stderr // \"\",.stdout // \"\"] | join(\"\\n\")' \"$p\")\nbody=V8_BUILD_FAILURE_CATEGORIES\nfor pat in 'npm ERR' 'npm error' 'ERROR TS' 'failed to solve' 'permission denied' 'no space left' 'not found' 'COPY failed' 'network' 'ERESOLVE' 'ENOENT' 'Cannot find module' 'missing' 'context canceled' 'failed to read' 'Dockerfile' 'service' 'no such file' 'error: process'; do\n if printf '%s\\n' \"$errs\" | grep -qiF \"$pat\"; then body=\"$body\nMATCH=$pat\"; fi\ndone\ncodes=$(printf '%s\\n' \"$errs\" | grep -Eo 'TS[0-9]{4,5}|E[A-Z]{4,12}' | sort -u | head -n 12 | tr '\\n' ',' || :)\nbody=\"$body\nCODES=$codes\"\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"$body\" --jq '.html_url'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "v8 Docker build attempt req_998d0bad911a9837d2e36e16 FAIL exit1 after25s stderr468 bytes stdout3006 bytes; classify source error without contents."
+  }
+}
