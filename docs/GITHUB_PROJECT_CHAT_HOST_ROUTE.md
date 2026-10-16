@@ -58,6 +58,8 @@ Host観測の `streams[].complete` はIssue/Jobに見える**プレビューの�
 
 通常CHATの既存GitHubコネクタには`download_workflow_artifact`がある。このセッションではprivate Artifact `12063644111`を取得し、返されたファイル参照から同一の41-byte出力を検証できた。自然言語の「Action completed」だけで本文取得済みと判断せず、構造化されたファイル参照と実バイトを確認する。コネクタのRun/Artifact一覧が先頭ページだけの場合は、完全性を推測せず既存APIのページング可能な取得経路を使う。短命のdownload URLをCurrent/Issue/Receiptへ保存しない。これは現セッションのコネクタ取得証拠であり、新しい通常CHATのCU継続やブラウザ症状の改善証拠ではない。
 
-private CIのRun IDが未取得なら、同じ元Host識別子に`--recover-private-output`を付ける。固定private宛先のArtifact名を元request IDで絞り込んで全ページを確認し、一意で未期限切れの結果の`workflow_run.id`から既存private Runを復元する。全Runの探索やArtifact一覧の重複取得はしない。0件・複数・期限切れは明示拒否し、最新版の恣意選択や元Host実行の再送をしない。複数回のprivate exportがある場合は、相関済みの`--private-output-run-id`で曖昧さを解消する。元Host Runとprivate Runは異なる証拠としてReceiptに残す。自動回収・明示Run・ローカルZIPは排他的。
+private CIのRun IDが未取得なら、同じ元Host識別子に`--recover-private-output`を付ける。固定private宛先のArtifact名を元request IDで絞り込んで全ページを確認し、一意で未期限切れの結果の`workflow_run.id`から既存private Runを復元する。全Runの探索やArtifact一覧の重複取得はしない。保存先がない・有効候補が複数・全候補が期限切れの場合は明示拒否し、最新版の恣意選択や元Host実行の再送をしない。有効なprivate exportが複数ある場合は、相関済みの`--private-output-run-id`で曖昧さを解消する。元Host Runとprivate Runは異なる証拠としてReceiptに残す。自動回収・明示Run・ローカルZIPは排他的。
+
+同じ結果の再公開要求では、既存publisherもこのprivate読取器を使い、元Writer由来の期待bytes/chars/SHAと既存Artifactを全バイト照合する。既に検証できた場合は`PRIVATE_ARTIFACT_ALREADY_VERIFIED`と元のRun/Artifact IDを返し、release・CI・Artifactを追加しない。欠落または全て期限切れの場合だけ保存済み結果を再公開する。曖昧さ、権限、破損、Source照合失敗から新規公開へfallbackしない。期限切れの複製は有効候補に数えず、有効な候補同士は日時で選ばない。再公開と元Hostコマンドの再実行は別であり、後者を自動発行しない。
 
 実行依頼のファイル形式、必要な署名・認証・SHA・登録Repo制約は既存の実装と `operations/github-project-bounded-host.json` に従う。結果は既存ActionsとHost返却で確認する。失敗時は原因を修正して作業を続ける。通常CHATでの新たなMaster承認は要求しない。

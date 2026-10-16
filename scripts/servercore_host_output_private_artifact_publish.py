@@ -106,18 +106,28 @@ def reconstruct(request_id, target, *, vault_base, vault_token,
         raise
 
 
-def private_release(request_id, path, *, runner=subprocess.run):
+def private_release(request_id, path, *, expected_streams, runner=subprocess.run):
     """Use existing authenticated gh CLI, not an additional token."""
     tag="gace-host-output-"+request_id
-    # Fail closed if a collaborator changed the recipient repository's
-    # visibility; do not silently publish output in a public repository.
+    # Local import reuses the reader's privacy, provenance and byte checks;
+    # the reader imports this module's fixed recipient, never an input URL.
     try:
-        privacy=runner(["gh","api","repos/"+REPO,"--jq",".private"],
-                       capture_output=True,text=True,timeout=15,check=False)
-    except (OSError,subprocess.TimeoutExpired):
+        from scripts.chat_host_observation_gh_restore import private_host_output
+    except ModuleNotFoundError:
+        from chat_host_observation_gh_restore import private_host_output
+    try:
+        with private_host_output(None, request_id, expected_streams, run=runner) as (_, proof):
+            return {"state": "PRIVATE_ARTIFACT_ALREADY_VERIFIED",
+                    "repository": REPO, "run_id": proof["run_id"],
+                    "artifact_id": proof["artifact_id"], "release_tag": tag,
+                    "zip_bytes": proof["zip_bytes"], "zip_sha256": proof["zip_sha256"]}
+    except ValueError as exc:
+        if str(exc) == "PRIVATE_REPOSITORY_NOT_VERIFIED":
+            raise PublishError("PRIVATE_REPOSITORY_NOT_VERIFIED") from None
+        if str(exc) not in {"PRIVATE_ARTIFACT_NOT_FOUND", "PRIVATE_ARTIFACT_EXPIRED"}:
+            raise PublishError("PRIVATE_ARTIFACT_REUSE_NOT_VERIFIED") from None
+    except (OSError, subprocess.SubprocessError, zipfile.BadZipFile):
         raise PublishError("PRIVATE_GITHUB_UNAVAILABLE") from None
-    if privacy.returncode!=0 or privacy.stdout.strip()!="true":
-        raise PublishError("PRIVATE_REPOSITORY_NOT_VERIFIED")
     cmds=[
       ["gh","release","create",tag,str(path)+"#output.zip",
        "--repo",REPO,"--draft","--prerelease","--latest=false",
@@ -158,7 +168,8 @@ def run(request_id, *, cipher_root, writer_dir, vault_base, vault_token,
                            writer_dir=writer_dir,opener=opener)
         if verify_only:
             return status
-        return {**status, **private_release(request_id,archive,runner=runner)}
+        return {**status, **private_release(request_id,archive,
+                                            expected_streams=status["streams"],runner=runner)}
 
 
 def publish_writer_output(request_id, *, writer_dir=DEFAULT_WRITER,
@@ -185,7 +196,8 @@ def publish_writer_output(request_id, *, writer_dir=DEFAULT_WRITER,
                   "zip_sha256": zip_digest}
         if verify_only:
             return status
-        return {**status, **private_release(request_id, archive, runner=runner)}
+        return {**status, **private_release(request_id, archive,
+                                            expected_streams=status["streams"], runner=runner)}
 
 
 def main():

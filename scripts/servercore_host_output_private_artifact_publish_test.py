@@ -5,6 +5,8 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from contextlib import contextmanager
+from unittest.mock import patch
 from scripts.servercore_host_output_export import export_output
 from scripts.servercore_host_output_cipher_inbox import store
 from scripts.servercore_host_output_private_artifact_publish import run, publish_writer_output
@@ -34,7 +36,8 @@ class MockRelease:
         self.calls.append(args)
         class Result:
             returncode=0
-            stdout="true"
+            stdout=json.dumps({"total_count": 0, "artifacts": []}) if "/actions/artifacts?" in args[2] else json.dumps({
+                "private": True, "full_name": "seigo-gace/TGserver"})
         return Result()
 
 def setup(directory):
@@ -73,8 +76,8 @@ class FullBridgeTests(unittest.TestCase):
             self.assertEqual(result["input"], "writer-ledger")
             self.assertEqual(result["streams"]["stdout"]["chars"], len("日本語 result\n"))
             self.assertNotIn("日本語", json.dumps(result, ensure_ascii=False))
-            self.assertEqual(len(gh.calls), 3)
-            archive_arg = gh.calls[1][4]
+            self.assertEqual(len(gh.calls), 4)
+            archive_arg = gh.calls[2][4]
             self.assertFalse(Path(archive_arg.split("#")[0]).exists())
 
     def test_local_verify_does_not_publish(self):
@@ -84,6 +87,48 @@ class FullBridgeTests(unittest.TestCase):
             result = publish_writer_output(RID, writer_dir=d, verify_only=True, runner=gh)
             self.assertEqual(result["state"], "FULL_ZIP_VERIFIED_LOCAL")
             self.assertEqual(gh.calls, [])
+
+    def test_existing_independently_verified_artifact_is_reused_without_publication(self):
+        @contextmanager
+        def existing(run_id, request_id, expected, run):
+            self.assertIsNone(run_id)
+            self.assertEqual(request_id, RID)
+            self.assertEqual(expected["stdout"]["chars"], len("日本語 result\n"))
+            yield Path("private-temporary"), {"run_id": 123, "artifact_id": 456,
+                "zip_bytes": 123, "zip_sha256": "a" * 64}
+        with tempfile.TemporaryDirectory() as d:
+            self.writer(d)
+            gh = MockRelease()
+            with patch("scripts.chat_host_observation_gh_restore.private_host_output", existing):
+                result = publish_writer_output(RID, writer_dir=d, runner=gh)
+            self.assertEqual(result["state"], "PRIVATE_ARTIFACT_ALREADY_VERIFIED")
+            self.assertEqual(result["artifact_id"], 456)
+            # ZIP timestamps may differ; report the reused Artifact's digest,
+            # not that of the new local ZIP which was never uploaded.
+            self.assertEqual((result["zip_bytes"], result["zip_sha256"]), (123, "a" * 64))
+            self.assertEqual(gh.calls, [])
+
+    def test_ambiguous_corrupt_or_unavailable_output_does_not_create_another_artifact(self):
+        for error in (ValueError("ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS"),
+                      ValueError("HOST_OUTPUT_MANIFEST_MISMATCH"),
+                      OSError("unavailable")):
+            with tempfile.TemporaryDirectory() as d:
+                self.writer(d)
+                gh = MockRelease()
+                with patch("scripts.chat_host_observation_gh_restore.private_host_output", side_effect=error):
+                    with self.assertRaises(ValueError):
+                        publish_writer_output(RID, writer_dir=d, runner=gh)
+                self.assertEqual(gh.calls, [])
+
+    def test_expired_artifact_can_be_republished_from_original_result(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.writer(d)
+            gh = MockRelease()
+            with patch("scripts.chat_host_observation_gh_restore.private_host_output",
+                       side_effect=ValueError("PRIVATE_ARTIFACT_EXPIRED")):
+                result = publish_writer_output(RID, writer_dir=d, runner=gh)
+            self.assertEqual(result["state"], "PRIVATE_RELEASE_PUBLISHED_AWAIT_ARTIFACT")
+            self.assertEqual([cmd[1:3] for cmd in gh.calls], [["release", "create"], ["release", "edit"]])
 
     def test_missing_or_mismatched_ledger_never_publishes(self):
         with tempfile.TemporaryDirectory() as d:
@@ -140,10 +185,10 @@ class FullBridgeTests(unittest.TestCase):
             self.assertEqual(v["state"],"PRIVATE_RELEASE_PUBLISHED_AWAIT_ARTIFACT")
             self.assertEqual(v["streams"]["stdout"]["bytes"],len(out.encode()))
             self.assertEqual(v["streams"]["stderr"]["chars"],len(err))
-            self.assertEqual(len(gh.calls),3)
+            self.assertEqual(len(gh.calls),4)
             self.assertEqual(gh.calls[0][:3],["gh","api","repos/seigo-gace/TGserver"])
-            self.assertEqual(gh.calls[1][:3],["gh","release","create"])
-            self.assertIn("seigo-gace/TGserver",gh.calls[1])
+            self.assertEqual(gh.calls[2][:3],["gh","release","create"])
+            self.assertIn("seigo-gace/TGserver",gh.calls[2])
 
     def test_corrupt_unseal_denied_without_github_upload(self):
         with tempfile.TemporaryDirectory() as d:

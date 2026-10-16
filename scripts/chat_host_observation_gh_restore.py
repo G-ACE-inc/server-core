@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import os
 import zipfile
+import hashlib
 from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
@@ -168,9 +169,16 @@ def private_host_output(run_id, request_id, expected_streams, run=subprocess.run
             f"repos/{repository}/actions/artifacts?name={artifact_name}&per_page=100",
             "artifacts", api)
         matching = [a for a in artifacts if a.get("name") == artifact_name]
-        if len(matching) != 1 or matching[0].get("expired") is not False:
+        if not matching:
+            raise ValueError("PRIVATE_ARTIFACT_NOT_FOUND")
+        if any(type(a.get("expired")) is not bool for a in matching):
             raise ValueError("ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS")
-        artifact = matching[0]
+        usable = [a for a in matching if a["expired"] is False]
+        if not usable:
+            raise ValueError("PRIVATE_ARTIFACT_EXPIRED")
+        if len(usable) != 1:
+            raise ValueError("ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS")
+        artifact = usable[0]
         provenance = artifact.get("workflow_run")
         if (not isinstance(provenance, dict) or type(provenance.get("id")) is not int
                 or provenance["id"] <= 0):
@@ -222,8 +230,11 @@ def private_host_output(run_id, request_id, expected_streams, run=subprocess.run
             if count != entry.file_size:
                 raise ValueError("PRIVATE_ARTIFACT_PAYLOAD_SIZE_MISMATCH")
         proof = verify_artifact_zip(payload, request_id, expected_streams)
+        with payload.open("rb") as source:
+            zip_digest = hashlib.file_digest(source, "sha256").hexdigest()
         yield payload, {"repository": repository, "run_id": run_id,
                         "artifact_id": artifact["id"], "source_sha": info["head_sha"],
+                        "zip_bytes": payload.stat().st_size, "zip_sha256": zip_digest,
                         **proof}
 
 
