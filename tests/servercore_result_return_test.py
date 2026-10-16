@@ -218,6 +218,11 @@ class SinkTests(unittest.TestCase):
         without = sink.comment_body(record, writer_dir=ledger)
         self.assertNotIn("diagnostic_hint", without)
         self.assertNotIn("private stderr details", without)
+        writer["stderr"] = "CHAT_SOURCE_SHA_MISMATCH\\n"
+        writer["source_preflight"] = False
+        p.write_text(json.dumps(writer), encoding="utf-8")
+        generic = sink.comment_body(record, writer_dir=ledger)
+        self.assertNotIn("diagnostic_hint", generic)
 
     def test_issue_comment_contains_metadata_not_output(self):
         output = "日本語の長文" * 10000
