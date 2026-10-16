@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Second product Astera actual running Node context sends authenticated GET /v1/models to existing AI Core Gate using existing bearer supplied only via stdin to one-shot process. Never print/persist token, no product config/source updates, no model inference. Prove network/auth boundary first.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\ncheck=$(docker exec ai-core-model-gate sh -c 'printf \"%s\" \"$AI_CORE_API_KEY\"')\ntest \"${#check}\" -ge 16\nout=$(printf '%s' \"$check\" | docker exec -i astera-v8 node -e '\nlet key=\"\";process.stdin.setEncoding(\"utf8\");\nprocess.stdin.on(\"data\",s=>key+=s);\nprocess.stdin.on(\"end\",async()=>{\n try{\n  const url=\"http://127.0.0.1:18181/v1/models\";\n  const res=await fetch(url,{headers:{Authorization:\"Bearer \"+key},signal:AbortSignal.timeout(8000)});\n  key=\"\";\n  const data=await res.json();\n  const pass=res.status===200&&Array.isArray(data.data)&&data.data.length===1;\n  console.log(JSON.stringify({consumer:\"astera-v8\",transport:\"actual_node_runtime\",gate_port:18181,status:res.status,model_count:data.data?.length,pass}));\n  if(!pass)process.exitCode=3;\n }catch(e){console.log(JSON.stringify({consumer:\"astera-v8\",result:\"TRANSPORT_ERROR\",kind:e.name}));process.exitCode=4;}\n});\n')\nunset check\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"AI_CORE_SECOND_CONSUMER_ASTERA_GATE_AUTH $out KEY_EXPORTED=NO PRODUCT_SOURCE_CHANGED=NO\" --jq '.html_url' >/dev/null\necho AI_CORE_ASTERA_GATE_AUTH=RECORDED\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Issue1 #6224140018 verified Astera product container host networking and OpenAICompatAdapter presence, no persistent key/config. Ephemeral Node test receives existing Gate credential only on stdin, never persists or emits it. This is transport-only second-product check, not full product E2E."
+  }
+}
