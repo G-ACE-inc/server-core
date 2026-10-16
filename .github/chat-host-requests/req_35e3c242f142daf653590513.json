@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core initial reversible cutover preparation only, verify exact tested source and all stopped/backends idle; tag current Gate rollback and create private volume; no stop/recreate",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "command": "set -euo pipefail\nroot=/home/admin1/projects/ai-core\nw=\"$root/.worktrees/pr3-verification-20261015\"\nhead=75778b66afcd397da5225466aadcc20fcd0df991\nrollback=\"$root/.ai-core/uds-cutover-75778b66\"\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = \"$head\"\ntest -z \"$(git -C \"$w\" status --porcelain)\"\nfor name in granite qwen3 ministral coder; do\n test \"$(docker inspect -f '{{.State.Running}}' \"ai-$name\")\" = false\ndone\ndocker exec -i ai-core-model-gate python3 - <<'PY'\nimport os,json,urllib.request\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']}\ndef get(path):\n r=urllib.request.Request('http://127.0.0.1:18184'+path,headers=h)\n with urllib.request.urlopen(r,timeout=8) as s:return json.load(s)\na=get('/internal/handoff/status')\nb=get('/internal/resources/status')\nassert (not any(a['active'].values()) and a['handoff'] is None and\n not a['recovery_pending'] and not b['queued'] and not b['admission_inflight'] and\n not b['transitioning'] and not b['recovery_pending']),'GATE_NOT_QUIESCENT'\nprint('GATE_QUIESCENT=PASS')\nPY\nfor port in 18081 18082 18083 18084; do\n grep -q \"127.0.0.1:$port:8080\" \"$root/compose.runtime.yml\"\ndone\ndocker image inspect ai-core-model-gate:uds-stage-75778b66 >/dev/null\numask 077\nmkdir -p \"$rollback\"\ncat > \"$rollback/old-cgroup.yml\" <<'YAML'\nservices:\n  granite:\n    cgroup_parent: ai-core.slice\n  qwen3:\n    cgroup_parent: ai-core.slice\n  ministral:\n    cgroup_parent: ai-core.slice\n  coder:\n    cgroup_parent: ai-core.slice\nYAML\ndocker compose -p ai-core --project-directory \"$root\" -f \"$root/compose.runtime.yml\" -f \"$rollback/old-cgroup.yml\" config --quiet\ndocker tag ai-core-model-gate:local ai-core-model-gate:rollback-75778b66\ndocker volume create ai-core-backend-bus >/dev/null\necho 'PRIVATE_CUTOVER_PREP=PASS'\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f 'body=AI_CORE_UDS_SAFE_PREP=PASS; exact tested source 75778b66; models stopped; Gate lease/queue/handoff idle; parent rollback compose validated; old Gate image tagged; Unix volume created. No running container replaced.' --jq .html_url"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6220954495"
+  }
+}
