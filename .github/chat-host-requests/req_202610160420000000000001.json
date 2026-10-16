@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core exact Host diagnosis of formerly stranded exit5 unittest and exit2 wrong diagnostic script, read original stderr only inside Host and emit categories; independently inspect current tested AI Core worktree paths, no raw logs or secrets",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,hashlib,re,subprocess\nfrom pathlib import Path\nrids=(\"req_0767619ec0511b46dc8e649b\",\"req_7afe52aa10c9ae42571c9ea5\")\nbase=Path(\"/home/admin1/logs/servercore-service-deploy\")\nfor rid in rids:\n try:\n  r=json.loads((base/(rid+\".json\")).read_text(encoding=\"utf-8\"))\n  stderr=str(r.get(\"stderr\") or \"\")\n  hints=[name for name,pattern in ((\"NO_TESTS\",r\"(NO TESTS RAN|Ran 0 tests)\"),(\"FILE_NOT_FOUND\",r\"(can't open file|No such file or directory)\"),(\"MODULE_NOT_FOUND\",r\"(No module named|ModuleNotFoundError)\"),(\"USAGE_OR_ARGUMENT\",r\"(usage:|unrecognized arguments)\")) if re.search(pattern,stderr,re.I)]\n  print(json.dumps({\"request_id\":rid,\"state\":r.get(\"state\"),\"exit\":r.get(\"exit_code\"),\"stderr_bytes\":len(stderr.encode()),\"stderr_sha256\":hashlib.sha256(stderr.encode()).hexdigest(),\"error_classes\":hints or [\"UNCLASSIFIED\"]},separators=(\",\",\":\")))\n except Exception as e: print(json.dumps({\"request_id\":rid,\"error_class\":type(e).__name__}))\nfor p in (\"/home/admin1/projects/ai-core\",\"/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\",\"/home/admin1/server-core\"):\n root=Path(p)\n g=subprocess.run([\"git\",\"-C\",p,\"rev-parse\",\"--verify\",\"HEAD\"],text=True,capture_output=True,timeout=5) if root.is_dir() else None\n targets=[\"tests/test_model_gate.py\",\"runtime/test_model_gate.py\",\"scripts/servercore_host_output_read.py\"]\n print(json.dumps({\"root\":p,\"exists\":root.is_dir(),\"head\":g.stdout.strip()[:16] if g and g.returncode==0 else \"UNKNOWN\",\"paths\":{n:(root/n).is_file() for n in targets}},separators=(\",\",\":\")))\nroot=Path(\"/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\")\nif root.is_dir():\n matches=[]\n for p in root.rglob(\"test*.py\"):\n  if \"/.git/\" in str(p) or len(matches)>=15: break\n  try:\n   if \"test_cold_start_after_wait_deadline_releases_inference_slot\" in p.read_text(encoding=\"utf-8\",errors=\"replace\"):matches.append(str(p.relative_to(root)))\n  except OSError:pass\n print(json.dumps({\"named_test_locations\":matches}))\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core exact Runs 38845295650 exit5 / 38846122327 exit2 and restored Host ledger Issue10 comments 6207679584 / 6207680085. Source from servercore Host command and root paths known; inspect only, no changes to other CHAT's work."
+  }
+}
