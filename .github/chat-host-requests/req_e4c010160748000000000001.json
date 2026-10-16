@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Agent Pool CU40 apply merged PR299 source to only existing shared server-core Host checkout via guarded git fast-forward; whitelist PR files and existing request files; preserve others; defer restart.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess,re,sys\nfrom pathlib import Path\nROOT=\"/home/admin1/server-core\"\nOLD=\"6a85ac70ee4c27b88b3922d9e74cf6b81a833d51\"\nALLOWED=set([\".github/workflows/chatgpt-live-api-verify.yml\",\"docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md\",\"scripts/chat_cu_continuation.py\",\"scripts/chat_cu_continuation_test.py\",\"scripts/chat_host_observation_artifact_readback.py\",\"scripts/chat_host_observation_artifact_readback_test.py\",\"scripts/chat_host_observation_gh_restore.py\",\"scripts/chat_host_observation_gh_restore_test.py\",\"scripts/chatgpt_isolated_request_select.py\",\"scripts/servercore_bounded_host_gateway_send.py\",\"scripts/servercore_bounded_host_receiver.py\",\"scripts/servercore_bounded_result_poll.py\",\"scripts/servercore_bounded_result_poll_test.py\",\"scripts/servercore_host_output_artifact_assemble.py\",\"scripts/servercore_host_output_artifact_assemble_test.py\",\"scripts/servercore_result_sink.py\",\"scripts/servercore_service_deploy_socket.py\",\"tests/chatgpt_isolated_request_select_test.py\",\"tests/servercore_result_return_test.py\",\"tests/servercore_service_deploy_socket_test.py\"])\ndef run(*argv,timeout=50):\n p=subprocess.run(argv,text=True,capture_output=True,timeout=timeout)\n if p.returncode: raise RuntimeError(\"GIT_\"+argv[-1][:15].replace(\" \",\"_\")+\"_EXIT_\"+str(p.returncode))\n return p.stdout.strip()\ntry:\n before=run(\"git\",\"-C\",ROOT,\"rev-parse\",\"HEAD\")\n if before!=OLD:raise RuntimeError(\"HOST_SHA_MOVED\")\n if run(\"git\",\"-C\",ROOT,\"branch\",\"--show-current\")!=\"main\":raise RuntimeError(\"NOT_MAIN\")\n if run(\"git\",\"-C\",ROOT,\"status\",\"--porcelain\",\"--untracked-files=no\"):raise RuntimeError(\"TRACKED_DIRTY\")\n run(\"git\",\"-C\",ROOT,\"fetch\",\"--quiet\",\"origin\",\"main\")\n target=run(\"git\",\"-C\",ROOT,\"rev-parse\",\"origin/main\")\n paths=run(\"git\",\"-C\",ROOT,\"diff\",\"--name-only\",\"HEAD\",\"origin/main\").splitlines()\n unknown=[s for s in paths if s not in ALLOWED and not re.fullmatch(r\"\\.github/chat-host-requests/req_[0-9a-f]{24}\\.json\",s)]\n if unknown:raise RuntimeError(\"UNOWNED_PATHS_REFUSED\")\n if target==before:state=\"ALREADY_CURRENT\"\n else:\n  run(\"git\",\"-C\",ROOT,\"merge\",\"--ff-only\",\"origin/main\")\n  state=\"FF_PASS\"\n after=run(\"git\",\"-C\",ROOT,\"rev-parse\",\"HEAD\")\n if after!=target:raise RuntimeError(\"HOST_FF_SHA_MISMATCH\")\n if run(\"git\",\"-C\",ROOT,\"status\",\"--porcelain\",\"--untracked-files=no\"):raise RuntimeError(\"POST_UPDATE_DIRTY\")\n info={\"tag\":\"AGENT_POOL_CU40_FF_REFLECT\",\"state\":state,\"before\":before,\"after\":after,\n       \"pr\":299,\"source_files_changed\":len([p for p in paths if p in ALLOWED]),\n       \"other_file_count\":len(paths)-len([p for p in paths if p in ALLOWED]),\n       \"unexpected_paths\":[],\"runtime_restarted\":False}\n p=subprocess.run([\"gh\",\"api\",\"-X\",\"POST\",\"repos/G-ACE-inc/server-core/issues/40/comments\",\"--input\",\"-\",\"--jq\",\".html_url\"],\n input=json.dumps({\"body\":\"AGENT_POOL_CU40_FF_REFLECT\\n\"+json.dumps(info,sort_keys=True,indent=2)}),text=True,capture_output=True,timeout=20)\n print(\"AGENT_POOL_CU40_FF=\"+json.dumps({**info,\"recorded\":p.returncode==0},sort_keys=True))\nexcept Exception as e:\n print(\"AGENT_POOL_CU40_FF_FAILED=\"+str(e)[:120])\n sys.exit(1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/299"
+  }
+}
