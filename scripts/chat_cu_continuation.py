@@ -66,7 +66,10 @@ def verified_output_evidence(checkpoint, archive):
     """Read every byte before advancing CU; never accept metadata as payload."""
     if (not isinstance(checkpoint, dict) or
             checkpoint.get("result_verified") is not True or
-            checkpoint.get("observation") != "HOST_OPERATION_PASSED" or
+            checkpoint.get("observation") not in (
+                "HOST_OPERATION_PASSED", "HOST_OUTPUT_PARTIAL",
+                "HOST_LEDGER_RECOVERY_REQUIRED") or
+            checkpoint.get("exit_code") != 0 or
             checkpoint.get("output_complete") is True):
         raise ValueError("OUTPUT_VERIFICATION_STATE_INVALID")
     path = Path(archive)
