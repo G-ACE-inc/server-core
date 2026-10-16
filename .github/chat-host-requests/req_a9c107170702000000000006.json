@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Persist category-only classification for own failed v8 build without exposing stdout, stderr or secrets.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\np=/home/admin1/logs/servercore-service-deploy/req_9d48eccd59b170836ea6565e.json\ntype=UNKNOWN\nif [ -r \"$p\" ]; then\n e=$(jq -r '.stderr // \"\"' \"$p\")\n if printf '%s' \"$e\" | grep -qi 'permission denied'; then type=PERMISSION_DENIED\n elif printf '%s' \"$e\" | grep -qi 'compose'; then type=COMPOSE_ERROR\n elif printf '%s' \"$e\" | grep -qi 'not found'; then type=NOT_FOUND\n elif printf '%s' \"$e\" | grep -qi 'docker'; then type=DOCKER_ERROR\n elif [ -z \"$e\" ]; then type=NO_STDERR\n else type=OTHER; fi\nfi\nbody=$(printf 'V8_FAILED_BUILD_CLASSIFICATION\\nclass=%s\\nledger_readable=%s\\n' \"$type\" \"$(test -r \"$p\" && echo yes || echo no)\")\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"$body\" --jq '.html_url'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "failed build req_9d48eccd59b170836ea6565e and independent preflight branch main clean SHA57dee; category-only root-cause triage."
+  }
+}
