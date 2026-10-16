@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only check newly deployed AI Core authenticated /internal/metrics/status reports bounded content-free 4-model counters, no active leases/queue and retired 18080 remains closed. Do not generate any model inference or change product Source.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\ndocker exec ai-core-model-gate python3 -c '\nimport json,os,urllib.request,hashlib\nroot=\"http://127.0.0.1:18184\"\nh={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]}\ndef get(route):\n req=urllib.request.Request(root+route,headers=h)\n with urllib.request.urlopen(req,timeout=10) as r:\n  assert r.status==200\n  return json.load(r)\nd=get(\"/internal/metrics/status\")\na=get(\"/internal/handoff/status\")\nb=get(\"/internal/resources/status\")\nassert d[\"window_capacity\"]==256\nassert set(d[\"model_metrics\"])=={\"granite\",\"qwen3\",\"ministral\",\"coder\"}\nassert not any(a[\"active\"].values()) and b[\"queued\"]==0\nassert not any(k in json.dumps(d).lower() for k in (\"authorization\",\"messages\",\"prompt\",\"bearer\"))\nprint(\"AI_CORE_METRICS_RUNTIME=PASS CAPACITY=\"+str(d[\"window_capacity\"])+\" SAMPLES=\"+str(d[\"window_completed\"])+\" MODELS=\"+str(len(d[\"model_metrics\"]))+\" ACTIVE=0 QUEUE=0\")\n'\nif ss -H -ltn 'sport = :18080' | grep -q LISTEN; then exit 81; fi\necho LEGACY_18080=CLOSED"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 d6a11e7 metrics Source full suite+offline image PASS Host #10 6225698940, safeguarded live Gate refresh PASS Host #10 6225710857. Read only authenticated 4 model metrics status, queue, no prompt/secret and retired 18080 closed. Host sha ee6002 from same real event."
+  }
+}
