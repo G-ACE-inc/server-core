@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -68,6 +69,7 @@ class IsolatedRequests(unittest.TestCase):
             prepared = m.prepare(path)["bounded_host_request"]
             script = prepared["command"]
             self.assertNotIn("source_context", prepared)
+            self.assertIs(prepared["source_preflight"], True)
             self.assertTrue(script.startswith("(\ncd /home/admin1/projects/ai-core/"))
             self.assertIn('git rev-parse HEAD', script)
             self.assertIn('CHAT_SOURCE_SHA_MISMATCH', script)
@@ -121,6 +123,61 @@ class IsolatedRequests(unittest.TestCase):
             script = m.prepare(p)["bounded_host_request"]["command"]
             self.assertIn("test -f 'tests/test user", script)
             self.assertIn("CHAT_SOURCE_REQUIRED_FILE_MISSING", script)
+
+
+    def test_source_preflight_cannot_be_claimed_without_context(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "request.json"
+            request = {**BASE, "bounded_host_request": {
+                "enabled": True, "command_id": "host.command",
+                "repository": "seigo-gace/ai-core",
+                "expected_sha": "a" * 40, "repo_sha": "b" * 40,
+                "command": "printf ok", "source_preflight": True}}
+            path.write_text(json.dumps(request))
+            with self.assertRaisesRegex(ValueError, "SOURCE_PREFLIGHT_INTERNAL_ONLY"):
+                m.prepare(path)
+
+    def test_real_git_worktree_dirty_and_independent_clone(self):
+        # Execute the generated shell against temporary actual Git objects.
+        # No Host checkout or AI Core worktree is touched.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp, "canonical")
+            root.mkdir()
+            def git(*argv):
+                return subprocess.check_output(["git", *map(str, argv)], stderr=subprocess.DEVNULL).decode().strip()
+            git("init", "-q", root)
+            (root / "source.txt").write_text("baseline")
+            git("-C", root, "add", "source.txt")
+            git("-C", root, "-c", "user.email=unit@example.com",
+                "-c", "user.name=Unit", "commit", "-qm", "initial")
+            sha = git("-C", root, "rev-parse", "HEAD")
+            wt = root / ".worktrees" / "good"
+            git("-C", root, "worktree", "add", "-q", "--detach", wt, "HEAD")
+            def run_at(target):
+                bounded = {"command_id": "host.command",
+                           "repository": "seigo-gace/ai-core",
+                           "command": "printf WORKTREE_OK"}
+                ctx = {"repository": "seigo-gace/ai-core",
+                       "workdir": "/home/admin1/projects/ai-core/.worktrees/" + target.name,
+                       "source_sha": sha, "required_files": ["source.txt"]}
+                cmd = m.bind_source_context(bounded, ctx)["command"]
+                cmd = cmd.replace("/home/admin1/projects/ai-core", str(root))
+                return subprocess.run(["bash", "-c", cmd], capture_output=True, text=True)
+            good = run_at(wt)
+            self.assertEqual((good.returncode, good.stdout, good.stderr), (0, "WORKTREE_OK", ""))
+            (wt / "untracked.txt").write_text("dirty")
+            dirty = run_at(wt)
+            self.assertEqual(dirty.returncode, 76)
+            self.assertEqual(dirty.stderr.strip(), "CHAT_SOURCE_DIRTY_WORKTREE")
+            (wt / "untracked.txt").unlink()
+            clone = root / ".worktrees" / "bad"
+            git("clone", "-q", root, clone)
+            wrong = run_at(clone)
+            self.assertEqual(wrong.returncode, 72)
+            self.assertEqual(wrong.stderr.strip(), "CHAT_SOURCE_ROOT_MISMATCH")
+            missing = run_at(root / ".worktrees" / "missing")
+            self.assertEqual((missing.returncode, missing.stderr.strip()),
+                             (70, "CHAT_SOURCE_WORKDIR_MISSING"))
 
     def test_current_terminal_uses_independent_commit_lanes(self):
         workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text()
