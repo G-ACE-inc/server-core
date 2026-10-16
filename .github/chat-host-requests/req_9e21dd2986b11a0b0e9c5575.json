@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Publish only safe classified cause of failed correction rollback, live Gate command/image and port18080 status into owned AI Core Current from protected Host ledger. No Source, Docker or model changes.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nbase=$(python3 -c 'import json; d=json.load(open(\"/home/admin1/logs/servercore-service-deploy/req_67040e5d9e6957ebb370d8e0.json\"));s=str(d.get(\"stderr\") or \"\").lower();keys=(\"permission denied\",\"no such image\",\"not found\",\"not running\",\"connection refused\",\"http error 503\",\"traceback\",\"assertionerror\",\"compose\",\"cannot connect\",\"already in use\",\"no such file\",\"api error\");print(\"EXIT=\"+str(d.get(\"exit_code\"))+\" STDERR=\"+str(len(s))+\" CLASSES=\"+\",\".join(k.replace(\" \",\"_\") for k in keys if k in s))')\ninfo=$(docker inspect ai-core-model-gate --format 'GATE={{.State.Status}} CMD={{json .Config.Cmd}} IMAGE={{.Image}}')\nold=$(docker image inspect ai-core-model-gate:rollback-before-ee0ba7c4 --format '{{.Id}}' 2>/dev/null || echo NO_ROLLBACK_IMAGE)\nif ss -H -ltn 'sport = :18080' | grep -q LISTEN; then port=LISTEN; else port=CLOSED; fi\nmsg=\"AI_CORE_18080_ROLLBACK_DIAG $base $info OLD_IMAGE=$old PORT18080=$port\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$msg\" --jq .html_url >/dev/null\necho ROLLBACK_DIAGNOSTIC_POSTED=YES"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Critical rollback to current README four Gate only required; actual attempted Host req_67040e5d9e6957ebb370d8e0 FAIL1 stderr2688 #6225437686. First read-only classified probe PASS #6225452264 but its stdout not surfaced by Host privacy, repost strict safe flags plus image/port to AI Core Current. No restart/secret."
+  }
+}
