@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 retry exact previous read-only boundary diagnosis using actual Host SHA reported 2026-10-16 18:16Z; no models modified or secrets read",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "a6f776c438edba21ee85eaf77167f56c0fee0b29",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "a6f776c438edba21ee85eaf77167f56c0fee0b29",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nfrom pathlib import Path\nbase=Path('/home/admin1/projects/ai-core')\nwork=base/'.worktrees/pr3-verification-20261015'\ndef run(a,timeout=12):\n try:\n  r=subprocess.run(a,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=timeout)\n  return r.returncode,r.stdout.strip(),r.stderr.strip()\n except Exception as e:return -1,'',type(e).__name__\nout={}\nout['source_head']=run(['git','-C',str(work),'rev-parse','HEAD'])[1][:40]\nout['staged_image']=run(['docker','image','inspect','ai-core-model-gate:uds-stage-75778b66','--format','{{.Id}}'])[0]==0\nout['rollback_image']=run(['docker','image','inspect','ai-core-model-gate:rollback-75778b66','--format','{{.Id}}'])[0]==0\nout['model_port_line_present']={}\nfor i,p in enumerate((18081,18082,18083,18084)):\n out['model_port_line_present'][str(p)]=('127.0.0.1:'+str(p)+':8080') in (base/'compose.runtime.yml').read_text()\nfor name in ('granite','qwen3','ministral','coder'):\n rc,v,_=run(['docker','inspect','-f','{{.State.Running}}','ai-'+name]);out['running_'+name]=v if rc==0 else 'INSPECT_FAIL'\nrc,v,_=run(['docker','inspect','-f','{{.State.Running}}','ai-core-model-gate'])\nout['gate_running']=v if rc==0 else 'INSPECT_FAIL'\nrc,v,e=run(['docker','exec','ai-core-model-gate','python3','-c','import os;print(int(bool(os.environ.get(\"AI_CORE_API_KEY\"))))'])\nout['existing_gate_key_available']=rc==0 and v=='1'\nout['key_probe_exit']=rc\nout['existing_config_env_file']= (Path('/home/admin1/projects/debug-ai/.env').is_file())\nout['private_bus_exists']=run(['docker','volume','inspect','ai-core-backend-bus'])[0]==0\nprint('AI_CORE_SAFE_READBACK='+json.dumps(out,sort_keys=True))\npayload=json.dumps({'body':'AI_CORE_UDS_FAILURE_BOUNDARY_READONLY '+json.dumps(out,sort_keys=True)})\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=payload,text=True,capture_output=True,timeout=22)\nprint('EVIDENCE_URL='+p.stdout.strip() if p.returncode==0 else 'NOT_RECORDED')\nraise SystemExit(0 if p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6221891496"
+  }
+}
