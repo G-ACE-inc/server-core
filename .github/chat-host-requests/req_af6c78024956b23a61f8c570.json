@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core and DebugAI single shared read-only Host snapshot of actual Gate leases, Docker residents and selected product route; no model call or runtime change",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "09bc2d22a94f7c46ad6a3413caebd3ad27f6ebd5",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "09bc2d22a94f7c46ad6a3413caebd3ad27f6ebd5",
+    "command": "python3 - <<'PY'\nimport json,subprocess\ndef run(argv,limit=10):\n p=subprocess.run(argv,capture_output=True,text=True,timeout=limit)\n return p.returncode,p.stdout.strip(),p.stderr.strip()\nout={'scope':'AI_CORE_DEBUGAI_NO_MODEL_INFERENCE'}\nfor name in ('ai-core-model-gate','ai-granite','ai-qwen3','ai-ministral','ai-coder','debug-ai-debug-ai-1'):\n rc,val,_=run(['docker','inspect',name,'--format','{{.State.Running}}|{{.State.Health.Status}}'])\n out[name]=val if rc==0 else 'NOT_INSPECTABLE'\nrc,val,err=run(['docker','exec','ai-core-model-gate','python3','-c',\"\"\"\nimport os,json,urllib.request,hashlib\nfrom pathlib import Path\nheaders={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']}\ndef get(path):\n req=urllib.request.Request('http://127.0.0.1:18184'+path,headers=headers)\n with urllib.request.urlopen(req,timeout=5) as r:return json.load(r)\nh=get('/internal/handoff/status');r=get('/internal/resources/status')\nprint(json.dumps({'gate_code_sha256':hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest(),\n 'active':h['active'],'resident':h['resident'],'handoff':h['handoff'] is not None,\n 'recovery_pending':h['recovery_pending'],'queued':r['queued'],\n 'inflight':r['admission_inflight'],'transitioning':r['transitioning'],\n 'cpu_max':r['cpu_max'],'memory_current':r['memory']['memory.current']}))\n\"\"\"],22)\nout['gate_status']=json.loads(val) if rc==0 else {'readback':'UNAVAILABLE','exit':rc}\nrc,val,_=run(['docker','inspect','debug-ai-debug-ai-1'])\nif rc==0:\n d=json.loads(val)[0]\n env={a.split('=',1)[0]:a.split('=',1)[1] for a in d['Config'].get('Env',[]) if '=' in a}\n out['debug_ai_route']={\n  'model_gates_selected':any(env.get(k)=='model_gates' for k in ('AI_CORE_LIVE_MODE','AI_CORE_DISPATCH_MODE')),\n  'gate_endpoint_count':sum(any((':'+str(p)) in v for p in (18181,18182,18183,18184)) for k,v in env.items() if 'URL' in k and 'CORE' in k),\n  'container_running':d['State']['Running']}\nbody='AI_CORE_DEBUGAI_SHARED_RUNTIME_READONLY\\n'+json.dumps(out,ensure_ascii=False,sort_keys=True)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=25)\nprint('CROSS_CU_STATUS='+('SAVED' if r.returncode==0 else 'NOT_SAVED'))\nprint('RECEIPT='+r.stdout.strip() if r.returncode==0 else 'NONE')\nraise SystemExit(0 if r.returncode==0 and isinstance(out.get('gate_status'),dict) and 'active' in out['gate_status'] else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-6222098041"
+  }
+}
