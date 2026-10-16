@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "Same AI Core UDS Source Coder HTTP 200 and 20.163s in https://github.com/seigo-gace/ai-core/issues/1#issuecomment-6222672692; next independent model Qwen3, no repeated Coder load. Host SHA d632... from https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6222673438"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d632c605b7f61e3baecba31b0bea2fc9cb54a3e8",
+    "repo_sha": "d632c605b7f61e3baecba31b0bea2fc9cb54a3e8",
+    "repository": "G-ACE-inc/server-core",
+    "command": "w=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = cfa5ee22b05d8932e26eb195e4f5ba76581d6e90 || exit 7\ntest -z \"$(git -C \"$w\" status --porcelain)\" || exit 8\nout=\"$(docker exec -i ai-core-model-gate python3 - qwen3 < \"$w/scripts/host_uds_inference_probe.py\" 2>/dev/null)\"\nresult=$?\nprintf '%s\\n' \"$out\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f \"body=AI_CORE_UDS_QWEN3_RESULT HEAD=cfa5ee22b05d8932e26eb195e4f5ba76581d6e90 EXIT=$result $out\" --jq .html_url || :\necho \"QWEN3_PROBE_EXIT=$result\"\nexit \"$result\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
