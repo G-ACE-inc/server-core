@@ -278,6 +278,16 @@ def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, 
 HOST_COMMAND_SCHEMA = "gace.servercore-host-command.request/v1"
 HOST_COMMAND_KEYS = {"schema", "id", "repository", "target_sha", "command", "source_preflight"}
 HOST_COMMAND_MAX_SECONDS = 90
+SOURCE_PREFLIGHT_OK = "__GACE_SOURCE_PREFLIGHT_OK__\\n"
+SOURCE_FAILURE_MARKERS = {
+    70: "CHAT_SOURCE_WORKDIR_MISSING",
+    71: "CHAT_SOURCE_GIT_UNAVAILABLE",
+    72: "CHAT_SOURCE_ROOT_MISMATCH",
+    73: "CHAT_SOURCE_SHA_UNAVAILABLE",
+    74: "CHAT_SOURCE_SHA_MISMATCH",
+    75: "CHAT_SOURCE_REQUIRED_FILE_MISSING",
+    76: "CHAT_SOURCE_DIRTY_WORKTREE",
+}
 
 def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, result_dir=None,
                      runner=None):
@@ -339,9 +349,22 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
             completed = run(["/bin/bash", "-lc", "umask 0022; " + command_text], cwd=str(root),
                             capture_output=True, text=True, timeout=HOST_COMMAND_MAX_SECONDS,
                             check=False)
+            output = completed.stdout
+            preflight_passed = bool(value.get("source_preflight", False)
+                                    and output.startswith(SOURCE_PREFLIGHT_OK))
+            if preflight_passed:
+                # Control marker is not part of the user's actual stdout.
+                # Restore the exact bytes seen from the original command.
+                output = output[len(SOURCE_PREFLIGHT_OK):]
+            preflight_failure = bool(value.get("source_preflight", False)
+                                     and not preflight_passed
+                                     and completed.returncode in SOURCE_FAILURE_MARKERS
+                                     and completed.stderr.strip() == SOURCE_FAILURE_MARKERS[completed.returncode]
+                                     and not output)
             result = {**base, "state": "HOST_COMMAND_PASS" if completed.returncode == 0 else "FAIL",
                       "exit_code": completed.returncode,
-                      "stdout": completed.stdout, "stderr": completed.stderr}
+                      "stdout": output, "stderr": completed.stderr,
+                      "source_preflight_failure": preflight_failure}
         except (OSError, subprocess.TimeoutExpired):
             result = {**base, "state": "FAIL", "failure_class": "HOST_COMMAND_EXECUTION_FAILED"}
         write_result(request_id, result, result_dir)
