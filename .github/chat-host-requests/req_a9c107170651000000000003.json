@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Return verified Docker labels/health metadata only; no changes.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nbody=$(for n in libral-vault-libral-vault-1 astera-v8 astera-v8-evaluator astera-v8-evidence-search; do docker inspect \"$n\" --format '{{.Name}}|{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}|{{index .Config.Labels \"com.docker.compose.project.working_dir\"}}' 2>/dev/null || echo \"$n|missing\"; done)\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"VAULT_V8_DEPLOY_PREFLIGHT\n$body\" --jq '.html_url'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Host 38972139529 PASS request req_1f8b02e00b70fe23cd21a403; readback output redacted by bounded observation, need minimal metadata."
+  }
+}
