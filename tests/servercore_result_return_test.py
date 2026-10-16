@@ -111,7 +111,8 @@ class SinkTests(unittest.TestCase):
         stderr = "警告⚠\\n" * 12000
         ledger = self.dir / "writer"
         ledger.mkdir(parents=True)
-        evidence = {"request_id": RID, "state": "HOST_COMMAND_PASS",
+        evidence = {"request_id": RID, "repository": sink.RESULT_REPOSITORY,
+                    "state": "HOST_COMMAND_PASS",
                     "source_sha": SHA, "exit_code": 0,
                     "stdout": stdout, "stderr": stderr}
         (ledger / (RID + ".json")).write_text(
@@ -140,6 +141,59 @@ class SinkTests(unittest.TestCase):
         # When no Writer result exists (admission denial), never invent it.
         fallback = sink.comment_body(actual, writer_dir=ledger)
         self.assertNotIn("HOST_WRITER_LEDGER_RAW", fallback)
+
+    def test_cross_repository_target_sha_is_not_dispatcher_sha_and_publishes(self):
+        # Actual failure mode of AI Core: Host Writer source_sha is the
+        # registered TARGET repo SHA, while Sink host_sha is Dispatcher SHA.
+        target = "seigo-gace/ai-core"
+        target_sha = "b" * 40
+        stdout = "日本語Ω🙂\\n" * 12000
+        stderr = "warning⚠\\n" * 3500
+        ledger = self.dir / "writer"
+        ledger.mkdir(parents=True)
+        writer = {"request_id": RID, "repository": target, "source_sha": target_sha,
+                  "state": "HOST_COMMAND_PASS", "exit_code": 0,
+                  "stdout": stdout, "stderr": stderr}
+        (ledger / (RID + ".json")).write_text(json.dumps(writer, ensure_ascii=False),
+                                              encoding="utf-8")
+        sink.accept_record(rec(command_id="host.command", host_sha=SHA,
+                               expected_sha=SHA,
+                               stdout="GACE_HOST_OUTPUT_STORED request_id=" + RID,
+                               stderr=""), result_dir=self.dir)
+        calls = []
+        def runner(args, stdin=None, timeout=40):
+            calls.append((args, stdin))
+            if args[:2] == ["api", "-X"]:
+                return json.dumps({"id": 88, "html_url": "https://github.com/x/y/issues/10#issuecomment-88"})
+            if "/comments?" in args[-1]:
+                return "[]"
+            return json.dumps({"comments": 100})
+        found = sink.publish_record(RID, result_dir=self.dir, runner=runner,
+                                    writer_dir=ledger)
+        self.assertEqual(found["comment_id"], 88)
+        self.assertEqual(sink.pending_ids(self.dir), [])
+        body = json.loads(calls[-1][1])["body"]
+        info = json.loads(body.split("```json\n", 1)[1].split("\n```", 1)[0])
+        for key, raw in (("stdout", stdout), ("stderr", stderr)):
+            self.assertEqual(info[key + "_sha256"], hashlib.sha256(raw.encode("utf-8")).hexdigest())
+            self.assertEqual(info[key + "_bytes"], len(raw.encode("utf-8")))
+            self.assertEqual(info[key + "_chars"], len(raw))
+            self.assertEqual(info[key], "")
+            self.assertNotIn(raw[:25], body)
+        self.assertEqual(info["host_sha"], SHA)
+        self.assertNotEqual(target_sha, SHA)
+
+        # Neither incomplete/corrupt provenance nor same-repo fake SHA may
+        # be promoted to an authentic writer/dispatcher correlation.
+        with self.assertRaisesRegex(sink.SinkError, "WRITER_LEDGER_CORRELATION_MISMATCH"):
+            self._invalid_writer_probe(ledger, writer)
+
+    def _invalid_writer_probe(self, ledger, writer):
+        # For a server-core-local request the two SHA pins must still match.
+        writer = {**writer, "repository": sink.RESULT_REPOSITORY}
+        (ledger / (RID + ".json")).write_text(json.dumps(writer), encoding="utf-8")
+        return sink.trusted_writer_metadata(
+            sink.read_record(RID, self.dir), writer_dir=ledger)
 
     def test_issue_comment_contains_metadata_not_output(self):
         output = "日本語の長文" * 10000
