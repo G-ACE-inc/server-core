@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "webhook-gateway Issue28 CU40; Source main 4847811c7508da508fe210312d5e8bcaafcdc83a merged PR29; runtime 6 destinations preserve bounded-host only; Host SHA 9bebd2cacaed10dd81d9687333427cc3de1dd9da verified on issue10 receipts"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9adea263b58905ee448c825efc708325a8c3e7b9",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9adea263b58905ee448c825efc708325a8c3e7b9",
+    "command": "#!/usr/bin/env bash\nset -euo pipefail\nexec python3 /home/admin1/projects/webhook-gateway/.snapshots/gateway28-20261017/gace_gateway28_deploy.py\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
