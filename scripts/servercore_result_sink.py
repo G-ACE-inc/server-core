@@ -284,7 +284,7 @@ def find_published(request_id, since, runner=_gh):
     return None
 
 
-def publish_record(request_id, *, result_dir=None, runner=_gh, now=None):
+def publish_record(request_id, *, result_dir=None, runner=_gh, now=None, writer_dir=HOST_WRITER_RESULT_DIR):
     record = read_record(request_id, result_dir)
     if not record or record.get("state") not in TERMINAL or record.get("published"):
         return None
@@ -292,7 +292,7 @@ def publish_record(request_id, *, result_dir=None, runner=_gh, now=None):
     since = (recorded - timedelta(minutes=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
     found = find_published(request_id, since, runner)
     if not found:
-        payload = json.dumps({"body": comment_body(record)})
+        payload = json.dumps({"body": comment_body(record, writer_dir=writer_dir)})
         out = runner(["api", "-X", "POST", f"repos/{RESULT_REPOSITORY}/issues/{RESULT_ISSUE}/comments",
                       "--input", "-"], stdin=payload)
         data = json.loads(out)
