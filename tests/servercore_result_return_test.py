@@ -200,6 +200,24 @@ class SinkTests(unittest.TestCase):
         return sink.trusted_writer_metadata(
             sink.read_record(RID, self.dir), writer_dir=ledger)
 
+    def test_host_writer_execution_failure_keeps_unknown_stream_digests(self):
+        ledger = self.dir / "writer"
+        ledger.mkdir(parents=True)
+        writer = {"request_id": RID, "repository": sink.RESULT_REPOSITORY,
+                  "source_sha": SHA, "state": "FAIL",
+                  "failure_class": "HOST_COMMAND_EXECUTION_FAILED"}
+        (ledger / (RID + ".json")).write_text(json.dumps(writer), encoding="utf-8")
+        sink.accept_record(rec(command_id="host.command", state="FAIL", exit_code=1,
+                               stdout="", stderr=""), result_dir=self.dir)
+        stored = sink.read_record(RID, self.dir)
+        body = sink.comment_body(stored, writer_dir=ledger)
+        data = json.loads(body.split("```json\n", 1)[1].split("\n```", 1)[0])
+        for stream in ("stdout", "stderr"):
+            self.assertIsNone(data[stream + "_sha256"])
+            self.assertIsNone(data[stream + "_bytes"])
+            self.assertTrue(data[stream + "_preview_truncated"])
+        self.assertNotIn(hashlib.sha256(b"").hexdigest(), body)
+
     def test_source_context_mismatch_publishes_only_verified_safe_hint(self):
         ledger = self.dir / "writer"
         ledger.mkdir(parents=True)
