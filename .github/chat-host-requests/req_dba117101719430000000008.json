@@ -1,0 +1,34 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/115"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "seigo-gace/debug-ai",
+    "repo_sha": "0864b04a7d394d69e52d09d39b58cc41c0bfb109",
+    "command": "docker exec debug-ai-debug-ai-1 grep -q HANDOFF_IN_PROGRESS /app/server/adapters/ai-core.js\na=$?\ngit symbolic-ref -q HEAD >/dev/null\nb=$?\nif [ \"$a\" -ne 0 ] && [ \"$b\" -ne 0 ]; then exit 43; fi\nif [ \"$a\" -ne 0 ]; then exit 41; fi\nif [ \"$b\" -ne 0 ]; then exit 42; fi\nexit 0"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
