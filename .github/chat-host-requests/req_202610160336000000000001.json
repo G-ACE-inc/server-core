@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "#40 activate reviewed PR295 Sink Writer-origin SHA metadata and PR292 Receiver retry semantics via existing service/container deferred restart, without changing Writer, registry or new tokens/workflows",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10",
+    "command": "set -e\ntest \"$(git rev-parse HEAD)\" = \"2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10\"\ntest \"$(git stash list | wc -l)\" -eq 3\nsystemctl --user is-active --quiet gace-servercore-result-sink.service\n/usr/bin/docker inspect -f '{{.State.Running}}' server-core-bounded-host | grep -qx true\nsystemd-run --user --collect --on-active=25s --unit=gace-chat-20261016-obs-source-refresh /bin/sh -c 'systemctl --user restart gace-servercore-result-sink.service && /usr/bin/sg docker -c \"/usr/bin/docker restart server-core-bounded-host >/dev/null\"' >/dev/null\necho CHAT_EXISTING_SINK_RECEIVER_REFRESH_SCHEDULED\ngit rev-parse --short=12 HEAD"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "PR295 main Source merge 2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10; Host ff request commit ebf80c... resulted PASS Run 38844646733. Existing receiver Docker mounted /home/admin1/server-core and sink user service, activate Source after 25s for safe host request receipt."
+  }
+}
