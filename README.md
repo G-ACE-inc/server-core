@@ -46,90 +46,7 @@ server-coreの全正本を一括読込しない。
 ツール開発の**２つの必須機能／実行順：先に② CHAT→Server、既存Log成果を維持して後に①残課題**（共通設計・Current責任＝[server-core Control #10](https://github.com/G-ACE-inc/server-core/issues/10)）：**① 統合Development Log（収集→TGserver ZERO保存→検索→CHAT間復元）**は [`SERVER_CORE_DESIGN` §17](docs/SERVER_CORE_DESIGN.md#17-tool-capability-a--unified-development-log-collect-persist-search-and-restore-2026-10-10)、**② CHAT→Serverの調査・操作・安全なSource反映・Runtime証拠**は [`SERVER_CORE_DESIGN` §16](docs/SERVER_CORE_DESIGN.md#16-tool-capability-b--common-chat-to-host-controlled-reflection-design-contract-2026-10-10)。いずれもGitHub Project #1の固定目的に従う。**設計のmain反映やCIのみではLog保存・Server反映の実E2Eは未完**。
 設計差分: [`docs/DESIGN_DELTA.md`](docs/DESIGN_DELTA.md)
 
-## 司令室としての役割
-
-server-coreはWorkspace全体について次を担当する。
-
-1. **Task Intake / Routing**
-   - 依頼内容を分類し、対象Project・Authority・必要Contextを決める。
-2. **Authority / Context Control**
-   - 必要な正本だけを段階的に読ませる。
-3. **Project Dispatch**
-   - 実作業を所有Projectへ送る。Project固有実装をserver-coreへ吸収しない。
-4. **Shared Capability Control**
-   - MCP / Tool / Skill / DebugAI / KB / Secret Contract / Provider Contractの発見入口を持つ。
-5. **Development / Verification Governance**
-   - 再利用、Design、Delta、Tree、Test、Documentation Gate、PASS条件を統一する。
-6. **GitHub Work History**
-   - Commit / PRを実作業履歴として残す。
-7. **Runtime / Operations Governance**
-   - confirmed GitHub revisionからのDeploy、Docker、Log/Cache/Cleanup、Backup/Recovery、安全境界を統一する。
-
-## Command Flow
-
-```text
-REQUEST
-  -> ROUTE
-  -> LOAD REQUIRED AUTHORITY
-  -> DISPATCH TO PROJECT
-  -> REUSE CHECK
-  -> IMPLEMENT / DEBUG
-  -> VERIFY
-  -> DOCUMENTATION GATE
-  -> COMMIT = WORK REPORT
-  -> PUSH / REMOTE READBACK / PR / CI
-  -> APPROVAL BOUNDARY
-  -> DEPLOY / RUNTIME VERIFY only when authorized
-```
-
-Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Productionは別状態として扱う。
-
-## GPT CHAT decision Gate — verified scope (2026-10-11)
-
-The existing bounded CHAT checkpoint evaluator is `scripts/github_project_chat_turn_gate.py`; deterministic tests are in `scripts/github_project_chat_turn_gate_test.py`. The existing `server-core-guard` runs these tests, and the existing `chatgpt-live-api-verify` Workflow validates an explicitly supplied START checkpoint before an admitted Host operation. **This is Host request admission, not interception of ordinary ChatGPT answer submission**. FAILURE/STOP are evaluator contracts, not verified native send-time enforcement. Operational START positive/negative evidence and intended boundary are preserved in [Design Delta](docs/DESIGN_DELTA.md) and [CU #40](https://github.com/G-ACE-inc/server-core/issues/40). A green CI alone is never proof that CHAT followed the Work Routine or continued until a legitimate stopping point.
-
-For CU #40 source PRs affecting the existing CHAT Gate evaluator/tests or live Host Actions entry, the existing `server-core-guard` additionally rejects missing Design baseline and Documentation Gate **declarations** in the PR. It also checks real changes for declared README/Tree/Delta updates, append-only Design Delta history, and the named System Document when required. This catches omitted checkpoints at the PR boundary; it cannot prove the statements were truthful or prevent a native CHAT premature reply. On private GitHub Free, native branch protection is unavailable (API 403); CU #40 gate paths on `main` must arrive via merged PR, and the existing guard push step fails CI on direct gate-path pushes without an exact main-target merged PR at the pushed SHA (post-push signal only—not a Git revert). See [Design Delta](docs/DESIGN_DELTA.md) for scope and limitations.
-
-The mandatory Work Routine (design baseline → change assessment → source/test → focused verification → Documentation Gate → GitHub Current/Evidence → actual continuation decision) remains in [G_ACE_WORKSPACE](docs/G_ACE_WORKSPACE.md) §6–§7. README is only a verified entry and status index; the architecture baseline remains [SERVER_CORE_DESIGN](docs/SERVER_CORE_DESIGN.md) and intentional changes are append-only in [DESIGN_DELTA](docs/DESIGN_DELTA.md).
-
-The existing Host-result poller now reads immediately, then backs off from 6 to at most 30 seconds while pending, with a final deadline read. Deterministic 240-second pending tests require 11 logical lookups rather than 41; `RESULT_LOOKUPS`, `FAILED_LOOKUPS` and `WAIT_SECONDS` markers expose the actual wait. A lookup can issue multiple GitHub HTTP requests and is not a ChatGPT tool call. Live CHAT request reduction and client freeze/rate-limit improvement remain **NOT_VERIFIED**. Work Routine §6 consolidates continuation/handoff instructions and requires a durable checkpoint before capacity exhaustion.
-
-The existing read-only Current recovery tool supports exact `--issue-url` selection and scoped `--include-body` output. It verifies complete Project registration, reads only the selected Current bodies and returns their text with hashes/timestamps, avoiding a second fetch for the same evidence. Its GraphQL query was repaired after actual GitHub rejected the old syntax; live Control #15 recovery and unregistered #40 rejection were verified before #40 enrollment. This is local/CLI capability evidence, not automatic native CHAT adoption. See [minimal Current loading](docs/LOAD_SCOPE.md).
-
-## Current Documentation State
-
-司令室MDとして現在の正本セットは以下。
-
-### Command / Routing
-- `README.md` — Workspace共通Command Center入口
-- `docs/SERVER_CORE_DESIGN.md` — server-core設計基準線
-- `docs/DESIGN_DELTA.md` — 設計差分と理由
-- `docs/LOAD_SCOPE.md` — Task routing / progressive context loading
-- `docs/GITHUB_PROJECT_RULE_PLANE.md` — GitHub Project上のSERVER_AI / GPT_CHAT二層Rule運用
-- `docs/MASTER_TERMINAL_COMMAND.md` — Master Terminal Copy&Paste Command / Syntax Validation / GACE_RESULT / Shell Safety契約
-- `docs/G_ACE_WORKSPACE.md` — Workspace正規運用
-- `docs/STRUCTURE.md` — server-core Project Tree / Navigation
-
-### Development / GitHub
-- `CORE.md` — LibralCore開発方法論
-- `SERVER_CORE_PROTOCOL.md` — 共通運用・禁止・Approval Boundary
-- `docs/PROJECT_TEMPLATE.md` — Project/Document標準
-- `docs/AUTO_COMMIT.md` — Commit = Work Report / Push / Remote Readback
-- `docs/DEPLOY_RUNBOOK.md` — confirmed GitHub revisionからRuntime verificationまでの共通Deploy境界
-
-### Shared Platform
-- `docs/WORKSPACE_REGISTRY.md` — Project / shared Capability / MCP / Tool / Secret Contract / Runtime discovery
-- `docs/WORKSPACE_MCP.md` — Workspace-global MCP registration / authentication / verification
-- `docs/PROJECT_INTEGRATION_RULES.md` — TGserver / webhook gateway / Vault / MCP / Tool Project導入契約
-- `docs/WORKSPACE_SHARED_SECRETS.md` — Vault経由Shared Secret / Token契約
-- `docs/KB_REUSE_DESIGN.md` — F: 1TB reusable-development KB設計
-- `docs/STORAGE_LIFECYCLE.md` — Log / Cache / Cleanup / Backup / Recovery設計
-- `docs/CLOUDFLARE_OPERATIONS.md` — Cloudflare固有運用
-
-### Support
-- `docs/GLOSSARY.md` — 正式用語
-- `docs/GITHUB_FREE_MAX.md` — GitHub無料枠Task時のみ
-- `docs/GITHUB_SKILL.md` — GitHub Skill resolver利用時のみ
+server-core owns intake/routing, shared capability discovery, verification boundaries and GitHub work history. Project implementation stays in its owning Repository. GitHub Project #1 / owning Current controls changing work; this README is a stable entry index, not a parallel work plan or runtime status authority.
 
 ## Task Routing
 
@@ -145,39 +62,30 @@ The existing read-only Current recovery tool supports exact `--issue-url` select
 | 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
 | Project / shared Capability / MCP / Tool / DebugAI / Secret / Runtime発見 | `docs/WORKSPACE_REGISTRY.md` |
 | Workspace共通MCPの登録 / Cursor Global MCP / 検証 | `docs/WORKSPACE_MCP.md` |
-| GitHub Projectからの共通server操作routing | `operations/github-project-debugai-routing.json` + `docs/WORKSPACE_MCP.md` |
+| GitHub Projectからの共通server操作routing | `operations/github-project-bounded-host.json` + `docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md` |
 | Project導入（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
 | Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
 | 再利用KB | `docs/KB_REUSE_DESIGN.md` |
 | Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
 | Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
 | 用語 | `docs/GLOSSARY.md` |
+| GitHub無料枠 / GitHub Skill resolver（該当Taskのみ） | `docs/GITHUB_FREE_MAX.md` / `docs/GITHUB_SKILL.md` |
 | GitHub Project Rule Plane / AI profile routing | `docs/GITHUB_PROJECT_RULE_PLANE.md` + `operations/github-project-rule-plane.json` |
 | server-core構造 | `docs/STRUCTURE.md` |
 | server-core設計判断 / 差分 | `docs/SERVER_CORE_DESIGN.md` + `docs/DESIGN_DELTA.md` |
 
 ## Documentation Contract
 
-### README
-Current completed / verified stateと入口を示す。Design正本にはしない。
+| Artifact | Responsibility |
+|---|---|
+| README | Verified entry/status index; no duplicated rule or runtime history |
+| Design | Architecture / contract / boundary baseline; do not overwrite history to match incidental code |
+| Design Delta | Adopted differences, reasons, evidence, impact and rollback |
+| Project Tree | Navigation / file responsibilities / related tests |
+| System / Module document | Existing owning unit's implementation and handoff contract |
+| Commit / PR | Chronological work report and exact verification evidence |
 
-### Design
-Architecture / Contract / Boundary / ResponsibilityのBaseline。
-
-Current実装へ合わせて履歴が消える上書きを禁止する。
-
-### Design Delta
-Designとの差を正式採用する場合、差分・理由・Evidence・影響範囲・適用Commit・Compatibility/rollbackを残す。
-
-### Project Tree
-主要File/Directoryの責務、Entry Point、関連Design/Testを示すNavigation Index。
-
-### System / Module Document
-READMEだけでは別AI/Developerへ説明なしで引継げない完成単位のみ作成/更新する。
-
-## Documentation Gate
-
-作業完了前に必ず判定する。
+The sole development procedure is [Work Routine §6–§7](docs/G_ACE_WORKSPACE.md#6-development-routine). [GitHub work-report contract](docs/AUTO_COMMIT.md) owns Commit/Push/remote readback. Judge the Documentation Gate before completion:
 
 ```text
 README_UPDATE_REQUIRED=YES/NO
@@ -186,134 +94,22 @@ DESIGN_DELTA_REQUIRED=YES/NO
 SYSTEM_DOCUMENT_REQUIRED=YES/NO/UPDATE_EXISTING
 ```
 
-Requiredなのに未更新ならDocumentation Completeではない。
+Required documentation must be updated. Keep Source / Test / Commit / Push / PR / CI / Merge / Deploy / Runtime / Production separate; UNKNOWN / NOT_EXECUTED / NOT_VERIFIED must not become PASS by inference.
 
-## GitHub = Work History Authority
+## Execution and evidence
 
-Commitは単なる保存点ではなく作業報告として扱う。
+The supplied-receipt CHAT gate and existing CI enforce only their actual admission/check surfaces. They do not intercept ordinary ChatGPT answers, prove live rule loading or qualify client performance. Current Source/CI/behavioral evidence belongs in [CU #40](https://github.com/G-ACE-inc/server-core/issues/40); implementation entrypoints and tests are indexed in [STRUCTURE](docs/STRUCTURE.md). Optional scoped Current recovery is in [LOAD_SCOPE](docs/LOAD_SCOPE.md).
 
-必要に応じて次を後から追える状態にする。
-- Purpose
-- Changed
-- Affected
-- Verified
-- Docs
-- Remaining / Unverified
+Ordinary CHAT Host work uses the [common ServerTerminal route](docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md), including independent-request marker, exact request/Run/result correlation and actual admission. Preserve runtime-owned TGserver topic mappings during Source reflection. A directly commissioned SERVER_AI uses its verified local tools under #16.
 
-詳細は `docs/AUTO_COMMIT.md`。
+Fresh native CHAT adoption requires real conversations and their own Current/request/Run/result evidence; see the [existing native CHAT test](docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md#通常chatの開始別chat実測手順). A server executor cannot manufacture those conversations. Incomplete ZERO index coverage cannot prove absence of client failures.
 
-## Shared Workspace Capabilities
+## Runtime and approval boundaries
 
-共有Capabilityの発見入口は `docs/WORKSPACE_REGISTRY.md`。
+[SERVER_CORE_PROTOCOL](SERVER_CORE_PROTOCOL.md) owns shared authorization; Work Routine §6 owns decision delegation. Routine approved technical work does not acquire a new Master gate merely because it is a merge or restart. Protected intent, irreversible data, Secret/provider/public effects and explicit Current gates still require their actual authority. Never forge a receipt, widen Host access or infer delegation from Project membership.
 
-server-coreが管理するのは:
-- discovery;
-- connection contract;
-- owner;
-- permission / safety boundary;
-- availability / verification state;
-- Workspace共通利用Rule。
+Production residency remains Docker / Docker Compose. Use [DEPLOY_RUNBOOK](docs/DEPLOY_RUNBOOK.md) for source-to-runtime reflection, exact readback and rollback, and [STORAGE_LIFECYCLE](docs/STORAGE_LIFECYCLE.md) for log/cache/backup/cleanup. A README, registry entry or old CI/run is not current Host/container evidence.
 
-Capability本体は所有Project/runtimeへ残す。
+Shared capability discovery belongs to [WORKSPACE_REGISTRY](docs/WORKSPACE_REGISTRY.md). **Project Integration:** TGserver / webhook gateway use [PROJECT_INTEGRATION_RULES](docs/PROJECT_INTEGRATION_RULES.md); Vault follows the [shared Secret contract](docs/WORKSPACE_SHARED_SECRETS.md). Do not read or store Secret values as development context.
 
-対象:
-- Workspace-global MCP;
-- MCP;
-- DebugAI;
-- GitHub tools;
-- reusable KB;
-- Cloudflare / Hugging Face;
-- Vault経由Secret / Token;
-- shared development tools / skills。
-
-## Project Integration Contracts
-
-Projectへ共通基盤を導入する際の標準契約は `docs/PROJECT_INTEGRATION_RULES.md` を正とする。
-
-- TGserver / webhook gateway = Project Integration（Shared Capabilityではない）
-- Libral Vault = Shared Capability + Project利用契約
-- MCP / Tool = Owner / Interface / Permission / Mutation / Verification boundary
-
-## Knowledge Base
-
-再利用開発KBの実データTargetはMaster PC `F:` 1TB。
-
-server-coreにはデータ本体を置かず、Access / Registration / Lifecycle / Safety Contractのみを置く。
-
-Authority: `docs/KB_REUSE_DESIGN.md`。
-
-## Server / Runtime
-
-VPSはRuntime / Processing環境であり、GitHub Source履歴・Design・Documentの代替正本にしない。
-
-本番常駐は原則Docker / Docker Compose。
-
-Deploy Authority: `docs/DEPLOY_RUNBOOK.md`  
-Storage Authority: `docs/STORAGE_LIFECYCLE.md`
-
-Runtime値はRegistryや古い報告から推測せず、必要時に実readbackする。
-
-## Current Source-Verified / Runtime-Pending Boundary
-
-Source/CIで確認されているものとLive Runtimeを分離する。
-
-- server-core command-center routing / documentation contracts: SOURCE / CI verified
-- read-only Storage Audit source: SOURCE / CI verified
-- DebugAI shared control route / Master Internal Persistent Delegation: current live exact `2695a0d3714d25593de16dd0f0a21deba7c29f43`, automatic MCP receipt E2E PASS, canonical499/499 / Host83/83, thirteen tools, Server Command and packaged parity266/266 verified. Prior finite Standing E2E at `cc3462d...` is retained as historical evidence; its policy remains unchanged. Remote ChatGPT direct connector remains NOT_VERIFIED.
-- F: reusable KB bridge/runtime: NOT_IMPLEMENTED
-- generic storage cleanup mutation: NOT_IMPLEMENTED
-- current server storage audit: NOT_VERIFIED
-
-これらのRuntime pendingを理由にMD設計を未完成扱いにはしない。逆にMDが完成していてもRuntime PASSとはしない。
-
-## Standing Delegation
-
-既存DebugAIのbounded Compose反映へ、Host専用Standing Delegation Policy参照をroutingする。
-委任Scope内の通常技術判断はAIが完結し、Hostが既存single-use receiptを安全に発行する。
-詳細は `docs/WORKSPACE_MCP.md` とowner側 `docs/GITOPS_STANDING_DELEGATION.md`。
-委任Scope外のMaster-owned boundaryと直接ChatGPT connectorのavailabilityは別に維持する。
-
-## Approval Boundary
-
-Masterの明示指示なしに次を越えない。
-- main / PR merge
-- Production deploy / 公開 / 切替
-- Force push / Branch削除
-- destructive reset / rebase
-- 既存Service停止 / recreate
-- Secret変更
-- Provider resource作成・変更・削除
-
-未確認・未実行・未検証は `UNKNOWN / NOT_EXECUTED / NOT_VERIFIED` を維持する。
-
-## Master Internal Persistent Delegation
-
-Purpose is fixed: preserve the existing sales/customer full approval path and
-extend only Master's own development to persistent delegation for verified
-GitHub Project #1 repositories. Canonical Workspace registry/mapping:
-`operations/master-internal-repositories.json`; routing:
-`operations/github-project-debugai-routing.json`. This extends the existing
-Workspace registry, not a new control plane. DebugAI owns validation/admission
-implementation: `docs/MASTER_INTERNAL_PERSISTENT_DELEGATION.md` in its repository.
-
-Each entry has verified GitHub repo numeric/node/owner/Project-item identity,
-server project/path, default/allowed branches, operations/scopes, pinned Compose
-runtime/services/private health/digest, effect/path policy, enabled/revoked state
-and audit identity. Initial entry is DebugAI; other registered repos receive no
-automatic grant. Trusted Host admission verifies and reads back an exact private
-copy in the existing delegation trust root. Every execution rechecks GitHub
-owner/admin/principal, Project item, mapping and exact target before a short
-single-use receipt. Repo delegation has no expiry; disable/revoke is immediate.
-
-Design delta: optional Master Internal registry lookup on the existing MCP/Host
-lane. Legacy manual and finite Standing modes remain compatible; no Commercial,
-licensing, Customer authentication, new executor/queue/transport/service or shell
-endpoint. Source/CI and real Runtime qualification remain separate; this source
-checkpoint does not claim live persistent-mode PASS. Protected product/spec/public/
-provider/model/Secret/destructive persistent decisions remain Master-owned.
-
-
-Tool B independent request callers must include `[isolated-host-request]` in the commit message and add one new request file per commit; see [CHAT Host route](docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md). The five Project #1 repositories returned live terminal PASS through existing Actions/Gateway/Host; independent TGserver/DebugAI sessions overlapped 3.938 seconds and returned separate results. Docker logs returned PASS (actual empty body). Same-event ZERO readback returned one P008 event with Telegram raw correlation. [Final runtime evidence](https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6129708234), [ZERO Reader](https://github.com/seigo-gace/TGserver/issues/123). This qualifies the delegated CHAT-path minimum; two fresh native CHAT identities/bootstrap and full historical index coverage were not tested. Preserve runtime-owned TGserver topic mappings during future Source reflection.
-
-
-For a fresh ordinary CHAT, start with [normal-CHAT entry and native two-CHAT test](docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md#通常chatの開始別chat実測手順). It uses the current server-core common Host lane; the older DebugAI-specific route is retained history. Two real new conversations must each supply their own rule/current evidence, request/session/Run/result; a server executor cannot create those conversations and synthetic sessions do not prove native client adoption.
+Master Internal/Standing delegation uses the existing [repository registry](operations/master-internal-repositories.json), [common Host contract](operations/github-project-bounded-host.json) and [MCP contract](docs/WORKSPACE_MCP.md); product validation remains in [DebugAI #41](https://github.com/seigo-gace/debug-ai/issues/41). Scope, owner, exact Source and trusted Host admission/readback must match on each operation. No automatic grant to other repositories or commercial/customer paths. Historical proof stays in [WORKSPACE_MCP](docs/WORKSPACE_MCP.md#master-internal-persistent-delegation-runtime-verified-2026-10-08) and the owning Issue/run history; old SHAs/test counts are not live status.
