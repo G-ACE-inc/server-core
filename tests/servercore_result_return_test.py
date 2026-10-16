@@ -278,6 +278,37 @@ class ReceiverResultTests(unittest.TestCase):
             status, body = self.post(self.serve(), self.request())
         self.assertEqual((status, body["error"]), (503, "RESULT_SINK_UNAVAILABLE"))
 
+    def test_receiver_forwards_typed_writer_digest_not_shell_stdout_claim(self):
+        request = self.request(command_id="host.command",
+                               repository="G-ACE-inc/server-core", repo_sha=SHA,
+                               command="printf safe")
+        safe = {"command_id": "host.command", "source_sha": SHA,
+                "state": "HOST_COMMAND_PASS", "exit_code": 0,
+                "stdout": "", "stderr": "",
+                "stdout_stored_complete": True, "stderr_stored_complete": True,
+                "stdout_sha256": "a" * 64, "stderr_sha256": "b" * 64,
+                "stdout_chars": 720000, "stderr_chars": 400000}
+        reports = []
+        with patch.object(receiver, "dispatch_host_command", return_value=safe), \
+                patch.object(receiver, "report_result",
+                             side_effect=lambda record, p=None: reports.append(record) or True):
+            status, data = self.post(self.serve(), request)
+        self.assertEqual(status, 200)
+        self.assertTrue(data["result_recorded"])
+        self.assertEqual(reports[0]["host_ledger"], {
+            "request_id": RID, "streams": {
+                "stdout": {"sha256": "a" * 64, "chars": 720000},
+                "stderr": {"sha256": "b" * 64, "chars": 400000}}})
+        spoof = {**safe, "stdout_stored_complete": False,
+                 "stderr_stored_complete": False,
+                 "stdout": "GACE_HOST_OUTPUT_STORED request_id=" + RID}
+        reports.clear()
+        with patch.object(receiver, "dispatch_host_command", return_value=spoof), \
+                patch.object(receiver, "report_result",
+                             side_effect=lambda record, p=None: reports.append(record) or True):
+            self.assertEqual(self.post(self.serve(), request)[0], 200)
+        self.assertNotIn("host_ledger", reports[0])
+
     def test_host_command_sink_failure_returns_retryable_503_not_false_success(self):
         request = self.request(command_id="host.command",
                                repository="G-ACE-inc/server-core", repo_sha=SHA,
