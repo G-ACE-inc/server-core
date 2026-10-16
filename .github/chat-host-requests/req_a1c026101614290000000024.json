@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI real Coder inference through shared AI Core Gate using already present Node http core client and inherited process-only credential; no DebugAI changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess\ncode=\"import json,subprocess\\nsrc=\\\"const http=require('http');\\\\nfunction call(path,method,body){\\\\n return new Promise((resolve,reject)=>{\\\\n  const h={Authorization:'Bearer '+process.env.AI_CORE_API_KEY,'Content-Type':'application/json'};\\\\n  const req=http.request({hostname:'127.0.0.1',port:18184,path,method,headers:h},r=>{\\\\n   let data='';\\\\n   r.on('data',chunk=>data+=chunk.toString());\\\\n   r.on('end',()=>{try{resolve({status:r.statusCode,body:JSON.parse(data)})}catch(e){reject(new Error('INVALID_JSON'))}});\\\\n  });\\\\n  req.on('error',reject);\\\\n  req.setTimeout(150000,()=>req.destroy(new Error('TIMEOUT')));\\\\n  req.end(body?JSON.stringify(body):undefined);\\\\n });\\\\n}\\\\n(async()=>{\\\\n const a=await call('/v1/models','GET');\\\\n if(a.status!==200||!a.body.data?.length)throw new Error('MODEL_LIST_NOT_READY');\\\\n const t=Date.now();\\\\n const b=await call('/v1/chat/completions','POST',{model:a.body.data[0].id,messages:[{role:'user',content:'Reply with OK.'}],max_tokens:8,stream:false});\\\\n console.log(JSON.stringify({node:process.version,http:b.status,choices:(b.body.choices||[]).length,has_answer:!!b.body.choices?.[0]?.message?.content,elapsed_s:Math.round((Date.now()-t)/100)/10,error_code:b.body.error?.code||null}));\\\\n})().catch(e=>{console.log(JSON.stringify({error:e.message.slice(0,70)}));process.exit(1)})\\\"\\np=subprocess.run(['docker','exec','--env','AI_CORE_API_KEY','debug-ai-debug-ai-1','node','-e',src],capture_output=True,text=True,timeout=175)\\ndata=json.loads(p.stdout) if p.stdout.strip().startswith('{') else {'error_kind':p.stderr.strip().splitlines()[-1][:110] if p.stderr.strip() else 'NO_OUTPUT'}\\nprint(json.dumps({'exec_code':p.returncode,'debug_ai':data,'token_in_output':False}))\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',code],capture_output=True,text=True,timeout=190)\ndata=json.loads(p.stdout) if p.stdout.strip().startswith('{') else {'error_class':'GATE_EXEC_FAILURE'}\nout={'gate_exec':p.returncode,'result':data,'ephemeral_credential':True}\nbody='AI_CORE_DEBUGAI_NODE_REAL_INFERENCE\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('DEBUGAI_INFERENCE_NODE='+('PASS '+r.stdout.strip() if r.returncode==0 else 'POST_FAILED'))\nraise SystemExit(0 if r.returncode==0 and data.get('debug_ai',{}).get('http')==200 and data.get('debug_ai',{}).get('has_answer') else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209390226"
+  }
+}
