@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Retry controlled real SSE restart via isolated ephemeral client inheriting existing env-file; avoid Host redaction of credential assignment and prove journal recovery",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json,time\nout={}\ndef sh(cmd,t=20):return subprocess.run(cmd,capture_output=True,text=True,timeout=t)\nprobe=\"\"\"import os,json,urllib.request as u\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']}\nwith u.urlopen(u.Request('http://127.0.0.1:18184/internal/resources/status',headers=h),timeout=8) as r:print(json.dumps(json.load(r)))\n\"\"\"\nclient_script=\"\"\"import os,json,urllib.request as u\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY'],'Content-Type':'application/json'}\nb={'model':'/models/qwen2.5-coder-7b-instruct-q4_k_m.gguf','stream':True,'messages':[{'role':'user','content':'Write 200 numbered maintenance tips, each with details.'}],'max_tokens':750}\nq=u.Request('http://127.0.0.1:18184/v1/chat/completions',data=json.dumps(b).encode(),headers=h)\nwith u.urlopen(q,timeout=150) as r:\n while r.read1(8192):pass\n\"\"\"\ntry:\n def state():\n  p=sh(['docker','exec','ai-core-model-gate','python3','-c',probe],18)\n  if p.returncode:raise RuntimeError('STATUS_UNAVAILABLE')\n  return json.loads(p.stdout)\n first=state()\n assert not any(first['active'].values()) and not first['recovery_pending']\n p=sh(['docker','exec','ai-core-model-gate','cat','/run/ai-core/active-leases.json'])\n assert p.returncode==0 and not any(json.loads(p.stdout)['active'].values())\n cli=subprocess.Popen(['docker','run','--rm','--network','host','--memory','128m','--read-only','--env-file','/home/admin1/projects/debug-ai/.env','ai-core-model-gate:local','python3','-c',client_script],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\n owned=False\n for _ in range(180):\n  if cli.poll() is not None:break\n  s=state()\n  if s['active']['coder']==1 and sum(s['active'].values())==1:\n   p=sh(['docker','exec','ai-core-model-gate','cat','/run/ai-core/active-leases.json'])\n   if p.returncode==0 and json.loads(p.stdout)['active']['coder']==1:owned=True;break\n  time.sleep(.2)\n out['test_lease_verified']=owned\n if owned and cli.poll() is None:\n  d=sh(['docker','restart','-t','1','ai-core-model-gate'],40)\n  out['restart_exit']=d.returncode\n  samples=[]\n  if d.returncode==0:\n   for _ in range(55):\n    try:\n     s=state();samples.append(s['recovery_pending'])\n     if len(samples)>1 and not samples[-1]:break\n    except Exception:pass\n    time.sleep(2)\n  out['samples']=len(samples)\n  out['first_pending']=samples[0] if samples else None\n  out['last_pending']=samples[-1] if samples else None\n  out['healthy']=all(sh(['docker','exec','ai-core-model-gate','python3','-c',probe],15).returncode==0 for _ in range(2))\n else:out['skipped']='OWNED_TEST_NOT_ACTIVE'\nexcept Exception as e:out['error']=type(e).__name__+': '+str(e)[:120]\nok=out.get('test_lease_verified') and out.get('restart_exit')==0 and out.get('healthy') and out.get('samples',0)>1 and not out.get('last_pending')\nq=sh(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','-f','body=AI_CORE_RESTART_OWNED_SSE_E2E '+json.dumps(out),'--jq','.html_url'],25)\nprint('E2E_RESULT='+str(bool(ok))+' '+q.stdout.strip())\nraise SystemExit(0 if ok and q.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6217420530"
+  }
+}
