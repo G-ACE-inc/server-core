@@ -3,6 +3,10 @@ import hashlib
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
+from contextlib import contextmanager
+import json
+import io
+from contextlib import redirect_stdout, redirect_stderr
 from scripts import chat_cu_continuation as continuation
 from scripts.chat_cu_continuation import resume, assess_diagnostic_context, discover_common_host_run, verified_output_evidence
 from scripts.servercore_host_output_artifact_assemble import assemble
@@ -18,6 +22,80 @@ BASE = {
 
 
 class ContinuationTests(unittest.TestCase):
+    def private_checkpoint(self):
+        expected = {name: {"bytes": 0, "chars": 0, "sha256": hashlib.sha256(b"").hexdigest()}
+                    for name in ("stdout", "stderr")}
+        return {**BASE, "observation": "HOST_LEDGER_RECOVERY_REQUIRED", "exit_code": 0,
+                "command_id": "host.command", "stream_metadata": expected}
+
+    def test_private_output_is_correlated_after_original_run_readback(self):
+        cp = self.private_checkpoint()
+        calls = []
+        @contextmanager
+        def recover(run_id, request_id, expected):
+            self.assertEqual(calls, ["original-run"])
+            self.assertEqual((run_id, request_id, expected), (456, cp["request_id"], cp["stream_metadata"]))
+            calls.append("private-output")
+            try:
+                yield Path("not-returned-in-receipt"), {
+                    "request_id": request_id, "streams": expected, "output_complete": True,
+                    "repository": "seigo-gace/TGserver", "run_id": 456,
+                    "artifact_id": 789, "source_sha": "d" * 40}
+            finally:
+                calls.append("cleanup")
+        def api(path):
+            calls.append("original-run")
+            self.assertEqual(path, "repos/G-ACE-inc/server-core/actions/runs/123")
+            return {"head_sha": cp["source_sha"], "status": "completed", "conclusion": "success"}
+        with patch.object(continuation, "private_host_output", recover):
+            result = resume(cp, api=api, private_output_run_id=456)
+        self.assertEqual(result["next_action"], "VERIFY_CU_ACCEPTANCE")
+        self.assertEqual(result["private_output_artifact"]["artifact_id"], 789)
+        self.assertEqual(calls, ["original-run", "private-output", "cleanup"])
+        self.assertNotIn("not-returned", json.dumps(result))
+        self.assertFalse(cp["output_complete"])
+
+    def test_private_download_never_precedes_success_and_output_admission(self):
+        cp = self.private_checkpoint()
+        with patch.object(continuation, "private_host_output") as recover:
+            for patch_cp, conclusion, error in (({}, "failure", "HOST_OUTPUT_RUN_NOT_SUCCESS"),
+                    ({"source_truncated": True}, "success", "OUTPUT_VERIFICATION_STATE_INVALID"),
+                    ({"exit_code": 1}, "success", "OUTPUT_VERIFICATION_STATE_INVALID"),
+                    ({"result_verified": False}, "success", "OUTPUT_VERIFICATION_STATE_INVALID")):
+                with self.subTest(patch_cp=patch_cp), self.assertRaisesRegex(ValueError, error):
+                    resume({**cp, **patch_cp}, api=lambda path: {
+                        "head_sha": cp["source_sha"], "status": "completed", "conclusion": conclusion},
+                        private_output_run_id=456)
+            recover.assert_not_called()
+
+    def test_private_source_selection_invalid_before_any_api(self):
+        cp = self.private_checkpoint()
+        for rid in (True, 0, -1, "456"):
+            with self.subTest(rid=rid), self.assertRaisesRegex(ValueError, "PRIVATE_RUN_ID_INVALID"):
+                resume(cp, api=lambda path: self.fail("NO_API"), private_output_run_id=rid)
+        with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_INPUTS_MUTUALLY_EXCLUSIVE"):
+            resume(cp, api=lambda path: self.fail("NO_API"), host_output_zip="local.zip", private_output_run_id=456)
+
+    def test_private_payload_error_is_not_reinterpreted_as_acceptance(self):
+        cp = self.private_checkpoint()
+        with patch.object(continuation, "private_host_output", side_effect=ValueError("ARTIFACT_EXPIRED")):
+            with self.assertRaisesRegex(ValueError, "ARTIFACT_EXPIRED"):
+                resume(cp, api=lambda path: {"head_sha": cp["source_sha"],
+                    "status": "completed", "conclusion": "success"}, private_output_run_id=456)
+
+    def test_cli_forwards_private_run_and_refuses_two_payload_inputs(self):
+        with tempfile.TemporaryDirectory() as d:
+            checkpoint = Path(d, "checkpoint.json")
+            checkpoint.write_text(json.dumps(self.private_checkpoint()))
+            argv = ["continuation", "--checkpoint-json", str(checkpoint), "--private-output-run-id", "456"]
+            with patch("sys.argv", argv), patch.object(continuation, "resume", return_value={
+                    "verified_host_output": None}) as mocked, redirect_stdout(io.StringIO()):
+                continuation.main()
+                self.assertEqual(mocked.call_args.kwargs["private_output_run_id"], 456)
+            with patch("sys.argv", argv + ["--host-output-zip", "local.zip"]), redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    continuation.main()
+
     def test_verified_large_unicode_host_output_enables_next_acceptance_step(self):
         stdout = "日本語Ω🙂\n" * 22000
         stderr = "stderr 日本語\n" * 7500

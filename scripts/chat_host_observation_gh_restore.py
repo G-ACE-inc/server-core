@@ -9,12 +9,22 @@ import json
 import re
 import subprocess
 import tempfile
+import os
+import zipfile
+from contextlib import contextmanager
+from functools import partial
 from pathlib import Path
 
 try:
     from scripts.chat_host_observation_artifact_readback import from_artifact
+    from scripts.servercore_host_output_private_artifact_publish import REPO as PRIVATE_OUTPUT_REPOSITORY
+    from scripts.servercore_host_output_artifact_assemble import (
+        verify_artifact_zip, validate_expected_streams, MAX_VERIFIED_ARCHIVE_BYTES)
 except ModuleNotFoundError:
     from chat_host_observation_artifact_readback import from_artifact
+    from servercore_host_output_private_artifact_publish import REPO as PRIVATE_OUTPUT_REPOSITORY
+    from servercore_host_output_artifact_assemble import (
+        verify_artifact_zip, validate_expected_streams, MAX_VERIFIED_ARCHIVE_BYTES)
 
 REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 REQUEST_ID = re.compile(r"req_[a-f0-9]{24}\Z")
@@ -24,11 +34,24 @@ ARTIFACT_SHA = re.compile(r"[a-f0-9]{40}\Z")
 MAX_OBSERVATION_ZIP_BYTES = 1024 * 1024
 
 
-def _enforce_zip_file_limit():
+def _enforce_zip_file_limit(limit=MAX_OBSERVATION_ZIP_BYTES):
     """Bound child stdout writes on the existing Linux execution path."""
     import resource
     resource.setrlimit(resource.RLIMIT_FSIZE, (
-        MAX_OBSERVATION_ZIP_BYTES, MAX_OBSERVATION_ZIP_BYTES))
+        limit, limit))
+
+
+def _download_artifact(repository, artifact_id, path, limit, run):
+    """Stream authenticated bytes to private temporary storage with a hard cap."""
+    if os.name != "posix":
+        raise RuntimeError("BOUNDED_ARTIFACT_DOWNLOAD_UNSUPPORTED_PLATFORM")
+    with path.open("xb") as output:
+        path.chmod(0o600)
+        run(["gh", "api", f"repos/{repository}/actions/artifacts/{artifact_id}/zip"],
+            stdout=output, stderr=subprocess.PIPE, timeout=90, check=True,
+            preexec_fn=partial(_enforce_zip_file_limit, limit))
+    if path.stat().st_size > limit:
+        raise ValueError("ARTIFACT_ZIP_SIZE_EXCEEDED")
 
 
 
@@ -106,20 +129,84 @@ def restore(repository, run_id, request_id, run=subprocess.run):
     artifact_id = artifact["id"]
     with tempfile.TemporaryDirectory(prefix="gace-observation-") as directory:
         path = Path(directory) / "observation.zip"
-        # Never capture ZIP bytes in process memory. Linux RLIMIT_FSIZE caps
-        # the actual received bytes even if GitHub metadata is inaccurate.
-        import os
-        if os.name != "posix":
-            raise RuntimeError("BOUNDED_ARTIFACT_DOWNLOAD_UNSUPPORTED_PLATFORM")
-        with path.open("wb") as output:
-            run(["gh", "api", f"repos/{repository}/actions/artifacts/{artifact_id}/zip"],
-                stdout=output, stderr=subprocess.PIPE, timeout=90,
-                check=True, preexec_fn=_enforce_zip_file_limit)
-        if path.stat().st_size > MAX_OBSERVATION_ZIP_BYTES:
-            raise ValueError("ARTIFACT_ZIP_SIZE_EXCEEDED")
+        _download_artifact(repository, artifact_id, path, MAX_OBSERVATION_ZIP_BYTES, run)
         observation = from_artifact(path, request_id)
     return {"repository": repository, "run_id": run_id, "artifact_id": artifact_id,
             "source_sha": source_sha, **observation}
+
+
+@contextmanager
+def private_host_output(run_id, request_id, expected_streams, run=subprocess.run):
+    """Yield a verified existing private payload, then remove all plaintext.
+
+    The destination is the existing publisher's fixed private repository. The
+    expected stream digests must come from independent common-Host observation,
+    never from this private ZIP's own manifest. No new Host work is dispatched.
+    """
+    if type(run_id) is not int or run_id <= 0:
+        raise ValueError("PRIVATE_RUN_ID_INVALID")
+    if not isinstance(request_id, str) or not REQUEST_ID.fullmatch(request_id):
+        raise ValueError("REQUEST_ID_INVALID")
+    validate_expected_streams(expected_streams)
+    repository = PRIVATE_OUTPUT_REPOSITORY
+
+    def api(path):
+        response = run(["gh", "api", path], capture_output=True, text=True,
+                       timeout=25, check=True)
+        return json.loads(response.stdout)
+
+    recipient = api(f"repos/{repository}")
+    if (not isinstance(recipient, dict) or recipient.get("private") is not True
+            or recipient.get("full_name", "").lower() != repository.lower()):
+        raise ValueError("PRIVATE_REPOSITORY_NOT_VERIFIED")
+    info = api(f"repos/{repository}/actions/runs/{run_id}")
+    if (not isinstance(info, dict) or info.get("id") != run_id
+            or not isinstance(info.get("repository"), dict)
+            or info["repository"].get("full_name", "").lower() != repository.lower()
+            or not isinstance(info.get("path"), str)
+            or info["path"].split("@", 1)[0] != ".github/workflows/ci.yml"
+            or info.get("event") != "release"
+            or info.get("status") != "completed" or info.get("conclusion") != "success"
+            or not isinstance(info.get("head_sha"), str)
+            or not ARTIFACT_SHA.fullmatch(info["head_sha"])):
+        raise ValueError("PRIVATE_RUN_PROVENANCE_MISMATCH")
+    artifacts = paginated_list(
+        f"repos/{repository}/actions/runs/{run_id}/artifacts?per_page=100", "artifacts", api)
+    matches = [a for a in artifacts if a.get("name") == "gace-host-output-" + request_id]
+    if len(matches) != 1 or matches[0].get("expired") is not False:
+        raise ValueError("ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS")
+    artifact = matches[0]
+    provenance = artifact.get("workflow_run")
+    if (not isinstance(provenance, dict) or provenance.get("id") != run_id
+            or provenance.get("head_sha") != info["head_sha"]):
+        raise ValueError("ARTIFACT_RUN_PROVENANCE_MISMATCH")
+    size = artifact.get("size_in_bytes")
+    if type(size) is not int or not 0 < size <= MAX_VERIFIED_ARCHIVE_BYTES:
+        raise ValueError("ARTIFACT_ZIP_SIZE_INVALID_OR_TOO_LARGE")
+    with tempfile.TemporaryDirectory(prefix="gace-private-readback-") as directory:
+        outer, payload = Path(directory, "artifact.zip"), Path(directory, "output.zip")
+        _download_artifact(repository, artifact["id"], outer, MAX_VERIFIED_ARCHIVE_BYTES, run)
+        with zipfile.ZipFile(outer) as archive:
+            if archive.namelist() != ["output.zip"]:
+                raise ValueError("PRIVATE_ARTIFACT_MEMBERS_INVALID")
+            entry = archive.getinfo("output.zip")
+            if (not 0 < entry.file_size <= MAX_VERIFIED_ARCHIVE_BYTES
+                    or entry.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED)):
+                raise ValueError("PRIVATE_ARTIFACT_PAYLOAD_SIZE_OR_COMPRESSION_INVALID")
+            with archive.open(entry) as source, payload.open("xb") as target:
+                payload.chmod(0o600)
+                count = 0
+                while data := source.read(65536):
+                    count += len(data)
+                    if count > entry.file_size:
+                        raise ValueError("PRIVATE_ARTIFACT_PAYLOAD_SIZE_MISMATCH")
+                    target.write(data)
+            if count != entry.file_size:
+                raise ValueError("PRIVATE_ARTIFACT_PAYLOAD_SIZE_MISMATCH")
+        proof = verify_artifact_zip(payload, request_id, expected_streams)
+        yield payload, {"repository": repository, "run_id": run_id,
+                        "artifact_id": artifact["id"], "source_sha": info["head_sha"],
+                        **proof}
 
 
 def continuation_checkpoint(result, cu_issue_url):

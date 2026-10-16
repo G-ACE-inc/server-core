@@ -12,9 +12,9 @@ import tempfile
 from pathlib import Path
 
 try:
-    from scripts.chat_host_observation_gh_restore import continuation_checkpoint, restore, paginated_list, valid_repository
+    from scripts.chat_host_observation_gh_restore import continuation_checkpoint, restore, paginated_list, valid_repository, private_host_output
 except ModuleNotFoundError:
-    from chat_host_observation_gh_restore import continuation_checkpoint, restore, paginated_list, valid_repository
+    from chat_host_observation_gh_restore import continuation_checkpoint, restore, paginated_list, valid_repository, private_host_output
 
 try:
     from scripts.servercore_host_output_artifact_assemble import verify_artifact_zip
@@ -63,8 +63,7 @@ def discover_common_host_run(repository, head_sha, api=api_read):
             "evidence_url": f"https://github.com/{repository}/actions/runs/{run['id']}",
             "other_run_count": len(runs) - 1}
 
-def verified_output_evidence(checkpoint, archive):
-    """Read every byte before advancing CU; never accept metadata as payload."""
+def _validate_output_state(checkpoint):
     if (not isinstance(checkpoint, dict) or
             checkpoint.get("result_verified") is not True or
             checkpoint.get("observation") not in (
@@ -75,6 +74,11 @@ def verified_output_evidence(checkpoint, archive):
             checkpoint.get("command_id") not in (None, "host.command") or
             checkpoint.get("output_complete") is True):
         raise ValueError("OUTPUT_VERIFICATION_STATE_INVALID")
+
+
+def verified_output_evidence(checkpoint, archive):
+    """Read every byte before advancing CU; never accept metadata as payload."""
+    _validate_output_state(checkpoint)
     path = Path(archive)
     if path.is_symlink() or not path.is_file():
         raise ValueError("HOST_OUTPUT_ZIP_UNAVAILABLE")
@@ -82,7 +86,12 @@ def verified_output_evidence(checkpoint, archive):
         path, checkpoint.get("request_id"), checkpoint.get("stream_metadata"))
 
 
-def resume(checkpoint, api=api_read, host_output_zip=None):
+def resume(checkpoint, api=api_read, host_output_zip=None, private_output_run_id=None):
+    if private_output_run_id is not None:
+        if host_output_zip is not None:
+            raise ValueError("HOST_OUTPUT_INPUTS_MUTUALLY_EXCLUSIVE")
+        if type(private_output_run_id) is not int or private_output_run_id <= 0:
+            raise ValueError("PRIVATE_RUN_ID_INVALID")
     if not isinstance(checkpoint, dict) or checkpoint.get("schema") != "gace.chat.cu.handoff.v1":
         raise ValueError("INVALID_CHECKPOINT_SCHEMA")
     run_id = checkpoint.get("run_id")
@@ -109,10 +118,19 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
     # Never accept caller-supplied booleans as proof. Verify the actual ZIP
     # against correlated stream digests *after* fresh GitHub Run readback.
     proof = None
-    if host_output_zip is not None:
+    private_artifact = None
+    if host_output_zip is not None or private_output_run_id is not None:
         if status != "completed" or conclusion != "success":
             raise ValueError("HOST_OUTPUT_RUN_NOT_SUCCESS")
-        proof = verified_output_evidence(checkpoint, host_output_zip)
+        if private_output_run_id is None:
+            proof = verified_output_evidence(checkpoint, host_output_zip)
+        else:
+            _validate_output_state(checkpoint)
+            with private_host_output(private_output_run_id, request_id,
+                                     checkpoint.get("stream_metadata")) as (_, recovered):
+                proof = {key: recovered[key] for key in ("request_id", "streams", "output_complete")}
+                private_artifact = {key: recovered[key] for key in (
+                    "repository", "run_id", "artifact_id", "source_sha")}
     # Distinguish an actual correlated Host-stage failure from an unrelated
     # Workflow failure. Result artifact is already matched by Run and request,
     # and the exact failing Job step must also corroborate that classification.
@@ -233,6 +251,7 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
         }[observed],
         "evidence_url": url,
         "verified_host_output": proof,
+        "private_output_artifact": private_artifact,
         "host_failure_step": host_failure_step,
         "observed_host_sha": checkpoint.get("host_sha") if sha_mismatch else None,
         "stale_expected_host_sha": checkpoint.get("expected_sha") if sha_mismatch else None,
@@ -298,8 +317,11 @@ def main():
     parser.add_argument("--request-id")
     parser.add_argument("--cu-issue-url")
     parser.add_argument("--receipt-json", type=Path)
-    parser.add_argument("--host-output-zip", type=Path, default=None,
+    output_input = parser.add_mutually_exclusive_group()
+    output_input.add_argument("--host-output-zip", type=Path, default=None,
                         help="Locally downloaded existing verified Host output ZIP")
+    output_input.add_argument("--private-output-run-id", type=int, default=None,
+                        help="Exact existing private TGserver CI run holding the original request output")
     parser.add_argument("--diagnostic-context-json", type=Path)
     parser.add_argument("--notion-context-json", type=Path)
     parser.add_argument("--notion-page-url")
@@ -316,13 +338,14 @@ def main():
             if restored["source_sha"] != discovery["source_sha"]:
                 raise ValueError("DISCOVERY_RESTORE_SHA_MISMATCH")
             checkpoint = continuation_checkpoint(restored, args.cu_issue_url)
-            continuation = resume(checkpoint, host_output_zip=args.host_output_zip)
+            continuation = resume(checkpoint, host_output_zip=args.host_output_zip,
+                                  private_output_run_id=args.private_output_run_id)
             result = {"discovery": discovery, "checkpoint": checkpoint,
                       "continuation": continuation}
             if continuation["verified_host_output"] is not None:
                 result["verified_host_output"] = continuation["verified_host_output"]
         else:
-            if args.host_output_zip:
+            if args.host_output_zip or args.private_output_run_id is not None:
                 parser.error("host output ZIP requires correlated request recovery")
             result = {"discovery": discovery}
         if args.receipt_json and "continuation" in result:
@@ -340,7 +363,8 @@ def main():
             parser.error("supply checkpoint file or all exact identifiers")
         checkpoint = continuation_checkpoint(
             restore(args.repository, args.run_id, args.request_id), args.cu_issue_url)
-    continuation = resume(checkpoint, host_output_zip=args.host_output_zip)
+    continuation = resume(checkpoint, host_output_zip=args.host_output_zip,
+                          private_output_run_id=args.private_output_run_id)
     result = {"checkpoint": checkpoint, "continuation": continuation}
     if continuation["verified_host_output"] is not None:
         result["verified_host_output"] = continuation["verified_host_output"]
