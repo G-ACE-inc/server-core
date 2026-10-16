@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Scoped cross-CHAT diagnosis: prior Codex/Copilot debug old SHA and actual AI Core requests Gateway ACCEPTED but no Result; inspect exact Host Writer/Sink ledgers without output bodies; no repo changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10",
+    "command": "python3 - <<'PY'\nimport json\nfrom pathlib import Path\nids=[\"req_b35e22a9c7a5e231ebd6743b\",\"req_0767619ec0511b46dc8e649b\",\"req_f1fc5d39f176ca981dca0bf9\",\"req_7afe52aa10c9ae42571c9ea5\"]\npaths=[(\"writer\",Path(\"/home/admin1/logs/servercore-service-deploy\")),(\"sink\",Path(\"/home/admin1/logs/servercore-bounded-results\"))]\nfor rid in ids:\n row={\"request_id\":rid}\n for typ,base in paths:\n  p=base/(rid+\".json\")\n  if p.is_symlink(): row[typ]=\"SYMLINK\"; continue\n  if not p.is_file(): row[typ]=\"ABSENT\"; continue\n  try:\n   j=json.loads(p.read_text(encoding=\"utf-8\"))\n   row[typ]={\"state\":j.get(\"state\"),\"exit_code\":j.get(\"exit_code\"),\"command_id\":j.get(\"command_id\"),\"source_sha\":j.get(\"source_sha\"),\"host_sha\":j.get(\"host_sha\"),\"expected_sha\":j.get(\"expected_sha\"),\"repo_sha\":j.get(\"repo_sha\")}\n  except Exception:row[typ]=\"INVALID\"\n print(json.dumps(row,separators=(\",\",\":\")))\nPY\necho 'UNITS='\nsystemctl --user show gace-servercore-result-sink.service gace-servercore-service-deploy.service --property=Id,ActiveState,MainPID --no-pager\necho 'RECEIVER_DOCKER='\ndocker inspect -f '{{.State.Running}}' server-core-bounded-host"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "Current server-core #40, merged PR #287 #294 #295, original source Host SHA 2d9b34 verified Run 38844840991. AICore live failures Runs 38844963000, 38845295650, 38845574530, 38846122327; read-only cross-CU common route diagnosis, no AICore mutation."
+  }
+}
