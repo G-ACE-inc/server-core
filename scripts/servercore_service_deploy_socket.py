@@ -354,7 +354,10 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         if previous is not None:
             return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
         base = {"request_id": request_id, "repository": repository, "source_sha": target_sha,
-                "source_preflight": value.get("source_preflight", False)}
+                "source_preflight": value.get("source_preflight", False),
+                # Hash only the admitted writer-side UTF-8 command; never log its text.
+                "command_sha256": hashlib.sha256(command_text.encode("utf-8")).hexdigest(),
+                "command_bytes": len(command_text.encode("utf-8"))}
         write_result(request_id, {**base, "state": "RUNNING"}, result_dir)
         try:
             run = runner or subprocess.run
