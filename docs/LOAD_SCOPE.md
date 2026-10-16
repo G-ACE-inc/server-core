@@ -34,6 +34,8 @@ For formal Master reports, follow Rule #17's Master-facing communication contrac
 
 対象CUが分かっている場合、全ProjectのIssue本文を列挙しない。既存GitHub connectorでは対象Currentを直接一度読む。ローカルの`gh`を利用できる場合は、既存`python3 scripts/gace_project_current_recovery.py --project-id PVT_kwHODOQFoM4BEJII --issue-url https://github.com/G-ACE-inc/server-core/issues/15 --include-body`で指定Issueだけの本文・更新時刻・ハッシュを同時取得できる（例はControl #15。実作業では所有CUの正確なURLを使う）。Project登録を全ページ照合し、未登録は`SELECTED_ISSUE_NOT_REGISTERED`として拒否する。返された本文を同じ判断のために再取得せず、更新・矛盾・実行時の独立照合が必要な場合だけ読み直す。ツールの存在や登録一致は実行権限を付与しない。通常CHATにこのCLIやHost操作を必須化しない。
 
+復元結果の`project_status`は取得済みの既存Statusを示す。IssueがOPENでもStatusがDoneなら`PROJECT_STATUS_RECHECK_REQUIRED`として、所有Current・Project表示・自動化を確認する。ツールはStatusを自動修正せず、既存4項目の書込契約も拡張しない。Source/CIの合格だけで未完了CU全体をDoneにしない。
+
 ## 2. Command Routing
 
 Use the single [README Task Routing table](../README.md#task-routing) to select common Authority. Combine only the rows needed for this task; do not fetch the whole table's documents.

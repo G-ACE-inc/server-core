@@ -75,6 +75,15 @@ def issue_fields(item):
                 result[name] = value.strip()
     return result
 
+
+def project_status(item):
+    """Native Status is context, not another writable control-contract field."""
+    for node in ((item.get("fieldValues") or {}).get("nodes") or []):
+        if (node.get("field") or {}).get("name") == "Status":
+            value = node.get("name") if "name" in node else node.get("text")
+            return value.strip() if isinstance(value, str) else None
+    return None
+
 def recover(project_id, fetch=gh_graphql, fetch_issue=None, *, issue_urls=None,
             include_body=False):
     if not project_id or not re.fullmatch(r"PVT_[A-Za-z0-9_-]+", project_id):
@@ -110,6 +119,7 @@ def recover(project_id, fetch=gh_graphql, fetch_issue=None, *, issue_urls=None,
                          "repository": match.group(1) + "/" + match.group(2),
                          "issue_number": int(match.group(3)),
                          "state": content.get("state"), "fields": fields,
+                         "project_status": project_status(item),
                          "missing_fields": [f for f in FIELDS if not fields.get(f)]})
         page = items.get("pageInfo") or {}
         if not page.get("hasNextPage"):
@@ -148,6 +158,7 @@ def recover(project_id, fetch=gh_graphql, fetch_issue=None, *, issue_urls=None,
             "current_updated_at": current.get("updated_at") if current else None,
             "current_body_sha256": hashlib.sha256(current["body"].encode()).hexdigest() if current else None,
             "recovery": ("CLOSED_NO_DISPATCH" if state == "CLOSED" else
+                         "PROJECT_STATUS_RECHECK_REQUIRED" if row["project_status"] == "Done" else
                          "OWNER_OR_CU_REQUIRED" if not fields.get("Mutation Owner") or not fields.get("Change Unit") else
                          "READY_FOR_OWNER_CURRENT_RECHECK"),
         })

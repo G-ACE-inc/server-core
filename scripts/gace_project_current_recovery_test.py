@@ -163,5 +163,34 @@ class RecoveryTests(unittest.TestCase):
         self.assertIn("SELECTED_ISSUE_NOT_REGISTERED", err.getvalue())
         self.assertEqual(recover.call_args.kwargs["issue_urls"], [url])
         self.assertTrue(recover.call_args.kwargs["include_body"])
+
+    def test_open_issue_done_project_status_requires_recheck_without_new_fields(self):
+        item = issue("a", "https://github.com/x/y/issues/1",
+                     fields={"Change Unit": "CU", "Mutation Owner": "writer"})
+        item["fieldValues"]["nodes"].append({"field": {"name": "Status"}, "name": "Done"})
+        out = mod.recover(P, lambda q,v: packet([item]),
+                          lambda repo,num: {"html_url": "https://github.com/x/y/issues/1",
+                                            "state": "open", "body": "Still unfinished"})
+        row = out["issue_items"][0]
+        self.assertEqual(row["project_status"], "Done")
+        self.assertEqual(row["recovery"], "PROJECT_STATUS_RECHECK_REQUIRED")
+        self.assertNotIn("Status", row["fields"])
+        self.assertFalse(out["dispatch_authorized"])
+
+    def test_in_progress_status_preserves_readiness_and_fresh_closed_still_wins(self):
+        for state, expected in (("open", "READY_FOR_OWNER_CURRENT_RECHECK"),
+                                ("closed", "CLOSED_NO_DISPATCH")):
+            with self.subTest(state=state):
+                item = issue("a", "https://github.com/x/y/issues/1",
+                             fields={"Change Unit": "CU", "Mutation Owner": "writer", "Status": "In Progress"})
+                calls = []
+                def current(repo, num):
+                    calls.append((repo,num))
+                    return {"html_url": "https://github.com/x/y/issues/1", "state": state, "body": "Current"}
+                out = mod.recover(P, lambda q,v: packet([item]), current,
+                                  issue_urls=["https://github.com/x/y/issues/1"])
+                self.assertEqual(out["issue_items"][0]["recovery"], expected)
+                self.assertEqual(out["issue_items"][0]["project_status"], "In Progress")
+                self.assertEqual(calls, [("x/y",1)])
 if __name__=="__main__":
     unittest.main()
