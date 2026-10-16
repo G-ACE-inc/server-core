@@ -219,6 +219,31 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(result["next_action"], "INSPECT_CORRELATED_HOST_FAILURE_AND_REPLAN")
         self.assertEqual(len(calls), 2)
 
+    def test_real_context_mismatch_rechecks_fresh_run_and_targets_pr_replan(self):
+        checkpoint = {**BASE, "observation": "HOST_SOURCE_CONTEXT_STALE",
+                      "exit_code": 74, "result_verified": True,
+                      "diagnostic_hint": "CHAT_SOURCE_SHA_MISMATCH"}
+        calls = []
+        def api(path):
+            calls.append(path)
+            if "/jobs?" in path:
+                return {"total_count": 1, "jobs": [{"steps": [
+                    {"name": "Bounded Host result return (request id correlated)",
+                     "conclusion": "failure"}]}]}
+            return {"head_sha": BASE["source_sha"], "status": "completed",
+                    "conclusion": "failure"}
+        result = resume(checkpoint, api=api)
+        self.assertEqual(result["observation"], "CORRELATED_SOURCE_CONTEXT_STALE")
+        self.assertEqual(result["next_action"], "REFRESH_TARGET_PR_HEAD_AND_REPLAN_EXISTING_WORKTREE")
+        self.assertEqual(len(calls), 2)
+        # A generic unrelated Actions failure cannot be a source-context root cause.
+        result2 = resume(checkpoint, api=lambda p: (
+            {"total_count": 1, "jobs": [{"steps": [
+                {"name": "Unrelated CI test", "conclusion": "failure"}]}]}
+            if "/jobs?" in p else {"head_sha": BASE["source_sha"], "status": "completed",
+                                     "conclusion": "failure"}))
+        self.assertEqual(result2["observation"], "RUN_FAILED_OR_INCOMPLETE")
+
     def test_correlated_absent_host_receipt_points_at_existing_delivery(self):
         checkpoint = {**BASE, "observation": "HOST_RESULT_NOT_RETURNED",
                       "result_verified": False, "exit_code": None}

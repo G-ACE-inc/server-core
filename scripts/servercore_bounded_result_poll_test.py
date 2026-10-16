@@ -55,6 +55,29 @@ class TerminalOutputTests(unittest.TestCase):
         self.assertEqual(poll.continuation_observation(record, "OK"),
                          ("HOST_OPERATION_RETRYABLE", "TRACE_EXISTING_HOST_DELIVERY_AND_RESULT_SINK"))
 
+    def test_verified_source_context_hint_selects_pr_replan_not_generic_failure(self):
+        rid = "req_" + "a" * 24
+        record = {"request_id": rid, "command_id": "host.command",
+                  "state": "FAIL", "exit_code": 74,
+                  "expected_sha": "a" * 40, "host_sha": "a" * 40,
+                  "diagnostic_hint": "CHAT_SOURCE_SHA_MISMATCH",
+                  "stdout": "", "stderr": "", "stderr_bytes": 27}
+        self.assertEqual(poll.continuation_observation(record, "OK"),
+                         ("HOST_SOURCE_CONTEXT_STALE", "REFRESH_TARGET_PR_HEAD_AND_REPLAN"))
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d, "obs.json")
+            poll.write_observation(target, rid, record, {"html_url": "https://github.com/x/y/issues/10"}, "OK")
+            saved = json.loads(target.read_text())
+            self.assertEqual(saved["diagnostic_hint"], "CHAT_SOURCE_SHA_MISMATCH")
+            self.assertEqual(saved["observation"], "HOST_SOURCE_CONTEXT_STALE")
+            self.assertNotIn("private", target.read_text())
+        # Unverified or malformed hints must never be promoted to causal evidence.
+        record["diagnostic_hint"] = None
+        self.assertEqual(poll.continuation_observation(record, "OK")[0], "HOST_OPERATION_FAILED")
+        record["diagnostic_hint"] = "CHAT_SOURCE_SHA_MISMATCH"
+        self.assertEqual(poll.continuation_observation(record, "CORRELATION_FAILED")[0],
+                         "CORRELATION_FAILED")
+
     def test_clipped_preview_requires_lossless_chunk_readback(self):
         import contextlib
         import io

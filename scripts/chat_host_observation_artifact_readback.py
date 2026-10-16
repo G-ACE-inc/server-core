@@ -17,6 +17,7 @@ OBSERVATIONS = {
     "HOST_RESULT_NOT_RETURNED", "HOST_OUTPUT_PARTIAL", "HOST_OPERATION_PASSED",
     "HOST_SOURCE_SHA_MISMATCH", "HOST_OPERATION_FAILED", "HOST_RESULT_UNVERIFIED",
     "CORRELATION_FAILED", "HOST_LEDGER_RECOVERY_REQUIRED", "HOST_OPERATION_RETRYABLE",
+    "HOST_SOURCE_CONTEXT_STALE", "HOST_SOURCE_CONTEXT_INVALID",
 }
 STREAM_KEYS = {"stdout", "stderr"}
 
@@ -59,6 +60,24 @@ def validate(receipt, expected_request_id):
     exit_code = receipt.get("exit_code")
     if exit_code is not None and (type(exit_code) is not int or not -1 <= exit_code <= 255):
         raise ValueError("HOST_EXIT_CODE_INVALID")
+    # Source-context hints originate only from matching Writer stderr and
+    # exit; an unverified hint or guessed exit must never drive another Tool.
+    hints = {
+        70: "CHAT_SOURCE_WORKDIR_MISSING",
+        71: "CHAT_SOURCE_GIT_UNAVAILABLE",
+        72: "CHAT_SOURCE_ROOT_MISMATCH",
+        73: "CHAT_SOURCE_SHA_UNAVAILABLE",
+        74: "CHAT_SOURCE_SHA_MISMATCH",
+        75: "CHAT_SOURCE_REQUIRED_FILE_MISSING",
+    }
+    hint = receipt.get("diagnostic_hint")
+    if obs in ("HOST_SOURCE_CONTEXT_STALE", "HOST_SOURCE_CONTEXT_INVALID"):
+        if (verified is not True or type(exit_code) is not int
+                or hint != hints.get(exit_code)
+                or (obs == "HOST_SOURCE_CONTEXT_STALE") != (exit_code == 74)):
+            raise ValueError("SOURCE_CONTEXT_HINT_UNVERIFIED")
+    elif hint is not None and hint != hints.get(exit_code):
+        raise ValueError("SOURCE_CONTEXT_HINT_INVALID")
     if obs == "HOST_SOURCE_SHA_MISMATCH":
         if (verified is not True or not host_sha or
                 host_sha == receipt.get("expected_sha") or exit_code == 0):
@@ -110,6 +129,7 @@ def validate(receipt, expected_request_id):
         "expected_sha": receipt.get("expected_sha") if verified else None,
         "host_sha": host_sha if verified else None,
         "exit_code": exit_code if verified else None,
+        "diagnostic_hint": hint if verified and hint in hints.values() else None,
     }
 
 

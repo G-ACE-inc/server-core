@@ -203,6 +203,19 @@ def trusted_writer_metadata(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
         data = value.encode("utf-8")
         meta[name] = {"bytes": len(data), "chars": len(value),
                       "sha256": hashlib.sha256(data).hexdigest()}
+    # Preserve ONLY a recognized source-bound preflight error marker (never
+    # the private stderr). It is a diagnostic hint, not causal proof by itself.
+    source_errors = {
+        70: "CHAT_SOURCE_WORKDIR_MISSING",
+        71: "CHAT_SOURCE_GIT_UNAVAILABLE",
+        72: "CHAT_SOURCE_ROOT_MISMATCH",
+        73: "CHAT_SOURCE_SHA_UNAVAILABLE",
+        74: "CHAT_SOURCE_SHA_MISMATCH",
+        75: "CHAT_SOURCE_REQUIRED_FILE_MISSING",
+    }
+    marker = source_errors.get(raw.get("exit_code"))
+    if raw.get("state") == "FAIL" and marker and str(raw.get("stderr") or "").strip() == marker:
+        meta["diagnostic_hint"] = marker
     return meta
 
 
@@ -212,6 +225,8 @@ def comment_body(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
     # The authorized Host Writer ledger is the source of full Host stream
     # digest/length, not the Receiver's GACE_HOST_OUTPUT_STORED locator.
     writer = trusted_writer_metadata(record, writer_dir=writer_dir)
+    if writer and writer.get("diagnostic_hint"):
+        view["diagnostic_hint"] = writer["diagnostic_hint"]
     # Issue is an index/status surface; never include any Host output text.
     for stream in ("stdout", "stderr"):
         full = str(record.get(stream) or "")

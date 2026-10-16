@@ -119,7 +119,8 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
         status == "completed" and conclusion == "failure"
         and host_observation in {
             "HOST_SOURCE_SHA_MISMATCH", "HOST_OPERATION_FAILED",
-            "HOST_OPERATION_RETRYABLE", "HOST_RESULT_NOT_RETURNED"}
+            "HOST_OPERATION_RETRYABLE", "HOST_RESULT_NOT_RETURNED",
+            "HOST_SOURCE_CONTEXT_STALE", "HOST_SOURCE_CONTEXT_INVALID"}
         and (checkpoint.get("result_verified") is True
              or host_observation == "HOST_RESULT_NOT_RETURNED")
     )
@@ -157,6 +158,17 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
         host_failure_step is not None and host_observation == "HOST_OPERATION_RETRYABLE"
         and checkpoint.get("result_verified") is True
     )
+    correlated_source_context = (
+        host_failure_step is not None
+        and host_observation in ("HOST_SOURCE_CONTEXT_STALE", "HOST_SOURCE_CONTEXT_INVALID")
+        and checkpoint.get("result_verified") is True
+        and checkpoint.get("diagnostic_hint") in {
+            "CHAT_SOURCE_SHA_MISMATCH", "CHAT_SOURCE_ROOT_MISMATCH",
+            "CHAT_SOURCE_WORKDIR_MISSING", "CHAT_SOURCE_GIT_UNAVAILABLE",
+            "CHAT_SOURCE_SHA_UNAVAILABLE", "CHAT_SOURCE_REQUIRED_FILE_MISSING"}
+        and type(checkpoint.get("exit_code")) is int
+        and checkpoint["exit_code"] in range(70, 76)
+    )
     correlated_missing = (
         host_failure_step is not None and host_observation == "HOST_RESULT_NOT_RETURNED"
         and checkpoint.get("result_verified") is False
@@ -165,6 +177,10 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
         observed = "RUN_NOT_FINISHED"
     elif sha_mismatch:
         observed = "CORRELATED_HOST_SHA_MISMATCH"
+    elif correlated_source_context:
+        observed = ("CORRELATED_SOURCE_CONTEXT_STALE"
+                    if host_observation == "HOST_SOURCE_CONTEXT_STALE"
+                    else "CORRELATED_SOURCE_CONTEXT_INVALID")
     elif correlated_failure:
         observed = "CORRELATED_HOST_OPERATION_FAILED"
     elif correlated_retry:
@@ -189,6 +205,8 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
             "RUN_NOT_FINISHED": "POLL_EXISTING_RUN",
             "RUN_FAILED_OR_INCOMPLETE": "READ_RUN_FAILURE_LOGS",
             "CORRELATED_HOST_SHA_MISMATCH": "RECHECK_REGISTERED_TARGET_REPO_SHA_AND_REPLAN_HOST_REQUEST",
+            "CORRELATED_SOURCE_CONTEXT_STALE": "REFRESH_TARGET_PR_HEAD_AND_REPLAN_EXISTING_WORKTREE",
+            "CORRELATED_SOURCE_CONTEXT_INVALID": "CHECK_TARGET_WORKTREE_AND_REQUIRED_FILES",
             "CORRELATED_HOST_OPERATION_FAILED": "INSPECT_CORRELATED_HOST_FAILURE_AND_REPLAN",
             "CORRELATED_HOST_RETRYABLE": "TRACE_EXISTING_DELIVERY_AND_RESULT_SINK",
             "CORRELATED_HOST_RESULT_MISSING": "TRACE_ORIGINAL_REQUEST_AND_RESULT_SINK",

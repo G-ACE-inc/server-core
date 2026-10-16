@@ -54,6 +54,22 @@ class ObservationReadbackTests(unittest.TestCase):
         self.assertFalse(result["output_complete"])
         self.assertNotIn("SENSITIVE_HOST_OUTPUT", json.dumps(result))
 
+    def test_safe_source_sha_diagnostic_survives_artifact_but_forgery_fails(self):
+        record = self.record()
+        record.update({"observation": "HOST_SOURCE_CONTEXT_STALE",
+                       "next_action": "REFRESH_TARGET_PR_HEAD_AND_REPLAN",
+                       "exit_code": 74,
+                       "diagnostic_hint": "CHAT_SOURCE_SHA_MISMATCH"})
+        proof = validate(record, RID)
+        self.assertEqual(proof["diagnostic_hint"], "CHAT_SOURCE_SHA_MISMATCH")
+        self.assertFalse(proof["output_complete"])
+        self.assertNotIn("SENSITIVE_HOST_OUTPUT", json.dumps(proof))
+        for change in ({"exit_code": 75}, {"diagnostic_hint": "FAKE_HINT"},
+                       {"result_verified": False}, {"observation": "HOST_SOURCE_CONTEXT_INVALID"}):
+            with self.subTest(change=change):
+                with self.assertRaises(ValueError):
+                    validate({**record, **change}, RID)
+
     def test_request_mismatch_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "REQUEST_MISMATCH"):
             validate(self.record(), "req_" + "d" * 24)
