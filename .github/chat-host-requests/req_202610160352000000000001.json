@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Fix common cross-repository CHAT result return: reflect PR296 ff-only main on Host with protected registry/stash checks; defer existing sink restart for safe result publication, then Publisher retries previously stalled requests",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10",
+    "command": "set -e\ntest \"$(git rev-parse HEAD)\" = \"2d9b34c358a25ed8e9c0cc1ac7ae34278f0e4d10\"\ntest \"$(git branch --show-current)\" = main\ntest -z \"$(git status --porcelain --untracked-files=no)\"\ntest \"$(git stash list | wc -l)\" -eq 3\nbefore=\"$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1)\"\ngit fetch --no-tags origin main\ngit merge-base --is-ancestor HEAD \"6a85ac70ee4c27b88b3922d9e74cf6b81a833d51\"\ngit merge-base --is-ancestor \"6a85ac70ee4c27b88b3922d9e74cf6b81a833d51\" FETCH_HEAD\ntest -z \"$(git diff --name-only HEAD \"6a85ac70ee4c27b88b3922d9e74cf6b81a833d51\" -- operations/master-internal-repositories.json)\"\ngit merge --ff-only \"6a85ac70ee4c27b88b3922d9e74cf6b81a833d51\" >/tmp/gace-result-sink-cross-repo-sha-reflect.log\ntest \"$(git rev-parse HEAD)\" = \"6a85ac70ee4c27b88b3922d9e74cf6b81a833d51\"\ntest \"$(sha256sum operations/master-internal-repositories.json | cut -d' ' -f1)\" = \"$before\"\ntest \"$(git stash list | wc -l)\" -eq 3\ntest -z \"$(git status --porcelain --untracked-files=no)\"\nsystemctl --user is-active --quiet gace-servercore-result-sink.service\nsystemd-run --user --collect --on-active=35s --unit=gace-crossrepo-sink-source-refresh-20261016 /bin/sh -c 'systemctl --user restart gace-servercore-result-sink.service' >/dev/null\necho GACE_CROSSREPO_RESULT_SINK_SOURCE_REFLECT=PASS\ngit rev-parse --short=12 HEAD\necho GACE_SINK_RESTART_DEFERRED=YES\necho GACE_STASH_COUNT=3"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "PR #296 merged main 6a85ac70ee4c27b88b3922d9e74cf6b81a833d51, six CI passed. Last live Dispatcher 2d9b34 from Run 38846896784, three AICore Writers/Sinks all present mask3f but no Issue #10 comments. Writer.source_sha targets ai-core not Dispatcher, fixed Result Sink source. Only existing service restart."
+  }
+}
