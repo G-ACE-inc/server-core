@@ -35,7 +35,7 @@ class ContinuationTests(unittest.TestCase):
             manifest = assemble([*pages("stdout", stdout), *pages("stderr", stderr)], target)
             cp = {**BASE, "observation": "HOST_OPERATION_PASSED", "exit_code": 0, "stream_metadata": {
                 name: {"sha256": manifest["streams"][name + ".txt"]["sha256"],
-                       "chars": len(data)}
+                       "chars": len(data), "bytes": len(data.encode("utf-8"))}
                 for name, data in (("stdout", stdout), ("stderr", stderr))}}
             api = lambda path: {"head_sha": BASE["source_sha"], "status": "completed",
                                 "conclusion": "success"}
