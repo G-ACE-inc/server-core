@@ -1,5 +1,5 @@
 import unittest
-from scripts.chat_cu_continuation import resume, assess_diagnostic_context
+from scripts.chat_cu_continuation import resume, assess_diagnostic_context, discover_common_host_run
 
 BASE = {
     "schema": "gace.chat.cu.handoff.v1",
@@ -39,6 +39,61 @@ class ContinuationTests(unittest.TestCase):
         result = resume(BASE, api=lambda path: {"head_sha": "b" * 40, "status": "completed", "conclusion": "failure"})
         self.assertEqual(result["next_action"], "READ_RUN_FAILURE_LOGS")
 
+
+
+    def test_five_runs_including_push_prevent_false_missing_run(self):
+        sha = "b" * 40
+        calls = []
+        def api(path):
+            calls.append(path)
+            return {"total_count": 5, "workflow_runs": [
+                {"id": 42, "head_sha": sha, "event": "push",
+                 "path": ".github/workflows/chatgpt-live-api-verify.yml",
+                 "status": "completed", "conclusion": "failure"},
+                *[{"id": i, "head_sha": sha, "event": "push",
+                   "path": ".github/workflows/other.yml"} for i in range(43, 47)]]}
+        result = discover_common_host_run("G-ACE-inc/server-core", sha, api=api)
+        self.assertEqual(result["run_id"], 42)
+        self.assertTrue(result["actions_trigger_verified"])
+        self.assertEqual(result["other_run_count"], 4)
+        self.assertEqual(calls, [f"repos/G-ACE-inc/server-core/actions/runs?head_sha={sha}&per_page=100"])
+
+    def test_empty_complete_run_list_not_claimed_to_be_trigger_failure(self):
+        result = discover_common_host_run("G-ACE-inc/server-core", "b" * 40,
+                 api=lambda path: {"total_count": 0, "workflow_runs": []})
+        self.assertEqual(result["observation"], "NO_MATCHING_COMMON_HOST_RUN_IN_COMPLETE_LIST")
+        self.assertFalse(result["actions_trigger_verified"])
+
+    def test_incomplete_run_page_does_not_invent_absence(self):
+        with self.assertRaisesRegex(ValueError, "RUN_LIST_PAGINATION_REQUIRED"):
+            discover_common_host_run("G-ACE-inc/server-core", "b" * 40,
+                api=lambda path: {"total_count": 101, "workflow_runs": []})
+
+    def test_verified_host_mismatch_triggers_second_tool_read_and_replan(self):
+        checkpoint = {**BASE, "observation": "HOST_SOURCE_SHA_MISMATCH",
+            "expected_sha": "a" * 40, "host_sha": "c" * 40,
+            "exit_code": 1, "result_verified": True}
+        calls = []
+        def api(path):
+            calls.append(path)
+            if path.endswith("/jobs?per_page=100"):
+                return {"jobs": [{"steps": [
+                    {"name": "Bounded Host result return (request id correlated)", "conclusion": "failure"}]}]}
+            return {"head_sha": "b" * 40, "status": "completed", "conclusion": "failure"}
+        result = resume(checkpoint, api=api)
+        self.assertEqual(result["observation"], "CORRELATED_HOST_SHA_MISMATCH")
+        self.assertEqual(result["next_action"], "RECHECK_REGISTERED_TARGET_REPO_SHA_AND_REPLAN_HOST_REQUEST")
+        self.assertEqual(result["observed_host_sha"], "c" * 40)
+        self.assertEqual(len(calls), 2)
+        self.assertIn("jobs?per_page=100", calls[1])
+
+    def test_unverified_host_mismatch_cannot_override_actions_failure(self):
+        checkpoint = {**BASE, "observation": "HOST_SOURCE_SHA_MISMATCH",
+            "expected_sha": "a" * 40, "host_sha": "c" * 40,
+            "exit_code": 1, "result_verified": False}
+        result = resume(checkpoint, api=lambda path: {
+            "head_sha": "b" * 40, "status": "completed", "conclusion": "failure"})
+        self.assertEqual(result["next_action"], "READ_RUN_FAILURE_LOGS")
 
 class DiagnosticReasoningTests(unittest.TestCase):
     def test_repeated_hypothesis_is_not_proven_cause(self):

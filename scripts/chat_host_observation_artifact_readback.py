@@ -51,6 +51,18 @@ def validate(receipt, expected_request_id):
                 raise ValueError("STREAM_DIGEST_INVALID")
         if obs == "HOST_OUTPUT_PARTIAL" and all(info["complete"] for info in stream_data.values()):
             raise ValueError("PARTIAL_FLAG_MISMATCH")
+    # Preserve authenticated, correlated diagnostic primitives for the next
+    # CHAT turn. Never carry raw stdout/stderr or arbitrary command text.
+    host_sha = receipt.get("host_sha")
+    if host_sha is not None and (not isinstance(host_sha, str) or not SHA.fullmatch(host_sha)):
+        raise ValueError("HOST_SHA_INVALID")
+    exit_code = receipt.get("exit_code")
+    if exit_code is not None and (type(exit_code) is not int or not 0 <= exit_code <= 255):
+        raise ValueError("HOST_EXIT_CODE_INVALID")
+    if obs == "HOST_SOURCE_SHA_MISMATCH":
+        if (verified is not True or not host_sha or
+                host_sha == receipt.get("expected_sha") or exit_code == 0):
+            raise ValueError("HOST_SHA_MISMATCH_EVIDENCE_INVALID")
     # Issue #10 metadata-only results contain Host ledger locators rather than
     # stdout/stderr bytes. The poller's 'complete' flag alone MUST NOT prove that
     # the CHAT received full output. Require verified digest + byte/char evidence.
@@ -78,6 +90,9 @@ def validate(receipt, expected_request_id):
         "result_url": receipt.get("result_url") if isinstance(receipt.get("result_url"), str) else None,
         "output_complete": False,  # This artifact contains metadata, never the Host payload.
         "stream_metadata_complete": stream_metadata_complete,
+        "expected_sha": receipt.get("expected_sha") if verified else None,
+        "host_sha": host_sha if verified else None,
+        "exit_code": exit_code if verified else None,
     }
 
 

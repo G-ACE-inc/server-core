@@ -30,6 +30,20 @@ class ObservationReadbackTests(unittest.TestCase):
         self.assertNotIn("SENSITIVE_HOST_OUTPUT", json.dumps(result))
         self.assertEqual(result["observation"], "HOST_OUTPUT_PARTIAL")
 
+    def test_sha_mismatch_carries_only_correlated_recovery_evidence(self):
+        record = self.record()
+        record.update({"observation": "HOST_SOURCE_SHA_MISMATCH",
+                       "next_action": "READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION",
+                       "host_sha": "d" * 40, "exit_code": 1})
+        result = validate(record, RID)
+        self.assertEqual(result["expected_sha"], SHA)
+        self.assertEqual(result["host_sha"], "d" * 40)
+        self.assertEqual(result["exit_code"], 1)
+        self.assertNotIn("stdout", result)
+        record["host_sha"] = SHA
+        with self.assertRaisesRegex(ValueError, "HOST_SHA_MISMATCH_EVIDENCE_INVALID"):
+            validate(record, RID)
+
     def test_request_mismatch_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "REQUEST_MISMATCH"):
             validate(self.record(), "req_" + "d" * 24)
@@ -71,6 +85,7 @@ class ObservationReadbackTests(unittest.TestCase):
     def test_full_hashes_can_validate_stream_metadata(self):
         record = self.record()
         record["streams"]["stdout"] = {"complete": True, "sha256": DIGEST, "chars": 100}
+        record["observation"] = "HOST_OPERATION_PASSED"
         result = validate(record, RID)
         self.assertFalse(result["output_complete"])
         self.assertTrue(result["stream_metadata_complete"])
