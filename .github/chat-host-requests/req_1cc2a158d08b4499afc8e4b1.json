@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Inspect actual role-stage evidence and bounded DebugAI error logs for ongoing real six-role replay at Causal Scout; preserve run and existing model leases",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,subprocess,urllib.request\nid='run_mvaxg8be_1099f77b3b'\nwith urllib.request.urlopen('http://127.0.0.1:8787/v1/inspect/'+id,timeout=8) as r:o=json.load(r)\nd=o.get('durable') or {};c=d.get('workflow_cursor') or {}\nart=o.get('artifacts') or {}\nview={'run':id,'job_status':d.get('job_status'),'generation':d.get('generation'),'workflow':c,'artifact_types':list(art),'artifacts':{k:{'type':v.get('type'),'keys':list((v.get('payload') or {}).keys()),'status':(v.get('payload') or {}).get('status'),'phase':(v.get('payload') or {}).get('phase'),'code':(v.get('payload') or {}).get('code')} for k,v in art.items()}}\nproc=subprocess.run(['docker','logs','--tail','100','debug-ai-debug-ai-1'],capture_output=True,text=True,timeout=12)\nlines=(proc.stderr+'\\n'+proc.stdout).splitlines()\nfilters=['AI_CORE_','DebugAI startup','model Gate','timeout','execution_failure','role-wall','role=','DebugAI HTTP error','Unhandled','FATAL']\nselected=[x[:230] for x in lines if any(w.lower() in x.lower() for w in filters)]\nview['log_summary']={'lines_examined':len(lines),'selected_nonsecret':selected[-18:]}\nbody='DEBUGAI_REAL_E2E_CAUSAL_PROGRESS_DIAGNOSTIC\\n'+json.dumps(view,ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/seigo-gace/debug-ai/issues/41/comments','-f','body='+body],capture_output=True,text=True,timeout=25)\nif p.returncode:raise SystemExit('GH_DIAGNOSTIC_POST_FAILED')\nprint('E2E_CAUSAL_COMMENT='+json.loads(p.stdout)['html_url'])\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
