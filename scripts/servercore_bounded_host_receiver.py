@@ -576,8 +576,12 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
                 recorded = report_result(result_record(
                     request["id"], request["command_id"], request["expected_sha"], state, exit_code,
                     result.get("source_sha"), out, err, started))
-                # read-only commands and dev.job (the provisioner replays its stored result) are retry-safe
-                if not recorded and (read_only or request["command_id"] == "dev.job"):
+                # A failed Sink handoff is NEVER a successful Host result delivery.
+                # For host.command the Host writer persists the exact request ID
+                # before execution and de-duplicates re-delivery, so signalling
+                # 503 lets Gateway retry the SAME request without re-executing.
+                # Do not turn an unrecorded PASS into a silent 200 acknowledgement.
+                if not recorded and (read_only or request["command_id"] in {"dev.job", "host.command"}):
                     fail("RESULT_SINK_UNAVAILABLE", 503)
                 self.send_json(
                     200,

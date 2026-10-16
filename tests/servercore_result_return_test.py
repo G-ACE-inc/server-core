@@ -185,7 +185,7 @@ class SinkTests(unittest.TestCase):
 class ReceiverResultTests(unittest.TestCase):
     def serve(self, now=1700000000, secret=b"k", root="/nonexistent"):
         contract = {"request_schema": "gace.servercore-bounded-host.request/v1",
-                    "allowed_command_ids": ["project.git_head", "project.git_status", "service.deploy"],
+                    "allowed_command_ids": ["project.git_head", "project.git_status", "service.deploy", "host.command"],
                     "canonical_host_root": root}
         handler = receiver.make_handler(contract, delivery_key=secret, now_fn=lambda: now)
         server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
@@ -243,6 +243,27 @@ class ReceiverResultTests(unittest.TestCase):
                 patch.object(receiver, "report_result", return_value=False):
             status, body = self.post(self.serve(), self.request())
         self.assertEqual((status, body["error"]), (503, "RESULT_SINK_UNAVAILABLE"))
+
+    def test_host_command_sink_failure_returns_retryable_503_not_false_success(self):
+        request = self.request(command_id="host.command",
+                               repository="G-ACE-inc/server-core", repo_sha=SHA,
+                               command="printf safe")
+        # The Host writer already completed this durable request, but the
+        # result sink did not record it: Gateway must not be told 200.
+        writer = {"command_id": "host.command", "source_sha": SHA,
+                  "state": "HOST_COMMAND_PASS", "exit_code": 0, "stdout": "safe",
+                  "stderr": ""}
+        reports = []
+        with patch.object(receiver, "dispatch_host_command", return_value=writer), \
+                patch.object(receiver, "report_result",
+                             side_effect=lambda record, p=None: reports.append(record) or False):
+            status, body = self.post(self.serve(), request)
+        self.assertEqual(status, 503)
+        self.assertEqual(body["error"], "RESULT_SINK_UNAVAILABLE")
+        self.assertEqual(len(reports), 1)
+        self.assertEqual(reports[0]["request_id"], RID)
+        self.assertEqual(reports[0]["state"], "PASS")
+        self.assertNotIn("result_recorded", body)
 
     def test_boundary_failure_reports_fail_exit_one(self):
         reports = []
