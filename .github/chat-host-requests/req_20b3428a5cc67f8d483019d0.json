@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read result of already started one Astera v8 existing OpenAICompatAdapter actual Gate inference, waiting at most 50 seconds. Do not launch another inference; post only sanitized pass/elapsed/token metadata to AI Core Current and clean transient files upon completion.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 53838af6ea54357daf328157cb603b54fc4e0eac\nfor i in 1 2 3 4 5 6 7 8 9 10; do\n  rc=0\n  out=$(bash \"$w/scripts/host_astera_second_consumer_acceptance.sh\" 53838af6ea54357daf328157cb603b54fc4e0eac result) || rc=$?\n  case \"$out\" in SECOND_CONSUMER_INFERENCE_STATE=*) sleep 5;; *) printf '%s\\n' \"$out\"; exit \"$rc\";; esac\ndone\necho SECOND_CONSUMER_INFERENCE_STILL_RUNNING=YES"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 exact 53838af6, one async actual Astera adapter real inference launched Host Issue#10 6225168481 PASS duration2231ms; shared Gate lease preflight and ephemeral FIFO, no new inference allowed. Read same test result only; Host current validated SHA ee6002 from last Host readback."
+  }
+}
