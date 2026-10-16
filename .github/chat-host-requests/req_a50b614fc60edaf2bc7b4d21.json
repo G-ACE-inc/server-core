@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core direct backend gate-only isolation design: read-only Host kernel packet filter + Gate UID/socket group capability inventory; do not change firewall or services",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json\nout={}\ndef run(cmd):\n try:\n  p=subprocess.run(cmd,capture_output=True,text=True,timeout=10)\n  return {'rc':p.returncode,'out':(p.stdout+p.stderr).strip()[:200]}\n except Exception as e:return {'error':type(e).__name__}\nfor name,cmd in {\n 'iptables':['sh','-c','command -v iptables && iptables --version'],\n 'nft':['sh','-c','command -v nft && nft --version'],\n 'owner_match':['sh','-c','iptables -m owner -h 2>&1 | tail -n 6'],\n 'cgroup_match':['sh','-c','iptables -m cgroup -h 2>&1 | tail -n 8'],\n 'gate_uid':['docker','inspect','-f','{{.Config.User}}|{{.HostConfig.NetworkMode}}','ai-core-model-gate'],\n 'gate_process_uid':['docker','exec','ai-core-model-gate','id','-u'],\n 'gate_process_groups':['docker','exec','ai-core-model-gate','id','-G'],\n 'sock_group':['stat','-c','%u:%g %a','/var/run/docker.sock']\n}.items():out[name]=run(cmd)\nq=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_BACKEND_EXCLUSIVITY_READONLY\\n'+json.dumps(out,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=20)\nprint('EVIDENCE='+q.stdout.strip())\nraise SystemExit(0 if q.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6219135847"
+  }
+}
