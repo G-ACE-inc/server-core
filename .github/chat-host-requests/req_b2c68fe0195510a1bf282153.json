@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only classify rollout failure by error classes and verify physical live image vs staged image and rollback tag. No model operations, no leaked stderr.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nfrom pathlib import Path\ns=str(json.loads(Path('/home/admin1/logs/servercore-service-deploy/req_2106a13d5d58c804441c3c78.json').read_text()).get('stderr','')).lower()\nflags={'SHELL_SYNTAX':any(x in s for x in ('syntax error','unexpected token','unexpected eof')),'COMPOSE_CONFIG':any(x in s for x in ('compose','config','env file','required variable')),'DOCKER_COMMAND':any(x in s for x in ('docker','container','image','daemon')),'SHA_OR_WORKTREE':any(x in s for x in ('source','head','checkout'))}\ndef run(*args):\n p=subprocess.run(args,capture_output=True,text=True,timeout=10)\n return p.stdout.strip() if p.returncode==0 else 'UNKNOWN'\nlive=run('docker','inspect','-f','{{.Image}}','ai-core-model-gate')\nstage=run('docker','image','inspect','-f','{{.Id}}','ai-core-model-gate:uds-stale-guard-cd5255')\nold=run('docker','image','inspect','-f','{{.Id}}','ai-core-model-gate:rollback-before-stale-cd5255')\nbody='AI_CORE_UDS_GATE_ROLLOUT_FAIL_DIAG '+json.dumps({'stderr_chars':len(s),'flags':flags,'live_is_stage':live==stage,'backup_exists':old!='UNKNOWN'},sort_keys=True)\nr=subprocess.run(['gh','api','-X','POST','repos/seigo-gace/ai-core/issues/1/comments','-f','body='+body,'--jq','.html_url'],capture_output=True,text=True,timeout=12)\nprint('ROLLBACK_DIAG_RECORD='+('PASS' if r.returncode==0 else 'FAIL'))\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Issue10 6223521700 shows Host command exit2 after1.1s; protect live Gate and inspect whether stage image got adopted, using Writer ledger fixed classifiers, no body/secret leak."
+  }
+}
