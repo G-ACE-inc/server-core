@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Check Granite actual answer output with explicit per-request thinking opt-out and 24 token budget via AI Core Gate",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess,time\nfrom pathlib import Path\nprobe=\"\"\"import os,json,urllib.request,urllib.error,time\nv=os.environ.get('AI_CORE_API_KEY','')\nport=18181\nout={'model_alias':'granite_explicit_no_think','credential_available':len(v)>=16}\ntry:\n r=urllib.request.Request('http://127.0.0.1:'+str(port)+'/v1/models',headers={'Authorization':'Bearer '+v})\n with urllib.request.urlopen(r,timeout=10) as f: ident=json.load(f)['data'][0]['id']\n body=json.dumps({'model':ident,'messages':[{'role':'user','content':'/no_think Reply exactly OK.'}],'max_tokens':24,'temperature':0,'chat_template_kwargs':{'enable_thinking':False},'stream':False}).encode()\n r=urllib.request.Request('http://127.0.0.1:'+str(port)+'/v1/chat/completions',data=body,headers={'Authorization':'Bearer '+v,'Content-Type':'application/json'},method='POST')\n now=time.monotonic()\n try:\n  with urllib.request.urlopen(r,timeout=215) as f:\n   d=json.load(f);out['status']=f.status\n   q=d.get('choices') or [{}]\n   out['choices']=len(d.get('choices',[]))\n   out['finish_reason']=q[0].get('finish_reason')\n   out['has_content']=bool((q[0].get('message') or {}).get('content'))\n   out['has_reasoning']=bool((q[0].get('message') or {}).get('reasoning_content'))\n except urllib.error.HTTPError as e:\n  out['status']=e.code\n  try:out['error_code']=json.loads(e.read().decode()).get('error',{}).get('code')\n  except Exception:out['error_code']='UNPARSEABLE'\n except Exception as e:out['error_class']=type(e).__name__\n out['inference_seconds']=round(time.monotonic()-now,2)\nexcept Exception as e:out['setup_failure']=type(e).__name__\nprint(json.dumps(out))\n\"\"\"\nroot=Path('/sys/fs/cgroup/ai.slice/ai-core.slice')\ndef memory():return int((root/'memory.current').read_text())\ndef residents():\n p=subprocess.run(['docker','ps','--format','{{.Names}}','--filter','name=^ai-'],capture_output=True,text=True,timeout=12)\n return sorted(p.stdout.splitlines())\nout={'before':{'memory_bytes':memory(),'residents':residents()}}\ntry:\n p=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',probe],capture_output=True,text=True,timeout=235)\n out['result']=json.loads(p.stdout) if p.stdout.strip().startswith('{') else {'stderr_type':p.stderr[:120]}\n out['exit_code']=p.returncode\nexcept Exception as e:out['driver_error']=type(e).__name__\nout['after']={'memory_bytes':memory(),'residents':residents()}\nbody='AI_CORE_REAL_GRANITE_NO_THINK\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('AI_CORE_GRANITE_NO_THINK_RESULT='+('PASS '+r.stdout.strip() if r.returncode==0 else 'POST_FAILED'))\nraise SystemExit(0 if r.returncode==0 and out.get('result',{}).get('status')==200 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209559899"
+  }
+}
