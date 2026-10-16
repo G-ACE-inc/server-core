@@ -12,55 +12,89 @@ import tempfile
 from pathlib import Path
 
 try:
-    from scripts.chat_host_observation_artifact_readback import validate
+    from scripts.chat_host_observation_artifact_readback import from_artifact
 except ModuleNotFoundError:
-    from chat_host_observation_artifact_readback import validate
+    from chat_host_observation_artifact_readback import from_artifact
 
 REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 REQUEST_ID = re.compile(r"req_[a-f0-9]{24}\Z")
 ARTIFACT_SHA = re.compile(r"[a-f0-9]{40}\Z")
 
 
+def paginated_list(path, key, api):
+    """Read a complete, stable GitHub collection before selecting evidence."""
+    items, ids, total, page = [], set(), None, 1
+    while True:
+        response = api(path if page == 1 else f"{path}&page={page}")
+        if (not isinstance(response, dict)
+                or type(response.get("total_count")) is not int
+                or response["total_count"] < 0
+                or not isinstance(response.get(key), list)):
+            raise ValueError("GITHUB_LIST_INVALID")
+        if total is None:
+            total = response["total_count"]
+        elif total != response["total_count"]:
+            raise ValueError("GITHUB_LIST_CHANGED_DURING_READBACK")
+        batch = response[key]
+        if not batch and len(items) < total:
+            raise ValueError("GITHUB_LIST_INCOMPLETE")
+        for item in batch:
+            if (not isinstance(item, dict) or type(item.get("id")) is not int
+                    or item["id"] <= 0 or item["id"] in ids):
+                raise ValueError("GITHUB_LIST_ID_INVALID_OR_DUPLICATE")
+            ids.add(item["id"])
+            items.append(item)
+        if len(items) > total:
+            raise ValueError("GITHUB_LIST_COUNT_MISMATCH")
+        if len(items) == total:
+            return items
+        page += 1
+
+
+def valid_repository(repository):
+    return (isinstance(repository, str) and REPOSITORY.fullmatch(repository)
+            and all(part not in {".", ".."} for part in repository.split("/")))
+
+
 def restore(repository, run_id, request_id, run=subprocess.run):
-    if (not isinstance(repository, str) or not REPOSITORY.fullmatch(repository)
-            or any(part in {".", ".."} for part in repository.split("/"))
+    if (not valid_repository(repository)
             or type(run_id) is not int or run_id <= 0):
         raise ValueError("RUN_ID_OR_REPOSITORY_INVALID")
-    if not REQUEST_ID.fullmatch(request_id):
+    if not isinstance(request_id, str) or not REQUEST_ID.fullmatch(request_id):
         raise ValueError("REQUEST_ID_INVALID")
-    # GitHub artifact naming contract from existing workflow: name includes source SHA.
-    metadata = run(
-        ["gh", "api", f"repos/{repository}/actions/runs/{run_id}"],
-        capture_output=True, text=True, timeout=25, check=True,
-    )
-    info = json.loads(metadata.stdout)
+    def api(path):
+        response = run(["gh", "api", path], capture_output=True, text=True,
+                       timeout=25, check=True)
+        return json.loads(response.stdout)
+
+    info = api(f"repos/{repository}/actions/runs/{run_id}")
+    if (not isinstance(info, dict) or info.get("id") != run_id
+            or not isinstance(info.get("repository"), dict)
+            or info["repository"].get("full_name", "").lower() != repository.lower()
+            or info.get("path") != ".github/workflows/chatgpt-live-api-verify.yml"):
+        raise ValueError("RUN_PROVENANCE_MISMATCH")
     source_sha = info.get("head_sha")
     if not isinstance(source_sha, str) or not ARTIFACT_SHA.fullmatch(source_sha):
         raise ValueError("RUN_SHA_UNVERIFIED")
     artifact_name = "chat-host-observation-" + source_sha
-    listing = run(
-        ["gh", "api", f"repos/{repository}/actions/runs/{run_id}/artifacts?per_page=100"],
-        capture_output=True, text=True, timeout=25, check=True,
-    )
-    artifacts = json.loads(listing.stdout).get("artifacts")
-    if not isinstance(artifacts, list):
-        raise ValueError("ARTIFACT_LIST_INVALID")
-    matching = [a for a in artifacts if a.get("name") == artifact_name and not a.get("expired")]
-    if len(matching) != 1:
+    artifacts = paginated_list(
+        f"repos/{repository}/actions/runs/{run_id}/artifacts?per_page=100", "artifacts", api)
+    matching = [a for a in artifacts if a.get("name") == artifact_name]
+    if len(matching) != 1 or matching[0].get("expired") is not False:
         raise ValueError("ARTIFACT_UNAVAILABLE_OR_AMBIGUOUS")
-    artifact_id = matching[0].get("id")
-    if type(artifact_id) is not int:
-        raise ValueError("ARTIFACT_ID_INVALID")
+    artifact = matching[0]
+    provenance = artifact.get("workflow_run")
+    if (not isinstance(provenance, dict) or provenance.get("id") != run_id
+            or provenance.get("head_sha") != source_sha):
+        raise ValueError("ARTIFACT_RUN_PROVENANCE_MISMATCH")
+    artifact_id = artifact["id"]
     with tempfile.TemporaryDirectory(prefix="gace-observation-") as directory:
-        run(
-            ["gh", "run", "download", str(run_id), "-R", repository,
-             "-n", artifact_name, "-D", directory],
-            capture_output=True, text=True, timeout=90, check=True,
-        )
-        path = Path(directory) / "gace-chat-host-observation.json"
-        if path.is_symlink() or not path.is_file() or path.stat().st_size > 32768:
-            raise ValueError("OBSERVATION_FILE_INVALID")
-        observation = validate(json.loads(path.read_text(encoding="utf-8")), request_id)
+        # Download the exact validated ID, rather than selecting again by name.
+        archive = run(["gh", "api", f"repos/{repository}/actions/artifacts/{artifact_id}/zip"],
+                      capture_output=True, timeout=90, check=True)
+        path = Path(directory) / "observation.zip"
+        path.write_bytes(archive.stdout)
+        observation = from_artifact(path, request_id)
     return {"repository": repository, "run_id": run_id, "artifact_id": artifact_id,
             "source_sha": source_sha, **observation}
 
