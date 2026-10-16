@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPT CHAT #40 restore existing stale Host Writer/Sink unit runtime after verified main reflect; deferred restart avoids self-killing Host command before result publication",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "e657645085b725271095bcf2521d2f13ba45009e",
+    "command": "set -e\ntest \"$(git rev-parse HEAD)\" = \"e657645085b725271095bcf2521d2f13ba45009e\"\ntest \"$(git stash list | wc -l)\" -eq 3\nsystemctl --user is-active --quiet gace-servercore-service-deploy.service\nsystemctl --user is-active --quiet gace-servercore-result-sink.service\nsystemd-run --user --collect --on-active=25s --unit=gace-chat-core-refresh-20261016 /bin/sh -c 'systemctl --user restart gace-servercore-result-sink.service && systemctl --user restart gace-servercore-service-deploy.service' >/dev/null\necho EXISTING_SINK_WRITER_REFRESH_SCHEDULED\necho SOURCE_HEAD_VERIFIED\ngit rev-parse --short=12 HEAD"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Host checkout main reflected e657645 PASS Run 38840765549, protected registry/stash3 preserved; Writer/Sink user service timestamps predating Writer Source mtime Run 38840319206; only restart existing two units through separate transient systemd execution after 25s."
+  }
+}
