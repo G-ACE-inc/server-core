@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core current PR3 live verify physical parent cgroup PSI and source exact fingerprint on all 4 local Gates; check retired Router remains stopped; readonly.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport json,subprocess,urllib.request\nprogram=\"\"\"import os,json,urllib.request,hashlib\nfrom pathlib import Path\nr=urllib.request.Request('http://127.0.0.1:18184/internal/resources/status',headers={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']})\nwith urllib.request.urlopen(r,timeout=10) as h:d=json.load(h)\nprint(json.dumps({'hash':hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest(),'cpu_psi':d['pressure']['cpu'],'memory_psi':d['pressure']['memory'],'cpu_max':d['cpu_max'],'memory_max':d['memory']['memory.max'],'memory_high':d['memory']['memory.high'],'queued':d['queued'],'active':d['active']}))\n\"\"\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',program],capture_output=True,text=True,timeout=24)\ns={'runtime_exit':p.returncode,'data':json.loads(p.stdout) if p.returncode==0 else {'stderr':p.stderr[-250:]}}\ns['health']={}\nfor port in (18181,18182,18183,18184):\n try:\n  with urllib.request.urlopen('http://127.0.0.1:'+str(port)+'/health',timeout=3) as r:s['health'][str(port)]=r.status\n except Exception as e:s['health'][str(port)]=type(e).__name__\nr=subprocess.run(['docker','inspect','-f','{{.State.Running}}','ai-llama-router'],capture_output=True,text=True,timeout=12)\ns['old_router_running']=r.stdout.strip() if r.returncode==0 else 'NOT_FOUND'\nq=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_PR3_PSI_AND_ROUTER_READBACK\\n'+json.dumps(s,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=25)\nprint('AI_CORE_PSI_READBACK='+('RECORDED '+q.stdout.strip() if q.returncode==0 else 'RECORD_FAILED'))\nok=p.returncode==0 and s['data']['hash']=='2e0a12055a3675a8e6e08ac811f997e07168c4edf366d364c5411f4d78437f18' and all(v==200 for v in s['health'].values()) and s['old_router_running']!='true'\nraise SystemExit(0 if ok and q.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6216802679"
+  }
+}
