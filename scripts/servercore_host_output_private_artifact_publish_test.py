@@ -32,7 +32,9 @@ class MockRelease:
     def __init__(self):self.calls=[]
     def __call__(self,args,**_):
         self.calls.append(args)
-        class Result:returncode=0
+        class Result:
+            returncode=0
+            stdout="true"
         return Result()
 
 def setup(directory):
@@ -69,9 +71,10 @@ class FullBridgeTests(unittest.TestCase):
             self.assertEqual(v["state"],"PRIVATE_RELEASE_PUBLISHED_AWAIT_ARTIFACT")
             self.assertEqual(v["streams"]["stdout"]["bytes"],len(out.encode()))
             self.assertEqual(v["streams"]["stderr"]["chars"],len(err))
-            self.assertEqual(len(gh.calls),2)
-            self.assertEqual(gh.calls[0][:3],["gh","release","create"])
-            self.assertIn("seigo-gace/TGserver",gh.calls[0])
+            self.assertEqual(len(gh.calls),3)
+            self.assertEqual(gh.calls[0][:3],["gh","api","repos/seigo-gace/TGserver"])
+            self.assertEqual(gh.calls[1][:3],["gh","release","create"])
+            self.assertIn("seigo-gace/TGserver",gh.calls[1])
 
     def test_corrupt_unseal_denied_without_github_upload(self):
         with tempfile.TemporaryDirectory() as d:
