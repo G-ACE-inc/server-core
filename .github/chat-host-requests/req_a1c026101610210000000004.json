@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Deploy exact AI Core PR3 SSE-terminal fix only after runtime idle checks; verify four Gate health and source hash; automatic rollback on failure",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport subprocess,json,hashlib,time,urllib.request\nfrom pathlib import Path\nwt=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\nhead='3d7f15f3a5e9a39ca084d2e656b9ba554e04a28e'\nexpected=hashlib.sha256((wt/'runtime/model_gate.py').read_bytes()).hexdigest()\nprevious='3d5f6eed6ad7c07a5da0ca68db5eeeadec1ad9b414b3b58ff81ce80bdcd99a12'\nresult={'head':head,'expected_sha256':expected}\ndef run(cmd,timeout=30):\n return subprocess.run(cmd,capture_output=True,text=True,timeout=timeout)\ndef status():\n probe=\"\"\"import os,json,urllib.request,hashlib\nfrom pathlib import Path\nreq=urllib.request.Request('http://127.0.0.1:18184/internal/handoff/status',headers={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']})\nwith urllib.request.urlopen(req,timeout=12) as r:s=json.load(r)\nprint(json.dumps({'active':s.get('active'),'handoff':s.get('handoff'),'resident':s.get('resident'),'sha':hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest()}))\n\"\"\"\n r=run(['docker','exec','ai-core-model-gate','python3','-c',probe],25)\n return json.loads(r.stdout) if r.returncode==0 else {'error':'GATE_STATUS_FAILED','exit':r.returncode}\ndef healthy():\n out={}\n for port in (18181,18182,18183,18184):\n  try:\n   with urllib.request.urlopen('http://127.0.0.1:'+str(port)+'/health',timeout=3) as r:out[str(port)]=r.status\n  except Exception as ex:out[str(port)]=type(ex).__name__\n return out\ncompose=['docker','compose','-p','ai-core-gate','-f',str(wt/'compose.gate.yml'),\n         '--env-file','/home/admin1/projects/debug-ai/.env']\nrollback_tag='ai-core-model-gate:rollback-20261016-sse'\ntry:\n rev=run(['git','-C',str(wt),'rev-parse','HEAD'],12)\n dirty=run(['git','-C',str(wt),'status','--porcelain'],12)\n before=status()\n result['before']=before\n safe=(rev.returncode==0 and rev.stdout.strip()==head and dirty.returncode==0 and not dirty.stdout.strip()\n   and before.get('sha')==previous and before.get('handoff') is None\n   and isinstance(before.get('active'),dict) and sum(before['active'].values())==0)\n if not safe:result['error']='LIVE_ADMISSION_GUARD_DENIED'\n else:\n  time.sleep(3)\n  after_wait=status()\n  if after_wait.get('active')!=before['active'] or after_wait.get('handoff') is not None or after_wait.get('sha')!=previous:\n   result['error']='LIVE_ADMISSION_CHANGED'\n  else:\n   old=run(['docker','image','inspect','ai-core-model-gate:local','--format','{{.Id}}'],15)\n   if old.returncode:result['error']='OLD_IMAGE_NOT_FOUND'\n   else:\n    tag=run(['docker','tag',old.stdout.strip(),rollback_tag],20)\n    if tag.returncode:result['error']='ROLLBACK_TAG_FAILED'\n    else:\n     deploy=run(compose+['up','-d','--build','--no-deps','gate'],165)\n     result['compose_exit']=deploy.returncode\n     if deploy.returncode:result['error']='DEPLOY_FAILED'\n     else:\n      time.sleep(3)\n      result['after']=status()\n      result['health']=healthy()\n      inspect=run(['docker','inspect','-f','{{.State.Status}}|{{.State.Health.Status}}|{{.HostConfig.CgroupParent}}','ai-core-model-gate'],12)\n      result['container_state']=inspect.stdout.strip()\n      if result['after'].get('sha')!=expected or not all(x==200 for x in result['health'].values()) or not result['container_state'].startswith('running|healthy|ai-core.slice'):\n       result['error']='DEPLOY_READBACK_FAILED'\n     if result.get('error'):\n      tagback=run(['docker','tag',rollback_tag,'ai-core-model-gate:local'],18)\n      recovery=run(compose+['up','-d','--no-deps','gate'],65) if tagback.returncode==0 else tagback\n      result['rollback_exit']=recovery.returncode\n      result['rollback_health']=healthy()\n     else:\n      cleanup=run(['docker','image','rm',rollback_tag],20)\n      result['rollback_alias_cleanup_exit']=cleanup.returncode\nexcept Exception as e:result['error']=type(e).__name__+': '+str(e)[:190]\nrecord='AI_CORE_PR3_SSE_EXACT_RUNTIME_DEPLOY\\n'+json.dumps(result,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':record}),capture_output=True,text=True,timeout=25)\nprint('AI_CORE_SSE_DEPLOY_RECEIPT='+('POSTED '+r.stdout.strip() if r.returncode==0 else 'RECORD_FAILED'))\nprint('AI_CORE_SSE_DEPLOY='+('PASS' if not result.get('error') and result.get('compose_exit')==0 else 'FAIL '+result.get('error','NO_DEPLOY')))\nraise SystemExit(0 if r.returncode==0 and not result.get('error') and result.get('compose_exit')==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/commit/3d7f15f3a5e9a39ca084d2e656b9ba554e04a28e"
+  }
+}
