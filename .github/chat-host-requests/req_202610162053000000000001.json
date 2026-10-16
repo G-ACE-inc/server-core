@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Inspect only the existing bounded Gate restart/abort test process and post sanitized structural final results after it exits; no duplicate model call, no product work.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nname=ai-core-handoff-restart-01ef\ns=$(docker inspect -f '{{.State.Status}}' \"$name\")\nif test \"$s\" = exited; then\n rc=$(docker inspect -f '{{.State.ExitCode}}' \"$name\")\n out=$(docker logs --tail 1 \"$name\" 2>/dev/null | docker exec -i ai-core-model-gate python3 -c 'import sys,json; t=sys.stdin.read(); d=json.loads(t); a={}; a[\"step\"]=d.get(\"step\"); a[\"cleanup\"]=d.get(\"cleanup\"); a[\"error_type\"]=str(d.get(\"error\",\"\")).split(\":\")[0]; a[\"two\"]=d.get(\"two\",{}).get(\"resident\"); a[\"three\"]=d.get(\"three\",{}).get(\"resident\"); a[\"after_restart\"]=d.get(\"after_restart\",{}).get(\"resident\"); a[\"recovered\"]=d.get(\"recovered\",{}).get(\"resident\"); a[\"abort\"]=d.get(\"after_abort\",{}).get(\"resident\"); a[\"final\"]=d.get(\"final\",{}).get(\"resident\"); a[\"final_active\"]=sum(d.get(\"final\",{}).get(\"active\",{}).values()); a[\"final_queue\"]=d.get(\"final\",{}).get(\"queued\"); print(json.dumps(a))')\n msg=\"AI_CORE_UDS_RESTART_REAL_FINAL EXIT=$rc $out\"\nelse\n msg=\"AI_CORE_UDS_RESTART_REAL_PENDING STATE=$s\"\nfi\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$msg\" --jq '.html_url' >/dev/null\necho RESTART_TEST_READBACK=POSTED\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Issue1 6223964281 physical actual Gate restart/abort acceptance one-run submitted Source01ef after resident0, later 6223987589 still running; DebugAI PR115 independently informed comment 6224005596, no duplicate test."
+  }
+}
