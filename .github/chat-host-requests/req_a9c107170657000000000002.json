@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Deploy approved merged v8 main source via existing Compose with preflight; no Vault or GPG changes.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nv=/home/admin1/projects/astera_v8\ntest \"$(git -C \"$v\" rev-parse HEAD)\" = 57dee0e189391c1f50b28aa5029fa2b264c7d651\ntest \"$(git -C \"$v\" branch --show-current)\" = main\ntest -z \"$(git -C \"$v\" status --porcelain --untracked-files=no)\"\nbefore=$(docker inspect astera-v8 --format '{{.Image}}')\ncd \"$v\"\ndocker compose up -d --no-deps --build astera-v8\nafter=$(docker inspect astera-v8 --format '{{.Image}}')\nprintf 'V8_IMAGE_BEFORE=%s\\nV8_IMAGE_AFTER=%s\\n' \"$before\" \"$after\"\nfor i in 1 2 3 4 5 6 7 8 9 10; do\n s=$(docker inspect astera-v8 --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')\n [ \"$s\" = healthy ] && { printf 'V8_DEPLOY_HEALTH=healthy\\n'; exit 0; }\n sleep 6\ndone\necho V8_DEPLOY_HEALTH_NOT_CONFIRMED\nexit 1"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "v8 merged main SHA 57dee0 and CI verified; Host source SHA 57dee confirmed 6225434007, Compose service astera-v8 running healthy, controlled one-service rebuild."
+  }
+}
