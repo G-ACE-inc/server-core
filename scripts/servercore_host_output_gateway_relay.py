@@ -22,8 +22,8 @@ except ModuleNotFoundError:
     from servercore_host_output_export import export_output
 
 
-REQUEST = re.compile(r"req_[0-9a-f]{24}\\Z")
-IDENTIFIER = re.compile(r"[A-Za-z0-9._:/-]{1,160}\\Z")
+REQUEST = re.compile(r"req_[0-9a-f]{24}\Z")
+IDENTIFIER = re.compile(r"[A-Za-z0-9._:/-]{1,160}\Z")
 CHUNK_BYTES = 128 * 1024  # below both existing Vault 2 MB and Gateway 1 MB limits
 
 
