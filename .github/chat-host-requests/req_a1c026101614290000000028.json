@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core actual Coder SSE streaming response terminal event [DONE], no leaked output or backend Router",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess\ncode=\"import os,json,urllib.request,urllib.error,time\\nv=os.environ.get('AI_CORE_API_KEY','')\\nout={}\\nstart=time.monotonic()\\ntry:\\n h={'Authorization':'Bearer '+v}\\n req=urllib.request.Request('http://127.0.0.1:18184/v1/models',headers=h)\\n with urllib.request.urlopen(req,timeout=8) as f:mid=json.load(f)['data'][0]['id']\\n body=json.dumps({'model':mid,'messages':[{'role':'user','content':'Reply with OK.'}],'max_tokens':8,'stream':True}).encode()\\n req=urllib.request.Request('http://127.0.0.1:18184/v1/chat/completions',data=body,headers={**h,'Content-Type':'application/json'},method='POST')\\n with urllib.request.urlopen(req,timeout=200) as f:\\n  raw=f.read(262144)\\n  out={'http':f.status,'content_type':f.headers.get('Content-Type'),'bytes':len(raw),'done':(b'data: [DONE]' in raw),'data_events':raw.count(b'data: '),'error_event':(b'event: error' in raw),'sse_length_capped':len(raw)>=262144}\\nexcept urllib.error.HTTPError as e:\\n out={'http':e.code,'status':'UPSTREAM_OR_GATE_ERROR'}\\nexcept Exception as e:out={'error_class':type(e).__name__}\\nout['elapsed_s']=round(time.monotonic()-start,2)\\nprint(json.dumps(out))\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',code],capture_output=True,text=True,timeout=225)\nout={'exec_exit':p.returncode,'result':json.loads(p.stdout) if p.stdout.strip().startswith('{') else {'reason':p.stderr[:120]}}\nbody='AI_CORE_REAL_SSE_COMPLETION\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('AI_CORE_SSE_REPORT='+('PASS '+r.stdout.strip() if r.returncode==0 else 'POST_FAILED'))\nraise SystemExit(0 if r.returncode==0 and out.get('result',{}).get('http')==200 and out.get('result',{}).get('done') is True and out.get('result',{}).get('error_event') is False else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209462367"
+  }
+}
