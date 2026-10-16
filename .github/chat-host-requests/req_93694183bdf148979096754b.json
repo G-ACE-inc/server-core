@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Observe genuine six-role E2E from Causal Scout into later roles using original canonical run; record only state transitions and no run mutations",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\npython3 - <<'PY'\nimport urllib.request,json,time,subprocess\nrid='run_mvaxg8be_1099f77b3b'\nobs=[]\nfor i in range(5):\n try:\n  with urllib.request.urlopen('http://127.0.0.1:8787/v1/status/'+rid,timeout=5) as r:o=json.load(r)\n  d=o.get('durable') or {};c=d.get('workflow_cursor') or {}\n  sample={'i':i+1,'status':d.get('job_status'),'generation':d.get('generation'),'step':c.get('step_id'),'phase':c.get('step_phase')}\n  if not obs or sample['status']!=obs[-1]['status'] or sample['generation']!=obs[-1]['generation'] or sample['step']!=obs[-1]['step'] or sample['phase']!=obs[-1]['phase']:obs.append(sample)\n  if sample['status'] in ('BLOCKED','DONE','FAILED','CANCELLED'):break\n except Exception as e:obs.append({'i':i+1,'error':type(e).__name__})\n if i<4:time.sleep(11)\nif not obs:raise SystemExit('EMPTY_OBSERVATION')\nbody='DEBUGAI_REAL_E2E_FOLLOWUP\\n'+json.dumps({'run_id':rid,'observations':obs},ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/seigo-gace/debug-ai/issues/41/comments','-f','body='+body],capture_output=True,text=True,timeout=28)\nif p.returncode:raise SystemExit('FOLLOWUP_WRITE_FAILED')\nprint('E2E_FOLLOWUP_COMMENT='+json.loads(p.stdout)['html_url'])\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
