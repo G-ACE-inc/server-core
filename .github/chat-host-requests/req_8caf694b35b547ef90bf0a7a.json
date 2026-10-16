@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Append existing Gateway output URL non-secret in-place and validate Compose config, atomic rollback, no credentials",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "set -euo pipefail\npython3 - <<'PY'\nimport os\nimport subprocess\nfrom pathlib import Path\nroot = Path('/home/admin1/projects/webhook-gateway')\np = root / '.env'\nif p.is_symlink() or not p.is_file():\n    raise SystemExit('ENV_FILE_INVALID')\nbefore = p.read_bytes()\nif not before.endswith(b'\\n'):\n    raise SystemExit('ENV_LINE_END_INVALID')\nlines = before.decode('utf-8').splitlines()\nbase_name = 'DEST_SERVER_CORE_BOUNDED_HOST_URL='\nnew_name = 'DEST_SERVER_CORE_HOST_OUTPUT_URL='\nbases = [x.split('=', 1)[1] for x in lines if x.startswith(base_name)]\nif len(bases) != 1 or not bases[0].endswith('/internal/servercore-bounded-host'):\n    raise SystemExit('EXISTING_DESTINATION_UNVERIFIED')\nnew_value = bases[0].rsplit('/', 1)[0] + '/internal/servercore-host-output'\nexisting = [x.split('=', 1)[1] for x in lines if x.startswith(new_name)]\nif existing and (len(existing) != 1 or existing[0] != new_value):\n    raise SystemExit('NEW_DESTINATION_CONFLICT')\naddition = b''\nif not existing:\n    addition = (new_name + new_value + '\\n').encode('utf-8')\n    fd = os.open(p, os.O_WRONLY | os.O_APPEND | os.O_NOFOLLOW)\n    try:\n        if os.write(fd, addition) != len(addition):\n            raise OSError('SHORT_WRITE')\n        os.fsync(fd)\n    finally:\n        os.close(fd)\ntry:\n    subprocess.run(['docker', 'compose', 'config', '--quiet'], cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20, check=True)\nexcept Exception:\n    if addition and p.read_bytes() == before + addition:\n        fd = os.open(p, os.O_RDWR | os.O_NOFOLLOW)\n        try:\n            os.ftruncate(fd, len(before))\n            os.fsync(fd)\n        finally:\n            os.close(fd)\n    raise SystemExit('GATEWAY_COMPOSE_CONFIG_FAILED')\nprint('CU40_GATEWAY_ENV_CONFIG=PASS')\nPY\ngh api -X POST repos/G-ACE-inc/server-core/issues/40/comments -f 'body=CU40_GATEWAY_ENV_CONFIG=PASS; EXISTING_DESTINATION_REUSED=YES; AUTH_UNCHANGED=YES' >/dev/null"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "MERGED PR #27 & #301; Host source FF receipt #6216821184; command bash -n and Python compile PASS, Gateway unchanged"
+  }
+}
