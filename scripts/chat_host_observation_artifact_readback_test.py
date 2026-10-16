@@ -85,6 +85,7 @@ class ObservationReadbackTests(unittest.TestCase):
     def test_full_hashes_can_validate_stream_metadata(self):
         record = self.record()
         record["streams"]["stdout"] = {"complete": True, "sha256": DIGEST, "chars": 100}
+        record["observation"] = "HOST_OPERATION_PASSED"
         result = validate(record, RID)
         self.assertFalse(result["output_complete"])
         self.assertTrue(result["stream_metadata_complete"])
