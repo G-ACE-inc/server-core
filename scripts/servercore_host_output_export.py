@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import os
 import re
 import zipfile
 from pathlib import Path
@@ -31,14 +32,22 @@ def export_output(request_id, target, *, result_dir=RESULT_DIR, zipped=False):
     meta = {"request_id": request_id, "streams": {
         name: {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
         for name, data in streams.items()}}
-    if zipped:
-        with zipfile.ZipFile(target, "x", compression=zipfile.ZIP_DEFLATED) as archive:
-            for name, data in streams.items():
-                archive.writestr(name, data)
-            archive.writestr("manifest.json", json.dumps(meta, ensure_ascii=False, indent=2))
-    else:
-        # Single text file with no length caps; use ZIP for separate streams.
-        target.write_bytes(streams["stdout.txt"])
+    # Host plaintext stays owner-only even with a permissive caller umask.
+    # Exclusive creation also closes the exists()/write race for TXT exports.
+    fd = os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    try:
+        with os.fdopen(fd, "wb") as output:
+            if zipped:
+                with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                    for name, data in streams.items():
+                        archive.writestr(name, data)
+                    archive.writestr("manifest.json", json.dumps(meta, ensure_ascii=False, indent=2))
+            else:
+                # Single text file; use ZIP for separate streams.
+                output.write(streams["stdout.txt"])
+    except BaseException:
+        target.unlink(missing_ok=True)
+        raise
     return meta
 
 

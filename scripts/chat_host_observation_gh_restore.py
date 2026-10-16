@@ -130,6 +130,15 @@ def continuation_checkpoint(result, cu_issue_url):
         raise ValueError("CU_ISSUE_URL_INVALID")
     if result["result_verified"] is not True:
         phase, next_action = "OBSERVE", "RECHECK_EXISTING_RUN_AND_HOST_RESULT"
+    elif result.get("observation") in {
+        "HOST_SOURCE_SHA_MISMATCH", "HOST_OPERATION_FAILED",
+        "HOST_OPERATION_RETRYABLE", "HOST_SOURCE_CONTEXT_STALE",
+        "HOST_SOURCE_CONTEXT_INVALID", "HOST_RESULT_UNVERIFIED",
+        "CORRELATION_FAILED",
+    }:
+        # Failure provenance must be rechecked against the original Job before
+        # payload recovery or replanning; missing plaintext is not the first gate.
+        phase, next_action = "OBSERVE", "RECHECK_EXISTING_RUN_AND_HOST_RESULT"
     elif result["output_complete"] is not True:
         phase, next_action = "OBSERVE", "RECOVER_HOST_LEDGER_PAYLOAD"
     else:

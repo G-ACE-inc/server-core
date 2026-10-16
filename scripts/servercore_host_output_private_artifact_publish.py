@@ -19,10 +19,12 @@ try:
     from scripts.servercore_host_output_cipher_inbox import collect, InboxError
     from scripts.servercore_host_output_gateway_relay import post_json, private_endpoint, canonical_base64, RelayError
     from scripts.servercore_host_output_artifact_assemble import verify_artifact_zip
+    from scripts.servercore_host_output_export import export_output
 except ModuleNotFoundError:
     from servercore_host_output_cipher_inbox import collect, InboxError
     from servercore_host_output_gateway_relay import post_json, private_endpoint, canonical_base64, RelayError
     from servercore_host_output_artifact_assemble import verify_artifact_zip
+    from servercore_host_output_export import export_output
 
 DEFAULT_WRITER = Path("/home/admin1/logs/servercore-service-deploy")
 REPO = "seigo-gace/TGserver"  # verified private repo, owning existing CI
@@ -159,23 +161,60 @@ def run(request_id, *, cipher_root, writer_dir, vault_base, vault_token,
         return {**status, **private_release(request_id,archive,runner=runner)}
 
 
+def publish_writer_output(request_id, *, writer_dir=DEFAULT_WRITER,
+                          verify_only=False, runner=subprocess.run):
+    """Recover an existing result on its trusted Host, without executing it again.
+
+    Explicit local input, never an automatic fallback after Vault failure.
+    The caller must already have read access to the protected Writer ledger.
+    Remote CHAT still uses the admitted Host channel; no HTTP endpoint is added.
+    """
+    if not isinstance(request_id, str) or not RID.fullmatch(request_id):
+        raise PublishError("REQUEST_ID_INVALID")
+    expected = independently_expected(request_id, writer_dir=writer_dir)
+    with tempfile.TemporaryDirectory(prefix="gace-private-output-") as temp:
+        archive = Path(temp, "output.zip")
+        export_output(request_id, archive, result_dir=writer_dir, zipped=True)
+        # Independent ledger expectations also detect changes during export.
+        verified = verify_artifact_zip(archive, request_id, expected)
+        with archive.open("rb") as source:
+            zip_digest = hashlib.file_digest(source, "sha256").hexdigest()
+        status = {"request_id": request_id, "streams": verified["streams"],
+                  "state": "FULL_ZIP_VERIFIED_LOCAL", "input": "writer-ledger",
+                  "zip_bytes": archive.stat().st_size,
+                  "zip_sha256": zip_digest}
+        if verify_only:
+            return status
+        return {**status, **private_release(request_id, archive, runner=runner)}
+
+
 def main():
     parser=argparse.ArgumentParser(description="Host private ZIP verification and existing CI handoff")
     parser.add_argument("request_id")
     parser.add_argument("--cipher-root",default="/run/gace/host-output-inbox")
     parser.add_argument("--writer-dir",default=str(DEFAULT_WRITER))
     parser.add_argument("--vault-base",default="http://127.0.0.1:8791")
-    parser.add_argument("--vault-key-ref",required=True,help="existing approved crypto ref")
-    parser.add_argument("--vault-consumer",required=True,help="approved consumer")
+    parser.add_argument("--vault-key-ref",help="existing approved crypto ref")
+    parser.add_argument("--vault-consumer",help="approved consumer")
+    parser.add_argument("--writer-ledger",action="store_true",
+                        help="explicit local protected Writer input; no Vault fallback")
     parser.add_argument("--vault-token-file",default="/home/admin1/.config/libral-vault/internal-token")
     parser.add_argument("--verify-only",action="store_true")
     x=parser.parse_args()
+    if x.writer_ledger and (x.vault_key_ref or x.vault_consumer):
+        parser.error("--writer-ledger cannot select a Vault consumer")
+    if not x.writer_ledger and (not x.vault_key_ref or not x.vault_consumer):
+        parser.error("encrypted input requires --vault-key-ref and --vault-consumer")
     try:
-        token=Path(x.vault_token_file).read_text().strip()
-        result=run(x.request_id,cipher_root=x.cipher_root,writer_dir=x.writer_dir,
-                   vault_base=x.vault_base,vault_token=token,
-                   expected_key_ref=x.vault_key_ref,expected_consumer=x.vault_consumer,
-                   verify_only=x.verify_only)
+        if x.writer_ledger:
+            result=publish_writer_output(x.request_id,writer_dir=x.writer_dir,
+                                         verify_only=x.verify_only)
+        else:
+            token=Path(x.vault_token_file).read_text().strip()
+            result=run(x.request_id,cipher_root=x.cipher_root,writer_dir=x.writer_dir,
+                       vault_base=x.vault_base,vault_token=token,
+                       expected_key_ref=x.vault_key_ref,expected_consumer=x.vault_consumer,
+                       verify_only=x.verify_only)
         print(json.dumps(result,sort_keys=True))
     except (PublishError,InboxError,RelayError,ValueError,OSError) as exc:
         print("CU40_PRIVATE_OUTPUT_HANDOFF=FAILED")

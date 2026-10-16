@@ -50,4 +50,8 @@ Host観測の `streams[].complete` はIssue/Jobに見える**プレビューの�
 
 **機密ZIPの公開境界（P0未達）**：このGitHub Repoは現時点で`public`であり、公開RepoのActions ArtifactにHost原文の完全ZIPを無加工でアップロードしてはいけない。GitHub ActionsのArtifactはRepoにread accessを持つGitHubユーザーへダウンロード可能（https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts）。既存WorkflowのmetadataのみのArtifactは原文とは異なる。秘匿性のある完全payloadをCHATへ戻す承認済み認証・公開防止・権限分離の経路は引き続き未確認で、Artifactを増量するだけでは解決しない。今回の受信検証改善は輸送を完成させず、要求Source/CIとHostの実運用を別ゲートで確認する。
 
+**既存Writerからの明示的な機密回収（2026-10-17）**：保護Ledgerを既に読めるSERVER_AI、または同じ読取が実際にadmitされた通常CHATのHost操作は、既存`servercore_host_output_private_artifact_publish.py <元request_id> --writer-ledger`で、元の結果を再実行せずZIP化して既存private TGserver CIへ渡せる。`--verify-only`はローカル整合検証だけでGitHubへ送らない。Writer本文から独立取得した期待bytes/chars/SHAとZIPを照合し、宛先Repositoryがprivateであることを再確認してから、一時private release→既存CIの1日Artifactを利用する。平文の一時ZIP/TXTは0600、処理後の一時ディレクトリは削除する。Vault入力は従来どおりであり、Vault失敗からの自動fallbackや新しいHTTP公開口は追加しない。Host実行・Ledger読取の権限をこのCLIの存在から推測しない。
+
+受取側はprivate Run/Artifact/request IDと独立した元出力メタデータを照合し、既存`--host-output-zip`で継続判断へ渡す。正常・失敗の分類をexit codeに埋めて再実行を重ねたり、候補コミットを総当たりして本文の代わりにしない。相関済みのHost失敗は本文が未取得でもまず元Run/失敗Stepを再確認し、その後に必要な範囲の回収・修正へ進む。回収ZIPの自己整合やprivate CI成功は、元Hostコマンドの成功・Source truncation不存在・実CHATの受信成功を証明しない。ブラウザの接続断・フリーズ解消も別途未検証。
+
 実行依頼のファイル形式、必要な署名・認証・SHA・登録Repo制約は既存の実装と `operations/github-project-bounded-host.json` に従う。結果は既存ActionsとHost返却で確認する。失敗時は原因を修正して作業を続ける。通常CHATでの新たなMaster承認は要求しない。
