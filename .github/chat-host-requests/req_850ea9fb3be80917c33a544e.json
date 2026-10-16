@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Retry guarded AI Core physical 4-private-backend migration after prior failed before effects; retrieve existing API key only within running Gate, no credential echo",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "command": "set -Eeuo pipefail\nroot=/home/admin1/projects/ai-core\nw=\"$root/.worktrees/pr3-verification-20261015\"\nbackup=\"$root/.ai-core/uds-cutover-75778b66\"\ntarget=75778b66afcd397da5225466aadcc20fcd0df991\nexpected=5f52b6c26ba70a7eb1c6e7fc5af93980708ca3208fb41b72ef307797162d9432\nmodels=(granite qwen3 ministral coder)\nnew=(docker compose -p ai-core --project-directory \"$root\" -f \"$w/compose.runtime.yml\")\nold=(docker compose -p ai-core --project-directory \"$root\" -f \"$root/compose.runtime.yml\" -f \"$backup/old-cgroup.yml\")\ngate=(docker compose -p ai-core-gate --project-directory \"$w\" -f \"$w/compose.gate.yml\")\nmutated=0\nrollback() {\n set +e\n echo ROLLBACK_BEGIN\n \"${gate[@]}\" stop gate >/dev/null 2>&1\n \"${old[@]}\" up --no-start --force-recreate --no-deps \"${models[@]}\" >/dev/null 2>&1\n backends_rc=$?\n docker tag ai-core-model-gate:rollback-75778b66 ai-core-model-gate:local\n image_rc=$?\n \"${gate[@]}\" up -d --no-deps --no-build --force-recreate gate >/dev/null 2>&1\n gate_rc=$?\n echo \"ROLLBACK_RESULT backend=$backends_rc image=$image_rc gate=$gate_rc\"\n gh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f \"body=AI_CORE_UDS_CUTOVER_ROLLBACK backend=$backends_rc image=$image_rc gate=$gate_rc\" --jq .html_url || true\n}\ntrap 'rc=$?; if [ \"$rc\" -ne 0 ] && [ \"$mutated\" -eq 1 ]; then rollback; fi; exit \"$rc\"' EXIT\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = \"$target\"\ntest -z \"$(git -C \"$w\" status --porcelain)\"\ntest -f \"$backup/old-cgroup.yml\"\ndocker image inspect ai-core-model-gate:uds-stage-75778b66 >/dev/null\ndocker image inspect ai-core-model-gate:rollback-75778b66 >/dev/null\nfor name in \"${models[@]}\"; do\n test \"$(docker inspect -f '{{.State.Running}}' \"ai-$name\")\" = false\ndone\ndocker exec -i ai-core-model-gate python3 - <<'PY'\nimport os,json,urllib.request\nheaders={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']}\ndef get(path):\n q=urllib.request.Request('http://127.0.0.1:18184'+path,headers=headers)\n with urllib.request.urlopen(q,timeout=6) as r:return json.load(r)\na=get('/internal/handoff/status');b=get('/internal/resources/status')\nassert (not any(a['active'].values()) and a['handoff'] is None and\n not a['recovery_pending'] and not b['queued'] and\n not b['admission_inflight'] and not b['transitioning']),'GATE_BUSY'\nprint('QUIESCENCE=PASS')\nPY\nkey=\"$(docker exec ai-core-model-gate python3 -c 'import os;print(os.environ[\"AI_CORE_API_KEY\"],end=\"\")')\"\ntest -n \"$key\"\nexport AI_CORE_API_KEY=\"$key\"\nunset key\nmutated=1\ndocker stop --time 30 ai-core-model-gate >/dev/null\nfor name in \"${models[@]}\"; do\n test \"$(docker inspect -f '{{.State.Running}}' \"ai-$name\")\" = false\ndone\n\"${new[@]}\" up --no-start --force-recreate --no-deps \"${models[@]}\" >/dev/null\nfor name in \"${models[@]}\"; do\n test \"$(docker inspect -f '{{.State.Running}}' \"ai-$name\")\" = false\n test \"$(docker inspect -f '{{.HostConfig.CgroupParent}}' \"ai-$name\")\" = ai-core.slice\n test \"$(docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' \"ai-$name\")\" = no\n docker inspect -f '{{json .HostConfig.PortBindings}}' \"ai-$name\" | grep -qv HostPort\n docker inspect -f '{{json .Mounts}}' \"ai-$name\" | grep -q ai-core-backend-bus\ndone\ndocker tag ai-core-model-gate:uds-stage-75778b66 ai-core-model-gate:local\n\"${gate[@]}\" up -d --no-deps --no-build --force-recreate gate >/dev/null\nhealthy=0\nfor attempt in $(seq 1 18); do\n if docker exec ai-core-model-gate python3 -c \"import hashlib,urllib.request;from pathlib import Path;assert hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest()=='$expected';[urllib.request.urlopen('http://127.0.0.1:%d/health'%p,timeout=3).close() for p in (18181,18182,18183,18184)]\" >/dev/null 2>&1; then healthy=1;break;fi\n sleep 2\ndone\ntest \"$healthy\" = 1\nmutated=0\ntrap - EXIT\necho \"AI_CORE_UDS_CUTOVER=PASS HEAD=$target HEALTH=4/4 RESIDENTS=0\"\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f \"body=AI_CORE_UDS_CUTOVER=PASS; head=$target; Gate source=$expected; private backend sockets=4; no published TCP ports; 4 Gate HTTP health PASS; rollback image retained. Inference not yet verified.\" --jq .html_url || true"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6221048149"
+  }
+}
