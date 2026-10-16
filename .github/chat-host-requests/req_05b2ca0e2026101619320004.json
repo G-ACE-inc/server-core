@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Start once-only real 2-to-3-to-2 UDS acceptance inside existing AI Core Gate with protected local result, after exact Source and shared idle/lease guard. Host command only initiates existing Docker execution and will separately retrieve result. No new workflow/token/runner or DebugAI changes.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 14fed8d3ecb96a78b25cd9579940dc74793f7bfc\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\ndocker exec ai-core-model-gate python3 -c 'import os,json,urllib.request;h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]};u=lambda p:json.load(urllib.request.urlopen(urllib.request.Request(\"http://127.0.0.1:18184\"+p,headers=h),timeout=8));a=u(\"/internal/handoff/status\");r=u(\"/internal/resources/status\");assert not any(a[\"active\"].values()) and not a[\"recovery_pending\"] and not a[\"handoff\"] and not r[\"queued\"] and len(a[\"resident\"])<=2'\ndocker exec ai-core-model-gate test ! -e /run/ai-core/uds-handoff-14fed8.status\ndocker cp \"$w/scripts/host_uds_handoff_probe.py\" ai-core-model-gate:/tmp/gace_uds_handoff_14fed8.py >/dev/null\ndocker exec ai-core-model-gate python3 -m py_compile /tmp/gace_uds_handoff_14fed8.py\ndocker exec -d ai-core-model-gate sh -c 'umask 077; echo RUNNING > /run/ai-core/uds-handoff-14fed8.status; python3 /tmp/gace_uds_handoff_14fed8.py > /run/ai-core/uds-handoff-14fed8.result 2>&1; rc=$?; printf \"%s\\n\" \"$rc\" > /run/ai-core/uds-handoff-14fed8.exit; echo DONE > /run/ai-core/uds-handoff-14fed8.status'\nprintf 'AI_CORE_UDS_HANDOFF_ASYNC_SUBMITTED=YES\\n'\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Source exact PR3 14fed8 confirmed Host Action 38955563238; shared UDS Gate & 4 real inference old probes passed; Host command 90 seconds vs Core 180, use existing Gate mounted volume and bounded in-container acceptance. DebugAI remains independently healthy but no new app deployment."
+  }
+}
