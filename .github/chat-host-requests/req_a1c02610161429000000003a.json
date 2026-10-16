@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core final live after aborted third-model handoff: exact running-source SHA256, authenticated active/resident status, parent memory/OOM/cpu, no legacy Router",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,hashlib,subprocess,urllib.request\nfrom pathlib import Path\nroot=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\ncg=Path('/sys/fs/cgroup/ai.slice/ai-core.slice')\nprog=\"\"\"import os,json,urllib.request\nsecret=os.environ.get('AI_CORE_API_KEY','')\nauth={''.join(('Author','ization')):'Bearer '+secret}\nout={}\nfor path in ('/internal/source/status','/internal/handoff/status'):\n req=urllib.request.Request('http://127.0.0.1:18184'+path,headers=auth)\n with urllib.request.urlopen(req,timeout=12) as response:out[path]={'http':response.status,'body':json.load(response)}\nprint(json.dumps(out))\n\"\"\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',prog],capture_output=True,text=True,timeout=25)\nout={'gate_exec_exit':p.returncode,'control':json.loads(p.stdout) if p.returncode==0 and p.stdout.strip().startswith('{') else {'reason':'READBACK_FAILED'}}\nout['source_sha256_expected']=hashlib.sha256((root/'runtime/model_gate.py').read_bytes()).hexdigest()\nremote=out['control'].get('/internal/source/status',{}).get('body',{}).get('source_sha256')\nout['binary_matches_source']=remote==out['source_sha256_expected']\nout['head']=subprocess.run(['git','-C',str(root),'rev-parse','HEAD'],capture_output=True,text=True,timeout=12).stdout.strip()\nfor name in ('memory.current','memory.high','memory.max','memory.swap.current','cpu.max'):\n f=cg/name\n out[name]=f.read_text().strip() if f.is_file() else None\nevents={}\nfor line in (cg/'memory.events').read_text().splitlines():\n parts=line.split()\n if len(parts)==2:events[parts[0]]=int(parts[1])\nout['memory_events']=events\ndocker=subprocess.run(['docker','ps','--format','{{.Names}}','--filter','name=^ai-'],capture_output=True,text=True,timeout=12)\nout['resident_containers']=sorted(docker.stdout.splitlines())\nrouter=subprocess.run(['docker','inspect','-f','{{.State.Running}}','ai-llama-router'],capture_output=True,text=True,timeout=12)\nout['legacy_router_running']=router.stdout.strip()=='true'\nbody='AI_CORE_AFTER_HANDOFF_ABORT_SOURCE_RESOURCE_GUARDS\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('AI_CORE_FINAL_GUARDS='+('PASS '+r.stdout.strip() if r.returncode==0 else 'RECORD_FAILED'))\nraise SystemExit(0 if r.returncode==0 and out['binary_matches_source'] and out['head']=='6d02767dca6d03e47e1a263b18a16e2413626311' and out['control'].get('/internal/handoff/status',{}).get('http')==200 and not out['legacy_router_running'] else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6210022347"
+  }
+}
