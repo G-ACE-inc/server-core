@@ -18,4 +18,6 @@ Host観測の `streams[].complete` はIssue/Jobに見える**プレビューの�
 
 観測済み `request_id` がある場合は、同じコマンドに `--request-id <実ID> --cu-issue-url https://github.com/G-ACE-inc/server-core/issues/40` を付け、既存Run→Artifact→Checkpoint→実Run再読込へ進む。Host失敗の相関と実Host SHAが検証されれば、Actions全体がfailureでも一般的な「Actions障害」へ戻さず、対象RepoのHost Checkout SHAを再確認して**異なる有意な修正Action**を選択する。失敗が継続した理由を恣意的に推測せず、失敗StepのGitHub再読込も行う。このスクリプト自身はHost実行やCHAT自動送信を強制せず、次の実Tool呼出は通常CHATが担う。これを実際の同一CUの複数回のACT→OBSERVE→DECIDE→ACT受入完了とはみなさない。
 
+大容量Host結果でWriterの保存は完了していても、ReceiverからResult Sinkへの記録が失敗すればGitHub Issue/Actionsに結果が戻らない。`host.command`も他のRequestと同様に**Sink未記録をHTTP 503として返し、Gatewayは元のevent/request IDを保持して再配送**する。Host writerの同一Request ID重複検知で実コマンドを再実行しない。Gatewayの受理HTTP 202、Host Writer ledger PASS、Sinkへの記録、Issueへのpublish、Actionsのpollを別の状態として扱い、片方のPASSから他方を推測しない。旧Host runtimeが新しいSourceを使用しているとはMergeだけで推測しない。
+
 実行依頼のファイル形式、必要な署名・認証・SHA・登録Repo制約は既存の実装と `operations/github-project-bounded-host.json` に従う。結果は既存ActionsとHost返却で確認する。失敗時は原因を修正して作業を続ける。通常CHATでの新たなMaster承認は要求しない。
