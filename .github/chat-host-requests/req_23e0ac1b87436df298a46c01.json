@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Authenticated non-secret model identity and source worktree readback from current DebugAI runtime; report structured observations to owning Current; no Host configuration mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,subprocess\ndef cmd(argv,timeout=25):\n p=subprocess.run(argv,capture_output=True,text=True,timeout=timeout)\n return {\"exit\":p.returncode,\"stdout\":p.stdout[:7000],\"stderr\":p.stderr[-200:]}\nroot='/home/admin1/projects/debug-ai/.worktrees/debugai-pr112-gates-20261016'\nhead=cmd(['git','-C',root,'rev-parse','HEAD'])\nstatus=cmd(['git','-C',root,'status','--porcelain','--untracked-files=normal'])\nnode=r\"\"\"\n(async()=>{\n const result={mode:process.env.DEBUG_AI_CORE_GATE_DISPATCH_MODE||'NOT_DEFINED', gate_urls:{},has_key:!!process.env.AI_CORE_API_KEY,models:{}};\n const ports={granite:18181,qwen3:18182,ministral:18183,coder:18184};\n for(const [n,p] of Object.entries(ports)){\n  result.gate_urls[n]=process.env['DEBUG_AI_CORE_GATE_'+n.toUpperCase()+'_URL']||'NOT_DEFINED';\n  try{\n   const r=await fetch('http://127.0.0.1:'+p+'/v1/models',{headers:{authorization:'Bearer '+(process.env.AI_CORE_API_KEY||'')},signal:AbortSignal.timeout(3500)});\n   const v=await r.json().catch(()=>({}));\n   result.models[n]={status:r.status,ids:Array.isArray(v.data)?v.data.map(x=>x.id).filter(x=>typeof x==='string').slice(0,4):[]};\n  }catch(e){result.models[n]={error:e.name||'UNKNOWN'};}\n }\n console.log(JSON.stringify(result));\n})().catch(e=>{console.error(e.name);process.exit(1)})\n\"\"\"\np=cmd(['docker','exec','debug-ai-debug-ai-1','node','-e',node],timeout=28)\nif p['exit']: raise SystemExit('DOCKER_NODE_GATE_PROBE_FAILED:'+p['stderr'])\nd=json.loads(p['stdout'])\nimage=cmd(['docker','inspect','--format','{{.Image}}|{{index .Config.Labels \"com.docker.compose.project\"}}','debug-ai-debug-ai-1'])\nout={'host_source_worktree_head':head['stdout'].strip() if head['exit']==0 else 'UNAVAILABLE','source_worktree_clean':status['exit']==0 and not status['stdout'].strip(),'live_container_image_project':image['stdout'].strip() if image['exit']==0 else 'UNAVAILABLE','debugai_gate_client':d,'note':'This is authenticated GET /v1/models, not real inference or six-role product success'}\nbody='DEBUGAI_CURRENT_HOST_GATE_PREFLIGHT\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=cmd(['gh','api','-X','POST','repos/seigo-gace/debug-ai/issues/41/comments','-f','body='+body],timeout=30)\nif r['exit']: raise SystemExit('GH_REPORT_FAILED:'+r['stderr'])\nx=json.loads(r['stdout'])\nprint('HOST_GATE_PREFLIGHT_COMMENT='+x['html_url'])\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
