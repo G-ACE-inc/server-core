@@ -289,6 +289,20 @@ SOURCE_FAILURE_MARKERS = {
     76: "CHAT_SOURCE_DIRTY_WORKTREE",
 }
 
+def attest_source_preflight(stdout, stderr, exit_code, enabled):
+    """Separate the trusted preflight phase from arbitrary command stderr.
+
+    The selector emits its success prefix before the original command;
+    remove only that prefix so captured user stdout stays exact.
+    """
+    passed = bool(enabled and stdout.startswith(SOURCE_PREFLIGHT_OK))
+    clean_stdout = stdout[len(SOURCE_PREFLIGHT_OK):] if passed else stdout
+    failed = bool(enabled and not passed and exit_code in SOURCE_FAILURE_MARKERS
+                  and stderr.strip() == SOURCE_FAILURE_MARKERS[exit_code]
+                  and not clean_stdout)
+    return clean_stdout, failed
+
+
 def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, result_dir=None,
                      runner=None):
     """Run a Master-delegated Host command inside an existing, registered checkout.
@@ -349,18 +363,9 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
             completed = run(["/bin/bash", "-lc", "umask 0022; " + command_text], cwd=str(root),
                             capture_output=True, text=True, timeout=HOST_COMMAND_MAX_SECONDS,
                             check=False)
-            output = completed.stdout
-            preflight_passed = bool(value.get("source_preflight", False)
-                                    and output.startswith(SOURCE_PREFLIGHT_OK))
-            if preflight_passed:
-                # Control marker is not part of the user's actual stdout.
-                # Restore the exact bytes seen from the original command.
-                output = output[len(SOURCE_PREFLIGHT_OK):]
-            preflight_failure = bool(value.get("source_preflight", False)
-                                     and not preflight_passed
-                                     and completed.returncode in SOURCE_FAILURE_MARKERS
-                                     and completed.stderr.strip() == SOURCE_FAILURE_MARKERS[completed.returncode]
-                                     and not output)
+            output, preflight_failure = attest_source_preflight(
+                completed.stdout, completed.stderr, completed.returncode,
+                value.get("source_preflight", False))
             result = {**base, "state": "HOST_COMMAND_PASS" if completed.returncode == 0 else "FAIL",
                       "exit_code": completed.returncode,
                       "stdout": output, "stderr": completed.stderr,
