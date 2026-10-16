@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Source-only v8 fast-forward if safe, protect Vault HMAC checkout and all production containers; no restart.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nv=/home/admin1/projects/astera_v8\nl=/home/admin1/projects/libral-vault\necho 'VAULT_API_EXPORT_IN_HOST'\nif git -C \"$l\" show HEAD:src/index.ts | grep -q 'export.*materializeRuntimeSecret'; then echo 'HOST_VAULT_DIRECT_EXPORT=YES'; else echo 'HOST_VAULT_DIRECT_EXPORT=NO'; fi\ntest \"$(git -C \"$v\" branch --show-current)\" = main\ntest \"$(git -C \"$v\" rev-parse HEAD)\" = 9209aaedd8f0721df75a03a8060607da6ac3ac13\ntest -z \"$(git -C \"$v\" status --porcelain --untracked-files=no)\"\ngit -C \"$v\" fetch --no-tags origin main\ntarget=$(git -C \"$v\" rev-parse FETCH_HEAD)\ntest \"$target\" = 57dee0e189391c1f50b28aa5029fa2b264c7d651\ngit -C \"$v\" merge-base --is-ancestor HEAD \"$target\"\ngit -C \"$v\" merge --ff-only \"$target\"\nprintf 'V8_HOST_SOURCE_SHA='; git -C \"$v\" rev-parse HEAD\necho 'VAULT_FEATURE_BRANCH_PRESERVED=YES'\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "V8 checkout main SHA 9209aa with untracked FETCH_HEAD,artifacts/ only; Vault checkout feature HMAC 4edc clean; main v8 CI SUCCESS merge 57dee; guarded ff-only source reflect, no deploy or Secret mutation."
+  }
+}
