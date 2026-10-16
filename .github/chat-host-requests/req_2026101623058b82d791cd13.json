@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read only running Core REAL two-client accepted workload result with genuine persistent metrics, max60s wait. Do not launch any new inference or mutate product Source. Cleanup ONLY successful owned temp.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "command": "set -eu\nbase=/tmp/ai_core_shared_acceptance_9c4c36ad\nready=NO\nfor i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do\n if docker exec ai-core-model-gate test -f \"$base.exit\"; then ready=YES; break; fi\n sleep 4\ndone\nif test \"$ready\" != YES; then echo AI_CORE_SHARED_READY_INFERENCE=RUNNING; exit 0; fi\nrc=$(docker exec ai-core-model-gate cat \"$base.exit\")\nout=$(docker exec ai-core-model-gate tail -n 1 \"$base.json\")\ncase \"$out\" in *'\"acceptance\":\"AI_CORE_ACTUAL_SHARED_ADMISSION_WITH_METRICS\"'*) :;; *) echo ACCEPTANCE_INVALID_OUTPUT; exit 3;; esac\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"AI_CORE_ACTUAL_SHARED_READY_ADMISSION SOURCE=9c4c36adbb9636a5cf45f72497d6d837f9effb0e CODE=$rc $out\" --jq .html_url >/dev/null\nif test \"$rc\" = 0; then docker exec ai-core-model-gate rm -f \"$base.py\" \"$base.json\" \"$base.exit\"; echo AI_CORE_SHARED_READY_INFERENCE=PASS\nelse echo AI_CORE_SHARED_READY_INFERENCE=FAIL; fi\ntest \"$rc\" = 0"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Ready-model two-client exact code9c4c36ad launched ONCE Host Issue#10 6226319356 PASS. Prior cold model test revealed 35s boot exceeds explicit wait30s, so new conditions prewarm then same-model concurrent; no rerequest inference. Need bounded readback and stats only. Host current sha4fe86475."
+  }
+}
