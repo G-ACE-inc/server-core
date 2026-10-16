@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core: retrieve exact untruncated raw Host stderr for failed crash-test command to fix syntax; read-only",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json\np=subprocess.run(['python3','/home/admin1/server-core/scripts/servercore_host_output_read.py','req_ae10e1c5030c61043d90f5a4','stderr','0','3900'],capture_output=True,text=True,timeout=12)\no={'read_exit':p.returncode,'error':p.stderr[-350:]}\nif p.returncode==0:\n x=json.loads(p.stdout);o['stderr']=x['data'];o['complete']=x['complete']\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_CRASH_TEST_RAW_STDERR\\n'+json.dumps(o,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=24)\nprint('CRASH_DIAG='+('RECORDED '+r.stdout.strip() if r.returncode==0 else 'RECORD_FAILED'))\nraise SystemExit(0 if r.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41#issuecomment-6216375940"
+  }
+}
