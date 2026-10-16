@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 read-only private Unix backend switch preflight; compare real container bindings, mounts, images, resource and current checkout; never start model or touch DebugAI.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "8d5751dc3a211708b0d54a8a8a5a1b3eb1f0630e",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "8d5751dc3a211708b0d54a8a8a5a1b3eb1f0630e",
+    "command": "set -eu\nprintf 'AI_CORE_PRIVATE_SWITCH_PREFLIGHT_V3\\n'\nprintf 'DISPATCHER_HEAD='; git -C /home/admin1/server-core rev-parse HEAD\nprintf 'AI_CORE_PR_WORKTREE_HEAD='; git -C /home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015 rev-parse HEAD\nprintf 'PR_WORKTREE_DIRTY_COUNT='; git -C /home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015 status --porcelain | wc -l\nfor n in ai-core-model-gate ai-coder ai-qwen3 ai-granite ai-ministral; do\n  docker inspect --format 'MODEL={{.Name}} STATUS={{.State.Status}} IMAGE={{.Image}} PORTS={{json .HostConfig.PortBindings}} CGROUP={{.HostConfig.CgroupParent}} MOUNTS={{range .Mounts}}{{.Destination}},{{end}} CMD={{json .Config.Cmd}}' \"$n\" 2>/dev/null || printf 'CONTAINER_MISSING=%s\\n' \"$n\"\ndone\nprintf 'ACTIVE_LISTENERS\\n'; ss -lnt | grep -E ':(18080|18081|18082|18083|18084|18181|18182|18183|18184) ' || :\nprintf 'PRIVATE_BUS\\n'; docker volume inspect ai-core-backend-bus --format '{{.Name}} {{.Driver}}' || :\nprintf 'MODEL_GATE_IMAGE\\n'; docker image inspect ai-core-model-gate:local --format '{{.Id}}' || :\nprintf 'BACKEND_IMAGE\\n'; docker image inspect ghcr.io/ggml-org/llama.cpp:server --format '{{.Id}}' || :\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "ai-core PR #3 at 75778b66, clean existing worktree and four stopped backends confirmed Issue #1 comment 6222440936; new UDS production switch not completed. DebugAI PR #115 separate writer, no duplicate inference."
+  }
+}
