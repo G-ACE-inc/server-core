@@ -110,7 +110,8 @@ jobs:
             # jq emits the command exactly; a sentinel protects trailing newlines
             # from Bash command substitution (ordinary $(jq -r ...) drops them).
             host_command="$(jq -jer '.bounded_host_request.command' "$target" && printf '__GACE_EOF_SENTINEL__')"
-            host_command="${host_command%
+            host_command="${host_command%__GACE_EOF_SENTINEL__}"
+            send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --host-command "$host_command" --repo-sha "$(jq -r '.bounded_host_request.repo_sha' "$target")")
             if [[ "$(jq -r '.bounded_host_request.source_preflight // false' "$target")" == "true" ]]; then send+=(--source-preflight); fi
           elif [[ "$command_id" == "dev.job" ]]; then
             # Separate isolated test facility, never ordinary VPS mutation.
