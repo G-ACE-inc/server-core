@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Investigate DebugAI real AI Core client POST failure with exact original Python script, capture sanitized stderr and response metadata without credentials",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess\ndiag=\"import json,subprocess\\nsrc=\\\"import os,json,urllib.request,urllib.error,time\\\\nv=os.environ.get('AI_CORE_API_KEY','')\\\\nbase='http://127.0.0.1:18184'\\\\nout={}\\\\ntry:\\\\n r=urllib.request.Request(base+'/v1/models',headers={'Authorization':'Bearer '+v})\\\\n with urllib.request.urlopen(r,timeout=10) as f:mid=json.load(f)['data'][0]['id']\\\\n payload=json.dumps({'model':mid,'messages':[{'role':'user','content':'Reply with OK.'}],'max_tokens':8,'stream':False}).encode()\\\\n req=urllib.request.Request(base+'/v1/chat/completions',data=payload,headers={'Authorization':'Bearer '+v,'Content-Type':'application/json'},method='POST')\\\\n t=time.monotonic()\\\\n try:\\\\n  with urllib.request.urlopen(req,timeout=140) as f:\\\\n   d=json.load(f)\\\\n   out={'status':f.status,'choice_count':len(d.get('choices',[])),'has_answer':bool((d.get('choices') or [{}])[0].get('message',{}).get('content')),'elapsed_s':round(time.monotonic()-t,2)}\\\\n except urllib.error.HTTPError as e:out={'status':e.code}\\\\nexcept Exception as e:out={'error':type(e).__name__}\\\\nprint(json.dumps(out))\\\"\\np=subprocess.run(['docker','exec','--env','AI_CORE_API_KEY','debug-ai-debug-ai-1','python3','-c',src],capture_output=True,text=True,timeout=150)\\nresult={'exit_code':p.returncode,'stdout_preview':p.stdout.strip()[-450:],'stderr_preview':p.stderr.strip()[-500:]}\\nprint(json.dumps(result,ensure_ascii=False))\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',diag],text=True,capture_output=True,timeout=170)\nresult={'gate_code':p.returncode,'debug_ai':json.loads(p.stdout) if p.stdout.strip().startswith('{') else {'status':'NO_JSON_RESULT','error_type':p.stderr[:80]}}\nbody='AI_CORE_DEBUG_AI_INFERENCE_DIAGNOSTIC\\n'+json.dumps(result,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('DEBUG_AI_INFERENCE_DIAG='+('PASS '+r.stdout.strip() if r.returncode==0 else 'UNAVAILABLE'))\nraise SystemExit(0 if r.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209355339"
+  }
+}
