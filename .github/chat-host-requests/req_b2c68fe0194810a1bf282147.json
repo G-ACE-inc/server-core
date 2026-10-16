@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Diagnose earlier staged Gate image Docker build failure using existing protected Writer ledger and only allowlisted boolean cause categories. Do not leak raw logs or retry build.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "python3 - <<'PY'\nimport json\nfrom pathlib import Path\np=Path('/home/admin1/logs/servercore-service-deploy/req_3be48d65f981b3a92643fb6c.json')\nd=json.loads(p.read_text())\nstderr=str(d.get('stderr','')).lower()\nterms={'NETWORK_OR_APT':['network is unreachable','temporary failure resolving','apt-get','failed to fetch','could not resolve'], 'MISSING_LOCAL_BASE':['pull access denied','not found','manifest unknown'], 'BUILD_CONTEXT':['failed to compute cache key','failed to read dockerfile','no such file or directory','permission denied'], 'BUILDKIT':['failed to solve','executor failed'], 'SOURCE_FAIL':['source_context_changed','source_dirty','source sha']}\nprint('UDS_STAGE_IMAGE_FAILURE_DIAG',json.dumps({'exit':d.get('exit_code'),'duration_ms':d.get('duration_ms'),'stderr_chars':len(stderr),'patterns':{k:any(term in stderr for term in v) for k,v in terms.items()}},sort_keys=True))\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Staged Docker build req_3be48d65f981b3a92643fb6c failed exit1 after9.728s, backend remains unchanged; safely examine classification before updating build parameters."
+  }
+}
