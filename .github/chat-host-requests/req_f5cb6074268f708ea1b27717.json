@@ -1,0 +1,34 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/115"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "seigo-gace/debug-ai",
+    "repo_sha": "bb08aef1d92271d1fb4ab9f37309535811d48180",
+    "command": "set -eu\nprintf 'DEBUGAI_HOST_HEAD='; git -C /home/admin1/projects/debug-ai rev-parse HEAD\nprintf 'DEBUGAI_DIRTY_COUNT='; git -C /home/admin1/projects/debug-ai status --porcelain | wc -l\nprintf 'AICORE_CHECKOUT_HEAD='; git -C /home/admin1/projects/ai-core/.worktrees/source-import-20261013 rev-parse HEAD || true\nprintf 'RELEVANT_CONTAINERS\\n'; docker ps --format '{{.Names}} {{.Status}}' | grep -E '^(debug-ai|ai-core-model-gate)' || true"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
