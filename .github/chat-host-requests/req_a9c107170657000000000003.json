@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Post deployment readback v8 image, start, SHA and health and Vault health; no mutations.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nv=/home/admin1/projects/astera_v8\nsha=$(git -C \"$v\" rev-parse HEAD)\nimage=$(docker inspect astera-v8 --format '{{.Image}}')\nhealth=$(docker inspect astera-v8 --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')\nstarted=$(docker inspect astera-v8 --format '{{.State.StartedAt}}')\nvault=$(docker inspect libral-vault-libral-vault-1 --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')\nbody=$(printf 'API_ONLY_V8_DEPLOY_READBACK\\nv8_source_sha=%s\\nv8_container_image=%s\\nv8_container_started=%s\\nv8_health=%s\\nvault_health=%s\\n' \"$sha\" \"$image\" \"$started\" \"$health\" \"$vault\")\ngh api -X POST repos/G-ACE-inc/server-core/issues/10/comments -f body=\"$body\" --jq '.html_url'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Host deployment result req_36fdb1e8b2d72e35946d3b96 PASS exit0 issue#10 6225468709; verify actual v8 post restart health image independently."
+  }
+}
