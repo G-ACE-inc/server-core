@@ -86,6 +86,14 @@ def continuation_observation(record, verdict):
     failed = record.get("state") == "FAIL" or (
         type(record.get("exit_code")) is int and record["exit_code"] != 0)
     if failed:
+        hint = record.get("diagnostic_hint")
+        if record.get("exit_code") == 74 and hint == "CHAT_SOURCE_SHA_MISMATCH":
+            return "HOST_SOURCE_CONTEXT_STALE", "REFRESH_TARGET_PR_HEAD_AND_REPLAN"
+        if hint in {
+                "CHAT_SOURCE_WORKDIR_MISSING", "CHAT_SOURCE_GIT_UNAVAILABLE",
+                "CHAT_SOURCE_ROOT_MISMATCH", "CHAT_SOURCE_SHA_UNAVAILABLE",
+                "CHAT_SOURCE_REQUIRED_FILE_MISSING"}:
+            return "HOST_SOURCE_CONTEXT_INVALID", "CHECK_TARGET_WORKDIR_AND_SOURCE_FILES"
         host_sha = record.get("host_sha")
         expected_sha = record.get("expected_sha")
         if (isinstance(host_sha, str) and isinstance(expected_sha, str)
@@ -179,6 +187,7 @@ def write_observation(path, request_id, record=None, comment=None, verdict=None)
                    "expected_sha": record.get("expected_sha"), "host_sha": record.get("host_sha"),
                    "result_url": (comment or {}).get("html_url"), "observation": observation,
                    "next_action": next_action, "result_verified": verdict == "OK",
+                   "diagnostic_hint": record.get("diagnostic_hint"),
                    "streams": {stream: stream_receipt_metadata(record, stream)
                                for stream in ("stdout", "stderr")}}
     dest = Path(path)
