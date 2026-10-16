@@ -25,6 +25,7 @@ class TerminalOutputTests(unittest.TestCase):
             receipt = json.loads(output)
             self.assertEqual(receipt["streams"]["stdout"]["sha256"], hashlib.sha256(text.encode()).hexdigest())
             self.assertEqual(receipt["streams"]["stdout"]["chars"], len(text))
+            self.assertEqual(receipt["streams"]["stdout"]["bytes"], len(text.encode("utf-8")))
             self.assertEqual(receipt["streams"]["stderr"]["chars"], 0)
             self.assertNotIn(text, output)
         # A metadata-only publisher must NEVER hash its empty preview.
@@ -35,6 +36,7 @@ class TerminalOutputTests(unittest.TestCase):
         pointer["stdout_sha256"] = "b" * 64
         pointer["stdout_chars"] = 777
         self.assertEqual(poll.stream_receipt_metadata(pointer, "stdout")["sha256"], "b" * 64)
+        self.assertEqual(poll.stream_receipt_metadata(pointer, "stdout")["bytes"], 1000)
         self.assertFalse(poll.stream_receipt_metadata(pointer, "stdout")["complete"])
 
     def test_failed_host_result_is_not_mislabeled_as_partial(self):
