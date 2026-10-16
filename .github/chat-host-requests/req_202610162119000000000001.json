@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Publish sanitized error class from already-observed original Astera connection attempt protected writer ledger; never raw error or secret and never repeat model test.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nout=$(python3 -c 'import json; d=json.load(open(\"/home/admin1/logs/servercore-service-deploy/req_6b018e99d2eaf53ba73dc619.json\")); s=str(d.get(\"stderr\") or \"\").lower(); keys=(\"syntaxerror\",\"referenceerror\",\"module_not_found\",\"error response from daemon\",\"syntax error\",\"econnrefused\",\"node:\",\"not found\",\"permission denied\"); print(\"AI_CORE_ASTERA_PROBE_ERROR_CLASS \"+json.dumps({\"exit\":d.get(\"exit_code\"),\"length\":len(s),\"matches\":[k for k in keys if k in s]}))')\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$out\" --jq '.html_url' >/dev/null\necho AI_CORE_PRIVATE_ERROR_CLASS_RECORDED=YES\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Issue1 Current PR3 01ef, source already validated. Original Astera auth probe failed Issue#10 6224170637; only needs nonsecret error class. Prior request Actions38963334927 START gate rejected missing cu_verified, command never reached Host."
+  }
+}
