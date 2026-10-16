@@ -30,4 +30,9 @@ Host観測の `streams[].complete` はIssue/Jobに見える**プレビューの�
 
 大容量Host結果でWriterの保存は完了していても、ReceiverからResult Sinkへの記録が失敗すればGitHub Issue/Actionsに結果が戻らない。`host.command`も他のRequestと同様に**Sink未記録をHTTP 503として返し、Gatewayは元のevent/request IDを保持して再配送**する。Host writerの同一Request ID重複検知で実コマンドを再実行しない。Gatewayの受理HTTP 202、Host Writer ledger PASS、Sinkへの記録、Issueへのpublish、Actionsのpollを別の状態として扱い、片方のPASSから他方を推測しない。旧Host runtimeが新しいSourceを使用しているとはMergeだけで推測しない。
 
+
+**2026-10-16 Agent Pool Source照合・診断の整合修正（PR #299）**：任意の`source_context`を含む依頼について、Selectorは既存登録checkoutのGit common directoryと指定先worktreeの実Git common directoryを`realpath`で比較する。名称やworktreeの位置だけが一致する無関係なGit cloneを拒否する。HEAD一致だけではソースが同一といえないため、実行先worktreeで`git status --porcelain --untracked-files=all`が空であることを検査し、変更・未追跡ファイルが残る場合は`CHAT_SOURCE_DIRTY_WORKTREE`（exit76）を返して**コマンドは実行しない**。既存の許可範囲を広げたり、別RepoのSourceを書き換えたりはしない。
+
+同Source照合が有効なRequestでは、Selectorだけが生成できる`source_preflight=true`を既存Actions/Gateway/Receiver/Host Writerへ伝え、Writer ledgerへ相関付きで保存する。Result Sinkはその記録があり、かつWriterが既知の終了コード70～76と完全一致する診断マーカーを返した場合**だけ**、短い`diagnostic_hint`を公開する。通常`host.command`が同じ文字列をstderrへ返してもSource障害と認定しない。`cd`エラーのシェル本文は抑止し、欠落時の単一診断マーカーを保つ。別CHATから既存checkpointを復元するときも、観測種別／終了コード／マーカーが整合しない組合せはSource固有の次Actionを選択しない。GitHub Workflowの正当な`...yml@main`等のref接尾辞はパス本体を照合して受け入れる。これらはSource/CI実装に関する契約であり、**Host稼働中Writer・Sink反映、機密ZIP全文輸送、Agent Loop全体の完了証拠ではない**。
+
 実行依頼のファイル形式、必要な署名・認証・SHA・登録Repo制約は既存の実装と `operations/github-project-bounded-host.json` に従う。結果は既存ActionsとHost返却で確認する。失敗時は原因を修正して作業を続ける。通常CHATでの新たなMaster承認は要求しない。
