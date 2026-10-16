@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core guarded real Coder SSE Gate restart orphan journal/recovery E2E: only own stream, abort when any other lease/handoff; preserve DebugAI service and legacy Router stop; source exact PR3",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json,time,urllib.request\ndef run(a,timeout=22):\n return subprocess.run(a,capture_output=True,text=True,timeout=timeout)\nprobe=\"\"\"import os,json,urllib.request,hashlib\nfrom pathlib import Path\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']}\nreq=urllib.request.Request('http://127.0.0.1:18184/internal/handoff/status',headers=h)\nwith urllib.request.urlopen(req,timeout=8) as r:s=json.load(r)\ntry:\n with urllib.request.urlopen('http://127.0.0.1:18084/slots',timeout=3) as r:slots=json.load(r)\n busy=any(x.get('is_processing') is True for x in slots)\nexcept Exception:busy=False\nprint(json.dumps({'active':s['active'],'pending':s['recovery_pending'],'handoff':s['handoff'],'resident':s['resident'],'busy':busy,'source':hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest()}))\n\"\"\"\nworker_code=\"\"\"import os,urllib.request,json\nbase='http://127.0.0.1:18184'\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY'],'Content-Type':'application/json'}\nwith urllib.request.urlopen(urllib.request.Request(base+'/v1/models',headers=h),timeout=8) as r:model=json.load(r)['data'][0]['id']\npayload={'model':model,'stream':True,'messages':[{'role':'system','content':'Return only the requested numeric sequence.'},{'role':'user','content':'Write numbers 1 to 400 separated by commas.'}],'max_tokens':500}\nwith urllib.request.urlopen(urllib.request.Request(base+'/v1/chat/completions',headers=h,data=json.dumps(payload).encode()),timeout=180) as r:\n for line in r:\n  if b'[DONE]' in line:break\n\"\"\"\ndef state():\n r=run(['docker','exec','ai-core-model-gate','python3','-c',probe],24)\n return json.loads(r.stdout) if r.returncode==0 else {'error':r.stderr[-160:]}\nout={'test':'SSE_GATE_RESTART_OWN_STREAM'}\nchild=None\ntry:\n initial=state();out['initial']=initial\n safe=(initial.get('source')=='24f72194632439f7666248e1ea790f9b69921683f03f9976bf984767b999ff3f' and\n       initial.get('pending')==[] and initial.get('handoff') is None and\n       sum(initial.get('active',{}).values())==0 and not initial.get('busy') and not initial.get('resident'))\n if not safe:out['error']='PREEXISTING_TRAFFIC_OR_SOURCE_CHANGED'\n else:\n  child=subprocess.Popen(['docker','exec','ai-core-model-gate','python3','-c',worker_code],stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)\n  busy=False\n  for _ in range(95):\n   current=state()\n   if current.get('busy') and current.get('active',{}).get('coder')==1 and sum(current['active'].values())==1 and current.get('handoff') is None and current.get('pending')==[]:\n    busy=True;out['before_crash']=current;break\n   if child.poll() is not None:break\n   time.sleep(1)\n  out['own_stream_busy_seen']=busy\n  if not busy:out['error']='INFERENCE_WAS_NOT_OBSERVED_ACTIVE'\n  else:\n   # Recheck immediately: never restart a Gate serving any other model.\n   check=state()\n   if check.get('active',{}).get('coder')!=1 or sum(check.get('active',{}).values())!=1 or not check.get('busy') or check.get('handoff') is not None:\n    out['error']='OTHER_TRAFFIC_OR_OWN_STREAM_ENDED'\n   else:\n    restarted=run(['docker','restart','--time','1','ai-core-model-gate'],60)\n    out['restart_exit']=restarted.returncode\n    if restarted.returncode:out['error']='GATE_RESTART_FAILED'\n    else:\n     samples=[]\n     for _ in range(20):\n      now=state()\n      if not now.get('error'):samples.append({'active':now['active'],'pending':now['pending'],'resident':now['resident'],'busy':now['busy']})\n      if not now.get('error') and now.get('pending')==[] and sum(now.get('active',{}).values())==0 and len(now.get('resident',[]))<=2:break\n      time.sleep(1)\n     out['post_restart_samples']=samples[:4]+samples[-4:]\n     out['post_recovered']=bool(samples and samples[-1]['pending']==[] and sum(samples[-1]['active'].values())==0 and len(samples[-1]['resident'])<=2)\nfinally:\n if child is not None:\n  try:\n   if child.poll() is None:child.terminate()\n   child.communicate(timeout=5)\n  except Exception:child.kill()\nports={}\nfor p in (18181,18182,18183,18184):\n try:\n  with urllib.request.urlopen('http://127.0.0.1:'+str(p)+'/health',timeout=4) as x:ports[str(p)]=x.status\n except Exception as e:ports[str(p)]=type(e).__name__\nout['health']=ports\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_CODER_REAL_GATE_RESTART_20261016\\n'+json.dumps(out,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=24)\nprint('EVIDENCE='+('POSTED '+r.stdout.strip() if r.returncode==0 else 'FAILED'))\nprint('CORE_CRASH_RECOVERY='+('PASS' if out.get('own_stream_busy_seen') and out.get('restart_exit')==0 and out.get('post_recovered') and all(x==200 for x in ports.values()) else 'NOT_PROVEN'))\nraise SystemExit(0 if r.returncode==0 and not out.get('error') and out.get('post_recovered') and all(x==200 for x in ports.values()) else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/commit/475f7568ed5a711b9b47d26a2575a477a6425737"
+  }
+}
