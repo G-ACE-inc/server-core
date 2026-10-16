@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Classify original protected Host Writer ledger stderr for Astera independent consumer auth probe, fixed error marker booleans only, no raw private values, no rerun of the failed Gate probe.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\npython3 -c '\nimport json\np=\"/home/admin1/logs/servercore-service-deploy/req_6b018e99d2eaf53ba73dc619.json\"\nd=json.load(open(p))\ns=str(d.get(\"stderr\") or \"\")\nmarkers={\"node_syntax\":\"SyntaxError\",\"node_reference\":\"ReferenceError\",\"node_module\":\"MODULE_NOT_FOUND\",\"docker_error\":\"Error response from daemon\",\"bash_syntax\":\"syntax error\",\"connection\":\"ECONNREFUSED\",\"invalid_argument\":\"invalid argument\",\"not_found\":\"not found\",\"node_exec\":\"node:\",\"permission\":\"permission denied\"}\nresult={k:(v.lower() in s.lower()) for k,v in markers.items()}\nprint(\"ASTERA_GATE_AUTH_FAILURE_CLASS=\"+json.dumps({\"exit\":d.get(\"exit_code\"),\"stderr_bytes\":len(s),\"markers\":result},sort_keys=True))\n'\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core second product authenticated GET attempt host.command req_6b018e99d2eaf53ba73dc619 failed exit1 with private stderr 506B Issue10 #6224170637. Read only protected Writer ledger and publish predetermined error class booleans, never raw stderr or credential. Gateway live source not updated."
+  }
+}
