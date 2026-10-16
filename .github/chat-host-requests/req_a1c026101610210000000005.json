@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core SSE: read running Gate source SHA + rollback image presence after stopped deploy attempt, no changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport subprocess,hashlib,json\nfrom pathlib import Path\nf=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015/runtime/model_gate.py')\nexpected=hashlib.sha256(f.read_bytes()).hexdigest()\ncode=\"import hashlib;from pathlib import Path;print(hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest())\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',code],capture_output=True,text=True,timeout=15)\ntag=subprocess.run(['docker','image','inspect','ai-core-model-gate:rollback-20261016-sse','--format','{{.Id}}'],capture_output=True,text=True,timeout=12)\nout={'expected':expected,'running':p.stdout.strip(),'probe_exit':p.returncode,'rollback_tag_exists':tag.returncode==0}\nbody='AI_CORE_SSE_DEPLOY_POST_FAILURE_READBACK\\n'+json.dumps(out)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('AI_CORE_DEPLOY_RECOVERY_STATE='+('RECORDED '+r.stdout.strip() if r.returncode==0 else 'NOT_RECORDED'))\nraise SystemExit(0 if r.returncode==0 and p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/commit/3d7f15f3a5e9a39ca084d2e656b9ba554e04a28e"
+  }
+}
