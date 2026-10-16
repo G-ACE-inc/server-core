@@ -7,6 +7,11 @@ import subprocess
 import sys
 from pathlib import Path, PurePosixPath
 
+try:
+    from scripts.chat_host_command_prepare import validate_command
+except ModuleNotFoundError:
+    from chat_host_command_prepare import validate_command
+
 PREFIX = ".github/chat-host-requests/"
 REQUEST = re.compile(r"^[.]github/chat-host-requests/req_[a-f0-9]{24}[.]json$")
 TARGET = Path("/tmp/gace-common-host-request.json")
@@ -120,6 +125,10 @@ def prepare(path):
     if path.is_symlink() or not path.is_file() or path.stat().st_size > 8192:
         raise ValueError("REQUEST_FILE_INVALID")
     data = json.loads(path.read_text(encoding="utf-8"))
+    return prepare_data(data)
+
+
+def prepare_data(data, *, command_diagnostics=None):
     if not isinstance(data, dict) or data.get("bounded_host_request", {}).get("enabled") is not True:
         raise ValueError("REQUEST_NOT_ENABLED")
     if data.get("chat_decision_checkpoint", {}).get("phase") != "START":
@@ -143,6 +152,10 @@ def prepare(path):
     if bounded.get("command_id") == "host.command" and bounded.get("repository") == "G-ACE-inc/server-core":
         if bounded.get("expected_sha") != bounded.get("repo_sha"):
             raise ValueError("SERVER_CORE_HOST_SHA_PINS_CONFLICT")
+    if bounded.get("command_id") == "host.command":
+        evidence = validate_command(bounded.get("command"))
+        if command_diagnostics is not None:
+            command_diagnostics.update(evidence)
     return data
 
 def main():
