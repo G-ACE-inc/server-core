@@ -1,6 +1,6 @@
 # SERVER CORE LOAD SCOPE / COMMAND ROUTER
 
-Version: 2026-10-05
+Version: 2026-10-17
 Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分け、必要情報だけを段階的に読ませるためのRouter。
 
 ## 1. Executor Profile / Mandatory Start
@@ -24,19 +24,11 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 
 **Server execution:** the existing server-core CHAT → Actions → Gateway → Receiver → Host `host.command` path with AI-authored commands, subject to actual Issue #10 admission. `dev.job` is for isolated tests. Do not assume all repositories have deploy admission. For a genuinely necessary Master terminal handoff use `docs/MASTER_TERMINAL_COMMAND.md`.
 
-**Efficiency:** Keep the approved Mission and design fixed; reuse verified history, choose sensible work grouping, and continue while relevant actions remain. Intermediate checks, records and reports are not independent work objectives. If this CHAT cannot execute a required step, provide the complete authorized execution instruction to the appropriate operator without inventing unnecessary detours, extra approvals, or new gates. Ownership/project containment: Workspace §4.1–§4.2; runtime/evidence: §9/§12.
-
 ### Integrated G-ACE mission routing
 
 Treat Tool B, TGserver and other capability inspections as dependencies of the commissioned Mission, not new work objectives. Project acceptance C01–C09 is owned by `docs/GITHUB_PROJECT_RULE_PLANE.md`; authority remains #15 (integration), #40 (CHAT continuity), #10 (common Host), TGserver #50 (ZERO). Preserve each CU's mutation owner and resume the original Mission after dependency checks. Execution/blocked-step decisions follow Workspace §6; Source or CI evidence alone does not prove runtime acceptance.
 
-### GPT CHAT work continuity
-
-The owning work procedure is `docs/G_ACE_WORKSPACE.md` §6. Keep the approved Mission fixed; choose efficient task grouping and reuse existing evidence without introducing another checklist, report trigger or stopping boundary. For formal Master reports, follow Rule #17's Master-facing communication contract. This router adds no independent execution procedure.
-
-GPT_CHAT拡張RuleをSERVER_AIへdefault loadしない。
-
-README以外のserver-core Authorityを新Task開始時に一括読込しない。
+For formal Master reports, follow Rule #17's Master-facing communication contract. Execution, continuation and capacity-safe handoff belong to Work Routine §6; this router adds no independent procedure. Do not default-load GPT_CHAT rules into SERVER_AI or bulk-read other server-core authority at task start.
 
 同一Taskで一度確認済みの安定Authority全文は通常、変更・矛盾・情報不足が無い限り再読込しない。開発進行はWork Routine §6に一本化し、毎ターンのRule Plane全文読込を独立した前提条件としない。読み込んだ事実だけで適用PASSにせず、選択したAction・継続・終了判断へ照合する。ただし開発の各ターンでは関連するGitHub Project/IssueのCurrentと対象HEAD/PR/CI等の変化を軽量に再同期し、対象変更・新規Gate・競合時だけ必要なAuthority/Source範囲を再取得する。古い履歴・別Project・GPT CHAT拡張RuleをSERVER_AIへまとめて渡さない。
 
@@ -44,51 +36,13 @@ README以外のserver-core Authorityを新Task開始時に一括読込しない�
 
 ## 2. Command Routing
 
-| Task | 追加で読むserver-core Authority |
-|---|---|
-| server-core自身の設計/司令室責務 | `docs/SERVER_CORE_DESIGN.md` + 必要なら `docs/DESIGN_DELTA.md` |
-| 開発方法論 / 責務 / 5段 / Module / 再利用 | `CORE.md` |
-| 共通運用 / 禁止 / Approval Boundary | `SERVER_CORE_PROTOCOL.md` |
-| Master Terminal Command / Copy&Paste / GACE_RESULT / Shell Safety / Syntax Validation | `docs/MASTER_TERMINAL_COMMAND.md` |
-| Workspace運用 / dispatch | `docs/G_ACE_WORKSPACE.md` |
-| Project / Repository / shared Capability / MCP / Tool / DebugAI / Runtime discovery | `docs/WORKSPACE_REGISTRY.md` |
-| Tool B: GPT CHATからの既存Actions→Gateway→server-core receiver→隔離Docker開発ターミナル `dev.job`、Host読取・GitOps・Source反映 | `docs/SERVER_CORE_DESIGN.md` §16.11と§16（B0–B5）+ owning #10 Current + 必要なHost/Registry実測。DebugAI製品経路とは認可を混同しない |
-| Tool A: 統合Development Logの収集・送信・TGserver ZERO保存・検索・CHAT間復元 | `docs/SERVER_CORE_DESIGN.md` §17（A0–A4）+ `docs/PROJECT_INTEGRATION_RULES.md` + TGserver `README_ZERO.md` / `docs/TGSERVER_ZERO_PROJECT_INTEGRATION.md` / #44/#50 + 関連Gateway Producer/Runtime Evidence |
-| Project Integration（TGserver / webhook gateway / Vault / MCP / Tool） | `docs/PROJECT_INTEGRATION_RULES.md` |
-| Git / Commit / Push / work report | `docs/AUTO_COMMIT.md` |
-| Deploy | `docs/DEPLOY_RUNBOOK.md` |
-| 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
-| Shared Secret / Token | `docs/WORKSPACE_SHARED_SECRETS.md` |
-| Reusable KB / F: storage / KB bridge | `docs/KB_REUSE_DESIGN.md` |
-| Log / Cache / Cleanup / Backup / Recovery | `docs/STORAGE_LIFECYCLE.md` |
-| Cloudflare | `docs/CLOUDFLARE_OPERATIONS.md` |
-| GitHub無料枠 | `docs/GITHUB_FREE_MAX.md` |
-| GitHub skill resolver | `docs/GITHUB_SKILL.md` |
-| 用語 | `docs/GLOSSARY.md` |
-| GitHub Project Rule Plane / executor profile | `docs/GITHUB_PROJECT_RULE_PLANE.md` + `operations/github-project-rule-plane.json` |
-| server-core構造 | `docs/STRUCTURE.md` |
+Use the single [README Task Routing table](../README.md#task-routing) to select common Authority. Combine only the rows needed for this task; do not fetch the whole table's documents.
 
-複合作業では必要Authorityだけ組み合わせる。
+For the integrated platform only: Tool B's common Host / isolated `dev.job` design is `docs/SERVER_CORE_DESIGN.md` §16/§16.11 and owning #10 Current; Tool A's collection→TGserver ZERO→search/restore design is §17 and `docs/PROJECT_INTEGRATION_RULES.md`, then the target TGserver `README_ZERO.md` / integration document and owning #44/#50 Current. Consult relevant Gateway/Host evidence only when that dependency is needed. DebugAI's product route is a separate authorization scope.
 
 ## 3. Dispatch Decision
 
-対象Projectへ入る前に、Taskに必要な範囲で次を確定する。
-
-```text
-PURPOSE
-EXPECTED_RESULT
-TARGET_PROJECT
-TARGET_RESPONSIBILITY
-TARGET_REPOSITORY
-AUTHORITY_REQUIRED
-REUSE_CANDIDATES
-VERIFY_PATH
-APPROVAL_BOUNDARY
-```
-
-対象Project / ownerが不明なら `docs/WORKSPACE_REGISTRY.md` を読む。
-
-既存owner / reusable assetを確認する前に新規Project / Module / Tool / Documentを作らない。
+Before entering a target, identify its purpose/expected result, Project/Repository/owner, responsibility, required Authority, reuse candidates (`REUSE_CANDIDATES`), verification path and approval boundary. If ownership is unknown, use `docs/WORKSPACE_REGISTRY.md`; do not create another Project/Module/Tool/Document before checking existing ownership and assets. Mission/CU/pre-dispatch detail belongs to Work Routine §6.
 
 ### 3.1 Project-list containment gate (mandatory for GPT CHAT / SERVER_AI / Codex / Composer)
 
@@ -115,55 +69,28 @@ Route every new CU, Branch, worktree, Module or same-purpose reimplementation th
 対象Projectへ入った後はREADMEを入口とする。
 
 ### Level 0: Repository Entry
-- README Current State
-- Designへのリンク
-- Project Treeへのリンク
-- Design Deltaへのリンク
-- completed System / Feature-bundle / Module Documentへのリンク
-- run / test / verify entry
 
-存在しないDocumentを推測で作成済み扱いしない。
+Read the target README's actual Current, Design/Tree/Delta/unit-document links and run/test entry. Do not invent missing documents.
 
 ### Level 1: Target Boundary
-最初に読む。
-- 対象Source
-- Input / Output
-- 直接依存
-- 関連Test
-- 明示された再利用候補
 
-通常変更がLevel 1で閉じられるならそこで止める。
+Read target Source, input/output, direct dependencies, relevant tests and named reuse candidates. Stop expansion if this bounds the change.
 
 ### Level 2: Adjacent Boundary
-次の場合だけ拡張する。
-- 呼出元 / 呼出先が必要
-- Config / State ownerが不明
-- Interface / Schema契約確認が必要
-- 近接再利用候補の比較が必要
+
+Expand only for required callers/callees, config/state ownership, interface/schema contracts or adjacent reuse comparison.
 
 ### Level 3: Reuse Unit
-次の場合だけModule / Component範囲へ拡張する。
-- 同じ責務の既存実装比較が必要
-- Adapter / shared contract検討が必要
-- 責務混在 / 循環依存の可能性がある
+
+Expand to a module/component only to compare the same responsibility, assess an adapter/shared contract, or resolve mixed responsibility/cycles.
 
 ### Level 4: System / Repository
-次の場合だけSystem / Repository全体へ拡張する。
-- 複数Component / Moduleへ影響
-- 局所情報で影響範囲を閉じられない
-- Masterが全体監査 / 全コード確認 / 横断調査を明示
+
+Expand only for cross-component impact, uncertainty that cannot be bounded locally, or Master's explicit whole-system audit.
 
 ### 4.1 Project Integration Routing
 
-TGserver / webhook gateway / Libral Vault / Project-level MCP・Tool integrationを変更または追加するときは、`docs/PROJECT_INTEGRATION_RULES.md` を必要範囲で確認する。
-
-```text
-server-core README
-  -> LOAD_SCOPE
-  -> PROJECT_INTEGRATION_RULES
-  -> target Project README
-  -> target Project authority / Source / Test
-```
+For TGserver / webhook gateway / Vault / Project-level MCP or Tool integration changes, read the relevant `docs/PROJECT_INTEGRATION_RULES.md` contract, then the target README and required Source/tests. Do not treat integration as shared capability ownership.
 
 ### Design baseline / anti-drift routing
 
@@ -171,27 +98,9 @@ For a source-changing CU, resolve the owning repository's canonical Design/Speci
 
 ## 5. Reuse Search Order
 
-新規Code / Module / Tool / Document作成前に必要範囲で確認する。
+Before new Code/Module/Tool/Document: target Project → shared discovery in `docs/WORKSPACE_REGISTRY.md` → existing Workspace assets → AVAILABLE_VERIFIED KB/Tool/MCP → official external authority only when needed. KB-specific access/lifecycle is `docs/KB_REUSE_DESIGN.md`.
 
-```text
-対象Project内
-  -> docs/WORKSPACE_REGISTRY.md の共有Capability
-  -> Workspace内の既存共有資産
-  -> AVAILABLE_VERIFIEDなKB / Tool / MCP
-  -> 必要な場合だけ公式外部Authority
-```
-
-Reuse priority:
-
-```text
-そのまま利用
-  -> 設定 / 引数 / 型調整
-  -> 薄いAdapter
-  -> 共通部分抽出
-  -> 新規実装
-```
-
-Registry entryはCurrent Runtime健康状態の証明ではない。
+Prefer unchanged reuse → configuration/arguments/types → thin adapter → shared extraction → new implementation. A Registry entry is not current runtime health or permission.
 
 ## 6. Normal Context Exclusions
 
@@ -210,14 +119,7 @@ Task対象の場合だけ必要Fileへ限定して読む。
 
 ## 7. Documentation Read Rule
 
-- README = Current completed / verified entry
-- Design = architecture baseline
-- Design Delta = intentional difference / rationale
-- Project Tree = navigation index
-- System/Module Document = completed unit handoff
-- Commit / PR = chronological work history
-
-DesignとCurrent実装が違う場合、DesignをCurrentへ合わせて履歴を消さない。
+Use [README's document responsibility table](../README.md#documentation-contract): entry/status, architecture baseline, intentional Delta, Tree navigation, unit handoff and chronological Commit/PR history are distinct. Do not overwrite Design history to fit incidental Source.
 
 ## 8. Runtime / Registry Rule
 
@@ -229,24 +131,10 @@ Current状態がTask判断に必要なら対象Provider / Docker / Endpoint / Gi
 
 ## 9. Stop Reading Condition
 
-作業開始に必要な読込は、次を説明・確認できた時点で止める。
-- purpose / expected result;
-- target Project / responsibility;
-- Design baseline when relevant;
-- input / output;
-- direct dependencies / constraints;
-- reuse candidates;
-- related tests / verification path;
-- affected scope;
-- approval boundary。
-
-不足した場合だけ次Levelへ進む。
+Stop expanding context when purpose/outcome, target owner/responsibility, relevant Design, input/output, direct dependencies/constraints, reuse, tests, affected scope and approval boundary are understood. Read the next level only for a concrete missing fact. This is a reading limit, not a development stop.
 
 ## 10. Router Failure Rule
 
 Task owner、Authority、Runtime state、Secret contract等が不明な場合は推測で補完しない。
 
 `UNKNOWN / NOT_VERIFIED / NOT_IMPLEMENTED` を維持し、必要なAuthority/readbackだけ追加取得する。
-<!-- Tool-B source_reflect E2E evidence line 2026-10-10T17:25:00+09:00 -->
-
-<!-- Tool-B source_reflect E2E evidence line 2026-10-10T17:30:00+09:00 round-2 -->
