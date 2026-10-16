@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Inspect restarting AI Core Gate container launch failure codes only; mask all API key values",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,re,subprocess\ndef run(args):\n p=subprocess.run(args,capture_output=True,text=True,timeout=12)\n return p.returncode,p.stdout,p.stderr\ncode,stdout,stderr=run(['docker','logs','--tail','45','ai-core-model-gate'])\nlines=(stdout+'\\n'+stderr).splitlines()\ncodes=[]\nfor line in lines:\n m=re.search(r'MODEL_GATE=FAIL[|]([A-Z0-9_]+)',line)\n if m:codes.append(m.group(1))\n m=re.search(r'([A-Za-z]+(?:Error|Exception)):\\s*([A-Z0-9_]+)?',line)\n if m:codes.append(m.group(1)+':'+(m.group(2) or ''))\ninspect=run(['docker','inspect','-f','{{.State.Status}}|{{.State.ExitCode}}|{{.State.Restarting}}|{{.State.Health.Status}}','ai-core-model-gate'])\nenv_names=run(['docker','inspect','-f','{{json .Config.Env}}','ai-core-model-gate'])\npresent=False;enough=False\nif env_names[0]==0:\n try:\n  pairs=json.loads(env_names[1])\n  for s in pairs:\n   if s.startswith('AI_CORE_API_KEY='):\n    present=True\n    enough=len(s.split('=',1)[1])>=16\n except Exception:pass\nout={'container_status':inspect[1].strip(),'log_exit':code,'log_line_count':len(lines),'startup_error_codes':codes[-15:],'key_mapped':present,'key_min_length_met':enough,'secret_values_printed':False}\nbody='AI_CORE_GATE_RESTART_DIAG\\n'+json.dumps(out,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('AI_CORE_GATE_RESTART_DIAG_REPORT='+('PASS '+p.stdout.strip() if p.returncode==0 else 'FAILED'))\nraise SystemExit(0 if p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core exact source cbd8903 Host startup result 6209035323 compose up0 but container restarting/unhealthy and 4 ports connection refused; need real Docker log fail reason."
+  }
+}
