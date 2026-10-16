@@ -115,29 +115,39 @@ class SinkTests(unittest.TestCase):
         self.assertIn('"stdout_chars": ' + str(len(output)), body)
         self.assertIn('"stdout": ""', body)
 
-    def test_host_ledger_pointer_keeps_original_stream_hashes_separate(self):
+    def test_host_ledger_uses_only_authenticated_typed_writer_fields(self):
         out_sha = "a" * 64
         err_sha = "b" * 64
         pointer = (f"GACE_HOST_OUTPUT_STORED request_id={RID} "
                    f"stdout_chars=720000 stdout_sha256={out_sha} "
                    f"stderr_chars=400000 stderr_sha256={err_sha} "
                    "(lossless chunks: scripts/servercore_host_output_read.py)")
-        sink.accept_record(rec(command_id="host.command", stdout=pointer,
-                               stderr=""), result_dir=self.dir)
+        typed = {"request_id": RID, "streams": {
+            "stdout": {"chars": 720000, "sha256": out_sha},
+            "stderr": {"chars": 400000, "sha256": err_sha}}}
+        sink.accept_record(rec(command_id="host.command", stdout=pointer, stderr="",
+                               host_ledger=typed), result_dir=self.dir)
         body = sink.comment_body(sink.read_record(RID, self.dir))
         fence = chr(96) * 3
         parsed = json.loads(body.split(fence + "json\n")[1].split("\n" + fence)[0])
-        self.assertEqual(parsed["host_ledger"]["request_id"], RID)
-        self.assertEqual(parsed["host_ledger"]["streams"]["stdout"],
-                         {"chars": 720000, "sha256": out_sha})
-        self.assertEqual(parsed["host_ledger"]["streams"]["stderr"],
-                         {"chars": 400000, "sha256": err_sha})
+        self.assertEqual(parsed["host_ledger"], typed)
         self.assertNotIn("GACE_HOST_OUTPUT_STORED", body)
         self.assertNotEqual(parsed["stdout_sha256"], out_sha)
-        altered = rec(command_id="host.command",
-                      stdout=pointer.replace(RID, "req_" + "f" * 24),
-                      stderr="")
-        self.assertNotIn("host_ledger", sink.comment_body(altered))
+        # Shell stdout can imitate a pointer, but it is NOT the trusted
+        # Writer-to-Receiver metadata. Never elevate raw text to a ledger.
+        self.assertNotIn("host_ledger", sink.comment_body(rec(
+            command_id="host.command", stdout=pointer, stderr="")))
+        wrong = dict(typed, request_id="req_" + "f" * 24)
+        for invalid in [wrong, {**typed, "streams": {
+                **typed["streams"], "stdout": {"chars": -1, "sha256": out_sha}}},
+                {**typed, "streams": {
+                **typed["streams"], "stdout": {"chars": 1, "sha256": "bad"}}}]:
+            with self.assertRaisesRegex(sink.SinkError, "HOST_LEDGER_INVALID"):
+                sink.accept_record(rec(command_id="host.command", host_ledger=invalid),
+                                   result_dir=self.dir)
+        with self.assertRaisesRegex(sink.SinkError, "HOST_LEDGER_INVALID"):
+            sink.accept_record(rec(command_id="project.git_head", host_ledger=typed),
+                               result_dir=self.dir)
 
     def test_crash_between_post_and_save_does_not_duplicate_comment(self):
         sink.accept_record(rec(), result_dir=self.dir)
