@@ -37,25 +37,29 @@
         "feat/tgserver-async-log-sink-20261003",
         "master-internal-runtime-20261008",
         "fix/p1c-refix-no-new-evidence-20261010",
-        "test/g3-semantic-progress-counterexample-20261011"
+        "test/g3-semantic-progress-counterexample-20261011",
+        "fix/debugai-scout-diagnosis-handoff-20261016"
       ],
       "allowed_operations": [
         "deploy",
-        "host.command"
+        "host.command",
+        "reflect"
       ],
       "allowed_scopes": [
-        "debugai.compose.reflect"
+        "debugai.compose.reflect",
+        "gace.source.reflect"
       ],
       "runtime_target": {
         "id": "debugai.compose",
         "compose_file": "compose.yaml",
-        "compose_digest": "50d8f1ad15633810dc2f5d3f04a71a1b9094b3a58e0c88e29dbbf07129fcf08f",
+        "compose_digest": "8ab1c7853c6e6804568be4533d2b3f43c65874869644c10b38f08ad4611e2b7c",
         "services": [
           "debug-ai",
           "sandbox-runner"
         ],
         "health_service": "debug-ai",
-        "health_url": "http://127.0.0.1:8787/health"
+        "health_url": "http://127.0.0.1:8787/health",
+        "source_reflect": true
       },
       "issuer": "master:seigo-gace",
       "authority": "gace-master",
@@ -95,7 +99,18 @@
         "scripts/host-server-command-runner.sh",
         "scripts/chatgpt-bounded-server-read.cjs",
         "operations/host-admitted-workspace-entries.json",
-        "operations/host-managed-container-entries.json"
+        "operations/host-managed-container-entries.json",
+        ".env.example",
+        "compose.yaml",
+        "server/adapters/ai-core.js",
+        "server/control/durable-workflow-stage.js",
+        "server/control/role-work-item/adapter.js",
+        "server/control/role-work-item/adapters/diagnoser-work-item-adapter.js",
+        "server/control/role-work-item/continuation.js",
+        "server/control/run-observation-context.js",
+        "server/control/sandbox-queue-selftest.js",
+        "server/main.js",
+        "server/role-modules/index.js"
       ]
     },
     {
