@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPT CHAT #40 compare Docker receiver/writer/sink code digests with Host checkout and identify 16k/1k legacy output cap",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "docker exec server-core-bounded-host python3 - <<'PY'\nfrom pathlib import Path\nimport hashlib\nfor label, filename in ((\"receiver\",\"servercore_bounded_host_receiver.py\"),(\"writer\",\"servercore_service_deploy_socket.py\"),(\"sink\",\"servercore_result_sink.py\")):\n    runtime=Path(\"/app/scripts\") / filename\n    checkout=Path(\"/home/admin1/server-core/scripts\") / filename\n    def audit(path):\n        if not path.is_file():\n            return {\"exists\": False}\n        text=path.read_text(encoding=\"utf-8\")\n        return {\"exists\": True, \"hash16\": hashlib.sha256(text.encode()).hexdigest()[:16], \"truncate16000\": \"[:16000]\" in text or \"16000\" in text, \"truncate1000\": \"[:1000]\" in text or \"1000\" in text, \"host_sink_fail_guard\": 'request[\"command_id\"] in {\"dev.job\", \"host.command\"}' in text}\n    print(label, \"runtime\",audit(runtime),\"checkout\",audit(checkout))\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED_MAIN",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "Run 38839946677 shows container /app/scripts servercore_bounded_host_receiver.py and host checkout bind; real synthetic ledger clipped at 16000/1000 despite checkout Writer Source unbounded."
+  }
+}
