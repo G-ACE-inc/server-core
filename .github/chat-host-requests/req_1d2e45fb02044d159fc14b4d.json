@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CU40 existing clean two-repo ff-only reflection, no TGS dirty checkout touching",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -euo pipefail\nfor SPEC in 'GATEWAY|/home/admin1/projects/webhook-gateway|502489a843a0a983b7e40b4b24b29530b1ad54ed' 'CORE|/home/admin1/server-core|1687f1a4a576b0b5f69518ff3077038a579d61bd'; do\n  NAME=\"${SPEC%%|*}\"\n  OTHER=\"${SPEC#*|}\"\n  ROOT=\"${OTHER%%|*}\"\n  TARGET=\"${OTHER##*|}\"\n  test -z \"$(git -C \"$ROOT\" status --porcelain --untracked-files=all)\"\n  git -C \"$ROOT\" fetch --no-tags --quiet origin main\n  git -C \"$ROOT\" merge-base --is-ancestor \"$TARGET\" FETCH_HEAD\n  if git -C \"$ROOT\" merge-base --is-ancestor \"$TARGET\" HEAD; then\n    :\n  else\n    git -C \"$ROOT\" merge-base --is-ancestor HEAD \"$TARGET\"\n    git -C \"$ROOT\" merge --ff-only \"$TARGET\" >/dev/null\n  fi\n  test \"$(git -C \"$ROOT\" rev-parse HEAD)\" = \"$TARGET\" || git -C \"$ROOT\" merge-base --is-ancestor \"$TARGET\" HEAD\n  printf 'CU40_%s_SOURCE_REFLECT=PASS\\n' \"$NAME\"\ndone\ngh api -X POST repos/G-ACE-inc/server-core/issues/40/comments -f 'body=CU40_HOST_SOURCE_REFLECT: GATEWAY=PASS CORE=PASS TGSERVER=GITHUB_ACTIONS_ONLY_NO_HOST_CHECKOUT_WRITE' >/dev/null"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "PR301/27 merged, CI verified; clean and ff Host flags 6216790245; bash -n PASS; Gateway command unchanged"
+  }
+}
