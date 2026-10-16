@@ -110,7 +110,7 @@ class SinkTests(unittest.TestCase):
         stdout = "日本語Ω🙂\\n" * 16000
         stderr = "警告⚠\\n" * 12000
         ledger = self.dir / "writer"
-        ledger.mkdir()
+        ledger.mkdir(parents=True)
         evidence = {"request_id": RID, "state": "HOST_COMMAND_PASS",
                     "source_sha": SHA, "exit_code": 0,
                     "stdout": stdout, "stderr": stderr}
