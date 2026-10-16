@@ -212,9 +212,11 @@ def trusted_writer_metadata(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
         73: "CHAT_SOURCE_SHA_UNAVAILABLE",
         74: "CHAT_SOURCE_SHA_MISMATCH",
         75: "CHAT_SOURCE_REQUIRED_FILE_MISSING",
+        76: "CHAT_SOURCE_DIRTY_WORKTREE",
     }
     marker = source_errors.get(raw.get("exit_code"))
-    if raw.get("state") == "FAIL" and marker and str(raw.get("stderr") or "").strip() == marker:
+    if (raw.get("source_preflight") is True and raw.get("state") == "FAIL"
+            and marker and str(raw.get("stderr") or "").strip() == marker):
         meta["diagnostic_hint"] = marker
     return meta
 
