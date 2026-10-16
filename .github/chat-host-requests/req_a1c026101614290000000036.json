@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 clean-unmapped-cache admission fix exact SHA worktree reflection and all unit tests, no production Docker mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport subprocess,os,json\nfrom pathlib import Path\nwt=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\nhead='027d3e4248c77f90e7f94732d9b1d916f21b453f'\nout={'target':head,'effect':'exact owned worktree Source reflection and unit suite only'}\ndef call(args,timeout=20,**kw):\n try:\n  p=subprocess.run(args,capture_output=True,text=True,timeout=timeout,**kw)\n  return {'exit':p.returncode,'stdout':p.stdout.strip()[-250:],'stderr':p.stderr.strip()[-400:]}\n except Exception as e:return {'error':type(e).__name__}\ngit=['git','-C',str(wt)]\ninitial=call(git+['rev-parse','HEAD'])\nstatus=call(git+['status','--porcelain'])\nout['initial_head']=initial.get('stdout')\nout['clean']=status.get('exit')==0 and not status.get('stdout')\nif out['clean']:\n fetched=call(git+['fetch','origin','feat/per-model-lifecycle-20261013'],timeout=70)\n out['fetch']=fetched.get('exit',fetched.get('error'))\n if out['fetch']==0:\n  checkout=call(git+['checkout','--detach',head])\n  out['checkout']=checkout.get('exit',checkout.get('error'))\nelse:out['checkout']='SKIPPED_DIRTY'\nout['exact_head']=call(git+['rev-parse','HEAD']).get('stdout')\nif out['exact_head']==head:\n t=call(['python3','-m','unittest','discover','-s','tests','-p','test_*.py','-q'],timeout=170,cwd=str(wt),env={**os.environ,'PYTHONDONTWRITEBYTECODE':'1'})\n out['tests_exit']=t.get('exit',t.get('error'))\n out['test_summary']=[line for line in t.get('stderr','').splitlines() if line.startswith(('Ran ','FAILED','OK'))][-4:]\n out['tests_failure_tail']=t.get('stderr','')[-380:] if t.get('exit') else ''\nbody='AI_CORE_RECLAIMABLE_CACHE_SOURCE_SUITE\\n'+json.dumps(out,ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('AI_CORE_CLEAN_CACHE_SOURCE_RESULT='+('PASS '+p.stdout.strip() if p.returncode==0 else 'POST_UNAVAILABLE'))\nraise SystemExit(0 if p.returncode==0 and out['exact_head']==head and out.get('tests_exit')==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209768618"
+  }
+}
