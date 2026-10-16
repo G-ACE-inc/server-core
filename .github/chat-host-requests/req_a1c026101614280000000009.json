@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core-only real contention acceptance: two independent caller labels on existing Coder Gate; wait deadline 429, cancel releases lease, without DebugAI workflow repetition",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json\nclient=\"\"\"import json,os,time,threading,urllib.request,urllib.error\nu='http://127.0.0.1:18184'\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY'],'Content-Type':'application/json'}\ndef get(path):\n with urllib.request.urlopen(urllib.request.Request(u+path,headers=h),timeout=12) as r:return json.load(r)\nout={}\ntry:\n status=get('/internal/resources/status')\n assert status['active']['coder']==0 and status['queued']==0 and status.get('recovery_pending',[])==[]\n with urllib.request.urlopen(urllib.request.Request(u+'/v1/models',headers=h),timeout=8) as r:model=json.load(r)['data'][0]['id']\n start=threading.Event();stop=threading.Event();errors=[]\n payload={'model':model,'stream':True,'messages':[{'role':'user','content':'Write integer numbers from 1 to 400 in sequence separated by commas.'}],'max_tokens':500}\n def first():\n  try:\n   req=urllib.request.Request(u+'/v1/chat/completions',headers={**h,'X-AI-Core-Client':'qa-a'},data=json.dumps(payload).encode())\n   with urllib.request.urlopen(req,timeout=180) as r:\n    start.set()\n    for line in r:\n     if stop.is_set() or b'[DONE]' in line:break\n  except Exception as e:errors.append(type(e).__name__)\n thread=threading.Thread(target=first,daemon=True);thread.start()\n if not start.wait(120):raise RuntimeError('FIRST_NOT_READY')\n s=get('/internal/resources/status')\n if s['active']['coder']!=1:raise RuntimeError('FIRST_NOT_ACTIVE')\n req=urllib.request.Request(u+'/v1/chat/completions',headers={**h,'X-AI-Core-Client':'qa-b','X-AI-Core-Wait-Ms':'1000'},data=json.dumps({**payload,'stream':False}).encode())\n try:\n  with urllib.request.urlopen(req,timeout=18) as r:out['competing_http']=r.status\n except urllib.error.HTTPError as e:\n  out['competing_http']=e.code\n  data=json.loads(e.read())\n  out['competing_error']=data.get('error',{}).get('code')\n out['queued_after_wait']=get('/internal/resources/status')['queued']\n stop.set();thread.join(timeout=14)\n for _ in range(20):\n  s=get('/internal/resources/status')\n  if s['active']['coder']==0 and s['queued']==0:break\n  time.sleep(1)\n out['released']=s['active']['coder']==0 and s['queued']==0\n out['model_active']=s['active']['coder']\n out['worker_errors']=errors\nexcept Exception as e:out['failure']=type(e).__name__+': '+str(e)[:140]\nprint(json.dumps(out))\n\"\"\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',client],capture_output=True,text=True,timeout=195)\no={'exit':p.returncode,'result':json.loads(p.stdout) if p.returncode==0 and p.stdout.strip().startswith('{') else {'error':p.stderr[-320:]}}\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_REAL_TWO_CALLER_ADMISSION_DEADLINE\\n'+json.dumps(o,ensure_ascii=False)}),capture_output=True,text=True,timeout=25)\nok=o['result'].get('competing_http')==429 and o['result'].get('released') and o['result'].get('queued_after_wait')==0\nprint('EVIDENCE='+('RECORDED '+r.stdout.strip() if r.returncode==0 else 'FAILED'))\nprint('CONTENTION='+('PASS' if ok else 'NOT_PROVEN'))\nraise SystemExit(0 if ok and r.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6218034802"
+  }
+}
