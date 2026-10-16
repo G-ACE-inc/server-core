@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 fair-admission READY bypass cold load, source-exact 75 tests passed; guarded Host build, source SHA verified, four model Gates health; rollback on failure",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport subprocess,json,hashlib,time,urllib.request\nfrom pathlib import Path\nw=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\nh='62bc230bfe667817290ba62a2c9e76c886d4e172'\nprev='ea505bbf7a93dec5752bacbb6a8cc7280dd1d586a22499fef422f5b0eab35410'\ncompose=['docker','compose','-p','ai-core-gate','-f',str(w/'compose.gate.yml'),'--env-file','/home/admin1/projects/debug-ai/.env']\ndef run(a,timeout=25):return subprocess.run(a,text=True,capture_output=True,timeout=timeout)\ndef probe():\n s=\"\"\"import json,os,hashlib,urllib.request\nfrom pathlib import Path\nr=urllib.request.Request('http://127.0.0.1:18184/internal/handoff/status',headers={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']})\nwith urllib.request.urlopen(r,timeout=8) as q:d=json.load(q)\nprint(json.dumps({'sha':hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest(),'active':d['active'],'handoff':d['handoff']}))\n\"\"\"\n p=run(['docker','exec','ai-core-model-gate','python3','-c',s])\n return json.loads(p.stdout) if p.returncode==0 else {'error':p.stderr[-200:]}\nout={'target':h}\nexpected=hashlib.sha256((w/'runtime/model_gate.py').read_bytes()).hexdigest()\ntag='ai-core-model-gate:rollback-fair-cold-20261016'\ntry:\n if run(['git','-C',str(w),'rev-parse','HEAD']).stdout.strip()!=h or run(['git','-C',str(w),'status','--porcelain']).stdout.strip():out['error']='WORKTREE_CHANGED'\n else:\n  p=probe();out['before']=p\n  if p.get('sha')!=prev or p.get('handoff') is not None or sum(p.get('active',{}).values())!=0:out['error']='MODEL_BUSY_OR_UNEXPECTED_SHA'\n  else:\n   t=run(['docker','tag','ai-core-model-gate:local',tag])\n   if t.returncode:out['error']='OLD_IMAGE_TAG_FAILED'\n   else:\n    b=run(compose+['build','gate'],150);out['build_exit']=b.returncode\n    if b.returncode:out['error']='BUILD_FAILED';out['build_tail']=b.stderr[-500:]\n    else:\n     s=run(['docker','run','--rm','ai-core-model-gate:local','python3','-c',\"import hashlib;from pathlib import Path;print(hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest())\"],35)\n     out['built_source_match']=(s.returncode==0 and s.stdout.strip()==expected)\n     if not out['built_source_match']:out['error']='BUILT_SOURCE_MISMATCH'\n     else:\n      p=probe()\n      if p.get('sha')!=prev or p.get('handoff') is not None or sum(p.get('active',{}).values())!=0:out['error']='ADMISSION_CHANGED'\n      else:\n       d=run(compose+['up','-d','--no-deps','gate'],80);out['deploy_exit']=d.returncode;out['deploy_tail']=d.stderr[-750:]\n       for _ in range(10):\n        try:\n         now=probe()\n         if now.get('sha')==expected and all(urllib.request.urlopen('http://127.0.0.1:'+str(x)+'/health',timeout=3).status==200 for x in (18181,18182,18183,18184)):\n          out['after']=now;break\n        except Exception:pass\n        time.sleep(2)\n       if d.returncode or 'after' not in out:out['error']='RUNTIME_GATE_HEALTH_FAILED'\n       if out.get('error'):\n        roll=run(['docker','tag',tag,'ai-core-model-gate:local'])\n        restore=run(compose+['up','-d','--no-deps','--force-recreate','gate'],80) if not roll.returncode else roll\n        out['rollback_exit']=restore.returncode;out['rollback_source']=probe().get('sha')\nexcept Exception as e:out['error']=type(e).__name__+': '+str(e)[:150]\nout['expected']=expected\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_FAIR_ADMISSION_HOST_DEPLOY\\n'+json.dumps(out,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=25)\nprint('AI_CORE_FAIR_DEPLOY='+('PASS' if not out.get('error') and 'after' in out else 'FAIL '+out.get('error','NO_CONFIRM')))\nprint('EVIDENCE_URL='+r.stdout.strip() if r.returncode==0 else 'EVIDENCE_NOT_POSTED')\nraise SystemExit(0 if r.returncode==0 and not out.get('error') and 'after' in out else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6214690043"
+  }
+}
