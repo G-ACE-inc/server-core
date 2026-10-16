@@ -115,6 +115,30 @@ class SinkTests(unittest.TestCase):
         self.assertIn('"stdout_chars": ' + str(len(output)), body)
         self.assertIn('"stdout": ""', body)
 
+    def test_host_ledger_pointer_keeps_original_stream_hashes_separate(self):
+        out_sha = "a" * 64
+        err_sha = "b" * 64
+        pointer = (f"GACE_HOST_OUTPUT_STORED request_id={RID} "
+                   f"stdout_chars=720000 stdout_sha256={out_sha} "
+                   f"stderr_chars=400000 stderr_sha256={err_sha} "
+                   "(lossless chunks: scripts/servercore_host_output_read.py)")
+        sink.accept_record(rec(command_id="host.command", stdout=pointer,
+                               stderr=""), result_dir=self.dir)
+        body = sink.comment_body(sink.read_record(RID, self.dir))
+        fence = chr(96) * 3
+        parsed = json.loads(body.split(fence + "json\n")[1].split("\n" + fence)[0])
+        self.assertEqual(parsed["host_ledger"]["request_id"], RID)
+        self.assertEqual(parsed["host_ledger"]["streams"]["stdout"],
+                         {"chars": 720000, "sha256": out_sha})
+        self.assertEqual(parsed["host_ledger"]["streams"]["stderr"],
+                         {"chars": 400000, "sha256": err_sha})
+        self.assertNotIn("GACE_HOST_OUTPUT_STORED", body)
+        self.assertNotEqual(parsed["stdout_sha256"], out_sha)
+        altered = rec(command_id="host.command",
+                      stdout=pointer.replace(RID, "req_" + "f" * 24),
+                      stderr="")
+        self.assertNotIn("host_ledger", sink.comment_body(altered))
+
     def test_crash_between_post_and_save_does_not_duplicate_comment(self):
         sink.accept_record(rec(), result_dir=self.dir)
 
