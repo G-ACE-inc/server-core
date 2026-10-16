@@ -244,6 +244,34 @@ class ContinuationTests(unittest.TestCase):
                                      "conclusion": "failure"}))
         self.assertEqual(result2["observation"], "RUN_FAILED_OR_INCOMPLETE")
 
+
+    def test_checkpoint_mismatched_source_hint_and_exit_never_replans_pr(self):
+        def api(path):
+            if "/jobs?" in path:
+                return {"total_count": 1, "jobs": [{"steps": [
+                    {"name": "Bounded Host result return (request id correlated)",
+                     "conclusion": "failure"}]}]}
+            return {"head_sha": BASE["source_sha"], "status": "completed",
+                    "conclusion": "failure"}
+        cases = [
+            ("HOST_SOURCE_CONTEXT_STALE", 70, "CHAT_SOURCE_WORKDIR_MISSING"),
+            ("HOST_SOURCE_CONTEXT_STALE", 74, "CHAT_SOURCE_WORKDIR_MISSING"),
+            ("HOST_SOURCE_CONTEXT_INVALID", 74, "CHAT_SOURCE_SHA_MISMATCH"),
+            ("HOST_SOURCE_CONTEXT_INVALID", 76, "CHAT_SOURCE_SHA_MISMATCH"),
+        ]
+        for observation, exit_code, hint in cases:
+            with self.subTest(observation=observation, exit_code=exit_code):
+                cp = {**BASE, "observation": observation, "exit_code": exit_code,
+                      "diagnostic_hint": hint}
+                result = resume(cp, api=api)
+                self.assertEqual(result["observation"], "RUN_FAILED_OR_INCOMPLETE")
+                self.assertEqual(result["next_action"], "READ_RUN_FAILURE_LOGS")
+        valid = {**BASE, "observation": "HOST_SOURCE_CONTEXT_INVALID",
+                 "exit_code": 76, "diagnostic_hint": "CHAT_SOURCE_DIRTY_WORKTREE"}
+        actual = resume(valid, api=api)
+        self.assertEqual(actual["observation"], "CORRELATED_SOURCE_CONTEXT_INVALID")
+        self.assertEqual(actual["next_action"], "CHECK_TARGET_WORKTREE_AND_REQUIRED_FILES")
+
     def test_correlated_absent_host_receipt_points_at_existing_delivery(self):
         checkpoint = {**BASE, "observation": "HOST_RESULT_NOT_RETURNED",
                       "result_verified": False, "exit_code": None}
