@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core safe no-active-lease no-handoff conditional restart of Gate Docker only, read back four authenticated/health routes and existing cgroup; no old Router",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess,time,urllib.request\nprobe=\"import json,os,urllib.request\\nv=os.environ.get('AI_CORE_API_KEY','')\\nreq=urllib.request.Request('http://127.0.0.1:18184/internal/handoff/status',headers={'Authorization':'Bearer '+v})\\nwith urllib.request.urlopen(req,timeout=10) as r:\\n data=json.load(r)\\n print(json.dumps({'http':r.status,'resident':data.get('resident'),'active':data.get('active'),'handoff_pending':data.get('handoff') is not None}))\"\ndef inspect_gate():\n p=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',probe],text=True,capture_output=True,timeout=18)\n return json.loads(p.stdout) if p.returncode==0 and p.stdout.strip().startswith('{') else {'probe_failure':p.returncode}\nbefore=inspect_gate()\nout={'before':before,'restart_attempted':False,'old_router_started':False}\nactive=before.get('active')\nif before.get('http')==200 and len(before.get('resident',[]))<=2 and active is not None and sum(active.values())==0 and not before.get('handoff_pending'):\n out['restart_attempted']=True\n run=subprocess.run(['docker','restart','-t','10','ai-core-model-gate'],text=True,capture_output=True,timeout=45)\n out['docker_restart_exit']=run.returncode\n if run.returncode==0:\n  for attempt in range(25):\n   try:\n    with urllib.request.urlopen('http://127.0.0.1:18181/health',timeout=2) as r:\n     if r.status==200:break\n   except Exception:pass\n   time.sleep(0.5)\n  health={}\n  for port in (18181,18182,18183,18184):\n   try:\n    with urllib.request.urlopen('http://127.0.0.1:'+str(port)+'/health',timeout=2) as f:health[str(port)]=f.status\n   except Exception as e:health[str(port)]=type(e).__name__\n  out['health']=health\n  out['after']=inspect_gate()\n  q=subprocess.run(['docker','inspect','-f','{{.State.Status}}|{{.State.Health.Status}}|{{.HostConfig.CgroupParent}}','ai-core-model-gate'],capture_output=True,text=True,timeout=10)\n  out['docker_state']=q.stdout.strip()\nelse:out['blocked']='ACTIVE_OR_PENDING_OR_UNAVAILABLE'\nbody='AI_CORE_SAFE_RESTART_RECOVERY_REAL\\n'+json.dumps(out,ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),text=True,capture_output=True,timeout=22)\nprint('AI_CORE_RESTART_REPORT='+('PASS '+p.stdout.strip() if p.returncode==0 else 'FAILED'))\nraise SystemExit(0 if p.returncode==0 and out.get('restart_attempted') and out.get('docker_restart_exit')==0 and len(out.get('health',{}))==4 and all(v==200 for v in out.get('health',{}).values()) and out.get('after',{}).get('http')==200 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209481109"
+  }
+}
