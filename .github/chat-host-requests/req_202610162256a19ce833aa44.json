@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Collect existing naturally occurring Core real-task performance aggregates and host resource state from live authenticated metrics; no new inference or any product/source mutation. Post concise nonsecret fact once to Core Current.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "command": "set -eu\nreport=$(docker exec ai-core-model-gate python3 -c '\nimport os,json,urllib.request\nh={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]}\ndef get(path):\n q=urllib.request.Request(\"http://127.0.0.1:18184\"+path,headers=h)\n return json.load(urllib.request.urlopen(q,timeout=8))\nm=get(\"/internal/metrics/status\")\nr=get(\"/internal/resources/status\")\nmodels={n:{\"count\":v[\"completed\"],\"ok\":v[\"success\"],\"p50\":v[\"latency_ms_p50\"],\"p95\":v[\"latency_ms_p95\"],\"ttft\":v[\"stream_first_token_ms_p50\"],\"tps\":v[\"effective_output_tps_p50\"]} for n,v in m[\"model_metrics\"].items()}\nprint(json.dumps({\"persistence\":m[\"persistence\"],\"window\":m[\"window_completed\"],\"models\":models,\"active\":sum(r[\"active\"].values()),\"queue\":r[\"queued\"],\"resident\":r.get(\"resident\"),\"mem\":r[\"memory\"].get(\"memory.current\"),\"psi\":r.get(\"pressure\")},separators=(\",\",\":\")))\n')\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"AI_CORE_NATURAL_WORKLOAD_METRICS SOURCE=81d75017d0fd0ddc631e0c6de862c1cc0d4d662d $report\" --jq .html_url >/dev/null\necho AI_CORE_NATURAL_WORKLOAD_METRICS_RECORDED=YES"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Issue#1 last Current exact PR3 81d75017 production metrics durable samples=0 at 2026-10-16T22:47 #6226127926. Real natural product activity may have created nonzero samples by 22:55; read per-model aggregate only and parent resource no new model starts, keep product owners. Host #10 6226221620 actual sha 4fe86475."
+  }
+}
