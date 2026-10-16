@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core source-unchanged read-only compare existing Gate key with already provisioned Compose env-file, report equality only not secrets, before authorized UDS cutover",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "a6f776c438edba21ee85eaf77167f56c0fee0b29",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "a6f776c438edba21ee85eaf77167f56c0fee0b29",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nfrom pathlib import Path\nbase=Path('/home/admin1/projects/ai-core')\nw=base/'.worktrees/pr3-verification-20261015'\ndef run(args):\n r=subprocess.run(args,capture_output=True,text=True,timeout=16)\n return r.returncode,r.stdout,r.stderr\nout={'purpose':'READ_ONLY_EXACT_EXISTING_GATE_ENV_MATCH'}\ntry:\n a,b,_=run(['docker','inspect','ai-core-model-gate'])\n if a:raise RuntimeError('GATE_INSPECT_FAIL')\n old=json.loads(b)[0]\n current={v.split('=',1)[0]:v.split('=',1)[1] for v in old['Config']['Env'] if '=' in v}\n out['gate_running']=bool(old['State']['Running'])\n x,y,z=run(['docker','compose','--env-file','/home/admin1/projects/debug-ai/.env',\n '-p','ai-core-gate','--project-directory',str(w),\n '-f',str(w/'compose.gate.yml'),'config','--format','json'])\n out['config_exit']=x\n if x:\n  out['config_error_code']='GATE_COMPOSE_CONFIG_FAILED'\n else:\n  cfg=json.loads(y)\n  derived=cfg['services']['gate']['environment'].get('AI_CORE_API_KEY')\n  actual=current.get('AI_CORE_API_KEY')\n  out['key_present_in_current_gate']=bool(actual)\n  out['key_present_in_existing_env_file']=bool(derived)\n  out['same_existing_key']=bool(actual and derived and actual==derived)\n  out['socket_bus_mount']=any(q.get('target')=='/run/ai-core-backend'\n      for q in cfg['services']['gate'].get('volumes',[]))\n out['worktree_head']=run(['git','-C',str(w),'rev-parse','HEAD'])[1].strip()\nexcept Exception as e:out['error']=type(e).__name__+':'+str(e)[:110]\npost=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments',\n '--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_GATE_KEY_PARITY_SAFE '+json.dumps(out)}),\n capture_output=True,text=True,timeout=20)\nprint('SAFE_GATE_KEY_CHECK='+json.dumps(out))\nprint('RECEIPT='+post.stdout.strip() if post.returncode==0 else 'NO_RECEIPT')\nraise SystemExit(0 if post.returncode==0 and out.get('same_existing_key') and out.get('socket_bus_mount') else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6221905771"
+  }
+}
