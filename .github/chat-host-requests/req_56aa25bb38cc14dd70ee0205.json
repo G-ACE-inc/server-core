@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core safe existing credential source discovery, key names only no value",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 -c 'import subprocess,json,sys; p=subprocess.run([\"docker\",\"inspect\",\"ai-llama-router\"],capture_output=True,text=True,timeout=8); a=json.loads(p.stdout)[0] if p.returncode==0 else {}; names=[s.split(\"=\",1)[0] for s in (a.get(\"Config\",{}).get(\"Env\") or [])]; q=[\"AI_CORE_API_KEY\",\"OPENAI_API_KEY\",\"API_KEY\",\"LLAMA_SWAP_API_KEY\"]; mask=sum(1<<i for i,k in enumerate(q) if k in names); print(\"OLD_ROUTER_KEY_NAME_MASK\",mask);sys.exit(0 if mask else 1)'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
