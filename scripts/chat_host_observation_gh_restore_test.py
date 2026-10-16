@@ -58,6 +58,17 @@ class RestoreTests(unittest.TestCase):
         self.assertFalse(result["result_verified"])
         self.assertEqual(result["source_sha"], SHA)
 
+
+    def test_ref_qualified_workflow_path_is_accepted(self):
+        def ref_run(cmd, **kwargs):
+            response = self.fake_run(cmd, **kwargs)
+            if cmd[1] == "api" and cmd[2].endswith("/runs/123"):
+                payload = json.loads(response.stdout)
+                payload["path"] += "@refs/heads/main"
+                return subprocess.CompletedProcess(cmd, 0, stdout=json.dumps(payload))
+            return response
+        self.assertEqual(restore("G-ACE-inc/server-core", 123, RID, run=ref_run)["artifact_id"], 19)
+
     def test_request_mismatch_denied(self):
         def wrong_run(cmd, **kwargs):
             if cmd[2].endswith("/zip"):
