@@ -78,17 +78,28 @@ def continuation_observation(record, verdict):
     """
     if verdict != "OK":
         return "CORRELATION_FAILED", "INSPECT_RESULT_CORRELATION"
+    # All public Issue records deliberately redact both streams to metadata.
+    # Diagnose authenticated Host failure before checking partial previews:
+    # otherwise every failed result with *_bytes is mislabelled "output partial".
+    failed = record.get("state") == "FAIL" or (
+        type(record.get("exit_code")) is int and record["exit_code"] != 0)
+    if failed:
+        host_sha = record.get("host_sha")
+        expected_sha = record.get("expected_sha")
+        if (isinstance(host_sha, str) and isinstance(expected_sha, str)
+                and re.fullmatch(r"[a-f0-9]{40}", host_sha)
+                and re.fullmatch(r"[a-f0-9]{40}", expected_sha)
+                and host_sha != expected_sha):
+            return "HOST_SOURCE_SHA_MISMATCH", "READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION"
+        return "HOST_OPERATION_FAILED", "INSPECT_FAILURE_EVIDENCE_AND_REPLAN"
+    if record.get("state") == "RETRYABLE":
+        return "HOST_OPERATION_RETRYABLE", "TRACE_EXISTING_HOST_DELIVERY_AND_RESULT_SINK"
     if any(record.get(stream + "_preview_truncated") or record.get(stream + "_truncated") for stream in ("stdout", "stderr")):
         return "HOST_OUTPUT_PARTIAL", "READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE"
     if any(stream + "_bytes" in record for stream in ("stdout", "stderr")):
         return "HOST_LEDGER_RECOVERY_REQUIRED", "READ_STORED_HOST_OUTPUT_CHUNKS_AND_CONTINUE"
     if record.get("state") == "PASS" and record.get("exit_code") == 0:
         return "HOST_OPERATION_PASSED", "RECHECK_MISSION_ACCEPTANCE_AND_CONTINUE"
-    stderr = str(record.get("stderr") or "")
-    if "SOURCE_SHA_MISMATCH" in stderr:
-        return "HOST_SOURCE_SHA_MISMATCH", "READBACK_HOST_SHA_AND_REPLAN_AUTHORIZED_ACTION"
-    if record.get("state") == "FAIL":
-        return "HOST_OPERATION_FAILED", "INSPECT_FAILURE_EVIDENCE_AND_REPLAN"
     return "HOST_RESULT_UNVERIFIED", "INSPECT_HOST_RESULT_AND_REPLAN"
 
 def emit(record, comment, verdict):
