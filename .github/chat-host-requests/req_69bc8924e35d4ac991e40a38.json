@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read actual current real DebugAI six-role run after last Researcher progress and save bounded sanitized evidence to owning Current; no model, source or runtime mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,subprocess,urllib.request\nrid='run_mvaxg8be_1099f77b3b'\ndata={'run_id':rid}\nfor route in ('inspect','status'):\n try:\n  with urllib.request.urlopen('http://127.0.0.1:8787/v1/'+route+'/'+rid,timeout=8) as r:o=json.load(r)\n  d=o.get('durable') or {}; c=d.get('workflow_cursor') or {}; e=((o.get('artifacts') or {}).get('ai_invocation') or {}).get('payload') or {}\n  data[route]={'http':200,'state':o.get('state'),'job':d.get('job_status'),'generation':d.get('generation'),'step':c.get('step_id'),'phase':c.get('step_phase'),'role':e.get('role'),'model_phase':e.get('phase'),'elapsed_ms':e.get('elapsed_ms'),'timeout':e.get('timeout_class'),'failure':e.get('failure_code')}\n except Exception as e:data[route]={'error':type(e).__name__}\ncode=\"\"\"const {RuntimeEvidenceStore}=require('/app/server/runtime-evidence.js');const s=new RuntimeEvidenceStore('/app/runtime');const a=s.list('run_mvaxg8be_1099f77b3b',{types:['ai_invocation'],limit:25});console.log(JSON.stringify(a.slice(0,16).map(e=>{let p=e.payload||{};return{role:p.role,phase:p.phase,kind:p.event_kind,elapsed:p.elapsed_ms,wait:p.queue_wait_ms,fail:p.failure_code,continuation:p.continuation_assessment}})))\"\"\"\np=subprocess.run(['docker','exec','debug-ai-debug-ai-1','node','-e',code],capture_output=True,text=True,timeout=15)\nif p.returncode==0:\n try:data['last_invocations']=json.loads(p.stdout)\n except ValueError:data['telemetry_error']='INVALID_JSON'\nelse:data['telemetry_error']='DOCKER_EXEC_'+str(p.returncode)\nbody='DEBUGAI_E2E_FRESH_STATUS_20261016\\n'+json.dumps(data,ensure_ascii=False,indent=2)\nq=subprocess.run(['gh','api','-X','POST','repos/seigo-gace/debug-ai/issues/41/comments','-f','body='+body],capture_output=True,text=True,timeout=25)\nif q.returncode:raise SystemExit('CURRENT_UPDATE_FAILED')\nprint('DEBUGAI_E2E_STATUS_URL='+json.loads(q.stdout)['html_url'])\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
