@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read only own bounded Host prior failed result and classify error without disclosing secret or raw logs.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\np=/home/admin1/logs/servercore-service-deploy/req_9d48eccd59b170836ea6565e.json\nif [ -r \"$p\" ]; then\n echo BUILD_LEDGER_FOUND=YES\n for pattern in 'permission denied' 'no such file' 'cannot connect' 'docker' 'not found' 'read-only' 'invalid' 'denied' 'unknown' 'not configured'; do\n  if jq -r '.stderr // \"\"' \"$p\" | grep -qi \"$pattern\"; then printf 'DIAGNOSTIC_MATCH=%s\\n' \"$pattern\"; fi\n done\n echo \"ERR_LEN=$(jq -r '.stderr // \"\" | length' \"$p\")\"\nelse echo BUILD_LEDGER_READABLE=NO; fi\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Host run38972755755 req_9d48eccd59b170836ea6565e FAIL exit1 at 9ms and v8 preflight tests later PASS. Error classification only."
+  }
+}
