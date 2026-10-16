@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Post safely derived Docker build failure categories without stderr/secret to owning AI Core Current; read-only Host.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nfrom pathlib import Path\nx=json.loads(Path('/home/admin1/logs/servercore-service-deploy/req_3be48d65f981b3a92643fb6c.json').read_text())\ns=str(x.get('stderr','')).lower()\ncodes={'APT_OR_OFFLINE':any(v in s for v in ('network is unreachable','temporary failure resolving','apt-get','failed to fetch','could not resolve')),'BASE_IMAGE_UNAVAILABLE':any(v in s for v in ('pull access denied','manifest unknown')),'CONTEXT_INVALID':any(v in s for v in ('failed to compute cache key','failed to read dockerfile','no such file or directory','permission denied')),'BUILDKIT':'failed to solve' in s}\nbody='AI_CORE_UDS_IMAGE_STAGE_FAILURE '+json.dumps({'exit':x.get('exit_code'),'stderr_chars':len(s),'kinds':codes},sort_keys=True)\nr=subprocess.run(['gh','api','-X','POST','repos/seigo-gace/ai-core/issues/1/comments','-f','body='+body,'--jq','.html_url'],capture_output=True,text=True,timeout=12)\nprint('IMAGE_CAUSE_RECORD='+('PASS' if r.returncode==0 else 'FAIL'))\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Original exact Image build Issue10 6223422525 failed, Writer ledger request req_3be48d65f981b3a92643fb6c; no model mutations. Need safe boolean cause record before retry."
+  }
+}
