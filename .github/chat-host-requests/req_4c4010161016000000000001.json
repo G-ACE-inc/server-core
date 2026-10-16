@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CU40 reflect merged Agent Pool PR300 to existing Host checkout with strict allowed paths and independently recover original small stdout bytes from correlated Writer ledger; publish only metadata; no AI Core effects",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "0ec4261ee4e134ed18834b2dca7943bf9808f950",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "0ec4261ee4e134ed18834b2dca7943bf9808f950",
+    "command": "python3 - <<'PY'\nimport hashlib,json,re,subprocess,sys\nfrom pathlib import Path\nROOT=\"/home/admin1/server-core\"\nOLD=\"0ec4261ee4e134ed18834b2dca7943bf9808f950\"\nRID=\"req_6a44efc4ef1add8aa3dec52e\"\nEXPECTED=\"f322bd40c89b8d8fc377adac3e2bbf4504e3343fadc5d48479b98664fae26fc7\"\ndef git(*args):\n p=subprocess.run([\"git\",\"-C\",ROOT,*args],capture_output=True,text=True,timeout=30)\n if p.returncode:raise RuntimeError(\"GIT_\"+args[0]+\"_FAILED\")\n return p.stdout.strip()\ntry:\n if git(\"rev-parse\",\"HEAD\")!=OLD:raise RuntimeError(\"HOST_HEAD_CHANGED\")\n if git(\"branch\",\"--show-current\")!=\"main\":raise RuntimeError(\"NOT_MAIN\")\n if git(\"status\",\"--porcelain\",\"--untracked-files=no\"):raise RuntimeError(\"CHECKOUT_DIRTY\")\n git(\"fetch\",\"--quiet\",\"origin\",\"main\")\n target=git(\"rev-parse\",\"origin/main\")\n changed=git(\"diff\",\"--name-only\",\"HEAD\",\"origin/main\").splitlines()\n safe={\"scripts/chat_cu_continuation.py\",\"scripts/chat_cu_continuation_test.py\"}\n unexpected=[x for x in changed if x not in safe and not re.fullmatch(r\"\\.github/chat-host-requests/req_[0-9a-f]{24}\\.json\",x)]\n if unexpected:raise RuntimeError(\"UNOWNED_SOURCE_DIFF_DENIED\")\n git(\"merge\",\"--ff-only\",\"origin/main\")\n after=git(\"rev-parse\",\"HEAD\")\n if after!=target:raise RuntimeError(\"FF_HEAD_INVALID\")\n ledger=Path(\"/home/admin1/logs/servercore-service-deploy\")/(RID+\".json\")\n if not ledger.is_file():raise RuntimeError(\"SOURCE_LEDGER_MISSING\")\n data=json.loads(ledger.read_text())\n raw=data.get(\"stdout\")\n if (data.get(\"request_id\")!=RID or data.get(\"state\")!=\"HOST_COMMAND_PASS\"\n     or not isinstance(raw,str)):raise RuntimeError(\"UNVERIFIED_ORIGINAL_STREAM\")\n b=raw.encode(\"utf-8\")\n if len(b)!=26 or hashlib.sha256(b).hexdigest()!=EXPECTED:raise RuntimeError(\"WRITER_LEDGER_STREAM_MISMATCH\")\n info={\"marker\":\"AGENT_POOL_PR300_HOST_RECOVERY\",\"host_before\":OLD,\"host_after\":after,\n       \"owned_source_paths\":[x for x in changed if x in safe],\n       \"original_request_id\":RID,\"original_stdout_bytes\":len(b),\n       \"original_stdout_sha256\":hashlib.sha256(b).hexdigest(),\n       \"original_stderr_bytes\":len(str(data.get(\"stderr\") or \"\").encode(\"utf-8\")),\n       \"ledger_recovery\":\"VERIFIED\",\"private_payload_published\":False}\n p=subprocess.run([\"gh\",\"api\",\"-X\",\"POST\",\"repos/G-ACE-inc/server-core/issues/40/comments\",\"--input\",\"-\",\"--jq\",\".html_url\"],\n input=json.dumps({\"body\":\"AGENT_POOL_PR300_HOST_RECOVERY\\n\"+json.dumps(info,indent=2)}),capture_output=True,text=True,timeout=20)\n print(\"AGENT_POOL_PR300_HOST_RECOVERY=\"+json.dumps({**info,\"recorded\":p.returncode==0}))\nexcept Exception as exc:\n print(\"AGENT_POOL_PR300_RECOVERY_FAILED=\"+str(exc)[:100])\n sys.exit(1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/300"
+  }
+}
