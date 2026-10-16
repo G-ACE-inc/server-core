@@ -9,6 +9,7 @@
     "method": "POST",
     "payloadMode": "json",
     "dataMode": "json_object",
+    "internalDataPolicy": "preserve",
     "successMode": "status_and_header",
     "acceptedHeader": "x-gace-accepted",
     "acceptedHeaderValue": "true",
