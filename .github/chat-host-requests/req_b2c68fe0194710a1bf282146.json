@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Build staged image only for exact AI Core PR#3 guarded stale Unix cleanup, Docker network none and exact model_gate source sha match. Live Gate, four backends and DebugAI unchanged.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = cd5255bb9f7fd4f6f8eb2db119e7bfcf2c413863\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\ntag=ai-core-model-gate:uds-stale-guard-cd5255\ntimeout 75 docker build --quiet --network none --cache-from ai-core-model-gate:uds-stage-75778b66 -t \"$tag\" -f \"$w/Dockerfile.gate\" \"$w\" >/dev/null\nexpected=$(sha256sum \"$w/runtime/model_gate.py\" | cut -d' ' -f1)\nactual=$(docker run --rm --network none --read-only --entrypoint sha256sum \"$tag\" /app/runtime/model_gate.py | cut -d' ' -f1)\ntest \"$actual\" = \"$expected\" || exit 77\nprintf 'UDS_STALE_GUARD_IMAGE_BUILT=PASS\\nSOURCE_HEAD=cd5255bb9f7fd4f6f8eb2db119e7bfcf2c413863\\nSOURCE_SHA256=%s\\nIMAGE_ID=%s\\n' \"$actual\" \"$(docker image inspect \"$tag\" --format '{{.Id}}')\"\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "cu_verified": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Host Issue10 6223396196 source-exact focused safety tests PASS; AI Core PR3 cd5255 and existing Host worktree clean at prior readback; new Unix stale listener guard must be image reflected, no product deployment."
+  }
+}
