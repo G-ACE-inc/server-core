@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "On clean existing PR3 nested worktree run one focused isolated Source regression for optional 18080 compatible listener using same Coordinator and existing per-model Gate auth. No production listener startup, model inference, DebugAI Source changes or new Runtime.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\nb=$(git -C \"$w\" rev-parse HEAD)\ncase \"$b\" in 53838af6ea54357daf328157cb603b54fc4e0eac|8e2f480db00faf20a51e463d4a05fe94c4dbeb49|cd84ad051dac40583ff1e3c2370d6c621f3cb530) :;; *) exit 72;; esac\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\" || exit 73\ngit -C \"$w\" fetch --no-tags origin feat/per-model-lifecycle-20261013 >/dev/null 2>&1\ntest \"$(git -C \"$w\" rev-parse FETCH_HEAD)\" = cd84ad051dac40583ff1e3c2370d6c621f3cb530 || exit 74\ntest \"$b\" = cd84ad051dac40583ff1e3c2370d6c621f3cb530 || git -C \"$w\" checkout --detach -q cd84ad051dac40583ff1e3c2370d6c621f3cb530\nrc=0\nout=$(docker run --rm --network none --cpus 1 --memory 512m -v \"$w:/src:ro\" -w /src -e PYTHONPATH=/src --entrypoint python3 ai-core-model-gate:offline-01ef4da9 -m unittest discover -s tests -p test_model_gate.py -k opt_in_18080_compatibility -v 2>&1) || rc=$?\nmsg=\"AI_CORE_18080_SOURCE_REGRESSION HEAD=cd84ad051dac40583ff1e3c2370d6c621f3cb530 EXIT=$rc $(printf '%s\\n' \"$out\" | grep -E '^Ran |^OK$|^FAILED ' | tr '\\n' ';')\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$msg\" --jq .html_url >/dev/null\necho \"AI_CORE_COMPAT_TEST_EXIT=$rc\"\nexit \"$rc\""
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 cd84ad0, adopted design §8/§11 legacy 18080-compatible API with single Coordinator; actual Host Issue#1 6225240592 confirmed old router absent, 18080 not listening. New opt-in 18080 listener Source only; isolated unit must confirm auth, per-model mapping, no new Coordinator, wrong-model denial. Shared live Gate untouched, DebugAI separate."
+  }
+}
