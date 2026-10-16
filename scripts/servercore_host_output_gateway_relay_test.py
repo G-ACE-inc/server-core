@@ -97,7 +97,13 @@ class ConfidentialRelayTests(unittest.TestCase):
                 self.assertEqual(data["zip_sha256"], result["zip_sha256"])
                 self.assertLessEqual(data["chunk_bytes"], CHUNK_BYTES)
                 self.assertEqual(data["schema"], "gace.host-output.encrypted-chunk/v1")
+                self.assertEqual(data["vault_ref"], "configured-existing-ref")
+                self.assertNotIn("key_ref", data)  # Gateway sanitizer would redact it
                 self.assertNotIn("plaintext_base64", data)
+                self.assertNotIn("ciphertext", data)  # Gateway clips long strings
+                self.assertTrue(all(len(piece) <= 3000 for piece in data["ciphertext_parts"]))
+                self.assertEqual(base64.b64decode("".join(data["ciphertext_parts"])),
+                                 b"C" * data["chunk_bytes"] + b"A" * 16)
             self.assertEqual(result["state"], "GATEWAY_ENQUEUED_NOT_CHAT_DELIVERED")
             self.assertFalse(list(Path(directory).glob("gace-host-output-*")))
 
