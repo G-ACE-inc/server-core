@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core generic Granite API content quality with adequate max_tokens=96, no-think system prompt; response metadata only, existing Gate, no other product modifications",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport subprocess,json\nscript=\"\"\"import os,json,time,urllib.request\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY'],'Content-Type':'application/json','X-AI-Core-Client':'independent-granite','X-AI-Core-Wait-Ms':'30000'}\nurl='http://127.0.0.1:18181'\nwith urllib.request.urlopen(urllib.request.Request(url+'/v1/models',headers=h),timeout=6) as r:mid=json.load(r)['data'][0]['id']\nbody={'model':mid,'stream':False,'messages':[{'role':'system','content':'Do not think aloud or give reasoning. Give one brief final answer.'},{'role':'user','content':'Reply exactly OK'}],'max_tokens':96,'temperature':0}\nstart=time.monotonic()\nreq=urllib.request.Request(url+'/v1/chat/completions',headers=h,data=json.dumps(body).encode(),method='POST')\nwith urllib.request.urlopen(req,timeout=180) as r:\n d=json.load(r);choice=d.get('choices',[{}])[0];msg=choice.get('message',{})\n print(json.dumps({'http':r.status,'choices':len(d.get('choices',[])),'finish_reason':choice.get('finish_reason'),'has_content':bool(msg.get('content')),'has_reasoning':bool(msg.get('reasoning_content')),'elapsed_seconds':round(time.monotonic()-start,2)}))\n\"\"\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',script],capture_output=True,text=True,timeout=215)\nout={'exit':p.returncode,'result':json.loads(p.stdout) if p.returncode==0 and p.stdout.strip().startswith('{') else {'error':p.stderr[-400:]}}\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_GRANITE_REAL_FINAL_ANSWER\\n'+json.dumps(out,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=25)\nprint('AI_CORE_GRANITE_REAL='+('RECORD '+r.stdout.strip() if r.returncode==0 else 'RECORD_FAILED'))\nraise SystemExit(0 if r.returncode==0 and out['result'].get('http')==200 and out['result'].get('has_content') else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6214765730"
+  }
+}
