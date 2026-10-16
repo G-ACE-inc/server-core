@@ -71,6 +71,8 @@ def verified_output_evidence(checkpoint, archive):
                 "HOST_OPERATION_PASSED", "HOST_OUTPUT_PARTIAL",
                 "HOST_LEDGER_RECOVERY_REQUIRED") or
             checkpoint.get("exit_code") != 0 or
+            checkpoint.get("source_truncated") is True or
+            checkpoint.get("command_id") not in (None, "host.command") or
             checkpoint.get("output_complete") is True):
         raise ValueError("OUTPUT_VERIFICATION_STATE_INVALID")
     path = Path(archive)
