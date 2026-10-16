@@ -143,6 +143,8 @@ def continuation_checkpoint(result, cu_issue_url):
         "artifact_id": result["artifact_id"],
         "source_sha": result["source_sha"],
         "request_id": result["request_id"],
+        "command_id": result.get("command_id"),
+        "source_truncated": result.get("source_truncated", False),
         "observation": result["observation"],
         "result_verified": result["result_verified"],
         "expected_sha": result.get("expected_sha"),
