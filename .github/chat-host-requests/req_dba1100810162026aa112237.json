@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Prepare exact PR112 isolated worktree nested within registered DebugAI parent for Stage B integration, without touching parent checkout or running containers",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu; r=/home/admin1/projects/debug-ai; w=$r/.worktrees/debugai-pr112-gates-20261016; h=bb08aef1d92271d1fb4ab9f37309535811d48180; test \"$(realpath \"$r\")\" = \"$r\"; test \"$(git -C \"$r\" rev-parse --show-toplevel)\" = \"$r\"; test ! -e \"$w\" && test ! -L \"$w\"; if git -C \"$r\" worktree list --porcelain | grep -Fq \"HEAD $h\"; then exit 22; fi; git -C \"$r\" fetch --quiet --no-tags origin pull/112/head; test \"$(git -C \"$r\" rev-parse FETCH_HEAD)\" = \"$h\"; mkdir -p \"$r/.worktrees\"; git -C \"$r\" worktree add --detach \"$w\" \"$h\"; test \"$(git -C \"$w\" rev-parse HEAD)\" = \"$h\"; test -z \"$(git -C \"$w\" status --porcelain)\""
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
