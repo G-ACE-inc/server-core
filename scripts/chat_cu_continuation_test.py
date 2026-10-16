@@ -196,7 +196,7 @@ class ContinuationTests(unittest.TestCase):
         def api(path):
             calls.append(path)
             if path.endswith("/jobs?per_page=100"):
-                return {"jobs": [{"steps": [
+                return {"total_count": 1, "jobs": [{"id": 400, "name": "live-dogfood", "steps": [
                     {"name": "Bounded Host result return (request id correlated)", "conclusion": "failure"}]}]}
             return {"head_sha": "b" * 40, "status": "completed", "conclusion": "failure"}
         result = resume(checkpoint, api=api)
@@ -213,7 +213,7 @@ class ContinuationTests(unittest.TestCase):
         def api(path):
             calls.append(path)
             if path.endswith("/jobs?per_page=100"):
-                return {"total_count": 1, "jobs": [{"id": 400, "steps": [
+                return {"total_count": 1, "jobs": [{"id": 400, "name": "live-dogfood", "steps": [
                     {"name": "Bounded Host result return (request id correlated)",
                      "conclusion": "failure"}]}]}
             return {"head_sha": BASE["source_sha"], "status": "completed",
@@ -231,7 +231,7 @@ class ContinuationTests(unittest.TestCase):
         def api(path):
             calls.append(path)
             if "/jobs?" in path:
-                return {"total_count": 1, "jobs": [{"steps": [
+                return {"total_count": 1, "jobs": [{"id": 400, "name": "live-dogfood", "steps": [
                     {"name": "Bounded Host result return (request id correlated)",
                      "conclusion": "failure"}]}]}
             return {"head_sha": BASE["source_sha"], "status": "completed",
@@ -242,7 +242,7 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         # A generic unrelated Actions failure cannot be a source-context root cause.
         result2 = resume(checkpoint, api=lambda p: (
-            {"total_count": 1, "jobs": [{"steps": [
+            {"total_count": 1, "jobs": [{"id": 400, "name": "live-dogfood", "steps": [
                 {"name": "Unrelated CI test", "conclusion": "failure"}]}]}
             if "/jobs?" in p else {"head_sha": BASE["source_sha"], "status": "completed",
                                      "conclusion": "failure"}))
@@ -252,7 +252,7 @@ class ContinuationTests(unittest.TestCase):
     def test_checkpoint_mismatched_source_hint_and_exit_never_replans_pr(self):
         def api(path):
             if "/jobs?" in path:
-                return {"total_count": 1, "jobs": [{"steps": [
+                return {"total_count": 1, "jobs": [{"id": 400, "name": "live-dogfood", "steps": [
                     {"name": "Bounded Host result return (request id correlated)",
                      "conclusion": "failure"}]}]}
             return {"head_sha": BASE["source_sha"], "status": "completed",
@@ -281,7 +281,7 @@ class ContinuationTests(unittest.TestCase):
                       "result_verified": False, "exit_code": None}
         def api(path):
             if "/jobs?" in path:
-                return {"total_count": 1, "jobs": [{"id": 99, "steps": [
+                return {"total_count": 1, "jobs": [{"id": 99, "name": "live-dogfood", "steps": [
                     {"name": "Bounded Host result return (request id correlated)",
                      "conclusion": "failure"}]}]}
             return {"head_sha": BASE["source_sha"], "status": "completed",
@@ -295,7 +295,7 @@ class ContinuationTests(unittest.TestCase):
                       "exit_code": 42, "result_verified": True}
         def api(path):
             if "/jobs?" in path:
-                return {"total_count": 1, "jobs": [{"id": 99, "steps": [
+                return {"total_count": 1, "jobs": [{"id": 99, "name": "live-dogfood", "steps": [
                     {"name": "Unrelated PR CI", "conclusion": "failure"}]}]}
             return {"head_sha": BASE["source_sha"], "status": "completed",
                     "conclusion": "failure"}
@@ -307,11 +307,73 @@ class ContinuationTests(unittest.TestCase):
                       "exit_code": 42, "result_verified": True}
         def api(path):
             if "/jobs?" in path:
-                return {"total_count": 2, "jobs": [{"id": 1, "steps": []}]}
+                return {"total_count": 2, "jobs": [] if "&page=2" in path else [
+                    {"id": 1, "name": "live-dogfood", "steps": []}]}
             return {"head_sha": BASE["source_sha"], "status": "completed",
                     "conclusion": "failure"}
-        with self.assertRaisesRegex(ValueError, "FAILED_RUN_JOBS_INCOMPLETE"):
+        with self.assertRaisesRegex(ValueError, "GITHUB_LIST_INCOMPLETE"):
             resume(checkpoint, api=api)
+
+    def test_failed_run_recovers_correlated_host_step_from_second_job_page(self):
+        cp = {**BASE, "observation": "HOST_OPERATION_FAILED", "exit_code": 43}
+        calls = []
+        def api(path):
+            calls.append(path)
+            if "/jobs?" in path:
+                jobs = ([{"id": 101, "name": "live-dogfood", "steps": [
+                    {"name": "Bounded Host result return (request id correlated)",
+                     "conclusion": "failure"}]}] if "&page=2" in path else [
+                    {"id": i, "name": "matrix-" + str(i), "steps": []}
+                    for i in range(1, 101)])
+                return {"total_count": 101, "jobs": jobs}
+            return {"head_sha": BASE["source_sha"],
+                    "status": "completed", "conclusion": "failure"}
+        result = resume(cp, api=api)
+        self.assertEqual(result["observation"], "CORRELATED_HOST_OPERATION_FAILED")
+        self.assertEqual(result["next_action"], "INSPECT_CORRELATED_HOST_FAILURE_AND_REPLAN")
+        self.assertEqual(len(calls), 3)
+        self.assertTrue(calls[2].endswith("/jobs?per_page=100&page=2"))
+
+    def test_unrelated_job_cannot_spoof_host_failure_step(self):
+        cp = {**BASE, "observation": "HOST_OPERATION_FAILED", "exit_code": 43}
+        def api(path):
+            if "/jobs?" in path:
+                return {"total_count": 2, "jobs": [
+                    {"id": 1, "name": "unrelated-matrix", "steps": [
+                        {"name": "Bounded Host result return (request id correlated)",
+                         "conclusion": "failure"}]},
+                    {"id": 2, "name": "live-dogfood", "steps": [
+                        {"name": "Bounded Host result return (request id correlated)",
+                         "conclusion": "success"}]}]}
+            return {"head_sha": BASE["source_sha"],
+                    "status": "completed", "conclusion": "failure"}
+        self.assertEqual(resume(cp, api=api)["observation"], "RUN_FAILED_OR_INCOMPLETE")
+
+    def test_ambiguous_duplicate_live_host_job_cannot_classify_failure(self):
+        cp = {**BASE, "observation": "HOST_OPERATION_FAILED", "exit_code": 43}
+        def api(path):
+            if "/jobs?" in path:
+                return {"total_count": 2, "jobs": [
+                    {"id": i, "name": "live-dogfood", "steps": [
+                        {"name": "Bounded Host result return (request id correlated)",
+                         "conclusion": "failure"}]}
+                    for i in (1, 2)]}
+            return {"head_sha": BASE["source_sha"],
+                    "status": "completed", "conclusion": "failure"}
+        self.assertEqual(resume(cp, api=api)["observation"], "RUN_FAILED_OR_INCOMPLETE")
+
+    def test_repeated_failed_job_id_between_pages_denied(self):
+        cp = {**BASE, "observation": "HOST_OPERATION_FAILED", "exit_code": 43}
+        def api(path):
+            if "/jobs?" in path:
+                return {"total_count": 101, "jobs": [
+                    {"id": 100 if "&page=2" in path else i, "name": "live-dogfood",
+                     "steps": []} for i in ([101] if "&page=2" in path
+                                            else range(1, 101))]}
+            return {"head_sha": BASE["source_sha"],
+                    "status": "completed", "conclusion": "failure"}
+        with self.assertRaisesRegex(ValueError, "GITHUB_LIST_ID_INVALID_OR_DUPLICATE"):
+            resume(cp, api=api)
 
     def test_unverified_host_mismatch_cannot_override_actions_failure(self):
         checkpoint = {**BASE, "observation": "HOST_SOURCE_SHA_MISMATCH",

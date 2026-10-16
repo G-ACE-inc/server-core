@@ -128,15 +128,18 @@ def resume(checkpoint, api=api_read, host_output_zip=None):
              or host_observation == "HOST_RESULT_NOT_RETURNED")
     )
     if inspect_host_step:
-        jobs = api(f"repos/{repository}/actions/runs/{run_id}/jobs?per_page=100")
-        if not isinstance(jobs, dict) or not isinstance(jobs.get("jobs"), list):
-            raise ValueError("FAILED_RUN_JOBS_UNVERIFIED")
-        if type(jobs.get("total_count")) is int and len(jobs["jobs"]) != jobs["total_count"]:
-            raise ValueError("FAILED_RUN_JOBS_INCOMPLETE")
-        for job in jobs["jobs"]:
-            if not isinstance(job, dict):
-                continue
-            for step in job.get("steps") or []:
+        # GitHub may return more than 100 Jobs (including unrelated matrix Jobs).
+        # Read every stable page and refuse duplicate/partial ID collections before
+        # attributing an Actions failure to the Host.
+        jobs = paginated_list(
+            f"repos/{repository}/actions/runs/{run_id}/jobs?per_page=100",
+            "jobs", api)
+        # Only the original common Host execution Job may classify a correlated
+        # Host error. An identically named step in unrelated Jobs is not evidence.
+        host_jobs = [job for job in jobs
+                     if job.get("name") == "live-dogfood"]
+        if len(host_jobs) == 1:
+            for step in host_jobs[0].get("steps") or []:
                 if (isinstance(step, dict) and step.get("conclusion") == "failure"
                         and step.get("name") == "Bounded Host result return (request id correlated)"):
                     host_failure_step = step["name"]
