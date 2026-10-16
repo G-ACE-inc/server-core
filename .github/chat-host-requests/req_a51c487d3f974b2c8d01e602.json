@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Gateway28 live runtime default sanitize regression for other five destinations",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "seigo-gace/webhook-gateway",
+    "repo_sha": "4847811c7508da508fe210312d5e8bcaafcdc83a",
+    "command": "set -eu\nname=\"$(docker ps --format '{{.Names}}' | grep -E '^webhook-gateway-api(-[0-9]+)?$' | head -n 1)\"\ntest -n \"$name\"\ndocker exec \"$name\" node -e 'const fs=require(\"fs\");const c=JSON.parse(fs.readFileSync(\"/app/config/webhooks.json\",\"utf8\"));const d=Array.isArray(c)?c:(c.destinations||c.webhooks);if(!Array.isArray(d)||d.length!==6)process.exit(33);const selected=d.filter(v=>v.id===\"server-core-bounded-host\");if(selected.length!==1||selected[0].internalDataPolicy!==\"preserve\")process.exit(34);if(d.filter(v=>v.id!==\"server-core-bounded-host\").some(v=>v.internalDataPolicy&&v.internalDataPolicy!==\"sanitize\"))process.exit(35);if(d.some(v=>v.id===\"server-core-host-output\"))process.exit(36);console.log(\"GATEWAY28_OTHER_FIVE_SANITIZE=PASS\")'\nprintf 'GATEWAY28_SANITIZE_REGRESSION=PASS\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/webhook-gateway/pull/29"
+  }
+}
