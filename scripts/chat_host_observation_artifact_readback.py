@@ -60,6 +60,8 @@ def validate(receipt, expected_request_id):
     exit_code = receipt.get("exit_code")
     if exit_code is not None and (type(exit_code) is not int or not -1 <= exit_code <= 255):
         raise ValueError("HOST_EXIT_CODE_INVALID")
+    # Source-context hints require the correlated Writer's structured
+    # preflight provenance; the public receipt alone is not a trust root.
     # Source-context hints originate only from matching Writer stderr and
     # exit; an unverified hint or guessed exit must never drive another Tool.
     hints = {
@@ -69,6 +71,7 @@ def validate(receipt, expected_request_id):
         73: "CHAT_SOURCE_SHA_UNAVAILABLE",
         74: "CHAT_SOURCE_SHA_MISMATCH",
         75: "CHAT_SOURCE_REQUIRED_FILE_MISSING",
+        76: "CHAT_SOURCE_DIRTY_WORKTREE",
     }
     hint = receipt.get("diagnostic_hint")
     if obs in ("HOST_SOURCE_CONTEXT_STALE", "HOST_SOURCE_CONTEXT_INVALID"):
