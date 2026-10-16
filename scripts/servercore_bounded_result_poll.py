@@ -81,6 +81,8 @@ def continuation_observation(record, verdict):
     # All public Issue records deliberately redact both streams to metadata.
     # Diagnose authenticated Host failure before checking partial previews:
     # otherwise every failed result with *_bytes is mislabelled "output partial".
+    if record.get("state") == "RETRYABLE":
+        return "HOST_OPERATION_RETRYABLE", "TRACE_EXISTING_HOST_DELIVERY_AND_RESULT_SINK"
     failed = record.get("state") == "FAIL" or (
         type(record.get("exit_code")) is int and record["exit_code"] != 0)
     if failed:
