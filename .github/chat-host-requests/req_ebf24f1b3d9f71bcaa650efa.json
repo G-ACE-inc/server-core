@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Single exact-HEAD full AI Core Source suite after Core-owned model inference timing metrics addition; only on PASS build offline new image and prove exact Gate runtime source parity. No model starts or live service change.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = d6a11e719c39684334d5b432bfddd0d70e5c1c39\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\ndocker run --rm --network none --cpus 1 --memory 512m -v \"$w:/src:ro\" -w /src -e PYTHONPATH=/src --entrypoint python3 ai-core-model-gate:offline-01ef4da9 -m unittest discover -s tests -q\ndocker build --pull=false --network none -f \"$w/Dockerfile.gate.refresh\" --build-arg GATE_BASE_IMAGE=ai-core-model-gate:offline-01ef4da9 -t ai-core-model-gate:offline-d6a11e71 \"$w/runtime\" >/dev/null\nwant=$(sha256sum \"$w/runtime/model_gate.py\" | cut -d ' ' -f1)\ngot=$(docker run --rm --network none --entrypoint sha256sum ai-core-model-gate:offline-d6a11e71 /app/runtime/model_gate.py | cut -d ' ' -f1)\ntest \"$want\" = \"$got\"\necho AI_CORE_FULL_SUITE_AND_OFFLINE_IMAGE=PASS"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Owner Current AI Core#1, exact PR3 d6a11e7 introduced bounded actual inference metrics endpoint while preserving public contracts. Focused metrics tests passed Host #10 6225679458. Run single complete regression suite then build offline image from existing base, no production mutation or DebugAI involvement."
+  }
+}
