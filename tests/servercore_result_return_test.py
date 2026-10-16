@@ -200,7 +200,7 @@ class SinkTests(unittest.TestCase):
         ledger.mkdir(parents=True)
         writer = {"request_id": RID, "repository": "seigo-gace/ai-core",
                   "source_sha": "b" * 40, "state": "FAIL", "exit_code": 74,
-                  "stdout": "", "stderr": "CHAT_SOURCE_SHA_MISMATCH\\n"}
+                  "stdout": "", "stderr": "CHAT_SOURCE_SHA_MISMATCH\n"}
         p = ledger / (RID + ".json")
         p.write_text(json.dumps(writer), encoding="utf-8")
         sink.accept_record(rec(command_id="host.command", state="FAIL", exit_code=74,
@@ -208,10 +208,10 @@ class SinkTests(unittest.TestCase):
                            result_dir=self.dir)
         record = sink.read_record(RID, self.dir)
         comment = sink.comment_body(record, writer_dir=ledger)
-        data = json.loads(comment.split("```json\\n", 1)[1].split("\\n```", 1)[0])
+        data = json.loads(comment.split("```json\n", 1)[1].split("\n```", 1)[0])
         self.assertEqual(data["diagnostic_hint"], "CHAT_SOURCE_SHA_MISMATCH")
         self.assertEqual(data["stderr"], "")
-        self.assertNotIn("CHAT_SOURCE_SHA_MISMATCH\\n", comment)
+        self.assertNotIn("CHAT_SOURCE_SHA_MISMATCH\n", comment)
         # A matching exit alone is not evidence of the specific preflight.
         writer["stderr"] = "private stderr details"
         p.write_text(json.dumps(writer), encoding="utf-8")
