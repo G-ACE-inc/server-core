@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from scripts.servercore_host_output_export import export_output
 from scripts.servercore_host_output_cipher_inbox import store
-from scripts.servercore_host_output_private_artifact_publish import run
+from scripts.servercore_host_output_private_artifact_publish import run, publish_writer_output
 
 RID="req_"+"9"*24
 
@@ -60,6 +60,75 @@ def setup(directory):
     return inbox,fragments,stdout,stderr
 
 class FullBridgeTests(unittest.TestCase):
+    def writer(self, directory):
+        Path(directory, RID + ".json").write_text(json.dumps({
+            "request_id": RID, "stdout": "日本語 result\n", "stderr": ""}), encoding="utf-8")
+
+    def test_local_writer_reuses_private_release_without_vault(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.writer(d)
+            gh = MockRelease()
+            result = publish_writer_output(RID, writer_dir=d, runner=gh)
+            self.assertEqual(result["state"], "PRIVATE_RELEASE_PUBLISHED_AWAIT_ARTIFACT")
+            self.assertEqual(result["input"], "writer-ledger")
+            self.assertEqual(result["streams"]["stdout"]["chars"], len("日本語 result\n"))
+            self.assertNotIn("日本語", json.dumps(result, ensure_ascii=False))
+            self.assertEqual(len(gh.calls), 3)
+            archive_arg = gh.calls[1][4]
+            self.assertFalse(Path(archive_arg.split("#")[0]).exists())
+
+    def test_local_verify_does_not_publish(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.writer(d)
+            gh = MockRelease()
+            result = publish_writer_output(RID, writer_dir=d, verify_only=True, runner=gh)
+            self.assertEqual(result["state"], "FULL_ZIP_VERIFIED_LOCAL")
+            self.assertEqual(gh.calls, [])
+
+    def test_missing_or_mismatched_ledger_never_publishes(self):
+        with tempfile.TemporaryDirectory() as d:
+            gh = MockRelease()
+            with self.assertRaisesRegex(ValueError, "WRITER_LEDGER_MISSING"):
+                publish_writer_output(RID, writer_dir=d, runner=gh)
+            Path(d, RID + ".json").write_text(json.dumps({"request_id": "wrong"}))
+            with self.assertRaisesRegex(ValueError, "WRITER_ID_MISMATCH"):
+                publish_writer_output(RID, writer_dir=d, runner=gh)
+            self.assertEqual(gh.calls, [])
+
+    def test_local_writer_refuses_public_recipient(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.writer(d)
+            calls = []
+            def public(args, **kwargs):
+                calls.append(args)
+                class Result:
+                    returncode = 0
+                    stdout = "false"
+                return Result()
+            with self.assertRaisesRegex(ValueError, "PRIVATE_REPOSITORY_NOT_VERIFIED"):
+                publish_writer_output(RID, writer_dir=d, runner=public)
+            self.assertEqual(len(calls), 1)
+
+    def test_changed_ledger_fails_independent_digest_before_upload(self):
+        from unittest.mock import patch
+        from scripts.servercore_host_output_private_artifact_publish import independently_expected
+        with tempfile.TemporaryDirectory() as d:
+            self.writer(d)
+            expected = independently_expected(RID, writer_dir=d)
+            Path(d, RID + ".json").write_text(json.dumps({
+                "request_id": RID, "stdout": "different", "stderr": ""}))
+            gh = MockRelease()
+            with patch("scripts.servercore_host_output_private_artifact_publish.independently_expected",
+                       return_value=expected):
+                with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_MANIFEST_MISMATCH"):
+                    publish_writer_output(RID, writer_dir=d, runner=gh)
+            self.assertEqual(gh.calls, [])
+
+    def test_local_request_id_cannot_select_other_paths(self):
+        for rid in ("../ledger", None, "req_" + "f" * 23):
+            with self.subTest(rid=rid), self.assertRaisesRegex(ValueError, "REQUEST_ID_INVALID"):
+                publish_writer_output(rid)
+
     def test_full_verified_zip_and_private_release_only_after_original_hash(self):
         with tempfile.TemporaryDirectory() as d:
             inbox,frags,out,err=setup(d)

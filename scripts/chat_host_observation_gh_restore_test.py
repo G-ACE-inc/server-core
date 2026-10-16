@@ -207,6 +207,24 @@ class RestoreTests(unittest.TestCase):
         self.assertEqual(checkpoint["next_action"], "RECOVER_HOST_LEDGER_PAYLOAD")
         self.assertEqual(checkpoint["phase"], "OBSERVE")
 
+    def test_known_failures_recheck_original_run_before_payload_recovery(self):
+        for observation in (
+            "HOST_SOURCE_SHA_MISMATCH", "HOST_OPERATION_FAILED",
+            "HOST_OPERATION_RETRYABLE", "HOST_SOURCE_CONTEXT_STALE",
+            "HOST_SOURCE_CONTEXT_INVALID", "CORRELATION_FAILED",
+            "HOST_RESULT_UNVERIFIED",
+        ):
+            for complete in (False, True):
+                with self.subTest(observation=observation, complete=complete):
+                    result = {"repository": "G-ACE-inc/server-core", "run_id": 123,
+                              "artifact_id": 19, "source_sha": SHA, "request_id": RID,
+                              "result_verified": True, "output_complete": complete,
+                              "observation": observation, "result_url": "existing"}
+                    checkpoint = continuation_checkpoint(
+                        result, "https://github.com/G-ACE-inc/server-core/issues/40")
+                    self.assertEqual(checkpoint["phase"], "OBSERVE")
+                    self.assertEqual(checkpoint["next_action"], "RECHECK_EXISTING_RUN_AND_HOST_RESULT")
+
 
 if __name__ == "__main__":
     unittest.main()
