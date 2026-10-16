@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only ownership of actual runtime model/API endpoint configuration for DebugAI and Astera-v8, environment keys only and sanitized URL host/port, no logs content",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,re,subprocess\nout={}\nfor name in ('debug-ai-debug-ai-1','astera-v8','astera-v8-evaluator'):\n p=subprocess.run(['docker','inspect',name],capture_output=True,text=True,timeout=10)\n if p.returncode!=0:out[name]={'status':'MISSING'};continue\n item=json.loads(p.stdout)[0]\n names={}\n for entry in (item.get('Config') or {}).get('Env') or []:\n  var,sep,val=entry.partition('=')\n  if not sep:continue\n  if re.search(r'(CORE|MODEL|LLAMA|OPENAI|PROVIDER|BASE_URL|API_URL|ENDPOINT|INFERENCE|ROUTER)',var,re.I):\n   if re.search(r'(KEY|TOKEN|PASS|SECRET|CRED|AUTH)',var,re.I):\n    names[var]={'declared':bool(val),'value':'REDACTED'}\n   elif re.search(r'(URL|HOST|PORT|ENDPOINT)',var,re.I):\n    from urllib.parse import urlsplit\n    try:\n     addr=urlsplit(val)\n     names[var]={'scheme':addr.scheme,'host':addr.hostname,'port':addr.port} if addr.hostname else {'configured':bool(val),'value_hidden':True}\n    except Exception:names[var]={'configured':bool(val),'value_hidden':True}\n   else:names[var]={'configured':bool(val),'value_hidden':True}\n logs=subprocess.run(['docker','logs','--tail','200',name],capture_output=True,text=True,timeout=15)\n tail=logs.stdout+'\\n'+logs.stderr\n out[name]={'state':item.get('State',{}).get('Status'),'network':item.get('HostConfig',{}).get('NetworkMode'),'relevant_environment':names,'log_counts':{'old_18080':tail.count('18080'),'new_gate_ports':sum(tail.count(str(n)) for n in (18181,18182,18183,18184))},'secret_values_included':False}\nbody='AI_CORE_CONSUMER_LIVE_ENDPOINT_OWNERSHIP\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('AI_CORE_CONSUMER_ENDPOINTS='+('PASS '+r.stdout.strip() if r.returncode==0 else 'POST_FAILED'))\nraise SystemExit(0 if r.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209438989"
+  }
+}
