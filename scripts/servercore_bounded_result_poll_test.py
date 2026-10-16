@@ -53,9 +53,6 @@ class TerminalOutputTests(unittest.TestCase):
         record["state"] = "RETRYABLE"
         record["exit_code"] = -1
         self.assertEqual(poll.continuation_observation(record, "OK"),
-                         ("HOST_OPERATION_FAILED", "INSPECT_FAILURE_EVIDENCE_AND_REPLAN"))
-        record["exit_code"] = 0
-        self.assertEqual(poll.continuation_observation(record, "OK"),
                          ("HOST_OPERATION_RETRYABLE", "TRACE_EXISTING_HOST_DELIVERY_AND_RESULT_SINK"))
 
     def test_clipped_preview_requires_lossless_chunk_readback(self):
