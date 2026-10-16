@@ -50,6 +50,9 @@ def validate(receipt, expected_request_id):
             digest = info.get("sha256")
             if digest is not None and (not isinstance(digest, str) or not DIGEST.fullmatch(digest)):
                 raise ValueError("STREAM_DIGEST_INVALID")
+            byte_count = info.get("bytes")
+            if byte_count is not None and (type(byte_count) is not int or byte_count < 0):
+                raise ValueError("STREAM_BYTES_INVALID")
         if obs == "HOST_OUTPUT_PARTIAL" and all(info["complete"] for info in stream_data.values()):
             raise ValueError("PARTIAL_FLAG_MISMATCH")
     # Preserve authenticated, correlated diagnostic primitives for the next
@@ -126,7 +129,8 @@ def validate(receipt, expected_request_id):
         "stream_metadata_complete": stream_metadata_complete,
         "stream_digests_available": stream_digests_available,
         "stream_metadata": ({name: {"sha256": streams[name]["sha256"],
-                                   "chars": streams[name]["chars"]}
+                                   "chars": streams[name]["chars"],
+                                   "bytes": streams[name].get("bytes")}
                             for name in ("stdout", "stderr")}
                             if stream_digests_available else None),
         "expected_sha": receipt.get("expected_sha") if verified else None,
