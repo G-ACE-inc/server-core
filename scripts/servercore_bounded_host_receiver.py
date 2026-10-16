@@ -15,6 +15,8 @@ import servercore_bounded_host as bounded_host
 
 RECEIVER_PATH = "/internal/servercore-bounded-host"
 HEALTH_PATH = "/healthz"
+CIPHER_PATH = "/internal/servercore-host-output"
+CIPHER_DESTINATION = "server-core-host-output"
 EXPECTED_DESTINATION = "server-core-bounded-host"
 MAX_BODY_BYTES = 1048576
 # Deterministic Host preflight denials must not enter infrastructure retry loops.
@@ -499,6 +501,44 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
             self.send_json(200, {"ok": True, "service": "servercore-bounded-host"})
 
         def do_POST(self):
+            if self.path == CIPHER_PATH:
+                # Separate signed, ciphertext-only ingress; no Host commands
+                # accepted through this endpoint. Uses the existing HMAC key,
+                # UNIX result socket and bound Receiver container.
+                try:
+                    raw_length = self.headers.get("content-length")
+                    try:
+                        length = int(raw_length or "")
+                    except ValueError:
+                        fail("CONTENT_LENGTH_REQUIRED", 411)
+                    if not 1 <= length <= MAX_BODY_BYTES:
+                        fail("BODY_SIZE_INVALID", 413)
+                    body = self.rfile.read(length)
+                    headers = {k.lower(): v for k, v in self.headers.items()}
+                    verify_delivery(
+                        headers, body, expected_destination=CIPHER_DESTINATION,
+                        delivery_key=delivery_key, now=now_fn() if now_fn else None,
+                        tolerance_seconds=int(os.environ.get("GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS", "300")),
+                    )
+                    chunk = json.loads(body.decode("utf-8"))
+                    if not isinstance(chunk, dict) or chunk.get("schema") != "gace.host-output.encrypted-chunk/v1":
+                        fail("CIPHER_ENVELOPE_INVALID", 422)
+                    reply = deploy_socket_call(chunk, RESULT_SOCKET, timeout=10)
+                    if reply.get("ok") is not True:
+                        fail("CIPHER_INBOX_REJECTED", 422 if reply.get("error") in {
+                            "ENVELOPE_INVALID", "CHUNK_REPLAY_CONFLICT", "CHUNK_BOUNDS_INVALID",
+                            "CHUNK_LENGTH_MISMATCH", "CHUNK_SHA_INVALID", "CIPHER_PARTS_INVALID"
+                        } else 503)
+                    self.send_json(200, {"ok": True, "state": reply.get("state")}, accepted=True)
+                except DeliveryAuthError as exc:
+                    self.send_json(exc.status, {"ok": False, "error": exc.code})
+                except ReceiverError as exc:
+                    self.send_json(exc.status, {"ok": False, "error": exc.code})
+                except (ValueError, TypeError, UnicodeError):
+                    self.send_json(422, {"ok": False, "error": "CIPHER_ENVELOPE_INVALID"})
+                except Exception:
+                    self.send_json(503, {"ok": False, "error": "CIPHER_DELIVERY_RETRYABLE"})
+                return
             if self.path != RECEIVER_PATH:
                 self.send_json(404, {"ok": False, "error": "NOT_FOUND"})
                 return
