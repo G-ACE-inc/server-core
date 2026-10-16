@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Diagnose authenticated model Gate client execution, report nonsecret model IDs/status and exact existing source clean state on DebugAI Current; no Host mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\npython3 - <<'PY'\nimport json, subprocess\ndef run(a,t=25):\n try:\n  p=subprocess.run(a,capture_output=True,text=True,timeout=t)\n  return {'code':p.returncode,'out':p.stdout[:10000],'err':p.stderr[:1100]}\n except Exception as e: return {'code':97,'out':'','err':type(e).__name__}\nroot='/home/admin1/projects/debug-ai/.worktrees/debugai-pr112-gates-20261016'\nhead=run(['git','-C',root,'rev-parse','HEAD'])\ndirty=run(['git','-C',root,'status','--porcelain','--untracked-files=normal'])\njs=\"\"\"const names=['granite','qwen3','ministral','coder']; const ports={granite:18181,qwen3:18182,ministral:18183,coder:18184}; const status={mode:process.env.DEBUG_AI_CORE_GATE_DISPATCH_MODE||'NOT_DEFINED',has_key:Boolean(process.env.AI_CORE_API_KEY),gates:{}}; Promise.all(names.map(async n=>{try{const r=await fetch('http://127.0.0.1:'+ports[n]+'/v1/models',{headers:{Authorization:'Bearer '+(process.env.AI_CORE_API_KEY||'')},signal:AbortSignal.timeout(3500)});const j=await r.json().catch(()=>({}));status.gates[n]={http:r.status,ids:Array.isArray(j.data)?j.data.map(x=>x.id).filter(x=>typeof x==='string').slice(0,3):[]}}catch(e){status.gates[n]={error:e.name}}})).then(()=>console.log(JSON.stringify(status))).catch(e=>{console.error(e.name);process.exitCode=1})\"\"\"\nprobe=run(['docker','exec','debug-ai-debug-ai-1','node','-e',js],t=26)\nimage=run(['docker','inspect','--format','{{.Image}}','debug-ai-debug-ai-1'])\ninfo={'head':head['out'].strip(),'source_clean':dirty['code']==0 and not dirty['out'].strip(),'container_image_id':image['out'].strip(),'node_exit':probe['code'],'node_error':probe['err'],'node_result':None}\nif probe['code']==0:\n try: info['node_result']=json.loads(probe['out'])\n except ValueError: info['node_error']='NODE_JSON_PARSE_FAILED'\nbody='DEBUGAI_GATE_HOST_RUNTIME_READBACK\\n'+json.dumps(info,ensure_ascii=False,indent=2)\np=run(['gh','api','-X','POST','repos/seigo-gace/debug-ai/issues/41/comments','-f','body='+body],t=30)\nif p['code']: raise SystemExit('CURRENT_POST_FAILED:'+p['err'])\nprint('DEBUGAI_GATE_HOST_COMMENT='+json.loads(p['out'])['html_url'])\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
