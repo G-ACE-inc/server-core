@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only diagnosed after Coder 78s client timeout, compare resident/leased state, model container start status, actual cgroup metrics; do not rerun inference or modify DebugAI.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\no=\"AI_CORE_UDS_COLD_TIMEOUT_FORENSIC\"\no=\"$o\\nWORKTREE_HEAD=$(git -C \"$w\" rev-parse HEAD)\"\no=\"$o\\nWORKTREE_DIRTY=$(git -C \"$w\" status --porcelain | wc -l)\"\nfor n in ai-coder ai-qwen3 ai-granite ai-ministral; do\n v=$(docker inspect -f '{{.Name}} state={{.State.Status}} started={{.State.StartedAt}} oom={{.State.OOMKilled}}' \"$n\")\n o=\"$o\\n$v\"\ndone\nv=$(docker exec ai-core-model-gate python3 -c 'import os,json,urllib.request;h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]};f=lambda p:json.load(urllib.request.urlopen(urllib.request.Request(\"http://127.0.0.1:18184\"+p,headers=h),timeout=12));a=f(\"/internal/handoff/status\");b=f(\"/internal/resources/status\");print(json.dumps({\"resident\":a[\"resident\"],\"active\":sum(a[\"active\"].values()),\"queue\":b[\"queued\"],\"recovery\":a[\"recovery_pending\"],\"handoff\":bool(a[\"handoff\"]),\"memory_current\":b[\"memory\"][\"memory.current\"],\"cpu\":b[\"cpu_max\"],\"oom_kill\":b[\"memory_events\"].get(\"oom_kill\"),\"cpu_stat\":b[\"cpu_stat\"]},sort_keys=True))')\no=\"$o\\n$v\"\nprintf '%b\\n' \"$o\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$(printf '%b' \"$o\")\" --jq '.html_url' >/dev/null\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Issue1 6222936436 Coder timeout 78s from resident0 vs Core cold-load timeout 180s; previous 4 UDS one-token probes passed, DebugAI concurrent, avoid repeated inference."
+  }
+}
