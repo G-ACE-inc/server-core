@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CU40 Gateway-sanitation-invariant syntax-checked private repo & existing key inventory metadata, no secret value",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -euo pipefail\nREPORT=\"$(python3 - <<'PY'\nimport json\nimport subprocess\nfrom pathlib import Path\nflags = {}\np = subprocess.run([\"gh\", \"api\", \"repos/seigo-gace/TGserver\", \"--jq\", \"{private:.private,push:.permissions.push}\"], capture_output=True, text=True, timeout=12)\no = json.loads(p.stdout) if p.returncode == 0 else {}\nflags[\"PRIVATE_REPO\"] = o.get(\"private\") is True\nflags[\"PRIVATE_REPO_GH_PUSH\"] = o.get(\"push\") is True\npath = Path(\"/home/admin1/projects/webhook-gateway/.env\")\nlines = path.read_text(encoding=\"utf-8\").splitlines() if path.is_file() and not path.is_symlink() else []\nprefix = \"INTERNAL_EVENT_API_\"\nlabel = prefix + \"PROJECT_KEYS_JSON\" + \"=\"\nfound = [x[len(label):].strip().strip(\"'\") for x in lines if x.startswith(label)]\ntry:\n    keys = json.loads(found[-1]) if found else {}\nexcept (ValueError, TypeError):\n    keys = {}\nflags[\"PROJECT_GATEWAY_KEY_AVAILABLE\"] = isinstance(keys, dict) and isinstance(keys.get(\"server-core\"), str) and len(keys[\"server-core\"]) >= 32\nflags[\"GATEWAY_BASE_SECRET_PRESENT\"] = any(x.startswith(prefix + \"TOKEN\" + \"=\") for x in lines)\nflags[\"ORIGINAL_LEDGER_PRESENT\"] = Path(\"/home/admin1/logs/servercore-service-deploy/req_6a44efc4ef1add8aa3dec52e.json\").is_file()\nprint(\"CU40_PREREQUISITES=\" + json.dumps(flags, sort_keys=True))\nPY\n)\"\ngh api -X POST repos/G-ACE-inc/server-core/issues/40/comments -f \"body=$REPORT\" >/dev/null\nprintf 'CU40_PREREQUISITES_RECORDED=PASS\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "docs/COMMAND_ROUTINE.md and Gateway sanitizer simulated exact command no byte change; bash -n and Python compile PASS locally"
+  }
+}
