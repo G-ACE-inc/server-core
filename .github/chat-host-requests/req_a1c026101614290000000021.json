@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Two independent actual DebugAI and Astera-v8 Docker containers send authenticated real Coder chat completions through one AI Core Gate; pass existing token process-only, no persistent consumer changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess\ninner=\"import json,subprocess,shlex\\npy=\\\"import os,json,urllib.request,urllib.error,time\\\\nv=os.environ.get('AI_CORE_API_KEY','')\\\\nbase='http://127.0.0.1:18184'\\\\nout={}\\\\ntry:\\\\n r=urllib.request.Request(base+'/v1/models',headers={'Authorization':'Bearer '+v})\\\\n with urllib.request.urlopen(r,timeout=10) as f:mid=json.load(f)['data'][0]['id']\\\\n payload=json.dumps({'model':mid,'messages':[{'role':'user','content':'Reply with OK.'}],'max_tokens':8,'stream':False}).encode()\\\\n req=urllib.request.Request(base+'/v1/chat/completions',data=payload,headers={'Authorization':'Bearer '+v,'Content-Type':'application/json'},method='POST')\\\\n t=time.monotonic()\\\\n try:\\\\n  with urllib.request.urlopen(req,timeout=140) as f:\\\\n   d=json.load(f)\\\\n   out={'status':f.status,'choice_count':len(d.get('choices',[])),'has_answer':bool((d.get('choices') or [{}])[0].get('message',{}).get('content')),'elapsed_s':round(time.monotonic()-t,2)}\\\\n except urllib.error.HTTPError as e:out={'status':e.code}\\\\nexcept Exception as e:out={'error':type(e).__name__}\\\\nprint(json.dumps(out))\\\"\\njs=\\\"(async()=>{\\\\n const base='http://127.0.0.1:18184';\\\\n const headers={Authorization:'Bearer '+process.env.AI_CORE_API_KEY};\\\\n const models=await fetch(base+'/v1/models',{headers});\\\\n const data=await models.json();\\\\n const start=Date.now();\\\\n const response=await fetch(base+'/v1/chat/completions',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({model:data.data[0].id,messages:[{role:'user',content:'Reply with OK.'}],max_tokens:8,stream:false})});\\\\n const body=await response.json();\\\\n console.log(JSON.stringify({status:response.status,choice_count:(body.choices||[]).length,has_answer:Boolean(body.choices?.[0]?.message?.content),elapsed_s:Math.round((Date.now()-start)/100)/10}));\\\\n})().catch(e=>{console.log(JSON.stringify({error:e.name}));process.exit(1)})\\\"\\nshell=\\\"if command -v python3 >/dev/null 2>&1; then python3 -c \\\"+shlex.quote(py)+\\\"; elif command -v node >/dev/null 2>&1; then node -e \\\"+shlex.quote(js)+\\\"; else echo NO_CLIENT; exit 3; fi\\\"\\nout={}\\nfor container in ('debug-ai-debug-ai-1','astera-v8'):\\n try:\\n  p=subprocess.run(['docker','exec','--env','AI_CORE_API_KEY',container,'sh','-c',shell],capture_output=True,text=True,timeout=160)\\n  out[container]={'exit':p.returncode,'inference':json.loads(p.stdout) if p.stdout.strip().startswith('{') else {'error_type':'NO_JSON_RESULT'}}\\n except Exception as e:out[container]={'error_type':type(e).__name__}\\nprint(json.dumps(out))\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',inner],capture_output=True,text=True,timeout=335)\nout={'gate_executor':p.returncode,'consumers':json.loads(p.stdout) if p.stdout.strip().startswith('{') else {'error_type':p.stderr[:100]},'credential_delivery':'process_only','product_source_mutated':False}\nbody='AI_CORE_TWO_REAL_PRODUCTS_INFERENCE\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=20)\nprint('REAL_TWO_PRODUCTS_INFERENCE='+('PASS '+r.stdout.strip() if r.returncode==0 else 'POST_FAILED'))\nraise SystemExit(0 if r.returncode==0 and all(q.get('inference',{}).get('status')==200 and q.get('inference',{}).get('has_answer') for q in out.get('consumers',{}).values()) and len(out.get('consumers',{}))==2 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209333336"
+  }
+}
