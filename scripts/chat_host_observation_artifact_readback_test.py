@@ -44,6 +44,16 @@ class ObservationReadbackTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "HOST_SHA_MISMATCH_EVIDENCE_INVALID"):
             validate(record, RID)
 
+    def test_retryable_host_result_retains_safe_negative_sentinel(self):
+        record = self.record()
+        record.update({"observation": "HOST_OPERATION_RETRYABLE",
+                       "next_action": "TRACE_EXISTING_HOST_DELIVERY_AND_RESULT_SINK",
+                       "exit_code": -1})
+        result = validate(record, RID)
+        self.assertEqual(result["exit_code"], -1)
+        self.assertFalse(result["output_complete"])
+        self.assertNotIn("SENSITIVE_HOST_OUTPUT", json.dumps(result))
+
     def test_request_mismatch_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "REQUEST_MISMATCH"):
             validate(self.record(), "req_" + "d" * 24)
