@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core read-only installed existing llama server image UDS --host support, last actual Host SHA 4012561b, ignore old failed runs and no model service mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4012561b24d66697f12df253ad9a579c1959c2c4",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4012561b24d66697f12df253ad9a579c1959c2c4",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nimage='ghcr.io/ggml-org/llama.cpp:server'\nout={}\nfor k,cmd in [('image',['docker','image','inspect',image,'--format','{{json .Config.Entrypoint}}']),('help',['docker','run','--rm',image,'--help'])]:\n try:\n  p=subprocess.run(cmd,text=True,capture_output=True,timeout=30)\n  value=p.stdout+p.stderr\n  out[k]={'exit':p.returncode,'socket_host':'.sock' in value or 'unix socket' in value.lower(),'host_option':'--host' in value,'tail':value[-500:]}\n except Exception as e:out[k]={'error':type(e).__name__+':'+str(e)[:120]}\nv=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_LLAMA_UDS_IMAGE_PREFLIGHT\\n'+json.dumps(out,ensure_ascii=False)}),text=True,capture_output=True,timeout=20)\nprint('PROBE='+json.dumps({k:{name:val for name,val in q.items() if name!='tail'} for k,q in out.items()}))\nprint('RECEIPT='+v.stdout.strip() if v.returncode==0 else 'UNAVAILABLE')\nraise SystemExit(0 if v.returncode==0 and out.get('help',{}).get('exit')==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6220092405"
+  }
+}
