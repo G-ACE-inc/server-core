@@ -36,6 +36,8 @@ Host観測の `streams[].complete` はIssue/Jobに見える**プレビューの�
 同Source照合が有効なRequestでは、Selectorだけが生成できる`source_preflight=true`を既存Actions/Gateway/Receiver/Host Writerへ伝え、Writer ledgerへ相関付きで保存する。Result Sinkはその記録があり、かつWriterが既知の終了コード70～76と完全一致する診断マーカーを返した場合**だけ**、短い`diagnostic_hint`を公開する。通常`host.command`が同じ文字列をstderrへ返してもSource障害と認定しない。`cd`エラーのシェル本文は抑止し、欠落時の単一診断マーカーを保つ。別CHATから既存checkpointを復元するときも、観測種別／終了コード／マーカーが整合しない組合せはSource固有の次Actionを選択しない。GitHub Workflowの正当な`...yml@main`等のref接尾辞はパス本体を照合して受け入れる。これらはSource/CI実装に関する契約であり、**Host稼働中Writer・Sink反映、機密ZIP全文輸送、Agent Loop全体の完了証拠ではない**。
 
 
+**完全ZIP検証の安全境界（2026-10-16）**：GitHubの古い自動レビューで、真のHost出力であることを照合せず大きなZIPを展開すると圧縮爆弾により検証器のCPU/メモリを消費し得る点が指摘された。既存`verify_artifact_zip`ではZIP内の自己申告とは独立した**Writer由来の期待byte数＋SHA256＋Unicode文字数**を必須とし、実ZIPのメンバー宣言値と突き合わせた上で64KiBのストリーミング検証を行う。検証器の保護上限は現在、各ストリーム512MiB／合計1GiB／ZIPファイル512MiB。超過を切り詰めてPASSにはせず`HOST_OUTPUT_UNCOMPRESSED_SIZE_LIMIT`等で明示拒否する。Host Writerの原文完全保存・受信の再設計とは別の保護であり、大容量の真正ログ受入をこの上限で完了扱いしてはいけない。短い予告なく異なる条件での運用をしない。Sourceで元から途切れた出力も`source_truncated=true`を引き継ぎ、ZIP自己整合が成立してもVERIFYへ昇格させない。Host Writerが実行前障害でstdout/stderr不明の場合も空SHAを捏造しない。
+
 **機密ZIPの公開境界（P0未達）**：このGitHub Repoは現時点で`public`であり、公開RepoのActions ArtifactにHost原文の完全ZIPを無加工でアップロードしてはいけない。GitHub ActionsのArtifactはRepoにread accessを持つGitHubユーザーへダウンロード可能（https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts）。既存WorkflowのmetadataのみのArtifactは原文とは異なる。秘匿性のある完全payloadをCHATへ戻す承認済み認証・公開防止・権限分離の経路は引き続き未確認で、Artifactを増量するだけでは解決しない。今回の受信検証改善は輸送を完成させず、要求Source/CIとHostの実運用を別ゲートで確認する。
 
 実行依頼のファイル形式、必要な署名・認証・SHA・登録Repo制約は既存の実装と `operations/github-project-bounded-host.json` に従う。結果は既存ActionsとHost返却で確認する。失敗時は原因を修正して作業を続ける。通常CHATでの新たなMaster承認は要求しない。
