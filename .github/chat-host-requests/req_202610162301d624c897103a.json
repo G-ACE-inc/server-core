@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Collect result ONLY of already running two-client real Core admission test, up to 60s, record bounded metadata and new persistent metrics. No second inference, no model restart, no consumer code. Clean owned temporary files only if successful.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "command": "set -eu\nbase=/tmp/ai_core_shared_acceptance_ce5cf8c\nready=NO\nfor i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do\n if docker exec ai-core-model-gate test -f \"$base.exit\"; then ready=YES; break; fi\n sleep 4\ndone\nif test \"$ready\" != YES; then echo AI_CORE_DUAL_CLIENT_ACCEPTANCE=RUNNING; exit 0; fi\nrc=$(docker exec ai-core-model-gate cat \"$base.exit\")\nout=$(docker exec ai-core-model-gate tail -n 1 \"$base.json\")\ncase \"$out\" in *'\"acceptance\":\"AI_CORE_ACTUAL_SHARED_ADMISSION_WITH_METRICS\"'*) :;; *) echo ACCEPTANCE_INVALID_OUTPUT; exit 3;; esac\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"AI_CORE_ACTUAL_SHARED_ADMISSION HEAD=ce5cf8c152219af0beda7161b5621fc5883bbf8d CODE=$rc $out\" --jq .html_url >/dev/null\nif test \"$rc\" = 0; then\n docker exec ai-core-model-gate rm -f \"$base.py\" \"$base.json\" \"$base.exit\"\n echo AI_CORE_DUAL_CLIENT_ACCEPTANCE=PASS\nelse echo AI_CORE_DUAL_CLIENT_ACCEPTANCE=FAIL; fi\ntest \"$rc\" = 0"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Existing one-shot actual Core dual-client run launched exactly once via Host Issue#10 #6226284521 req_86d61b3eb52f19001b91cd5e PASS. This request ONLY waits for its own result file and records nonsecret response and private metrics, no new inference/secret. PR3 ce5cf8c. Host sha4fe86475."
+  }
+}
