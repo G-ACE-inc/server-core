@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read last real 6-role analysis artifact and actual reproduction workspace to establish whether Patch Engineer is admitted, no patch or deploy action",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,subprocess,urllib.request\nrid='run_mvaxg8be_1099f77b3b'\ncode=\"\"\"const fs=require('fs');const {RuntimeEvidenceStore}=require('/app/server/runtime-evidence.js');const s=new RuntimeEvidenceStore('/app/runtime');const id='run_mvaxg8be_1099f77b3b';const a=s.list(id,{types:['analysis'],limit:3});const p=a[0]?.payload||{};const r='/workspace/debug-ai/.worktrees/g3-semantic/.debugai-input/unicode-search-source-slice';let names=[];try{names=fs.readdirSync(r).slice(0,18)}catch(e){names=['READ_FAILED:'+e.code]};console.log(JSON.stringify({analysis_count:a.length,analysis_keys:Object.keys(p),diagnosis_keys:Object.keys(p.diagnosis||{}),diagnosis_summary:JSON.stringify(p.diagnosis||{}).slice(0,480),local_review:p.local_hypothesis_review?.json?.verdict||null,external_review:p.external_hypothesis_review?.json?.verdict||p.external_review?.verdict||null,deterministic_status:p.deterministic_verification?.status||null,deterministic_checks:(p.deterministic_verification?.checks||[]).map(x=>({name:x.name,status:x.status})).slice(0,12),evidence_ids:(p.evidence_registry?.evidence_ids||[]).length,root_entries:names}))\"\"\"\np=subprocess.run(['docker','exec','debug-ai-debug-ai-1','node','-e',code],capture_output=True,text=True,timeout=16)\ndata={'run_id':rid,'exec':p.returncode}\nif p.returncode==0:\n try:data['actual_analysis']=json.loads(p.stdout)\n except ValueError:data['error']='ANALYSIS_JSON_INVALID'\nelse:data['error']=p.stderr[-500:]\nbody='DEBUGAI_COMPLETED_ANALYSIS_PATCH_READINESS\\n'+json.dumps(data,ensure_ascii=False,indent=2)\ng=subprocess.run(['gh','api','-X','POST','repos/seigo-gace/debug-ai/issues/41/comments','-f','body='+body],capture_output=True,text=True,timeout=25)\nif g.returncode:raise SystemExit('CURRENT_WRITE_FAILED')\nprint('PATCH_READINESS_URL='+json.loads(g.stdout)['html_url'])\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
