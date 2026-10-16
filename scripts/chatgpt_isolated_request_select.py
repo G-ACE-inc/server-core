@@ -61,7 +61,7 @@ def bind_source_context(bounded, context):
     target_str = context.get("workdir")
     if (not isinstance(root_str, str) or not isinstance(target_str, str)
             or not 1 <= len(target_str) <= 256
-            or any(c in target_str for c in ("\\n", "\\r", "\\x00"))):
+            or any(c in target_str for c in ("\${n}", "\${n}", "\${n}"))):
         raise ValueError("SOURCE_CONTEXT_WORKDIR_INVALID")
     root, target = PurePosixPath(root_str), PurePosixPath(target_str)
     if (not target.is_absolute() or not root.is_absolute()
@@ -84,7 +84,7 @@ def bind_source_context(bounded, context):
             or any(not isinstance(p, str) or not p or len(p) > 200
                    or p.startswith("/") or
                    any(bit in ("", ".", "..") for bit in p.split("/"))
-                   or "\\x00" in p or "\\n" in p or "\\r" in p
+                   or "\${n}" in p or "\${n}" in p or "\${n}" in p
                    for p in files)):
         raise ValueError("SOURCE_CONTEXT_REQUIRED_FILES_INVALID")
     original = bounded.get("command")
@@ -103,7 +103,7 @@ def bind_source_context(bounded, context):
         preflight.append("test -f " + shlex.quote(path) +
                          " || { echo CHAT_SOURCE_REQUIRED_FILE_MISSING >&2; exit 75; }")
     preflight += [original, ")"]
-    return {**bounded, "command": "\\n".join(preflight)}
+    return {**bounded, "command": "\${n}".join(preflight)}
 
 
 def prepare(path):
