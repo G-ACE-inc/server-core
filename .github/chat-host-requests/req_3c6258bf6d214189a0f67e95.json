@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "safe read-only FF and dirty checks for 3 shared Host implementation roots",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -euo pipefail\nREPORT=\"\"\nfor ENTRY in 'CORE|/home/admin1/server-core' 'GATEWAY|/home/admin1/projects/webhook-gateway' 'TGSERVER|/home/admin1/projects/TGserver'; do\n  NAME=\"${ENTRY%%|*}\"\n  ROOT=\"${ENTRY#*|}\"\n  CLEAN=NO\n  FF=NO\n  FETCH=NO\n  if test -d \"$ROOT/.git\"; then\n    if test -z \"$(git -C \"$ROOT\" status --porcelain --untracked-files=all)\"; then CLEAN=YES; fi\n    if git -C \"$ROOT\" fetch --quiet --no-tags origin main 2>/dev/null; then\n      FETCH=YES\n      if git -C \"$ROOT\" merge-base --is-ancestor HEAD FETCH_HEAD; then FF=YES; fi\n    fi\n  fi\n  REPORT=\"${REPORT}${NAME}_CLEAN=${CLEAN} ${NAME}_FETCH=${FETCH} ${NAME}_FAST_FORWARD=${FF} \"\ndone\ngh api -X POST repos/G-ACE-inc/server-core/issues/40/comments -f \"body=CU40_HOST_REFLECT_PREFLIGHT: $REPORT\" >/dev/null\nprintf 'CU40_REFLECT_PREFLIGHT_RECORDED=PASS\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "docs/COMMAND_ROUTINE.md; merged PR301/27/129; reviewed signed bounded host"
+  }
+}
