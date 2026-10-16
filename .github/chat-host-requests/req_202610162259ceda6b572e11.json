@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Launch one actual Core-owned dual-client concurrent Granite Gate inference + persisted metrics integrity validation. Preflight actual no shared active/handoff/queue, transient script inside running Gate, no product changes, no duplicate prior four-Gate tests.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4fe86475cd71c69b94099f9acb4e4dd2c6e55c82",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\nbase=/tmp/ai_core_shared_acceptance_ce5cf8c\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 81d75017d0fd0ddc631e0c6de862c1cc0d4d662d\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\ngit -C \"$w\" fetch --no-tags origin feat/per-model-lifecycle-20261013 >/dev/null 2>&1\ntest \"$(git -C \"$w\" rev-parse FETCH_HEAD)\" = ce5cf8c152219af0beda7161b5621fc5883bbf8d\ngit -C \"$w\" checkout --detach -q ce5cf8c152219af0beda7161b5621fc5883bbf8d\ndocker exec ai-core-model-gate sh -c 'test ! -e \"$1\" && test ! -e \"$2\" && test ! -e \"$3\"' _ \"$base.py\" \"$base.json\" \"$base.exit\"\ndocker exec ai-core-model-gate python3 -c 'import os,json,urllib.request;h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]};f=lambda p:json.load(urllib.request.urlopen(urllib.request.Request(\"http://127.0.0.1:18184\"+p,headers=h),timeout=8));a=f(\"/internal/handoff/status\");r=f(\"/internal/resources/status\");assert not a[\"handoff\"] and not a[\"recovery_pending\"] and not any(a[\"active\"].values()) and r[\"queued\"]==0'\ndocker exec -i ai-core-model-gate sh -c 'umask 077; cat > \"$1\"' _ \"$base.py\" < \"$w/scripts/host_shared_admission_metrics_acceptance.py\"\ndocker exec ai-core-model-gate python3 -m py_compile \"$base.py\"\ndocker exec -d ai-core-model-gate sh -c 'python3 \"$1\" > \"$2\" 2>&1; printf \"%s\" \"$?\" > \"$3\"' _ \"$base.py\" \"$base.json\" \"$base.exit\"\necho AI_CORE_DUAL_CLIENT_REAL_INFERENCE_LAUNCHED=YES"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Current#1 PR3 ce5cf8c, authenticated durable Core metrics READY but no samples Issue1 6226246028. Adopted Design §14.4 actual concurrent clients and metrics. Prior create_file same exact request got GitHub 409 due concurrent main, explicitly confirmed target path 404 (not written, unexecuted). This is safe one retry, not replay of Host failure. Known host SHA 4fe86475."
+  }
+}
