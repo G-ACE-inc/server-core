@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Real AI Core Coder cold-start and chat completion through authenticated own Gate; RAM/resident measurements, no legacy Router, existing model Docker lifecycle",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess,time\nfrom pathlib import Path\nroot=Path('/sys/fs/cgroup/ai.slice/ai-core.slice')\ndef current():\n try:return int((root/'memory.current').read_text().strip())\n except Exception:return None\ndef live():\n p=subprocess.run(['docker','ps','--format','{{.Names}}','--filter','name=^ai-'],capture_output=True,text=True,timeout=12)\n return sorted(p.stdout.splitlines()) if p.returncode==0 else []\nprobe=\"\"\"import os,json,urllib.request,urllib.error,time\nv=os.environ.get('AI_CORE_API_KEY','')\nhost='http://127.0.0.1:18184'\nout={'alias':'coder','credential_valid':len(v)>=16}\ntry:\n req=urllib.request.Request(host+'/v1/models',headers={'Authorization':'Bearer '+v})\n with urllib.request.urlopen(req,timeout=10) as f:model_id=json.load(f)['data'][0]['id']\n payload={'model':model_id,'messages':[{'role':'user','content':'Reply with one word: READY'}],'max_tokens':8,'temperature':0,'stream':False}\n body=json.dumps(payload).encode('utf-8')\n req=urllib.request.Request(host+'/v1/chat/completions',data=body,headers={'Authorization':'Bearer '+v,'Content-Type':'application/json'},method='POST')\n start=time.monotonic()\n try:\n  with urllib.request.urlopen(req,timeout=215) as r:\n   data=json.load(r)\n   out['http']=r.status\n   out['choice_count']=len(data.get('choices',[]))\n   out['answer_nonempty']=bool((data.get('choices') or [{}])[0].get('message',{}).get('content'))\n   out['finish_reason']=(data.get('choices') or [{}])[0].get('finish_reason')\n except urllib.error.HTTPError as e:\n  out['http']=e.code\n  try:out['error_code']=json.loads(e.read().decode()).get('error',{}).get('code')\n  except Exception:out['error_code']='UNPARSEABLE'\n except Exception as e:out['failure_class']=type(e).__name__\n out['elapsed_s']=round(time.monotonic()-start,2)\nexcept Exception as e:out['setup_error']=type(e).__name__\nprint(json.dumps(out))\n\"\"\"\nbefore={'memory_current':current(),'resident':live()}\ntry:\n p=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',probe],capture_output=True,text=True,timeout=235)\n out={'before':before,'exec_exit':p.returncode,'result':json.loads(p.stdout) if p.stdout.strip().startswith('{') else {'error_class':p.stderr.split(':',1)[0][:100]},'after':{'memory_current':current(),'resident':live()},'legacy_router_started':False}\nexcept Exception as e:out={'before':before,'execute_error_class':type(e).__name__,'after':{'memory_current':current(),'resident':live()}}\nbody='AI_CORE_REAL_CODER_INFERENCE\\n'+json.dumps(out,ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('AI_CORE_CODER_INFERENCE_RESULT='+('PASS '+p.stdout.strip() if p.returncode==0 else 'POST_FAILED'))\nraise SystemExit(0 if p.returncode==0 and out.get('result',{}).get('http')==200 and out.get('result',{}).get('answer_nonempty') else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 Docker Gate Source 84ee18e, Host four health 200; all four authenticated model-list HTTP 200 (Issue#10 6209154375); no Router, real Coder request through shared Coordinator."
+  }
+}
