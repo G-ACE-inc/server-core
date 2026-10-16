@@ -46,6 +46,82 @@ class IsolatedRequests(unittest.TestCase):
             p.write_text(json.dumps(base))
             self.assertEqual(m.prepare(p)["bounded_host_request"]["repo_sha"], "b" * 40)
 
+    def test_source_bound_diagnostic_targets_existing_pr_worktree(self):
+        # Real AI Core failure: the registered source import checkout did
+        # not contain the test, while this already-existing PR worktree did.
+        source = {**BASE, "bounded_host_request": {
+            "enabled": True, "command_id": "host.command",
+            "repository": "seigo-gace/ai-core",
+            "expected_sha": "a" * 40,
+            "repo_sha": "b" * 40,
+            "command": "python3 -m unittest discover -s tests -p test_model_gate.py -q",
+            "source_context": {
+                "repository": "seigo-gace/ai-core",
+                "workdir": "/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015",
+                "source_sha": "c" * 40,
+                "required_files": ["tests/test_model_gate.py"],
+            },
+        }}
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "request.json"
+            path.write_text(json.dumps(source))
+            prepared = m.prepare(path)["bounded_host_request"]
+            script = prepared["command"]
+            self.assertNotIn("source_context", prepared)
+            self.assertTrue(script.startswith("(\\ncd /home/admin1/projects/ai-core/"))
+            self.assertIn('git rev-parse HEAD', script)
+            self.assertIn('CHAT_SOURCE_SHA_MISMATCH', script)
+            self.assertIn('CHAT_SOURCE_REQUIRED_FILE_MISSING', script)
+            self.assertIn('test -f tests/test_model_gate.py', script)
+            self.assertIn('python3 -m unittest discover', script)
+            self.assertTrue(script.endswith("\\n)"))
+
+    def test_source_bound_diagnostic_rejects_misrouted_repo_and_escape(self):
+        target = {
+            "enabled": True, "command_id": "host.command",
+            "repository": "seigo-gace/ai-core", "expected_sha": "a" * 40,
+            "repo_sha": "b" * 40, "command": "printf ok",
+            "source_context": {"repository": "seigo-gace/ai-core",
+                 "workdir": "/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015",
+                 "source_sha": "c" * 40, "required_files": ["tests/test_model_gate.py"]},
+        }
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "request.json"
+            for field, value, expected in [
+                ("repository", "G-ACE-inc/server-core", "SOURCE_CONTEXT_REPOSITORY_MISMATCH"),
+                ("workdir", "/home/admin1/server-core", "SOURCE_CONTEXT_WORKDIR_OUTSIDE_REGISTERED_CHECKOUT"),
+                ("workdir", "/home/admin1/projects/ai-core/.worktrees/../other", "SOURCE_CONTEXT_WORKDIR_INVALID"),
+                ("source_sha", "a" * 8, "SOURCE_CONTEXT_SHA_INVALID"),
+                ("required_files", ["../scripts/servercore_host_output_read.py"],
+                 "SOURCE_CONTEXT_REQUIRED_FILES_INVALID"),
+            ]:
+                changed = {**target["source_context"], field: value}
+                candidate = {**BASE, "bounded_host_request": {**target, "source_context": changed}}
+                p.write_text(json.dumps(candidate))
+                with self.subTest(field=field, value=value), self.assertRaisesRegex(ValueError, expected):
+                    m.prepare(p)
+            # Existing legacy freeform calls are unchanged when no context is
+            # requested. This adds no global Master approval or new worker.
+            clean = {**target}
+            clean.pop("source_context")
+            p.write_text(json.dumps({**BASE, "bounded_host_request": clean}))
+            self.assertEqual(m.prepare(p)["bounded_host_request"]["command"], "printf ok")
+
+    def test_source_bound_diagnostic_shell_quotes_untrusted_file_names(self):
+        base = {**BASE, "bounded_host_request": {
+            "enabled": True, "command_id": "host.command",
+            "repository": "G-ACE-inc/server-core", "expected_sha": "a" * 40,
+            "repo_sha": "a" * 40, "command": "printf done",
+            "source_context": {"repository": "G-ACE-inc/server-core",
+                 "workdir": "/home/admin1/server-core", "source_sha": "a" * 40,
+                 "required_files": ["tests/test user's.py"]}}}
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "request.json"
+            p.write_text(json.dumps(base))
+            script = m.prepare(p)["bounded_host_request"]["command"]
+            self.assertIn("test -f 'tests/test user", script)
+            self.assertIn("CHAT_SOURCE_REQUIRED_FILE_MISSING", script)
+
     def test_current_terminal_uses_independent_commit_lanes(self):
         workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text()
         self.assertIn("group: common-host-${{ github.sha }}", workflow)
