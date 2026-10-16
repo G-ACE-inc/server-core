@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "Coder, Qwen3, Granite real inference PASS on private UDS; see AI Core Issue1 comments 6222672692,6222699976,6222730102. Latest Source PR3 369f5edf corrects probe resident recording only. Next distinct final model Ministral, verify resident<=2 and OOM0."
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d632c605b7f61e3baecba31b0bea2fc9cb54a3e8",
+    "repo_sha": "d632c605b7f61e3baecba31b0bea2fc9cb54a3e8",
+    "repository": "G-ACE-inc/server-core",
+    "command": "w=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest -z \"$(git -C \"$w\" status --porcelain)\" || exit 8\ngit -C \"$w\" fetch --no-tags origin feat/per-model-lifecycle-20261013 >/dev/null || exit 10\ngit -C \"$w\" checkout --detach 369f5edf3c41de91689399868c4e405d1a0940e4 >/dev/null || exit 11\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 369f5edf3c41de91689399868c4e405d1a0940e4 || exit 12\nout=\"$(docker exec -i ai-core-model-gate python3 - ministral < \"$w/scripts/host_uds_inference_probe.py\" 2>/dev/null)\"\nresult=$?\nprintf '%s\\n' \"$out\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f \"body=AI_CORE_UDS_MINISTRAL_RESULT HEAD=369f5edf3c41de91689399868c4e405d1a0940e4 EXIT=$result $out\" --jq .html_url || :\nexit \"$result\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
