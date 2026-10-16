@@ -103,6 +103,44 @@ class SinkTests(unittest.TestCase):
         self.assertEqual(len([c for c in calls if c[0][:3] == ["api", "-X", "POST"]]), 1)
         self.assertEqual(sink.pending_ids(self.dir), [])
 
+    def test_host_writer_ledger_metadata_overrides_locator_without_leaking_payload(self):
+        # Real large-output Host writer persists both streams; Receiver and
+        # Result Sink carry a short locator. The public Issue must refer to
+        # the original Writer stream SHA/Unicode chars, not locator bytes.
+        stdout = "日本語Ω🙂\\n" * 16000
+        stderr = "警告⚠\\n" * 12000
+        ledger = self.dir / "writer"
+        ledger.mkdir()
+        evidence = {"request_id": RID, "state": "HOST_COMMAND_PASS",
+                    "source_sha": SHA, "exit_code": 0,
+                    "stdout": stdout, "stderr": stderr}
+        (ledger / (RID + ".json")).write_text(
+            json.dumps(evidence, ensure_ascii=False), encoding="utf-8")
+        sink.accept_record(rec(command_id="host.command",
+                               stdout="GACE_HOST_OUTPUT_STORED request_id=" + RID,
+                               stderr=""), result_dir=self.dir)
+        actual = sink.read_record(RID, self.dir)
+        body = sink.comment_body(actual, writer_dir=ledger)
+        info = json.loads(body.split("```json\n", 1)[1].split("\n```", 1)[0])
+        for name, source in (("stdout", stdout), ("stderr", stderr)):
+            self.assertEqual(info[name + "_chars"], len(source))
+            self.assertEqual(info[name + "_bytes"], len(source.encode("utf-8")))
+            self.assertEqual(info[name + "_sha256"],
+                             hashlib.sha256(source.encode("utf-8")).hexdigest())
+            self.assertEqual(info[name + "_origin"], "HOST_WRITER_LEDGER_RAW")
+            self.assertEqual(info[name], "")
+            self.assertTrue(info[name + "_preview_truncated"])
+            self.assertNotIn(source[:15], body)
+        evidence["source_sha"] = "f" * 40
+        (ledger / (RID + ".json")).write_text(
+            json.dumps(evidence, ensure_ascii=False), encoding="utf-8")
+        with self.assertRaisesRegex(sink.SinkError, "WRITER_LEDGER_CORRELATION_MISMATCH"):
+            sink.comment_body(actual, writer_dir=ledger)
+        (ledger / (RID + ".json")).unlink()
+        # When no Writer result exists (admission denial), never invent it.
+        fallback = sink.comment_body(actual, writer_dir=ledger)
+        self.assertNotIn("HOST_WRITER_LEDGER_RAW", fallback)
+
     def test_issue_comment_contains_metadata_not_output(self):
         output = "日本語の長文" * 10000
         sink.accept_record(rec(stdout=output, stderr="private failure details"), result_dir=self.dir)
