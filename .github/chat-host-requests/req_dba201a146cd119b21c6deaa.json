@@ -1,0 +1,34 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "implementation_context": "adopted_main_implementation",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/115"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "seigo-gace/debug-ai",
+    "repo_sha": "0864b04a7d394d69e52d09d39b58cc41c0bfb109",
+    "command": "p=/home/admin1/projects/debug-ai\nv=0\ntest -z \"$(git -C \"$p\" status --porcelain --untracked-files=all)\" || v=$((v+1))\ngit -C \"$p\" symbolic-ref -q --short HEAD >/dev/null || v=$((v+2))\ngit -C \"$p\" cat-file -e '70689ec0fdb9201742625d5d8a0054feeb31320d^{commit}' 2>/dev/null || v=$((v+4))\ndocker exec debug-ai-debug-ai-1 grep -Fq DEBUG_AI_ROLE_EXECUTION_MODE /app/server/main.js || v=$((v+8))\ngit -C \"$p\" rev-parse HEAD | grep -qx 70689ec0fdb9201742625d5d8a0054feeb31320d || v=$((v+16))\nexit \"$v\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
