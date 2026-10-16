@@ -166,7 +166,7 @@ class IsolatedRequests(unittest.TestCase):
                 cmd = cmd.replace("/home/admin1/projects/ai-core", str(root))
                 return subprocess.run(["bash", "-c", cmd], capture_output=True, text=True)
             good = run_at(wt)
-            self.assertEqual((good.returncode, good.stdout, good.stderr), (0, "WORKTREE_OK", ""))
+            self.assertEqual((good.returncode, good.stdout, good.stderr), (0, "__GACE_SOURCE_PREFLIGHT_OK__\\nWORKTREE_OK", ""))
             (wt / "untracked.txt").write_text("dirty")
             dirty = run_at(wt)
             self.assertEqual(dirty.returncode, 76)
