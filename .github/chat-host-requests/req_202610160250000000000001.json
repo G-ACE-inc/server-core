@@ -1,0 +1,36 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "GPT CHAT #40 safe preflight for main Host checkout fast-forward, protected registry hash and stash count (no merge yet)",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "96d01bb845152569658ccd1187b502bf33649c06",
+    "command": "set -e\ntest \"$(git rev-parse HEAD)\" = \"96d01bb845152569658ccd1187b502bf33649c06\"\ntest \"$(git branch --show-current)\" = main\ntest -z \"$(git status --porcelain --untracked-files=no)\"\ntest \"$(git stash list | wc -l)\" -eq 3\nbefore=\"$(sha256sum operations/master-internal-repositories.json | awk '{print $1}')\"\ngit fetch --no-tags origin main\ngit merge-base --is-ancestor HEAD FETCH_HEAD\necho PRECHECK_MAIN_FAST_FORWARD_PASS\nprintf 'CURRENT_HEAD='; git rev-parse HEAD\nprintf 'REMOTE_TARGET='; git rev-parse FETCH_HEAD\nprintf 'REGISTRY_HASH_PREFIX='; printf '%s\\n' \"$before\" | cut -c1-12\nprintf 'STASH_COUNT='; git stash list | wc -l\nprintf 'CHANGED_FILES='; git diff --name-only HEAD FETCH_HEAD | wc -l\necho PROTECTED_DIFF_BEGIN\ngit diff --name-only HEAD FETCH_HEAD -- operations/master-internal-repositories.json\necho PROTECTED_DIFF_END"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED_MAIN",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "Run 38840319206 writer unit process started Oct14 18:30 CEST, file changed Oct15 02:56 CEST, stale runtime; maintain 3 stashes and protected registry before main reflect."
+  }
+}
