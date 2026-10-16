@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core exact new Gate recovery_pending API used by crash recovery: read-only authenticated current runtime, no other-product model test",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "1687f1a4a576b0b5f69518ff3077038a579d61bd",
+    "command": "python3 - <<'PY'\nimport subprocess,json\ninner=\"\"\"import os,json,urllib.request,hashlib\nfrom pathlib import Path\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']}\nreq=urllib.request.Request('http://127.0.0.1:18184/internal/handoff/status',headers=h)\nwith urllib.request.urlopen(req,timeout=10) as r:s=json.load(r)\nassert isinstance(s['recovery_pending'],list)\nprint(json.dumps({'source_sha':hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest(),'recovery_pending':s['recovery_pending'],'active':s['active'],'handoff':s['handoff'],'resident':s['resident']}))\n\"\"\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',inner],capture_output=True,text=True,timeout=26)\no={'http_status_verified':p.returncode==0,'data':json.loads(p.stdout) if p.returncode==0 else {'error':p.stderr[-200:]}}\nx=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_RECOVERY_STATUS_RUNTIME_AFTER_DEBUGAI_EVIDENCE_REUSE\\n'+json.dumps(o,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=25)\nprint('RECOVERY_STATUS='+('PASS '+x.stdout.strip() if x.returncode==0 else 'RECORD_FAILED'))\nassert p.returncode==0 and x.returncode==0 and o['data']['source_sha']=='24f72194632439f7666248e1ea790f9b69921683f03f9976bf984767b999ff3f'\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41#issuecomment-6216375940"
+  }
+}
