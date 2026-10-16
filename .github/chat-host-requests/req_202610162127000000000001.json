@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Measure AI Core parent cgroup physical idle memory current/anon/file/swap PSI and throttling, without model execution; publish bounded values for performance baseline. Do not alter product or Gateway.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\np=/sys/fs/cgroup/ai.slice/ai-core.slice\ntest -f \"$p/memory.current\"\nr=0\nfor n in ai-granite ai-qwen3 ai-ministral ai-coder; do\n test \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = true && r=$((r+1)) || :\ndone\nmem=$(cat \"$p/memory.current\")\nanon=$(awk '$1==\"anon\"{print $2}' \"$p/memory.stat\")\nfile=$(awk '$1==\"file\"{print $2}' \"$p/memory.stat\")\nswap=$(cat \"$p/memory.swap.current\")\npsi=$(awk 'NR==1{print $2}' \"$p/memory.pressure\")\nthrottle=$(awk '$1==\"nr_throttled\"{print $2}' \"$p/cpu.stat\")\nmsg=\"AI_CORE_IDLE_CGROUP_RESOURCES RESIDENT=$r MEM_BYTES=$mem ANON_BYTES=$anon FILE_BYTES=$file SWAP_BYTES=$swap MEMORY_PSI=$psi THROTTLED_COUNT=$throttle\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$msg\" --jq '.html_url' >/dev/null\necho AI_CORE_IDLE_CGROUP_RESOURCES=RECORDED\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core physical 2→3→2 and restart recovery PASS, exact 144 tests PASS. Second-product Astera has adapter but absent persistent credentials and Host probe blocked by Node SyntaxError/Gateway command transport, avoid further expensive model inference. Measure physical idle parent cgroup anon/file/swap/PSI and resident only."
+  }
+}
