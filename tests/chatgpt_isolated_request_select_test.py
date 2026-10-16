@@ -151,6 +151,8 @@ class IsolatedRequests(unittest.TestCase):
             git("-C", root, "-c", "user.email=unit@example.com",
                 "-c", "user.name=Unit", "commit", "-qm", "initial")
             sha = git("-C", root, "rev-parse", "HEAD")
+            git("-C", root, "worktree", "add", "-q", "--detach",
+                root / ".worktrees" / "source-import-20261013", "HEAD")
             wt = root / ".worktrees" / "good"
             git("-C", root, "worktree", "add", "-q", "--detach", wt, "HEAD")
             def run_at(target):
