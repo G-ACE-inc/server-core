@@ -1,0 +1,45 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Agent Pool CU40 ACT→OBSERVE→DECIDE→ACT: prior source-bound PR3 test correctly returned CHAT_SOURCE_SHA_MISMATCH exit74, fresh GitHub PR3 head 8484c9... verified with test file, now execute exact current source without mutating AI Core",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "seigo-gace/ai-core",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p test_model_gate.py -k test_cold_start_after_wait_deadline_releases_inference_slot -q && echo CHAT_AGENT_SOURCE_CONTEXT_TEST_PASS",
+    "source_context": {
+      "repository": "seigo-gace/ai-core",
+      "workdir": "/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015",
+      "source_sha": "8484c9b2682845e53be24742cefc283913fef5ff",
+      "required_files": [
+        "tests/test_model_gate.py"
+      ]
+    }
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "First protected source-context live Run 38852270182 request req_fa330e24a9c6c01d25985ff6 returned HOST FAIL exit74, proving mismatched earlier PR3 SHA 898a23 was refused. Fresh GitHub PR3 head 8484c9b2682845e53be24742cefc283913fef5ff (updated 2026-10-16T04:37:56Z) and tests/test_model_gate.py source fetched present. Registered AI Core checkout SHA2955d728 was admitted in first Run; same dispatcher SHA6a85."
+  }
+}
