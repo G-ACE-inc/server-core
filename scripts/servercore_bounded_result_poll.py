@@ -192,6 +192,8 @@ def write_observation(path, request_id, record=None, comment=None, verdict=None)
                    "result_url": (comment or {}).get("html_url"), "observation": observation,
                    "next_action": next_action, "result_verified": verdict == "OK",
                    "diagnostic_hint": record.get("diagnostic_hint"),
+                   "source_truncated": any(bool(record.get(k + "_truncated"))
+                                           for k in ("stdout", "stderr")),
                    "streams": {stream: stream_receipt_metadata(record, stream)
                                for stream in ("stdout", "stderr")}}
     dest = Path(path)
