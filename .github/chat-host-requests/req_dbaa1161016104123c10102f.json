@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Inspect real DebugAI durable native model run status/step privately, retaining full JSON on Host only; return fixed status code.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu; id=$(cat /tmp/debugai-pr112-e2e-run-id); test -n \"$id\"; curl -fsS --max-time 10 \"http://127.0.0.1:8787/v1/status/$id\" >/tmp/debugai-pr112-e2e-status.json; jq -e '.schema==\"debugai.run-status/v1\" and .durable!=null' /tmp/debugai-pr112-e2e-status.json >/dev/null; jq -e '[.durable.job_status,.durable.workflow_cursor.step_id,.durable.last_execution_error]|all(.==null or type==\"string\")' /tmp/debugai-pr112-e2e-status.json >/dev/null; s=$(jq -r '.durable.job_status' /tmp/debugai-pr112-e2e-status.json); case \"$s\" in DONE) exit 43;; BLOCKED) exit 41;; FAILED) exit 44;; RETRY_WAIT) exit 42;; RUNNING|QUEUED|PAUSED) exit 0;; *) exit 45;; esac"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
