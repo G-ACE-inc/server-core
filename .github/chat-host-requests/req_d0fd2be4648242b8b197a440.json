@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Gateway28 fresh Writer ingress digest check after host activation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6ab1b4dce10c684cfd3f7e15462a6c54fd05af58",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6ab1b4dce10c684cfd3f7e15462a6c54fd05af58",
+    "command": "set -eu\npython3 - <<'PY'\nimport hashlib\ns='ACCESS_TOKEN=synthetic_日本語Ω\"quoted\"\\n'+('Q'*4400)\nb=s.encode('utf-8')\nassert len(b)>4000\nassert s.startswith('ACCESS_TOKEN=synthetic_')\nprint('GATEWAY28_INGRESS_PROBE_OK')\nprint('GATEWAY28_SYNTHETIC_DATA_SHA256='+hashlib.sha256(b).hexdigest())\nPY\n# synthetic length carrier: ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/315"
+  }
+}
