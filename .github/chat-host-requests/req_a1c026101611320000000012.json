@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core journal recovery runtime prerequisite: verify llama.cpp /slots schema while a self-owned short Coder inference keeps backend resident; no Gate restart, no product changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport subprocess,json\nscript=\"\"\"import os,json,urllib.request\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY'],'Content-Type':'application/json'}\nwith urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:18184/v1/models',headers=h),timeout=5) as r:mid=json.load(r)['data'][0]['id']\nbody={'model':mid,'stream':False,'messages':[{'role':'user','content':'Say OK'}],'max_tokens':4}\ntry:\n req=urllib.request.Request('http://127.0.0.1:18184/v1/chat/completions',headers=h,data=json.dumps(body).encode())\n with urllib.request.urlopen(req,timeout=150) as r: answer={'http':r.status,'choices':len(json.load(r).get('choices',[]))}\nexcept Exception as e:answer={'error':type(e).__name__}\ntry:\n with urllib.request.urlopen('http://127.0.0.1:18084/slots',timeout=6) as r:\n  x=json.load(r)\n  slots={'http':r.status,'is_list':isinstance(x,list),'count':len(x) if isinstance(x,list) else None,'fields':sorted(x[0].keys()) if isinstance(x,list) and x else [],'processing': [i.get('is_processing') for i in x[:2]] if isinstance(x,list) else None}\nexcept Exception as e:slots={'error':type(e).__name__+': '+str(e)[:130]}\nprint(json.dumps({'inference':answer,'slots':slots}))\n\"\"\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',script],capture_output=True,text=True,timeout=210)\nout={'exit':p.returncode,'detail':json.loads(p.stdout) if p.returncode==0 else {'error':p.stderr[-350:]}}\nq=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_SLOT_RECOVERY_REAL_READBACK\\n'+json.dumps(out,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=23)\nprint('AI_CORE_SLOT_RECOVERY='+('RECORD '+q.stdout.strip() if q.returncode==0 else 'RECORD_FAILED'))\nraise SystemExit(0 if q.returncode==0 and p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6214765730"
+  }
+}
