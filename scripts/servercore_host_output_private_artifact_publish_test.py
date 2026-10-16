@@ -64,7 +64,8 @@ class FullBridgeTests(unittest.TestCase):
             mock=MockVault(frags)
             gh=MockRelease()
             v=run(RID,cipher_root=inbox,writer_dir=d,vault_base="http://127.0.0.1:8791",
-                  vault_token="x",opener=mock,runner=gh)
+                  vault_token="x",expected_key_ref="registered-ref",
+                  expected_consumer="g-ace-workspace",opener=mock,runner=gh)
             self.assertEqual(v["state"],"PRIVATE_RELEASE_PUBLISHED_AWAIT_ARTIFACT")
             self.assertEqual(v["streams"]["stdout"]["bytes"],len(out.encode()))
             self.assertEqual(v["streams"]["stderr"]["chars"],len(err))
@@ -79,7 +80,19 @@ class FullBridgeTests(unittest.TestCase):
             gh=MockRelease()
             with self.assertRaisesRegex(ValueError,"UNSEALED_CHUNK_DIGEST_MISMATCH"):
                 run(RID,cipher_root=inbox,writer_dir=d,vault_base="http://127.0.0.1:8791",
-                    vault_token="x",opener=mock,runner=gh)
+                    vault_token="x",expected_key_ref="registered-ref",
+                  expected_consumer="g-ace-workspace",opener=mock,runner=gh)
+            self.assertEqual(gh.calls,[])
+
+
+    def test_attacker_supplied_consumer_never_selects_vault_key(self):
+        with tempfile.TemporaryDirectory() as d:
+            inbox,frags,*_=setup(d)
+            gh=MockRelease()
+            with self.assertRaisesRegex(ValueError,"VAULT_CONSUMER_CONTRACT_MISMATCH"):
+                run(RID,cipher_root=inbox,writer_dir=d,vault_base="http://127.0.0.1:8791",
+                    vault_token="x",expected_key_ref="another-protected-ref",
+                    expected_consumer="g-ace-workspace",opener=MockVault(frags),runner=gh)
             self.assertEqual(gh.calls,[])
 
 if __name__=="__main__": unittest.main()
