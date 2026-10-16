@@ -35,6 +35,19 @@ class Fixture(unittest.TestCase):
                                 result_dir=self.dir, threaded=threaded)
 
 
+class HostCommandIngressFingerprintTests(unittest.TestCase):
+    def test_unicode_long_command_fingerprint_is_exact_and_tail_sensitive(self):
+        import hashlib
+        command = "ACCESS_TOKEN=synthetic_日本語Ω\\n" + ("x" * 4500)
+        digest = m.command_ingress_fingerprint(command)
+        payload = command.encode("utf-8")
+        self.assertEqual(digest["command_bytes"], len(payload))
+        self.assertEqual(digest["command_sha256"], hashlib.sha256(payload).hexdigest())
+        self.assertNotEqual(
+            digest["command_sha256"],
+            m.command_ingress_fingerprint(command + "last-byte-change")["command_sha256"])
+
+
 class PreflightAttestationTests(unittest.TestCase):
     def test_original_stdout_is_lossless_and_cannot_spoof_a_preflight_failure(self):
         clean, failed = m.attest_source_preflight(
