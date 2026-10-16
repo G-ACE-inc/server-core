@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Use corrected existing AI Core reversible Gate refresh for exact metrics Source 13c0cb20 with bounded startup readiness and existing matching rollback image, only on idle shared leases. No new model inference or other products edits.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 13c0cb2079aab87aa5db4ef27c0f1f9adcc8886d\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\ngit -C \"$w\" fetch --no-tags origin feat/per-model-lifecycle-20261013 >/dev/null 2>&1\ntest \"$(git -C \"$w\" rev-parse FETCH_HEAD)\" = 1b93dd5e0b2514ad7d3bb7e89b6a0f502b94d3c9\ngit -C \"$w\" checkout --detach -q 1b93dd5e0b2514ad7d3bb7e89b6a0f502b94d3c9\nbash -n \"$w/scripts/host_gate_refresh.sh\"\nbash \"$w/scripts/host_gate_refresh.sh\" 1b93dd5e0b2514ad7d3bb7e89b6a0f502b94d3c9 ai-core-model-gate:offline-13c0cb20"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 1b93dd5 script only bounded 4 Gate readiness, safe existing rollback image reuse; original failed real update req_acb53 #6225757843 due connection refused right after compose, image rolled back and match old #6225774500. Target offline-13c0cb20 image source and focused streaming regression PASS #6225748044. Source implementation untouched since previous tests. Host SHA ee6002 observed #6225774989."
+  }
+}
