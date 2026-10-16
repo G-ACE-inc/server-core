@@ -232,6 +232,8 @@ Shared safety/delegation authority is [SERVER_CORE_PROTOCOL](../SERVER_CORE_PROT
 
 > **Archived runtime qualification only (2026-10-08).** Kept for historical evidence; it is not a live authorization or today's runtime Current.
 
+<a id="master-internal-persistent-delegation-runtime-verified-2026-10-08"></a>
+
 ## Master Internal Persistent Delegation — Runtime verified (2026-10-08)
 
 Fixed purpose: preserve sales/customer legacy full approval and extend only Master's

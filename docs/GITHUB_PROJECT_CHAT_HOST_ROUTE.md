@@ -1,5 +1,15 @@
 # GPT CHAT 共通ServerTerminal入口
 
+## 通常CHATの開始・別CHAT実測手順
+
+開発手順の正本は [Work Routine §6](G_ACE_WORKSPACE.md#6-development-routine)。新しい通常CHATでも、所有Project/CU Current・適用Profile・対象Sourceをそこで復元する。古い会話の停止指示やNotion議論全文を起動指示として持ち込まない。Current取得は既存GitHub connectorの対象Issue読取で足りる。ローカルCLIが実際に使える場合だけ [対象を絞った復元](LOAD_SCOPE.md)を利用し、取得した同じ本文を読み直さない。
+
+Host経路の別CHAT実測では、**実際の新しい2会話**が、それぞれ自分のCurrent参照・実作業のrequest/session/Run/resultを示す。Sourceだけの作業に不要なHost requestを作らず、成功済み操作を測定のために再送しない。server executorの合成sessionや同じ実行の再表示を、新しい通常CHATの採用証拠にしない。
+
+作業中は、確認できた事実・修正内容・結果から次の操作につながる短い説明と、その後の実作業を観測する。ツール表示の件数、CHATの呼出し、Actions Run、サーバー側lookupは別に扱う。アプリ内部の計測がなければ、制限やフリーズの原因は未確認のままにする。実測結果と次の未完作業は既存Currentへ残し、途中説明を停止条件にしない。
+
+## 共通Host実行経路
+
 通常のCHATが使う実行経路は、既存の `G-ACE-inc/server-core` の `.github/chat-host-requests/req_*.json` → `chatgpt-live-api-verify.yml` → Gateway → Receiver → Host。AI自身がShellを構成して `host.command` に渡す。隔離作業だけ `dev.job` を使う。
 
 コマンド作成時の軽い自己確認は `docs/COMMAND_ROUTINE.md`、Masterへ直接コマンドを提示する場合は `docs/MASTER_TERMINAL_COMMAND.md` を唯一の作成規則とする。このページに別のコマンド選択規則やゲートは設けない。
