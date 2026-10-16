@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Launch ONCE actual 0-to-2 preparation and 2-to-3-to-2 shared Gate handoff acceptance after deployed guarded stale Unix socket fix, in Gate mounted private state asynchronously to avoid Host90s timeout. Fails closed on active DebugAI leases. No new tests beyond this boundary.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 406d79c7aa60a13e05dd08e85b581604b9418a6d\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\"\ndocker exec ai-core-model-gate test ! -e /run/ai-core/uds-handoff-406d.status\ndocker exec ai-core-model-gate python3 -c 'import os,json,urllib.request;h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]};f=lambda p:json.load(urllib.request.urlopen(urllib.request.Request(\"http://127.0.0.1:18184\"+p,headers=h),timeout=8));a=f(\"/internal/handoff/status\");b=f(\"/internal/resources/status\");assert not any(a[\"active\"].values()) and not a[\"recovery_pending\"] and not a[\"handoff\"] and not b[\"queued\"] and len(a[\"resident\"])<=2'\ndocker exec -i ai-core-model-gate sh -c 'umask 077; cat >/run/ai-core/gace_uds_handoff_406d.py' < \"$w/scripts/host_uds_handoff_probe.py\"\ndocker exec ai-core-model-gate python3 -m py_compile /run/ai-core/gace_uds_handoff_406d.py\ndocker exec -d ai-core-model-gate sh -c 'umask 077; echo RUNNING >/run/ai-core/uds-handoff-406d.status; python3 /run/ai-core/gace_uds_handoff_406d.py >/run/ai-core/uds-handoff-406d.result 2>&1; rc=$?; echo \"$rc\" >/run/ai-core/uds-handoff-406d.exit; echo DONE >/run/ai-core/uds-handoff-406d.status'\necho AI_CORE_UDS_HANDOFF_406D_SUBMITTED=YES\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 exact 406d79; Source Gate offline image activated PASS Issue#10 6223678279, targeted stale socket safety regression PASS Issue#10 6223709830; previous actual 182s 503 was stale Unix socket file of stopped backend, confirmed ECONNREFUSED. DebugAI PR115 owned independently."
+  }
+}
