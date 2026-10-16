@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Prove Unix socket paths remaining after two backend exit1 cannot accept connections, capture bounded sanitized startup error only; no unlink, no inference, no Docker mutation.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nv=$(docker exec -i ai-core-model-gate python3 - <<'PY'\nimport os,socket,stat\nfor n in (\"granite\",\"qwen3\",\"ministral\",\"coder\"):\n p=\"/run/ai-core-backend/\"+n+\".sock\"\n try:\n  st=os.lstat(p)\n  if not stat.S_ISSOCK(st.st_mode): print(n+\"=UNSAFE_NOT_SOCKET\");continue\n  s=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);s.settimeout(1)\n  try: rc=s.connect_ex(p)\n  finally: s.close()\n  print(n+\"=SOCKET_CONNECT_ERRNO_\"+str(rc))\n except OSError as e: print(n+\"=PATH_ERRNO_\"+str(e.errno))\nPY\n)\nm=\"AI_CORE_UDS_STALE_SOCKET_DIAG\\n$v\"\nfor n in ai-granite ai-coder; do\n x=$(docker logs --since 2026-10-16T19:15:00Z --tail 100 \"$n\" 2>&1 | grep -Ei 'error' | tail -1 | sed -E 's#(/[a-zA-Z0-9_.-]+){2,}#<path>#g' | cut -c 1-180 || :)\n m=\"$m\\nERROR_$n=$x\"\ndone\nprintf '%b\\n' \"$m\"\ngh api -X POST repos/seigo-gace/ai-core/issues/1/comments -f body=\"$(printf '%b' \"$m\")\" --jq '.html_url' >/dev/null\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core Issue1 #6223286217 Granite/Coder exited code1 immediately OOM false, 4 Unix socket files present after exit. Need AF_UNIX connect errno and sanitized startup log before safe cleanup patch; no repeated expensive inference."
+  }
+}
