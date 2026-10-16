@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 SSE source tested 72/72: read real Gate active leases/handoff/source fingerprint before safe rebuild; read-only",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport subprocess,json,hashlib,urllib.request,time\nfrom pathlib import Path\nwt=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\nsrc=wt/'runtime/model_gate.py'\nout={'worktree_head':subprocess.run(['git','-C',str(wt),'rev-parse','HEAD'],capture_output=True,text=True,timeout=12).stdout.strip(),\n     'worktree_dirty':bool(subprocess.run(['git','-C',str(wt),'status','--porcelain'],capture_output=True,text=True,timeout=12).stdout.strip()),\n     'expected_source_sha256':hashlib.sha256(src.read_bytes()).hexdigest()}\nprog=\"\"\"import os,json,urllib.request,hashlib\nfrom pathlib import Path\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']}\nreq=urllib.request.Request('http://127.0.0.1:18184/internal/handoff/status',headers=h)\nwith urllib.request.urlopen(req,timeout=12) as r: state=json.load(r)\nprint(json.dumps({'status':r.status,'active':state.get('active'),'resident':state.get('resident'),\n'handoff':state.get('handoff'),'source_sha256':hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest()}))\n\"\"\"\nobservations=[]\nfor _ in range(2):\n p=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',prog],capture_output=True,text=True,timeout=25)\n observations.append(json.loads(p.stdout) if p.returncode==0 else {'exit':p.returncode,'error':p.stderr[-300:]})\n time.sleep(3)\nout['observations']=observations\nout['gate_health']={}\nfor port in (18181,18182,18183,18184):\n try:\n  with urllib.request.urlopen('http://127.0.0.1:'+str(port)+'/health',timeout=3) as r:out['gate_health'][str(port)]=r.status\n except Exception as e:out['gate_health'][str(port)]=type(e).__name__\nrecord='AI_CORE_PR3_SSE_BEFORE_RUNTIME_REBUILD\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':record}),capture_output=True,text=True,timeout=25)\nprint('AI_CORE_SSE_GUARDS='+('PASS '+r.stdout.strip() if r.returncode==0 else 'RECORD_FAILED'))\nsafe=(out['worktree_head']=='3d7f15f3a5e9a39ca084d2e656b9ba554e04a28e' and not out['worktree_dirty']\n and len(observations)==2 and all(o.get('status')==200 and sum(o.get('active',{}).values())==0 and o.get('handoff') is None for o in observations)\n and all(x==200 for x in out['gate_health'].values()))\nprint('GATE_SAFE_REBUILD_PREFLIGHT='+('PASS' if safe else 'BLOCKED'))\nraise SystemExit(0 if safe and r.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/commit/3d7f15f3a5e9a39ca084d2e656b9ba554e04a28e"
+  }
+}
