@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read the exact existing Host inventory ledger and record only whitelisted nonsecret source/Gate observations to DebugAI Current via installed gh auth; no Host mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,re,subprocess,sys\nsys.path.insert(0,'scripts')\nfrom servercore_host_output_read import chunk\no=chunk('req_2b1dd3f0fcbbbf0082860291','stdout',0,8192)\nif not o['complete']: raise SystemExit('SAVED_INVENTORY_PARTIAL')\nlines=o['data'].splitlines()\nallow_keys=('DISPATCHER_SHA=','DEBUGAI_PARENT_SHA=','DEBUGAI_PARENT_BRANCH=','DEBUGAI_PARENT_STATUS_BEGIN','DEBUGAI_WORKTREES_BEGIN','DEBUGAI_CONTAINERS_BEGIN','GATES_HEALTH_BEGIN')\nclean=[]\nfor s in lines:\n if s.startswith(allow_keys) or re.fullmatch(r'(?:worktree |HEAD |branch |detached|bare|locked |prunable ).{1,250}',s) or re.fullmatch(r'\\d{5} (?:200|[1-5]\\d\\d|URLError|TimeoutError)',s) or re.fullmatch(r'[A-Za-z0-9_.-]+ (?:Up|Exited|Restarting|Created|Paused|Dead).{0,190}',s):\n  clean.append(s)\n elif re.fullmatch(r'[ MADRCU?!]{1,3} [A-Za-z0-9_/.+-]{1,160}',s):\n  clean.append(s)\nmsg='DebugAI read-only Host inventory (actual persisted output, sanitized)\\nHost result: https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6214894673\\n'+'\\n'.join(clean)\nif not any(z.startswith('DEBUGAI_PARENT_SHA=') for z in clean): raise SystemExit('INVENTORY_KEY_MISSING')\nif len(msg)>6500: raise SystemExit('INVENTORY_LIMIT')\np=subprocess.run(['gh','api','-X','POST','repos/seigo-gace/debug-ai/issues/41/comments','-f','body='+msg],capture_output=True,text=True,timeout=25)\nif p.returncode: raise SystemExit('EXISTING_GH_COMMENT_FAILED: '+p.stderr[-300:])\nx=json.loads(p.stdout)\nprint('DEBUGAI_INVENTORY_RECORDED='+x['html_url'])\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
