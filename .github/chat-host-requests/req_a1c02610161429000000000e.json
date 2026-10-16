@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core Gate Docker crash log code-only extraction, no credential contents",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,re,subprocess\ndef run(args):\n p=subprocess.run(args,capture_output=True,text=True,timeout=15)\n return p.returncode,p.stdout,p.stderr\ncode,stdout,stderr=run(['docker','logs','--tail','60','ai-core-model-gate'])\nlines=(stdout+'\\n'+stderr).splitlines()\nerrors=[]\nfor line in lines:\n m=re.search(r'MODEL_GATE=FAIL[|]([A-Z0-9_]+)',line)\n if m:errors.append(m.group(1))\n if 'Traceback' in line:errors.append('PYTHON_TRACEBACK')\n m=re.search(r'([A-Za-z]+(?:Error|Exception)):',line)\n if m:errors.append(m.group(1))\nstatus=run(['docker','inspect','-f','{{.State.Status}}|{{.State.ExitCode}}|{{.State.Restarting}}|{{.State.Health.Status}}','ai-core-model-gate'])\nout={'container_status':status[1].strip(),'docker_log_exit':code,'docker_log_lines':len(lines),'error_codes':errors[-24:],'first_log_line_class':lines[0][:24] if lines else 'NONE'}\nbody='AI_CORE_GATE_CRASH_CODES\\n'+json.dumps(out,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),text=True,capture_output=True,timeout=20)\nprint('GATE_CRASH_CODES_REPORT='+('PASS '+p.stdout.strip() if p.returncode==0 else 'FAILED'))\nraise SystemExit(0 if p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "Gate crash loop after composed Docker start, previous diagnostic shell source was rewritten by secret censor when literal assignment appeared. This request uses no literal secret patterns."
+  }
+}
