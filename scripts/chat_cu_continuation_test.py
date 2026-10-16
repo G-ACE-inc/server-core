@@ -49,7 +49,7 @@ class ContinuationTests(unittest.TestCase):
                 resume(cp, api=api, output_verified=True)  # old bypass parameter removed
             with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_MANIFEST_MISMATCH"):
                 resume({**cp, "stream_metadata": {**cp["stream_metadata"],
-                         "stdout": {"sha256": "f" * 64, "chars": len(stdout)}}},
+                         "stdout": {**cp["stream_metadata"]["stdout"], "sha256": "f" * 64}}},
                        api=api, host_output_zip=target / "output.zip")
             with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_RUN_NOT_SUCCESS"):
                 resume(cp, api=lambda p: {"head_sha": BASE["source_sha"],
@@ -59,7 +59,7 @@ class ContinuationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "HOST_OUTPUT_MANIFEST_MISMATCH"):
                 verified_output_evidence(
                     {**cp, "stream_metadata": {**cp["stream_metadata"],
-                     "stdout": {"sha256": "0"*64, "chars": len(stdout)}}},
+                     "stdout": {**cp["stream_metadata"]["stdout"], "sha256": "0"*64}}},
                     target / "output.zip")
             with self.assertRaisesRegex(ValueError, "OUTPUT_VERIFICATION_STATE_INVALID"):
                 verified_output_evidence({**cp, "result_verified": False}, target / "output.zip")
