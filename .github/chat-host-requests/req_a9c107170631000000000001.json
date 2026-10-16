@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Vault read-only completion audit via existing common Host terminal. Do not disclose secrets.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ee6002f901168df5bfd22bc19cc7964bb23b14b2",
+    "command": "set -eu\nprintf 'VAULT_HOST_DIAGNOSTIC\\n'\ndocker ps -a --filter name=libral-vault --format 'name={{.Names}} status={{.Status}} image={{.Image}}'\nif docker container inspect libral-vault >/dev/null 2>&1; then docker inspect libral-vault --format 'state={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} image_id={{.Image}} started={{.State.StartedAt}}'; else echo 'VAULT_CONTAINER_NOT_FOUND'; fi\nprintf 'VAULT_REPO_DISCOVERY\\n'\nfor d in /home/admin1/projects/Libral-Vault /home/admin1/projects/libral-vault /home/admin1/Libral-Vault; do if [ -d \"$d/.git\" ]; then printf 'repo=%s head=' \"$d\"; git -C \"$d\" rev-parse HEAD; fi; done\nprintf 'END_VAULT_DIAGNOSTIC\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "GitHub Project #1 Control #10, Vault README main, Vault latest CI run 38564475099 PASS; bounded read-only Host audit with exact Host SHA observed in #10 2026-10-16T21:31:56Z."
+  }
+}
