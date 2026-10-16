@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core existing PR3 full exact source/Compose Unix private migration regression tests and installed llama-server feature check; no production mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "4f22608988283166c58dd63378fa1cafd5b8824c",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nfrom pathlib import Path\nwt=Path('/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015')\ntarget='5e21c1d891dd9121f8a9dc73c802249b9c59a5f8'\nout={'source_target':target}\ndef run(argv,timeout):\n return subprocess.run(argv,capture_output=True,text=True,timeout=timeout)\ntry:\n current=run(['git','-C',str(wt),'rev-parse','HEAD'],12)\n dirty=run(['git','-C',str(wt),'status','--porcelain'],12)\n out.update(before=current.stdout.strip(),dirty=bool(dirty.stdout.strip()),initial_status=[current.returncode,dirty.returncode])\n if current.returncode or dirty.returncode or dirty.stdout.strip():\n  out['error']='EXISTING_WORKTREE_NOT_CLEAN'\n else:\n  f=run(['git','-C',str(wt),'fetch','--no-tags','origin','feat/per-model-lifecycle-20261013'],90)\n  out['fetch_exit']=f.returncode\n  if f.returncode:\n   out['error']='GIT_FETCH_FAILED'\n   out['fetch_log_tail']=f.stderr[-700:]\n  else:\n   c=run(['git','-C',str(wt),'checkout','--detach',target],20)\n   out['checkout_exit']=c.returncode\n   now=run(['git','-C',str(wt),'rev-parse','HEAD'],12)\n   out['tested_source_head']=now.stdout.strip()\n   if c.returncode or now.stdout.strip()!=target:\n    out['error']='EXACT_HEAD_CHECKOUT_FAILED'\n   else:\n    argv=['docker','run','--rm','--network','host','--cpus','2','--memory','1g',\n      '--memory-swap','1g','--read-only','--tmpfs','/tmp:mode=1777,size=64m',\n      '-e','PYTHONDONTWRITEBYTECODE=1','-e','PYTHONPATH=/src',\n      '-v',str(wt)+':/src:ro','-w','/src','ai-core-model-gate:local',\n      'python3','-B','-m','unittest','discover','-s','tests','-p','test_*.py']\n    t=run(argv,250)\n    out['test_exit']=t.returncode\n    out['test_log_tail']=(t.stdout+t.stderr)[-3900:]\n    image='ghcr.io/ggml-org/llama.cpp:server'\n    v=run(['docker','image','inspect',image,'--format','{{.Id}}'],12)\n    out['installed_llama_image']=v.stdout.strip() if v.returncode==0 else 'MISSING'\n    if v.returncode==0:\n     h=run(['docker','run','--rm','--network','none','--memory','256m','--cpus','1',image,'--help'],25)\n     out['image_help_exit']=h.returncode\n     text=h.stdout+h.stderr\n     out['socket_help_supported']=('--host HOST' in text and ('.sock' in text or 'UNIX socket' in text))\n     out['socket_help_excerpt']=' '.join(line.strip() for line in text.splitlines() if '--host ' in line)[:400]\nexcept Exception as exc:\n out['error']=type(exc).__name__+': '+str(exc)[:200]\nbody='AI_CORE_PRIVATE_SOCKET_SOURCE_EXACT\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],22) if False else subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('AI_CORE_SSE_TEST_RECEIPT='+('PASS '+r.stdout.strip() if r.returncode==0 else 'RECORD_FAILED'))\nprint('AI_CORE_SSE_TEST_STATE='+json.dumps({k:v for k,v in out.items() if k!='test_log_tail'},ensure_ascii=False))\nraise SystemExit(0 if r.returncode==0 and out.get('test_exit')==0 and out.get('tested_source_head')==target else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/commit/5e21c1d891dd9121f8a9dc73c802249b9c59a5f8"
+  }
+}
