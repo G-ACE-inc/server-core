@@ -107,6 +107,15 @@ def reconstruct(request_id, target, *, vault_base, vault_token,
 def private_release(request_id, path, *, runner=subprocess.run):
     """Use existing authenticated gh CLI, not an additional token."""
     tag="gace-host-output-"+request_id
+    # Fail closed if a collaborator changed the recipient repository's
+    # visibility; do not silently publish output in a public repository.
+    try:
+        privacy=runner(["gh","api","repos/"+REPO,"--jq",".private"],
+                       capture_output=True,text=True,timeout=15,check=False)
+    except (OSError,subprocess.TimeoutExpired):
+        raise PublishError("PRIVATE_GITHUB_UNAVAILABLE") from None
+    if privacy.returncode!=0 or privacy.stdout.strip()!="true":
+        raise PublishError("PRIVATE_REPOSITORY_NOT_VERIFIED")
     cmds=[
       ["gh","release","create",tag,str(path)+"#output.zip",
        "--repo",REPO,"--draft","--prerelease","--latest=false",
@@ -114,14 +123,23 @@ def private_release(request_id, path, *, runner=subprocess.run):
        "--notes","Private transient handoff to existing TGS CI Artifact. No Issue contents."],
       ["gh","release","edit",tag,"--repo",REPO,"--draft=false"],
     ]
+    created=False
     for cmd in cmds:
         try:
             p=runner(cmd,capture_output=True,text=True,timeout=60,check=False)
-        except (OSError,subprocess.TimeoutExpired):
-            raise PublishError("PRIVATE_GITHUB_UNAVAILABLE") from None
-        if p.returncode:
-            # Never echo a GitHub CLI error body: it can contain private paths.
-            raise PublishError("PRIVATE_RELEASE_SUBMISSION_FAILED")
+            if p.returncode:
+                raise PublishError("PRIVATE_RELEASE_SUBMISSION_FAILED")
+            created=True
+        except (OSError,subprocess.TimeoutExpired,PublishError):
+            # If publication failed *after* our draft was created, clean it.
+            # If create itself failed, do not delete another attempt's tag.
+            if created:
+                try:
+                    runner(["gh","release","delete",tag,"--repo",REPO,"--yes","--cleanup-tag"],
+                           capture_output=True,text=True,timeout=20,check=False)
+                except (OSError,subprocess.TimeoutExpired):
+                    pass
+            raise PublishError("PRIVATE_RELEASE_SUBMISSION_FAILED") from None
     return {"state":"PRIVATE_RELEASE_PUBLISHED_AWAIT_ARTIFACT",
             "repository":REPO,"release_tag":tag}
 
