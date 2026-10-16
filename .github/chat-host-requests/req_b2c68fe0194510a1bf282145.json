@@ -1,0 +1,37 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core PR3 existing worktree exact SHA and Docker network-none focused seven tests for safe stale Unix socket cleanup. No live Gate/model mutation and no DebugAI duplicate inference.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "9bebd2cacaed10dd81d9687333427cc3de1dd9da",
+    "command": "set -eu\nw=/home/admin1/projects/ai-core/.worktrees/pr3-verification-20261015\nbefore=$(git -C \"$w\" rev-parse HEAD)\ncase \"$before\" in 14fed8d3ecb96a78b25cd9579940dc74793f7bfc|aefb1a1e489a2cf6e296ccccac70b90418641b55|4145fb6a1a93207f374595caab31e70c04dbe789|cd5255bb9f7fd4f6f8eb2db119e7bfcf2c413863) :;; *) echo \"SOURCE_CONTEXT_CHANGED\"; exit 72;; esac\ntest -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\" || exit 73\ngit -C \"$w\" fetch --no-tags origin feat/per-model-lifecycle-20261013 >/dev/null 2>&1\ntest \"$(git -C \"$w\" rev-parse FETCH_HEAD)\" = cd5255bb9f7fd4f6f8eb2db119e7bfcf2c413863 || exit 74\ntest \"$before\" = cd5255bb9f7fd4f6f8eb2db119e7bfcf2c413863 || git -C \"$w\" checkout --detach -q cd5255bb9f7fd4f6f8eb2db119e7bfcf2c413863\ndocker run --rm --network none --read-only --memory 512m --cpus 1 -v \"$w:/app:ro\" --tmpfs /tmp:rw,size=64m -w /app -e PYTHONDONTWRITEBYTECODE=1 --entrypoint python3 ai-core-model-gate:local -m unittest discover -s tests -p test_private_transport_policy.py -v\nprintf 'AI_CORE_UDS_STALE_GUARD_FOCUSED=PASS HEAD=%s\\n' \"$(git -C \"$w\" rev-parse HEAD)\"\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "AI Core PR3 latest cd5255bb source guard plus test, live Host issue1 6223308849 proves dead UDS sockets errno111 and backend exit1. Isolated focused tests only; DebugAI PR115 owns product."
+  }
+}
