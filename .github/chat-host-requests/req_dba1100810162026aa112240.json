@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Diagnose actual DebugAI->four-Gate auth/identity status without secret or response disclosure, bitmask identity ports 1 2 4 8, missing env16, 401=32, otherHTTP64, transport128",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "c=$(docker ps -q --filter label=com.docker.compose.service=debug-ai); test -n \"$c\" || exit 64; docker exec \"$c\" node -e 'const e=[[18181,\"granite//models/granite-4.2-8b-Q4_K_M.gguf\"],[18182,\"qwen3//models/Qwen3-8B-Q4_K_M.gguf\"],[18183,\"ministral//models/Ministral-3-8B-Reasoning-2512-Q4_K_M.gguf\"],[18184,\"coder//models/qwen2.5-coder-7b-instruct-q4_k_m.gguf\"]];(async()=>{let x=process.env.AI_CORE_API_KEY?0:16;for(let i=0;i<4;i++){try{const r=await fetch(`http://127.0.0.1:${e[i][0]}/v1/models`,{headers:{Authorization:`Bearer ${process.env.AI_CORE_API_KEY}`},signal:AbortSignal.timeout(4500)});if(r.status===401){x|=32;continue}if(r.status!==200){x|=64;continue}const j=await r.json();if(j.data?.length!==1||j.data[0]?.id!==e[i][1])x|=1<<i}catch{x|=128}}process.exit(x)})().catch(()=>process.exit(8))' >/dev/null 2>&1"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
