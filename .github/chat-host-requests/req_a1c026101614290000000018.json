@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core 2026-10-16 read-only live inference Docker and memory status while one real Coder request runs",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nfrom pathlib import Path\ndef run(args):\n try:\n  p=subprocess.run(args,text=True,capture_output=True,timeout=14)\n  return {'exit':p.returncode,'output':p.stdout.strip()[:500]}\n except Exception as e:return {'failure':type(e).__name__}\nroot=Path('/sys/fs/cgroup/ai.slice/ai-core.slice')\nchecks=['memory.current','memory.high','memory.max','cpu.max']\nout={'cgroup':{key:(root/key).read_text().strip() if (root/key).is_file() else None for key in checks},\n 'containers':run(['docker','ps','-a','--format','{{.Names}}|{{.State}}','--filter','name=^ai-']),\n 'gate':run(['docker','inspect','--format','{{.State.Status}}|{{.State.Health.Status}}|{{.RestartCount}}','ai-core-model-gate']),\n 'gate_ports':run(['ss','-ltn','( sport = :18181 or sport = :18182 or sport = :18183 or sport = :18184 )'])}\nbody='AI_CORE_REALTIME_INFERENCE_WATCH\\n'+json.dumps(out,ensure_ascii=False,indent=2)\np=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),text=True,capture_output=True,timeout=20)\nprint('AI_CORE_WATCH='+('PASS '+p.stdout.strip() if p.returncode==0 else 'RECORD_FAILED'))\nraise SystemExit(0 if p.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/3"
+  }
+}
