@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "AI Core read-only live /internal/resources/status P0 cgroup, cpu, memory and queue; after 76 passing tests, verify exact running gate source and 4 health",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "python3 - <<'PY'\nimport json,subprocess,urllib.request\nprog=\"\"\"import os,json,urllib.request,hashlib\nfrom pathlib import Path\nh={'Authorization':'Bearer '+os.environ['AI_CORE_API_KEY']}\nr=urllib.request.Request('http://127.0.0.1:18184/internal/resources/status',headers=h)\nwith urllib.request.urlopen(r,timeout=10) as f:d=json.load(f)\nassert int(d['memory']['memory.max'])==38654705664\nassert int(d['memory']['memory.high'])==36507222016\nassert d['cpu_max'].split()[0]!='max'\nassert d['memory_events']['oom_kill']>=0\nprint(json.dumps({'source_sha':hashlib.sha256(Path('/app/runtime/model_gate.py').read_bytes()).hexdigest(),\n 'memory_current':int(d['memory']['memory.current']),'high':d['memory']['memory.high'],'max':d['memory']['memory.max'],\n 'cpu_max':d['cpu_max'],'usage_usec':d['cpu_stat'].get('usage_usec'),\n 'oom_kill':d['memory_events']['oom_kill'],'queued':d['queued'],'inflight':d['admission_inflight'],\n 'active':d['active'],'transitioning':d['transitioning']}))\n\"\"\"\np=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',prog],capture_output=True,text=True,timeout=30)\nout={'exec_exit':p.returncode,'resource_status':json.loads(p.stdout) if p.returncode==0 else {'stderr_tail':p.stderr[-500:]}}\nout['health']={}\nfor port in (18181,18182,18183,18184):\n try:\n  with urllib.request.urlopen('http://127.0.0.1:'+str(port)+'/health',timeout=3) as r:out['health'][str(port)]=r.status\n except Exception as e:out['health'][str(port)]=type(e).__name__\nq=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':'AI_CORE_RESOURCES_LIVE_RUNTIME\\n'+json.dumps(out,ensure_ascii=False,indent=2)}),capture_output=True,text=True,timeout=25)\nprint('AI_CORE_RESOURCES_LIVE='+('PASS '+q.stdout.strip() if q.returncode==0 else 'RECORD_FAILED'))\nassert p.returncode==0 and out['resource_status']['source_sha']=='2879658652b411829b48dc9cbb519636559b03346fbfc30c4df8f8a0d3b13d21'\nassert q.returncode==0 and all(x==200 for x in out['health'].values())\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6214765730"
+  }
+}
