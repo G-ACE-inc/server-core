@@ -1,0 +1,39 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Actual AI Core parent cgroup anon/file/inactive_file, host MemAvailable and Docker resident status after 4-model and handoff verification; never alter memory limits",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "6a85ac70ee4c27b88b3922d9e74cf6b81a833d51",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nfrom pathlib import Path\nbase=Path('/sys/fs/cgroup/ai.slice/ai-core.slice')\nout={}\nfor fname in ('memory.current','memory.high','memory.max','memory.swap.current','cpu.max'):\n file=base/fname\n out[fname]=file.read_text().strip() if file.is_file() else None\nstat={}\np=base/'memory.stat'\nif p.is_file():\n for line in p.read_text().splitlines():\n  parts=line.split()\n  if len(parts)==2 and parts[0] in ('anon','file','shmem','inactive_file','active_file','slab','kernel'):\n   stat[parts[0]]=int(parts[1])\nout['memory_stat_bytes']=stat\nmeminfo={}\nfor line in Path('/proc/meminfo').read_text().splitlines():\n if line.startswith(('MemTotal:','MemAvailable:','SwapTotal:','SwapFree:')):\n  m=line.split()\n  meminfo[m[0].rstrip(':')]=int(m[1])*1024\nout['host_meminfo_bytes']=meminfo\np=subprocess.run(['docker','ps','-a','--format','{{.Names}}|{{.State}}','--filter','name=^ai-'],capture_output=True,text=True,timeout=10)\nout['model_containers']=p.stdout.strip().splitlines()\np=subprocess.run(['docker','inspect','-f','{{.State.Status}}|{{.State.Health.Status}}','ai-core-model-gate'],capture_output=True,text=True,timeout=10)\nout['gate_health']=p.stdout.strip()\nbody='AI_CORE_PHYSICAL_MEMORY_RESOURCE_CHECK\\n'+json.dumps(out,ensure_ascii=False,indent=2)\nr=subprocess.run(['gh','api','-X','POST','repos/G-ACE-inc/server-core/issues/10/comments','--input','-','--jq','.html_url'],input=json.dumps({'body':body}),capture_output=True,text=True,timeout=22)\nprint('AI_CORE_MEMORY_EVIDENCE='+('PASS '+r.stdout.strip() if r.returncode==0 else 'POST_FAILED'))\nraise SystemExit(0 if r.returncode==0 else 1)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10#issuecomment-6209629377"
+  }
+}
