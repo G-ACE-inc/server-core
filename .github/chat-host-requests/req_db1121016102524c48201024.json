@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Run exact DebugAI PR112 Gate regression inside existing Docker image with read-only source mounts; no deploy.",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "adb662adb1153b787e8082803c3ecb6824e27c3d",
+    "command": "set -eu; p=/home/admin1/projects/debug-ai/.worktrees/pr112-gates-20261016; test \"$(git -C \"$p\" rev-parse HEAD)\" = \"bb08aef1d92271d1fb4ab9f37309535811d48180\" || exit 23; c=$(docker ps -q --filter label=com.docker.compose.service=debug-ai); test \"$(printf '%s\\n' \"$c\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 31; im=$(docker inspect -f '{{.Image}}' \"$c\"); test -n \"$im\"; docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=64m --cap-drop ALL --security-opt no-new-privileges:true --memory 768m --cpus 1 -v \"$p/server:/app/server:ro\" -v \"$p/compose.yaml:/app/compose.yaml:ro\" -w /app \"$im\" node --test server/tests/ai-core-gate-preflight.test.cjs >/tmp/dbg-pr112-docker-test.log 2>&1 || { tail -n 12 /tmp/dbg-pr112-docker-test.log; exit 32; }"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "claimed_adopted_without_merge": false,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/112"
+  }
+}
