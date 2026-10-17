@@ -1,6 +1,6 @@
 # GITHUB PROJECT DUAL RULE PLANE
 
-Version: 2026-10-07
+Version: 2026-10-17
 Authority contract: `operations/github-project-rule-plane.json`
 
 ## Purpose
@@ -61,7 +61,7 @@ Notion GPT-only principles  -> migration source/history until cutover
 | Mission, priority, current CU, mutation owner, gate, acceptance, next action | GitHub Project #1 + owning Current Issue | Resolve/read the current item, never keep a parallel current task plan |
 | GPT CHAT orchestration, tool-routing preference and reporting behavior | GPT CHAT Issue #17 | Entry adapters reference #17 only for GPT CHAT |
 | SERVER_AI / Composer / Codex executor-specific minimum behavior | SERVER_AI Issue #16 | Entry adapters reference #16; never load #17 by default |
-| Common development Work Routine and documentation/verification sequence | `docs/G_ACE_WORKSPACE.md` §6 and §7 | Project Current selects which CU; agents execute the common method without copying it |
+| GPT app CHAT Agent Loop, continuation and Notion decision records | GPT CHAT Issue #17; `docs/G_ACE_WORKSPACE.md` §6 and §7 | GPT CHAT applies this routine; do not impose the loop or Notion on server executors |
 | Common Host, Docker/Compose, workspace location, GitOps and security/authorization contracts | `SERVER_CORE_PROTOCOL.md`, `docs/G_ACE_WORKSPACE.md`, `docs/DEPLOY_RUNBOOK.md` and registered operations contracts | Project intent cannot grant Runtime permission or override verified Host denial |
 | Capability discovery, canonical parent identity and registered connection contracts | `docs/WORKSPACE_REGISTRY.md` + authorized `operations/*` | The real Host/provider status requires independent readback |
 | Source, implementation details, tests, package/runtime integration | Owning Project repository | server-core routes; it does not absorb Product implementation |
@@ -93,7 +93,7 @@ The normative assignment remains the **Responsibility boundary — Current vs co
 
 ## Shared Work Routine ownership and scope-drift gate
 
-The only **stable common Work Routine** is [`docs/G_ACE_WORKSPACE.md` §6](G_ACE_WORKSPACE.md#6-development-routine), including its Mission/CU pre-dispatch requirements. Do **not** copy a second full routine into Issue #16, Issue #17, per-agent `AGENTS.md`, Cursor `.mdc`, or Copilot instructions. Each executor fetches the same owning GitHub Project/Issue Current but **only its own** minimal SERVER_AI #16 or GPT CHAT #17 profile.
+The only **stable GPT app CHAT Work Routine** is [`docs/G_ACE_WORKSPACE.md` §6](G_ACE_WORKSPACE.md#6-development-routine), including its Mission/CU pre-dispatch requirements. Its Agent Loop, communication and Notion obligations apply only to GPT app CHAT. Do **not** copy that routine into Issue #16, per-agent `AGENTS.md`, Cursor `.mdc`, or Copilot instructions, or duplicate it in Issue #17. Each executor fetches the same owning GitHub Project/Issue Current but **only its own** minimal SERVER_AI #16 or GPT CHAT #17 profile. Existing shared security, ownership, Source/CI/Runtime separation and GitHub work-report contracts remain independent of the CHAT loop; no server-profile change is required.
 
 Use existing Project Control fields `Wave / Gate / Change Unit / Mutation Owner`. `MISSION / IN_SCOPE / OUT_OF_SCOPE / ACCEPTANCE / EXACT_NEXT_GATE` stay in the **owning canonical Current Issue**, until genuine Project field registration and readback explicitly prove otherwise. Before dispatch verify actual task ownership and whether the planned diff/effect is within the current CU; deny only out-of-scope mutations. Recording a current reference or passing a source-file test is not evidence that Cursor/Codex/GPT actually loaded it or that the bounded Host runner enforced it; those require their own runtime/readback proofs.
 
