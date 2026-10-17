@@ -352,6 +352,8 @@ Notion側の最初の候補は**既存議事録の再利用＋最小の『Decisi
 5. `CHECKPOINT`: §13.7の全開発工程（アイデア・調査事実・比較案/不採用理由・採用設計・実装変更・障害分析・検証・次Action）について、そのTurnで新たに生じた有意味な差分をNotion議事録へ増分記録する。初期からの経緯を毎回全量複写する必要はないが、採否結論やPR日報だけに省略しない。正式タスク状態とCIはGitHub、Raw LogはTGserver/Artifactへ。NotionにRunの巨大本文を貼らない。
 6. 次CHATはCurrentから最小Notion文脈レコードを復元し、**少なくとも一つ実際のTool Action**を続行。Issue #10の全コメント取得を前提にしない。
 
+**復元処理の障害境界（2026-10-17）:** 実Notion connectorのstructuredContent／MCP text envelopeを正規化し、正常なpage headerを厳密な出所URLで照合する。`isError`の拒否結果・検索ヒット・別ページを判断記録に昇格しない。任意のNotion補助文脈が不正・拒否・取得不能でも、既存`chat_cu_continuation.py`は確認済みGitHub/Host結果と次Actionを消さず、文脈をUNAVAILABLEとして記録する。これをNotion書込成功や過去の安全性拒否解消とは扱わない。サーバーAIへのNotion義務・新しいGate・Token・同期サービスは追加しない。GPT CHATの記録失敗処理はWork Routine §6を参照する。
+
 ### 13.5 無料プラン制約とGoogle Drive補完
 - Notion Free：DBと基本属性は利用可、ファイル1個最大5MB、個人利用のページ/ブロックは原則無制限、複数Memberはブロック上限が適用され得る。公式 https://www.notion.com/pricing 。現在の実ワークスペース人数・接続権限は未確認のため`UNKNOWN`。
 - Notion有料のDB自動化、Notion AI常用、Custom Agentや有料同期を**依存機能にしない**。既存CHAT/Pluginから必要時に読書き、連続実行可能な範囲で対応。
