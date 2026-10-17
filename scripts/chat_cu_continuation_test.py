@@ -484,6 +484,59 @@ class ContinuationTests(unittest.TestCase):
             "head_sha": "b" * 40, "status": "completed", "conclusion": "failure"})
         self.assertEqual(result["next_action"], "READ_RUN_FAILURE_LOGS")
 
+class OptionalNotionFailureTests(unittest.TestCase):
+    PAGE = "https://app.notion.com/p/example"
+
+    def invoke(self, payload, page_url=None, reader=None):
+        observed = {"verified_host_output": None, "next_action": "READ_RUN_FAILURE_LOGS",
+                    "readback_status": "VERIFIED", "completion_verified": False}
+        with tempfile.TemporaryDirectory() as directory:
+            cp, notes = Path(directory) / "checkpoint.json", Path(directory) / "notion.json"
+            cp.write_text(json.dumps(BASE))
+            notes.write_text(json.dumps(payload))
+            argv = ["continuation", "--checkpoint-json", str(cp), "--notion-context-json", str(notes)]
+            if page_url:
+                argv.extend(["--notion-page-url", page_url])
+            output = io.StringIO()
+            with patch("sys.argv", argv), patch.object(continuation, "resume", return_value=observed), \
+                    patch("scripts.chat_notion_cu_context.readback_issue") as current, redirect_stdout(output):
+                if isinstance(reader, Exception):
+                    current.side_effect = reader
+                else:
+                    current.return_value = reader or {"url": BASE["cu_issue_url"], "state": "open"}
+                continuation.main()
+            result = json.loads(output.getvalue())
+            self.assertEqual(result["continuation"], observed)
+            return result, current.call_count
+
+    def test_rejected_notion_keeps_verified_next_action_without_retry(self):
+        result, calls = self.invoke({"isError": True, "error": "private-error-body"})
+        context = result["notion_context"]
+        self.assertEqual(context["failure_class"], "NOTION_TOOL_REJECTED")
+        self.assertEqual(context["records"], [])
+        self.assertFalse(context["automatic_retry"])
+        self.assertEqual(calls, 0)
+        self.assertNotIn("private-error-body", json.dumps(result))
+
+    def test_wrong_page_cannot_block_or_become_decision(self):
+        result, _ = self.invoke({"text": '<page url="https://app.notion.com/p/other"><content>'+BASE["cu_issue_url"]+'</content>'}, self.PAGE)
+        self.assertEqual(result["notion_context"]["failure_class"], "PAGE_SOURCE_MISMATCH")
+        self.assertEqual(result["notion_context"]["count"], 0)
+
+    def test_readback_failure_is_not_printed_as_success_or_raw_error(self):
+        result, calls = self.invoke([], reader=OSError("private-error-body"))
+        self.assertEqual(result["notion_context"]["state"], "UNAVAILABLE")
+        self.assertEqual(calls, 1)
+        self.assertNotIn("private-error-body", json.dumps(result))
+
+    def test_actual_wrapped_page_augments_without_overriding_continuation(self):
+        raw = '<page url="'+self.PAGE+'"><content>'+BASE["cu_issue_url"]+'</content></page>'
+        result, calls = self.invoke({"content": [{"type": "text", "text": json.dumps({"text": raw})}]}, self.PAGE)
+        self.assertEqual(result["notion_context"]["count"], 1)
+        self.assertEqual(result["notion_context"]["records"][0]["state"], "UNKNOWN")
+        self.assertEqual(calls, 1)
+
+
 class DiagnosticReasoningTests(unittest.TestCase):
     def test_repeated_hypothesis_is_not_proven_cause(self):
         context = {"symptom": "Actions run missing", "hypotheses": [

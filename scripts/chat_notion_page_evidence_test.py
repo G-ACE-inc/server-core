@@ -1,3 +1,4 @@
+import json
 import unittest
 from scripts.chat_notion_page_evidence import page_evidence
 from scripts.chat_notion_context_ingest import ingest
@@ -18,5 +19,25 @@ class PageEvidenceTests(unittest.TestCase):
     def test_malformed_page_fails(self):
         with self.assertRaisesRegex(ValueError,"PAGE_FORMAT_INVALID"):
             page_evidence("some text",CU,PAGE)
+    def test_actual_mcp_text_wrapper(self):
+        actual = {"content": [{"type": "text", "text": json.dumps({
+            "id": "page", "text": '<page url="'+PAGE+'" icon="x">\n<content>'+CU+'</content></page>'})}],
+            "isError": False}
+        self.assertEqual(ingest(actual, CU, PAGE)[0]["state"], "UNKNOWN")
+    def test_rejected_tool_cannot_smuggle_valid_page(self):
+        payload = {"isError": True, "structuredContent": {
+            "text": '<page url="'+PAGE+'"><content>'+CU+'</content></page>'}}
+        with self.assertRaisesRegex(ValueError, "NOTION_TOOL_REJECTED"):
+            ingest(payload, CU, PAGE)
+    def test_ambiguous_page_headers_are_not_provenance(self):
+        raw = '<page url="'+PAGE+'"><page url="https://app.notion.com/p/other"><content>'+CU+'</content>'
+        with self.assertRaisesRegex(ValueError, "PAGE_SOURCE_MISMATCH"):
+            page_evidence(raw, CU, PAGE)
+    def test_malformed_tool_block_has_fixed_failure(self):
+        with self.assertRaisesRegex(ValueError, "NOTION_TOOL_CONTENT_AMBIGUOUS"):
+            ingest({"content": [None]}, CU, PAGE)
+    def test_wrapped_search_hits_are_only_pointers(self):
+        payload = {"content": [{"type": "text", "text": json.dumps({"results": [{"id": "x"}]})}]}
+        self.assertEqual(ingest(payload, CU), [])
 if __name__=="__main__":
     unittest.main()

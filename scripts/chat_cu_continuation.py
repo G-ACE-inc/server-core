@@ -381,31 +381,43 @@ def main():
         result["diagnostic_assessment"] = assess_diagnostic_context(diagnostic, result["continuation"])
     if args.notion_context_json:
         try:
-            from scripts.chat_notion_cu_context import build, readback_issue
-        except ModuleNotFoundError:
-            from chat_notion_cu_context import build, readback_issue
-        source = json.loads(args.notion_context_json.read_text(encoding="utf-8"))
-        try:
-            from scripts.chat_notion_context_ingest import ingest
-        except ModuleNotFoundError:
-            from chat_notion_context_ingest import ingest
-        records = ingest(source, checkpoint["cu_issue_url"], args.notion_page_url)
-        context = build(checkpoint["cu_issue_url"], records, checkpoint["cu_issue_url"])
-        context["fresh_github_issue"] = readback_issue(checkpoint["cu_issue_url"])
-        context["pilot_measure"] = {
-            "source_count": len(source.get("sources", [])) if isinstance(source, dict) else 1,
-            "matched_records": context["count"],
-            "fetched_records": len(records),
-            "unselected_records": max(0, len(records) - context["count"]),
-            "baseline_read_calls": None,
-            "efficiency_improvement": "NOT_MEASURED",
-        }
-        context["pilot_measure"]["github_issue_readback_verified"] = True
-        context["pilot_measure"]["run_readback_status"] = result["continuation"]["readback_status"]
-        context["pilot_measure"]["continuation_action"] = result["continuation"]["next_action"]
-        result["notion_context"] = context
-        # Context augments rationale; only fresh GitHub run verification
-        # determines the executable next action.
+            try:
+                from scripts.chat_notion_cu_context import build, readback_issue
+            except ModuleNotFoundError:
+                from chat_notion_cu_context import build, readback_issue
+            source = json.loads(args.notion_context_json.read_text(encoding="utf-8"))
+            try:
+                from scripts.chat_notion_context_ingest import ingest
+            except ModuleNotFoundError:
+                from chat_notion_context_ingest import ingest
+            records = ingest(source, checkpoint["cu_issue_url"], args.notion_page_url)
+            context = build(checkpoint["cu_issue_url"], records, checkpoint["cu_issue_url"])
+            context["fresh_github_issue"] = readback_issue(checkpoint["cu_issue_url"])
+            context["pilot_measure"] = {
+                "source_count": len(source.get("sources", [])) if isinstance(source, dict) else 1,
+                "matched_records": context["count"],
+                "fetched_records": len(records),
+                "unselected_records": max(0, len(records) - context["count"]),
+                "baseline_read_calls": None,
+                "efficiency_improvement": "NOT_MEASURED",
+            }
+            context["pilot_measure"]["github_issue_readback_verified"] = True
+            context["pilot_measure"]["run_readback_status"] = result["continuation"]["readback_status"]
+            context["pilot_measure"]["continuation_action"] = result["continuation"]["next_action"]
+            result["notion_context"] = context
+            # Context augments rationale; only fresh GitHub run verification
+            # determines the executable next action.
+        except (ValueError, OSError, subprocess.SubprocessError) as exc:
+            # Optional decision history must not erase a verified Host/Run result.
+            # Do not print connector error bodies, infer write success or retry.
+            code = str(exc)
+            result["notion_context"] = {
+                "state": "UNAVAILABLE", "records": [], "count": 0,
+                "coverage": "NOT_VERIFIED",
+                "failure_class": code if re.fullmatch(r"[A-Z][A-Z0-9_]{1,99}", code)
+                else "NOTION_CONTEXT_UNAVAILABLE",
+                "automatic_retry": False, "continuation_preserved": True,
+            }
     if args.development_evidence_json:
         try:
             from scripts.chat_notion_development_evidence import audit_evidence

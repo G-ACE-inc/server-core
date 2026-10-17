@@ -8,8 +8,11 @@ import json
 def ingest(payload, cu_url, page_url=None):
     try:
         from scripts.chat_notion_comment_adapter import parse_comments
+        from scripts.chat_notion_page_evidence import unwrap_tool_response
     except ModuleNotFoundError:
         from chat_notion_comment_adapter import parse_comments
+        from chat_notion_page_evidence import unwrap_tool_response
+    payload = unwrap_tool_response(payload)
     if isinstance(payload, list):
         return payload
     if isinstance(payload, dict) and isinstance(payload.get("sources"), list):
@@ -38,12 +41,9 @@ def ingest(payload, cu_url, page_url=None):
         return page_evidence(payload, cu_url, page_url)
     if not isinstance(payload, dict):
         raise ValueError("NOTION_PAYLOAD_INVALID")
-    if isinstance(payload.get("structuredContent"), dict):
-        inner = payload["structuredContent"]
-        if isinstance(inner.get("results"), list):
-            # Search results are pointers only; they are not decision records.
-            return []
-        return parse_comments(inner, cu_url)
+    if isinstance(payload.get("results"), list):
+        # Search results remain pointers after MCP wrapper normalization.
+        return []
     if "text" in payload:
         return parse_comments(payload, cu_url)
     raise ValueError("NOTION_PAYLOAD_UNSUPPORTED")
