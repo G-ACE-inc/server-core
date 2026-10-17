@@ -33,6 +33,13 @@ SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$")
 SERVICE_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
 DEPLOY_SOCKET = "/run/gace/servercore-service-deploy.sock"
+# Publish only fixed admission codes, never arbitrary writer exception text.
+HOST_COMMAND_ADMISSION_ERRORS = frozenset({
+    "HOST_COMMAND_NOT_REGISTERED", "HOST_COMMAND_ROOT_INVALID",
+    "HOST_COMMAND_SHA_MISMATCH", "HOST_COMMAND_KEYS_INVALID",
+    "HOST_COMMAND_INVALID", "HOST_SOURCE_PREFLIGHT_INVALID",
+    "REPOSITORY_INVALID", "TARGET_SHA_INVALID", "REQUEST_INVALID",
+})
 DOCKER_LOGS_SOCKET = "/run/gace/servercore-docker-logs.sock"
 DEV_JOB_SOCKET = "/run/gace/servercore-dev-job.sock"
 DEV_JOB_RETRYABLE = frozenset({"DOCKER_BINARY_MISSING", "INTERNAL_ERROR", "DEV_JOB_BUSY", "WORKSPACE_CREATE_FAILED", "HOST_GIT_FAILED"})
@@ -329,6 +336,11 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
         writer_request["source_preflight"] = True
     reply = deploy_socket_call(writer_request, socket_path, timeout=120)
     if reply.get("ok") is not True:
+        error = reply.get("error")
+        if error == "DEPLOY_LOCK_BUSY":
+            fail("HOST_COMMAND_BUSY", 503)
+        if isinstance(error, str) and error in HOST_COMMAND_ADMISSION_ERRORS:
+            fail(error, 422)
         fail("HOST_COMMAND_ADMISSION_DENIED", 422)
     if reply.get("state") == "HOST_COMMAND_DUPLICATE":
         result = reply.get("result")

@@ -32,6 +32,38 @@ CONTRACT = {"request_schema": "gace.servercore-bounded-host.request/v1",
             "allowed_command_ids": ["docker.operation"]}
 
 class DockerRouteTests(unittest.TestCase):
+    def host_admission_failure(self, error):
+        request = {"id": SESSION, "command_id": "host.command", "expected_sha": SHA,
+                   "repository": REPO, "repo_sha": SHA, "command": "printf ok"}
+        with patch.object(receiver.bounded_host, "checked_root", return_value=Path("/unused")), \
+             patch.object(receiver.bounded_host, "head_sha", return_value=SHA), \
+             patch.object(receiver, "deploy_socket_call", return_value={"ok": False, "error": error}):
+            with self.assertRaises(receiver.ReceiverError) as raised:
+                receiver.dispatch_host_command(request, Path("/unused"))
+        return raised.exception
+
+    def test_host_sha_mismatch_is_not_reported_as_missing_permission(self):
+        error = self.host_admission_failure("HOST_COMMAND_SHA_MISMATCH")
+        self.assertEqual(str(error), "HOST_COMMAND_SHA_MISMATCH")
+        self.assertEqual(error.status, 422)
+
+    def test_host_registration_and_root_denials_remain_distinct(self):
+        for code in ["HOST_COMMAND_NOT_REGISTERED", "HOST_COMMAND_ROOT_INVALID"]:
+            with self.subTest(code=code):
+                self.assertEqual(str(self.host_admission_failure(code)), code)
+
+    def test_host_busy_is_retryable_infrastructure_not_permission_denial(self):
+        error = self.host_admission_failure("DEPLOY_LOCK_BUSY")
+        self.assertEqual(str(error), "HOST_COMMAND_BUSY")
+        self.assertEqual(error.status, 503)
+
+    def test_host_unknown_writer_errors_do_not_disclose_private_text(self):
+        for code in ["/private/path secret", "UNKNOWN_PRIVATE_CODE", None, ["bad"]]:
+            with self.subTest(code=code):
+                error = self.host_admission_failure(code)
+                self.assertEqual(str(error), "HOST_COMMAND_ADMISSION_DENIED")
+                self.assertEqual(error.status, 422)
+
     def test_compose_ps_without_container_is_not_success(self):
         from servercore_registered_docker_ops import operate, DockerOperationError
         entry = {"server_project_path": "/home/admin1/projects/TGserver",
