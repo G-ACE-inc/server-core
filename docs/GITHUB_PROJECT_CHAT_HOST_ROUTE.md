@@ -12,6 +12,10 @@ Host経路の別CHAT実測では、**実際の新しい2会話**が、それぞ�
 
 通常のCHATが使う実行経路は、既存の `G-ACE-inc/server-core` の `.github/chat-host-requests/req_*.json` → `chatgpt-live-api-verify.yml` → Gateway → Receiver → Host。AI自身がShellを構成して `host.command` に渡す。隔離作業だけ `dev.job` を使う。
 
+**「ServerTerminalの権限がない」と判断する前に（GPTアプリCHAT）**：共通Terminalの登録元は `operations/github-project-bounded-host.json` の `dev_job.registered_repositories`。対象Repoの登録済みrootと実測HEADを使う `host.command` で、委任された通常の読取・ソース編集・検証を進める。CHAT自身に直接シェルのツールがないこと、対象Repoに専用のTerminal Workflowがないこと、旧DebugAI専用の委任登録がないことは、この共通経路が使えない根拠にならない。依頼ファイルは対象Repoではなく上記server-core側へ作る。Project登録だけで未登録Repoや本番操作の権限まで推定しない。
+
+失敗時は実際のrequest/Runと拒否コードを確認する。`HOST_COMMAND_SHA_MISMATCH` は対象Repoの実測SHA、`SOURCE_SHA_MISMATCH` はDispatcher SHAを再確認する問題であり、権限不足と報告しない。`HOST_COMMAND_ROOT_INVALID` は登録rootの実在・Git checkoutを所有者と照合し、`HOST_COMMAND_NOT_REGISTERED` は登録漏れとして扱う。`HOST_COMMAND_BUSY` は実行基盤の一時状態。未知の拒否は `HOST_COMMAND_ADMISSION_DENIED` のまま理由UNKNOWNとし、推測で権限拡張しない。`service.deploy` / `docker.operation` の専用Registry・サービス・Compose等の拒否は、その操作範囲だけの問題であり、登録済みRepoへの通常 `host.command` 全体を禁止されたと解釈しない。本番操作を自由コマンドで迂回せず、実際の拒否を所有Currentへ残し、独立した通常開発を続ける。
+
 コマンド作成時の軽い自己確認は `docs/COMMAND_ROUTINE.md`、Masterへ直接コマンドを提示する場合は `docs/MASTER_TERMINAL_COMMAND.md` を唯一の作成規則とする。このページに別のコマンド選択規則やゲートは設けない。
 
 **2026-10-16 横断Repoの結果未着を修正した条件**：`Host Writer ledger.source_sha` は**実行対象Repo**の`repo_sha`であり、`Result Sink receipt.host_sha` は共通**Dispatcher/server-core**の`expected_sha`である。別Repo（例：`seigo-gace/ai-core`）なら異なるのが正常。以前のSink Sourceはこの2値を同一と誤判断して、Writer/Sinkの保存が完了していてもIssue #10への公開を失敗させ、Actionsが240秒待っていた。[PR #296](https://github.com/G-ACE-inc/server-core/pull/296)で、Receiverの既存「実Writer request ID＋対象Repo＋target SHA照合」を維持し、SinkではWriterの実Repo/target SHAを形式検証した上で同Request ID・exit・stateを照合する。同一Repo server-coreを実行した場合は引き続きDispatcher SHAとも完全一致を要求する。別Repoの古い`expected_sha`/古いRequest JSONをテンプレとして再送しない。SHA整合に失敗したら**その時の実Hostと対象Repo HEAD**を独立取得し、新規requestで正しく指定する。過去Requestは履歴証拠でありSelectorは新規追加された単一Requestだけを実行する。Source Merge後も既存Sinkの稼働プロセス更新と未公開結果の実回収を別途検証する。
