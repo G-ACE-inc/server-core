@@ -3,6 +3,8 @@ Status: DESIGN ADOPTED (PR #246) / IMPLEMENTATION IN PROGRESS
 Owner: G-ACE-inc/server-core / GitHub Project #1 / Control #10
 Baseline: docs/SERVER_CORE_DESIGN.md §16.11 and §17. This document refines these existing contracts; it neither supersedes them nor authorizes additional Host privileges.
 
+**適用範囲:** 本設計のAgent Loop、Notionによる判断経緯の参照・記録・復元、会話の進捗・引継ぎは、GPTアプリのCHATに適用する。Cursor/Codex等のサーバーAIへ適用・移植せず、サーバー側は通常の開発機能と既存の最小実行ルールを使用する。Notionが未参照・未記録であることをサーバーAIの着手・検証・反映を止める条件にしない。CHATは必要時にサーバー側のGitHub/Source/Runtime証拠を受け取り、自身のNotion記録へ関連付ける。
+
 ## 1. 開発目的・完成の姿
 通常のGPTアプリCHATから、既存のGitHub Project/Repository/Actionsとserver-coreの共通Hostターミナルを介し、Cursor、Codex、IDE内Agentのように**登録済みProjectの開発Change Unit (CU)を継続遂行**する。Rule記述だけで継続を期待するのでなく、実際の状態保存・結果観測・再判断・再実行の連鎖を組み立てる。Masterは要求・製品上の採否を行い、通常のコマンド・実装・テスト・CI・マージの技術判断はCHATへ委任する。
 
