@@ -458,6 +458,11 @@ jobs:
           set -euo pipefail
           python3 scripts/workspace_command_center_check_test.py
 
+      - name: Shared GitHub MCP editor client contract
+        run: |
+          set -euo pipefail
+          python3 scripts/github_mcp_editor_clients_test.py
+
       - name: Workspace MCP manifest schema
         run: |
           set -euo pipefail

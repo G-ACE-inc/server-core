@@ -1,0 +1,25 @@
+{
+  "schema": "gace.github-mcp-editor-clients/v1",
+  "name": "github",
+  "source_authority": "G-ACE-inc/server-core#10",
+  "implementation": "official-github-hosted-mcp",
+  "url": "https://api.githubcopilot.com/mcp/",
+  "toolsets": [
+    "projects",
+    "repos",
+    "issues",
+    "pull_requests",
+    "actions"
+  ],
+  "readonly": true,
+  "bearer_env": "GACE_GITHUB_MCP_TOKEN",
+  "consumers": [
+    "cursor",
+    "vscode",
+    "codex"
+  ],
+  "project_current": "seigo-gace/G-ACE Development Platform#1",
+  "project_field_write_authority": "scripts/github_project_control.py",
+  "server_execution_backend": "operations/github-project-debugai-routing.json",
+  "deployment_note": "Editor user-scope registration only; independent of PR33 server-private Phase A. No new Host/service/Secret/Project/DebugAI mutation."
+}
