@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "bfd021802f55bcfd3ce88a781f1e75eecd355a1a",
+    "repo_sha": "bfd021802f55bcfd3ce88a781f1e75eecd355a1a",
+    "command": "set -o pipefail\nprintf 'C01_BEGIN\\n'\nprintf 'DISPATCHER_HEAD='; git -C /home/admin1/server-core rev-parse HEAD\nroot=/home/admin1/projects/ai-core\ntest -d \"$root/.git\" || git -C \"$root\" rev-parse --is-inside-work-tree >/dev/null || exit 11\nprintf 'CORE_HEAD='; git -C \"$root\" rev-parse HEAD\nprintf 'CORE_BRANCH='; git -C \"$root\" branch --show-current\nprintf 'CORE_STATUS='; test -z \"$(git -C \"$root\" status --porcelain)\" && echo CLEAN || echo DIRTY\nprintf 'SOURCE_SHA256='; sha256sum \"$root/runtime/model_gate.py\" | cut -d ' ' -f1\nprintf 'RUNTIME_SHA256='; docker exec ai-core-model-gate sha256sum /app/runtime/model_gate.py | cut -d ' ' -f1\nfor port in 18181 18182 18183 18184; do\n  code=\"$(docker exec ai-core-model-gate python3 -c 'import sys,urllib.request; u=\"http://127.0.0.1:\"+sys.argv[1]+\"/health\"; print(urllib.request.urlopen(u,timeout=5).status)' \"$port\" 2>/dev/null)\" || code=ERROR\n  printf 'HEALTH_%s=%s\\n' \"$port\" \"$code\"\ndone\nprintf 'C01_END\\n'"
+  }
+}
