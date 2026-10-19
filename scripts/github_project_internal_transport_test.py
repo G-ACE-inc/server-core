@@ -137,7 +137,8 @@ class InternalTransportTests(unittest.TestCase):
         server = ThreadingHTTPServer(
             ("127.0.0.1", 0),
             receiver.make_handler(
-                CONTRACT, secret=b"delivery-secret", execute_fn=fake_execute,
+                CONTRACT,
+                claim_fn=lambda *_: "INTENT_LOGGED", secret=b"delivery-secret", execute_fn=fake_execute,
                 publish_fn=lambda _request, _result, _contract: "PUBLISHED",
                 now_fn=lambda:1700000000,
             ),
@@ -171,6 +172,121 @@ class InternalTransportTests(unittest.TestCase):
         finally:
             server.shutdown(); server.server_close(); thread.join(timeout=2)
 
+
+    def test_http_receiver_obeys_existing_cli_lock(self):
+        import fcntl
+        import os
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+
+        executed = []
+        with tempfile.TemporaryDirectory() as tmp:
+            lock_path = Path(tmp) / "shared.lock"
+            with patch.dict(os.environ, {"GACE_PROJECT_CONTROL_LOCK": str(lock_path)}):
+                server = ThreadingHTTPServer(
+                    ("127.0.0.1", 0),
+                    receiver.make_handler(
+                CONTRACT,
+                claim_fn=lambda *_: "INTENT_LOGGED", secret=b"delivery-secret",
+                        execute_fn=lambda request, _contract: (
+                            executed.append(request),
+                            {"REQUEST_ID": request["id"], "READBACK": request["value"],
+                             "MUTATION_PERFORMED": "YES"},
+                        )[1],
+                        publish_fn=lambda *_: "PUBLISHED",
+                        now_fn=lambda: 1700000000,
+                    ),
+                )
+                worker = threading.Thread(target=server.serve_forever, daemon=True)
+                worker.start()
+                try:
+                    body = json.dumps(request_payload(), separators=(",", ":")).encode()
+                    def post():
+                        return urllib.request.Request(
+                            f"http://127.0.0.1:{server.server_port}{receiver.RECEIVER_PATH}",
+                            data=body, method="POST", headers=signed_headers(body),
+                        )
+                    with lock_path.open("a+", encoding="utf-8") as held:
+                        fcntl.flock(held.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        with self.assertRaises(urllib.error.HTTPError) as err:
+                            urllib.request.urlopen(post(), timeout=3)
+                        self.assertEqual(err.exception.code, 503)
+                        self.assertEqual(json.loads(err.exception.read())["error"], "PROJECT_CONTROL_BUSY")
+                        self.assertEqual(executed, [])
+                        fcntl.flock(held.fileno(), fcntl.LOCK_UN)
+                    with urllib.request.urlopen(post(), timeout=3) as response:
+                        self.assertEqual(response.status, 200)
+                    self.assertEqual(len(executed), 1)
+                finally:
+                    server.shutdown()
+                    server.server_close()
+                    worker.join(timeout=2)
+
+    def test_threaded_receiver_denies_concurrent_field_write(self):
+        import os
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+
+        started = threading.Event()
+        release = threading.Event()
+        calls = []
+        first_result = []
+
+        def fake_execute(request, _contract):
+            calls.append(request["id"])
+            if len(calls) == 1:
+                started.set()
+                self.assertTrue(release.wait(timeout=5))
+            return {"REQUEST_ID": request["id"], "READBACK": request["value"],
+                    "MUTATION_PERFORMED": "YES"}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.dict(os.environ, {"GACE_PROJECT_CONTROL_LOCK": str(Path(tmp) / "shared.lock")}):
+                server = ThreadingHTTPServer(
+                    ("127.0.0.1", 0),
+                    receiver.make_handler(
+                CONTRACT,
+                claim_fn=lambda *_: "INTENT_LOGGED", secret=b"delivery-secret",
+                        execute_fn=fake_execute, publish_fn=lambda *_: "PUBLISHED",
+                        now_fn=lambda: 1700000000,
+                    ),
+                )
+                worker = threading.Thread(target=server.serve_forever, daemon=True)
+                worker.start()
+                def post(payload):
+                    body = json.dumps(payload, separators=(",", ":")).encode()
+                    request = urllib.request.Request(
+                        f"http://127.0.0.1:{server.server_port}{receiver.RECEIVER_PATH}",
+                        data=body, method="POST", headers=signed_headers(body),
+                    )
+                    return urllib.request.urlopen(request, timeout=3)
+                def first():
+                    try:
+                        with post(request_payload()) as response:
+                            first_result.append(response.status)
+                    except Exception as exc:
+                        first_result.append(type(exc).__name__)
+                first_thread = threading.Thread(target=first)
+                try:
+                    first_thread.start()
+                    self.assertTrue(started.wait(timeout=3))
+                    second = request_payload()
+                    second["id"] = "gpc_1123456789abcdef01234567"
+                    with self.assertRaises(urllib.error.HTTPError) as err:
+                        post(second)
+                    self.assertEqual(err.exception.code, 503)
+                    self.assertEqual(json.loads(err.exception.read())["error"], "PROJECT_CONTROL_BUSY")
+                    self.assertEqual(len(calls), 1)
+                finally:
+                    release.set()
+                    first_thread.join(timeout=3)
+                    server.shutdown()
+                    server.server_close()
+                    worker.join(timeout=2)
+                self.assertEqual(first_result, [200])
+
     def test_result_comment_is_bounded_and_deduplicated(self):
         calls=[]
         def fake_gh(args,_contract):
@@ -203,7 +319,8 @@ class InternalTransportTests(unittest.TestCase):
         server=ThreadingHTTPServer(
             ("127.0.0.1",0),
             receiver.make_handler(
-                CONTRACT,secret=b"delivery-secret",execute_fn=fake_execute,
+                CONTRACT,
+                claim_fn=lambda *_: "INTENT_LOGGED",secret=b"delivery-secret",execute_fn=fake_execute,
                 publish_fn=lambda _request,_result,_contract:"PUBLISHED",
                 now_fn=lambda:1700000000,
             ),
@@ -220,6 +337,156 @@ class InternalTransportTests(unittest.TestCase):
             self.assertEqual(context.exception.code,503)
         finally:
             server.shutdown(); server.server_close(); thread.join(timeout=2)
+
+
+
+    def test_claim_request_writes_intent_before_mutation_and_blocks_replay(self):
+        # The Issue comments are the existing durable result sink, not a new DB.
+        comments = []
+        calls = []
+        def gh_fake(args, _contract):
+            if args[1] == "graphql":
+                return json.dumps({"data": {"repository": {"issue": {"comments": {
+                    "nodes": [{"body": body} for body in comments],
+                    "pageInfo": {"hasNextPage": False, "endCursor": None},
+                }}}}})
+            if args[1].endswith("/comments"):
+                comments.append(args[-1][len("body="):])
+                return '{"id":1}'
+            raise AssertionError(args)
+        def claim(req, ctr):
+            return receiver.claim_request_before_mutation(req, ctr, gh_fn=gh_fake)
+        def execute(req, _ctr):
+            calls.append(req["id"])
+            return {"REQUEST_ID": req["id"], "READBACK": req["value"],
+                    "MUTATION_PERFORMED": "YES"}
+        server = ThreadingHTTPServer(
+            ("127.0.0.1", 0),
+            receiver.make_handler(
+                CONTRACT, secret=b"delivery-secret", execute_fn=execute,
+                publish_fn=lambda *_: "PUBLISHED", claim_fn=claim,
+                now_fn=lambda: 1700000000,
+            ),
+        )
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            def post(payload):
+                body = json.dumps(payload, separators=(",", ":")).encode()
+                return urllib.request.Request(
+                    f"http://127.0.0.1:{server.server_port}{receiver.RECEIVER_PATH}",
+                    data=body, method="POST", headers=signed_headers(body),
+                )
+            with urllib.request.urlopen(post(request_payload()), timeout=3) as response:
+                self.assertEqual(response.status, 200)
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(len(comments), 1)
+            self.assertIn("gace-project-control-intent:", comments[0])
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                urllib.request.urlopen(post(request_payload()), timeout=3)
+            self.assertEqual(error.exception.code, 409)
+            self.assertEqual(json.loads(error.exception.read())["error"],
+                             "REQUEST_REPLAY_OR_IN_DOUBT")
+            self.assertEqual(len(calls), 1)
+            # A newer, genuinely distinct request is permitted.
+            newer = request_payload()
+            newer["id"] = "gpc_aaaaaaaaaaaaaaaaaaaaaaaa"
+            newer["value"] = "NEXT_GATE"
+            with urllib.request.urlopen(post(newer), timeout=3) as response:
+                self.assertEqual(response.status, 200)
+            self.assertEqual(len(calls), 2)
+            # After the newer operation, replay of the old id still fails closed.
+            with self.assertRaises(urllib.error.HTTPError) as old:
+                urllib.request.urlopen(post(request_payload()), timeout=3)
+            self.assertEqual(old.exception.code, 409)
+            self.assertEqual(len(calls), 2)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+    def test_claim_history_scans_beyond_last_100_and_rejects_old_request(self):
+        request = request_payload()
+        pages = []
+        posts = []
+        old_marker = f"<!-- gace-project-control-intent:{request['id']} -->"
+        def gh_fake(args, _contract):
+            if args[1] != "graphql":
+                posts.append(args)
+                raise AssertionError("must not claim replay")
+            cursor_arg = [a for a in args if a.startswith("cursor=")]
+            pages.append(cursor_arg)
+            if not cursor_arg:
+                # Exactly 100 prior comments; the old id is in an older page.
+                nodes = [{"body": f"unrelated {i}"} for i in range(100)]
+                more, cursor = True, "page2"
+            else:
+                self.assertEqual(cursor_arg, ["cursor=page2"])
+                nodes = [{"body": old_marker}]
+                more, cursor = False, None
+            return json.dumps({"data": {"repository": {"issue": {"comments": {
+                "nodes": nodes,
+                "pageInfo": {"hasNextPage": more, "endCursor": cursor},
+            }}}}})
+        with self.assertRaisesRegex(receiver.ReceiverError, "REQUEST_REPLAY_OR_IN_DOUBT"):
+            receiver.claim_request_before_mutation(request, CONTRACT, gh_fn=gh_fake)
+        self.assertEqual(len(pages), 2)
+        self.assertEqual(posts, [])
+
+    def test_claim_history_fails_closed_on_bad_pagination(self):
+        def gh_fake(args, _contract):
+            self.assertEqual(args[1], "graphql")
+            return json.dumps({"data": {"repository": {"issue": {"comments": {
+                "nodes": [], "pageInfo": {"hasNextPage": True, "endCursor": None},
+            }}}}})
+        with self.assertRaisesRegex(receiver.ReceiverError, "REQUEST_HISTORY_PAGINATION_INVALID"):
+            receiver.claim_request_before_mutation(request_payload(), CONTRACT, gh_fn=gh_fake)
+
+    def test_claim_post_ack_lost_does_not_execute_on_retry(self):
+        # The POST may persist an intent and then lose its HTTP acknowledgement.
+        comments = []
+        call_count = []
+        def gh_fake(args, _contract):
+            if args[1] == "graphql":
+                return json.dumps({"data": {"repository": {"issue": {"comments": {
+                    "nodes": [{"body": c} for c in comments],
+                    "pageInfo": {"hasNextPage": False, "endCursor": None},
+                }}}}})
+            if args[1].endswith("/comments"):
+                comments.append(args[-1][len("body="):])
+                from github_project_control import ControlError
+                raise ControlError("GH_COMMAND_TIMEOUT")
+            raise AssertionError(args)
+        def claim(req, ctr):
+            return receiver.claim_request_before_mutation(req, ctr, gh_fn=gh_fake)
+        server = ThreadingHTTPServer(
+            ("127.0.0.1", 0),
+            receiver.make_handler(
+                CONTRACT, secret=b"delivery-secret", claim_fn=claim,
+                execute_fn=lambda *_: call_count.append("executed"),
+                publish_fn=lambda *_: "PUBLISHED", now_fn=lambda: 1700000000,
+            ),
+        )
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            body = json.dumps(request_payload(), separators=(",", ":")).encode()
+            req = urllib.request.Request(
+                f"http://127.0.0.1:{server.server_port}{receiver.RECEIVER_PATH}",
+                data=body, method="POST", headers=signed_headers(body),
+            )
+            with self.assertRaises(urllib.error.HTTPError) as first:
+                urllib.request.urlopen(req, timeout=3)
+            self.assertEqual(first.exception.code, 503)
+            with self.assertRaises(urllib.error.HTTPError) as retry:
+                urllib.request.urlopen(req, timeout=3)
+            self.assertEqual(retry.exception.code, 409)
+            self.assertEqual(call_count, [])
+            self.assertEqual(len(comments), 1)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
 
 
 if __name__=="__main__":

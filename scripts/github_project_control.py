@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import fcntl
+from contextlib import contextmanager
 import json
 import os
 import re
@@ -368,6 +369,29 @@ def execute(request, contract):
     }
 
 
+
+@contextmanager
+def project_control_lock():
+    """Serialize callers sharing one filesystem namespace and lock path."""
+    lock_path = Path(os.environ.get(
+        "GACE_PROJECT_CONTROL_LOCK",
+        str(Path.home() / ".cache" / "gace" / "github-project-control.lock"),
+    ))
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        with lock_path.open("a+", encoding="utf-8") as lock_file:
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                fail("PROJECT_CONTROL_BUSY")
+            try:
+                yield
+            finally:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+    except OSError:
+        fail("PROJECT_CONTROL_LOCK_UNAVAILABLE")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Bounded GitHub Project #1 field mutation with exact readback")
     parser.add_argument("--request", required=True)
@@ -391,16 +415,7 @@ def main():
             })
             return 0
 
-        lock_path = Path(os.environ.get(
-            "GACE_PROJECT_CONTROL_LOCK",
-            str(Path.home() / ".cache" / "gace" / "github-project-control.lock"),
-        ))
-        lock_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-        with lock_path.open("a+", encoding="utf-8") as lock_file:
-            try:
-                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError:
-                fail("PROJECT_CONTROL_BUSY")
+        with project_control_lock():
             result_lines(execute(request, contract))
             return 0
     except ControlError as exc:
