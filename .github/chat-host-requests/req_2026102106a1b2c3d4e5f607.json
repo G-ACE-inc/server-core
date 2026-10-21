@@ -1,0 +1,33 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "authorized_admin2_ssh_key_registration",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "bfd021802f55bcfd3ce88a781f1e75eecd355a1a",
+    "repo_sha": "bfd021802f55bcfd3ce88a781f1e75eecd355a1a",
+    "command": "set -eu\nif [ \"$(id -u)\" -eq 0 ]; then SUDO=''; else SUDO='sudo -n'; fi\n$SUDO bash <<'ADMIN2_KEY_SETUP'\nset -eu\ngetent passwd admin1 >/dev/null\nif getent passwd admin2 >/dev/null; then echo ADMIN2_ACCOUNT=EXISTS; else useradd -m -s /bin/bash admin2; echo ADMIN2_ACCOUNT=CREATED; fi\nh=$(getent passwd admin2 | cut -d: -f6)\n[ \"$h\" = /home/admin2 ] || { echo ADMIN2_HOME_UNEXPECTED; exit 30; }\n[ ! -L \"$h\" ] && [ ! -L \"$h/.ssh\" ] && [ ! -L \"$h/.ssh/authorized_keys\" ] || { echo ADMIN2_SYMLINK_REFUSED; exit 31; }\nfor g in $(id -nG admin1); do\n  if [ \"$g\" != admin1 ] && getent group \"$g\" >/dev/null; then usermod -aG \"$g\" admin2; fi\ndone\ngrp=$(id -gn admin2)\ninstall -d -m 700 -o admin2 -g \"$grp\" \"$h/.ssh\"\nauth=\"$h/.ssh/authorized_keys\"\n[ -e \"$auth\" ] || install -m 600 -o admin2 -g \"$grp\" /dev/null \"$auth\"\npub='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMa5pDFPDoQoRARKZIsitJHNUtj3lT/b1vY3Xi8l/8br contabo-admin2-recovery-20261021'\nif grep -Fqx \"$pub\" \"$auth\"; then echo ADMIN2_KEY=ALREADY_PRESENT; else printf '\\n%s\\n' \"$pub\" >> \"$auth\"; echo ADMIN2_KEY=ADDED; fi\nchown admin2:\"$grp\" \"$h/.ssh\" \"$auth\"\nchmod 700 \"$h/.ssh\"\nchmod 600 \"$auth\"\nprintf 'ADMIN2_GROUPS='; id -nG admin2\necho ADMIN2_KEY_INSTALL=PASS\nADMIN2_KEY_SETUP"
+  }
+}
