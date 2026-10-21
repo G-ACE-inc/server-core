@@ -1,0 +1,33 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "bfd021802f55bcfd3ce88a781f1e75eecd355a1a",
+    "repo_sha": "bfd021802f55bcfd3ce88a781f1e75eecd355a1a",
+    "command": "cd /home/admin1/server-core || exit 12\nprintf 'HOST=%s\\n' \"$(hostname)\"\nprintf 'CURRENT_USER=%s\\n' \"$(id -un)\"\nprintf 'ADMIN1_GROUPS='; id -nG admin1 2>/dev/null || true\nprintf 'ADMIN2_ACCOUNT='; getent passwd admin2 || echo NOT_FOUND\nprintf 'ADMIN2_GROUPS='; id -nG admin2 2>/dev/null || echo NOT_FOUND\nfor p in /home/admin2 /home/admin2/.ssh /home/admin2/.ssh/authorized_keys; do if test -e \"$p\"; then stat -c 'PATH=%n OWNER=%U:%G PERM=%a TYPE=%F' \"$p\"; else printf 'PATH_MISSING=%s\\n' \"$p\"; fi; done\nif test -r /home/admin2/.ssh/authorized_keys; then printf 'AUTHORIZED_KEYS_COUNT='; grep -Ec '^(ssh-|ecdsa-|sk-)' /home/admin2/.ssh/authorized_keys || true; ssh-keygen -lf /home/admin2/.ssh/authorized_keys 2>/dev/null || true; fi\nfor d in /home/admin2/.ssh /home/admin1/.ssh; do if test -d \"$d\"; then find \"$d\" -maxdepth 1 -type f \\( -name 'id_*' -o -name '*.pem' -o -name '*.ppk' \\) -printf 'KEY_CANDIDATE=%p OWNER=%u MODE=%m\\n' 2>/dev/null; fi; done\nprintf 'SSHD_BINARY='; command -v sshd || true"
+  }
+}
