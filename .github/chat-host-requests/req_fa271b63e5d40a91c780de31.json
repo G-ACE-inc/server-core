@@ -1,0 +1,35 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/Libral-Vault/commit/3e0c06d81257fbbe8a35f024a5916f3b96f1e95e"
+  },
+  "server_command_id": "",
+  "run_id": "",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/Libral-Vault",
+    "repo_sha": "3e0c06d81257fbbe8a35f024a5916f3b96f1e95e",
+    "expected_sha": "bfd021802f55bcfd3ce88a781f1e75eecd355a1a",
+    "command": "cd /home/admin1/projects/libral-vault || exit 31\nprintf 'VAULT_HEAD='; git rev-parse HEAD\nprintf 'VAULT_STATUS='; docker inspect --format '{{.State.Status}}/{{if .State.Health}}{{.State.Health.Status}}{{end}}' libral-vault-libral-vault-1\nprintf 'TUNNEL_STATUS='; docker inspect --format '{{.State.Status}}/{{.State.ExitCode}}' astera_v8-astera-v8-cloudflared-1\nprintf 'SHARE='; stat -c '%a/%u:%g' /run/user/1000/astera-v8-tunnel-vault\nprintf 'TMPFS='; stat -f -c '%T' /run/user/1000/astera-v8-tunnel-vault\nprintf 'TARGET='; test -e /run/user/1000/astera-v8-tunnel-vault/astera_v8_cloudflare_tunnel_token && echo PRESENT || echo MISSING\nprintf 'CONFIG_FLAGS='; docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' libral-vault-libral-vault-1 | awk -F= '/^LIBRAL_VAULT_ASTERA_V8_TUNNEL_(SECRET_ID|RUNTIME_DIR)=/{print $1\"=SET\"}'"
+  }
+}
