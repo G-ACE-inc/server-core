@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -146,8 +147,8 @@ def validate_request(value, contract):
                 "repository": repo, "service": service, "operation": operation,
                 "argv": argv, "tail": tail}
     if command_id == "host.command":
-        if set(value) not in ({"schema", "id", "command_id", "expected_sha", "repository", "repo_sha", "command"},
-                              {"schema", "id", "command_id", "expected_sha", "repository", "repo_sha", "command", "source_preflight"}):
+        required = {"schema", "id", "command_id", "expected_sha", "repository", "repo_sha", "command"}
+        if not required <= set(value) or set(value) - required - {"source_preflight", "command_sha256"}:
             fail("HOST_COMMAND_KEYS_INVALID", 422)
         repository, command = value["repository"], value["command"]
         repo_sha = value["repo_sha"]
@@ -157,6 +158,14 @@ def validate_request(value, contract):
             fail("HOST_COMMAND_TARGET_INVALID", 422)
         if "source_preflight" in value and value["source_preflight"] is not True:
             fail("HOST_SOURCE_PREFLIGHT_INVALID", 422)
+        # New senders bind the exact UTF-8 command before Gateway normalization.
+        # Keep old authenticated deliveries compatible; never repair/re-encode a mismatch.
+        if "command_sha256" in value:
+            digest = value["command_sha256"]
+            if not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest):
+                fail("HOST_COMMAND_DIGEST_INVALID", 422)
+            if hashlib.sha256(command.encode("utf-8")).hexdigest() != digest:
+                fail("HOST_COMMAND_TRANSPORT_CHANGED", 422)
         return {"id": req_id, "command_id": command_id, "expected_sha": expected_sha,
                 "repository": repository, "repo_sha": repo_sha, "command": command,
                 "source_preflight": value.get("source_preflight") is True}

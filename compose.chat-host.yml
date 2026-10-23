@@ -1,0 +1,44 @@
+# Existing common CHAT infrastructure; no product services or AI workers.
+services:
+  receiver:
+    image: ${GACE_CHAT_HOST_IMAGE:?Use the verified exact-source Receiver image}
+    container_name: server-core-bounded-host
+    init: true
+    user: "1000:1000"
+    environment:
+      GACE_BOUNDED_HOST_HMAC_KEY_FILE: /run/secrets/bounded-host-delivery
+      GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS: "300"
+    volumes:
+      - /run/gace:/run/gace:ro
+      - /home/admin1/server-core:/home/admin1/server-core:ro
+      - /home/admin1/.config/gace-bounded-host-hmac-key:/run/secrets/bounded-host-delivery:ro
+    networks: [gace-internal]
+    read_only: true
+    tmpfs: ["/tmp:size=32m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 64
+    mem_limit: 192m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; assert urllib.request.urlopen('http://127.0.0.1:8789/healthz',timeout=3).status == 200"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+  gateway-tunnel:
+    image: cloudflare/cloudflared:2026.7.2
+    container_name: server-core-gateway-tunnel
+    command: [tunnel, --no-autoupdate, run, --token-file, /run/secrets/tunnel-token]
+    network_mode: host
+    user: "1000:1000"
+    volumes:
+      - /home/admin1/.config/gace-gateway-tunnel-token:/run/secrets/tunnel-token:ro
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 64
+    mem_limit: 192m
+    restart: unless-stopped
+networks:
+  gace-internal:
+    external: true

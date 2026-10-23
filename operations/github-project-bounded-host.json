@@ -58,7 +58,9 @@
     "service_deploy_admission": "Fixed registered repository/service only via separately Host-admitted UNIX socket writer (/run/gace/servercore-service-deploy.sock); Receiver has no Docker authority. Authority comes from operations/master-internal-repositories.json deploy entries, never from docker ps or log registration.",
     "file_inspect_admission": "Exact registered_files only (no globs/traversal/symlinks), one 2400-byte chunk per request via offset; canonical master-internal registry is intentionally NOT registered.",
     "docker_logs_admission": "Only containers in registered_log_containers via separately admitted Host UNIX socket /run/gace/servercore-docker-logs.sock (fixed `docker logs --tail N --timestamps`, tail<=200); Receiver has no Docker authority; authority is the committed contract only. Adding another project's container requires an explicit reviewed contract change.",
-    "docker_operation_admission": "Existing privileged Host service-deploy UNIX socket only. Protected master-internal registry restricts Compose service. No Docker socket inside isolated dev.job. Read-only status/log/stats and registered container exec/start/stop/restart/up only; existing service.deploy remains build/update route. Each write result is durable/idempotent by request ID."
+    "docker_operation_admission": "Existing privileged Host service-deploy UNIX socket only. Protected master-internal registry restricts Compose service. No Docker socket inside isolated dev.job. Read-only status/log/stats and registered container exec/start/stop/restart/up only; existing service.deploy remains build/update route. Each write result is durable/idempotent by request ID.",
+    "ordinary_gpt_chat_route": "Only host.command and isolated dev.job via server-core common Actions. Other allowed_command_ids are compatibility receivers, not the ordinary CHAT command menu.",
+    "host_command_transport_integrity": "New Sender binds exact UTF-8 command_sha256; Receiver rejects changed command before execution. Preserve destination data and secret-safe logs."
   },
   "result_return": {
     "kind": "github_issue_comment",

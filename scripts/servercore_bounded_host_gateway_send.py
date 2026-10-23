@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Submit bounded Host requests through the existing Generic Internal Event API."""
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -116,7 +117,8 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, refle
             raise SendError("HOST_COMMAND_TARGET_INVALID")
         if not isinstance(repo_sha, str) or not SHA_PATTERN.fullmatch(repo_sha):
             raise SendError("HOST_COMMAND_REPO_SHA_INVALID")
-        request.update({"repository": repository, "repo_sha": repo_sha, "command": host_command})
+        request.update({"repository": repository, "repo_sha": repo_sha, "command": host_command,
+                        "command_sha256": hashlib.sha256(host_command.encode("utf-8")).hexdigest()})
         if source_preflight is True:
             request["source_preflight"] = True
     elif host_command is not None or source_preflight:
@@ -257,6 +259,8 @@ def main():
     except SendError as exc:
         print(json.dumps({"state": "FAIL", "failure_class": str(exc)}, sort_keys=True))
         print(f"SERVERCORE_BOUNDED_HOST_GATEWAY={exc}")
+        if str(exc).startswith("GATEWAY_HTTP_"):
+            print("CHAT_NEXT_ACTION=RESTORE_COMMON_GATEWAY_INGRESS_NOT_REPO_PERMISSIONS")
         return 1
 
 

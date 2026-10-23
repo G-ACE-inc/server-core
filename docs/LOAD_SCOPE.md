@@ -24,6 +24,8 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 
 **Development procedure owner:** `docs/G_ACE_WORKSPACE.md` §6. Use the owning GitHub Project/CU Current and the necessary Source, design and evidence; reload changed information, not the entire active Rule #17 profile each turn. Master owns product intent and material protected-impact decisions; AI owns routine technical choices and execution. Verify against Mission and adopted design at meaningful change points; record substantive decisions in existing Notion minutes and executable state in GitHub Current only when needed for accurate continuation. Neither verification nor recording is a completion or stopping gate.
 
+**GPT CHAT delegation boundary:** Starting another server AI, coding agent or AI review always needs Master's explicit permission for that individual purpose/scope. General technical autonomy and efficiency do not grant it. Ordinary common Host shell commands and deterministic CI remain directly usable within actual admission.
+
 **Server execution:** the existing server-core CHAT → Actions → Gateway → Receiver → Host `host.command` path with AI-authored commands, subject to actual Issue #10 admission. `dev.job` is for isolated tests. Do not assume all repositories have deploy admission. For a genuinely necessary Master terminal handoff use `docs/MASTER_TERMINAL_COMMAND.md`.
 
 ### Integrated G-ACE mission routing

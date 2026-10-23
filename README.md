@@ -104,6 +104,8 @@ Ordinary CHAT Host work uses the [common ServerTerminal route](docs/GITHUB_PROJE
 
 Fresh native CHAT adoption requires real conversations and their own Current/request/Run/result evidence; see the [existing native CHAT test](docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md#通常chatの開始別chat実測手順). A server executor cannot manufacture those conversations. Incomplete ZERO index coverage cannot prove absence of client failures.
 
+Common CHAT Receiver and existing Gateway Tunnel residency/restart recovery are defined in [`compose.chat-host.yml`](compose.chat-host.yml); command-integrity and GPT-only delegation boundaries are in the [Host route](docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md) and Work Routine §6.
+
 ## Runtime and approval boundaries
 
 [SERVER_CORE_PROTOCOL](SERVER_CORE_PROTOCOL.md) owns shared authorization; Work Routine §6 owns decision delegation. Routine approved technical work does not acquire a new Master gate merely because it is a merge or restart. Protected intent, irreversible data, Secret/provider/public effects and explicit Current gates still require their actual authority. Never forge a receipt, widen Host access or infer delegation from Project membership.

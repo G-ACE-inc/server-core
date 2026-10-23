@@ -25,6 +25,29 @@ CONTRACT = {
 
 
 class GatewaySendTests(unittest.TestCase):
+    def test_long_unicode_command_is_bound_before_transport(self):
+        contract = {**CONTRACT, "allowed_command_ids": ["host.command"]}
+        command = "# 自由コマンド\n" + "x" * 6000 + "\nprintf '%s' '保持'\n"
+        request = sender.validate_cli("host.command", "a" * 40, contract,
+                                      repository="G-ACE-inc/server-core", repo_sha="a" * 40,
+                                      host_command=command)
+        admitted = receiver.validate_request(request, contract)
+        self.assertEqual(admitted["command"], command)
+        for changed in (command[:4000], command.replace("保持", "置換")):
+            with self.subTest(change=len(changed)):
+                with self.assertRaisesRegex(receiver.ReceiverError, "HOST_COMMAND_TRANSPORT_CHANGED"):
+                    receiver.validate_request({**request, "command": changed}, contract)
+
+    def test_invalid_command_digest_is_rejected(self):
+        contract = {**CONTRACT, "allowed_command_ids": ["host.command"]}
+        request = sender.validate_cli("host.command", "a" * 40, contract,
+                                      repository="G-ACE-inc/server-core", repo_sha="a" * 40,
+                                      host_command="printf ok")
+        for digest in (None, [], "private error text", "a" * 63):
+            with self.subTest(digest=digest):
+                with self.assertRaisesRegex(receiver.ReceiverError, "HOST_COMMAND_DIGEST_INVALID"):
+                    receiver.validate_request({**request, "command_sha256": digest}, contract)
+
     # Regression: CLI parameter order must never change the selected Host command.
     def test_cli_host_command_does_not_shift_into_dev_job_arguments(self):
         from unittest.mock import patch

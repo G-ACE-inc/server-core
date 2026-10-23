@@ -34,6 +34,8 @@ README.md
 - `.github/`
   - GitHub Actions / Dependabot / Issue/PR support
   - `copilot-instructions.md` はGitHub Copilot向けSERVER_AI最小bootstrap
+- `compose.chat-host.yml`
+  - Existing common CHAT Receiver and Gateway Tunnel Compose recovery; exact verified Receiver image, private Secret-file injection, restart policy
 - `Dockerfile.project-control`
   - bounded GitHub Project Control receiver image
 - `Dockerfile.project-control.dockerignore`

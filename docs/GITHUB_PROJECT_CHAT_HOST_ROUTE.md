@@ -67,3 +67,11 @@ private CIのRun IDが未取得なら、同じ元Host識別子に`--recover-priv
 同じ結果の再公開要求では、既存publisherもこのprivate読取器を使い、元Writer由来の期待bytes/chars/SHAと既存Artifactを全バイト照合する。既に検証できた場合は`PRIVATE_ARTIFACT_ALREADY_VERIFIED`と元のRun/Artifact IDを返し、release・CI・Artifactを追加しない。欠落または全て期限切れの場合だけ保存済み結果を再公開する。曖昧さ、権限、破損、Source照合失敗から新規公開へfallbackしない。期限切れの複製は有効候補に数えず、有効な候補同士は日時で選ばない。再公開と元Hostコマンドの再実行は別であり、後者を自動発行しない。
 
 実行依頼のファイル形式、必要な署名・認証・SHA・登録Repo制約は既存の実装と `operations/github-project-bounded-host.json` に従う。結果は既存ActionsとHost返却で確認する。失敗時は原因を修正して作業を続ける。通常CHATでの新たなMaster承認は要求しない。
+
+## 自由コマンドの完全性と稼働復旧
+
+通常CHATは `host.command` / 隔離検証の `dev.job` のみを使用する。機械契約に残る互換固定コマンドは通常Actionsの選択肢ではない。自由コマンドを短く言い換えたり、圧縮・base64で伝送障害を回避しない。Senderは元のUTF-8本文の `command_sha256` を付け、Receiverは実行前に照合する。不一致は `HOST_COMMAND_TRANSPORT_CHANGED` で拒否し、壊れた本文を実行しない。既存の署名・登録Repo・SHA照合とログ秘匿は維持する。旧認証済み配送は互換受付するため、新Senderの反映と実際の長文到達証拠を別に確認する。
+
+`GATEWAY_HTTP_*` はGateway公開入口・認証・到達性を実ステータスで確認し、対象Repo権限不足と混同しない。Receiverと既存Tunnelの常駐は `compose.chat-host.yml` に定義し、再起動は `unless-stopped`。Tunnelは既存のDNS/remote configを再利用し、Secret fileを読取専用で注入する。新しい公開Host、固定コマンド一覧、AI常駐botは追加しない。
+
+CHATから別AIへの調査・実装・レビュー委任は、Masterの対象/目的/範囲への個別事前許可が必要。通常の自由Shell実行はAI委任ではない。Rule #17とWork Routine §6を適用し、サーバーAI用Rule #16へCHAT手順を追加しない。
