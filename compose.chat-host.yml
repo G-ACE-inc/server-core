@@ -32,7 +32,10 @@ services:
     network_mode: host
     user: "1000:1000"
     volumes:
-      - /home/admin1/.config/gace-gateway-tunnel-token:/run/secrets/tunnel-token:ro
+      - type: bind
+        source: /home/admin1/.config/gace-gateway-tunnel-token
+        target: /run/secrets/tunnel-token
+        read_only: true
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
