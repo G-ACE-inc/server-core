@@ -16,6 +16,9 @@ PREFIX = ".github/chat-host-requests/"
 REQUEST = re.compile(r"^[.]github/chat-host-requests/req_[a-f0-9]{24}[.]json$")
 TARGET = Path("/tmp/gace-common-host-request.json")
 LEGACY_TARGET = ".github/chatgpt-live-api-target.json"
+# Leave headroom for JSON escaping/envelope and generated source preflight
+# within the Receiver's 1 MiB request boundary; never slice command text.
+MAX_REQUEST_FILE_BYTES = 262144
 
 def select(added, changed):
     candidates = [p for p in changed if p.startswith(PREFIX)]
@@ -122,8 +125,10 @@ def bind_source_context(bounded, context):
 
 
 def prepare(path):
-    if path.is_symlink() or not path.is_file() or path.stat().st_size > 8192:
+    if path.is_symlink() or not path.is_file():
         raise ValueError("REQUEST_FILE_INVALID")
+    if path.stat().st_size > MAX_REQUEST_FILE_BYTES:
+        raise ValueError("REQUEST_FILE_TOO_LARGE")
     data = json.loads(path.read_text(encoding="utf-8"))
     return prepare_data(data)
 

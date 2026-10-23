@@ -75,3 +75,5 @@ private CIのRun IDが未取得なら、同じ元Host識別子に`--recover-priv
 `GATEWAY_HTTP_*` はGateway公開入口・認証・到達性を実ステータスで確認し、対象Repo権限不足と混同しない。Receiverと既存Tunnelの常駐は `compose.chat-host.yml` に定義し、再起動は `unless-stopped`。Tunnelは既存のDNS/remote configを再利用し、Secret fileを読取専用で注入する。新しい公開Host、固定コマンド一覧、AI常駐botは追加しない。
 
 CHATから別AIへの調査・実装・レビュー委任は、Masterの対象/目的/範囲への個別事前許可が必要。通常の自由Shell実行はAI委任ではない。Rule #17とWork Routine §6を適用し、サーバーAI用Rule #16へCHAT手順を追加しない。
+
+要求票ファイルには旧8KiB制限を適用しない。Selectorは256KiBまでをそのまま読み、超過は `REQUEST_FILE_TOO_LARGE` と明示拒否する。Receiverの1MiB配送境界へJSONエスケープやSource前処理の余地を残す保護であり、コマンド本文を切り詰めない。

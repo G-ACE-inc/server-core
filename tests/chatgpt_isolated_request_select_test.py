@@ -15,6 +15,21 @@ BASE = {"bounded_host_request": {"enabled": True, "command_id": "project.git_hea
         "gitops_request": {"enabled": False}, "source_reflect_request": {"enabled": False}}
 
 class IsolatedRequests(unittest.TestCase):
+    def test_long_unicode_request_is_not_rejected_by_legacy_8k_limit(self):
+        source = {**BASE, "bounded_host_request": {
+            "enabled": True, "command_id": "host.command",
+            "repository": "G-ACE-inc/server-core", "expected_sha": "a" * 40,
+            "repo_sha": "a" * 40, "command": "#" + "日本語" * 2200 + "\nprintf ok\n"}}
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "request.json"
+            path.write_text(json.dumps(source, ensure_ascii=False))
+            self.assertGreater(path.stat().st_size, 8192)
+            self.assertEqual(m.prepare(path)["bounded_host_request"]["command"],
+                             source["bounded_host_request"]["command"])
+            path.write_text(" " * (m.MAX_REQUEST_FILE_BYTES + 1))
+            with self.assertRaisesRegex(ValueError, "REQUEST_FILE_TOO_LARGE"):
+                m.prepare(path)
+
     def test_separate_commit_request(self):
         self.assertEqual(str(m.select([P], [P])), P)
         self.assertIsNone(m.select([], ["README.md"]))
