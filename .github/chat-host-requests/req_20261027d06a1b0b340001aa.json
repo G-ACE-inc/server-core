@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read-only DebugAI owning Host parent and nested worktree preflight against Current #41 / PR #115, no AI or runtime mutation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d10896e6f629769deb16db85abe01f48af274392",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "d10896e6f629769deb16db85abe01f48af274392",
+    "command": "set -eu\np=/home/admin1/projects/debug-ai\nprintf 'SC_HOST_HEAD='; git -C /home/admin1/server-core rev-parse HEAD\nprintf 'DEBUGAI_REALPATH='; realpath \"$p\"\nprintf 'DEBUGAI_HEAD='; git -C \"$p\" rev-parse HEAD\nprintf 'DEBUGAI_BRANCH='; git -C \"$p\" branch --show-current\nprintf 'DEBUGAI_DIRTY='; if test -z \"$(git -C \"$p\" status --porcelain)\"; then echo NO; else echo YES; fi\nprintf 'DEBUGAI_WORKTREES='; git -C \"$p\" worktree list --porcelain | awk '/^worktree / {print $2}'\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
