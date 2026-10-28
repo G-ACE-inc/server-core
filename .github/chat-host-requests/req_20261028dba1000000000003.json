@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI controlled one-time same-run Causal Scout recovery after material evidence projection fix; reuse persisted Code Scout; model-driven product E2E",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,urllib.request,urllib.error\nrid=\"run_mv5agtgf_96b706c70a\"\nbase=\"http://127.0.0.1:8787\"\ndef get(path):\n    with urllib.request.urlopen(base+path,timeout=15) as f:return json.load(f)\nprint(\"DEBUGAI_SAME_RUN_RECOVERY_BEGIN\")\ns=get(\"/v1/status/\"+rid)\nd=s.get(\"durable\") or {}; cursor=d.get(\"workflow_cursor\") or {}\nprint(\"PRE_RUN_ID=\"+rid)\nprint(\"PRE_JOB=\"+str(d.get(\"job_status\")))\nprint(\"PRE_STEP=\"+str(cursor.get(\"step_id\")))\nprint(\"PRE_PHASE=\"+str(cursor.get(\"step_phase\")))\nprint(\"PRE_GENERATION=\"+str(d.get(\"generation\")))\nf=d.get(\"last_execution_failure\") or {}\nprint(\"PRE_FAILURE_CODE=\"+str(f.get(\"code\")))\nprint(\"PRE_FAILURE_ROLE=\"+str(f.get(\"role\")))\neligible=(d.get(\"job_status\")==\"BLOCKED\" and cursor.get(\"step_id\")==\"CAUSAL_SCOUT\" and cursor.get(\"step_phase\")==\"BLOCKED\" and f.get(\"code\")==\"AI_CORE_TIMEOUT\" and f.get(\"role\")==\"causal_scout\" and type(d.get(\"generation\")) is int)\nif not eligible:\n    print(\"RECOVERY=NOT_EXECUTED_INELIGIBLE_STATE\")\nelse:\n    body={\"runId\":rid,\"recovery\":{\"expected_generation\":d[\"generation\"],\"expected_step\":\"CAUSAL_SCOUT\",\"failure_code\":\"AI_CORE_TIMEOUT\"}}\n    req=urllib.request.Request(base+\"/v1/runs/resume\",data=json.dumps(body).encode(\"utf-8\"),headers={\"Content-Type\":\"application/json\"},method=\"POST\")\n    try:\n        with urllib.request.urlopen(req,timeout=20) as f:\n            result=json.load(f)\n            print(\"RECOVERY_HTTP=\"+str(f.status))\n        print(\"RECOVERY_STATE=\"+str(result.get(\"state\")))\n        print(\"RECOVERY_RUN_ID=\"+str(result.get(\"run_id\")))\n        print(\"RECOVERY_DUPLICATE_SUPPRESSED=\"+str(result.get(\"duplicate_resume_suppressed\")))\n    except urllib.error.HTTPError as e:\n        print(\"RECOVERY_HTTP=\"+str(e.code))\n        try:\n            v=json.loads(e.read(2048))\n            print(\"RECOVERY_REJECTION_CODE=\"+str(v.get(\"code\")))\n        except Exception:\n            print(\"RECOVERY_REJECTION_CODE=UNAVAILABLE\")\nprint(\"DEBUGAI_SAME_RUN_RECOVERY_END\")\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
