@@ -251,3 +251,5 @@ client and exact Host revision comparison; it cannot approve/apply/deploy.
 - `docs/WORKSPACE_MCP.md`: optional product MCP registration plus explicitly historical qualification; the former shared DebugAI fixed-command catalog is retired.
 
 Do not copy delegation policy or changing Runtime/Current into this navigation index. DebugAI retains its product-specific implementation; common Host execution stays server-core-owned.
+
+- `tests/servercore_host_dependency_test.py` — common Receiver socket readiness, false-healthy rejection, transient/sustained-loss recovery regression tests.

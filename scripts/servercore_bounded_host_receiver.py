@@ -5,7 +5,9 @@ import json
 import os
 import re
 import socket
+import stat
 import sys
+import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -480,6 +482,55 @@ def result_record(request_id, command_id, expected_sha, state, exit_code, host_s
     }
 
 
+def host_dependency_status(paths=None):
+    """Probe fixed local RPC listeners without dispatching a command or writing a result.
+
+    Empty objects are rejected by both protocols before execution/persistence.
+    Reading the bounded reply avoids broken-pipe noise from connect-only probes.
+    """
+    paths = paths or {"host_writer": DEPLOY_SOCKET, "result_sink": RESULT_SOCKET}
+    status = {}
+    for name, path in paths.items():
+        status[name] = False
+        try:
+            if not stat.S_ISSOCK(Path(path).lstat().st_mode):
+                continue
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+                client.settimeout(1)
+                client.connect(str(path))
+                client.sendall(b"{}\n")
+                with client.makefile("rb") as stream:
+                    raw = stream.readline(4097)
+                if len(raw) > 4096 or not raw.endswith(b"\n"):
+                    continue
+                reply = json.loads(raw)
+                status[name] = isinstance(reply, dict) and type(reply.get("ok")) is bool
+        except (OSError, ValueError, TypeError):
+            pass
+    return status
+
+
+def watch_host_dependencies(server, stop, *, interval=5, grace_seconds=60,
+                            ready=None, monotonic=time.monotonic):
+    """Exit this Receiver after sustained dependency loss; Docker rebinds /run/gace.
+
+    Socket services can legitimately restart. A full grace window avoids flapping;
+    a replaced parent-directory bind otherwise stays stale indefinitely.
+    """
+    ready = ready or (lambda: all(host_dependency_status().values()))
+    failed_since = None
+    while not stop.wait(interval):
+        if ready():
+            failed_since = None
+        elif failed_since is None:
+            failed_since = monotonic()
+        elif monotonic() - failed_since >= grace_seconds:
+            server.host_dependency_shutdown = True
+            print("GACE_RECEIVER_DEPENDENCIES=UNAVAILABLE_REBIND_REQUIRED", flush=True)
+            server.shutdown()
+            return
+
+
 def make_handler(contract, *, delivery_key=None, now_fn=None):
     root = Path(contract.get("canonical_host_root") or bounded_host.CANONICAL_ROOT)
 
@@ -519,7 +570,12 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
             if self.path != HEALTH_PATH:
                 self.send_json(404, {"ok": False, "error": "NOT_FOUND"})
                 return
-            self.send_json(200, {"ok": True, "service": "servercore-bounded-host"})
+            dependencies = host_dependency_status()
+            ready = all(dependencies.values())
+            self.send_json(200 if ready else 503, {
+                "ok": ready, "service": "servercore-bounded-host", "dependencies": dependencies,
+                **({} if ready else {"error": "HOST_DEPENDENCIES_UNAVAILABLE"}),
+            })
 
         def do_POST(self):
             if self.path == CIPHER_PATH:
@@ -703,7 +759,16 @@ def main():
     contract = load_contract(args.contract)
     delivery_key = read_delivery_key(env_prefix="GACE_BOUNDED_HOST")
     server = ThreadingHTTPServer((args.host, args.port), make_handler(contract, delivery_key=delivery_key))
-    server.serve_forever()
+    stop = threading.Event()
+    server.host_dependency_shutdown = False
+    threading.Thread(target=watch_host_dependencies, args=(server, stop), daemon=True).start()
+    try:
+        server.serve_forever()
+    finally:
+        stop.set()
+        server.server_close()
+    if server.host_dependency_shutdown:
+        raise SystemExit("HOST_DEPENDENCIES_UNAVAILABLE")
 
 
 if __name__ == "__main__":

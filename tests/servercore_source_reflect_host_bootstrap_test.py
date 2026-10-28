@@ -37,6 +37,9 @@ class BootstrapTests(unittest.TestCase):
              patch.object(boot.pwd, "getpwnam", return_value=types.SimpleNamespace(pw_uid=1000)):
             return boot.preflight(SHA, "10001")
 
+    def test_shared_runtime_directory_survives_source_executor_restart(self):
+        self.assertIn("RuntimeDirectoryPreserve=yes", boot.unit_text("gace"))
+
     def test_preflight_pass(self):
         self.assertEqual(self.verify(), "gace")
 

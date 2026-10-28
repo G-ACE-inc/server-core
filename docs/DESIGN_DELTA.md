@@ -1119,3 +1119,13 @@ Change: CHAT must obtain individual explicit Master permission before other-AI e
 Evidence/reason: CU40 audit 2026-10-23 found stopped Receiver/Tunnel, four Gateway HTTP530 failures, one invalid receipt enum and automatic Codex PR-open reviews. Prior Source/CI success did not establish native CHAT adoption.
 
 Scope/rollback: GPT CHAT policy, common transport and existing infrastructure only; no SERVER_AI profile, product source or protected deploy authority change. Old authenticated deliveries remain compatible. Revert the Source change and restore the saved old Receiver if transport qualification fails; preserve Gateway destinations, existing DNS/config and all request IDs. Exact Source/CI/runtime outcomes and remaining external review-setting access are recorded in CU40 rather than inferred here.
+
+## 2026-10-28 — Common Receiver socket readiness and bind recovery
+
+Baseline: HTTP-only health returned200 even when Host Writer and Result Sink sockets were unavailable; unless-stopped alone did not repair a live Receiver's stale `/run/gace` directory bind.
+
+Observed failure: the two original events reached Receiver, failed503 DEPLOY_EXECUTOR_UNAVAILABLE eight times and became dead. Host and Receiver had different directory inodes; Receiver saw an empty old directory. Refreshing the mount restored both sockets. Existing authenticated Admin replay of the same delivery IDs then produced first Host execution, published PASS results and delivered200, retaining all prior attempts.
+
+Change: check both fixed local RPC listeners with an empty invalid-schema probe that dispatches/persists nothing; health returns503 when unavailable. After60seconds continuous loss, gracefully stop Receiver so its existing Compose policy remounts the current directory. Transient failures reset the grace window. Future Source-reflect installer units preserve the shared runtime directory. No additional listener, Docker authority in Receiver, model, agent, replay daemon or result store.
+
+Verification and rollback: focused tests and staged directory-replacement qualification, exact Source/CI/runtime evidence in CU40/#10. Previous Receiver image/container is retained for rollback; deployment does not re-execute original commands. The existing root-owned unit's preservation flag is separate Host admission and not inferred applied from Source.

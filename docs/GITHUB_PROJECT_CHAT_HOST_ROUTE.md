@@ -77,3 +77,13 @@ private CIのRun IDが未取得なら、同じ元Host識別子に`--recover-priv
 CHATから別AIへの調査・実装・レビュー委任は、Masterの対象/目的/範囲への個別事前許可が必要。通常の自由Shell実行はAI委任ではない。Rule #17とWork Routine §6を適用し、サーバーAI用Rule #16へCHAT手順を追加しない。
 
 要求票ファイルには旧8KiB制限を適用しない。Selectorは256KiBまでをそのまま読み、超過は `REQUEST_FILE_TOO_LARGE` と明示拒否する。Receiverの1MiB配送境界へJSONエスケープやSource前処理の余地を残す保護であり、コマンド本文を切り詰めない。
+
+## Hostソケットの見え方と結果未着の診断
+
+`ACCEPTED/QUEUED` の後に結果が無い場合、元のevent UUIDとwire request IDでGatewayのdelivery/outboxを追跡し、Receiverの実応答を確認する。202は配送・実行完了ではない。`DEPLOY_EXECUTOR_UNAVAILABLE` は共通Writer接続の障害であり、DebugAI処理失敗や対象Repo権限不足を推測しない。
+
+Hostの `/run/gace` とReceiver内の同pathは名前だけでなく実device/inodeとsocketの存在・応答を比較する。親directoryが作り直されると、既存bind mountは古い空directoryを参照し続ける。ReceiverのhealthzはWriterとResult SinkへのコマンドなしRPC probeを確認し、片方でも不通なら503。短い再起動を許容し、60秒継続して不通ならReceiver自身を終了し、既存Compose restart policyによってmountを再取得する。ReceiverへDocker権限や新しいAI/監視サービスは追加しない。
+
+Source-reflect installerのunitは共有runtime directoryを保持する設定とする。既設system unitの更新は既存のroot admissionが必要であり、Source変更だけで稼働設定更新済みとは扱わない。上記Receiverの回復はこのroot更新を前提としない。
+
+既存要求の回復は、元ID・保存済みpayload・Writer ledger・失敗段階を確認して判断する。今回のようにWriter到達前の配送失敗なら、既存Admin replayで同一deliveryを再開し、event/request IDとSHAを維持する。実行済みなら同じIDで保存済み結果を復元し、新しいIDでコマンドを再実行しない。過去の失敗Actionsを成功へ書き換えず、回収後の結果URLを元Runに相関して残す。

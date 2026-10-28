@@ -104,7 +104,7 @@ Ordinary CHAT Host work uses the [common ServerTerminal route](docs/GITHUB_PROJE
 
 Fresh native CHAT adoption requires real conversations and their own Current/request/Run/result evidence; see the [existing native CHAT test](docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md#通常chatの開始別chat実測手順). A server executor cannot manufacture those conversations. Incomplete ZERO index coverage cannot prove absence of client failures.
 
-Common CHAT Receiver and existing Gateway Tunnel residency/restart recovery are defined in [`compose.chat-host.yml`](compose.chat-host.yml); command-integrity and GPT-only delegation boundaries are in the [Host route](docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md) and Work Routine §6.
+The common Receiver health checks Host Writer and Result Sink RPC reachability; sustained dependency loss triggers a bounded self-restart to refresh stale socket-directory mounts. Common CHAT Receiver and existing Gateway Tunnel residency/restart recovery are defined in [`compose.chat-host.yml`](compose.chat-host.yml); command-integrity and GPT-only delegation boundaries are in the [Host route](docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md) and Work Routine §6.
 
 ## Runtime and approval boundaries
 

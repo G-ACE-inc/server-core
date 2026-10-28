@@ -53,6 +53,7 @@ jobs:
         run: |
           python3 -m py_compile scripts/gace_internal_delivery_auth.py scripts/servercore_bounded_host_receiver.py scripts/servercore_bounded_host_gateway_send.py scripts/github_project_bounded_host_transport_test.py scripts/github_project_bounded_host_runtime_config_test.py
           python3 scripts/github_project_bounded_host_transport_test.py
+          python3 -m unittest discover -s tests -p servercore_host_dependency_test.py -v
           python3 scripts/github_project_bounded_host_runtime_config_test.py
           docker build -f Dockerfile.bounded-host -t gace-server-core-bounded-host:ci .
       - name: Canonical Source reflect fail-closed tests
