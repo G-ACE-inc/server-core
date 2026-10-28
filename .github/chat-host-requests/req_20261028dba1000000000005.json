@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI actual one-time blocked Causal Scout recovery HTTP400 root reason and post-rejection durability, no retry",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,urllib.request\nrid=\"run_mv5agtgf_96b706c70a\"\nwith urllib.request.urlopen(\"http://127.0.0.1:8787/v1/status/\"+rid,timeout=10) as resp:\n    r=json.load(resp)\nd=r.get(\"durable\") or {}; c=d.get(\"workflow_cursor\") or {}; f=d.get(\"last_execution_failure\") or {}\nfor name,value in ((\"RUN\",r.get(\"run_id\")),(\"JOB\",d.get(\"job_status\")),(\"GENERATION\",d.get(\"generation\")),(\"ACTIVE\",d.get(\"active_in_process\")),(\"STEP\",c.get(\"step_id\")),(\"PHASE\",c.get(\"step_phase\")),(\"FAILURE\",f.get(\"code\")),(\"ERROR\",d.get(\"last_execution_error\")),(\"PROJECT_DIR\",r.get(\"project_dir\"))):\n    print(name+\"=\"+str(value))\nPY\necho DEBUGAI_RECOVERY_ERROR_CODES_BEGIN\ndocker logs --since '2026-10-28T05:11:00Z' --until '2026-10-28T05:16:00Z' debug-ai-debug-ai-1 2>&1 | grep -E 'DebugAI HTTP error|BLOCKED_RECOVERY|RUN_NOT_RECOVERABLE|DURABLE' | sed -E 's/.*code=([A-Z0-9_.:-]+).*/HTTP_ERROR_CODE=\\1/' | tail -n 12 || true\necho DEBUGAI_RECOVERY_ERROR_CODES_END\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
