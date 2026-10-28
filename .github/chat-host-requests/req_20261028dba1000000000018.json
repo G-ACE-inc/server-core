@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI Causal Scout actual model-run progress and current CPU/memory for timeout diagnosis, no model restart or new invocation",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,urllib.request\nrid=\"run_mvrnydib_f5e96251e5\"\nwith urllib.request.urlopen(\"http://127.0.0.1:8787/v1/status/\"+rid,timeout=10) as r:j=json.load(r)\nd=j.get(\"durable\") or {};c=d.get(\"workflow_cursor\") or {};f=d.get(\"last_execution_failure\") or {}\nfor k,v in ((\"RUN\",rid),(\"JOB\",d.get(\"job_status\")),(\"STEP\",c.get(\"step_id\")),(\"PHASE\",c.get(\"step_phase\")),(\"ACTIVE\",d.get(\"active_in_process\")),(\"GEN\",d.get(\"generation\")),(\"FAILURE\",f.get(\"code\")),(\"ROLE\",f.get(\"role\")),(\"TIMEOUT_CLASS\",f.get(\"timeout_class\"))):print(k+\"=\"+str(v))\nfor inv in d.get(\"role_invocations\") or []:\n role=inv.get(\"role\")\n if role in (\"code_scout\",\"causal_scout\",\"researcher\",\"diagnoser\"):\n  print(\"CALL_\"+str(role).upper()+\"=\"+json.dumps({k:inv.get(k) for k in (\"queue_wait_ms\",\"duration_ms\",\"started_at\",\"finished_at\",\"timeout_class\",\"error_code\") if k in inv},separators=(\",\",\":\"))[:320])\nPY\necho MODEL_RESOURCE_BEGIN\ndocker stats --no-stream --format '{{.Name}}|{{.CPUPerc}}|{{.MemUsage}}' | grep -Ei 'qwen3|coder|debug-ai' | head -n 12 || true\necho MODEL_RESOURCE_END\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
