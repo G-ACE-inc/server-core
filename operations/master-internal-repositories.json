@@ -103,6 +103,7 @@
         ".env.example",
         "compose.yaml",
         "server/adapters/ai-core.js",
+        "server/control/model-ab-benchmark.js",
         "server/control/durable-workflow-stage.js",
         "server/control/role-work-item/adapter.js",
         "server/control/role-work-item/adapters/diagnoser-work-item-adapter.js",
