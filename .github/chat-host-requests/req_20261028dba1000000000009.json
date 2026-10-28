@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Execute exactly one native DebugAI real-model regression on captured Unicode source slice; correcting prior pre-dispatch classification, no previous dispatch",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,urllib.request,urllib.error\nbase=\"http://127.0.0.1:8787\"\nrepo=\"/workspace/debug-ai/.worktrees/g3-semantic/.debugai-input/unicode-search-source-slice\"\nreq_text=\"Investigate the real Unicode search excerpt defect in this captured 12-file source slice: after 900 U+0130 characters a source.search hit yields empty original-source excerpt despite a genuine match. Preserve original UTF-16 offsets, source hashes, security bounds and tests. Derive an evidence-backed diagnosis and minimal patch candidate; never apply a patch without the existing approval and sandbox gates. Unknown facts must remain UNKNOWN.\"\nbody={\"repo\":repo,\"projectId\":\"debug-ai\",\"rawRequest\":req_text,\"failure\":{\"message\":\"The source.search Unicode expanding-lowercase prefix reproducer has two failing holdout cases and one passing control; inspect actual source and existing tests before attributing root cause.\"},\"localEvidence\":[]}\nreq=urllib.request.Request(base+\"/v1/runs/start\",data=json.dumps(body).encode(\"utf-8\"),headers={\"Content-Type\":\"application/json\"},method=\"POST\")\ntry:\n    with urllib.request.urlopen(req,timeout=25) as f:\n        result=json.load(f)\n        print(\"DEBUGAI_REAL_RUN_HTTP=\"+str(f.status))\n    print(\"DEBUGAI_REAL_RUN_STATE=\"+str(result.get(\"state\")))\n    print(\"DEBUGAI_REAL_RUN_ID=\"+str(result.get(\"run_id\")))\n    print(\"DEBUGAI_REAL_RUN_RESUMED=\"+str(result.get(\"resumed\")))\nexcept urllib.error.HTTPError as e:\n    print(\"DEBUGAI_REAL_RUN_HTTP=\"+str(e.code))\n    try:\n        x=json.loads(e.read(4096));print(\"DEBUGAI_REAL_RUN_ERROR=\"+str(x.get(\"code\") or x.get(\"error\"))[:240])\n    except Exception:print(\"DEBUGAI_REAL_RUN_ERROR=UNKNOWN\")\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
