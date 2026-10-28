@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Check exact live DebugAI Diagnoser completion and real hypothesis review outcome; no new role dispatch",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,urllib.request\nrid=\"run_mvrnydib_f5e96251e5\";base=\"http://127.0.0.1:8787\"\ndef get(t):\n with urllib.request.urlopen(base+t,timeout=15) as f:return json.load(f)\ns=get(\"/v1/status/\"+rid);d=s.get(\"durable\") or {};c=d.get(\"workflow_cursor\") or {};er=d.get(\"last_execution_failure\") or {}\nfor k,v in ((\"RUN\",rid),(\"JOB\",d.get(\"job_status\")),(\"STATE\",s.get(\"state\")),(\"ACTIVE\",d.get(\"active_in_process\")),(\"STEP\",c.get(\"step_id\")),(\"PHASE\",c.get(\"step_phase\")),(\"FAILURE\",er.get(\"code\")),(\"FAIL_ROLE\",er.get(\"role\"))):print(k+\"=\"+str(v))\nfor key,z in (d.get(\"role_executions\") or {}).items():\n if z.get(\"role\") in (\"diagnoser\",\"researcher\",\"patch_engineer\"):\n  print(\"WORKITEM=\"+json.dumps({\"role\":z.get(\"role\"),\"status\":z.get(\"status\"),\"attempt\":z.get(\"attempt_no\")},separators=(\",\",\":\")))\nif d.get(\"job_status\") in (\"DONE\",\"BLOCKED\",\"FAILED\"):\n i=get(\"/v1/inspect/\"+rid)\n arts=i.get(\"artifacts\") or {}; a=(arts.get(\"analysis\") or {}).get(\"payload\") or {}\n print(\"ANALYSIS_PRESENT=\"+str(bool(a)))\n print(\"ARTIFACT_TYPES=\"+\",\".join(sorted(arts.keys())))\n diag=a.get(\"diagnosis\") or {}\n print(\"DIAGNOSIS_STATUS=\"+str(diag.get(\"diagnosis_status\")))\n print(\"DIAGNOSIS_KEYS=\"+\",\".join(sorted(diag.keys())[:18]))\n hyp=a.get(\"external_hypothesis_review\") or {}\n loc=a.get(\"local_hypothesis_review\") or {}\n print(\"HYPOTHESIS_EXTERNAL_VERDICT=\"+str((hyp.get(\"json\") or {}).get(\"verdict\")))\n print(\"HYPOTHESIS_LOCAL_VERDICT=\"+str((loc.get(\"json\") or {}).get(\"verdict\")))\n print(\"ANALYSIS_STATE=\"+str(a.get(\"state\")))\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
