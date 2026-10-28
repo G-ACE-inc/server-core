@@ -1,0 +1,31 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9#issuecomment-6476869564",
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/TGserver",
+    "repo_sha": "1993c658b743f18de4284709eaca788ed8047712",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "python3 - <<'GACE_HISTORY_READ_ONLY'\nimport hashlib,json,os,pathlib,re,subprocess\nroot=pathlib.Path(\"/home/admin1/projects/TGserver\")\nlogs=pathlib.Path(\"/home/admin1/logs/TGserver\")\nprint(\"ACTION=TGZERO_HISTORY_DISCOVERY_READ_ONLY\")\ntry: print(\"TGS_HEAD=\"+subprocess.check_output([\"git\",\"-C\",str(root),\"rev-parse\",\"HEAD\"],text=True,timeout=5).strip())\nexcept Exception: print(\"TGS_HEAD=UNKNOWN\")\nlive=root/\".tgs-state/topics.json\"\ntry:\n    obj=json.loads(live.read_text())\n    print(\"LIVE_PROJECTS=\"+str(len(obj))+\" LIVE_ROUTES=\"+str(sum(len(v) for v in obj.values() if isinstance(v,dict))))\nexcept Exception as e: print(\"LIVE_STATE=ERROR_\"+type(e).__name__)\ncheckpoint=logs/\"deployments/20261007-p014/EXECUTION_CHECKPOINT.json\"\ntry:\n    if checkpoint.is_symlink() or not checkpoint.is_file(): raise ValueError(\"NOT_REGULAR\")\n    raw=checkpoint.read_bytes()\n    cp=json.loads(raw)\n    print(\"OCT07_CHECKPOINT=READABLE sha16=\"+hashlib.sha256(raw).hexdigest()[:16]+\" bytes=\"+str(len(raw)))\n    if isinstance(cp,dict):\n        print(\"OCT07_TOP_KEYS=\"+\",\".join(sorted(str(k) for k in cp.keys())[:20]))\n        for k,v in cp.items():\n            if isinstance(v,(list,dict)) and re.search(\"topic|route|state|map|deploy|result|project\",str(k),re.I):\n                print(\"OCT07_FIELD_\"+str(k)[:30]+\"=\"+str(len(v)))\nexcept Exception as e: print(\"OCT07_CHECKPOINT=ERROR_\"+type(e).__name__)\nfound=[]\nvisited=0\nfor base in (root/\".tgs-state\",logs):\n    if not base.is_dir(): continue\n    for dirname,dirs,files in os.walk(base,followlinks=False):\n        dirs[:]=sorted(d for d in dirs if not (pathlib.Path(dirname)/d).is_symlink() and len(pathlib.Path(dirname,d).relative_to(base).parts)<=5)\n        for name in sorted(files):\n            visited+=1\n            if visited>10000: break\n            p=pathlib.Path(dirname)/name\n            if not p.is_symlink() and p.suffix==\".json\" and re.search(r\"topic|backup|2026100[478]|2026-10-0[478]|state\",str(p),re.I):\n                found.append((base,p))\n        if visited>10000: break\nprint(\"SCAN_FILES=\"+str(visited)+\" CANDIDATES=\"+str(len(found)))\nfor i,(base,p) in enumerate(found[:28]):\n    try:\n        raw=p.read_bytes() if p.stat().st_size<=5000000 else None\n        if raw is None: print(\"CANDIDATE_\"+str(i+1)+\"=OVERSIZE\"); continue\n        j=json.loads(raw)\n        if isinstance(j,dict):\n            k=[v for key,v in j.items() if re.fullmatch(r\"P[0-9]{3}\",str(key)) and isinstance(v,dict)]\n            print(\"CANDIDATE_\"+str(i+1)+\"=\"+str(p.relative_to(base))+\" sha16=\"+hashlib.sha256(raw).hexdigest()[:16]+\" project_maps=\"+str(len(k))+\" routes=\"+str(sum(len(v) for v in k))+\" topkeys=\"+\",\".join(list(map(str,j.keys()))[:3]))\n        else: print(\"CANDIDATE_\"+str(i+1)+\"=\"+str(p.relative_to(base))+\" sha16=\"+hashlib.sha256(raw).hexdigest()[:16]+\" type=\"+type(j).__name__)\n    except Exception as e: print(\"CANDIDATE_\"+str(i+1)+\"=ERROR_\"+type(e).__name__)\nprint(\"MUTATION=NONE\")\nGACE_HISTORY_READ_ONLY\n"
+  }
+}
