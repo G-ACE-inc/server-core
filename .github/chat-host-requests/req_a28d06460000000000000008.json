@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Run DebugAI real deterministic regression with safe tmpfs for test fixtures, no network, no inference, unchanged candidate SHA",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\nw=/home/admin1/projects/debug-ai/.worktrees/hypothesis-review-evidence-20261028\nexpected=e4040b3da34f53a5da5bd51dd47a10cb66b2b93c\n[ \"$(git -C \"$w\" rev-parse HEAD)\" = \"$expected\" ] || { echo WRONG_TEST_HEAD; exit 4; }\nimage=$(docker inspect -f '{{.Image}}' debug-ai-debug-ai-1)\necho \"TEST_SOURCE_HEAD=$expected\"\necho \"TEST_NETWORK=NONE\"\necho \"TEST_ROOTFS=READ_ONLY_TMPFS_ONLY\"\ndocker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 96 --memory 768m --cpus 1 \\\n --tmpfs /tmp:rw,nosuid,nodev,size=32m,mode=1777 \\\n --mount \"type=bind,source=$w/server/workflow.js,target=/app/server/workflow.js,readonly\" \\\n --mount \"type=bind,source=$w/server/tests/workflow-hypothesis-review-evidence.test.cjs,target=/app/server/tests/workflow-hypothesis-review-evidence.test.cjs,readonly\" \\\n --entrypoint node \"$image\" \\\n --test server/tests/workflow-hypothesis-review-evidence.test.cjs server/tests/external-review-verdict-contract.test.cjs server/tests/workflow-review-tool-runtime.test.cjs server/tests/workflow-diagnoser-horizontal-continuation.test.cjs server/tests/workflow-six-role-horizontal-entry.test.cjs\necho \"FOCUSED_TESTS=PASS\"\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
