@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI same native real-model run after interrupted CHAT; read status, diagnosis and review; do not restart inference",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\npython3 - <<'PY'\nimport json, urllib.request, urllib.error\nrun=\"run_mvrnydib_f5e96251e5\"\nbase=\"http://127.0.0.1:8787\"\ndef fetch(route):\n    with urllib.request.urlopen(base+route,timeout=12) as resp: return json.load(resp)\nfor label,endpoint in ((\"STATUS\",\"/v1/status/\"),(\"INSPECT\",\"/v1/inspect/\")):\n try:\n  obj=fetch(endpoint+run)\n  if label==\"STATUS\":\n   d=obj.get(\"durable\") or {}; c=d.get(\"workflow_cursor\") or {}; f=d.get(\"last_execution_failure\") or {}\n   print(\"RUN_ID=\"+str(obj.get(\"run_id\")))\n   for k,v in ((\"STATE\",obj.get(\"state\")),(\"JOB\",d.get(\"job_status\")),(\"ACTIVE\",d.get(\"active_in_process\")),(\"GENERATION\",d.get(\"generation\")),(\"STEP\",c.get(\"step_id\")),(\"PHASE\",c.get(\"step_phase\")),(\"ERROR\",d.get(\"last_execution_error\")),(\"FAIL_ROLE\",f.get(\"role\")),(\"FAIL_CODE\",f.get(\"code\")),(\"FAIL_CLASS\",f.get(\"timeout_class\")),(\"FAIL_RETRYABLE\",f.get(\"retryable\"))):print(k+\"=\"+str(v))\n   for key,v in (d.get(\"role_executions\") or {}).items():\n    print(\"ROLE_EXEC=\"+json.dumps({\"role\":v.get(\"role\"),\"status\":v.get(\"status\"),\"attempt\":v.get(\"attempt_no\")},separators=(\",\",\":\")))\n  else:\n   a=obj.get(\"artifacts\") or {}\n   print(\"ARTIFACT_TYPES=\"+\",\".join(sorted(a)))\n   for k in (\"analysis\",\"execution_failure\",\"workflow_progress\"):\n    z=(a.get(k) or {}).get(\"payload\") or {}\n    if k==\"analysis\":\n     print(\"ANALYSIS_STATE=\"+str(z.get(\"state\")))\n     dg=z.get(\"diagnosis\") or {}\n     print(\"DIAGNOSIS_STATUS=\"+str(dg.get(\"diagnosis_status\")))\n     print(\"DIAGNOSIS_KEYS=\"+\",\".join(sorted(dg)))\n     print(\"DIAGNOSIS_HYPOTHESES=\"+json.dumps(dg.get(\"hypotheses\",[])[:3],ensure_ascii=True)[:850])\n     for n in (\"external_hypothesis_review\",\"local_hypothesis_review\"):\n      v=z.get(n) or {};print(n.upper()+\"=\"+str((v.get(\"json\") or {}).get(\"verdict\")))\n     print(\"EVIDENCE_GAP=\"+str(z.get(\"evidence_gap\")))\n    elif k==\"execution_failure\":print(\"INSPECT_FAILURE=\"+json.dumps({key:z.get(key) for key in (\"role\",\"code\",\"retryable\",\"timeout_class\")},separators=(\",\",\":\")))\n    else: print(\"INSPECT_PROGRESS=\"+json.dumps({key:z.get(key) for key in (\"step\",\"phase\")},separators=(\",\",\":\")))\n except urllib.error.HTTPError as e:print(label+\"_HTTP=\"+str(e.code))\n except Exception as e:print(label+\"_ERROR=\"+type(e).__name__)\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
