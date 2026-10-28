@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI live role execution mode, gate health and app sidecar images, read-only after Host transport recovery; zero model inference",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\np=/home/admin1/projects/debug-ai\nprintf 'SOURCE_HEAD='; git -C \"$p\" rev-parse HEAD\nprintf 'SOURCE_BRANCH='; git -C \"$p\" branch --show-current\nprintf 'SOURCE_DIRTY='; if test -z \"$(git -C \"$p\" status --porcelain --untracked-files=all)\"; then echo NO; else echo YES; fi\nfor c in debug-ai-debug-ai-1 debug-ai-sandbox-runner-1; do\n  echo \"CONTAINER=$c\"\n  docker inspect --format 'STATE={{.State.Status}} IMAGE={{.Image}}' \"$c\"\ndone\necho DEBUGAI_RUNTIME_FLAGS_BEGIN\ndocker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' debug-ai-debug-ai-1 | awk -F= '$1==\"DEBUG_AI_ROLE_EXECUTION_MODE\" || $1==\"DEBUG_AI_CORE_GATE_DISPATCH_MODE\" || $1==\"DEBUG_AI_CORE_CONTEXT_TOKENS\" {print $1 \"=\" $2}'\necho DEBUGAI_RUNTIME_FLAGS_END\nfor port in 8787 18181 18182 18183 18184; do\n  code=$(curl --max-time 3 -sS -o /dev/null -w '%{http_code}' \"http://127.0.0.1:$port/health\" 2>/dev/null || true)\n  printf 'HEALTH_%s=%s\\n' \"$port\" \"${code:-UNKNOWN}\"\ndone\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
