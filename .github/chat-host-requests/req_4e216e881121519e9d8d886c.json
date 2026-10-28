@@ -1,0 +1,31 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9#issuecomment-6476869564",
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/TGserver",
+    "repo_sha": "1993c658b743f18de4284709eaca788ed8047712",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "python3 - <<'GACE_MAP_COMPARE'\nimport json,hashlib,pathlib,re,collections\nroot=pathlib.Path(\"/home/admin1/projects/TGserver\")\nlogs=pathlib.Path(\"/home/admin1/logs/TGserver\")\nprint(\"ACTION=TGZERO_HISTORY_TO_LIVE_MAPPING_COMPARE_READ_ONLY\")\nfiles={\"live\":root/\".tgs-state/topics.json\",\"oct05\":logs/\"deployments/20261005/topics-before.json\",\"oct13\":root/\".tgs-state/topics.toolb-before-20261013.json\",\"oct07_after\":logs/\"deployments/20261007-p014/runtime-after.json\",\"registry\":root/\"storage-registry.json\"}\ndata={}\nfor label,p in files.items():\n try:\n    if not p.is_file() or p.is_symlink(): raise ValueError(\"FILE_NOT_REGULAR\")\n    raw=p.read_bytes()\n    data[label]=json.loads(raw)\n    print(label.upper()+\"=READABLE sha16=\"+hashlib.sha256(raw).hexdigest()[:16])\n except Exception as e: print(label.upper()+\"=ERROR_\"+type(e).__name__)\ndef mapped(obj):\n    if not isinstance(obj,dict): return {}\n    out={}\n    for pid,v in obj.items():\n        if re.fullmatch(r\"P[0-9]{3}\",str(pid)) and isinstance(v,dict):\n            for route,val in v.items():\n                if re.fullmatch(r\"P[0-9]{3}_(error|warn|info|debug|trace)\",str(route)) and isinstance(val,dict) and type(val.get(\"topic_id\")) is int:\n                    out[(pid,route)]=val[\"topic_id\"]\n    return out\nlive=mapped(data.get(\"live\"))\nold=mapped(data.get(\"oct05\"))\npre=mapped(data.get(\"oct13\"))\nreg=data.get(\"registry\",{}).get(\"projects\",{})\ngroups={pid:p.get(\"storage_group_id\") for pid,p in reg.items() if isinstance(p,dict)}\nmatches=[k for k in old if k in live and old[k]==live[k]]\ndivergent=[k for k in old if k in live and old[k]!=live[k]]\nmissing=[k for k in old if k not in live]\nprint(\"OCT05_COMPARISON expected=\"+str(len(old))+\" matching_live=\"+str(len(matches))+\" divergent=\"+str(len(divergent))+\" missing_live=\"+str(len(missing)))\nprint(\"OCT13_ENTRIES=\"+str(len(pre))+\" match_live=\"+str(sum(k in live and v==live[k] for k,v in pre.items())))\nfor pid in sorted(set(k[0] for k in old)|set(k[0] for k in live)):\n    print(\"PROJECT_\"+pid+\" old=\"+str(sum(k[0]==pid for k in old))+\" live=\"+str(sum(k[0]==pid for k in live))+\" id_matches=\"+str(sum(k[0]==pid for k in matches))+\" id_conflicts=\"+str(sum(k[0]==pid for k in divergent)))\ndef collisions(x):\n  seen={};n=0\n  for (pid,route),tid in x.items():\n    loc=(groups.get(pid),tid)\n    if loc in seen and seen[loc]!=(pid,route): n+=1\n    seen[loc]=(pid,route)\n  return n\nprint(\"PHYSICAL_COLLISIONS_OLD=\"+str(collisions(old))+\" LIVE=\"+str(collisions(live)))\nafter=data.get(\"oct07_after\")\nif isinstance(after,dict):\n  print(\"OCT07_AFTER_KEYS=\"+\",\".join(sorted(after)[:16]))\n  for k in (\"routes\",\"topics\",\"state\",\"results\",\"project_id\",\"group_id\"):\n    if k in after:\n      v=after[k]\n      print(\"OCT07_\"+k.upper()+\"_TYPE=\"+type(v).__name__+\" COUNT=\"+str(len(v) if isinstance(v,(dict,list)) else -1))\n      if isinstance(v,dict):print(\"OCT07_\"+k.upper()+\"_CHILD_KEYS=\"+\",\".join(str(x) for x in list(v)[:12]))\n      if isinstance(v,list) and v and isinstance(v[0],dict):print(\"OCT07_\"+k.upper()+\"_ENTRY_KEYS=\"+\",\".join(sorted(v[0])[:12]))\nprint(\"MUTATION=NONE\")\nGACE_MAP_COMPARE\n"
+  }
+}
