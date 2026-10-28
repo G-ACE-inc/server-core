@@ -23,7 +23,11 @@ TGserverはProject導入時の通信・記録基盤として利用する。
 - Retention policy
 - Failure handling
 
-必要なTopicのみ追加する。用途不明のTopicを作成しない。
+TGserver ZEROの新規登録・上限・復旧・Runtime反映の正本は、所有Repoの [TGSERVER_ZERO_OPERATIONS.md](https://github.com/seigo-gace/TGserver/blob/main/docs/TGSERVER_ZERO_OPERATIONS.md)。Repo/stream対応表、Live Registry、Live Topic台帳、system収集対象を先に既存 `topics:onboarding-audit` で照合する。Reader mapの未登録や検索0件をTopic不存在と読み替えず、既存番号・バックアップ・Provider履歴を確認する。
+
+1 Groupの運用上限は10 Project、各Project標準5 severity。20通/分は送信予算でありTopic数上限ではない。満杯Groupへの追加、一括Topic新設、既存Topicの削除・再作成で解決しない。system収集とCanonical開発ログは別Producerとして登録・実測し、コンテナのないProjectへ架空のsystem sourceを追加しない。
+
+新規導入はRegistry／表示名／Repo+stream map／必要なsystem manifestを加算同期し、起動時読込のRegistryと開発ログ対応表をRuntimeでも照合する。Source登録、台帳一致、Gateway受領、Telegram保存、Reader検索を別判定にし、同一eventIdの実配送まで確認する。CHATからサーバーAIへこの作業を委任する場合は、既存どおりMasterの個別許可が必要。必要なTopicのみ追加し、用途不明のTopicを作成しない。
 
 ### TGserver ZERO v1.5 実Runtime・Topic台帳の運用契約
 
