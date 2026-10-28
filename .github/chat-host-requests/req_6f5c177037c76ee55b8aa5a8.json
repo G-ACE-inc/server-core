@@ -1,0 +1,31 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9#issuecomment-6476869564",
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/TGserver",
+    "repo_sha": "1993c658b743f18de4284709eaca788ed8047712",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "python3 - <<'GACE_SCHEMA_AWARE'\nimport json,hashlib,pathlib,collections\nroot=pathlib.Path(\"/home/admin1/projects/TGserver\")\nlogs=pathlib.Path(\"/home/admin1/logs/TGserver\")\nprint(\"ACTION=TGZERO_SCHEMA_AWARE_ID_COMPARE_READ_ONLY\")\nnames={\"live\":root/\".tgs-state/topics.json\",\"oct05\":logs/\"deployments/20261005/topics-before.json\",\"oct13\":root/\".tgs-state/topics.toolb-before-20261013.json\",\"oct07\":logs/\"deployments/20261007-p014/runtime-after.json\",\"reg\":root/\"storage-registry.json\"}\nobjects={}\nfor name,p in names.items():\n try:\n    if p.is_symlink() or not p.is_file(): raise ValueError(\"INVALID_FILE\")\n    b=p.read_bytes();objects[name]=json.loads(b)\n    print(name.upper()+\"_SHA16=\"+hashlib.sha256(b).hexdigest()[:16])\n except Exception as e: print(name.upper()+\"_ERROR=\"+type(e).__name__)\nreg=objects.get(\"reg\",{}).get(\"projects\",{})\nsev=(\"error\",\"warn\",\"info\",\"debug\",\"trace\")\ndef entries(obj):\n out={}\n if not isinstance(obj,dict):return out\n for pid,routes in obj.items():\n    prefix=reg.get(pid,{}).get(\"topic_prefix\")\n    if not prefix or not isinstance(routes,dict):continue\n    for s in sev:\n        name=prefix+s\n        ent=routes.get(name)\n        if isinstance(ent,dict) and type(ent.get(\"topic_id\")) is int:\n            out[(pid,s)]=ent[\"topic_id\"]\n return out\nlive=entries(objects.get(\"live\"));old=entries(objects.get(\"oct05\"));pre=entries(objects.get(\"oct13\"))\nidentical=sum(k in live and v==live[k] for k,v in old.items())\nmismatch=sum(k in live and v!=live[k] for k,v in old.items())\nmissing=sum(k not in live for k in old)\nprint(\"OCT05_COUNT=\"+str(len(old))+\" LIVE_COUNT=\"+str(len(live))+\" SAME=\"+str(identical)+\" DIFFERENT=\"+str(mismatch)+\" OLD_MISSING_FROM_LIVE=\"+str(missing))\nprint(\"OCT13_COUNT=\"+str(len(pre))+\" SAME_LIVE=\"+str(sum(k in live and v==live[k] for k,v in pre.items())))\nfor pid in sorted(reg):\n n=sum(k[0]==pid for k in old);m=sum(k[0]==pid for k in live)\n if n or m:print(pid+\"_OLD=\"+str(n)+\" LIVE=\"+str(m)+\" SAME=\"+str(sum(k[0]==pid and k in live and v==live[k] for k,v in old.items())))\nafter=objects.get(\"oct07\",{})\nif isinstance(after,dict):\n for name in (\"P014\",\"topic_records\",\"projects\"):\n    value=after.get(name)\n    print(\"OCT07_\"+name+\"_TYPE=\"+type(value).__name__+\" LEN=\"+str(len(value) if isinstance(value,(list,dict)) else -1))\n    if isinstance(value,dict):\n        print(\"OCT07_\"+name+\"_KEYS=\"+\",\".join(list(map(str,value.keys()))[:12]))\n        first=next(iter(value.values()),None)\n        if isinstance(first,dict):print(\"OCT07_\"+name+\"_FIRST_ENTRY_KEYS=\"+\",\".join(sorted(first.keys())[:15]))\n    if isinstance(value,list) and value and isinstance(value[0],dict):\n        print(\"OCT07_\"+name+\"_LIST_ENTRY_KEYS=\"+\",\".join(sorted(value[0].keys())[:15]))\ndef collisions(x):\n by={};count=0\n for (pid,s),tid in x.items():\n  group=reg.get(pid,{}).get(\"storage_group_id\")\n  key=(group,tid)\n  if key in by and by[key]!=(pid,s): count+=1\n  by[key]=(pid,s)\n return count\nprint(\"PHYSICAL_ID_COLLISIONS_OLD=\"+str(collisions(old))+\" LIVE=\"+str(collisions(live)))\nprint(\"MUTATION=NONE\")\nGACE_SCHEMA_AWARE\n"
+  }
+}
