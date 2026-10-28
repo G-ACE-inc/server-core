@@ -1,0 +1,31 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9#issuecomment-6471047776",
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/TGserver",
+    "repo_sha": "1993c658b743f18de4284709eaca788ed8047712",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "python3 - <<'GACE_TOPIC_READONLY'\nimport hashlib, json, os, pathlib, subprocess\nroot = pathlib.Path(\"/home/admin1/projects/TGserver\")\ndef githead():\n    try:\n        return subprocess.check_output([\"git\", \"-C\", str(root), \"rev-parse\", \"HEAD\"], text=True, timeout=5).strip()\n    except Exception: return \"UNAVAILABLE\"\nprint(\"ACTION=TGZERO_TOPIC_LEDGER_BACKUP_READ_ONLY\")\nprint(\"ACTUAL_TGS_HEAD=\" + githead())\ndef inspect(label, p):\n    try:\n        if not p.is_file() or p.is_symlink():\n            print(label + \"=NOT_FOUND\"); return\n        raw = p.read_bytes()\n        obj = json.loads(raw)\n        groups = obj if isinstance(obj, dict) else {}\n        by = {k: len(v) for k,v in groups.items() if isinstance(k,str) and k.startswith(\"P\") and isinstance(v,dict)}\n        total = sum(by.values())\n        print(label + \"=READABLE sha256=\" + hashlib.sha256(raw).hexdigest()[:16] + \" projects=\" + str(len(by)) + \" total=\" + str(total) + \" P013=\" + str(by.get(\"P013\",0)) + \" P014=\" + str(by.get(\"P014\",0)) + \" P015=\" + str(by.get(\"P015\",0)))\n    except Exception as e:\n        print(label + \"=ERROR_\" + type(e).__name__)\ninspect(\"LIVE_STATE\", root / \".tgs-state/topics.json\")\ninspect(\"OCT13_PRESTATE\", root / \".tgs-state/topics.toolb-before-20261013.json\")\nlive_registry = root / \"storage-registry.json\"\ntry:\n    data=json.loads(live_registry.read_text())\n    print(\"LIVE_REGISTRY_PROJECTS=\"+str(len(data.get(\"projects\",{})))+\" P014=\"+str(\"P014\" in data.get(\"projects\",{}))+\" P015=\"+str(\"P015\" in data.get(\"projects\",{})))\nexcept Exception as e: print(\"LIVE_REGISTRY=ERROR_\"+type(e).__name__)\nstate = root / \".tgs-state\"\ntry:\n    candidates=sorted(p for p in state.iterdir() if p.is_file() and not p.is_symlink() and p.name.startswith(\"topics\") and p.suffix==\".json\")\n    print(\"TOPIC_STATE_CANDIDATES=\"+str(len(candidates)))\n    for n,p in enumerate(candidates[:12]):\n        inspect(\"TOPIC_SNAPSHOT_\"+str(n+1),p)\nexcept Exception as e: print(\"TOPIC_STATE_CANDIDATES=ERROR_\"+type(e).__name__)\ncheckpoint=pathlib.Path(\"/home/admin1/logs/TGserver/deployments/20261007-p014/EXECUTION_CHECKPOINT.json\")\ntry:\n    print(\"OCT07_CHECKPOINT_PRESENT=\"+str(checkpoint.is_file() and not checkpoint.is_symlink()))\nexcept Exception as e: print(\"OCT07_CHECKPOINT=ERROR_\"+type(e).__name__)\nprint(\"MUTATION=NONE\")\nGACE_TOPIC_READONLY\n"
+  }
+}
