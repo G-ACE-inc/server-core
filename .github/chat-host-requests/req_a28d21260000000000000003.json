@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI trusted owner installed admission exact operation/scopes and privileged installed sync capability; read-only sanitized",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\npolicy=/home/admin1/.config/debugai-gitops/delegations/policies/dlg_master_debugai_v1.json\nprintf 'TRUST_POLICY_READABLE='; test -r \"$policy\" && echo YES || echo NO\nif test -r \"$policy\"; then\n jq -c '{id,enabled,revoked,allowed_operations,allowed_scopes,benchmark_path_allowed:(.allowed_paths|index(\"server/control/model-ab-benchmark.js\")!=null)}' \"$policy\"\nfi\nprintf 'HOST_USER=';id -un\nprintf 'SUDO_PASSWORDLESS=';sudo -n true >/dev/null 2>&1 && echo YES || echo NO\nprintf 'SOURCE_REFLECT_SOCKET=';if test -S /run/gace/servercore-source-reflect.sock; then stat -c '%a:%U:%G' /run/gace/servercore-source-reflect.sock;else echo ABSENT;fi\nprintf 'SOURCE_REFLECT_SERVICE='; systemctl is-active gace-servercore-source-reflect.service 2>/dev/null || true\nprintf 'REPO_BRANCH=';git -C /home/admin1/projects/debug-ai branch --show-current\nprintf 'REPO_REMOTE=';git -C /home/admin1/projects/debug-ai remote get-url origin\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
