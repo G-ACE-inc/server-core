@@ -1,0 +1,31 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9#issuecomment-6476869564",
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/TGserver",
+    "repo_sha": "1993c658b743f18de4284709eaca788ed8047712",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "python3 - <<'GACE_SEVENTY_AUDIT'\nimport json,pathlib,hashlib\nroot=pathlib.Path(\"/home/admin1/projects/TGserver\")\nlogs=pathlib.Path(\"/home/admin1/logs/TGserver\")\nprint(\"ACTION=TGZERO_70_ROUTE_CANDIDATE_CONSISTENCY_READ_ONLY\")\nfiles={\"reg\":root/\"storage-registry.json\",\"live\":root/\".tgs-state/topics.json\",\"oct05\":logs/\"deployments/20261005/topics-before.json\",\"oct07\":logs/\"deployments/20261007-p014/runtime-after.json\"}\nd={}\nfor label,p in files.items():\n try:\n  if not p.is_file() or p.is_symlink():raise ValueError(\"NONREGULAR\")\n  raw=p.read_bytes();d[label]=json.loads(raw)\n  print(label+\"_sha16=\"+hashlib.sha256(raw).hexdigest()[:16])\n except Exception as e: print(label+\"_ERROR=\"+type(e).__name__)\nreg=d[\"reg\"][\"projects\"]\nsev=(\"error\",\"warn\",\"info\",\"debug\",\"trace\")\ndef extract(obj):\n out={}\n for pid,project in reg.items():\n  m=obj.get(pid,{}) if isinstance(obj,dict) else {}\n  pref=project[\"topic_prefix\"]\n  for s in sev:\n   row=m.get(pref+s) if isinstance(m,dict) else None\n   if isinstance(row,dict) and type(row.get(\"topic_id\")) is int and row[\"topic_id\"]>0:out[(pid,s)]=row[\"topic_id\"]\n return out\nold=extract(d[\"oct05\"])\np014=extract(d[\"oct07\"])\nlive=extract(d[\"live\"])\nmerged=dict(old)\ncolliding_keys=sum(k in merged and merged[k]!=v for k,v in p014.items())\nmerged.update(p014)\ndef duplicates(items):\n seen={};out=0\n for (pid,s),tid in items.items():\n  group=reg[pid][\"storage_group_id\"]\n  key=(group,tid)\n  if key in seen and seen[key]!=(pid,s):out+=1\n  seen[key]=(pid,s)\n return out\nprint(\"HISTORY_OCT05=\"+str(len(old))+\" OCT07_P014=\"+str(len(p014))+\" MERGED=\"+str(len(merged))+\" DUPLICATE_ROUTE_CONFLICTS=\"+str(colliding_keys))\nprint(\"HISTORY_DUPLICATE_PHYSICAL_IDS=\"+str(duplicates(merged)))\nprint(\"LIVE=\"+str(len(live))+\" MATCH=\"+str(sum(k in merged and merged[k]==v for k,v in live.items()))+\" MISMATCH=\"+str(sum(k in merged and merged[k]!=v for k,v in live.items()))+\" UNKNOWN=\"+str(sum(k not in merged for k in live)))\nmissing={k:v for k,v in merged.items() if k not in live}\nprint(\"HISTORY_NOT_IN_LIVE=\"+str(len(missing))+\" PROJECTS=\"+\",\".join(pid+\":\"+str(sum(k[0]==pid for k in missing)) for pid in sorted(set(k[0] for k in missing))))\nprint(\"EXPECTED_14_PROJECT_ROUTES=\"+str(sum(5 for pid in reg if pid!=\"P015\")))\na=d[\"oct07\"]\nfor k in (\"projects\",\"topic_records\",\"observed_at\"):\n v=a.get(k)\n if k==\"observed_at\":print(\"OCT07_OBSERVED_AT_TYPE=\"+type(v).__name__)\n else:print(\"OCT07_\"+k.upper()+\"=\"+str(v) if type(v) is int else \"OCT07_\"+k.upper()+\"_NON_INTEGER\")\nprint(\"PROVIDER_LIVE_EXISTENCE=NOT_VERIFIED\")\nprint(\"MUTATION=NONE\")\nGACE_SEVENTY_AUDIT\n"
+  }
+}
