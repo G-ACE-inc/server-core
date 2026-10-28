@@ -25,6 +25,20 @@ TGserverはProject導入時の通信・記録基盤として利用する。
 
 必要なTopicのみ追加する。用途不明のTopicを作成しない。
 
+### TGserver ZERO v1.5 実Runtime・Topic台帳の運用契約
+
+Gateway同様、TGserverは**Source・稼働Runtime・Telegram Providerの物理Topic**を別のAuthorityとして扱う。詳細の所有者はTGserver側の [ZERO Operations](https://github.com/seigo-gace/TGserver/blob/main/docs/TGSERVER_ZERO_OPERATIONS.md) とし、本契約で全Project導入時の必須条件を共通化する。現在の変更提案・検証先：[TGserver PR #132](https://github.com/seigo-gace/TGserver/pull/132)。PRがmainへ入るまでSource運用の新機能を本番実装済みと扱わない。
+
+- **台帳の役割:** `storage-registry.json` = Project/Groupの承認済み割当、VPS Live `.tgs-state/topics.json` = Topic ID/Router向け現行State、Telegram Group = 実物Topic。GitHubにあるTopic stateは本番実IDの証拠ではない。Group ID、Topic ID、旧Projectの割当は推測しない。
+- **既存資産を優先:** 新設・改名よりも、まずLive State、過去の実バックアップ、Providerの既存Topic IDと実履歴を照合する。Stateから欠落していてもProvider Topicが消滅したと推定しない。既存Topicの再作成・丸ごとState置換・Projectの重複追加は禁止。既存65/70ルート完成等の歴史Evidenceと現Liveが不一致の場合は `STATE_HISTORY_DIVERGED` として保護変更を停止し、読取監査で回復候補を作る。
+- **番号と画面表示は別:** 内部 `Pxxx` / `Pxxx_severity` キーと既存 `topic_id` を保持し、Telegram UIは `P013｜Webhook Gateway｜エラー` / `P014｜G-ACE 開発KB｜警告` のようにProject名とLog区分を示す。表示名を変更する際は実Providerの既存Topic IDに対する改名だけを使用し、既存Topicの新設・削除はしない。Source表示名を修正したことをProvider改名完了と扱わない。
+- **上限の混同禁止:** Telegramの既存ZERO設計は1 Group **20通/分**の送信予算、通常1 Group最大10 Projects × 5 severity。20 Topic上限ではない。開発が行われない期間のLog 0件は故障ではない。
+- **保護された変更:** 新Project/Topic追加時は単一Projectスコープ、事前のread-only監査、Live State・BackupのSHA256/readback、既存Routeへの非破壊差分、Provider重複防止、rollbackを揃える。Topicの一括Provision、未確認Topicの機械的再作成、Secretの公開やAPIの無断外部公開は禁止。Registry反映後は必要な既存TGserverの管理されたrestart/readbackを別途確かめる。
+- **証拠の段階:** `SOURCE_REGISTERED`→`LIVE_REGISTRY_LOADED`→`TOPIC_ID_MATCH_VERIFIED`→`DISPLAY_TITLE_VERIFIED`→`GATEWAY_RECEIVED`→`TGS_ACCEPTED`→`TELEGRAM_RAW_VERIFIED`→`SEARCH_VERIFIED`。Gateway 202・legacy TGS accepted・Meili hit単独をTelegram原本保存と混同しない。0件検索も不存在証明ではない。登録Projectが休止中なら`NO_PRODUCER_ACTIVITY`と障害を区別する。
+- **責務:** TGserverのRuntime台帳とProvider操作はTGserver Owner、Gateway配送設定と認証はGateway Owner、Producerアプリのイベント作成は対象Project Owner。CHATは横断整合とCurrent記録を担う。プロジェクト別変更と実サーバー効果の許可境界を混同しない。
+
+
+
 ## webhook gateway Integration
 
 webhook gatewayはEvent連携入口として利用する。
