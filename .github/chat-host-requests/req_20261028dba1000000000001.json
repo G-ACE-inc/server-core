@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Read native DebugAI original run's status and persisted failure evidence; product debugging read-only; no replay or external AI",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\npython3 - <<'PY'\nimport json, urllib.request\nbase=\"http://127.0.0.1:8787\"\nrid=\"run_mv5agtgf_96b706c70a\"\nkeys=(\"run_id\",\"state\",\"job_status\",\"status\",\"phase\",\"last_execution_failure\",\"reason\",\"code\",\"stage\",\"role\",\"retryable\",\"retry_count\",\"last_error\",\"latest_error\",\"error\",\"current_step\",\"next_action\",\"blocked_reason\",\"timestamp\")\nfor name in (\"status\",\"inspect\"):\n    url=f\"{base}/v1/{name}/{rid}\"\n    print(f\"DEBUGAI_{name.upper()}_BEGIN\")\n    try:\n        with urllib.request.urlopen(url,timeout=10) as response:\n            obj=json.load(response)\n            print(\"HTTP=\",response.status)\n        def walk(value, prefix=\"\", depth=0):\n            if depth>5: return\n            if isinstance(value,dict):\n                for k,v in value.items():\n                    if k in keys:\n                        raw=json.dumps(v,ensure_ascii=True)\n                        print((prefix+\".\"+k).strip(\".\")+\"=\"+raw[:700])\n                    elif isinstance(v,(dict,list)):\n                        walk(v,(prefix+\".\"+k).strip(\".\"),depth+1)\n            elif isinstance(value,list):\n                for i,v in enumerate(value[:4]):walk(v,prefix+f\"[{i}]\",depth+1)\n        walk(obj)\n        print(\"TOP_KEYS=\"+\",\".join(sorted(obj)[:50]))\n    except Exception as e:\n        print(\"ERROR_TYPE=\"+type(e).__name__)\n        if hasattr(e,\"code\"): print(\"HTTP_ERROR=\"+str(e.code))\n    print(f\"DEBUGAI_{name.upper()}_END\")\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
