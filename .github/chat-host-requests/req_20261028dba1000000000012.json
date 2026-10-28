@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Observe exact DebugAI real-model Unicode E2E run progress and failures, no duplicate invocation or changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\npython3 - <<'PY'\nimport urllib.request,json\nrid=\"run_mvrnydib_f5e96251e5\"\nwith urllib.request.urlopen(\"http://127.0.0.1:8787/v1/status/\"+rid,timeout=12) as f:\n  j=json.load(f)\nd=j.get(\"durable\") or {};c=d.get(\"workflow_cursor\") or {};er=d.get(\"last_execution_failure\") or {}\nfor k,v in ((\"RUN_ID\",rid),(\"STATE\",j.get(\"state\")),(\"JOB\",d.get(\"job_status\")),(\"GENERATION\",d.get(\"generation\")),(\"ACTIVE\",d.get(\"active_in_process\")),(\"CURSOR_STEP\",c.get(\"step_id\")),(\"CURSOR_PHASE\",c.get(\"step_phase\")),(\"FAILURE_CODE\",er.get(\"code\")),(\"FAILURE_ROLE\",er.get(\"role\"))):\n print(k+\"=\"+str(v))\ncalls=d.get(\"role_invocations\") or []\nprint(\"INVOCATIONS=\"+str(len(calls)))\nfor x in calls[-8:]:\n if not isinstance(x,dict):continue\n parts=[\"role\",\"state\",\"status\",\"started_at\",\"finished_at\",\"duration_ms\",\"model\"]\n print(\"INVOCATION=\"+json.dumps({k:x.get(k) for k in parts if k in x},ensure_ascii=True,separators=(\",\",\":\"))[:420])\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
