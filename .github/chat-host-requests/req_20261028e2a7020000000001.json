@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Targeted original req_c80c95b3bc35f97c57dbf471 Host delivery/result-sink diagnosis, metadata only, no replay",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "d10896e6f629769deb16db85abe01f48af274392",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "d10896e6f629769deb16db85abe01f48af274392",
+    "command": "set -eu\nrid=req_c80c95b3bc35f97c57dbf471\nprintf 'HOST_CHECKOUT_HEAD='\ngit -C /home/admin1/server-core rev-parse HEAD\nfor entry in 'SINK:/home/admin1/logs/servercore-bounded-results' 'WRITER:/home/admin1/logs/servercore-service-deploy'; do\n  name=\"${entry%%:*}\"\n  root=\"${entry#*:}\"\n  target=\"$root/$rid.json\"\n  if test -f \"$target\" && ! test -L \"$target\"; then\n    printf '%s_RECORD=EXISTS\\n' \"$name\"\n    if test \"$name\" = SINK; then\n      python3 - \"$target\" <<'GACE_READ'\nimport json,sys\ntry:\n    r=json.load(open(sys.argv[1],encoding=\"utf-8\"))\n    for k in (\"request_id\",\"command_id\",\"state\",\"exit_code\",\"published\",\"recorded_at\",\"attempts\"):\n        print(\"SINK_\"+k.upper()+\"=\"+str(r.get(k,\"UNKNOWN\"))[:100])\nexcept (OSError,ValueError,TypeError):\n    print(\"SINK_RECORD=UNREADABLE\")\nGACE_READ\n    fi\n  else\n    printf '%s_RECORD=ABSENT_OR_NONREGULAR\\n' \"$name\"\n  fi\ndone\nif command -v journalctl >/dev/null 2>&1; then\n  printf 'JOURNAL_MATCHES='\n  (journalctl --user --since '2026-10-27 13:15:00 UTC' --until '2026-10-27 13:32:00 UTC' -o cat --no-pager 2>/dev/null | grep -Fc \"$rid\") || true\nfi\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
