@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Check original real Unicode bug fixture file names and direct test imports to validate the new product evidence seeding logic; no inference or writes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\nfixture=/home/admin1/projects/debug-ai/.worktrees/g3-semantic/.debugai-input/unicode-search-source-slice\n[ -d \"$fixture\" ] || { echo DEBUGAI_FIXTURE=NOT_PRESENT; exit 3; }\necho DEBUGAI_FIXTURE=FOUND\nfind \"$fixture\" -maxdepth 3 -type f -not -path '*/.git/*' -printf '%P\\n' | sort | head -n 20\ntestfile=\"$fixture/unicode-search.test.cjs\"\nif [ -f \"$testfile\" ]; then\n  echo DEBUGAI_TEST_IMPORT_LINES_BEGIN\n  grep -nE 'require\\(|from ' \"$testfile\" | head -n 10 || true\n  echo DEBUGAI_TEST_IMPORT_LINES_END\nelse echo DEBUGAI_TEST_FILE=NOT_FOUND; fi\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
