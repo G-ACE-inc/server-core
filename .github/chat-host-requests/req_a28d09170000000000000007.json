@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI bounded offline real Unicode source-slice validation of newly implemented direct test dependency evidence, no model or production change",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\nparent=/home/admin1/projects/debug-ai\nw=\"$parent/.worktrees/hypothesis-review-evidence-20261028\"\nfixture=\"$parent/.worktrees/g3-semantic/.debugai-input/unicode-search-source-slice\"\n[ \"$(realpath \"$w\")\" = \"$w\" ] && [ -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\" ] || { echo DEBUGAI_SOURCE_DIRTY_OR_UNVERIFIED; exit 3; }\n[ -f \"$fixture/unicode-search.test.cjs\" ] && [ -f \"$fixture/package.json\" ] || { echo DEBUGAI_REAL_FIXTURE_MISSING; exit 3; }\ngit -C \"$parent\" fetch --no-tags origin refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\n[ \"$(git -C \"$parent\" rev-parse FETCH_HEAD)\" = \"5f4d0825dfd2d67d5c10a35b89bcb54f9ef6d6b3\" ] || { echo DEBUGAI_BRANCH_MOVED; exit 4; }\ngit -C \"$w\" checkout --detach \"5f4d0825dfd2d67d5c10a35b89bcb54f9ef6d6b3\" >/dev/null\nimage=$(docker inspect -f '{{.Image}}' debug-ai-debug-ai-1)\ndocker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 768m --cpus 1 \\\n --tmpfs /tmp:rw,nosuid,nodev,size=24m,mode=1777 \\\n --mount \"type=bind,source=$w/server/workflow.js,target=/app/server/workflow.js,readonly\" \\\n --mount \"type=bind,source=$fixture,target=/fixture,readonly\" \\\n --entrypoint node \"$image\" -e '\nconst {initialInvestigationEvidence}=require(\"/app/server/control/read-only-tool-runtime.js\");\nconst {addBoundedTestDependencyEvidence}=require(\"/app/server/workflow.js\");\nconst root=\"/fixture\";\nconst initial=initialInvestigationEvidence(root,{request:\"Investigate the Unicode source.search excerpt defect\",failure:{message:\"A real source.search Unicode expanding-lowercase-prefix failure\"},checks:[{status:\"FAIL\",executed:true,timed_out:false}]});\nconst expanded=addBoundedTestDependencyEvidence(root,initial);\nconst source=x=>x.records.filter(r=>r.kind===\"initial_source\").map(r=>r.value.path);\nconst candidates=expanded.records.filter(r=>r.kind===\"initial_dependency_candidate\").map(r=>r.value.path);\nconsole.log(\"REAL_BASELINE_PATHS=\"+JSON.stringify(source(initial)));\nconsole.log(\"REAL_SEEDED_CANDIDATES=\"+JSON.stringify(candidates));\nconsole.log(\"REAL_TEST_SCRIPT=\"+JSON.stringify(initial.records.find(x=>x.kind===\"initial_test_inventory\")?.value?.checks?.find(x=>x.name===\"test\")?.command||null));\nconsole.log(\"REAL_EVIDENCE_SCOPE=\"+expanded.scope.mode);\nconsole.log(\"REAL_COVERAGE=\"+expanded.scope.coverage);\nconsole.log(\"REAL_DIRECT_SOURCE_VERIFIED=\"+String(candidates.includes(\"server/control/read-only-tool-runtime-base.js\")));\n'\necho DEBUGAI_REAL_FIXTURE_PROBE=EXECUTED\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
