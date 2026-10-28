@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Observe same running DebugAI Unicode native model E2E: Diagnoser outcome, no duplicate inference",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,urllib.request\nrid=\"run_mvrnydib_f5e96251e5\"\nwith urllib.request.urlopen(\"http://127.0.0.1:8787/v1/status/\"+rid,timeout=10) as f:j=json.load(f)\nd=j.get(\"durable\") or {}; c=d.get(\"workflow_cursor\") or {}; e=d.get(\"last_execution_failure\") or {}\nfor key,val in ((\"RUN\",rid),(\"STATE\",j.get(\"state\")),(\"JOB\",d.get(\"job_status\")),(\"ACTIVE\",d.get(\"active_in_process\")),(\"CURSOR\",c.get(\"step_id\")),(\"CURSOR_PHASE\",c.get(\"step_phase\")),(\"GEN\",d.get(\"generation\")),(\"FAIL_CODE\",e.get(\"code\")),(\"FAIL_ROLE\",e.get(\"role\")),(\"FAIL_RETRYABLE\",e.get(\"retryable\"))):print(key+\"=\"+str(val))\nfor ident,r in (d.get(\"role_executions\") or {}).items():\n if r.get(\"role\") in (\"researcher\",\"diagnoser\",\"patch_engineer\",\"local_reviewer\"):\n  print(\"WORKITEM=\"+json.dumps({\"id\":ident,\"role\":r.get(\"role\"),\"status\":r.get(\"status\"),\"attempt_no\":r.get(\"attempt_no\")},separators=(\",\",\":\")))\nfor r in d.get(\"role_invocations\") or []:\n if r.get(\"role\") in (\"diagnoser\",\"researcher\",\"patch_engineer\",\"local_reviewer\"):\n  print(\"ROLE=\"+json.dumps({k:r.get(k) for k in (\"role\",\"started_at\",\"finished_at\",\"queue_wait_ms\",\"duration_ms\",\"timeout_class\") if k in r},separators=(\",\",\":\"))[:500])\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
