@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Test DebugAI existing design: isolated owned nested worktree exact source commit, syntax and evidence-review regression without model inference",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "set -eu\np=/home/admin1/projects/debug-ai\nbranch=fix/debugai-hypothesis-review-evidence-20261028\ntarget=/home/admin1/projects/debug-ai/.worktrees/hypothesis-review-evidence-20261028\nexpected=e4040b3da34f53a5da5bd51dd47a10cb66b2b93c\nroot=$(realpath \"$p\")\n[ \"$root\" = /home/admin1/projects/debug-ai ] || { echo SOURCE_PARENT_MISMATCH; exit 3; }\n[ -d \"$root/.git\" ] || [ -f \"$root/.git\" ] || { echo NOT_GIT_PARENT; exit 3; }\ncase \"$target\" in \"$root\"/.worktrees/*) ;; *) echo WORKTREE_SCOPE_DENIED; exit 3;; esac\nif [ -e \"$target\" ]; then\n  existing=$(git -C \"$target\" rev-parse HEAD 2>/dev/null || true)\n  [ \"$existing\" = \"$expected\" ] || { echo EXISTING_WORKTREE_MISMATCH; exit 4; }\nelse\n  git -C \"$p\" fetch --no-tags origin \"refs/heads/$branch\"\n  actual=$(git -C \"$p\" rev-parse FETCH_HEAD)\n  [ \"$actual\" = \"$expected\" ] || { echo REMOTE_BRANCH_MOVED; exit 4; }\n  git -C \"$p\" worktree add --detach \"$target\" \"$actual\"\nfi\necho \"DEBUGAI_TEST_HEAD=$(git -C \"$target\" rev-parse HEAD)\"\necho \"DEBUGAI_WORKTREE_REALPATH=$(realpath \"$target\")\"\necho \"CREATED_NEW_TOP_LEVEL_SIBLING=NO\"\ncd \"$target\"\nnode --check server/workflow.js\nnode --check server/tests/workflow-hypothesis-review-evidence.test.cjs\necho SYNTAX=PASS\nset +e\nNODE_PATH=\"$p/node_modules\" node --test server/tests/workflow-hypothesis-review-evidence.test.cjs server/tests/external-review-verdict-contract.test.cjs\ncode=$?\nset -e\necho \"FOCUSED_TEST_EXIT=$code\"\nexit \"$code\"\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
