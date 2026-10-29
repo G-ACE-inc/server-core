@@ -60,15 +60,15 @@ def main():
     print("TARGET_ZONE=" + DOMAIN)
     print("VAULT_SECRET_ID=" + SECRET_ID)
     print("MCP_AUTHENTICATION=SEPARATE_OAUTH")
-    token = getpass.getpass("Enter value (hidden): ")
-    if not 32 <= len(token) <= 512 or not token.isascii() or any(c.isspace() for c in token):
+    entered = getpass.getpass("Enter value (hidden): ")
+    if not 32 <= len(entered) <= 512 or not entered.isascii() or any(c.isspace() for c in entered):
         raise RuntimeError("TOKEN_FORMAT_INVALID")
-    result = cf_get("/user/tokens/verify", token).get("result")
+    result = cf_get("/user/tokens/verify", entered).get("result")
     if not isinstance(result, dict) or result.get("status") != "active":
         raise RuntimeError("TOKEN_NOT_ACTIVE")
     print("CLOUDFLARE_TOKEN=ACTIVE")
     query = urllib.parse.urlencode({"name": DOMAIN, "per_page": "5"})
-    rows = cf_get("/zones?" + query, token).get("result")
+    rows = cf_get("/zones?" + query, entered).get("result")
     if not isinstance(rows, list):
         raise RuntimeError("ZONE_RESPONSE_INVALID")
     matches = [z for z in rows if isinstance(z, dict) and z.get("name") == DOMAIN]
@@ -82,7 +82,7 @@ def main():
     payload = {
         "id": SECRET_ID,
         "allowed_consumers": [CONSUMER],
-        "value_base64": base64.b64encode(token.encode()).decode(),
+        "value_base64": base64.b64encode(entered.encode()).decode(),
     }
     req = urllib.request.Request(VAULT_URL, data=json.dumps(payload).encode(),
         method="POST", headers={
