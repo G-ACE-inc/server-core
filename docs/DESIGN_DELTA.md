@@ -1142,3 +1142,12 @@ stays in owning Current#50 rather than a historical PR number. Source/CI/runtime
 remain separate. Router regression tests qualify argument boundaries and reuse of
 the actual running image. Removing this entry reverts routing only; preserve live
 registry, Topics, pending/private recovery journals and all provider history.
+
+### TGserver router CI ownership correction
+
+The initial routing commit also inserted its regression into the CU40-protected
+shared guard workflow. Main push admission rejected that workflow edit although
+the new regression passed. Restore the shared guard to its prior bytes and run
+TGserver owner-routing tests in a narrow, read-only dedicated workflow. This
+correction itself uses the required PR design preflight and merge; no admission
+checks are removed or weakened. The rejected run remains historical evidence.
