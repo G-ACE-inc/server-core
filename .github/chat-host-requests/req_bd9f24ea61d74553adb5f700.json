@@ -1,0 +1,31 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9#issuecomment-6486525799",
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "expected_sha": "ddb05920296c0a2a2de1df61b2d61bd4dfa28c8c",
+    "command": "cd /home/admin1/server-core && python3 - <<'PY'\nimport json,pathlib,re,subprocess,urllib.request\nproducer='gserver:gserver-probe:probe-bd9f24ea61d74553adb5f700edaafec2'\nprobe=producer.rsplit(':',1)[1]\ndef run(*args,data=None):\n r=subprocess.run(args,input=data,capture_output=True,check=True,timeout=9)\n return r.stdout.decode().strip()\ntry:\n names=run('docker','ps','--format','{{.Names}}').splitlines()\n pg=[n for n in names if 'webhook' in n and (n.endswith('-postgres-1') or n.endswith('_postgres_1'))]\n if len(pg)!=1: raise ValueError('PG_CONTAINER_UNVERIFIED')\n sql=(\"SELECT e.source_id,e.provider_event_id,d.destination_id,d.status,\"\n \"COALESCE(d.last_status_code::text,'NULL') FROM events e \"\n \"JOIN deliveries d ON d.event_id=e.id WHERE e.provider='internal-api' \"\n \"AND e.source_id='gserver-bot' AND e.provider_event_id='\"+producer+\"' LIMIT 2;\")\n out=run('docker','exec','-i',pg[0],'sh','-c',\n 'exec psql -X -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -At -F \"|\"',data=sql.encode())\n rows=[z.split('|') for z in out.splitlines() if z]\n valid=len(rows)==1 and len(rows[0])==5 and rows[0][:3]==['gserver-bot',producer,'tgserver-zero-bulk']\n print('GATEWAY_EVENT='+('PASS' if valid else 'NOT_VERIFIED'))\n if not valid: raise ValueError('EVENT_NOT_UNIQUE')\n print('GATEWAY_DELIVERY_STATUS='+rows[0][3])\n print('GATEWAY_DELIVERY_HTTP='+rows[0][4])\n req=urllib.request.Request('http://127.0.0.1:3000/search',\n data=json.dumps({'query':probe,'project_id':'P015','limit':10}).encode(),\n headers={'Content-Type':'application/json'},method='POST')\n with urllib.request.urlopen(req,timeout=8) as resp: result=json.load(resp)\n hits=result.get('hits',[]) if isinstance(result,dict) else []\n matches=[h for h in hits if isinstance(h,dict) and h.get('project_id')=='P015'\n and h.get('severity')=='info' and\n re.search(r'\"event_id\"\\s*:\\s*\"'+re.escape(probe)+r'\"',str(h.get('message','')))]\n print('MEILI_EXACT_HITS='+str(len(matches)))\n if len(matches)!=1: raise ValueError('SEARCH_UNVERIFIED')\n h=matches[0];ids=h.get('telegram_message_ids',[])\n linked=isinstance(ids,list) and any(type(v) is int and v>0 for v in ids)\n print('TELEGRAM_MESSAGE_LINK='+('PASS' if linked else 'NOT_VERIFIED'))\n tgs=[n for n in names if n.endswith('-tgs-1') or n.endswith('_tgs_1')]\n if len(tgs)!=1: raise ValueError('TGS_CONTAINER_UNVERIFIED')\n mounts=json.loads(run('docker','inspect',tgs[0]))[0].get('Mounts',[])\n roots=[m.get('Source') for m in mounts if m.get('Destination')=='/app/.tgs-state']\n if len(roots)!=1: raise ValueError('TGS_STATE_UNVERIFIED')\n digest=h.get('hash','');receipt=False\n if isinstance(digest,str) and re.fullmatch('[a-f0-9]{16}',digest):\n  for p in pathlib.Path(roots[0]).glob('receipts-*.log'):\n   if p.is_symlink() or not p.is_file(): continue\n   with p.open('rb') as f:\n    f.seek(max(0,p.stat().st_size-2000000))\n    if any(line.rstrip().endswith(b' '+digest.encode()) for line in f):\n     receipt=True;break\n print('TELEGRAM_FLUSH_RECEIPT='+('PASS' if receipt else 'NOT_VERIFIED'))\n passed=rows[0][3]=='delivered' and rows[0][4]=='200' and linked and receipt\n print('EXACT_EVENT_E2E='+('PASS' if passed else 'NOT_VERIFIED'))\nexcept Exception:\n print('DOWNSTREAM_READBACK=PARTIAL_OR_UNVERIFIED')\nPY\n"
+  }
+}
