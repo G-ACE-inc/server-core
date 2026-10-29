@@ -31,7 +31,9 @@ TGserver ZEROの新規登録・上限・復旧・Runtime反映の正本は、所
 
 ### TGserver ZERO v1.5 実Runtime・Topic台帳の運用契約
 
-Gateway同様、TGserverは**Source・稼働Runtime・Telegram Providerの物理Topic**を別のAuthorityとして扱う。詳細の所有者はTGserver側の [ZERO Operations](https://github.com/seigo-gace/TGserver/blob/main/docs/TGSERVER_ZERO_OPERATIONS.md) とし、本契約で全Project導入時の必須条件を共通化する。現在の変更提案・検証先：[TGserver PR #132](https://github.com/seigo-gace/TGserver/pull/132)。PRがmainへ入るまでSource運用の新機能を本番実装済みと扱わない。
+Gateway同様、TGserverは**Source・稼働Runtime・Telegram Providerの物理Topic**を別のAuthorityとして扱う。詳細の所有者はTGserver側の [ZERO Operations](https://github.com/seigo-gace/TGserver/blob/main/docs/TGSERVER_ZERO_OPERATIONS.md) とし、本契約で全Project導入時の必須条件を共通化する。変更状況と実証は [TGserver Current #50](https://github.com/seigo-gace/TGserver/issues/50) で確認する。過去PR番号を現行実装やRuntime反映の証拠にしない。
+
+管理入口は `python3 scripts/tgzero_admin.py status`。`plan-project` / `plan-group` / `apply` / `recover` は所有Repositoryの登録実装に委譲し、server-coreへ二重台帳を作らない。`audit-topics` / 単一Projectの `provision` は既存Topic provisionerを使う。requestとplanはGit外のprivateディレクトリに置く。登録とGroup増設のschema・順序・保護条件は上記ZERO Operationsのみで管理する。全Group満杯なら実在する新Forum Groupを登録してから新Projectを割り当てる。既存Project移動、無人Group作成、自動サービスrestartは行わない。
 
 - **台帳の役割:** `storage-registry.json` = Project/Groupの承認済み割当、VPS Live `.tgs-state/topics.json` = Topic ID/Router向け現行State、Telegram Group = 実物Topic。GitHubにあるTopic stateは本番実IDの証拠ではない。Group ID、Topic ID、旧Projectの割当は推測しない。
 - **既存資産を優先:** 新設・改名よりも、まずLive State、過去の実バックアップ、Providerの既存Topic IDと実履歴を照合する。Stateから欠落していてもProvider Topicが消滅したと推定しない。既存Topicの再作成・丸ごとState置換・Projectの重複追加は禁止。既存65/70ルート完成等の歴史Evidenceと現Liveが不一致の場合は `STATE_HISTORY_DIVERGED` として保護変更を停止し、読取監査で回復候補を作る。

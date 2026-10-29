@@ -1129,3 +1129,16 @@ Observed failure: the two original events reached Receiver, failed503 DEPLOY_EXE
 Change: check both fixed local RPC listeners with an empty invalid-schema probe that dispatches/persists nothing; health returns503 when unavailable. After60seconds continuous loss, gracefully stop Receiver so its existing Compose policy remounts the current directory. Transient failures reset the grace window. Future Source-reflect installer units preserve the shared runtime directory. No additional listener, Docker authority in Receiver, model, agent, replay daemon or result store.
 
 Verification and rollback: focused tests and staged directory-replacement qualification, exact Source/CI/runtime evidence in CU40/#10. Previous Receiver image/container is retained for rollback; deployment does not re-execute original commands. The existing root-owned unit's preservation flag is separate Host admission and not inferred applied from Source.
+
+## 2026-10-29 — TGserver administration through server-core
+
+Baseline: registration was owner-side manual editing plus read-only onboarding
+audit; no command-center administration entry. Master requested central Project
+and Group growth management. Added scripts/tgzero_admin.py as a thin structured
+argv router to TGserver-owned plan/apply/recovery and its existing Topic provisioner.
+No second registry, Bot, daemon, HTTP API, AI delegation or runtime auto-deploy.
+Capacity and registration rules stay in TGserver ZERO Operations; current evidence
+stays in owning Current#50 rather than a historical PR number. Source/CI/runtime
+remain separate. Router regression tests qualify argument boundaries and reuse of
+the actual running image. Removing this entry reverts routing only; preserve live
+registry, Topics, pending/private recovery journals and all provider history.

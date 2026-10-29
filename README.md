@@ -18,6 +18,8 @@ Design / loading contract: [`docs/GITHUB_PROJECT_RULE_PLANE.md`](docs/GITHUB_PRO
 
 各Projectの実装本体は所有Repositoryに残す。
 
+TGserver ZEROのProject登録・Group増設管理もserver-coreを入口にする：`python3 scripts/tgzero_admin.py status`。登録計画・適用・途中停止復旧・既存Topic provisionerへの接続は [Project Integration Rules](docs/PROJECT_INTEGRATION_RULES.md) と所有RepositoryのZERO Operationsを参照する。
+
 ## 必ずここから開始
 
 Workspace内の作業開始順は固定する。
