@@ -71,10 +71,23 @@ def main():
         raise RuntimeError("TOKEN_FORMAT_INVALID")
     # Bind this enrollment to the Master-selected Account, not an arbitrary
     # account returned by a token's available zones.
-    verified = cf_get("/accounts/" + account_id + "/tokens/verify", entered).get("result")
-    if not isinstance(verified, dict) or verified.get("status") != "active":
-        raise RuntimeError("ACCOUNT_TOKEN_NOT_ACTIVE")
-    print("CLOUDFLARE_ACCOUNT_TOKEN=ACTIVE")
+    # A prepared credential may be account-owned or user-owned.
+    try:
+        account_check = cf_get("/accounts/" + account_id + "/tokens/verify", entered)
+        verified = account_check.get("result") if isinstance(account_check, dict) else None
+    except urllib.error.HTTPError:
+        verified = None
+    if isinstance(verified, dict) and verified.get("status") == "active":
+        print("CLOUDFLARE_TOKEN=ACTIVE_ACCOUNT")
+    else:
+        try:
+            user_check = cf_get("/user/tokens/verify", entered)
+            verified = user_check.get("result") if isinstance(user_check, dict) else None
+        except urllib.error.HTTPError:
+            verified = None
+        if not isinstance(verified, dict) or verified.get("status") != "active":
+            raise RuntimeError("TOKEN_NOT_ACTIVE_FOR_TARGET")
+        print("CLOUDFLARE_TOKEN=ACTIVE_USER")
     query = urllib.parse.urlencode({"name": DOMAIN, "per_page": "5"})
     rows = cf_get("/zones?" + query, entered).get("result")
     if not isinstance(rows, list):
@@ -121,7 +134,7 @@ if __name__ == "__main__":
             "ZONE_NOT_ACTIVE_NO_SECRET_STORED",
             "VAULT_ADMIN_CREDENTIAL_UNSAFE", "VAULT_READBACK_NOT_VERIFIED",
             "ACCOUNT_ID_REQUIRED_OR_INVALID", "ACCOUNT_ZONE_MISMATCH_NO_SECRET_STORED",
-            "ACCOUNT_TOKEN_NOT_ACTIVE",
+            "ACCOUNT_TOKEN_NOT_ACTIVE", "TOKEN_NOT_ACTIVE_FOR_TARGET",
         }
         code = str(exc) if str(exc) in allowed else "AUTH_OR_TRANSPORT_NOT_VERIFIED"
         print("BOOTSTRAP=FAIL_" + code)
