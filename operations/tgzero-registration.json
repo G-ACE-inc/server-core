@@ -1,0 +1,19 @@
+{
+  "schema": "gace.tgzero-registration-router.v1",
+  "owner_repository": "seigo-gace/TGserver",
+  "runtime_checkout": "/home/admin1/projects/TGserver",
+  "entrypoint": "scripts/tgzero_admin.py",
+  "owner_entrypoint": "scripts/registration-admin.py",
+  "authority_files": {
+    "project_and_group_assignment": "storage-registry.json",
+    "live_topic_ids": ".tgs-state/topics.json",
+    "repository_stream_assignment": ".github/tgserver-zero-project-map.json",
+    "display_names": "config/topic-display-labels.json",
+    "system_log_sources": "collector/server-log-projects.json"
+  },
+  "topic_state_in_git_is_runtime_authority": false,
+  "missing_state_allows_topic_recreation": false,
+  "registration_command": "register --request <private-request.json>",
+  "lookup_command": "lookup --repo <owner/repo> --stream <stream>",
+  "runtime_verification_command": "runtime-status"
+}

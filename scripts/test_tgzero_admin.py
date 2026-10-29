@@ -11,6 +11,16 @@ spec.loader.exec_module(admin)
 
 
 class RouterTests(unittest.TestCase):
+    def test_unified_registration_routes_to_owner_without_a_second_registry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / 'scripts').mkdir()
+            (root / 'scripts/project-register.js').touch()
+            (root / 'scripts/registration-admin.py').touch()
+            args = Namespace(tgserver_root=root, action='register', request=pathlib.Path('/private/request.json'), operation_dir=None, image=None)
+            command = admin.command_args(args)
+            self.assertEqual(command, ['python3', str(root / 'scripts/registration-admin.py'), 'register', '--root', str(root), '--request', '/private/request.json'])
+
     def test_owner_delegation_uses_argv_no_shell_and_readonly_status(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)

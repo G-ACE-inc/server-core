@@ -1151,3 +1151,21 @@ the new regression passed. Restore the shared guard to its prior bytes and run
 TGserver owner-routing tests in a narrow, read-only dedicated workflow. This
 correction itself uses the required PR design preflight and merge; no admission
 checks are removed or weakened. The rejected run remains historical evidence.
+
+## 2026-10-29 — close central registration through runtime reflection
+
+Baseline routing still left authoritative-file discovery and runtime reflection
+to manual steps. Master commissioned unified Topic registration with preserved
+identities. Added a machine discovery contract containing owner/path roles only,
+lookup of actual live Project/Topic mappings, and routing to owner-side register,
+register-group, reflect and runtime-status. Existing phase commands remain for
+recovery; the normal entry no longer requires CHAT to coordinate each phase.
+
+Owner implementation retains single authoritative registry/state/map files,
+records provenance before new provider effects, resumes exact requests and
+verifies hashes from objects actually loaded by the running service. Existing
+Compose only, targeted recreation, unrelated env/mount changes denied and private
+rollback retained. No additional AI, Bot, daemon or write HTTP API. Source, runtime
+registration and Producer raw/search success remain separate. Exact CI/image/live
+acceptance is recorded in TGserver Current50. Removing the router does not remove
+existing Topic IDs, registrations, operation records or provider history.

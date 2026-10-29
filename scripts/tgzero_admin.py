@@ -8,7 +8,8 @@ import re
 import subprocess
 import sys
 
-DEFAULT_OWNER = pathlib.Path('/home/admin1/projects/TGserver')
+CONTRACT = json.loads((pathlib.Path(__file__).resolve().parents[1] / 'operations/tgzero-registration.json').read_text())
+DEFAULT_OWNER = pathlib.Path(CONTRACT['runtime_checkout'])
 
 
 def command_args(args):
@@ -16,6 +17,18 @@ def command_args(args):
     script = root / 'scripts/project-register.js'
     if not script.is_file():
         raise ValueError('TGSERVER_REGISTRATION_TOOL_NOT_INSTALLED')
+    if args.action in ('register', 'register-group', 'reflect', 'runtime-status'):
+        owner = root / 'scripts/registration-admin.py'
+        if not owner.is_file():
+            raise ValueError('TGSERVER_WORKFLOW_NOT_INSTALLED')
+        command = ['python3', str(owner), args.action, '--root', str(root)]
+        for key in ('request', 'operation_dir', 'image'):
+            value = getattr(args, key, None)
+            if value is not None:
+                command += ['--' + key.replace('_', '-'), str(value)]
+        if getattr(args, 'dry_run', False):
+            command += ['--dry-run']
+        return command
     if args.action in ('audit-topics', 'provision'):
         if args.action == 'provision' and (not args.project or not re.fullmatch(r'P\d{3}', args.project) or
                 not args.state_sha256 or not re.fullmatch(r'[a-f0-9]{64}', args.state_sha256)):
@@ -43,8 +56,15 @@ def command_args(args):
     command = ['docker', 'run', '--rm', '--network=none', '--user',
                f'{os.getuid()}:{os.getgid()}',
                '--read-only', '--cap-drop=ALL', '--security-opt=no-new-privileges',
-               '-v', f'{root}:/owner' + (':ro' if args.action in ('status', 'plan-project', 'plan-group') else '')]
+               '-v', f'{root}:/owner' + (':ro' if args.action in ('status', 'lookup', 'plan-project', 'plan-group') else '')]
     owner_args = [args.action, '--root', '/owner']
+    if args.action == 'lookup':
+        if not getattr(args, 'repo', None) and not args.project:
+            raise ValueError('REPO_OR_PROJECT_REQUIRED')
+        for key in ('repo', 'stream', 'project'):
+            value = getattr(args, key, None)
+            if value is not None:
+                owner_args += ['--' + key, value]
     if args.action in ('plan-project', 'plan-group', 'apply'):
         if args.plan is None:
             raise ValueError('PRIVATE_PLAN_PATH_REQUIRED')
@@ -72,15 +92,30 @@ def command_args(args):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['status', 'plan-project', 'plan-group', 'apply', 'recover', 'audit-topics', 'provision'])
+    parser.add_argument('action', choices=['status', 'lookup', 'register', 'register-group', 'reflect', 'runtime-status', 'plan-project', 'plan-group', 'apply', 'recover', 'audit-topics', 'provision'])
     parser.add_argument('--tgserver-root', type=pathlib.Path, default=DEFAULT_OWNER)
     parser.add_argument('--request', type=pathlib.Path)
     parser.add_argument('--plan', type=pathlib.Path)
     parser.add_argument('--digest')
     parser.add_argument('--project')
     parser.add_argument('--state-sha256')
+    parser.add_argument('--repo')
+    parser.add_argument('--stream')
+    parser.add_argument('--operation-dir', type=pathlib.Path)
+    parser.add_argument('--image')
+    parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args(argv)
     try:
+        if args.action == 'lookup':
+            result = subprocess.run(command_args(args), capture_output=True, text=True, check=False)
+            if result.returncode:
+                print(result.stderr, end='', file=sys.stderr)
+                return result.returncode
+            value = json.loads(result.stdout)
+            value['authority'] = {key: str(args.tgserver_root.resolve() / pathlib.PurePosixPath(file).relative_to('/owner'))
+                                  for key, file in value['authority'].items()}
+            print(json.dumps(value, ensure_ascii=False, indent=2))
+            return 0
         return subprocess.run(command_args(args), check=False).returncode
     except (OSError, ValueError) as error:
         print('TGZERO_ADMIN_ERROR=' + (str(error) if isinstance(error, ValueError) else type(error).__name__), file=sys.stderr)

@@ -18,7 +18,7 @@ Design / loading contract: [`docs/GITHUB_PROJECT_RULE_PLANE.md`](docs/GITHUB_PRO
 
 各Projectの実装本体は所有Repositoryに残す。
 
-TGserver ZEROのProject登録・Group増設管理もserver-coreを入口にする：`python3 scripts/tgzero_admin.py status`。登録計画・適用・途中停止復旧・既存Topic provisionerへの接続は [Project Integration Rules](docs/PROJECT_INTEGRATION_RULES.md) と所有RepositoryのZERO Operationsを参照する。
+TGserver ZEROのProject登録・Group増設管理もserver-coreを入口にする：`python3 scripts/tgzero_admin.py lookup --repo OWNER/REPO` で既存番号・実Topic ID・実機正本ファイルを照会、`register --request /private/request.json` で登録から既存Composeへの反映・読込SHA照合まで実施する。`runtime-status` で稼働一致を確認。発見契約は [`operations/tgzero-registration.json`](operations/tgzero-registration.json)、運用は [Project Integration Rules](docs/PROJECT_INTEGRATION_RULES.md) と所有RepositoryのZERO Operations。
 
 ## 必ずここから開始
 

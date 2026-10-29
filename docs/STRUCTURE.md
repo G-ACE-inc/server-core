@@ -46,8 +46,10 @@ README.md
   - Design / Delta / Router / Registry / Project standard / Operations contract
 - `operations/`
   - Secret値を持たないProvider / shared contract / audit-policy manifests
+  - `tgzero-registration.json`: TGserver owner・Live checkout・正本5ファイルの発見契約。番号/Topic ID台帳は複製しない
 - `scripts/`
   - 共通自動化・resolver・read-only audit
+  - `tgzero_admin.py`: TGserver照会と一括登録/Compose反映を所有Repoへrouting。登録実装は所有Repo内に置く
 - `archive/`
   - 旧版・退避。Current Authorityではなく通常Context対象外
 

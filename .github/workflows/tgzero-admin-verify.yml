@@ -4,12 +4,14 @@ on:
     paths:
       - scripts/tgzero_admin.py
       - scripts/test_tgzero_admin.py
+      - operations/tgzero-registration.json
       - .github/workflows/tgzero-admin-verify.yml
   push:
     branches: [main]
     paths:
       - scripts/tgzero_admin.py
       - scripts/test_tgzero_admin.py
+      - operations/tgzero-registration.json
       - .github/workflows/tgzero-admin-verify.yml
 permissions:
   contents: read
