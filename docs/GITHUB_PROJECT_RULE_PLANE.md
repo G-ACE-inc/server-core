@@ -227,3 +227,26 @@ The table below is an **implementation backlog against existing owners**, not a 
 **Trial recording contract:** for each row, record `CASE_ID / PROJECT_CURRENT / OWNER / DESIGN_REV / SOURCE_SHA / ENTRY_SURFACE / BEFORE / ACTION / ACTUAL_RESULT / AFTER / STATUS / EVIDENCE_URL / NEXT_SAFE_ACTION` in the existing owning Issue. Do not turn this table into a second mutable Current; record `UNKNOWN` when the client behavior, installed loader or Host result is not observed.
 
 **Baseline at proposal time:** C01–C03 have real failure observations under #40 and remain NOT_VERIFIED as recovered; C04–C09 are NOT_VERIFIED as full end-to-end outcomes. No invented elapsed-time, autonomy percentage, API quota or savings.
+
+## SERVER_AI profile reflection — 2026-10-29
+
+Master clarified the selected-lead/configured-subagent distinction in PR
+[#323](https://github.com/G-ACE-inc/server-core/pull/323). Rule16 remains the
+SERVER_AI authority; Rule17 retains GPT app CHAT's ServerTerminal, Notion and
+loop and adds only the configured-system-subagent exception to external AI
+selection. Shared Secret/domain/permission/state boundaries remain intact.
+
+Installed Global router/roles match the versioned templates. All four existing
+subagent model fields are unchanged, as are unrelated workspace settings and
+registered workspace folders. The old codex.serverCore rule/cache payload is
+removed; real client adapters route to Rule16 and owning Source. The optional
+workspace checker passes installed-file readback and does not become a per-task
+mutation gate. No paid model, external agent or new provider was invoked.
+
+Focused checks: workspace/profile11, CI selection3, design entry21, and rule-plane
+contract PASS. Full PR transport/security/Windows/command-contract CI passed
+before merge. A docs/profile-only follow-up exercises the actual CI skip path;
+its exact run/step evidence is retained in Rule16's work report. Installed files
+and passing CI do not prove active-session instruction injection or an actual
+Cursor lead-switch/subagent invocation; those remain NOT_VERIFIED until observed
+in the corresponding client. No production service or credential was changed.
