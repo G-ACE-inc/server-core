@@ -1,0 +1,23 @@
+name: tgzero-admin-verify
+on:
+  pull_request:
+    paths:
+      - scripts/tgzero_admin.py
+      - scripts/test_tgzero_admin.py
+      - .github/workflows/tgzero-admin-verify.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/tgzero_admin.py
+      - scripts/test_tgzero_admin.py
+      - .github/workflows/tgzero-admin-verify.yml
+permissions:
+  contents: read
+jobs:
+  owner-routing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest scripts/test_tgzero_admin.py -v
+      - run: python3 scripts/tgzero_admin.py --help

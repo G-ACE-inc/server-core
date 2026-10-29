@@ -34,9 +34,6 @@ jobs:
       - name: Agent continuation diagnostic regression
         run: python3 -m unittest scripts/chat_cu_continuation_test.py -v
 
-      - name: TGserver administration owner routing
-        run: python3 -m unittest scripts/test_tgzero_admin.py -v
-
       - name: Confidential Host ZIP existing API integration
         run: python3 -m unittest scripts.servercore_host_output_gateway_relay_test -v
 
