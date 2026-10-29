@@ -1,0 +1,31 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/17",
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "8064bca71230292aa91264068b615c62ed50a05b",
+    "expected_sha": "8064bca71230292aa91264068b615c62ed50a05b",
+    "command": "cd /home/admin1/server-core && python3 - <<'PY'\nimport json,pathlib,stat,urllib.request,urllib.error,re\nfrom pathlib import Path\nmanifest=Path('/home/admin1/server-core/operations/cloudflare-account.json')\nmcp=Path('/home/admin1/.cursor/mcp.json')\nif manifest.is_file():\n try:\n  x=json.loads(manifest.read_text())\n  ok=x.get('secret_id')=='cf-account-api' and x.get('consumer')=='g-ace-workspace'\n  print('CLOUDFLARE_API_CONTRACT='+('PASS' if ok else 'NOT_VERIFIED'))\n except Exception: print('CLOUDFLARE_API_CONTRACT=NOT_VERIFIED')\nelse: print('CLOUDFLARE_API_CONTRACT=ABSENT')\nif mcp.is_file() and not mcp.is_symlink():\n try:\n  f=json.loads(mcp.read_text())\n  c=f.get('mcpServers',{}).get('cloudflare-api',{})\n  ok=isinstance(c,dict) and c.get('url')=='https://mcp.cloudflare.com/mcp'\n  print('CLOUDFLARE_MCP_CONFIG='+('PASS' if ok else 'NOT_VERIFIED'))\n  print('CLOUDFLARE_MCP_AUTH_MODE='+('OAUTH_CONFIG' if ok and isinstance(c.get('auth'),dict) else 'NOT_VERIFIED'))\n except Exception: print('CLOUDFLARE_MCP_CONFIG=NOT_VERIFIED')\nelse: print('CLOUDFLARE_MCP_CONFIG=ABSENT')\np=Path('/home/admin1/.config/libral-vault/internal-token')\nif not p.is_file() or p.is_symlink() or p.stat().st_mode & 0o077:\n print('VAULT_TOKEN_FILE=NOT_READY')\n raise SystemExit(0)\nprint('VAULT_TOKEN_FILE=SAFE')\nsecret=p.read_text(encoding='utf-8').strip()\nif len(secret)<24:\n print('VAULT_AUTH=NOT_READY')\n raise SystemExit(0)\nbase='http://127.0.0.1:8791/internal/v1/actions/http'\nfor name in ('g-acebot.jp','g-acebot.com'):\n data={'secret_id':'cf-account-api','consumer':'g-ace-workspace',\n 'url':'https://api.cloudflare.com/client/v4/zones?name='+name,\n 'method':'GET','secret_header':'authorization','secret_prefix':'Bearer '}\n req=urllib.request.Request(base,data=json.dumps(data).encode(),\n headers={'Authorization':'Bearer '+secret,'Content-Type':'application/json'},\n method='POST')\n label='JP' if name.endswith('.jp') else 'COM'\n try:\n  with urllib.request.urlopen(req,timeout=12) as response: v=json.load(response)\n  provider=v.get('provider',{}) if isinstance(v,dict) else {}\n  api=json.loads(provider.get('body','{}'))\n  if not provider.get('ok') or not api.get('success'):\n   print('CLOUDFLARE_'+label+'_ZONE=API_REJECTED')\n  else:\n   rows=api.get('result',[])\n   found=[z for z in rows if isinstance(z,dict) and z.get('name')==name]\n   print('CLOUDFLARE_'+label+'_ZONE='+('FOUND_'+str(len(found)) if found else 'NOT_LISTED'))\n   if found:\n    print('CLOUDFLARE_'+label+'_STATUS='+('ACTIVE' if all(z.get('status')=='active' for z in found) else 'NOT_ACTIVE_OR_UNKNOWN'))\n except urllib.error.HTTPError as e:\n  try:\n   body=json.loads(e.read(4000))\n   code=(body.get('error') or {}).get('code','HTTP_'+str(e.code))\n   if not re.fullmatch(r'[A-Z0-9_]{3,60}',str(code)): code='HTTP_'+str(e.code)\n  except Exception: code='HTTP_'+str(e.code)\n  print('CLOUDFLARE_'+label+'_ZONE=VAULT_'+str(code))\n except Exception: print('CLOUDFLARE_'+label+'_ZONE=TRANSPORT_NOT_VERIFIED')\nPY\n"
+  }
+}
