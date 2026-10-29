@@ -8,6 +8,8 @@ GitHub上で確認できる対象RevisionからServerへ反映し、DeployとRun
 
 ## Standard Source-to-Server Flow
 
+**Executor distinction:** 以下の履歴・対象Revision・rollback確認は必要な範囲で共通。直接依頼されたSERVER_AIは通常のローカルGit/Compose等で実行し、GPT CHAT専用のActions中継やreceipt発行を追加条件にしない。実際にguarded Host/APIを使う場合の認証は維持する。Source/CIだけで本番権限を推定せず、既存の明示許可と対象操作を照合する。
+
 ```text
 Development / Debug
   -> Test / Verify

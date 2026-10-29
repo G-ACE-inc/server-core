@@ -26,21 +26,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Select affected execution profile
+        id: scope
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/server_core_ci_scope.py --base "$CI_BASE_SHA" --output "$GITHUB_OUTPUT"
+
+      - name: CI scope selection regression
+        run: python3 -m unittest discover -s scripts -p server_core_ci_scope_test.py -v
+
       - name: Terminal input and output lossless regressions
+        if: steps.scope.outputs.remote_chat == 'true'
         run: |
           python3 -m unittest discover -s tests -p 'test_terminal_unbounded_command_regression.py' -v
           python3 -m unittest discover -s tests -p 'test_host_terminal_full_output.py' -v
 
       - name: Agent continuation diagnostic regression
+        if: steps.scope.outputs.remote_chat == 'true'
         run: python3 -m unittest scripts/chat_cu_continuation_test.py -v
 
       - name: Confidential Host ZIP existing API integration
+        if: steps.scope.outputs.remote_chat == 'true'
         run: python3 -m unittest scripts.servercore_host_output_gateway_relay_test -v
 
       - name: Encrypted Host output inbox existing UNIX socket regression
+        if: steps.scope.outputs.remote_chat == 'true'
         run: python3 -m unittest scripts.servercore_host_output_cipher_inbox_test -v
 
       - name: Authenticated private ZIP Artifact publisher regression
+        if: steps.scope.outputs.remote_chat == 'true'
         run: python3 -m unittest scripts.servercore_host_output_private_artifact_publish_test -v
 
       - name: CU40 design-before-source preflight

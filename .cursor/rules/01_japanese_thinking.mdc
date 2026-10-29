@@ -1,12 +1,8 @@
 ---
-description: thinking・内部推論を日本語に強制する。全チャット・全モデルに適用。
-alwaysApply: true
+description: Compatibility stub. SERVER_AI communication follows Rule 16 and the selected client's instructions.
+alwaysApply: false
 ---
 
-# 日本語Thinking強制ルール
+# SERVER_AI language compatibility
 
-## 絶対ルール
-- thinkingブロック内の思考は**必ず日本語**で行う
-- 英語でthinkingしてはならない
-- 内部推論・途中分析・仮説検討・手順立案をすべて日本語で行う
-- このルールはモデル切替・チャット新規作成・ワークスペース変更に関係なく常に適用される
+User-facing explanations should be clear Japanese. Do not impose or expose internal reasoning, full-log output or GPT app CHAT reporting formats. See server-core Rule #16; this inactive stub adds no execution rule.

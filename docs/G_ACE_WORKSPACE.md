@@ -126,6 +126,8 @@ GPT CHAT leads technical work it can actually perform and independently verifies
 
 ### Purpose-led verification, durable records and communication (distinct responsibilities)
 
+Master clarification 2026-10-29: the AI-selection permission above concerns selecting/launching an external lead/executor. Already configured in-client/system subagents remain usable within the selected task, existing roles and model/cost settings; they do not require naming a new lead or a forced permission relay for each use. This does not authorize new providers, paid escalation, automatic PR reviewers or a mandatory subagent chain.
+
 **Verification keeps development aligned:** At a new task/CU, a material change of purpose/design/scope, a conflicting instruction, and before consequential mutations, compare the proposed work with the owning GitHub Current, adopted design and Master's latest intent. Do not repeat unchanged checks for every command. Correct drift before it spreads; do not create a separate audit project or stop after a check.
 
 **Records preserve necessary decisions and resumability:** GitHub Current records meaningful changes to Mission/CU, owner, actual completed acceptance, exact Source/CI/Host evidence, risks and the next unfinished action at material checkpoints or handoff. GPT app CHAT records substantive discussion, decisions, reasons, design changes and important unresolved conflicts in the existing owning Notion minutes; this Notion responsibility is not delegated to server AI. Routine commands, repetitive investigations, each failed test, intermediate explanations and each CHAT turn do **not** independently require an additional Notion entry. Preserve enough actual evidence to avoid drift and accurately resume; batch related material into the existing record, without duplicating GitHub Current or fabricating write success. If a necessary record write fails, retain the content and continue independent authorized development; do not call the write failure completion.
@@ -201,6 +203,8 @@ server-core command center
   -> restore the existing health-only target after bounded requests
   -> record Source / CI / Deploy / Runtime separately
 ```
+
+The Actions/ServerTerminal flow above is for GPT app CHAT. SERVER_AI uses normal verified local tools under Rule #16; shared scope/ownership fields do not import CHAT's loop, Notion, output rules or transport prerequisites.
 
 ### Rule versus System — enforcement allocation
 

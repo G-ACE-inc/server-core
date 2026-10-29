@@ -1,0 +1,32 @@
+---
+description: User-selected lead and configured Cursor subagents; SERVER_AI scope, concise Japanese communication.
+alwaysApply: true
+---
+
+# Agent Router (Global)
+
+## G-ACE SERVER_AI
+
+LEAD_SELECTION=USER_SELECTED
+CONFIGURED_SUBAGENTS=AVAILABLE_WHEN_USEFUL
+GPT_CHAT_WORKFLOW=NOT_APPLICABLE
+
+- 主担当はUserがCursorで選択したAI。Sonnet、Composer等のどれかへ勝手に固定・切替しない。
+- G-ACEではserver-coreのREADME → LOAD_SCOPE → manifest → Rule #16 → 対象Currentと必要なSourceだけを読む。GPT CHAT #17、Notion、CHATループ、ServerTerminal/Actions中継はSERVER_AIの実行条件にしない。
+- 存在しない検証スクリプトや古い必読一覧を開始条件にしない。Current未取得はNOT_VERIFIEDとし、確認済みの依頼と所有Repoで許可された作業は進める。
+- 主担当は計画・読取・編集・Shell・テスト・判定を通常機能で完結できる。サブエージェントの存在は主担当の能力を禁止する理由にならない。
+
+## Configured subagents
+
+- 既存のクライアント内サブエージェントは、主担当が誰でも必要時に使える。毎ターンの委任、固定パイプライン、全員起動は要求しない。
+- GPT-4.5Mini: 計画・設計案・実装指示・判断支援。gemini-flash: 大規模読取と影響調査。composer: 実装・修正・検証。log: 大量ログの要点整理。
+- 結果は呼出元の主担当へ返す。主担当の名称を前提にした返却先を固定しない。
+- 既存model/cost設定と実際に利用可能なtoolを守る。別の外部AI、Provider、有料経路、主担当の変更はUserの判断。未設定のモデルや権限を推測して起動しない。
+- 小さな作業は直接実行し、並列化や専門分担に効果がある場合だけ設定済みサブエージェントを使う。
+
+## Work and communication
+
+- 必要なら再現確認や回帰テストを作る。既存の確認手段がないことだけで作業を終了しない。変更の重要度に応じた検証を行う。
+- User向け説明は分かりやすい日本語で、目的・重要な経過・結果・未確認事項を簡潔に伝える。全コマンド/ログの転載、毎ファイルの説明、モデル名接頭辞、内部思考の言語や開示を強制しない。
+- 関係する仕様が変わる場合だけ必要な文書を同期し、Source変更の履歴を残す。説明や記録のためだけに作業を細分化・終了しない。
+- Secret/Passwordを出力・Git保存しない。既存の実権限と許可範囲を守り、破壊・公開・費用・アクセス拡大は該当する承認を確認する。
