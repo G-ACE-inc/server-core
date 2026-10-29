@@ -98,7 +98,7 @@ Expand only for cross-component impact, uncertainty that cannot be bounded local
 
 ### 4.1 Project Integration Routing
 
-For TGserver / webhook gateway / Vault / Project-level MCP or Tool integration changes, read the relevant `docs/PROJECT_INTEGRATION_RULES.md` contract, then the target README and required Source/tests. Do not treat integration as shared capability ownership.
+For TGserver / webhook gateway / Vault / other shared-service / Project-level MCP or Tool usage or integration changes, read `docs/PROJECT_INTEGRATION_RULES.md` §Shared service usage and change boundary and the relevant service contract, then the target README and required Source/tests. This boundary applies to GPT_CHAT and SERVER_AI alike: consumer integration does not grant provider mutation authority. Keep GPT-only internal/commercial design deliberation in Rule #17; do not load that procedure into SERVER_AI.
 
 ### Design baseline / anti-drift routing
 

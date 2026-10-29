@@ -9,6 +9,18 @@ server-coreは共通Capabilityの司令室であり、Project固有実装は所�
 
 本Documentは、各Projectが共通基盤を利用するときの導入契約を定義する。
 
+## Shared service usage and change boundary
+
+**適用対象:** GPT CHAT、SERVER_AI、設定済みサブエージェント、自動処理を含む全実行主体。webhook-gateway、Libral Vault、TGserverおよび今後の共通サービスの利用・接続・提供元変更に適用する。本節が共通の利用／変更境界の正本であり、各サービスのAPI詳細・管理手順・Runtime状態は提供元Repository／Currentが所有する。
+
+1. **利用と変更の権限を分離する。** 利用側Projectの開発・接続・障害対応の依頼や、技術判断の一任は、提供元の実装・共通設定・認証・配送・保存仕様を変更する許可ではない。特定Projectの都合で提供元を無断変更・専用化し、既存利用者の動作を変えてはならない。server-coreを管理入口にしても、提供元の所有権は移らない。
+2. **正式な接続契約を使用する。** 提供元が定めたAPI又はMCPを使い、内部DB・保存ファイル・非公開関数・GPG等の内部部品を直接利用／操作して代用しない。提供元が正式に公開するModule APIや、それを使う既存の管理CLI・provisionerは接続契約に含む。APIとMCPの両方の新設や、新たなHTTPサービスの設置を義務化しない。接続口が未提供・不明なら、実装や利用可能状態を推測せず、提供元の契約確認又は拡張案の提示を行う。読取診断は許可された範囲で可能だが、内部状態の直接読取を製品の通常接続口にしない。
+3. **承認済みの管理操作は維持する。** 既存手順で許可されたProject／Topic／配送先の登録、キー管理等は、その対象・権限・手順内で実施できる。管理CLIが正本設定ファイルを更新すること自体は禁止しない。ただし既存利用者の割当・ポリシー・共有既定値の変更、直接ファイル編集による迂回、権限拡大はその登録権限に含まれない。Secret・Host・ドメイン等の個別承認境界も維持する。
+4. **提供元の変更は事前提案と明示承認を要する。** 接続契約内の利用側対応で解決できない場合は、提供元Owner／Current、変更理由、対象・具体案、既存利用者への影響、互換性確認、移行・復旧方法を示し、Masterの明示許可後に提供元の変更として別の範囲を確定する。Masterから直接依頼された提供元開発や、既に明示承認された提供元変更は、その範囲で通常の実装・検証を継続し、各編集で再承認を要求しない。利用側の包括的な改善依頼や過去の別件許可を、提供元変更の承認へ読み替えない。承認待ちはその変更だけを止め、独立した許可済み作業は継続する。
+5. **既存契約を保護する。** 既存のAPI／MCP／設定の意味、認証境界、データ、配送先、Project／Topic識別子を保存する。破壊的変更は明示承認された移行計画・必要な版分け／移行期間・復旧策なしに適用しない。特定利用者の成功で他利用者への影響確認を代用しない。影響範囲の既存契約との互換性を検証し、Source・CI・Runtimeを分けて記録する。利用者一覧や稼働状態が不明ならUNKNOWNとして残し、影響なしと断定しない。
+6. **契約と運用方法を提供元で管理する。** 接続先の発見方法、対応版、認証・権限、入力／出力、制限、エラー、再試行・重複処理、登録・設定反映、更新・廃止・復旧方法を該当する範囲で明示する。server-coreは正本への参照と管理入口を持ち、API仕様や実Topic台帳、Secretを複製しない。仕様の記載だけで接続・配送・保存完了と扱わない。
+7. **適用範囲を混同しない。** 本節は既存・承認済みの共通サービスを安全に利用・変更する規則であり、全製品への内部／外部商用機能の追加や外部公開を命じるものではない。内部利用・外部商用を設計時に考慮する手順はGPT CHAT [Rule #17](https://github.com/G-ACE-inc/server-core/issues/17)のみが所有し、提供範囲・優先順位・公開可否はMasterの判断に従う。SERVER_AIへGPT CHATのNotion・会話・設計検討手順を追加しない。別AI・サブエージェント・CIを経由して本節の変更境界を迂回してはならない。
+
 ## TGserver Integration
 
 TGserverはProject導入時の通信・記録基盤として利用する。
@@ -75,7 +87,7 @@ webhook gatewayはEvent連携入口として利用する。
 
 内部Producerは既存の `POST /internal/events` を使用する。API仕様の正本は [webhook-gateway / INTERNAL_EVENT_API.md](https://github.com/seigo-gace/webhook-gateway/blob/main/docs/INTERNAL_EVENT_API.md)、実装は同Repositoryの `src/system/internal-event-api.ts` と配送先設定とする。導入・変更時だけ該当範囲を確認し、Sourceの対応を稼働環境へ推測で適用しない。
 
-- **発行主体と利用単位**：server-coreを司令室として、GPT／SERVER_AIが既存Gatewayの生成手段を使い、内部Projectごとに独立したAPIキーを発行・登録・更新・失効する。旧共通キー1本を全Projectへ使い回す運用を新規導入の前提にしない。API利用の衝突を調査する際はキーの利用単位と `sourceId + eventId` の重複を分けて確認する。キー分離だけでevent ID競合や宛先権限の分離が保証されるとは扱わない。発行・登録の実値は既存Secret注入経路だけで扱い、会話・Git・ログへ残さない。
+- **発行主体と利用単位**：server-coreを司令室として、GPT／SERVER_AIが許可済みの発行・運用範囲内で既存Gatewayの生成手段を使い、内部Projectごとに独立したAPIキーを発行・登録・更新・失効する。旧共通キー1本を全Projectへ使い回す運用を新規導入の前提にしない。API利用の衝突を調査する際はキーの利用単位と `sourceId + eventId` の重複を分けて確認する。キー分離だけでevent ID競合や宛先権限の分離が保証されるとは扱わない。発行・登録の実値は既存Secret注入経路だけで扱い、会話・Git・ログへ残さない。
 - **認証**：既存 `INTERNAL_EVENT_API_TOKEN` と任意の `INTERNAL_EVENT_API_PROJECT_KEYS_JSON` に登録したプロジェクト別キーを、同じ `Authorization: Bearer ...` または `x-internal-api-token` で利用する。既存 `npm run secret` で生成し、実値はprivate deployment環境へ注入する。キー名は運用ラベルであり、プロジェクト別の宛先権限・scope・bodyの本人性を保証しない。新しいログイン・承認・キー発行HTTP APIは作らない。環境変更の反映には既存APIプロセスの再起動／再デプロイが必要で、旧共通キーは別途廃止するまで有効。
 - **宛先とdata**：呼出側は登録・有効化済み `destinationId` とAPI schemaのevent/dataを指定する。URL・credential・outbound header・retry policyはdeployment所有とする。`payloadMode=json` は `data` のみを配送するが、原文保持を意味しない。`internalDataPolicy` 省略／`sanitize` は従来の秘匿置換・文字列制限、`preserve` は完全な内部data保持であり、JSON配送・private-network許可・署名付き配送先への明示設定が必要。callerはこのpolicyを選べず、ログ・audit・errorの秘匿は維持する。コマンドへcredential実値を埋め込まない。
 - **受領と重複**：`202` はEvent／Delivery／OutboxのDB commit済み受領であり、配送・Host実行・TGserver保存完了ではない。`sourceId + eventId` を重複キーとし、新規受付のfingerprintはその宛先policy適用後の意味内容を対象とする。同一キー・同一内容はduplicate、異なる内容は `409 IDEMPOTENCY_KEY_PAYLOAD_CONFLICT`。fingerprintのない旧行は旧duplicate動作を維持する。policy変更後の409を新IDの自動再送で回避せず、元操作の実行状態を確認する。

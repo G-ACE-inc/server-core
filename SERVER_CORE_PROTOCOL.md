@@ -119,6 +119,8 @@ Server上の直接Source修正を正式開発履歴の代替にしない。Runti
 
 server-coreは共有Capabilityの実装本体を抱え込まず、Discovery・接続契約・所有者・権限境界・Availability stateを管理する。
 
+共通サービスの利用権限は提供元の変更権限ではない。全実行主体は [Project Integration Rules / Shared service usage and change boundary](docs/PROJECT_INTEGRATION_RULES.md#shared-service-usage-and-change-boundary) に従う。通常技術判断の一任やRuntime委任も、この提供元変更の事前承認境界を置き換えない。承認済み管理手順・明示依頼された提供元開発は同節の範囲で継続する。
+
 Discovery Authority: `docs/WORKSPACE_REGISTRY.md`
 
 Registry記載だけでCurrent Runtimeを証明しない。必要時は実設定・Provider・Endpoint・Docker・GitHub等をreadbackする。
