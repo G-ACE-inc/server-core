@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Exactly two command-authoring authorities
+      - name: GPT command contracts and inactive SERVER_AI adapter
         shell: bash
         run: |
           set -euo pipefail
@@ -37,5 +37,6 @@ jobs:
           grep -q 'MASTER TERMINAL COMMAND CONTRACT' docs/MASTER_TERMINAL_COMMAND.md
           grep -q 'COMMAND_ROUTINE.md' .cursor/rules/02_master_terminal_command.mdc
           grep -q 'MASTER_TERMINAL_COMMAND.md' .cursor/rules/02_master_terminal_command.mdc
-          grep -q 'alwaysApply: true' .cursor/rules/02_master_terminal_command.mdc
+          grep -q 'alwaysApply: false' .cursor/rules/02_master_terminal_command.mdc
+          grep -q 'not a SERVER_AI execution contract' .cursor/rules/02_master_terminal_command.mdc
           grep -q 'MASTER_TERMINAL_COMMAND.md' docs/LOAD_SCOPE.md

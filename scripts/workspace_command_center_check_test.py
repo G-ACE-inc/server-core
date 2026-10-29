@@ -94,7 +94,7 @@ class WorkspaceRuleModeTests(unittest.TestCase):
         self.install_stubs()
         file = self.root / 'workspace/G-ACE.code-workspace'
         data = json.loads(file.read_text())
-        data['settings']['codex.serverCore.requiredStartFiles'] = ['missing/KB.md']
+        data['settings']['codex.serverCore.requiredStartFiles'] = ['missing/retired-design.md']
         data['settings']['user.preference'] = {'keep': True}
         file.write_text(json.dumps(data))
         self.assertIn('retired codex.serverCore', ' '.join(workspace.check(self.root)))

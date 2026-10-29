@@ -6,4 +6,5 @@ alwaysApply: false
 # Master Terminal Reference
 
 `docs/MASTER_TERMINAL_COMMAND.md` owns the GPT app CHAT manual handoff format.
+`docs/COMMAND_ROUTINE.md` owns GPT CHAT command authoring/transport; neither document is a SERVER_AI local-tool prerequisite.
 SERVER_AI uses normal verified local tools under Rule #16 and the applicable task/permissions. GPT-specific formatting and Actions receipts are not prerequisites.
