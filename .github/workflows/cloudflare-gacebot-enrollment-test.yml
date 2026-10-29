@@ -1,6 +1,13 @@
 name: Cloudflare G-ACE Domain Enrollment Tests
 
 on:
+  push:
+    branches:
+      - feat/cloudflare-gacebot-jp-vault-mcp-20261029
+    paths:
+      - 'scripts/cloudflare_gacebot_com_bootstrap.py'
+      - 'tests/test_cloudflare_gacebot_com_bootstrap.py'
+      - '.github/workflows/cloudflare-gacebot-enrollment-test.yml'
   pull_request:
     paths:
       - 'scripts/cloudflare_gacebot_com_bootstrap.py'
