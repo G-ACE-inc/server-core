@@ -45,6 +45,17 @@ Gateway同様、TGserverは**Source・稼働Runtime・Telegram Providerの物理
 
 
 
+## Cloudflare domain boundary (Master fixed 2026-10-29)
+
+Cross-project deployment, Gateway Producer integration, DNS/Tunnel/Access changes and outgoing live tests must respect the **owning product domain**, not merely a working shared URL.
+
+- Gserver and general G-ACE applications use the designated **G-ACE primary domain**; the **Astera product domain** (including its subdomains) is reserved for Astera-related applications only.
+- Using any Astera-owned domain/hostname for a non-Astera application, even through the existing shared Webhook Gateway, **requires the Master's explicit *advance* approval for the named host, purpose, and effects**. A prior 202, Cloudflare Access credential, DNS record, working Tunnel, older CHAT instruction or successful SSH test is **not** approval.
+- For each new connection or live test, resolve its owner, hostname, private route, Access policy and Gateway Bearer separately. If owner/permission is unverified, do not send traffic, persist credentials, deploy or add a public route. Continue independent project work and ask only for the protected domain exception when truly needed.
+- **Do not destroy or retarget existing Astera DNS/Tunnel/Access** to solve an ownership violation. Reuse the same Gateway application and its `POST /internal/events`, Event/Delivery/Outbox and Worker; split only the access path when necessary, not the Gateway product.
+- The exact domain map is stored in the private Gserver/Gateway integration Current and [Notion Gserver/TGserver handoff](https://app.notion.com/p/407cdcf128e4810f9fc8d7f3d97aba8c) under "Cloudflareドメイン所有区分・Gserver優先・事前承認"; do not copy active Hostnames or Secrets to public Source/issues. Executors must load the applicable [Rule #16](https://github.com/G-ACE-inc/server-core/issues/16) or [Rule #17](https://github.com/G-ACE-inc/server-core/issues/17).
+- Past Gserver-to-Astera-zone canary evidence remains historical fact. It does not authorize any **new** cross-zone send, even a read-only-looking HTTP probe. Live migration/activation is NOT_VERIFIED until the correct G-ACE path is tested and allowed.
+
 ## webhook gateway Integration
 
 webhook gatewayはEvent連携入口として利用する。
