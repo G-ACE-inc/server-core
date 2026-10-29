@@ -60,7 +60,7 @@ def main():
     print("TARGET_ZONE=" + DOMAIN)
     print("VAULT_SECRET_ID=" + SECRET_ID)
     print("MCP_AUTHENTICATION=SEPARATE_OAUTH")
-    token = getpass.getpass("Cloudflare API token (hidden): ")
+    token = getpass.getpass("Enter value (hidden): ")
     if not 32 <= len(token) <= 512 or not token.isascii() or any(c.isspace() for c in token):
         raise RuntimeError("TOKEN_FORMAT_INVALID")
     result = cf_get("/user/tokens/verify", token).get("result")
