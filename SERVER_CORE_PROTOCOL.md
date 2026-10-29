@@ -13,6 +13,14 @@ server-coreは司令室としてTaskをRouting/Dispatchするが、Project固有
 
 人間、AI、自動処理のすべてに適用する。
 
+### Executor scope
+
+共通なのは対象の所有権、Secret/Password保護、履歴、実際の権限、破壊・公開・費用等の保護境界。SERVER_AIはRule #16と通常のローカル開発機能、GPT app CHATはRule #17 / Work Routine §6と既存ServerTerminalを使う。CHAT専用Actions/START/receipt、Notion、会話・出力規則をSERVER_AIの開始・継続条件にしない。既存のHost/APIを呼ぶ場合はその実際の認証・admissionを守るが、ローカル操作のために別のCHAT要求や承認receiptを作らない。
+
+Masterが主担当・外部AIを選択する。設定済みのクライアント内サブエージェントは、担当Task内で従来の役割と既存のmodel/cost設定のまま必要時に使える。別サービスへの起動・課金設定変更・自動PRレビューをこの例外で許可しない。
+
+承認済みTaskの通常の編集・調査・テスト・回復は担当AIが判断する。Secret実値を会話/ログ/Gitへ出さず、必要な範囲の既存Secret利用と、追加・削除・rotation・アクセス拡大を区別する。既存の明示許可は再要求しない。実際の拒否や未確認の破壊/公開/費用/ドメイン所有変更を推測で迂回せず、該当操作だけ保留し独立した許可済み作業を進める。
+
 ## Authority / Approval
 
 最終決定者はMaster（Product目的・仕様・重要なUX・公開/Release・費用/Provider/Model方針・Secret権限・不可逆Data・最終受入）。AIは明示された目的・Scope・Current Rule内の通常技術判断と実行を担当する。質問・提案・説明は承認ではない。
@@ -121,7 +129,7 @@ DebugAIは独立Project/runtime。Sourceのmain、開発feature、実稼働runti
 
 既存DebugAI MCPの13 tools、bounded Server Command、guarded GitOps、exact HEAD/health readbackは指定されたLive Revisionで検証済み。Master Internal Persistent DelegationもDebugAI 1 RepoでRuntime E2E済み。正確な最新稼働Revision・enrollment/allowed scopeはOwner Current #41、`operations/master-internal-repositories.json` と実Host readbackで確認する。Registryの過去成功を将来のRuntime PASSとしない。
 
-Workspace/server作業ではこの既存のbounded経路を優先する。ChatGPTアプリ直接remote MCP connectorは未検証、他RepoのHost登録も未検証。DebugAI製品全体・統合開発Log完成を推定しない。旧manual approvalを販売用途へ変更しない。
+このDebugAI固有経路は、DebugAI製品の該当操作を実際に使用する場合だけ参照する。直接依頼されたSERVER_AIの通常VS/shell作業や、他Projectの実装をDebugAI経由に固定しない。GPT CHATの共通Host経路はserver-coreが所有し、登録/実行可否はそのCurrentと実Hostで確認する。古い検証件数を現在の権限に読み替えず、DebugAI製品全体・統合開発Log完成も推定しない。販売用途への承認拡大は行わない。
 
 ### Reusable KB
 

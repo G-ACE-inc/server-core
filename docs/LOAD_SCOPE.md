@@ -18,6 +18,8 @@ Role: G-ACE Workspace司令室がTaskを正しいProject / Authorityへ振り分
 6. 今回必要なserver-core / Project Authority・Source・Testだけ
 ```
 
+SERVER_AIは通常のVS/editor/shell/test機能を使用する。GPTアプリ用ServerTerminal/Actions、Notion記録、会話ループ、出力形式を開始・継続条件にしない。主担当はMasterが選択し、既存のクライアント内サブエージェントは必要時に従来の役割と設定で利用できる。別の外部AI/有料経路へ勝手に切り替えない。実行の正本は#16で、共有の所有権・Secret・破壊操作等の境界だけ必要時に参照する。
+
 ### GPT_CHAT / ChatGPT Work (Master-facing orchestrator)
 
 このProfileのAgent LoopとNotion参照・記録はGPTアプリのチャットに限定する。サーバーAIへこのCHAT手順をロード・適用せず、委任先にNotion記録を要求しない。詳細の適用範囲はWork Routine §6を参照する。
@@ -48,7 +50,7 @@ For the integrated platform only: Tool B's common Host / isolated `dev.job` desi
 
 ## 3. Dispatch Decision
 
-Before entering a target, identify its purpose/expected result, Project/Repository/owner, responsibility, required Authority, reuse candidates (`REUSE_CANDIDATES`), verification path and approval boundary. If ownership is unknown, use `docs/WORKSPACE_REGISTRY.md`; do not create another Project/Module/Tool/Document before checking existing ownership and assets. Mission/CU/pre-dispatch detail belongs to Work Routine §6.
+Before entering a target, identify its purpose/expected result, Project/Repository/owner, responsibility, required Authority, reuse candidates (`REUSE_CANDIDATES`), verification path and approval boundary. If ownership is unknown, use `docs/WORKSPACE_REGISTRY.md`; do not create another Project/Module/Tool/Document before checking existing ownership and assets. SERVER_AI uses #16 and verified task/repository evidence; GPT CHAT pre-dispatch detail belongs to Work Routine §6. Unavailable Project metadata is NOT_VERIFIED, not a reason to abandon independent authorized local work or invent permissions.
 
 ### 3.1 Project-list containment gate (mandatory for GPT CHAT / SERVER_AI / Codex / Composer)
 
@@ -100,7 +102,7 @@ For TGserver / webhook gateway / Vault / Project-level MCP or Tool integration c
 
 ### Design baseline / anti-drift routing
 
-For a source-changing CU, resolve the owning repository's canonical Design/Specification link from its Current/README before editing, fetch only relevant sections and prior Design Delta, and check proposed Source/Test against CU acceptance. Recheck at diff/PR and on scope changes using the existing `docs/G_ACE_WORKSPACE.md` §6 Design-alignment step. An inaccessible baseline is `DESIGN_BASELINE_NOT_VERIFIED`; a conflicting change is `DESIGN_DRIFT_REVIEW_REQUIRED`. Do not improvise a substitute design, claim compliance without reading, or create another design tracker. Continue independent read-only work while the affected mutation awaits resolution.
+For a source-changing CU, resolve the owning repository's canonical Design/Specification link from its Current/README before editing, fetch only relevant sections and prior Design Delta, and check proposed Source/Test against CU acceptance. Recheck material scope/design changes and the final diff under the selected profile: SERVER_AI #16, or GPT CHAT Work Routine §6. An inaccessible baseline is `DESIGN_BASELINE_NOT_VERIFIED`; a conflicting change is `DESIGN_DRIFT_REVIEW_REQUIRED`. Use a verified alternative in the same owner's repository when available; do not invent an adopted design or a new tracker. Continue independent authorized work while the affected decision is resolved.
 
 ## 5. Reuse Search Order
 

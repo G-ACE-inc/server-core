@@ -1169,3 +1169,40 @@ rollback retained. No additional AI, Bot, daemon or write HTTP API. Source, runt
 registration and Producer raw/search success remain separate. Exact CI/image/live
 acceptance is recorded in TGserver Current50. Removing the router does not remove
 existing Topic IDs, registrations, operation records or provider history.
+
+## 2026-10-29 — SERVER_AI scope and selected-lead Cursor configuration
+
+Baseline: Rule16 and client entries selected SERVER_AI, but README/shared references
+still routed into GPT app CHAT Work Routine/Actions, global Cursor forced Composer
+and contradicted configured subagent use, and workspace settings named missing
+KB/PROJECT_STATUS/verifier files. Master clarified that CHAT's ServerTerminal,
+Notion and output/loop rules do not apply to server-side executors. Master selects
+the lead/external AI; already configured in-client subagents remain usable with
+the original plan/read/implement/log roles regardless of the selected lead.
+
+Change: keep Rule16 as the executor authority, scope shared references explicitly,
+retain CHAT transport/Notion functionality, and remove false local prerequisites.
+Normal SERVER_AI tools, proportional verification including new focused tests,
+concise explanations and materially affected documentation replace forced chains,
+full output and record-only stops. Domain ownership, credentials, actual installed
+admission, destructive/public/cost protection and GitHub history remain. Notion is
+not a SERVER_AI domain-map dependency; unavailable verified owner data holds only
+the affected domain effect and never grants cross-zone permission.
+
+Cursor role/router templates are versioned adapters, not another rule authority.
+The existing optional workspace checker can explicitly install them, preserving
+existing model fields and unrelated workspace settings, backing up private files
+and detecting installed adapter drift. No provider, model download, AI launch,
+production service or Secret mutation occurs. Actual live client injection remains
+separate from installed-file verification.
+
+CI selection skips unrelated remote CHAT/Notion/PowerShell/deploy tests for pure
+SERVER_AI adapters/docs/wiring changes; shared guard checks remain. Workflow,
+classifier, executable/unknown or CHAT request/transport changes keep full checks.
+Classification has focused positive and conservative negative tests. All original
+CHAT verification steps and their admission logic remain present.
+
+Rollback: revert owned Source/adapters and restore private client/workspace/rule
+backups if needed; preserve model settings, other writers, CHAT artifacts, domains
+and protected data. GitHub profile edits use current-body comparison, preserving
+concurrent owner changes. Evidence belongs in Rule16/owning work-report history.

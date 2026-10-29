@@ -1,5 +1,7 @@
 # AI自由コマンド作成・簡易ゲート
 
+**Profile scope:** 下記のServerTerminal/Actions送信手順はGPTアプリCHAT用。直接依頼されたSERVER_AIは通常のローカルeditor/shell/testを使用する。実行先・破損防止・Secret非表示の確認は共有するが、Actions要求・START/receipt・Master向けコマンド形式をローカル実行の条件にしない。
+
 通常の開発実行は、CHAT自身がShellコマンドを作成して既存の `host.command` から実行する。対象Repo・作業ディレクトリ・実行先・現在のSHAを確認し、既存のGitHub Actions → Gateway → Receiver → Hostを使用する。Masterに技術判断やコマンド選択を求めない。
 
 実行直前にAI自身が一度だけ確認する。

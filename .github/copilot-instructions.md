@@ -13,7 +13,7 @@
 
 1. Lock **the target product's exact canonical purpose** from its Current and active Design, separate from the immediate CU (e.g. FREE review is not DebugAI's entire goal). Verify CU/owner, PR/branch/HEAD/paths, prior cancelled/reverted/overlapping Branches and reusable Source before changes.
 2. Beneficial new Branches, in-parent Modules/tests and linked worktrees **are allowed** for quality, parallelism, isolation, testing or speed; no numeric Branch cap. Do not create derivative sibling Projects at the top-level server Project list. Git Branch alone needs no Host worktree. Record split benefit, owner and post-merge/revert cleanup owner. Never delete another writer's work.
-3. Choose the smallest **complete** in-scope change and focused offline/static tests; use existing CI only when the mode can run/check it. After failure, diagnose and fix or perform the next independent authorized same-CU step. Never equate a failed Host command, Codex quota or pending API evidence with all-work blocked.
+3. Choose a complete in-scope change and verification proportional to its risk; add a focused reproduction/test when needed even if none exists. Use affected CI, not CHAT-only Host/Notion workflows for unrelated SERVER_AI edits. After failure, diagnose and fix or perform the next independent authorized step; one failed tool is not all-work blocked.
 4. Routine technical methods, branch choices, tests and scoped reversible edits are delegated; don't return them to Master for approval. **Actual** protected Host admission, Secret/identity changes, irreversible state and material commercial/public effects retain real authorization. Never forge `human_approved`, claim missing permissions, or bypass an installed policy.
 5. Default to verified evidence → deterministic/local tests → already-connected bounded tools → additional AI only if necessary. No unnecessary agent/Workflow/MCP/Token/Project proliferation. No Groq/Gemini quota consumption for ordinary Copilot tests; use mocks/offline checks. Do not modify billing or invent provider quota facts.
 
@@ -23,3 +23,5 @@ Read applicable Current/rules → resolve conflicts/reuse → implement → veri
 
 Return a **compact executor receipt**, not the GPT CHAT five-part Master report:
 `CU/OWNER`; `CHANGED_PATHS`; `BRANCH/HEAD`; `TEST/CI_EVIDENCE`; `BLOCKED_STEP` if any; `EXACT_NEXT_ACTION/EXECUTOR`; `CLEANUP_OWNER` when relevant. Separate Source, CI, Host Runtime and UNKNOWN; no invented success, tool access, deployed state or delivered handoff. Use the existing owning GitHub Current for durable status—no parallel tracker.
+
+Master selects the lead/external AI. Already configured in-client subagents may support the chosen task; do not force delegation or switch models/providers. Use normal local tools; GPT app CHAT's ServerTerminal, Notion, per-turn reporting/output rules do not apply. Update only materially affected documentation, not every README on every edit.

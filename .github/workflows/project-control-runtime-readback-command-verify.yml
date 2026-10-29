@@ -24,7 +24,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - name: Select affected execution profile
+        id: scope
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python scripts/server_core_ci_scope.py --base "$env:CI_BASE_SHA" --output "$env:GITHUB_OUTPUT"
       - name: Parse exact Master PowerShell launcher
+        if: steps.scope.outputs.remote_chat == 'true'
         shell: powershell
         run: |
           $tokens=$null

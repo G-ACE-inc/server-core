@@ -5,6 +5,8 @@ Role: G-ACE WorkspaceでAIがMasterへ提示するTerminal Commandの形式・�
 
 ## 1. Scope
 
+**Profile:** GPT app CHATの手動引継ぎ用。直接作業するSERVER_AIのコマンド実行・通常の進捗説明には、この表示形式・文字数・報告手順を適用しない。SERVER_AIは選択されたクライアントの通常機能と#16に従う。
+
 **適用対象の限定（重要）:** この文書の行数・総文字数・ワンライナー・`GACE_RESULT`などの表示形式は、Master本人へCopy & Paste用Commandを**提示する場合だけ**の契約である。server-coreの新しい共通 `host.command` ターミナルでAI自身が作成・送信・実行するコマンド、標準入力、標準出力、標準エラー、成果物には適用しない。新ターミナルへの入出力を66行/6,072文字/4,000文字へ切り詰めたり、長文コマンドを禁止する根拠にしてはならない。新ターミナルは実際の通信・実行資源・認証・機密保護の境界に従い、必要な大きさのコマンドとデータを処理する。大容量は必要に応じて分割・永続化・ページングし、欠落や省略を明示して再取得可能にする。Masterへの承認・確認を新設しない。
 
 本Contractは、Workspace AI / Server AI / Cursor / Codex等がMasterへCopy & Paste用Commandを提示する場合に必ず適用する。

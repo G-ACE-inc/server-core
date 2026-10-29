@@ -3,6 +3,7 @@
 import json
 import tempfile
 import unittest
+import shutil
 from pathlib import Path
 
 import workspace_command_center_check as workspace
@@ -32,7 +33,7 @@ class WorkspaceRuleModeTests(unittest.TestCase):
         self.global_rule = self.root / ".cursor/rules/00_agent_language_router.mdc"
         self.global_rule.parent.mkdir(parents=True)
         self.global_rule.write_text(
-            "---\nalwaysApply: true\n---\n## G-ACE SERVER_AI\nCOMPOSER\n",
+            "---\nalwaysApply: true\n---\n## G-ACE SERVER_AI\nLEAD_SELECTION=USER_SELECTED\nCONFIGURED_SUBAGENTS=AVAILABLE_WHEN_USEFUL\nGPT_CHAT_WORKFLOW=NOT_APPLICABLE\n",
             encoding="utf-8",
         )
 
@@ -88,6 +89,46 @@ class WorkspaceRuleModeTests(unittest.TestCase):
     def test_invalid_symlink_target_rejected(self):
         self.rules.symlink_to(self.root / ".cursor/rules", target_is_directory=True)
         self.assertIn("rules link target mismatch", " ".join(workspace.check(self.root)))
+
+    def test_legacy_workspace_payload_is_removed_without_touching_other_settings(self):
+        self.install_stubs()
+        file = self.root / 'workspace/G-ACE.code-workspace'
+        data = json.loads(file.read_text())
+        data['settings']['codex.serverCore.requiredStartFiles'] = ['missing/retired-design.md']
+        data['settings']['user.preference'] = {'keep': True}
+        file.write_text(json.dumps(data))
+        self.assertIn('retired codex.serverCore', ' '.join(workspace.check(self.root)))
+        workspace.repair(self.root)
+        self.assertEqual(json.loads(file.read_text())['settings']['user.preference'], {'keep': True})
+        self.assertEqual(workspace.check(self.root), [])
+
+    def profile_fixture(self):
+        actual = Path(__file__).resolve().parents[1]
+        shutil.copytree(actual / '.cursor/templates', self.root / 'server-core/.cursor/templates')
+        shutil.copy2(actual / '.cursor/rules/01_japanese_thinking.mdc', self.server_rules / '01_japanese_thinking.mdc')
+        for name in ('composer.md', 'GPT-4.5Mini.md', 'gemini-flash.md', 'log.md'):
+            target = self.root / '.cursor/agents' / name
+            target.parent.mkdir(exist_ok=True)
+            target.write_text('---\nmodel: user-selected-existing-model\n---\nold role\n')
+
+    def test_profile_install_preserves_models_and_detects_installed_role_drift(self):
+        self.install_stubs()
+        self.profile_fixture()
+        workspace.repair_profile(self.root)
+        self.assertEqual(workspace.check(self.root), [])
+        composer = self.root / '.cursor/agents/composer.md'
+        self.assertIn('model: user-selected-existing-model', composer.read_text())
+        composer.write_text(composer.read_text() + '\nold conflicting rule\n')
+        self.assertIn('adapter drift: composer.md', ' '.join(workspace.check(self.root)))
+
+    def test_missing_agent_model_cannot_be_silently_configured(self):
+        self.install_stubs()
+        self.profile_fixture()
+        (self.root / '.cursor/agents/log.md').unlink()
+        before = self.global_rule.read_text()
+        with self.assertRaisesRegex(ValueError, 'EXISTING_AGENT_MODEL_CONFIGURATION_REQUIRED'):
+            workspace.repair_profile(self.root)
+        self.assertEqual(self.global_rule.read_text(), before)
 
 
 if __name__ == "__main__":

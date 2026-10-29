@@ -87,7 +87,7 @@ server-core owns intake/routing, shared capability discovery, verification bound
 | System / Module document | Existing owning unit's implementation and handoff contract |
 | Commit / PR | Chronological work report and exact verification evidence |
 
-The sole development procedure is [Work Routine §6–§7](docs/G_ACE_WORKSPACE.md#6-development-routine). [GitHub work-report contract](docs/AUTO_COMMIT.md) owns Commit/Push/remote readback. Judge the Documentation Gate before completion:
+GPT app CHAT's development procedure is [Work Routine §6–§7](docs/G_ACE_WORKSPACE.md#6-development-routine). SERVER_AI follows [Rule #16](https://github.com/G-ACE-inc/server-core/issues/16), the commissioned task and owning repository, using normal local tools. CHAT's ServerTerminal/Actions route, Notion, output conventions and per-turn loop are not SERVER_AI prerequisites. [GitHub work-report contract](docs/AUTO_COMMIT.md) owns Commit/Push/remote readback. Judge only the documentation affected by the change before completion:
 
 ```text
 README_UPDATE_REQUIRED=YES/NO
@@ -110,7 +110,7 @@ The common Receiver health checks Host Writer and Result Sink RPC reachability; 
 
 ## Runtime and approval boundaries
 
-[SERVER_CORE_PROTOCOL](SERVER_CORE_PROTOCOL.md) owns shared authorization; Work Routine §6 owns decision delegation. Routine approved technical work does not acquire a new Master gate merely because it is a merge or restart. Protected intent, irreversible data, Secret/provider/public effects and explicit Current gates still require their actual authority. Never forge a receipt, widen Host access or infer delegation from Project membership.
+[SERVER_CORE_PROTOCOL](SERVER_CORE_PROTOCOL.md) owns shared authorization; Rule #16 owns SERVER_AI execution and Work Routine §6 owns GPT CHAT progression. Master selects the lead AI/external executor; configured in-client subagents are available within the selected task and existing model/cost settings. Routine approved technical work does not acquire a new Master gate merely because it is a merge or restart. Protected intent, irreversible data, Secret/provider/public effects and explicit Current gates still require their actual authority. Never forge a receipt, widen Host access or infer delegation from Project membership.
 
 Production residency remains Docker / Docker Compose. Use [DEPLOY_RUNBOOK](docs/DEPLOY_RUNBOOK.md) for source-to-runtime reflection, exact readback and rollback, and [STORAGE_LIFECYCLE](docs/STORAGE_LIFECYCLE.md) for log/cache/backup/cleanup. A README, registry entry or old CI/run is not current Host/container evidence.
 

@@ -20,7 +20,7 @@ Do not load unrelated repositories or historical Notion material by default.
 Execution invariants:
 - Fresh Current before mutation.
 - Reuse existing verified evidence/code/tool before new implementation.
-- Prefer deterministic checks and AVAILABLE_VERIFIED tools before paid AI reasoning.
+- Prefer sufficient deterministic checks and useful AVAILABLE_VERIFIED tools; do not require another AI/service for ordinary work.
 - Keep FACT / INFERENCE / UNKNOWN separate.
 - Keep SOURCE / TEST / CI / MERGE / DEPLOY / RUNTIME separate.
 - Never expose Secret/Token values.
@@ -31,3 +31,7 @@ Execution invariants:
 If Project/rule Current cannot be read, do not guess. Use the local server-core bootstrap only for safe routing and mark `RULE_PLANE_CURRENT=NOT_VERIFIED`.
 
 server-core is the Workspace control room. Project implementation remains in the owning repository.
+
+Master selects the lead AI. The lead may use already configured in-client subagents when useful, preserving their roles and existing model/cost settings; do not force a chain or replace the lead. External AI/service launches remain Master's choice.
+Use normal local editing/shell/testing tools. GPT app CHAT ServerTerminal/Actions, Notion, per-turn loop and output conventions do not apply. Create necessary focused tests and finish the assigned work; do not stop merely because an existing test is absent.
+Report material progress and evidence concisely in Japanese. No mandatory model-name prefix, internal-thinking language, full-log output or per-file narrative. Keep secrets private and respect real installed permissions.

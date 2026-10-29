@@ -31,6 +31,7 @@ README.md
   - normal context exclusion hints
 - `.cursor/`
   - Workspace Agent runtime rules / MCP client config
+  - `templates/`: versioned Cursor Global router and existing subagent role adapters; installation preserves user model settings
 - `.github/`
   - GitHub Actions / Dependabot / Issue/PR support
   - `copilot-instructions.md` はGitHub Copilot向けSERVER_AI最小bootstrap
@@ -49,6 +50,8 @@ README.md
   - `tgzero-registration.json`: TGserver owner・Live checkout・正本5ファイルの発見契約。番号/Topic ID台帳は複製しない
 - `scripts/`
   - 共通自動化・resolver・read-only audit
+  - `workspace_command_center_check.py`: optional wiring/profile verification and explicit `--repair-profile`; private backups, no per-task gate
+  - `server_core_ci_scope.py`: scope selection for unrelated SERVER_AI profile edits vs remote CHAT tests; unknown/shared executable changes keep full validation
   - `tgzero_admin.py`: TGserver照会と一括登録/Compose反映を所有Repoへrouting。登録実装は所有Repo内に置く
 - `archive/`
   - 旧版・退避。Current Authorityではなく通常Context対象外
