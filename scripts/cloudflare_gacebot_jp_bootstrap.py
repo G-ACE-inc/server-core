@@ -63,10 +63,8 @@ def main():
     entered = getpass.getpass("Enter value (hidden): ")
     if not 32 <= len(entered) <= 512 or not entered.isascii() or any(c.isspace() for c in entered):
         raise RuntimeError("TOKEN_FORMAT_INVALID")
-    result = cf_get("/user/tokens/verify", entered).get("result")
-    if not isinstance(result, dict) or result.get("status") != "active":
-        raise RuntimeError("TOKEN_NOT_ACTIVE")
-    print("CLOUDFLARE_TOKEN=ACTIVE")
+    # Account-owned tokens have a different verify route from user-owned tokens.
+    # Resolve the account only from the exact caller-visible target Zone.
     query = urllib.parse.urlencode({"name": DOMAIN, "per_page": "5"})
     rows = cf_get("/zones?" + query, entered).get("result")
     if not isinstance(rows, list):
@@ -79,6 +77,13 @@ def main():
     if not isinstance(matches[0].get("account"), dict) or not matches[0]["account"].get("id"):
         raise RuntimeError("ZONE_ACCOUNT_UNKNOWN_NO_SECRET_STORED")
     print("CLOUDFLARE_TARGET_ZONE=ACTIVE_AND_VISIBLE")
+    account_id = matches[0]["account"]["id"]
+    if not isinstance(account_id, str) or len(account_id) != 32 or any(c not in "0123456789abcdefABCDEF" for c in account_id):
+        raise RuntimeError("ZONE_ACCOUNT_ID_INVALID")
+    verified = cf_get("/accounts/" + account_id + "/tokens/verify", entered).get("result")
+    if not isinstance(verified, dict) or verified.get("status") != "active":
+        raise RuntimeError("ACCOUNT_TOKEN_NOT_ACTIVE")
+    print("CLOUDFLARE_ACCOUNT_TOKEN=ACTIVE")
     payload = {
         "id": SECRET_ID,
         "allowed_consumers": [CONSUMER],
