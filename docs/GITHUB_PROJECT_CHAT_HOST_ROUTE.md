@@ -14,6 +14,8 @@ Host経路の別CHAT実測では、**実際の新しい2会話**が、それぞ�
 
 **「ServerTerminalの権限がない」と判断する前に（GPTアプリCHAT）**：共通Terminalの登録元は `operations/github-project-bounded-host.json` の `dev_job.registered_repositories`。対象Repoの登録済みrootと実測HEADを使う `host.command` で、委任された通常の読取・ソース編集・検証を進める。CHAT自身に直接シェルのツールがないこと、対象Repoに専用のTerminal Workflowがないこと、旧DebugAI専用の委任登録がないことは、この共通経路が使えない根拠にならない。依頼ファイルは対象Repoではなく上記server-core側へ作る。Project登録だけで未登録Repoや本番操作の権限まで推定しない。
 
+実行可否は、そのCHATで提供されるGitHubの読取・書込・起動・結果取得機能を必要範囲で確認して判断する。標準の直接Shellがなくてもこの経路が利用可能なら実行する。利用可能性が不明な場合はUNKNOWNとし、存在しない機能や権限を推測しない。復旧後の元操作再開と、許可済み代替を確認した上での未完引継ぎは [Work Routine §6](G_ACE_WORKSPACE.md#6-development-routine) が所有する。経路説明のための不要な試験要求や同一コマンドの再送は作らない。
+
 失敗時は実際のrequest/Runと拒否コードを確認する。`HOST_COMMAND_SHA_MISMATCH` は対象Repoの実測SHA、`SOURCE_SHA_MISMATCH` はDispatcher SHAを再確認する問題であり、権限不足と報告しない。`HOST_COMMAND_ROOT_INVALID` は登録rootの実在・Git checkoutを所有者と照合し、`HOST_COMMAND_NOT_REGISTERED` は登録漏れとして扱う。`HOST_COMMAND_BUSY` は実行基盤の一時状態。未知の拒否は `HOST_COMMAND_ADMISSION_DENIED` のまま理由UNKNOWNとし、推測で権限拡張しない。`service.deploy` / `docker.operation` の専用Registry・サービス・Compose等の拒否は、その操作範囲だけの問題であり、登録済みRepoへの通常 `host.command` 全体を禁止されたと解釈しない。本番操作を自由コマンドで迂回せず、実際の拒否を所有Currentへ残し、独立した通常開発を続ける。
 
 コマンド作成時の軽い自己確認は `docs/COMMAND_ROUTINE.md`、Masterへ直接コマンドを提示する場合は `docs/MASTER_TERMINAL_COMMAND.md` を唯一の作成規則とする。このページに別のコマンド選択規則やゲートは設けない。
