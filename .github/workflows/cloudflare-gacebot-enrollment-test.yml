@@ -1,0 +1,29 @@
+name: Cloudflare G-ACE Domain Enrollment Tests
+
+on:
+  push:
+    branches:
+      - feat/cloudflare-gacebot-jp-vault-mcp-20261029
+    paths:
+      - 'scripts/cloudflare_gacebot_com_bootstrap.py'
+      - 'tests/test_cloudflare_gacebot_com_bootstrap.py'
+      - '.github/workflows/cloudflare-gacebot-enrollment-test.yml'
+  pull_request:
+    paths:
+      - 'scripts/cloudflare_gacebot_com_bootstrap.py'
+      - 'tests/test_cloudflare_gacebot_com_bootstrap.py'
+      - '.github/workflows/cloudflare-gacebot-enrollment-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile enrollment helper
+        run: python3 -B -c "import ast,pathlib; ast.parse(pathlib.Path('scripts/cloudflare_gacebot_com_bootstrap.py').read_text())"
+      - name: Offline account-ownership and Vault deny tests
+        run: python3 -B -m unittest discover -s tests -p test_cloudflare_gacebot_com_bootstrap.py -v
