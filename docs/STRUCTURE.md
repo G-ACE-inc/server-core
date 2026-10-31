@@ -88,7 +88,7 @@ README.md
 - `WORKSPACE_MCP.md`
   - Cursor Global MCP / Workspace共通実行経路 / verification
 - `PROJECT_INTEGRATION_RULES.md`
-  - TGserver / webhook gateway / Vault / MCP / Tool Project導入契約
+  - Contabo/Gserver共通のProject開始・Repo登録runbookと、TGserver / webhook gateway / Vault / MCP / Toolの正式接続・利用/提供元変更境界
 - `WORKSPACE_SHARED_SECRETS.md`
   - Vault経由Workspace shared Secret / Token契約
 - `KB_REUSE_DESIGN.md`
