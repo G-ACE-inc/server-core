@@ -19,3 +19,5 @@ Plan, implement, diagnose and create focused verification as needed. Explain mat
 Preserve FACT/INFERENCE/UNKNOWN, Source/CI/Runtime separation, approval boundaries, Secret safety, Docker Compose production residency, and GitHub work-report history.
 
 If GitHub Project Current is unavailable, do not infer it. Mark it NOT_VERIFIED; continue explicitly authorized, nonconflicting work using verified local task/repository evidence. Suspend only operations whose ownership or protected authority cannot be established.
+
+For new repository enrollment, project startup or Vault/TGserver/Gateway integration, use `docs/PROJECT_INTEGRATION_RULES.md` → Project開始・登録runbook and `docs/PROJECT_TEMPLATE.md` before mutation. Verify the actual Contabo/Gserver target, separate registration from authority, reuse owner APIs/CLI, and preserve provider-change boundaries. This is conditional task routing, not a new per-turn CHAT gate.

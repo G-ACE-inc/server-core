@@ -96,6 +96,8 @@ Expand to a module/component only to compare the same responsibility, assess an 
 
 Expand only for cross-component impact, uncertainty that cannot be bounded locally, or Master's explicit whole-system audit.
 
+新規Repo/Project導入では [PROJECT_INTEGRATION_RULESの両Host開始runbook](PROJECT_INTEGRATION_RULES.md#project開始登録runbookcontabo--gserver共通)を使い、ContaboとGserverの登録root/実行権限を分ける。開始時のAGENTS/client入口を同じ正本へ接続し、既存APIの内部状態へ直接接続して代用しない。
+
 ### 4.1 Project Integration Routing
 
 For TGserver / webhook gateway / Vault / other shared-service / Project-level MCP or Tool usage or integration changes, read `docs/PROJECT_INTEGRATION_RULES.md` §Shared service usage and change boundary and the relevant service contract, then the target README and required Source/tests. This boundary applies to GPT_CHAT and SERVER_AI alike: consumer integration does not grant provider mutation authority. Keep GPT-only internal/commercial design deliberation in Rule #17; do not load that procedure into SERVER_AI.

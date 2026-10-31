@@ -35,3 +35,5 @@ server-core is the Workspace control room. Project implementation remains in the
 Master selects the lead AI. The lead may use already configured in-client subagents when useful, preserving their roles and existing model/cost settings; do not force a chain or replace the lead. External AI/service launches remain Master's choice.
 Use normal local editing/shell/testing tools. GPT app CHAT ServerTerminal/Actions, Notion, per-turn loop and output conventions do not apply. Create necessary focused tests and finish the assigned work; do not stop merely because an existing test is absent.
 Report material progress and evidence concisely in Japanese. No mandatory model-name prefix, internal-thinking language, full-log output or per-file narrative. Keep secrets private and respect real installed permissions.
+
+When enrolling a new repository, starting a project or connecting Vault/TGserver/Gateway, follow the existing docs/PROJECT_INTEGRATION_RULES.md startup runbook and docs/PROJECT_TEMPLATE.md. Verify Contabo versus Gserver target and actual admission; registration is not provider/Secret/deploy permission. Do not substitute internal files/DB/GPG for owner APIs.
