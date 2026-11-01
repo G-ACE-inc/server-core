@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Sequential real MCP stdio initialize/list/health within live DebugAI Docker app, preserving transport through async call",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c688961d29a7485c9a4d949a95c1991a452c7ec8",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c688961d29a7485c9a4d949a95c1991a452c7ec8",
+    "command": "set -eu\npython3 - <<'PY'\nimport json\nimport os\nimport selectors\nimport subprocess\nimport sys\nimport time\np=subprocess.Popen(['docker','exec','-i','--workdir','/app','debug-ai-debug-ai-1','node','bin/debugai-mcp.mjs'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)\nsel=selectors.DefaultSelector()\nsel.register(p.stdout,selectors.EVENT_READ)\nrecords={}\nbuf=b''\ndef send(obj):\n    p.stdin.write((json.dumps(obj,separators=(',',':'))+'\\n').encode())\n    p.stdin.flush()\ndef wait_for(id,limit=18):\n    global buf\n    deadline=time.monotonic()+limit\n    while time.monotonic()<deadline:\n        if id in records:return records[id]\n        ready=sel.select(min(1,max(.01,deadline-time.monotonic())))\n        if not ready:\n            if p.poll() is not None:break\n            continue\n        raw=os.read(p.stdout.fileno(),65536)\n        if not raw:break\n        buf+=raw\n        while b'\\n' in buf:\n            one,buf=buf.split(b'\\n',1)\n            try:obj=json.loads(one)\n            except (ValueError,UnicodeError):continue\n            if isinstance(obj,dict) and type(obj.get('id')) is int:records[obj['id']]=obj\n    raise TimeoutError('MCP_RESPONSE_MISSING_'+str(id))\ntry:\n    send({'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'2025-06-18','capabilities':{},'clientInfo':{'name':'gace-live-mcp-smoke','version':'1'}}})\n    ini=wait_for(1).get('result',{})\n    if not isinstance(ini,dict) or not ini.get('protocolVersion'):sys.exit(61)\n    print('MCP_INIT=PASS')\n    send({'jsonrpc':'2.0','method':'notifications/initialized','params':{}})\n    send({'jsonrpc':'2.0','id':2,'method':'tools/list','params':{}})\n    items=wait_for(2).get('result',{}).get('tools',[])\n    names={i.get('name') for i in items if isinstance(i,dict)}\n    print('MCP_TOOL_COUNT='+str(len(names)))\n    if len(names)!=13 or 'debugai_health' not in names or any('approve' in n or 'apply' in n for n in names):sys.exit(62)\n    print('MCP_TOOLS=PASS')\n    send({'jsonrpc':'2.0','id':3,'method':'tools/call','params':{'name':'debugai_health','arguments':{}}})\n    result=wait_for(3).get('result',{})\n    blocks=result.get('content',[]) if isinstance(result,dict) else []\n    payload={}\n    for b in blocks:\n        if isinstance(b,dict) and b.get('type')=='text':\n            try:payload=json.loads(b.get('text',''))\n            except ValueError:pass\n            break\n    print('MCP_HEALTH_SCHEMA='+str(payload.get('schema','MISSING'))[:60])\n    print('MCP_HEALTH_ISERROR='+str(result.get('isError',False)))\n    print('MCP_HEALTH_OK='+str(payload.get('result',{}).get('ok',None) if isinstance(payload.get('result'),dict) else None))\n    if result.get('isError') is True or payload.get('schema')!='debugai.mcp-result/v1' or payload.get('result',{}).get('ok') is not True:sys.exit(63)\n    print('MCP_LIVE_HEALTH=PASS')\nexcept TimeoutError as e:\n    print(str(e));sys.exit(64)\nfinally:\n    if p.stdin and not p.stdin.closed:p.stdin.close()\n    if p.poll() is None:p.terminate()\n    try:p.wait(timeout=5)\n    except subprocess.TimeoutExpired:p.kill()\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_EXISTING",
+    "implementation_context": "source_and_host_separate",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
