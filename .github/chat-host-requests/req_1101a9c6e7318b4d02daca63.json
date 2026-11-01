@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI MCP current runtime read-only source/health/dependency preflight; preserve existing service and permissions",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "8064bca71230292aa91264068b615c62ed50a05b",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "8064bca71230292aa91264068b615c62ed50a05b",
+    "command": "set -eu\nprintf 'HOST_SHA='; git -C /home/admin1/server-core rev-parse HEAD\nprintf 'DEBUGAI_HEAD='; git -C /home/admin1/projects/debug-ai rev-parse HEAD\nprintf 'DEBUGAI_BRANCH='; git -C /home/admin1/projects/debug-ai branch --show-current\nprintf 'DEBUGAI_DIRTY_COUNT='; git -C /home/admin1/projects/debug-ai status --porcelain --untracked-files=all | wc -l\nfor f in mcp/server.mjs bin/debugai-mcp.mjs mcp/tests/mcp-stdio.test.mjs; do\n  if test -f \"/home/admin1/projects/debug-ai/$f\"; then printf 'MCP_FILE_PRESENT=%s\\n' \"$f\"; else printf 'MCP_FILE_MISSING=%s\\n' \"$f\"; fi\ndone\nif command -v node >/dev/null 2>&1; then printf 'NODE_VERSION='; node --version; else printf 'NODE=NOT_FOUND\\n'; fi\nif test -d /home/admin1/projects/debug-ai/node_modules/@modelcontextprotocol/server; then printf 'MCP_SERVER_PACKAGE=INSTALLED\\n'; else printf 'MCP_SERVER_PACKAGE=ABSENT\\n'; fi\nif command -v curl >/dev/null 2>&1; then\n  printf 'DEBUGAI_HEALTH_HTTP='; curl -sS -o /dev/null -w '%{http_code}\\n' --max-time 4 http://127.0.0.1:8787/health || true\nfi\nif command -v docker >/dev/null 2>&1; then\n  docker inspect --format 'DEBUGAI_CONTAINER_STATUS={{.State.Status}} IMAGE={{.Image}}' debug-ai-debug-ai-1 2>/dev/null || printf 'DEBUGAI_CONTAINER=NOT_READABLE\\n'\nfi\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_EXISTING",
+    "implementation_context": "source_and_host_separate",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
