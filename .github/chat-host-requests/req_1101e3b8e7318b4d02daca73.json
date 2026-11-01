@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Final DebugAI MCP completion preflight: fresh deployed mode and canonical protected-operation shape read-only; no approval or role change",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c688961d29a7485c9a4d949a95c1991a452c7ec8",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c688961d29a7485c9a4d949a95c1991a452c7ec8",
+    "command": "set -eu\nprintf 'HOST_HEAD='\ngit -C /home/admin1/server-core rev-parse HEAD\nprintf 'DEBUGAI_HEAD='\ngit -C /home/admin1/projects/debug-ai rev-parse HEAD\nprintf 'DEBUGAI_DIRTY_COUNT='\ngit -C /home/admin1/projects/debug-ai status --porcelain --untracked-files=all | wc -l\nif command -v docker >/dev/null 2>&1; then\n docker inspect --format 'DEBUGAI_ROLE_MODE={{range .Config.Env}}{{if eq . \"DEBUG_AI_ROLE_EXECUTION_MODE=six_role\"}}six_role{{end}}{{if eq . \"DEBUG_AI_ROLE_EXECUTION_MODE=legacy\"}}legacy{{end}}{{end}}' debug-ai-debug-ai-1\n docker inspect --format 'DEBUGAI_MODEL_DISPATCH={{range .Config.Env}}{{if eq . \"DEBUG_AI_CORE_GATE_DISPATCH_MODE=model_gates\"}}model_gates{{end}}{{if eq . \"DEBUG_AI_CORE_GATE_DISPATCH_MODE=legacy\"}}legacy{{end}}{{end}}' debug-ai-debug-ai-1\nfi\npython3 - <<'PY'\nimport json\nfrom pathlib import Path\npaths=[Path('/home/admin1/server-core/operations/master-internal-repositories.json')]\nfor path in paths:\n try:\n  data=json.loads(path.read_text())\n  row=next((x for x in data.get('repositories',[]) if x.get('id')=='dlg_master_debugai_v1'),None)\n  if not row:\n   print('DEBUGAI_CANONICAL_REGISTRY=ENTRY_NOT_FOUND')\n   continue\n  print('DEBUGAI_CANONICAL_REGISTRY=FOUND')\n  print('DEBUGAI_CANONICAL_BENCHMARK_PATH='+str('server/control/model-ab-benchmark.js' in row.get('allowed_paths',[])))\n  print('DEBUGAI_CANONICAL_OPERATIONS='+','.join(row.get('allowed_operations',[])))\n except (OSError,ValueError,TypeError):\n  print('DEBUGAI_CANONICAL_REGISTRY=UNREADABLE')\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_EXISTING",
+    "implementation_context": "source_and_host_separate",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
