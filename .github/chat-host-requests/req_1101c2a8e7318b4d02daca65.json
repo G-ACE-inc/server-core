@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI existing MCP stdio protocol and local API Host smoke: read-only source, dependencies and exact tests; no models/applies",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c688961d29a7485c9a4d949a95c1991a452c7ec8",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c688961d29a7485c9a4d949a95c1991a452c7ec8",
+    "command": "set -eu\ncd /home/admin1/projects/debug-ai\ntest -f mcp/server.mjs || exit 31\ntest -f bin/debugai-mcp.mjs || exit 32\ntest -d node_modules/@modelcontextprotocol/server || exit 33\nif ! curl -fsS -o /dev/null --max-time 5 http://127.0.0.1:8787/health; then exit 34; fi\nif ! node --test mcp/tests/mcp-stdio.test.mjs >/dev/null 2>&1; then exit 35; fi\nprintf 'MCP_HOST_STDIO_CONTRACT=PASS\\n'\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_EXISTING",
+    "implementation_context": "source_and_host_separate",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
