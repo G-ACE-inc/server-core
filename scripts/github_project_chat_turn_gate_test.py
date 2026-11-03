@@ -54,7 +54,7 @@ class DecisionTests(unittest.TestCase):
             remaining_actions=["Inspect existing logs"])), "Inspect existing logs")
         valid_complete = dict(
             phase="STOP", stop_reason="VERIFIED_COMPLETE",
-            stop_evidence="verified acceptance", remaining_actions=[],
+            stop_evidence="https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6615846478", remaining_actions=[],
             same_cu_actions_reviewed=True, next_action_decision="MISSION_ACCEPTED",
             completion_verified=True, mission_acceptance_verified=True)
         self.assertEqual(gate.next_agent_action(valid_complete), "MISSION_ACCEPTED")
@@ -141,9 +141,10 @@ class DecisionTests(unittest.TestCase):
     def test_stop_rejects_unfinished(self):
         base = dict(
             phase="STOP", stop_reason="ALL_ACTIONS_BLOCKED",
-            stop_evidence="run/42", remaining_actions=[],
+            stop_evidence="https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6615846478", remaining_actions=[],
             mission_acceptance_verified=False,
             same_cu_actions_reviewed=True,
+            runnable_actions_inventory_verified=True,
             next_action_decision="NO_RUNNABLE_ACTIONS",
         )
         self.assertEqual(gate.evaluate(base), "PASS")
@@ -178,7 +179,13 @@ class DecisionTests(unittest.TestCase):
             **base, "stop_reason": "MASTER_ONLY_ACTION",
             "next_action_decision": "MASTER_ONLY_ACTION_REQUIRED",
         }
-        self.assertEqual(gate.evaluate(master_only), "PASS")
+        self.assertEqual(gate.evaluate(master_only), "STOP_MASTER_ACTION_NOT_READY")
+        ready_master_only = {
+            **master_only,
+            "master_action_ready": True,
+            "master_action_evidence": "https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6615846478",
+        }
+        self.assertEqual(gate.evaluate(ready_master_only), "PASS")
         self.assertEqual(
             gate.evaluate({**base, "stop_reason": "MASTER_INTERRUPT",
                            "remaining_actions": ["Inspect logs"],
@@ -187,6 +194,8 @@ class DecisionTests(unittest.TestCase):
             "PASS",
         )
         self.assertEqual(gate.evaluate({**base, "stop_reason": "NO_RESPONSE"}), "STOP_REASON_UNVERIFIED")
+        self.assertEqual(gate.evaluate({**base, "runnable_actions_inventory_verified": False}), "STOP_RUNNABLE_ACTIONS_INVENTORY_NOT_VERIFIED")
+        self.assertEqual(gate.evaluate({**base, "stop_evidence": "run/42"}), "STOP_EVIDENCE_NOT_VERIFIED")
         self.assertEqual(gate.evaluate({**base, "remaining_actions": None}), "STOP_REMAINING_ACTIONS_UNVERIFIED")
 
     def test_start_design_gate_blocks_missing_design(self):
