@@ -31,6 +31,7 @@ ALLOWED_KEYS = {
     "independent_actions", "completed_actions", "next_action_evidence", "stop_reason",
     "stop_evidence", "remaining_actions", "completion_verified",
     "mission_acceptance_verified", "same_cu_actions_reviewed", "next_action_decision",
+    "runnable_actions_inventory_verified", "master_action_ready", "master_action_evidence",
 }
 
 
@@ -125,6 +126,23 @@ def evaluate(state):
         }
         if state.get("next_action_decision") != decisions.get(reason):
             return "STOP_MISSION_DECISION_MISMATCH"
+        # A caller cannot turn a small completed subtask into a Mission stop by
+        # submitting an empty action list. The complete same-CU inventory must
+        # be verified before ALL_ACTIONS_BLOCKED is accepted.
+        if reason == "ALL_ACTIONS_BLOCKED":
+            if state.get("runnable_actions_inventory_verified") is not True:
+                return "STOP_RUNNABLE_ACTIONS_INVENTORY_NOT_VERIFIED"
+            if not evidence_locator(state.get("stop_evidence")):
+                return "STOP_EVIDENCE_NOT_VERIFIED"
+        # A protected Master-only boundary is not a vague handoff. The AI must
+        # have prepared one executable instruction and recorded its evidence.
+        if reason == "MASTER_ONLY_ACTION":
+            if state.get("master_action_ready") is not True:
+                return "STOP_MASTER_ACTION_NOT_READY"
+            if not evidence_locator(state.get("master_action_evidence")):
+                return "STOP_MASTER_ACTION_EVIDENCE_NOT_VERIFIED"
+        if reason == "VERIFIED_COMPLETE" and not evidence_locator(state.get("stop_evidence")):
+            return "STOP_EVIDENCE_NOT_VERIFIED"
     if reason == "VERIFIED_COMPLETE":
         if state.get("completion_verified") is not True or state.get("mission_acceptance_verified") is not True:
             return "STOP_MISSION_ACCEPTANCE_UNVERIFIED"
