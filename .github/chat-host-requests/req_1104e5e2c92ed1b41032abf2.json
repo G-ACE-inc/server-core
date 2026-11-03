@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI historical run status/inspect HTTP error classification only (no body/secret), determine MCP failure cause",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c688961d29a7485c9a4d949a95c1991a452c7ec8",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c688961d29a7485c9a4d949a95c1991a452c7ec8",
+    "command": "set -eu\npython3 - <<'PY'\nimport json,re,urllib.error,urllib.request\nrun='run_mvrnydib_f5e96251e5'\nfor route in ('status','inspect'):\n    url='http://127.0.0.1:8787/v1/'+route+'/'+run\n    try:\n        with urllib.request.urlopen(url,timeout=5) as response:\n            status=response.status\n            payload=json.loads(response.read(32768))\n    except urllib.error.HTTPError as e:\n        status=e.code\n        try: payload=json.loads(e.read(32768))\n        except (ValueError,TypeError): payload={}\n    except (TimeoutError,OSError):\n        status=0;payload={}\n    code=str(payload.get('code','UNKNOWN')) if isinstance(payload,dict) else 'UNKNOWN'\n    if not re.fullmatch(r'[A-Z0-9_.:-]{1,100}',code): code='REDACTED_OR_UNKNOWN'\n    print(route.upper()+'_HTTP='+str(status))\n    print(route.upper()+'_ERROR_CLASS='+code)\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_EXISTING",
+    "implementation_context": "source_and_host_separate",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
