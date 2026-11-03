@@ -1,0 +1,38 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "DebugAI MCP continuation: direct historical status/inspect HTTP classification and installed-versus-canonical admission readback, no changes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "c688961d29a7485c9a4d949a95c1991a452c7ec8",
+    "repository": "G-ACE-inc/server-core",
+    "repo_sha": "c688961d29a7485c9a4d949a95c1991a452c7ec8",
+    "command": "set -eu\nprintf 'HOST_SHA='; git -C /home/admin1/server-core rev-parse HEAD\nprintf 'DEBUGAI_SHA='; git -C /home/admin1/projects/debug-ai rev-parse HEAD\nprintf 'DEBUGAI_BRANCH='; git -C /home/admin1/projects/debug-ai branch --show-current\nprintf 'DEBUGAI_DIRTY_COUNT='; git -C /home/admin1/projects/debug-ai status --porcelain --untracked-files=all | wc -l\nprintf 'DEBUGAI_HEALTH_HTTP='; curl -sS -o /dev/null -w '%{http_code}\\n' --max-time 5 http://127.0.0.1:8787/health || true\nfor p in status inspect; do\n  printf 'OLD_RUN_%s_HTTP=' \"$(printf '%s' \"$p\" | tr '[:lower:]' '[:upper:]')\"\n  curl -sS -o /dev/null -w '%{http_code}\\n' --max-time 5 \"http://127.0.0.1:8787/v1/$p/run_mvrnydib_f5e96251e5\" || true\ndone\npython3 - <<'PY'\nimport json,pathlib\ninstalled=pathlib.Path('/home/admin1/.config/debugai-gitops/delegations/policies/dlg_master_debugai_v1.json')\ncanonical=pathlib.Path('/home/admin1/server-core/operations/master-internal-repositories.json')\ntry:\n    obj=json.loads(installed.read_text())\n    print('INSTALLED_POLICY_READABLE=YES')\n    print('INSTALLED_ENABLED='+str(obj.get('enabled')))\n    print('INSTALLED_REVOKED='+str(obj.get('revoked')))\n    print('INSTALLED_OPERATIONS='+','.join(sorted(obj.get('allowed_operations',[]))))\n    print('INSTALLED_PR115_BRANCH='+str('fix/debugai-scout-diagnosis-handoff-20261016' in obj.get('allowed_branches',[])))\n    print('INSTALLED_BENCHMARK_PATH='+str('server/control/model-ab-benchmark.js' in obj.get('allowed_paths',[])))\nexcept (OSError,ValueError,TypeError):\n    print('INSTALLED_POLICY_READABLE=NO')\ntry:\n    data=json.loads(canonical.read_text())\n    obj=next(v for v in data['repositories'] if v.get('id')=='dlg_master_debugai_v1')\n    print('CANONICAL_PR115_BRANCH='+str('fix/debugai-scout-diagnosis-handoff-20261016' in obj.get('allowed_branches',[])))\n    print('CANONICAL_BENCHMARK_PATH='+str('server/control/model-ab-benchmark.js' in obj.get('allowed_paths',[])))\nexcept (OSError,ValueError,TypeError,KeyError,StopIteration):\n    print('CANONICAL_POLICY_READABLE=NO')\nPY\n"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_EXISTING",
+    "implementation_context": "source_and_host_separate",
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  }
+}
