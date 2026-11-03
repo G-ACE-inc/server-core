@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Bounded START/FAILURE/STOP decision gate for workflow checkpoint receipts.
 
+# STOP is fail-closed when continuation or protected handoff evidence is absent.
 This checks supplied evidence. It cannot intercept a normal ChatGPT reply.
 """
 import argparse
