@@ -54,7 +54,7 @@ class DecisionTests(unittest.TestCase):
             remaining_actions=["Inspect existing logs"])), "Inspect existing logs")
         valid_complete = dict(
             phase="STOP", stop_reason="VERIFIED_COMPLETE",
-            stop_evidence="verified acceptance", remaining_actions=[],
+            stop_evidence="https://github.com/G-ACE-inc/server-core/issues/40#issuecomment-6615846478", remaining_actions=[],
             same_cu_actions_reviewed=True, next_action_decision="MISSION_ACCEPTED",
             completion_verified=True, mission_acceptance_verified=True)
         self.assertEqual(gate.next_agent_action(valid_complete), "MISSION_ACCEPTED")
