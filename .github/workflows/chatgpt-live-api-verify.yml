@@ -107,7 +107,132 @@ jobs:
           }
           send=(python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha")
           if [[ "$command_id" == "host.command" ]]; then
-            send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --host-command "$(jq -r '.bounded_host_request.command' "$target")" --repo-sha "$(jq -r '.bounded_host_request.repo_sha' "$target")")
+            # jq emits the command exactly; a sentinel protects trailing newlines
+            # from Bash command substitution (ordinary $(jq -r ...) drops them).
+            host_command="$(jq -jer '.bounded_host_request.command' "$target" && printf '__GACE_EOF_SENTINEL__')"
+            host_command="${host_command%__GACE_EOF_SENTINEL__}"
+            send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --host-command "$host_command" --repo-sha "$(jq -r '.bounded_host_request.repo_sha' "$target")")
+            if [[ "$(jq -r '.bounded_host_request.source_preflight // false' "$target")" == "true" ]]; then send+=(--source-preflight); fi
+          elif [[ "$command_id" == "dev.job" ]]; then
+            # Separate isolated test facility, never ordinary VPS mutation.
+            send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --session "$(jq -r '.bounded_host_request.session' "$target")" --job-argv-json "$(jq -c '.bounded_host_request.argv' "$target")" --timeout-s "$(jq -r '.bounded_host_request.timeout_s' "$target")" --fresh "$(jq -r '.bounded_host_request.fresh' "$target")")
+            repo_sha="$(jq -r '.bounded_host_request.repo_sha // empty' "$target")"
+            if [[ -n "$repo_sha" ]]; then send+=(--repo-sha "$repo_sha"); fi
+          else
+            echo "RETIRED_FIXED_COMMAND_DENIED"
+            exit 47
+          fi
+          "${send[@]}" | tee /tmp/bounded-host-send.out
+          request_id="$(grep -m1 '^{' /tmp/bounded-host-send.out | jq -r '.request_id // empty')"
+          test -n "$request_id"
+          echo "SERVERCORE_BOUNDED_HOST_REQUEST_ID=$request_id"
+          {
+            echo "BOUNDED_HOST_REQUEST_ID=$request_id"
+            echo "BOUNDED_HOST_COMMAND_ID=$command_id"
+            echo "BOUNDED_HOST_EXPECTED_SHA=$expected_sha"
+          } >> "$GITHUB_ENV"
+          echo "SERVERCORE_BOUNDED_HOST_DISPATCH=QUEUED"
+
+      - name: Bounded Host result return (request id correlated)
+        if: ${{ env.BOUNDED_HOST_REQUEST_ID != '' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/servercore_bounded_result_poll.py \
+            --repository "$GITHUB_REPOSITORY" --issue 10 \
+            --request-id "$BOUNDED_HOST_REQUEST_ID" \
+            --command-id "$BOUNDED_HOST_COMMAND_ID" \
+            --expected-sha "$BOUNDED_HOST_EXPECTED_SHA" \
+            --observation-json /tmp/gace-chat-host-observation.json
+
+
+      - name: Persist CHAT host observation for cross-chat recovery
+        id: host_observation_artifact
+        if: ${{ always() && env.BOUNDED_HOST_REQUEST_ID != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-host-observation-${{ github.sha }}
+          path: /tmp/gace-chat-host-observation.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Expose Host observation artifact locator
+        if: ${{ always() && env.BOUNDED_HOST_REQUEST_ID != '' }}
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.host_observation_artifact.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.host_observation_artifact.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          echo "CHAT_HOST_OBSERVATION_RUN_ID=$GITHUB_RUN_ID"
+          echo "CHAT_HOST_OBSERVATION_REQUEST_ID=$BOUNDED_HOST_REQUEST_ID"
+          if [[ -z "${ARTIFACT_ID:-}" || -z "${ARTIFACT_URL:-}" ]]; then
+            echo "CHAT_HOST_OBSERVATION_ARTIFACT=UNAVAILABLE"
+            exit 0
+          fi
+          echo "CHAT_HOST_OBSERVATION_ARTIFACT_ID=$ARTIFACT_ID"
+          echo "CHAT_HOST_OBSERVATION_ARTIFACT_URL=$ARTIFACT_URL"
+          {
+            echo "### CHAT Host observation"
+            echo "Request: \`$BOUNDED_HOST_REQUEST_ID\`"
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "Artifact: $ARTIFACT_URL"
+            echo "Artifact ID: \`$ARTIFACT_ID\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  issue-history-export:
+    if: ${{ contains(github.event.head_commit.message, '[issue-export]') }}
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve exact committed Issue export request
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="$(git diff-tree --root --no-commit-id --name-only --diff-filter=A -r HEAD | grep -E '^.github/issue-export-requests/req_[a-f0-9]{24}.json$' || true)"
+          test -n "$file" && test "$(printf '%s\n' "$file" | wc -l)" -eq 1
+          jq -e '.repository | type == "string"' "$file" >/dev/null
+          jq -e '.issue | type == "number"' "$file" >/dev/null
+          echo "EXPORT_REPOSITORY=$(jq -r .repository "$file")" >> "$GITHUB_ENV"
+          echo "EXPORT_ISSUE=$(jq -r .issue "$file")" >> "$GITHUB_ENV"
+      - name: Export full Issue body and comments to TXT and ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/issue10_comments_export.py --repository "$EXPORT_REPOSITORY" --issue "$EXPORT_ISSUE"
+      - id: issue_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-issue-full-export-${{ github.run_id }}
+          path: /tmp/gace-issue-export/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Index artifact on Project control Issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_URL: ${{ steps.issue_artifact.outputs.artifact-url }}
+          ARTIFACT_ID: ${{ steps.issue_artifact.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          test -n "$ARTIFACT_ID" && test -n "$ARTIFACT_URL"
+          gh api -X POST "repos/$GITHUB_REPOSITORY/issues/10/comments" \
+            -f body="<!-- GACE_ISSUE_EXPORT run_id=$GITHUB_RUN_ID -->
+          Issue export target: $EXPORT_REPOSITORY#$EXPORT_ISSUE
+          Issue complete TXT/JSONL/ZIP export: $ARTIFACT_URL
+          Artifact ID: $ARTIFACT_ID
+          Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          SHA: $(jq -r .text_sha256 /tmp/gace-issue-export/manifest.json)
+          Exported comments: $(jq -r .exported_comments /tmp/gace-issue-export/manifest.json)
+          Artifact retention: 30 days." >/dev/null
+\\037'}"
+            send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --host-command "$host_command" --repo-sha "$(jq -r '.bounded_host_request.repo_sha' "$target")")
             if [[ "$(jq -r '.bounded_host_request.source_preflight // false' "$target")" == "true" ]]; then send+=(--source-preflight); fi
           elif [[ "$command_id" == "dev.job" ]]; then
             # Separate isolated test facility, never ordinary VPS mutation.
