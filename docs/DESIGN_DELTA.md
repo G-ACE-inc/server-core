@@ -1235,3 +1235,8 @@ Rollback: revert the owned contract, sender, adapter, test, CI and this
 append-only entry. Do not alter the existing protected registry, Asteraserver
 runtime, Gateway, Vault, Cloudflare or Gserver production container as part of
 this Source rollback.
+
+CI gate follow-up: the PR body declares the design baseline, requirement,
+alignment evidence and document decisions required by the shared server-core
+guard. This declaration is a review gate only; it does not activate the
+Gserver destination or promote Source/isolated verification to Host Runtime.
