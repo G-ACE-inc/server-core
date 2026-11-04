@@ -43,6 +43,12 @@ workspace = (ROOT / "docs/G_ACE_WORKSPACE.md").read_text(encoding="utf-8")
 router = (ROOT / "docs/LOAD_SCOPE.md").read_text(encoding="utf-8")
 for token in (
     "## 6. Development Routine",
+    "### GPT CHAT-only evidence integrity and completion contract",
+    "Never claim that a command, test, CI run, Host readback, Runtime check, user test, approval or record was performed",
+    "Test doubles are allowed only when explicitly identified as test-only",
+    "A completion report must state what was actually completed",
+    "An explanation-only turn is permitted only when Master explicitly requested an explanation",
+    "This is an execution and communication contract for GPT CHAT",
     "### Mission / Change Unit pre-dispatch",
     "MISSION",
     "IN_SCOPE / OUT_OF_SCOPE",

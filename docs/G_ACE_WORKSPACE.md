@@ -136,6 +136,24 @@ Master clarification 2026-10-29: the AI-selection permission above concerns sele
 
 **Reporting communicates to Master:** A user-visible status or formal report is separate from verification, records and development completion. Do not infer any reporting schedule, required report per block, or stop condition from a recording checkpoint. Follow Master's specific request and Rule #17 communication contract when a formal report is actually warranted. Neither making a record nor sending a report completes or suspends an unfinished Mission. End conditions are owned by the existing continuation rule below, not this section.
 
+### GPT CHAT-only evidence integrity and completion contract
+
+This contract applies only to the GPT app CHAT Agent Loop. It does not apply to SERVER_AI, Codex or other directly commissioned executors, which remain governed by Rule #16 and their normal development tools.
+
+GPT CHAT must not report or imply completion by fabrication, omission, silent simplification or unnecessary dummy work.
+
+- Never claim that a command, test, CI run, Host readback, Runtime check, user test, approval or record was performed when it was not actually performed.
+- Never promote a partial implementation, one passing subtest, a green CI result, a mock/stub/fixture, a placeholder, a static contract check or a report-only checkpoint into full Mission completion.
+- Never omit a required acceptance condition, failed step, unverified layer, changed scope, rollback condition or remaining action to make the result appear complete.
+- Never silently reduce, replace or simplify the requested purpose or acceptance. If scope must change, state the exact reduction, reason, impact and alternative before treating the changed scope as the task.
+- Test doubles are allowed only when explicitly identified as test-only; they are never evidence that the real integration, Host, Runtime or user-facing feature works.
+- Keep PLANNED, EXECUTED, OBSERVED, VERIFIED, NOT_EXECUTED, NOT_VERIFIED, BLOCKED and USER_ACCEPTED separate. Unknown or unexecuted facts never become PASS by wording.
+- A completion report must state what was actually completed, what remains unverified, the next executable action, and any decision or operation required from Master. Do not end with "完了しました" alone.
+- If an executable next action remains, continue it in the same turn. An explanation-only turn is permitted only when Master explicitly requested an explanation, a protected intent/contract/Secret/permission/public-impact decision is required, or verified tool/environment/capacity limits leave no executable action. In the latter cases, provide the exact blocker, attempted evidence, allowed alternative, minimum resume condition and ready-to-use Master instruction.
+- When the Mission is not complete, the final status must be incomplete or blocked, never complete. A formal report, checkpoint, commit, PR, CI pass, issue comment or handoff is an intermediate artifact unless the owning acceptance explicitly makes it the requested result.
+
+This is an execution and communication contract for GPT CHAT, not proof that an external client hook intercepts every ordinary ChatGPT reply. Real CHAT adoption still requires fresh conversation evidence.
+
 **Visible in-flight progress (without exposing private reasoning):** During a substantial continuous CU, give Master concise, factual, nonterminal work-in-progress notes at meaningful transitions: initial actual action/target; confirmed new evidence or decision change; failure with the narrowed cause and corrective next action; and a genuinely lengthy interval without other visible progress. Identify the existing repo/CU and exact Run/PR/request ID only when useful. Explicitly distinguish PLANNED, EXECUTING, OBSERVED and UNKNOWN. Show *why the next operation follows the result*, not a repetitive stream of tool names, "Actions ran", or a fabricated internal Thinking trace. The notes do not pause work, trigger authorization, require Master response, or replace actual evidence. Do not expose raw confidential logs, credentials or hidden reasoning. A client may not be able to display updates *during* a single blocking Tool call; never promise guaranteed real-time UI or instant interruption.
 
 ### Default execution ownership and mandatory continuation (Master current)
