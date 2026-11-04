@@ -44,6 +44,13 @@ router = (ROOT / "docs/LOAD_SCOPE.md").read_text(encoding="utf-8")
 for token in (
     "## 6. Development Routine",
     "### GPT CHAT-only evidence integrity and completion contract",
+    "This contract reduces context drift but cannot prove that a client applied it",
+    "The three-turn or any other turn count is not a permission to discard the rule",
+    "After every tool result, update the tuple",
+    "If any tuple field is unknown, stale, conflicting or missing",
+    "PROFILE=#17",
+    "At the start of every GPT CHAT turn",
+    "### GPT CHAT-only per-turn re-anchor and anti-drift loop",
     "Never claim that a command, test, CI run, Host readback, Runtime check, user test, approval or record was performed",
     "Test doubles are allowed only when explicitly identified as test-only",
     "A completion report must state what was actually completed",

@@ -154,6 +154,18 @@ GPT CHAT must not report or imply completion by fabrication, omission, silent si
 
 This is an execution and communication contract for GPT CHAT, not proof that an external client hook intercepts every ordinary ChatGPT reply. Real CHAT adoption still requires fresh conversation evidence.
 
+### GPT CHAT-only per-turn re-anchor and anti-drift loop
+
+This is a per-turn rule for the GPT CHAT Agent Loop. It exists because a multi-turn chat may lose the active rule, Current or Mission context after a few turns. GPT CHAT must re-anchor on every turn; it must not assume that a rule read at chat start remains applied automatically.
+
+- At the start of every GPT CHAT turn that concerns the active work, restore the compact execution tuple: `PROFILE=#17`, `PROJECT/CURRENT`, `MISSION`, `CHANGE_UNIT`, `MUTATION_OWNER`, `ADOPTED_DESIGN`, `EXACT_NEXT_GATE`, and current status (`PLANNED / EXECUTING / OBSERVED / VERIFIED / INCOMPLETE / BLOCKED`).
+- If any tuple field is unknown, stale, conflicting or missing, read the owning Current and the applicable GPT CHAT rule before making a consequential decision. Do not continue from conversational memory alone.
+- On every turn, compare the new Master instruction with the restored Mission and acceptance. A later message does not silently replace the Mission, owner, scope or safety boundary. If it conflicts, isolate the conflict, preserve the existing state, and request only the protected decision while continuing independent authorized work.
+- After every tool result, update the tuple and select the next action from the actual result. Do not enter a free-running response mode in which the rule, Current or next gate is dropped after several turns.
+- If a proposed action or final response would omit `PROFILE`, `CURRENT`, `MISSION/CU`, `MUTATION_OWNER`, evidence status or the next executable action, treat that as a drift signal: re-anchor first, then continue or report the exact blocker. Do not silently produce the incomplete response.
+- The three-turn or any other turn count is not a permission to discard the rule. GPT CHAT repeats this compact re-anchor on every turn, including turns containing only a user correction, a tool failure, a CI result or a progress report.
+- This contract reduces context drift but cannot prove that a client applied it. There is no claim of an external hook intercepting ordinary ChatGPT replies; fresh CHAT E2E testing remains required.
+
 **Visible in-flight progress (without exposing private reasoning):** During a substantial continuous CU, give Master concise, factual, nonterminal work-in-progress notes at meaningful transitions: initial actual action/target; confirmed new evidence or decision change; failure with the narrowed cause and corrective next action; and a genuinely lengthy interval without other visible progress. Identify the existing repo/CU and exact Run/PR/request ID only when useful. Explicitly distinguish PLANNED, EXECUTING, OBSERVED and UNKNOWN. Show *why the next operation follows the result*, not a repetitive stream of tool names, "Actions ran", or a fabricated internal Thinking trace. The notes do not pause work, trigger authorization, require Master response, or replace actual evidence. Do not expose raw confidential logs, credentials or hidden reasoning. A client may not be able to display updates *during* a single blocking Tool call; never promise guaranteed real-time UI or instant interruption.
 
 ### Default execution ownership and mandatory continuation (Master current)
