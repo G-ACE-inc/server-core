@@ -1206,3 +1206,32 @@ Rollback: revert owned Source/adapters and restore private client/workspace/rule
 backups if needed; preserve model settings, other writers, CHAT artifacts, domains
 and protected data. GitHub profile edits use current-body comparison, preserving
 concurrent owner changes. Evidence belongs in Rule16/owning work-report history.
+## 2026-11-05 — Gserver second Host target on the common host.command route
+
+Baseline: the common bounded Host contract had one server-core receiver/Writer
+route and no Gserver Host target. Gserver's current product repository contains
+no independent Terminal, Dispatcher, or fixed-command replacement. Master
+requested Gserver as a second Host while preserving the existing Asteraserver /
+Contabo path.
+
+Change: extend the existing `operations/github-project-bounded-host.json`
+contract with a `gserver` target descriptor and add the thin
+`servercore_gserver_target.py` adapter. The sender can bind a request to the
+existing common `host.command`, exact Gserver repository, target SHA and
+command SHA, then select the registered Gserver Gateway destination. The target
+descriptor contains no credential or fixed command. Existing Contabo and
+server-core registrations are unchanged. The Gserver receiver/Writer remains a
+separate target-owned adapter; this Source change does not activate a Gateway,
+Host admission, Secret, or production endpoint.
+
+Verification: five focused target tests, 18 existing transport tests, three
+registered-repository tests, two current-admission tests and Python compilation
+PASS locally. The new CI step runs the target contract alongside the existing
+bounded Host transport tests. The target status remains `SOURCE_CONTRACT_ONLY`
+until Gateway destination registration, receiver Secret readback, Host
+admission, and Result Sink correlation are independently verified.
+
+Rollback: revert the owned contract, sender, adapter, test, CI and this
+append-only entry. Do not alter the existing protected registry, Asteraserver
+runtime, Gateway, Vault, Cloudflare or Gserver production container as part of
+this Source rollback.
