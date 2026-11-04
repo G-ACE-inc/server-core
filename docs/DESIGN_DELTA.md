@@ -1240,3 +1240,8 @@ CI gate follow-up: the PR body declares the design baseline, requirement,
 alignment evidence and document decisions required by the shared server-core
 guard. This declaration is a review gate only; it does not activate the
 Gserver destination or promote Source/isolated verification to Host Runtime.
+
+The design record remains an append-only evidence document, not a System
+Document authority. The PR declares `SYSTEM_DOCUMENT_REQUIRED=NO` for this
+target-only contract change and keeps the existing System Document authorities
+unchanged.
