@@ -1,6 +1,6 @@
 # Gserver 第2 Host 接続 Change Plan
 
-Status: SOURCE_REFLECTED / RUNTIME_ACTIVATION_PENDING / PROTECTED_EFFECTS_ISOLATED
+Status: HOST_ADMITTED / RUNTIME_ACTIVATION_IN_PROGRESS / PROTECTED_EFFECTS_AUTHORIZED
 
 ## 2026-11-05 current checkpoint: bidirectional source complete
 
@@ -36,6 +36,22 @@ Creating or changing those production credentials/routes and starting the new
 resident service are the protected effects still isolated by this plan. After
 that one-time activation, ordinary registered requests do not return to Master
 for routine technical approval.
+
+## 2026-11-05 Master authorization: Host admission
+
+Master explicitly authorized the one-time production connection work after the
+source and protected-effect plan were presented. The canonical `gserver` target
+is therefore promoted to `HOST_ADMITTED`. This admission is limited to the
+existing common `host.command` route, repository
+`seigo-gace/G-ACEserver`, canonical root
+`/home/gace/Project/Gserver/repository`, signed Gateway delivery, durable replay
+ledger, and correlated Result Sink return. It does not grant a second
+Dispatcher, a fixed-command Terminal, root authority, another repository, or an
+unregistered endpoint.
+
+Gateway destination configuration, machine-key readback, active Receiver, live
+request/result correlation, and Contabo regression remain independent Runtime
+evidence. Until those checks pass, the connection is admitted but not complete.
 
 ## 2026-11-05 continuation: concrete Host boundary and return ingress
 

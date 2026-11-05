@@ -59,7 +59,7 @@
       "canonical_host_root": "/home/gace/Project/Gserver/repository",
       "common_command_id": "host.command",
       "fixed_command_terminal": false,
-      "status": "SOURCE_CONTRACT_ONLY",
+      "status": "HOST_ADMITTED",
       "transport": {
         "kind": "webhook_gateway_internal_event",
         "destination_id": "gserver-bounded-host",
@@ -68,7 +68,6 @@
       "activation_required": [
         "gateway_destination_registration",
         "gserver_receiver_secret_readback",
-        "gserver_host_admission",
         "result_sink_correlation"
       ]
     }
