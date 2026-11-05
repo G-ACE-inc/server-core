@@ -73,10 +73,10 @@ class RehydrateTests(unittest.TestCase):
         self.assertEqual(out["result"], "ALLOW")
         self.assertEqual(out["code"], "READONLY_BYPASS")
 
-    def test_mutate_baseline_without_binding(self):
+    def test_mutate_without_binding_is_denied_by_default(self):
         out = run("mutate", self.repo)
-        self.assertEqual(out["result"], "ALLOW")
-        self.assertEqual(out["code"], "BASELINE_REPOSITORY_VERIFIED")
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "WORK_ROUTINE_MUTATION_BINDING_REQUIRED")
         self.assertEqual(out.get("current_mission_verified"), "NO")
 
     def test_strict_mode_denies_missing_binding_at_mutation_entry(self):
@@ -149,8 +149,8 @@ class RehydrateTests(unittest.TestCase):
     def test_allow_matching_binding_identity_bound(self):
         binding = full_binding(self.repo)
         out = run("mutate", self.repo, env={"GACE_MUTATION_BINDING": binding})
-        self.assertEqual(out["result"], "ALLOW")
-        self.assertEqual(out["code"], "IDENTITY_BOUND")
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "WORK_ROUTINE_TURN_RECEIPT_REQUIRED")
         self.assertEqual(out.get("current_mission_verified"), "NO")
 
     def test_deny_scope_drift(self):
@@ -223,7 +223,7 @@ class RehydrateTests(unittest.TestCase):
         mod = self._load_mod()
         state = {
             "manifest_verified": True,
-            "rule_plane_profile": "GPT_CHAT",
+            "rule_plane_profile": "SERVER_AI",
             "rule_plane_read": True,
             "current_verified": True,
             "purpose_verified": True,
@@ -358,8 +358,8 @@ class RehydrateTests(unittest.TestCase):
             env={"GACE_MUTATION_BINDING": binding},
             paths=["scripts/new.py", "scripts/old.py"],
         )
-        self.assertEqual(out["result"], "ALLOW")
-        self.assertEqual(out["code"], "IDENTITY_BOUND")
+        self.assertEqual(out["result"], "DENY")
+        self.assertEqual(out["code"], "WORK_ROUTINE_TURN_RECEIPT_REQUIRED")
 
     def test_git_c_config_not_repo_root(self):
         mod = self._load_mod()
