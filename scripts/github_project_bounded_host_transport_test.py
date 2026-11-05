@@ -3,7 +3,10 @@ import base64
 import hashlib
 import hmac
 import json
+import os
+from pathlib import Path
 import secrets
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -174,6 +177,50 @@ class GatewaySendTests(unittest.TestCase):
         payload = sender.send(req, CONTRACT, env=env, opener=opener)
         self.assertEqual(payload["ok"], True)
         self.assertIn(b"servercore-bounded-host", opener.request.data)
+
+    def test_gateway_send_supports_host_files_for_bidirectional_repo_use(self):
+        req = sender.validate_cli("project.git_head", "c" * 40, CONTRACT)
+
+        class FakeResponse:
+            status = 202
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def read(self, _n): return b'{"ok":true}'
+
+        class FakeOpener:
+            def open(self, request, timeout=0):
+                self.request = request
+                return FakeResponse()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            url = Path(tmp) / "gateway-url"
+            token = Path(tmp) / "gateway-token"
+            url.write_text("https://gateway.test/internal/events\n", encoding="utf-8")
+            token.write_text("host-machine-token\n", encoding="utf-8")
+            os.chmod(token, 0o600)
+            opener = FakeOpener()
+            payload = sender.send(req, CONTRACT, env={
+                "GACE_EVENT_GATEWAY_URL_FILE": str(url),
+                "GACE_EVENT_GATEWAY_TOKEN_FILE": str(token),
+            }, opener=opener)
+            self.assertTrue(payload["ok"])
+            scheme, supplied = opener.request.get_header("Authorization").split(" ", 1)
+            self.assertEqual(scheme.lower(), "bearer")
+            self.assertEqual(supplied, "host-machine-token")
+
+    def test_host_token_file_fails_closed_on_ambiguity_or_open_permissions(self):
+        req = sender.validate_cli("project.git_head", "c" * 40, CONTRACT)
+        with tempfile.TemporaryDirectory() as tmp:
+            token = Path(tmp) / "gateway-token"
+            token.write_text("host-machine-token\n", encoding="utf-8")
+            os.chmod(token, 0o644)
+            base = {"GACE_EVENT_GATEWAY_URL": "https://gateway.test",
+                    "GACE_EVENT_GATEWAY_TOKEN_FILE": str(token)}
+            with self.assertRaisesRegex(sender.SendError, "TOKEN_FILE_PERMISSIONS_INVALID"):
+                sender.send(req, CONTRACT, env=base)
+            os.chmod(token, 0o600)
+            with self.assertRaisesRegex(sender.SendError, "CONFIG_SOURCE_AMBIGUOUS"):
+                sender.send(req, CONTRACT, env={**base, "GACE_EVENT_GATEWAY_TOKEN": "duplicate"})
 
 
 class DeliveryAuthTests(unittest.TestCase):

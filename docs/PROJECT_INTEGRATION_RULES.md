@@ -183,6 +183,16 @@ SSHでは既存設定/鍵/agent/known_hostsを再利用し、接続先を確認�
 
 遠隔操作前は登録Host target、dispatcher SHA、対象Repo SHA、command digest、権限/影響範囲を照合する。実行後は元request ID、Run、Host実結果、exit、出力hash、対象状態と不変条件を照合する。結果未着だけで新requestへ同じ変更を再送しない。既存の[Host route](GITHUB_PROJECT_CHAT_HOST_ROUTE.md)を使い、新workflow/常駐AI/別Terminalを増設しない。
 
+共通Terminalは双方向で利用する。server-coreのActionsから登録Repo/Hostへ送る経路に
+加え、各登録HostのRepo作業からも同じ
+`scripts/servercore_bounded_host_gateway_send.py`を呼び、server-coreのGateway、認証、
+target選択、Result Sinkへ戻す。RepoごとにDispatcherやTerminalを複製しない。
+Host側は`GACE_EVENT_GATEWAY_URL_FILE`と`GACE_EVENT_GATEWAY_TOKEN_FILE`で外部の
+machine credentialを読み、Tokenをcommand、Source、環境変数値、ログへ載せない。
+Token fileはgroup/other非公開でなければ拒否する。これは通常の登録済み開発を
+Master承認待ちにする仕組みではなく、同じ共通経路をどちら側からも開始できるための
+machine authenticationである。
+
 ### 4. Libral Vault：内部仕様を守る利用手順
 
 正本：[Libral Vault README / Module Interface / Internal API Adapter](https://github.com/seigo-gace/Libral-Vault/blob/main/README.md)、共通利用は[WORKSPACE_SHARED_SECRETS](WORKSPACE_SHARED_SECRETS.md)。

@@ -6,6 +6,7 @@ import json
 import os
 import re
 import secrets
+import stat
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -25,6 +26,31 @@ CONTAINER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 
 class SendError(RuntimeError):
     pass
+
+
+def config_value(env, direct_name, file_name, *, secret=False):
+    """Read one machine setting from an env value or an external Host file."""
+    direct = str(env.get(direct_name) or "").strip()
+    file_value = str(env.get(file_name) or "").strip()
+    if direct and file_value:
+        raise SendError("GATEWAY_CONFIG_SOURCE_AMBIGUOUS")
+    if not file_value:
+        return direct
+    path = Path(file_value)
+    try:
+        info = path.lstat()
+        if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
+            raise SendError("GATEWAY_CONFIG_FILE_INVALID")
+        if secret and info.st_mode & 0o077:
+            raise SendError("GATEWAY_TOKEN_FILE_PERMISSIONS_INVALID")
+        value = path.read_text(encoding="utf-8").strip()
+    except SendError:
+        raise
+    except (OSError, UnicodeError):
+        raise SendError("GATEWAY_CONFIG_FILE_UNREADABLE") from None
+    if not value:
+        raise SendError("GATEWAY_CONFIG_FILE_EMPTY")
+    return value
 
 
 def load_contract(path):
@@ -179,9 +205,13 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, refle
 def send(request, contract, *, env=None, opener=None):
     current = dict(os.environ if env is None else env)
     transport = contract.get("transport") or {}
-    url = gateway_url(current.get(transport.get("gateway_url_env", "GACE_EVENT_GATEWAY_URL")))
-    token = str(current.get(transport.get("gateway_token_env", "GACE_EVENT_GATEWAY_TOKEN")) or "").strip()
-    if not token:
+    url_env = transport.get("gateway_url_env", "GACE_EVENT_GATEWAY_URL")
+    url_file_env = transport.get("gateway_url_file_env", "GACE_EVENT_GATEWAY_URL_FILE")
+    auth_env = transport.get("gateway_token_env", "GACE_EVENT_GATEWAY_TOKEN")
+    auth_file_env = transport.get("gateway_token_file_env", "GACE_EVENT_GATEWAY_TOKEN_FILE")
+    url = gateway_url(config_value(current, url_env, url_file_env))
+    auth_value = config_value(current, auth_env, auth_file_env, secret=True)
+    if not auth_value:
         raise SendError("GATEWAY_TOKEN_MISSING")
     body = json.dumps(build_event(request, contract), ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     user_agent = str(
@@ -193,7 +223,7 @@ def send(request, contract, *, env=None, opener=None):
         method="POST",
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
+            "Authorization": f"Bearer {auth_value}",
             "User-Agent": user_agent or "G-ACE-server-core-internal-event/1",
         },
     )
