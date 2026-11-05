@@ -20,6 +20,8 @@ RECEIVER_PATH = "/internal/servercore-bounded-host"
 HEALTH_PATH = "/healthz"
 CIPHER_PATH = "/internal/servercore-host-output"
 CIPHER_DESTINATION = "server-core-host-output"
+GSERVER_RESULT_PATH = "/internal/gserver-bounded-result"
+GSERVER_RESULT_DESTINATION = "gserver-bounded-result"
 EXPECTED_DESTINATION = "server-core-bounded-host"
 MAX_BODY_BYTES = 1048576
 # Deterministic Host preflight denials must not enter infrastructure retry loops.
@@ -467,6 +469,26 @@ def report_result(record, socket_path=None):
     return isinstance(reply, dict) and reply.get("ok") is True
 
 
+def forward_gserver_result(record, socket_path=None):
+    """Forward one separately authenticated Gserver record to the shared sink.
+
+    The Result Sink owns full record validation and durable first-result-wins
+    semantics.  This boundary only preserves the already-signed JSON record;
+    it never interprets or executes a Host command.
+    """
+    data = (json.dumps(record, separators=(",", ":")) + "\n").encode("utf-8")
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.settimeout(15)
+            client.connect(socket_path or RESULT_SOCKET)
+            client.sendall(data)
+            with client.makefile("rb") as stream:
+                reply = json.loads(stream.readline(4096))
+    except (OSError, ValueError, TypeError):
+        return None
+    return reply if isinstance(reply, dict) else None
+
+
 def result_record(request_id, command_id, expected_sha, state, exit_code, host_sha, stdout, stderr, started):
     return {
         "request_id": request_id,
@@ -531,7 +553,7 @@ def watch_host_dependencies(server, stop, *, interval=5, grace_seconds=60,
             return
 
 
-def make_handler(contract, *, delivery_key=None, now_fn=None):
+def make_handler(contract, *, delivery_key=None, gserver_result_key=None, now_fn=None):
     root = Path(contract.get("canonical_host_root") or bounded_host.CANONICAL_ROOT)
 
     class Handler(BaseHTTPRequestHandler):
@@ -578,6 +600,48 @@ def make_handler(contract, *, delivery_key=None, now_fn=None):
             })
 
         def do_POST(self):
+            if self.path == GSERVER_RESULT_PATH:
+                # Result-only ingress for the second Host.  A distinct key and
+                # destination prevent this endpoint from accepting commands or
+                # reusing the Gateway-to-Host trust boundary.
+                if gserver_result_key is None:
+                    self.send_json(503, {"ok": False, "error": "GSERVER_RESULT_NOT_CONFIGURED"})
+                    return
+                try:
+                    raw_length = self.headers.get("content-length")
+                    try:
+                        length = int(raw_length or "")
+                    except ValueError:
+                        fail("CONTENT_LENGTH_REQUIRED", 411)
+                    if not 1 <= length <= MAX_BODY_BYTES:
+                        fail("BODY_SIZE_INVALID", 413)
+                    body = self.rfile.read(length)
+                    headers = {k.lower(): v for k, v in self.headers.items()}
+                    verify_delivery(
+                        headers, body, expected_destination=GSERVER_RESULT_DESTINATION,
+                        delivery_key=gserver_result_key, now=now_fn() if now_fn else None,
+                        tolerance_seconds=int(os.environ.get(
+                            "GACE_GSERVER_RESULT_SIGNATURE_TOLERANCE_SECONDS", "300")),
+                    )
+                    record = json.loads(body.decode("utf-8"))
+                    if not isinstance(record, dict) or record.get("schema") != RESULT_SCHEMA:
+                        fail("GSERVER_RESULT_ENVELOPE_INVALID", 422)
+                    reply = forward_gserver_result(record)
+                    if reply is None:
+                        fail("RESULT_SINK_UNAVAILABLE", 503)
+                    if reply.get("ok") is not True:
+                        fail("GSERVER_RESULT_REJECTED", 422)
+                    self._verified_request_id = record.get("request_id")
+                    self.send_json(200, {"ok": True, "state": reply.get("state")}, accepted=True)
+                except DeliveryAuthError as exc:
+                    self.send_json(exc.status, {"ok": False, "error": exc.code})
+                except ReceiverError as exc:
+                    self.send_json(exc.status, {"ok": False, "error": exc.code})
+                except (ValueError, TypeError, UnicodeError):
+                    self.send_json(422, {"ok": False, "error": "GSERVER_RESULT_ENVELOPE_INVALID"})
+                except Exception:
+                    self.send_json(503, {"ok": False, "error": "GSERVER_RESULT_DELIVERY_RETRYABLE"})
+                return
             if self.path == CIPHER_PATH:
                 # Separate signed, ciphertext-only ingress; no Host commands
                 # accepted through this endpoint. Uses the existing HMAC key,
@@ -758,7 +822,15 @@ def main():
         raise SystemExit("PORT_INVALID")
     contract = load_contract(args.contract)
     delivery_key = read_delivery_key(env_prefix="GACE_BOUNDED_HOST")
-    server = ThreadingHTTPServer((args.host, args.port), make_handler(contract, delivery_key=delivery_key))
+    if os.environ.get("GACE_GSERVER_RESULT_HMAC_KEY") or os.environ.get("GACE_GSERVER_RESULT_HMAC_KEY_FILE"):
+        gserver_result_key = read_delivery_key(env_prefix="GACE_GSERVER_RESULT")
+    else:
+        # Existing Contabo operation remains available until the independently
+        # managed second-Host result key is provisioned.  Once configured, an
+        # unreadable or ambiguous key remains a startup-fatal error.
+        gserver_result_key = None
+    server = ThreadingHTTPServer((args.host, args.port), make_handler(
+        contract, delivery_key=delivery_key, gserver_result_key=gserver_result_key))
     stop = threading.Event()
     server.host_dependency_shutdown = False
     threading.Thread(target=watch_host_dependencies, args=(server, stop), daemon=True).start()

@@ -1,0 +1,13 @@
+# Activation-only overlay for the Gserver second-Host result return path.
+# The base Contabo service remains unchanged until this overlay is explicitly
+# selected with an independently provisioned key file.
+services:
+  server-core-bounded-host:
+    environment:
+      GACE_GSERVER_RESULT_HMAC_KEY_FILE: /run/secrets/gserver-result-delivery
+      GACE_GSERVER_RESULT_SIGNATURE_TOLERANCE_SECONDS: "${GACE_GSERVER_RESULT_SIGNATURE_TOLERANCE_SECONDS:-300}"
+    volumes:
+      - type: bind
+        source: "${GACE_GSERVER_RESULT_HMAC_KEY_FILE:?GACE_GSERVER_RESULT_HMAC_KEY_FILE is required}"
+        target: /run/secrets/gserver-result-delivery
+        read_only: true
