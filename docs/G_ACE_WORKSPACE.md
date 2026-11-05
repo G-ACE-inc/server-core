@@ -268,6 +268,8 @@ At a new task/CU, and whenever material Current/Source state changes, read the o
 
 Existing machine effect-admission checks remain where they actually execute. Their receipts do **not** control ordinary ChatGPT response submission and must not be treated as a second CHAT development procedure.
 
+For mutation-capable GPT CHAT turns, the machine preflight `scripts/gpt_chat_mutation_preflight.py` is required before the existing START gate can pass. It requires the Project/Current, Mission, Change Unit, Mutation Owner, work location and HEAD, owned paths, exact next gate, rollback plan, verifiable GitHub evidence references, and a matching per-turn re-anchor tuple. Missing or contradictory values fail closed. This is an execution-entry contract for callers that invoke the gate; it does not claim that ordinary ChatGPT response submission is externally intercepted.
+
 This is a **readback/review step of existing Work Routine**, not a second design authority or an automatic semantic-code equivalence assertion. Targeted CI may enforce evidence fields when actually available, but cannot prove semantic design alignment from prose alone.
 
 ## 7. Documentation Gate
