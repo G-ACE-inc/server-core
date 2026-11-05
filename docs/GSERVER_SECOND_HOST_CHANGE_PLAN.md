@@ -1,6 +1,41 @@
 # Gserver 第2 Host 接続 Change Plan
 
-Status: PREPARED / NORMAL_SOURCE_WORK_CONTINUES / PROTECTED_EFFECTS_ISOLATED
+Status: SOURCE_REFLECTED / RUNTIME_ACTIVATION_PENDING / PROTECTED_EFFECTS_ISOLATED
+
+## 2026-11-05 current checkpoint: bidirectional source complete
+
+The source work described by this plan is no longer waiting on PR #325. The
+current verified and reflected revisions are:
+
+- server-core PR #333 final HEAD: `b8a54cbbb37b5312d0e1fee0bee71ef250c272b9`
+- server-core merged main and Contabo checkout:
+  `3b74f899130a701d51ad4c0d004d45abbbd7689a`
+- Gserver PR #15 branch: `2ef0bfe5bd67f74ff6b3ce15d3fece0762a6a9d2`
+- Gateway merged source: `fba869c` (production reflection/reload is not verified)
+
+PR #333 exact-head `verify`, `server-core-guard`, and `windows-parser` checks
+passed. The Contabo source reflection passed its dry-run and apply checks,
+preserved the four existing untracked request files, left tracked files clean,
+and did not restart the healthy bounded-host service.
+
+The common Terminal now supports both initiation directions through the same
+sender, Gateway, target selection, Receiver/Writer, and Result Sink. Gserver
+commands run with the normal logged-in `gace` user's repository, Git/SSH, and
+Docker authority. This is deliberately not a read-only or per-command approval
+Terminal. Authentication, target/SHA binding, replay protection, and result
+correlation remain mandatory machine checks; they do not ask Master to approve
+ordinary commands one by one.
+
+The remaining work is one-time Runtime activation, not additional Source
+design: install the loopback Gserver user service, deliver the existing machine
+credentials through mode-0600 external files, reflect/reload the existing
+Gateway destination and private route, then perform one live request/result
+round trip. On the inspected Gserver Host, the service unit, configuration
+directory, credential files, and port 8790 listener are currently absent.
+Creating or changing those production credentials/routes and starting the new
+resident service are the protected effects still isolated by this plan. After
+that one-time activation, ordinary registered requests do not return to Master
+for routine technical approval.
 
 ## 2026-11-05 continuation: concrete Host boundary and return ingress
 
@@ -79,16 +114,17 @@ Owner: server-core Control #10 / SERVER_AI Rule #16
 stdout hashをResult Sinkから読み戻すことである。独立Terminal、固定コマンド
 Dispatcher、Gateway複製、別Control Planeは作らない。
 
-## 既確認済みの前提
+## 現在の確認済み前提
 
-- server-core Source: PR #325 exact HEAD `e177bb0e7fc48d0dec847816316c801ce65ca793`
-- Gserver Source: PR #15 exact HEAD `9f56b2d6a4aa951f3c4e28d2cdf2f11eb7a2ce28`
-- Contabo Runtime read-only snapshot: `c688961d29a7485c9a4d949a95c1991a452c7ec8`
+- server-core Source: merged main `3b74f899130a701d51ad4c0d004d45abbbd7689a`
+- Gserver Source: PR #15 branch `2ef0bfe5bd67f74ff6b3ce15d3fece0762a6a9d2`
+- Contabo checkout: `3b74f899130a701d51ad4c0d004d45abbbd7689a`
 - 既存共通経路: `server-core-bounded-host` / `/internal/servercore-bounded-host`
 - Gserver Source adapter: `scripts/gserver_host_adapter.py`
 - Gserver target contract: `host_targets.gserver`, destination `gserver-bounded-host`
 
-上記のCI、SSH、隔離E2Eは本計画の再実行対象ではない。
+上記のSource CI、SSH、隔離E2Eは本計画の再実行対象ではない。Gateway本番反映、
+Gserver Runtime起動、実Request/resultは未確認であり、Source成功と混同しない。
 
 ## 実行順
 
@@ -105,14 +141,14 @@ Dispatcher、Gateway複製、別Control Planeは作らない。
 
 dirty、未追跡、稼働中サービスは変更しない。
 
-### 1. server-core Source反映
+### 1. server-core Source反映（完了）
 
 既存のPR、Source reflection、Host admission契約だけを使用する。通常のPR/Source/
 CI/契約修正と、既存admissionが明示的に許可する可逆反映は通常開発として進める。
 新規権限、Secret、外部公開、Provider内部変更、破壊的作用だけを保護Gateとして分離する。
 
-- PR #325をexact HEADで通常の既存PR手順によりmainへ合流
-- Host側は既存のff-only Source reflectionを使用
+- PR #333 final HEADをmainへ合流済み
+- Host側は既存のff-only Source reflectionで `3b74f899` へ反映済み
 - before/after HEAD、active consumer、変更ファイルhashを読み戻す
 - `git pull`、`reset --hard`、`clean`、無条件stashは使用しない
 
@@ -176,9 +212,11 @@ Gserver側は `gserver_host_adapter.py` を呼ぶ薄いReceiver/Writerだけを�
 - 受信Requestをtarget/repository/SHA/command digestで検証する
 - 結果はrequest ID、Host SHA、exit、stdout/stderr hashを返す
 
-配置先・起動方法・公開bind addressは、既存Gserver Runtimeの現物とGateway
-destinationが一致していることを確認してから決める。新規常駐service、公開domain、
-Cloudflare tunnel変更はこの計画だけでは許可しない。
+配置先は既存Sourceどおり `/home/gace/Project/Gserver/repository`、起動は
+`gace` のuser service、bindはloopback `127.0.0.1:8790` とする。公開Listenerや
+別Terminalは作らない。初回のservice配置・起動と既存private route/Gateway設定の
+反映は一度だけの保護されたRuntime activationとして扱う。activation後の通常Commandを
+Masterの都度承認へ戻してはならない。
 
 rollback: Gserver Receiver/Writerの追加ファイル・process・containerだけを撤去し、
 既存Gserver app、Core、Storage、Bot/TGSを変更しない。
