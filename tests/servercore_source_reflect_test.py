@@ -18,7 +18,8 @@ class ReflectTests(TestCase):
         self.root = Path(self.temp.name)
         (self.root / ".git").mkdir()
 
-    def execute(self, *, before=A, remote=B, dirty=False, branch="main", ancestor=A, dry_run=False, origin=None):
+    def execute(self, *, before=A, remote=B, dirty=False, untracked=False, collision=False,
+                branch="main", ancestor=A, dry_run=False, origin=None):
         commands = []
         def fake_git(root, *argv):
             commands.append(argv)
@@ -28,8 +29,12 @@ class ReflectTests(TestCase):
                 return branch
             if argv == ("rev-parse", "HEAD"):
                 return B if any(c[:1] == ("merge",) for c in commands) else before
-            if argv == ("status", "--porcelain", "--untracked-files=all"):
+            if argv == ("status", "--porcelain", "--untracked-files=no"):
                 return " M operations/master-internal-repositories.json" if dirty else ""
+            if argv == ("diff", "--name-only", before, B):
+                return "README.md" if collision else ""
+            if argv == ("ls-files", "--others", "--exclude-standard"):
+                return "README.md" if untracked else ""
             if argv == ("rev-parse", "FETCH_HEAD"):
                 return remote
             if argv == ("merge-base", before, B):
@@ -52,6 +57,14 @@ class ReflectTests(TestCase):
     def test_existing_dirty_file_preserved(self):
         with self.assertRaisesRegex(source.ReflectError, "DIRTY_CHECKOUT_DENIED"):
             self.execute(dirty=True)
+
+    def test_untracked_request_spool_is_preserved(self):
+        result, _ = self.execute(untracked=True, dry_run=True)
+        self.assertEqual(result["state"], "PREFLIGHT_PASS")
+
+    def test_untracked_path_collision_is_denied(self):
+        with self.assertRaisesRegex(source.ReflectError, "UNTRACKED_PATH_COLLISION_DENIED"):
+            self.execute(untracked=True, collision=True)
 
     def test_wrong_expected_before_denied(self):
         with self.assertRaisesRegex(source.ReflectError, "BEFORE_SHA_MISMATCH"):

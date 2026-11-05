@@ -61,14 +61,21 @@ def reflect(root, expected_before, target_sha, *, branch="main", allowed_origins
     before = git(root, "rev-parse", "HEAD")
     if before != expected_before:
         raise ReflectError("BEFORE_SHA_MISMATCH")
-    # Intentionally includes staged/unstaged/untracked files; no checkout/reset/stash.
-    if git(root, "status", "--porcelain", "--untracked-files=all"):
+    # Preserve the CHAT request spool. Tracked changes still fail closed; an
+    # untracked path is rejected only when the requested fast-forward would
+    # touch the same path. This avoids deleting/moving/stashing request files
+    # while preventing merge from overwriting one.
+    if git(root, "status", "--porcelain", "--untracked-files=no"):
         raise ReflectError("DIRTY_CHECKOUT_DENIED")
     # Fetch only the registered main branch. Never accept a branch from the request.
     git(root, "fetch", "--no-tags", "origin", "refs/heads/" + branch)
     current_remote = git(root, "rev-parse", "FETCH_HEAD")
     if current_remote != target_sha:
         raise ReflectError("REMOTE_BRANCH_SHA_MISMATCH")
+    changed_paths = set(filter(None, git(root, "diff", "--name-only", before, target_sha).splitlines()))
+    untracked_paths = set(filter(None, git(root, "ls-files", "--others", "--exclude-standard").splitlines()))
+    if changed_paths.intersection(untracked_paths):
+        raise ReflectError("UNTRACKED_PATH_COLLISION_DENIED")
     if git(root, "merge-base", before, target_sha) != before:
         raise ReflectError("NON_FAST_FORWARD_DENIED")
     if dry_run:
