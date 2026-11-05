@@ -42,7 +42,9 @@
     "delivery_secret_env": "OUTBOUND_SERVER_CORE_BOUNDED_HOST_SECRET",
     "delivery_secret_file_env": "GACE_BOUNDED_HOST_HMAC_KEY_FILE",
     "gateway_url_env": "GACE_EVENT_GATEWAY_URL",
+    "gateway_url_file_env": "GACE_EVENT_GATEWAY_URL_FILE",
     "gateway_token_env": "GACE_EVENT_GATEWAY_TOKEN",
+    "gateway_token_file_env": "GACE_EVENT_GATEWAY_TOKEN_FILE",
     "signature_tolerance_seconds_env": "GACE_BOUNDED_HOST_SIGNATURE_TOLERANCE_SECONDS"
   },
   "result_markers": [
