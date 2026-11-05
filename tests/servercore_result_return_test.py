@@ -336,11 +336,13 @@ class SinkTests(unittest.TestCase):
 
 
 class ReceiverResultTests(unittest.TestCase):
-    def serve(self, now=1700000000, secret=b"k", root="/nonexistent"):
+    def serve(self, now=1700000000, secret=b"k", root="/nonexistent", gserver_result_key=None):
         contract = {"request_schema": "gace.servercore-bounded-host.request/v1",
                     "allowed_command_ids": ["project.git_head", "project.git_status", "service.deploy", "host.command"],
                     "canonical_host_root": root}
-        handler = receiver.make_handler(contract, delivery_key=secret, now_fn=lambda: now)
+        handler = receiver.make_handler(contract, delivery_key=secret,
+                                        gserver_result_key=gserver_result_key,
+                                        now_fn=lambda: now)
         server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
         threading.Thread(target=server.serve_forever, daemon=True).start()
         self.addCleanup(server.shutdown)
@@ -359,11 +361,60 @@ class ReceiverResultTests(unittest.TestCase):
         resp = conn.getresponse()
         return resp.status, json.loads(resp.read())
 
+    def post_gserver_result(self, port, payload, secret=b"result-k", destination=None):
+        body = json.dumps(payload).encode()
+        mid, ts = "msg_" + secrets.token_hex(6), "1700000000"
+        digest = hmac.new(secret, mid.encode() + b"." + ts.encode() + b"." + body,
+                          hashlib.sha256).digest()
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        conn.request("POST", receiver.GSERVER_RESULT_PATH, body, {
+            "content-type": "application/json",
+            "x-gace-destination": destination or receiver.GSERVER_RESULT_DESTINATION,
+            "webhook-id": mid, "webhook-timestamp": ts,
+            "webhook-signature": "v1," + base64.b64encode(digest).decode()})
+        response = conn.getresponse()
+        return response.status, json.loads(response.read())
+
     def request(self, **kw):
         base = {"schema": "gace.servercore-bounded-host.request/v1", "id": RID,
                 "command_id": "project.git_head", "expected_sha": SHA}
         base.update(kw)
         return base
+
+    def test_gserver_result_uses_separate_auth_and_existing_sink(self):
+        forwarded = []
+        result = rec(command_id="host.command", target_evidence={
+            "host_target": "gserver", "repository": "seigo-gace/G-ACEserver",
+            "repo_sha": SHA, "dispatcher_sha": SHA, "command_sha256": "b" * 64,
+            "stdout_sha256": hashlib.sha256(b"{}").hexdigest(),
+            "stderr_sha256": hashlib.sha256(b"").hexdigest(),
+        })
+        with patch.object(receiver, "forward_gserver_result",
+                          side_effect=lambda record, p=None: forwarded.append(record) or
+                          {"ok": True, "state": "RECORDED"}):
+            status, body = self.post_gserver_result(
+                self.serve(gserver_result_key=b"result-k"), result)
+        self.assertEqual((status, body), (200, {"ok": True, "state": "RECORDED"}))
+        self.assertEqual(forwarded, [result])
+
+    def test_gserver_result_rejects_wrong_key_before_sink(self):
+        with patch.object(receiver, "forward_gserver_result") as forward:
+            status, body = self.post_gserver_result(
+                self.serve(gserver_result_key=b"result-k"), rec(), secret=b"wrong")
+        self.assertEqual((status, body["error"]), (401, "DELIVERY_SIGNATURE_INVALID"))
+        forward.assert_not_called()
+
+    def test_gserver_result_is_disabled_without_independent_key(self):
+        with patch.object(receiver, "forward_gserver_result") as forward:
+            status, body = self.post_gserver_result(self.serve(), rec())
+        self.assertEqual((status, body["error"]), (503, "GSERVER_RESULT_NOT_CONFIGURED"))
+        forward.assert_not_called()
+
+    def test_gserver_result_sink_failure_is_retryable(self):
+        with patch.object(receiver, "forward_gserver_result", return_value=None):
+            status, body = self.post_gserver_result(
+                self.serve(gserver_result_key=b"result-k"), rec())
+        self.assertEqual((status, body["error"]), (503, "RESULT_SINK_UNAVAILABLE"))
 
     def test_receiver_denial_has_redacted_diagnostic_log(self):
         log = __import__("io").StringIO()

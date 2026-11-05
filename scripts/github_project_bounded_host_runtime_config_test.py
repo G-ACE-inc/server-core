@@ -14,6 +14,7 @@ def main():
     compose = (ROOT / "docker-compose.project-control.yml").read_text(encoding="utf-8")
     ignore = (ROOT / "Dockerfile.bounded-host.dockerignore").read_text(encoding="utf-8")
     overlay = (ROOT / "docker-compose.source-reflect.yml").read_text(encoding="utf-8")
+    gserver_result = (ROOT / "docker-compose.gserver-result.yml").read_text(encoding="utf-8")
 
     require(dockerfile, "servercore_bounded_host_receiver.py", "dockerfile")
     require(dockerfile, "USER 65532:65532", "dockerfile")
@@ -32,6 +33,11 @@ def main():
     require(overlay, "read_only: true", "socket_overlay")
     if "servercore-source-reflect.sock" in overlay:
         raise AssertionError("socket file-level mount is forbidden (stale inode on restart)")
+    require(gserver_result, "GACE_GSERVER_RESULT_HMAC_KEY_FILE", "gserver_result_overlay")
+    require(gserver_result, "target: /run/secrets/gserver-result-delivery", "gserver_result_overlay")
+    require(gserver_result, "read_only: true", "gserver_result_overlay")
+    if "ports:" in gserver_result:
+        raise AssertionError("Gserver result overlay must not publish a new port")
     print("BOUNDED_HOST_RUNTIME_CONFIG=PASS")
 
 
