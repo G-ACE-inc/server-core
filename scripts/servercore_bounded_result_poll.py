@@ -59,13 +59,28 @@ def find_result(comments, request_id):
     return None, None
 
 
-def evaluate(record, request_id, command_id, expected_sha):
+def evaluate(record, request_id, command_id, expected_sha, *, host_target=None,
+             repo_sha=None, command_sha256=None):
     if record.get("request_id") != request_id:
         return 3, "REQUEST_ID_MISMATCH"
     if record.get("command_id") != command_id and record.get("command_id") != "invalid.request":
         return 3, "COMMAND_MISMATCH"
     if record.get("expected_sha") not in (expected_sha, ""):
         return 3, "EXPECTED_SHA_MISMATCH"
+    if host_target is not None:
+        evidence = record.get("target_evidence")
+        if not isinstance(evidence, dict):
+            return 3, "TARGET_EVIDENCE_MISSING"
+        if (host_target != "gserver" or evidence.get("host_target") != host_target
+                or evidence.get("repository") != "seigo-gace/G-ACEserver"
+                or evidence.get("dispatcher_sha") != expected_sha
+                or record.get("expected_sha") != expected_sha
+                or evidence.get("repo_sha") != repo_sha or record.get("host_sha") != repo_sha
+                or evidence.get("command_sha256") != command_sha256):
+            return 3, "TARGET_EVIDENCE_MISMATCH"
+        for stream in ("stdout", "stderr"):
+            if not re.fullmatch(r"[0-9a-f]{64}", str(evidence.get(stream + "_sha256", ""))):
+                return 3, "TARGET_STREAM_EVIDENCE_INVALID"
     return (0 if record.get("state") == "PASS" and record.get("exit_code") == 0 else 1), "OK"
 
 
@@ -196,6 +211,8 @@ def write_observation(path, request_id, record=None, comment=None, verdict=None)
                                            for k in ("stdout", "stderr")),
                    "streams": {stream: stream_receipt_metadata(record, stream)
                                for stream in ("stdout", "stderr")}}
+        if "target_evidence" in record:
+            receipt["target_evidence"] = record["target_evidence"]
     dest = Path(path)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
@@ -208,10 +225,16 @@ def main(argv=None, fetch=gh_api, sleep=time.sleep, clock=time.monotonic):
     parser.add_argument("--request-id", required=True)
     parser.add_argument("--command-id", required=True)
     parser.add_argument("--expected-sha", required=True)
+    parser.add_argument("--host-target", choices=["gserver"])
+    parser.add_argument("--repo-sha")
+    parser.add_argument("--command-sha256")
     parser.add_argument("--observation-json", default=None)
     parser.add_argument("--timeout", type=int, default=240)
     parser.add_argument("--interval", type=int, default=6)
     args = parser.parse_args(argv)
+    if args.host_target and (not SHA.fullmatch(args.repo_sha or "") or
+                            not re.fullmatch(r"[0-9a-f]{64}", args.command_sha256 or "")):
+        parser.error("target result requires repository SHA and command digest")
     if not 1 <= args.interval <= 60:
         parser.error("--interval must be between 1 and 60 seconds")
     if not REQ_ID.fullmatch(args.request_id) or not SHA.fullmatch(args.expected_sha):
@@ -240,7 +263,9 @@ def main(argv=None, fetch=gh_api, sleep=time.sleep, clock=time.monotonic):
             api_failures += 1
             comment = record = None
         if record:
-            code, verdict = evaluate(record, args.request_id, args.command_id, args.expected_sha)
+            code, verdict = evaluate(record, args.request_id, args.command_id, args.expected_sha,
+                                     host_target=args.host_target, repo_sha=args.repo_sha,
+                                     command_sha256=args.command_sha256)
             emit(record, comment, verdict)
             write_observation(args.observation_json, args.request_id, record, comment, verdict)
             emit_lookup_stats()

@@ -128,6 +128,11 @@ jobs:
             echo "BOUNDED_HOST_REQUEST_ID=$request_id"
             echo "BOUNDED_HOST_COMMAND_ID=$command_id"
             echo "BOUNDED_HOST_EXPECTED_SHA=$expected_sha"
+            if [[ -n "${host_target:-}" ]]; then
+              echo "BOUNDED_HOST_TARGET=$host_target"
+              echo "BOUNDED_HOST_REPO_SHA=$(jq -r '.bounded_host_request.repo_sha' "$target")"
+              echo "BOUNDED_HOST_COMMAND_SHA=$(printf '%s' "$(jq -r '.bounded_host_request.command' "$target")" | sha256sum | cut -d' ' -f1)"
+            fi
           } >> "$GITHUB_ENV"
           echo "SERVERCORE_BOUNDED_HOST_DISPATCH=QUEUED"
 
@@ -138,12 +143,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          target_args=()
+          if [[ -n "${BOUNDED_HOST_TARGET:-}" ]]; then
+            target_args+=(--host-target "$BOUNDED_HOST_TARGET" --repo-sha "$BOUNDED_HOST_REPO_SHA" --command-sha256 "$BOUNDED_HOST_COMMAND_SHA")
+          fi
           python3 scripts/servercore_bounded_result_poll.py \
             --repository "$GITHUB_REPOSITORY" --issue 10 \
             --request-id "$BOUNDED_HOST_REQUEST_ID" \
             --command-id "$BOUNDED_HOST_COMMAND_ID" \
             --expected-sha "$BOUNDED_HOST_EXPECTED_SHA" \
-            --observation-json /tmp/gace-chat-host-observation.json
+            --observation-json /tmp/gace-chat-host-observation.json "${target_args[@]}"
 
 
       - name: Persist CHAT host observation for cross-chat recovery

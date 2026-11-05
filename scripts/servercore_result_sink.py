@@ -79,7 +79,7 @@ def bound(text, limit=STREAM_LIMIT):
 
 
 def validate_record(value):
-    if not isinstance(value, dict) or set(value) != RECORD_KEYS or value.get("schema") != RECORD_SCHEMA:
+    if not isinstance(value, dict) or set(value) not in (RECORD_KEYS, RECORD_KEYS | {"target_evidence"}) or value.get("schema") != RECORD_SCHEMA:
         raise SinkError("RECORD_SHAPE_INVALID")
     if not isinstance(value["request_id"], str) or not REQ_ID.fullmatch(value["request_id"]):
         raise SinkError("REQUEST_ID_INVALID")
@@ -97,6 +97,19 @@ def validate_record(value):
             raise SinkError("STREAM_INVALID")
     if type(value["duration_ms"]) is not int or not 0 <= value["duration_ms"] <= 3_600_000:
         raise SinkError("DURATION_INVALID")
+    if "target_evidence" in value:
+        from servercore_gserver_target import EVIDENCE_KEYS, validate_result, GserverTargetError
+        evidence = value["target_evidence"]
+        if not isinstance(evidence, dict) or set(evidence) != EVIDENCE_KEYS or value["command_id"] != "host.command":
+            raise SinkError("TARGET_EVIDENCE_INVALID")
+        request = {"id": value["request_id"], "repo_sha": evidence.get("repo_sha"),
+                   "expected_sha": value["expected_sha"], "command_sha256": evidence.get("command_sha256")}
+        if not re.fullmatch(r"[0-9a-f]{64}", str(evidence.get("command_sha256", ""))):
+            raise SinkError("TARGET_EVIDENCE_INVALID")
+        try:
+            validate_result({**value, **evidence}, request)
+        except (GserverTargetError, TypeError, ValueError):
+            raise SinkError("TARGET_EVIDENCE_INVALID") from None
     return value
 
 
@@ -130,7 +143,7 @@ def read_record(request_id, result_dir=None):
 def public_view(record):
     keep = ("request_id", "command_id", "state", "exit_code", "host_sha", "expected_sha",
             "stdout", "stderr", "stdout_truncated", "stderr_truncated", "duration_ms",
-            "recorded_at", "attempts", "published")
+            "recorded_at", "attempts", "published", "target_evidence")
     return {k: record[k] for k in keep if k in record}
 
 
@@ -151,6 +164,8 @@ def accept_record(value, *, result_dir=None, now=None):
                   "stdout": stdout, "stderr": stderr, "stdout_truncated": out_cut,
                   "stderr_truncated": err_cut, "duration_ms": value["duration_ms"],
                   "recorded_at": stamp, "attempts": attempts, "published": None}
+        if "target_evidence" in value:
+            record["target_evidence"] = dict(value["target_evidence"])
         _write(record_path(value["request_id"], result_dir), record)
     if record["state"] in TERMINAL:
         _WAKE.set()
@@ -241,7 +256,8 @@ def comment_body(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
     view.pop("published", None)
     # The authorized Host Writer ledger is the source of full Host stream
     # digest/length, not the Receiver's GACE_HOST_OUTPUT_STORED locator.
-    writer = trusted_writer_metadata(record, writer_dir=writer_dir)
+    # A remote target must never inherit the Contabo-local Writer's evidence.
+    writer = None if "target_evidence" in record else trusted_writer_metadata(record, writer_dir=writer_dir)
     if writer and writer.get("diagnostic_hint"):
         view["diagnostic_hint"] = writer["diagnostic_hint"]
     # Issue is an index/status surface; never include any Host output text.
