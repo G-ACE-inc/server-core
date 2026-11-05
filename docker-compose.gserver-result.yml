@@ -11,3 +11,24 @@ services:
         source: "${GACE_GSERVER_RESULT_HMAC_KEY_FILE:?GACE_GSERVER_RESULT_HMAC_KEY_FILE is required}"
         target: /run/secrets/gserver-result-delivery
         read_only: true
+  gserver-result-tunnel:
+    image: cloudflare/cloudflared:2026.10.7
+    container_name: server-core-gserver-result-tunnel
+    command: [tunnel, --no-autoupdate, --config, /etc/cloudflared/config.yml, run]
+    user: "1000:1000"
+    volumes:
+      - type: bind
+        source: "${GACE_GSERVER_RESULT_TUNNEL_CONFIG_FILE:?GACE_GSERVER_RESULT_TUNNEL_CONFIG_FILE is required}"
+        target: /etc/cloudflared/config.yml
+        read_only: true
+      - type: bind
+        source: "${GACE_GSERVER_RESULT_TUNNEL_CREDENTIAL_FILE:?GACE_GSERVER_RESULT_TUNNEL_CREDENTIAL_FILE is required}"
+        target: /run/secrets/gserver-result-tunnel.json
+        read_only: true
+    networks: [gace-internal]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 64
+    mem_limit: 128m
+    restart: unless-stopped

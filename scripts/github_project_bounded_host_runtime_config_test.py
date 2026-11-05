@@ -38,6 +38,11 @@ def main():
     require(gserver_result, "read_only: true", "gserver_result_overlay")
     if "ports:" in gserver_result:
         raise AssertionError("Gserver result overlay must not publish a new port")
+    require(gserver_result, "server-core-gserver-result-tunnel", "gserver_result_tunnel")
+    require(gserver_result, "cloudflare/cloudflared:2026.10.7", "gserver_result_tunnel")
+    require(gserver_result, "GACE_GSERVER_RESULT_TUNNEL_CONFIG_FILE", "gserver_result_tunnel")
+    require(gserver_result, "GACE_GSERVER_RESULT_TUNNEL_CREDENTIAL_FILE", "gserver_result_tunnel")
+    require(gserver_result, "networks: [gace-internal]", "gserver_result_tunnel")
     print("BOUNDED_HOST_RUNTIME_CONFIG=PASS")
 
 

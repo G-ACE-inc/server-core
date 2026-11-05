@@ -1245,3 +1245,35 @@ The design record remains an append-only evidence document, not a System
 Document authority. The PR declares `SYSTEM_DOCUMENT_REQUIRED=NO` for this
 target-only contract change and keeps the existing System Document authorities
 unchanged.
+
+## 2026-11-05 — Gserver Host admission after protected-effect authorization
+
+Baseline: the bidirectional common Terminal source, Gserver user-authority
+adapter, Gateway destination source and result-return overlay were verified,
+merged and reflected, but the canonical target intentionally remained
+`SOURCE_CONTRACT_ONLY`. Runtime preflight confirmed that the Gserver service,
+credentials and private route were absent, so no request could be delivered.
+
+Change: after Master explicitly authorized the one-time production connection
+work and its rollback, promote only the existing `gserver` target to
+`HOST_ADMITTED`. Keep the same repository, canonical root, common
+`host.command`, target/SHA/command binding, signed delivery, replay ledger and
+Result Sink. Remove only the now-satisfied `gserver_host_admission` item from
+the remaining activation list. This does not add root authority, another
+Terminal, another Dispatcher, a fixed command catalogue, another repository or
+an unregistered endpoint.
+
+Runtime activation and Source admission remain separate evidence. Gateway
+configuration, key readback, active Receiver, live request/result correlation
+and existing Contabo regression must still pass before completion.
+
+Result return keeps the existing no-published-Host-port boundary. The
+activation-only Compose overlay adds one Gserver-specific Cloudflare connector
+to `gace-internal`, where it resolves the existing Receiver service directly.
+The connector has no Docker socket, Host network, command authority or shared
+Gateway role. Its config and credential are external read-only inputs, and the
+existing Asteraserver tunnel is not edited.
+
+Rollback: revert this admission commit before disabling the Gserver-only
+Receiver, Gateway destination and result overlay. Preserve existing Contabo
+targets, requests, results, services and unrelated Provider configuration.

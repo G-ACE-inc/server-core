@@ -25,7 +25,7 @@ class GserverTargetTests(unittest.TestCase):
         config = target.target_config(CONTRACT)
         self.assertEqual(config["common_command_id"], "host.command")
         self.assertFalse(config["fixed_command_terminal"])
-        self.assertEqual(config["status"], "SOURCE_CONTRACT_ONLY")
+        self.assertEqual(config["status"], "HOST_ADMITTED")
 
     def test_request_and_event_bind_target_repository_and_digest(self):
         value = request()
