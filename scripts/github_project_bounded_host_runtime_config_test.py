@@ -33,6 +33,9 @@ def main():
     require(overlay, "read_only: true", "socket_overlay")
     if "servercore-source-reflect.sock" in overlay:
         raise AssertionError("socket file-level mount is forbidden (stale inode on restart)")
+    require(gserver_result, "  receiver:", "gserver_result_overlay")
+    if "  server-core-bounded-host:" in gserver_result:
+        raise AssertionError("Gserver result overlay must merge the base receiver service")
     require(gserver_result, "GACE_GSERVER_RESULT_HMAC_KEY_FILE", "gserver_result_overlay")
     require(gserver_result, "target: /run/secrets/gserver-result-delivery", "gserver_result_overlay")
     require(gserver_result, "read_only: true", "gserver_result_overlay")
