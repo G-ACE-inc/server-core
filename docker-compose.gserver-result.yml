@@ -2,7 +2,7 @@
 # The base Contabo service remains unchanged until this overlay is explicitly
 # selected with an independently provisioned key file.
 services:
-  server-core-bounded-host:
+  receiver:
     environment:
       GACE_GSERVER_RESULT_HMAC_KEY_FILE: /run/secrets/gserver-result-delivery
       GACE_GSERVER_RESULT_SIGNATURE_TOLERANCE_SECONDS: "${GACE_GSERVER_RESULT_SIGNATURE_TOLERANCE_SECONDS:-300}"
