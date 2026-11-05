@@ -13,6 +13,11 @@ from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path, PurePosixPath
 
+try:
+    from scripts.gpt_chat_mutation_preflight import evaluate_mutation_preflight
+except ModuleNotFoundError:
+    from gpt_chat_mutation_preflight import evaluate_mutation_preflight
+
 ROOT = Path(__file__).resolve().parents[1]
 RULE_PLANE = ROOT / "operations" / "github-project-rule-plane.json"
 SSH_ALIAS_RE = re.compile(
@@ -294,16 +299,9 @@ def check(
         )
 
     if state is BindingState.ABSENT:
-        if (os.environ.get("GACE_WORK_ROUTINE_REQUIRED", "").strip() == "1"
-                or os.environ.get("GACE_WORK_ROUTINE_TURN", "").strip()):
-            return emit(
-                "DENY",
-                "WORK_ROUTINE_MUTATION_BINDING_REQUIRED",
-                current_mission_verified="NO",
-            )
         return emit(
-            "ALLOW",
-            "BASELINE_REPOSITORY_VERIFIED",
+            "DENY",
+            "WORK_ROUTINE_MUTATION_BINDING_REQUIRED",
             repository=repository,
             branch=branch or "",
             head=head or "",
@@ -365,6 +363,13 @@ def check(
                 current_mission_verified="NO",
             )
 
+    if not os.environ.get("GACE_WORK_ROUTINE_TURN", "").strip():
+        return emit(
+            "DENY",
+            "WORK_ROUTINE_TURN_RECEIPT_REQUIRED",
+            current_mission_verified="NO",
+        )
+
     os.environ["GACE_WORK_ROUTINE_REPO_ROOT"] = str(repo_root.resolve())
     if os.environ.get("GACE_WORK_ROUTINE_REQUIRED", "").strip() == "1":
         os.environ["GACE_WORK_ROUTINE_REQUIRE_CONTENT_HASH"] = "1"
@@ -419,6 +424,14 @@ def evaluate_work_routine_turn_receipt() -> dict | None:
             "WORK_ROUTINE_MUTATION_SCOPE_MISMATCH",
             current_mission_verified="NO",
         )
+    if state.get("rule_plane_profile", state.get("profile")) == "GPT_CHAT":
+        preflight = evaluate_mutation_preflight(state)
+        if preflight != "PASS":
+            return emit(
+                "DENY",
+                preflight,
+                current_mission_verified="NO",
+            )
     gate_path = Path(__file__).resolve().with_name("work_routine_design_entry_gate.py")
     spec = importlib.util.spec_from_file_location("work_routine_design_entry_gate", gate_path)
     if spec is None or spec.loader is None:
