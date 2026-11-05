@@ -2,6 +2,40 @@
 
 Status: PREPARED / NORMAL_SOURCE_WORK_CONTINUES / PROTECTED_EFFECTS_ISOLATED
 
+## 2026-11-05 continuation: concrete Host boundary and return ingress
+
+The Gserver branch now contains a loopback-only user service boundary which
+loads `servercore_gserver_target.receive_delivery` from the existing local
+same-upstream server-core checkout. It adds no dispatcher, command catalogue,
+Docker authority or independent control plane. Request and result HMAC keys are
+separate file-backed inputs. The service refuses startup while the canonical
+target remains `SOURCE_CONTRACT_ONLY`, and remote result endpoints require TLS.
+
+The existing Contabo bounded-host Receiver now has a result-only path
+`/internal/gserver-bounded-result`. It uses the independent
+`GACE_GSERVER_RESULT` key, forwards the unchanged signed record to the existing
+UNIX Result Sink, and cannot accept commands on that path. The base deployment
+remains unchanged when no second-Host key is configured. An activation-only
+Compose overlay mounts that key without adding a published port. Once the key
+environment is explicitly configured, unreadable or ambiguous key sources are
+startup-fatal rather than silently disabling authentication.
+
+Source verification: Gserver full Python regression passed 406 tests; focused
+Host boundary tests passed 15. server-core result-return, delivery replay and
+dependency tests passed 47, plus the existing target tests. A loopback HTTP E2E
+used both repositories' real modules, temporary keys and a temporary ledger:
+two deliveries of `req_999999999999999999999999` executed once and returned a
+correlated PASS record with dispatcher, repository, command and stream hashes.
+
+This is Source and isolated-runtime evidence only. The production contract is
+still `SOURCE_CONTRACT_ONLY`; no real key was generated, no service was
+installed or restarted, and no Cloudflare/Gateway route was changed. Activation
+still requires the protected key/route/reload operations in sections 2-5. Source
+rollback is a normal revert of the two repository commits. Runtime rollback,
+after future activation, is to disable only the Gserver user service and remove
+only the result overlay from the bounded-host deployment; existing Contabo
+request handling and the Result Sink remain in place.
+
 ## 2026-11-05 continuation: authenticated delivery and result return
 
 The shared `servercore_gserver_target.receive_delivery` now reuses
