@@ -108,6 +108,8 @@ jobs:
           send=(python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha")
           if [[ "$command_id" == "host.command" ]]; then
             send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --host-command "$(jq -r '.bounded_host_request.command' "$target")" --repo-sha "$(jq -r '.bounded_host_request.repo_sha' "$target")")
+            host_target="$(jq -r '.bounded_host_request.host_target // empty' "$target")"
+            if [[ -n "$host_target" ]]; then send+=(--host-target "$host_target"); fi
             if [[ "$(jq -r '.bounded_host_request.source_preflight // false' "$target")" == "true" ]]; then send+=(--source-preflight); fi
           elif [[ "$command_id" == "dev.job" ]]; then
             # Separate isolated test facility, never ordinary VPS mutation.

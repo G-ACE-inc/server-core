@@ -83,9 +83,20 @@ def validate_result(result, request):
         raise GserverTargetError("GSERVER_RESULT_REPO_SHA_MISMATCH")
     if not SHA.fullmatch(str(result.get("host_sha", ""))):
         raise GserverTargetError("GSERVER_RESULT_HOST_SHA_INVALID")
+    if result["host_sha"] != request.get("repo_sha"):
+        raise GserverTargetError("GSERVER_RESULT_HOST_SHA_MISMATCH")
+    if result.get("dispatcher_sha") != request.get("expected_sha"):
+        raise GserverTargetError("GSERVER_RESULT_DISPATCHER_SHA_MISMATCH")
+    if result.get("command_sha256") != request.get("command_sha256"):
+        raise GserverTargetError("GSERVER_RESULT_COMMAND_SHA_MISMATCH")
     if result.get("state") not in {"PASS", "FAIL"} or type(result.get("exit_code")) is not int:
         raise GserverTargetError("GSERVER_RESULT_STATE_INVALID")
+    if not 0 <= result["exit_code"] <= 255 or (result["state"] == "PASS") != (result["exit_code"] == 0):
+        raise GserverTargetError("GSERVER_RESULT_EXIT_STATE_MISMATCH")
     for key in ("stdout_sha256", "stderr_sha256"):
         if not DIGEST.fullmatch(str(result.get(key, ""))):
             raise GserverTargetError("GSERVER_RESULT_STREAM_HASH_INVALID")
+        stream = result.get(key.removesuffix("_sha256"))
+        if not isinstance(stream, str) or hashlib.sha256(stream.encode()).hexdigest() != result[key]:
+            raise GserverTargetError("GSERVER_RESULT_STREAM_HASH_MISMATCH")
     return result
