@@ -2,6 +2,42 @@
 
 Status: PREPARED / NORMAL_SOURCE_WORK_CONTINUES / PROTECTED_EFFECTS_ISOLATED
 
+## 2026-11-05 continuation: authenticated delivery and result return
+
+The shared `servercore_gserver_target.receive_delivery` now reuses
+`gace_internal_delivery_auth.verify_delivery` and the existing Host Writer
+ledger primitives. It accepts the Gateway's signed JSON **data** payload (not
+the producer event envelope), requires `HOST_ADMITTED` and the canonical root,
+and persists a fingerprint and RUNNING receipt before invoking the existing
+Gserver adapter. A completed duplicate reuses the stored result; changed content
+under the same ID is rejected. An interrupted RUNNING claim requires outcome
+reconciliation and is never automatically re-executed. Sink failure permits
+delivery retry without rerunning the command.
+
+The shared Result Sink accepts optional, strictly validated `target_evidence`
+while retaining the legacy record contract. Raw streams remain private and
+public comments contain only correlation metadata. Remote target evidence does
+not consult the Contabo-local Writer ledger. Actions passes target/repository/
+command pins to the existing result poller, which checks the returned metadata.
+
+Verification: six signed-delivery/failure tests, 32 existing result-return tests,
+13 poll tests, five target tests and 18 existing transport tests pass. An isolated
+signed request using the real WSL Gserver adapter, temporary Writer/Sink storage,
+public-record renderer and poll evaluator passed; two deliveries executed once.
+Test admission and signing key existed only in memory. This is not a live
+Gateway delivery, production admission, network listener or CHAT return.
+
+Runtime integration still needs an admitted deployment caller to supply the
+existing signature key, private ledger/lock paths, adapter and authenticated
+Result Sink transport. None of these are caller-controlled request parameters.
+The production target remains SOURCE_CONTRACT_ONLY. No service was started.
+
+Correction to the historical steps below: the inspected Gateway contract uses
+deployment configuration for destinations, not a destination-write Admin API.
+The old prerequisite SHAs below are historical snapshots, not execution pins.
+Resolve current PR/Host HEADs before reflection. Rollback for this increment is
+a normal source revert; no production configuration or data migration occurred.
+
 Owner: server-core Control #10 / SERVER_AI Rule #16
 
 目的は、既存の共通 `host.command` 経路を使い、Gserverへ1件の実Requestを送り、
@@ -75,7 +111,9 @@ byte-preservingで戻す。
 
 ### 3. Gateway destinationと認証配送
 
-既存Webhook Gatewayの正式API/CLIで、Gserver destinationを1件登録する。
+既存Webhook Gatewayのdeployment所有設定で、Gserver destinationを1件登録する。
+現物のREADMEとINTERNAL_EVENT_APIではdestination書込Admin APIは提供されていない。
+環境変数名だけで管理APIが稼働していると判断しない。
 
 - destination ID: `gserver-bounded-host`
 - event type: `gace.servercore-bounded-host.requested`
@@ -87,8 +125,8 @@ Secretの値はIssue、PR、Source、ログへ出さない。既存Secretを再�
 consumer/readbackで対応関係だけを確認する。新規Secretが不可避なら、登録前に
 Master承認が必要。
 
-無停止可否: destination登録はAPIの既存idempotent操作であれば停止不要。Gateway
-再起動、Secret reload、Cloudflare/Vault変更が必要なら承認対象。
+無停止可否: 実deploymentの設定読込方式に依存する。Gateway
+再起動、Secret reload、Cloudflare/Vault変更の必要性と既存承認範囲を確認する。
 
 rollback: `gserver-bounded-host` destinationとそのconsumer mappingだけを無効化し、
 既存destinationを触らない。
