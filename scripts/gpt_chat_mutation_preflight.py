@@ -13,7 +13,7 @@ from typing import Any
 MUTATION_SCOPES = {"design_changing", "routine_fix"}
 STATUSES = {"PLANNED", "EXECUTING", "OBSERVED", "VERIFIED", "INCOMPLETE", "BLOCKED"}
 EVIDENCE_LOCATOR = re.compile(
-    r"^https://github\.com/[^/\\s]+/[^/\\s]+/"
+    r"^https://github\.com/[^/\s]+/[^/\s]+/"
     r"(?:issues/[1-9][0-9]*(?:#issuecomment-[1-9][0-9]*)?|"
     r"actions/runs/[1-9][0-9]*|commit/[0-9a-f]{40}|pull/[1-9][0-9]*)$"
 )
