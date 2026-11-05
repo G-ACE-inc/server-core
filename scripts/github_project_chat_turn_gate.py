@@ -35,6 +35,10 @@ ALLOWED_KEYS = {
     "stop_evidence", "remaining_actions", "completion_verified",
     "mission_acceptance_verified", "same_cu_actions_reviewed", "next_action_decision",
     "runnable_actions_inventory_verified", "master_action_ready", "master_action_evidence",
+    "project_current", "mission", "change_unit", "mutation_owner",
+    "adopted_design", "status", "work_branch", "worktree_path",
+    "exact_head", "owned_paths", "exact_next_gate", "rollback_plan",
+    "evidence_refs", "reanchor",
 }
 
 
