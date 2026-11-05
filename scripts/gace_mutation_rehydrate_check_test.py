@@ -246,7 +246,7 @@ class RehydrateTests(unittest.TestCase):
         mod = self._load_mod()
         state = {
             "manifest_verified": True,
-            "rule_plane_profile": "GPT_CHAT",
+            "rule_plane_profile": "SERVER_AI",
             "rule_plane_read": True,
             "current_verified": True,
             "purpose_verified": True,
@@ -270,7 +270,7 @@ class RehydrateTests(unittest.TestCase):
         """Exercise the CLI entry, not only its helper evaluator."""
         shared = {
             "manifest_verified": True,
-            "rule_plane_profile": "GPT_CHAT",
+            "rule_plane_profile": "SERVER_AI",
             "rule_plane_read": True,
             "current_verified": True,
             "purpose_verified": True,
