@@ -1267,6 +1267,13 @@ Runtime activation and Source admission remain separate evidence. Gateway
 configuration, key readback, active Receiver, live request/result correlation
 and existing Contabo regression must still pass before completion.
 
+Result return keeps the existing no-published-Host-port boundary. The
+activation-only Compose overlay adds one Gserver-specific Cloudflare connector
+to `gace-internal`, where it resolves the existing Receiver service directly.
+The connector has no Docker socket, Host network, command authority or shared
+Gateway role. Its config and credential are external read-only inputs, and the
+existing Asteraserver tunnel is not edited.
+
 Rollback: revert this admission commit before disabling the Gserver-only
 Receiver, Gateway destination and result overlay. Preserve existing Contabo
 targets, requests, results, services and unrelated Provider configuration.

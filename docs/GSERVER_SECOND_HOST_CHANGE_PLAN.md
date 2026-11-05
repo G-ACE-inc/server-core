@@ -53,6 +53,13 @@ Gateway destination configuration, machine-key readback, active Receiver, live
 request/result correlation, and Contabo regression remain independent Runtime
 evidence. Until those checks pass, the connection is admitted but not complete.
 
+The result-return activation uses one Gserver-specific Cloudflare connector on
+the existing `gace-internal` Docker network. It reaches
+`server-core-bounded-host:8789` by service identity and does not publish a Host
+port or edit the existing Asteraserver tunnel. Its credential and config remain
+external mode-0600 files. Rollback removes only
+`server-core-gserver-result-tunnel` and the Gserver result overlay.
+
 ## 2026-11-05 continuation: concrete Host boundary and return ingress
 
 The Gserver branch now contains a loopback-only user service boundary which
