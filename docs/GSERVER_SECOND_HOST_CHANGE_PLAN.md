@@ -111,7 +111,9 @@ byte-preservingで戻す。
 
 ### 3. Gateway destinationと認証配送
 
-既存Webhook Gatewayの正式API/CLIで、Gserver destinationを1件登録する。
+既存Webhook Gatewayのdeployment所有設定で、Gserver destinationを1件登録する。
+現物のREADMEとINTERNAL_EVENT_APIではdestination書込Admin APIは提供されていない。
+環境変数名だけで管理APIが稼働していると判断しない。
 
 - destination ID: `gserver-bounded-host`
 - event type: `gace.servercore-bounded-host.requested`
@@ -123,8 +125,8 @@ Secretの値はIssue、PR、Source、ログへ出さない。既存Secretを再�
 consumer/readbackで対応関係だけを確認する。新規Secretが不可避なら、登録前に
 Master承認が必要。
 
-無停止可否: destination登録はAPIの既存idempotent操作であれば停止不要。Gateway
-再起動、Secret reload、Cloudflare/Vault変更が必要なら承認対象。
+無停止可否: 実deploymentの設定読込方式に依存する。Gateway
+再起動、Secret reload、Cloudflare/Vault変更の必要性と既存承認範囲を確認する。
 
 rollback: `gserver-bounded-host` destinationとそのconsumer mappingだけを無効化し、
 既存destinationを触らない。
