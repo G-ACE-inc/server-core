@@ -11,6 +11,8 @@ import re
 import sys
 from pathlib import Path
 
+from gpt_chat_mutation_preflight import evaluate_mutation_preflight
+
 PHASES = {"START", "FAILURE", "STOP"}
 STOP_REASONS = {"MASTER_INTERRUPT", "MASTER_ONLY_ACTION", "VERIFIED_COMPLETE", "ALL_ACTIONS_BLOCKED"}
 
@@ -79,6 +81,9 @@ def evaluate(state):
             return "START_PROFILE_MISMATCH"
         if state.get("purpose_cu_aligned") is not True:
             return "START_PURPOSE_CU_ALIGNMENT_NOT_VERIFIED"
+        preflight = evaluate_mutation_preflight(state)
+        if preflight != "PASS":
+            return "START_" + preflight
         if not isinstance(state.get("source_evidence"), str) or not state["source_evidence"].strip():
             return "START_EVIDENCE_MISSING"
         design_out = evaluate_design_turn(state)
