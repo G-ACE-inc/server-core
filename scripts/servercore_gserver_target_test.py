@@ -51,10 +51,22 @@ class GserverTargetTests(unittest.TestCase):
             target.validate_request(bad, CONTRACT)
         result = {
             "request_id": value["id"], "host_target": "gserver", "repository": target.REPOSITORY,
-            "repo_sha": value["repo_sha"], "host_sha": "b" * 40, "state": "PASS", "exit_code": 0,
-            "stdout_sha256": "c" * 64, "stderr_sha256": "d" * 64,
+            "repo_sha": value["repo_sha"], "host_sha": value["repo_sha"], "state": "PASS", "exit_code": 0,
+            "dispatcher_sha": value["expected_sha"], "command_sha256": value["command_sha256"],
+            "stdout": "ok", "stderr": "",
+            "stdout_sha256": hashlib.sha256(b"ok").hexdigest(),
+            "stderr_sha256": hashlib.sha256(b"").hexdigest(),
         }
         self.assertIs(target.validate_result(result, value), result)
+        for key, changed in {
+            "request_id": "req_" + "0" * 24, "host_target": "contabo",
+            "repository": "other/repo", "repo_sha": "f" * 40,
+            "host_sha": "f" * 40, "dispatcher_sha": "f" * 40,
+            "command_sha256": "f" * 64, "exit_code": 1,
+            "stdout": "tampered", "stderr": "tampered",
+        }.items():
+            with self.subTest(key=key), self.assertRaises(target.GserverTargetError):
+                target.validate_result(dict(result, **{key: changed}), value)
 
     def test_target_contract_does_not_contain_secrets_or_fixed_commands(self):
         config = target.target_config(CONTRACT)
