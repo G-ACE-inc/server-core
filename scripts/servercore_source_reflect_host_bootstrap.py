@@ -58,7 +58,9 @@ def preflight(expected_head, gid):
         raise AdmissionError("REMOTE_ORIGIN_DENIED")
     if git("rev-parse", "HEAD") != expected_head:
         raise AdmissionError("SOURCE_HEAD_MISMATCH")
-    if git("status", "--porcelain", "--untracked-files=all"):
+    # The CHAT request spool is intentionally untracked and must survive
+    # executor installation/restart. Tracked edits remain fail-closed.
+    if git("status", "--porcelain", "--untracked-files=no"):
         raise AdmissionError("DIRTY_CHECKOUT_DENIED")
     try:
         number = int(gid)

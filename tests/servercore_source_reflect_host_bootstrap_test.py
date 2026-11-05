@@ -29,7 +29,7 @@ class BootstrapTests(unittest.TestCase):
                 return remote or sorted(boot.APPROVED_ORIGINS)[0]
             if args == ("rev-parse", "HEAD"):
                 return head
-            if args == ("status", "--porcelain", "--untracked-files=all"):
+            if args == ("status", "--porcelain", "--untracked-files=no"):
                 return " M operations/master-internal-repositories.json" if dirty else ""
             return ""
         with patch.object(boot, "ROOT", self.root), patch.object(boot, "git", side_effect=git), \
