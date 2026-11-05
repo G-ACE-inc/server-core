@@ -1,6 +1,6 @@
 # Gserver 第2 Host 接続 Change Plan
 
-Status: PREPARED / PRODUCTION_ACTIVATION_NOT_AUTHORIZED
+Status: PREPARED / NORMAL_SOURCE_WORK_CONTINUES / PROTECTED_EFFECTS_ISOLATED
 
 Owner: server-core Control #10 / SERVER_AI Rule #16
 
@@ -11,9 +11,9 @@ Dispatcher、Gateway複製、別Control Planeは作らない。
 
 ## 既確認済みの前提
 
-- server-core Source: PR #325 exact HEAD `1e8205202e3d4b68d4c600e57e7131c7d9748f0c`
-- Gserver Source: PR #15 exact HEAD `bf1daf6e160f78a15df0187494b9dd26a094022e`
-- Contabo Runtime: `c688961d29a7485c9a4d949a95c1991a452c7ec8`
+- server-core Source: PR #325 exact HEAD `e177bb0e7fc48d0dec847816316c801ce65ca793`
+- Gserver Source: PR #15 exact HEAD `9f56b2d6a4aa951f3c4e28d2cdf2f11eb7a2ce28`
+- Contabo Runtime read-only snapshot: `c688961d29a7485c9a4d949a95c1991a452c7ec8`
 - 既存共通経路: `server-core-bounded-host` / `/internal/servercore-bounded-host`
 - Gserver Source adapter: `scripts/gserver_host_adapter.py`
 - Gserver target contract: `host_targets.gserver`, destination `gserver-bounded-host`
@@ -37,18 +37,21 @@ dirty、未追跡、稼働中サービスは変更しない。
 
 ### 1. server-core Source反映
 
-既存の承認済みPR/Source reflection経路だけを使用する。
+既存のPR、Source reflection、Host admission契約だけを使用する。通常のPR/Source/
+CI/契約修正と、既存admissionが明示的に許可する可逆反映は通常開発として進める。
+新規権限、Secret、外部公開、Provider内部変更、破壊的作用だけを保護Gateとして分離する。
 
-- PR #325をexact HEADでmainへ合流
+- PR #325をexact HEADで通常の既存PR手順によりmainへ合流
 - Host側は既存のff-only Source reflectionを使用
 - before/after HEAD、active consumer、変更ファイルhashを読み戻す
 - `git pull`、`reset --hard`、`clean`、無条件stashは使用しない
 
 無停止可否: Source reflectionのみならサービス停止不要。ただしactive consumerが
-再読込を必要とする場合は、限定再起動の別承認が必要。
+再読込を必要とする場合、その限定reload/restartが既存承認範囲を超えるかを実行時に確認する。
 
-rollback: 合流commitのrevert後、既存Source reflection経路で直前の安全なSHAへ
-ff-only反映する。dirty/untrackedを持つcheckoutには反映しない。
+rollback: 合流commitを通常のrevert手順で戻し、既存Source reflection経路のadmissionが
+許可する直前の安全なSHAへ反映する。対象SHAがancestorでない場合にforce/resetはせず、
+Source conflictとして停止する。dirty/untrackedを持つcheckoutには反映しない。
 
 ### 2. Gserver Host admission
 
@@ -152,13 +155,15 @@ request/resultの相関、既存destination、既存Host SHA、既存service状�
 ことを確認する。Gserver canary失敗時は既存Contabo経路へ切り替えず、Gserver側だけ
 rollbackする。
 
-## 承認が必要な保護変更の一括提示
+## 追加判断が必要な保護変更の一括提示
 
-次の変更だけが追加承認対象である。
+通常のSource/PR/CI/契約修正はこの表の追加判断を待たずに進める。次の操作だけは、
+既存Rule/Provider/Host正本で新規権限・Secret・外部公開・破壊的効果が発生する場合に、
+その操作単位で追加判断を要する。
 
 | 変更 | 対象 | 影響 | 停止見込み | rollback |
 | --- | --- | --- | --- | --- |
-| PR #325合流/Source reflection | server-core main/Contabo checkout | 共通Source更新 | 原則なし | merge commit revert + 旧SHAへff-only |
+| PR #325合流/Source reflection | server-core main/Contabo checkout | 共通Source更新 | 原則なし | merge revert + admission済み旧SHAへ反映 |
 | Gserver Host admission | protected Registry | Gserver targetの実行許可 | 原則なし | Gserver entryのみrevert |
 | Gateway destination | webhook Gateway | 新destinationへの配送 | API登録のみならなし | destination/consumerのみ無効化 |
 | Secret consumer/readback | Gateway/Gserver Receiver | 認証配送 | reload時のみ要確認 | consumer無効化、再発行なし |
@@ -166,8 +171,10 @@ rollbackする。
 | Result Sink mapping | server-core Result Sink | Gserver結果保存 | なし | Gserver mappingのみrevert |
 | 限定再起動 | Gateway/Receiver | 対象サービスのみ | 影響時間を事前提示 | 既存image/configで再起動 |
 
-この表の承認なしに、Secret、Gateway、Host admission、サービス再起動、main merge、
-本番deployは実行しない。
+Secret発行/再発行、既存Provider内部設定の変更、公開domain/外部公開、破壊的操作、
+既存正本でMaster-onlyと明記された変更は、この表の対象影響・停止有無・rollbackを
+一度に提示してから、その操作だけを保留する。その他のSource、テスト、CI、既存admission
+内の可逆技術反映は継続する。
 
 ## Completion record
 
