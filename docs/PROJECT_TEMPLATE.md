@@ -6,6 +6,12 @@
 
 このTemplateは大量のDocument作成を要求するものではない。必要な正本だけを作る。
 
+## 開始・登録の必須手順
+
+新規Repo作成や既存Repo導入は、[PROJECT_INTEGRATION_RULESの開始runbook](PROJECT_INTEGRATION_RULES.md#project開始登録runbookcontabo--gserver共通)に従う。既存Repo/CUとOwner、対象Host、正規親/checkout、GitHub Project登録を先に照合する。Workspace/遠隔実行/TGserver/Gateway/Vaultの登録と権限を分け、必要なものだけを既存正式入口から接続・実測する。
+
+AIが作業するRepoでは、既存AGENTS/client入口又は最小AGENTSからserver-core README→LOAD_SCOPE→Manifest→適用Profile→所有Currentと本runbookへroutingする。Rule全文やAPI schemaをRepoへコピーしない。SERVER_AIには#16だけを適用し、#17/Notion/CHAT確認票を混ぜない。Project登録・提供元の健康状態・202を接続完成の証拠にしない。
+
 ## Workspace Integration
 
 ProjectはG-ACE Workspace内ではserver-core共通ルールに従う。

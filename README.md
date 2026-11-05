@@ -61,7 +61,7 @@ server-core owns intake/routing, shared capability discovery, verification bound
 | Workspace運用 | `docs/G_ACE_WORKSPACE.md` |
 | Git / Commit / Push | `docs/AUTO_COMMIT.md` |
 | Deploy | `docs/DEPLOY_RUNBOOK.md` |
-| 新規Project / Document構成 | `docs/PROJECT_TEMPLATE.md` |
+| 新規Repo登録 / Project開始 / 両Hostの共通接続手順 | `docs/PROJECT_INTEGRATION_RULES.md` → Project開始・登録runbook + `docs/PROJECT_TEMPLATE.md` |
 | Project / shared Capability / MCP / Tool / DebugAI / Secret / Runtime発見 | `docs/WORKSPACE_REGISTRY.md` |
 | Workspace共通MCPの登録 / Cursor Global MCP / 検証 | `docs/WORKSPACE_MCP.md` |
 | GitHub Projectからの共通server操作routing | `operations/github-project-bounded-host.json` + `docs/GITHUB_PROJECT_CHAT_HOST_ROUTE.md` |

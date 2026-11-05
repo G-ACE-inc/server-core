@@ -1,6 +1,6 @@
 # PROJECT INTEGRATION RULES
 
-Version: 2026-10-17
+Version: 2026-10-31
 Role: Projectへ共通基盤を導入するときの接続・利用ルール。
 
 ## Purpose
@@ -8,6 +8,10 @@ Role: Projectへ共通基盤を導入するときの接続・利用ルール。
 server-coreは共通Capabilityの司令室であり、Project固有実装は所有しない。
 
 本Documentは、各Projectが共通基盤を利用するときの導入契約を定義する。
+
+## 開始時の入口
+
+新規Repoの登録・既存Projectの導入・Vault/TGserver/Gateway接続開始では、本書の[Project開始・登録runbook（両Host共通）](#project開始登録runbookcontabo--gserver共通)を実行する。利用／提供元変更の境界とAPI詳細の所有権は以下を正本とする。
 
 ## Shared service usage and change boundary
 
@@ -128,3 +132,112 @@ ProjectがMCPまたはToolを利用する場合:
 - Verification結果記録
 
 を行う。
+
+
+## Project開始・登録runbook（Contabo / Gserver共通）
+
+この節は新規Repo、既存RepoのWorkspace導入、共通サービスの接続開始・変更時に必ず使う。通常の小さな修正で全仕様の再読込を要求せず、所有Currentと変更に必要な契約だけを更新確認する。APIの完全なschema・実装・Runtime台帳は各所有Repoが正本であり、本手順へ複製しない。
+
+### 1. 開始前：目的・場所・実行者を固定する
+
+1. server-core README → LOAD_SCOPE → Rule Plane Manifest → 適用Profile → 所有Current → 対象README/設計を確認する。Codex/Composer/SERVER_AIは#16、GPT CHATは#17。別Profileの確認票を自分の実行証拠として作らない。
+2. Owner/Repo、目的、既存CU、Mutation Owner、branch/PR、実HEAD、dirty/stash、正規Project親と実checkoutを確認する。同じ仕事の既存Repo/CUがあれば再利用し、日付名・タスク名の兄弟Projectを増やさない。
+3. `Host target`をContaboかGserverか明示する。Workspace表示名、同じRepo名、成功した過去URLをHost実行権限に読み替えない。Gserverの通常Core/Storage/appはGitHub/Contabo不通でも動く設計を維持する。
+4. 新しい独立Projectの作成意図と、公開範囲・費用・外部効果の許可を確認してから作成する。文書整備や「登録方法を調べる」という依頼だけで新Repo/Topic/キーを作らない。通常の承認済み実装は再確認で止めない。
+
+### 2. 登録は用途ごとに別々に照合する
+
+| 登録面 | 正本・操作 | 登録だけでは得られないもの |
+|---|---|---|
+| GitHub Repo | Ownerの既存Repoを先に検索し、必要時のみ既存GitHub認証で作成。README、Current Issue、既存branch/PRを確定 | Project #1登録、Host実行権限 |
+| GitHub Project #1 | 既存ItemをURLで照合し、未登録時だけ正規GitHub UI/API/既存`gh project item-add`で同じCurrent Issueを追加。ProjectのOwner/番号/Itemをreadback | Issue作成だけでProject登録済みとはしない。4 Control Field更新CLIはItem追加の代替ではない |
+| Workspace | `WORKSPACE_REGISTRY.md`にOwner/Repo/用途/確認済みHost入口を登録。既存親内の正規checkoutか承認されたnested worktreeを使い、origin/toplevel/Git common-dirを照合 | cloneやフォルダ表示から遠隔権限を推定しない |
+| ServerTerminal | 既存`operations/github-project-bounded-host.json`とHost-local admissionを対象Hostで照合。read-only/dev.job/host.command/reflect/deployを個別評価 | `dev.job`登録はHost shell/本番Deployの許可ではない。保護Registryへ権限を一括追記しない |
+| TGserver | 既存Repo+streamをlookupし、必要な登録だけ正式管理CLIから実施 | Topic新設、原本保存、検索完了 |
+| Gateway | 正式な既存destination、data policy、Project用認証、到達経路をOwnerと照合 | APIキー名からdestination別権限を推定しない |
+| Vault | 既存secret ID、allowed consumer、TTL、許可origin、注入方法を正式契約で照合 | Repo/Project登録はSecret利用許可ではない |
+
+GitHub Item追加のCLI例は、既存`gh`が認証済みで、対象Issueと登録先を確認した場合だけ使う。例中の値をそのまま本番へ送らない。
+
+```text
+既存Item一覧でCurrent Issue URLを照合
+→ 未登録の場合のみ gh project item-add <確認済み番号> --owner <確認済みOwner> --url <Current Issue URL>
+→ 同じProject/Issue URLのItem IDと既存Fieldをreadback
+```
+
+Repo名変更・移動・廃止では、Project Item、Host root、Repo+stream map、Producer sourceId、destination、Vault consumerの影響を個別確認する。同じ名前へ新規作成して旧割当を乗っ取らない。
+
+### 3. Host別の入口・実行・配置
+
+| 項目 | Contabo | Gserver |
+|---|---|---|
+| server-core | Registryで確認する既存VPS checkout | 同じupstreamを参照する既存WSL checkout。別指令室/別Rule Planeを作らない |
+| Project root | 実VPSの登録済み親/root | 実WSLの既存親/root。Windows drive/旧copyを勝手に移動しない |
+| 実行 | SERVER_AIは検証済みの非root SSH/既存ローカルtool。GPT CHATは既存Actions→Gateway→Receiver→Writer→Sinkの実admissionに従う | ローカルSERVER_AIは既存WSL shell。CHAT遠隔操作はGserver専用Receiver/Writer/結果経路の実受入が必要 |
+| shared API | 実Providerのruntime contractで到達性/認証を確認 | 同じ契約でも別Host。WSLのlocalhostはVPSのlocalhostではない |
+| 障害 | 元requestのWriter/Sink/配送状態を調査 | PC/WSL offlineを識別し、誤ってVPSへ送らない。無断wake/直接WAN fallbackなし |
+
+VPS用initializerやbootstrapにHost固定path・特定SHA・固定Registry hashがある場合、WSLでそのまま実行しない。既存`init_dev_workspace_project_gate.py`は登録済み既存checkoutを選ぶ検査であり、Repo作成/権限付与器ではない。Host側の対応が未実装なら未対応として保持し、root名の文字列置換や一括`cp`で突破しない。GserverのWorkspace配置adapterもremote admissionは作らない。
+
+SSHでは既存設定/鍵/agent/known_hostsを再利用し、接続先を確認する。Host鍵照合無効化、rootへの切替、資格情報の複製、新キー発行を接続失敗時の自動Fallbackにしない。初めは正本SHA・変更状態・serviceのread-only確認だけを行う。
+
+遠隔操作前は登録Host target、dispatcher SHA、対象Repo SHA、command digest、権限/影響範囲を照合する。実行後は元request ID、Run、Host実結果、exit、出力hash、対象状態と不変条件を照合する。結果未着だけで新requestへ同じ変更を再送しない。既存の[Host route](GITHUB_PROJECT_CHAT_HOST_ROUTE.md)を使い、新workflow/常駐AI/別Terminalを増設しない。
+
+### 4. Libral Vault：内部仕様を守る利用手順
+
+正本：[Libral Vault README / Module Interface / Internal API Adapter](https://github.com/seigo-gace/Libral-Vault/blob/main/README.md)、共通利用は[WORKSPACE_SHARED_SECRETS](WORKSPACE_SHARED_SECRETS.md)。
+
+1. Module APIを使う同一Trust Boundary内か、既存Internal API Adapterの利用側かを決める。`@libral/vault`と既存Adapterを使い、GPG process、GNUPGHOME、内部State/Secret file/DBへ直接接続しない。Project別Vaultや新HTTP入口を作らない。
+2. secret identifier、consumer ACL、TTL、allowed origin、Internal API認証とprivate routeを確認する。Internal Bearer認証、consumer、Cloudflare Access認証は別物。既存のshared consumer名を無条件で自称して全Secretを使わない。
+3. 認証済みhealth/Manifestと必要な代表操作を確認する。`initializing/ready/blocked/stopped`を区別し、health 200だけで必要Secret/consumer利用をPASSにしない。Hostごとの到達性・認証・API対応版を確認する。
+4. Provider HTTPは既存`POST /internal/v1/actions/http`でVault内にHeader注入させ、利用側へProvider tokenを取り出さない。origin allowlist、URL credentials拒否、redirect拒否、timeout/応答byte上限、Secret反射遮断を維持する。Moduleの`useSecret`ではcallback内だけ利用し、復号bufferを外へ保持しない。
+5. Secret登録/置換/削除、鍵rotation、Recovery export/restoreはそれぞれ変更権限とrollbackが必要。通常のProject開始や接続失敗の対策として勝手に実施しない。原本/dataDirの二重起動、消去、別鍵bootstrapで復旧を代用しない。
+6. Consumer拒否、期限切れ、Secret不在、破損、Provider 401/403とVault全体障害を分ける。失敗しても平文tokenコピー、暗号化解除、allowlist拡大へfallbackしない。復旧は所有Repoの既存transaction/recovery手順で行う。
+
+認証値は承認済みprivate注入経路から実行時だけ渡す。CLI引数、URL、会話、公開Issue、環境全dumpへ出さない。Compose常駐と永続Volumeを維持し、ホストの直接npm/systemd常駐へ置換しない。
+
+### 5. TGserver ZERO：既存登録から原本・検索まで
+
+正本：[ZERO Operations](https://github.com/seigo-gace/TGserver/blob/main/docs/TGSERVER_ZERO_OPERATIONS.md)、Current #50、発見契約`operations/tgzero-registration.json`。実Topic IDをserver-coreへ二重管理しない。
+
+1. 管理操作は**TGserverの実checkoutと権限があるHost**で行う。server-coreの正式routerで`lookup --repo OWNER/REPO --stream STREAM`→`runtime-status`を実施し、既存番号/Group/Topic/Repo+stream mapと稼働Sourceを照合する。WSLでVPS pathのrouterを動かして「Topicなし」と判定しない。
+2. 既存Projectなら再登録・Topic再作成をしない。検索0件、Reader map欠落、idle時のLog 0件はTopic不存在の証拠ではない。履歴とLive Stateが食い違えば変更を止め、既存Backup/Provider台帳を読取照合する。
+3. 新規の必要が確認された範囲だけ、Owner schemaのprivate requestを使う`register --request ...`へ渡す。Group追加は必要容量と承認を確認して既存`register-group`を使う。request fieldやTopic IDを推測しない。低位plan/apply/provisionを毎回手分けで作り直さない。
+4. 1 Group最大10 Projects・標準5 severityと、20通/分の送信予算を区別する。満杯をTopic削除/再作成や無人Group作成で解決しない。
+5. 正本5fileの非破壊差分、Backup、Source→実Runtime読込SHA、既存番号/route不変、Provider Topic ID/表示名を確認する。失敗は保存済み同一requestから正式recoverで再開し、一括State上書きはしない。
+6. Producerから承認済みcanaryを送り、同一event IDでGateway受領→Delivery→TGS受付→Telegram原文→Reader/検索を照合する。system収集と開発ログProducerは別に確認し、存在しないcontainerのsystem sourceを作らない。内部commandやprivate情報をpublic canaryへ入れない。
+
+GserverのP015は既存登録履歴がある。新規番号・Topicを発行せず、現在の実lookup/readbackを先に行う。20通/分/10Projectの値や上限変更はTGserver正本と実Runtimeで再確認し、単なる手順追記で稼働へ反映済みとしない。
+
+### 6. Webhook Gateway：認証・配送・冪等性
+
+正本：[INTERNAL_EVENT_API](https://github.com/seigo-gace/webhook-gateway/blob/main/docs/INTERNAL_EVENT_API.md)、実稼働destinationとOwner Current。
+
+1. 内部Producerは`POST /internal/events`、第三者Webhook受信は既存外部Ingress契約で扱う。内部APIをInternet向け無認証入口にしない。実hostnameのOwner、TLS、Access、private到達性、Gateway Bearerをそれぞれ確認する。G-ACE用途へAstera zoneを流用する承認は過去202から推定しない。
+2. 既存キーの登録/有効状態とProject分離を確認する。新規発行・rotation/revokeが許可された場合だけ既存`npm run secret`とprivate deployment mappingを使う。既存共通キーは別途廃止するまで有効で、Project別キー追加だけでは無効化されない。生成値を表示/公開せず、新キー発行APIを作らない。
+3. callerが指定するのは登録済みenabled destination IDとevent schema。配送URL/header/signing secret/timeout/retry/private-network policyはGateway Owner設定。Projectキーの名前はdestination別ACLでも、body sourceIdの本人性保証でもない。
+4. `payloadMode=json`は原文保持保証ではない。`internalDataPolicy`の既定sanitizeと、署名/private-network/JSONを要するOwner明示preserveを区別する。callerがpreserveを要求して強制しない。Credentialはどちらのdataにも埋め込まず、観測ログは常に秘匿する。
+5. `sourceId + eventId`は安定させる。202はEvent/Delivery/OutboxのDB commit、同一内容duplicateは再配送なし、409は内容衝突であり新IDへの自動差替えをしない。配送はat-least-onceなので受信側も冪等にする。DB commit失敗を外部Ingress用spoolへ迂回しない。
+6. 401=認証、403=IP制約、429=Retry-After、422=destination不明/disabled等を実応答で分類し、400/413も必要範囲で確認する。配送失敗は同じ元event/Delivery/Outboxを正式な再試行・replay手順で追跡する。
+7. Source例のdestinationsはLive inventoryではない。反映前に実機専用destination/Secret mappingを保全し、意図した差分だけ反映・process再読込・配送readback・rollbackを行う。設定更新だけで配達成功と扱わない。
+
+### 7. 開始・引継ぎで残す最小情報
+
+以下を所有Current/PRの必要な箇所へ記録し、別trackerやサービス台帳を増やさない。private root/Host情報はprivate記録へ分離する。
+
+```text
+目的 / Owner Repo / Current Issue・Project Item / Mutation Owner
+Host target / canonical parent・実checkout / branch・HEAD・dirty/stash
+今回許可された操作 / 保護された未承認変更 / 適用Rule Profile
+利用するサービスと正本 / consumer・stream・destination等の非秘密契約
+Source・Test・CI・Host・Runtime・Provider・最終結果の個別判定
+既存状態の不変条件 / 失敗時の復旧・rollback / 次の実行可能な操作
+```
+
+使わないサービスは`NOT_REQUIRED`、不明は`NOT_VERIFIED`とし、全ProjectへVault/TGserver/Gatewayを無条件で導入しない。通常のProject接続許可を提供元変更許可へ読み替えない。提供元変更が必要なら本書冒頭の具体案・利用者影響・互換性/移行/復旧策を示す。Masterが直接依頼・承認した範囲では通常作業を続け、同じ承認を繰り返し求めない。
+
+### 8. 適用と検査の実効範囲
+
+server-core/ProjectのREADME・AGENTS・既存client adapterから本runbookへ条件付きroutingする。既存のProject selector、Host admission、Gateway validator/認証、Vault ACL、TGserver登録/provisionerの実チェックを使い、拒否を別経路で迂回しない。
+
+文書を読ませる入口と、実行を強制遮断する仕組みは別である。これらの検査がすべての会話/任意shellを監視しているとは主張しない。Contabo/Gserverそれぞれで、現在のSource、実client読込、Host登録、認証、代表操作、拒否・再送・復旧を検証した範囲だけを利用可能とする。新しい監視daemon、強制AI呼出し、自動PRレビューを開始要件にしない。

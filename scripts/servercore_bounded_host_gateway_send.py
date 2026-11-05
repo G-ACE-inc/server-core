@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
+import servercore_gserver_target
+
 DEFAULT_CONTRACT = Path(__file__).resolve().parents[1] / "operations" / "github-project-bounded-host.json"
 SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$")
@@ -48,11 +50,14 @@ def gateway_url(value):
 
 def build_event(request, contract):
     transport = contract.get("transport") or {}
+    destination_id = transport.get("destination_id")
+    if request.get("host_target"):
+        destination_id = servercore_gserver_target.event_destination(request, contract)
     return {
         "eventId": request["id"],
         "eventType": transport.get("event_type"),
         "sourceId": transport.get("source_id"),
-        "destinationId": transport.get("destination_id"),
+        "destinationId": destination_id,
         "subject": "servercore-bounded-host/" + request["command_id"],
         "time": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "data": request,
@@ -62,7 +67,7 @@ def build_event(request, contract):
 def validate_cli(command_id, expected_sha, contract, expected_before=None, reflect_repository=None, reflect_branch=None, repository=None,
                  service=None, deploy_request_id=None, path=None, offset=None, container=None, tail=None,
                  session=None, argv=None, timeout_s=None, fresh=None, repo_sha=None,
-                 docker_operation=None, host_command=None, source_preflight=False):
+                 docker_operation=None, host_command=None, source_preflight=False, host_target=None):
     allowed = contract.get("allowed_command_ids") or []
     if command_id not in allowed:
         raise SendError("COMMAND_NOT_REGISTERED")
@@ -119,10 +124,17 @@ def validate_cli(command_id, expected_sha, contract, expected_before=None, refle
             raise SendError("HOST_COMMAND_REPO_SHA_INVALID")
         request.update({"repository": repository, "repo_sha": repo_sha, "command": host_command,
                         "command_sha256": hashlib.sha256(host_command.encode("utf-8")).hexdigest()})
+        if host_target is not None:
+            if host_target != servercore_gserver_target.TARGET_ID:
+                raise SendError("HOST_TARGET_NOT_REGISTERED")
+            request["host_target"] = host_target
+            servercore_gserver_target.validate_request(request, contract)
         if source_preflight is True:
             request["source_preflight"] = True
     elif host_command is not None or source_preflight:
         raise SendError("UNEXPECTED_HOST_COMMAND")
+    elif host_target is not None:
+        raise SendError("UNEXPECTED_HOST_TARGET")
     if command_id == "docker.operation":
         if docker_operation not in {"ps", "inspect", "logs", "stats", "start", "stop",
                                     "restart", "up", "exec"}:
@@ -234,6 +246,7 @@ def main():
     parser.add_argument("--fresh", choices=("true", "false"))
     parser.add_argument("--repo-sha")
     parser.add_argument("--source-preflight", action="store_true")
+    parser.add_argument("--host-target")
     parser.add_argument("--contract", default=str(DEFAULT_CONTRACT))
     args = parser.parse_args()
     contract = load_contract(args.contract)
@@ -248,7 +261,8 @@ def main():
                            fresh=None if args.fresh is None else args.fresh == "true",
                            repo_sha=args.repo_sha, docker_operation=args.docker_operation,
                            host_command=args.host_command,
-                           source_preflight=args.source_preflight)
+                           source_preflight=args.source_preflight,
+                           host_target=args.host_target)
     try:
         receipt = send(request, contract)
         print(json.dumps({"state": "QUEUED", "request_id": request["id"], "gateway": receipt}, sort_keys=True))
