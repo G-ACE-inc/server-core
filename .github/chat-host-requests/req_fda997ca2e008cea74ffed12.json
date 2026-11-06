@@ -1,0 +1,31 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "fda997ca2e008cea74ffed11955c3af9e2158462",
+    "repo_sha": "2ef0bfe5bd67f74ff6b3ce15d3fece0762a6a9d2",
+    "command": "set -euo pipefail\nprintf 'PROJECT=TGtumbler\\nACTION=GSERVER_TGTUMBLER_DEPLOY_PREFLIGHT_READ_ONLY\\n'\npython3 - <<'PY'\nimport json,pathlib,subprocess\nhome=pathlib.Path.home()\nws=home/'workspace/G-ACE.code-workspace'\nroot=home/'Project'\ngs=root/'Gserver/repository'\nprint('WSL_USER_HOME_CHECK=',str(home)=='/home/gace')\nprint('WORKSPACE_EXISTS=',ws.is_file())\nif ws.is_file():\n try:\n  data=json.loads(ws.read_text())\n  print('WORKSPACE_ROOTS=',','.join(sorted(str(x.get('name','')) for x in data.get('folders',[]))))\n  print('WORKSPACE_PROJECT_PATH_MATCH=',any(x.get('name')=='projects' and x.get('path')==str(root) for x in data.get('folders',[])))\n except (ValueError,OSError):\n  print('WORKSPACE_JSON_INVALID=YES')\nprint('PROJECTS_ROOT_EXISTS=',root.is_dir())\nfor name in ['TGtumbler','GateApp-Bot','Gserver','TGbot_grp_system','_TelegramGroup','create-videobot','tumblr-integration']:\n p=root/name\n print('EXISTING_'+name.replace('-','_').upper()+'=', 'SYMLINK' if p.is_symlink() else 'DIR' if p.is_dir() else 'OTHER' if p.exists() else 'ABSENT')\nprint('GSERVER_REGISTERED_ROOT_EXISTS=',gs.is_dir())\nif gs.is_dir():\n for arg in (['rev-parse','HEAD'],['branch','--show-current'],['status','--porcelain']):\n  q=subprocess.run(['git','-C',str(gs),*arg],capture_output=True,text=True,timeout=7)\n  if arg[0]=='status':\n   print('GSERVER_DIRTY_ENTRY_COUNT=',len(q.stdout.splitlines()) if q.returncode==0 else 'ERROR')\n  else:\n   print('GSERVER_'+('HEAD' if arg[0]=='rev-parse' else 'BRANCH')+'=',q.stdout.strip() if q.returncode==0 else 'ERROR')\nq=subprocess.run(['docker','ps','--format','{{.Names}}'],capture_output=True,text=True,timeout=10)\nprint('DOCKER_LIST_STATUS=', 'PASS' if q.returncode==0 else 'UNAVAILABLE')\nif q.returncode==0:\n names=q.stdout.splitlines()\n print('RUNNING_CONTAINER_COUNT=',len(names))\n for key in ['gserver','gaybbs','tgtumbler','telegram','videobot','tumblr']:\n  print('CONTAINERS_MATCH_'+key.upper()+'=',sum(key in n.lower() for n in names))\nprint('MUTATIONS=NONE')\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
