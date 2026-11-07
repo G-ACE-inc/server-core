@@ -157,6 +157,21 @@ ProjectがMCPまたはToolを利用する場合:
 | Gateway | 正式な既存destination、data policy、Project用認証、到達経路をOwnerと照合 | APIキー名からdestination別権限を推定しない |
 | Vault | 既存secret ID、allowed consumer、TTL、許可origin、注入方法を正式契約で照合 | Repo/Project登録はSecret利用許可ではない |
 
+#### Gserver ServerTerminal: Project登録後の共通実行入口
+
+GitHub Project #1に対象RepositoryのIssueまたはPRをItemとして追加する。GPT CHATの既存
+`host.command`でGserverを選び、`project_context: {"repository": "owner/repo"}`を渡す。
+必要な場合だけ`sha`を追加して対象checkoutのHEADを固定する。個別Repository用の
+Host target、Token、Terminal設定を増やさない。
+
+Gserver側は既存認証済み`gh` CLIでProject #1のItemを毎回照合し、Workspaceに登録済みの
+checkoutと`projects/`直下のcheckoutをoriginで探す。まだ無ければ既存`projects/`の
+直下へ初回だけcloneする。`projects/`は既にWorkspace folderなので、新しいRepositoryを
+Workspace fileへ個別追記する必要はない。GitHub ProjectのItemが無い、CLI認証が使えない、
+cloneに失敗する、originが一致しない、複数checkoutがある、指定SHAとHEADが異なる場合は
+理由を返して停止する。Project Itemは発見条件であり、既存Gserver Host admissionや
+変更・本番操作の権限を拡張しない。
+
 GitHub Item追加のCLI例は、既存`gh`が認証済みで、対象Issueと登録先を確認した場合だけ使う。例中の値をそのまま本番へ送らない。
 
 ```text
