@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Diagnose failed TGtumbler VideoBot Docker build with classified error exit, no log disclosure",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "fda997ca2e008cea74ffed11955c3af9e2158462",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "host_target": "gserver",
+    "command": "sh -c 'p=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot; test \"$(git -C \"$p\" rev-parse HEAD)\" = 5c7510bea751ca8c69926a0764488a28a8013289 || exit 71; command -v docker >/dev/null 2>&1 || exit 73; docker info >/dev/null 2>&1 || exit 74; f=\"$(mktemp)\" || exit 96; trap \"rm -f \\\"$f\\\"\" EXIT; if docker build --progress=plain --file \"$p/deploy/Dockerfile\" --tag create-videobot:local-telegram \"$p\" >\"$f\" 2>&1; then docker image inspect create-videobot:local-telegram >/dev/null 2>&1 || exit 76; exit 0; fi; if grep -Eiq \"network|lookup|TLS handshake|timed out|timeout|Temporary failure|proxy|connection refused\" \"$f\"; then exit 91; fi; if grep -Eiq \"npm ERR|npm error|package-lock|peer dep\" \"$f\"; then exit 92; fi; if grep -Eiq \"apk|alpine|ffmpeg\" \"$f\"; then exit 93; fi; if grep -Eiq \"no space left|disk quota|read-only file system\" \"$f\"; then exit 94; fi; if grep -Eiq \"permission denied|access denied|unauthorized\" \"$f\"; then exit 95; fi; exit 96'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  }
+}
