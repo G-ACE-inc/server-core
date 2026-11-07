@@ -15,6 +15,22 @@ BASE = {"bounded_host_request": {"enabled": True, "command_id": "project.git_hea
         "gitops_request": {"enabled": False}, "source_reflect_request": {"enabled": False}}
 
 class IsolatedRequests(unittest.TestCase):
+    def test_gserver_project_context_uses_registered_workspace_checkout(self):
+        source = {**BASE, "bounded_host_request": {
+            "enabled": True, "command_id": "host.command", "host_target": "gserver",
+            "repository": "seigo-gace/G-ACEserver", "expected_sha": "a" * 40,
+            "repo_sha": "b" * 40, "command": "pwd; git rev-parse HEAD",
+            "project_context": {"repository": "seigo-gace/GateApp-Bot", "sha": "c" * 40}}}
+        prepared = m.prepare_data(source)["bounded_host_request"]
+        self.assertNotIn("project_context", prepared)
+        self.assertIn("gserver_project_terminal.py", prepared["command"])
+        self.assertIn("seigo-gace/GateApp-Bot", prepared["command"])
+        self.assertIn("pwd; git rev-parse HEAD", prepared["command"])
+        source["bounded_host_request"]["project_context"] = {
+            "repository": "../invalid", "sha": "c" * 40}
+        with self.assertRaisesRegex(ValueError, "PROJECT_CONTEXT_INVALID"):
+            m.prepare_data(source)
+
     def test_long_unicode_request_is_not_rejected_by_legacy_8k_limit(self):
         source = {**BASE, "bounded_host_request": {
             "enabled": True, "command_id": "host.command",
