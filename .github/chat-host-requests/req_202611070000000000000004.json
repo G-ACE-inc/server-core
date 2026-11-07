@@ -1,0 +1,31 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "command": "set -euo pipefail\npython3 - <<'PY'\nimport pathlib,json,subprocess\nprint('PROJECT=TGtumbler')\nprint('ACTION=BOT_INVITE_READINESS_PROBE')\nws=pathlib.Path('/home/gace/Project/Gserver/workspace/G-ACE.code-workspace')\nprint('WORKSPACE='+('PRESENT' if ws.is_file() else 'MISSING'))\nroots=[]\nif ws.is_file():\n try:\n  obj=json.loads(ws.read_text())\n  for f in obj.get('folders',[]):\n   p=pathlib.Path(f.get('path',''))\n   if not p.is_absolute():p=(ws.parent/p).resolve()\n   print('ROOT='+str(f.get('name',''))+':'+str(p))\n   roots.append(p)\n except Exception as e:print('WS_PARSE='+type(e).__name__)\nfor p in [pathlib.Path('/home/gace/Project/Gserver/projects/TGtumbler'),pathlib.Path('/home/gace/Project/Gserver/projects/GateApp-Bot'),pathlib.Path('/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot')]:\n print('SOURCE='+p.name+':'+('EXISTS' if p.is_dir() else 'MISSING'))\n if p.is_dir():\n  for fn in ('artifacts/bot/src/gaybbsBot.ts','deploy/gserver-compose.yaml'):\n   print('CODE='+fn+':'+str((p/fn).is_file()))\ntry:\n q=subprocess.run(['docker','ps','--format','{{.Names}}|{{.Status}}'],capture_output=True,text=True,timeout=9)\n print('DOCKER='+('ACCESSIBLE' if q.returncode==0 else 'UNAVAILABLE'))\n if q.returncode==0:\n  v=[z for z in q.stdout.splitlines() if any(t in z.lower() for t in ('tgtumbler','gaybbs','gateapp'))]\n  print('BOT_CONTAINER_COUNT='+str(len(v)))\n  for z in v[:5]:print('BOT_CONTAINER='+z)\nexcept Exception as e:print('DOCKER='+type(e).__name__)\nprint('MUTATIONS=NONE')\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
