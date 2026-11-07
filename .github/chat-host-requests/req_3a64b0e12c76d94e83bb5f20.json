@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "TGtumbler parent children read-only verify existing sales/gate/tumblr project folder names",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "fda997ca2e008cea74ffed11955c3af9e2158462",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "host_target": "gserver",
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport sys\nroot=Path('/home/gace/Project/Gserver/projects/TGtumbler')\nif not root.is_dir():sys.exit(90)\npresent=set()\nfor p in root.iterdir():\n if p.is_dir():present.add(p.name.lower())\nflags=sum((1<<i) for i,n in enumerate(['create-videobot','gateapp-bot','tumblr-integration']) if n in present)\nif flags==7:sys.exit(97)\nif flags==0:sys.exit(91)\nsys.exit(91+flags)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  }
+}
