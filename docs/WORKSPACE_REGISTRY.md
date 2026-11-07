@@ -46,6 +46,9 @@ GitHub Repositoryが確認できる主要G-ACE Projectを記録する。Server P
 | Deterministic Japanese Parser MCP | `seigo-gace/Deterministic-Japanese-Parser-MCP` | runtime-specific | shared deterministic parser/MCP Project | availability must be checked from actual registration/runtime |
 | Libral Vault | `seigo-gace/Libral-Vault` | Vault runtime contract | shared Secret broker owner | use contract is `docs/WORKSPACE_SHARED_SECRETS.md` |
 | KB System | `seigo-gace/kb-system` | UNKNOWN until target readback | existing KB-related Project | do not confuse with future F: reusable-development KB without explicit integration |
+| Create Video Bot | `seigo-gace/create-videobot` | WSL Workspace child path: NOT_VERIFIED | TGtumbler video sales Bot source owner | Terminal Host checkout/admission: NOT_VERIFIED; default branch `main` |
+| Tumblr Integration | `seigo-gace/tumblr-integration` | WSL Workspace child path: NOT_VERIFIED | TGtumbler Tumblr integration source owner | Terminal Host checkout/admission: NOT_VERIFIED; default branch `main` |
+| GateApp Bot | `seigo-gace/GateApp-Bot` | WSL Workspace child path: NOT_VERIFIED | TGtumbler Gate/3掲示板 Bot source owner | Terminal Host checkout/admission: NOT_VERIFIED; default branch `master` |
 | G-ACE Dev KB | `seigo-gace/gace-dev-kb` | UNKNOWN until target readback | development-KB related Repository | current implementation state requires Project readback |
 
 Project追加時は、Repository / owner / path / responsibility / authorityを確認してから追加する。
