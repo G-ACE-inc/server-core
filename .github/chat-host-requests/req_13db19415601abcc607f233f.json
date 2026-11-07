@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Check Creator and Gate existing worktrees, branch and live deployment source without mutations",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "fda997ca2e008cea74ffed11955c3af9e2158462",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "host_target": "gserver",
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport subprocess,importlib.util,sys\np=Path('/home/gace/Project/Gserver/repository/scripts/gserver_project_terminal.py')\ns=importlib.util.spec_from_file_location('gpt',str(p));m=importlib.util.module_from_spec(s);s.loader.exec_module(m)\nv=m.find_checkout('seigo-gace/create-videobot')\nw=m.find_checkout('seigo-gace/GateApp-Bot')\nflags=0\nif v and w: flags|=1\nif v:\n a=subprocess.run(['git','-C',str(v),'status','--porcelain'],capture_output=True,text=True)\n if a.returncode==0 and not a.stdout.strip():flags|=2\n a=subprocess.run(['git','-C',str(v),'rev-parse','HEAD'],capture_output=True,text=True)\n if a.stdout.strip()=='5c7510bea751ca8c69926a0764488a28a8013289':flags|=4\n a=subprocess.run(['git','-C',str(v),'branch','--show-current'],capture_output=True,text=True)\n if a.stdout.strip()=='feat/assistant-ai-and-sales-core':flags|=8\n if (v/'deploy/compose.videobot.telegram.yaml').is_file():flags|=16\n if (v/'src/runtime/creatorEntrypoint.mjs').is_file():flags|=32\nif w:\n a=subprocess.run(['git','-C',str(w),'status','--porcelain'],capture_output=True,text=True)\n if a.returncode==0 and not a.stdout.strip():flags|=64\nprint('CREATOR_CHECKOUT_FLAGS='+str(flags))\nsys.exit(flags)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  }
+}
