@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "TGtumbler ownership preflight: location of existing sales and gate repos, no creation/moves",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "fda997ca2e008cea74ffed11955c3af9e2158462",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "host_target": "gserver",
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport importlib.util,subprocess,sys\nroot=Path('/home/gace/Project/Gserver/repository')\nspec=importlib.util.spec_from_file_location('pt',root/'scripts/gserver_project_terminal.py')\nmod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)\nf=0\nfor i,repo in enumerate(('seigo-gace/create-videobot','seigo-gace/GateApp-Bot')):\n p=mod.find_checkout(repo)\n if p is None:continue\n resolved=p.resolve(strict=True)\n if 'TGtumbler' in resolved.parts:f|=(1<<i)\n if resolved.parent.name=='projects' or resolved.parent.name=='workspace':f|=(1<<(i+2))\n if (p/'.git').exists():f|=(1<<(i+4))\n if (p/'.git').is_dir():f|=(1<<(i+6))\n if (p/'deploy/compose.videobot.telegram.yaml').is_file():f|=(1<<(i+8))\n if p.parent.name.lower()=='tgtumbler':f|=(1<<(i+10))\nprint('TG_OWNER_LOCATION_FLAGS='+str(f))\nsys.exit(f%128)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  }
+}
