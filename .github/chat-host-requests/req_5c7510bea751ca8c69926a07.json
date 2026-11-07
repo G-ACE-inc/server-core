@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "CreateVdoBot resume: read-only Gserver canonical placement and running services",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "host_target": "gserver",
+    "command": "sh -c 'cd /home/gace/Project/Gserver/repository && printf \"GSERVER_HEAD=\" && git rev-parse HEAD && printf \"GSERVER_BRANCH=\" && git branch --show-current && printf \"GSERVER_STATUS=\" && git status --porcelain | wc -l && for p in /home/gace/Project/Gserver/repository /home/gace/Project/Gserver/repository/workspace /home/gace/Project/Gserver/workspace; do if test -d \"$p\"; then printf \"PATH_EXISTS=%s\\n\" \"$p\"; fi; done && printf \"DOCKER_STATUS=\" && (docker ps --format \"{{.Names}}:{{.Status}}\" 2>/dev/null | grep -Ei \"gserver|video|tumbler|postgres\" | head -12 || true) && printf \"TG_SOURCE=\" && (find /home/gace/Project/Gserver -maxdepth 5 -type d \\( -iname \"*tumbler*\" -o -iname \"*videobot*\" \\) 2>/dev/null | head -15 || true)'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  }
+}
