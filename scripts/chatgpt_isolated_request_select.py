@@ -143,6 +143,25 @@ def prepare_data(data, *, command_diagnostics=None):
     if data.get("server_command_id") or data.get("run_id"):
         raise ValueError("OTHER_COMMAND_DENIED")
     bounded = data["bounded_host_request"]
+    if "project_context" in bounded:
+        context = bounded.pop("project_context")
+        if (bounded.get("host_target") != "gserver" or
+                bounded.get("repository") != "seigo-gace/G-ACEserver" or
+                not isinstance(context, dict) or
+                set(context) != {"repository", "sha"} or
+                not isinstance(context["repository"], str) or
+                not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", context["repository"]) or
+                any(part in {".", ".."} for part in context["repository"].split("/")) or
+                not isinstance(context["sha"], str) or
+                not re.fullmatch(r"[a-f0-9]{40}", context["sha"])):
+            raise ValueError("PROJECT_CONTEXT_INVALID")
+        original = bounded.get("command")
+        if not isinstance(original, str) or not original.strip():
+            raise ValueError("PROJECT_COMMAND_INVALID")
+        helper = "/home/gace/Project/Gserver/repository/scripts/gserver_project_terminal.py"
+        bounded["command"] = "python3 -B " + " ".join(map(shlex.quote, [
+            helper, "--repository", context["repository"], "--sha", context["sha"], original
+        ]))
     if "source_preflight" in bounded:
         raise ValueError("SOURCE_PREFLIGHT_INTERNAL_ONLY")
     if "source_context" in bounded:
