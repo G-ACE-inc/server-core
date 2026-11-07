@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "TGtumbler parent-only read-only locator for existing GATE adapter and config names; no file contents or Secret access",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "fda997ca2e008cea74ffed11955c3af9e2158462",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "host_target": "gserver",
+    "command": "bash -c 'set -u; root=/home/gace/Project/Gserver/projects/TGtumbler; test -d \"$root\" || exit 70; flags=0; find \"$root\" -maxdepth 5 -type f \\( -name \"gateOwner.mjs\" -o -name \"gateOwner.js\" \\) -print -quit 2>/dev/null | grep -q . || flags=$((flags+1)); find \"$root\" -maxdepth 3 -type f \\( -name \".env\" -o -name \".env.production\" -o -name \"videobot.env\" \\) -print -quit 2>/dev/null | grep -q . || flags=$((flags+2)); docker network ls --format \"{{.Name}}\" | grep -Eiq \"gserver\" || flags=$((flags+4)); test -f \"$root/create-videobot/deploy/compose.videobot.telegram.yaml\" || flags=$((flags+8)); exit $((80+flags))'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  }
+}
