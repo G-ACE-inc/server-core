@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Verify canonical Gserver project terminal and existing CreatorBot checkout via owner-aware lookup",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "fda997ca2e008cea74ffed11955c3af9e2158462",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "host_target": "gserver",
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport sys,importlib.util\nroot=Path('/home/gace/Project/Gserver/repository')\np=root/'scripts/gserver_project_terminal.py'\nflags=0\nif p.is_file():flags|=1\nif Path('/home/gace/Project/Gserver/workspace/G-ACE.code-workspace').is_file():flags|=2\nif Path('/home/gace/Project/Gserver/projects').is_dir():flags|=4\nif p.is_file():\n try:\n  spec=importlib.util.spec_from_file_location('gpt',str(p));mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)\n  found=mod.find_checkout('seigo-gace/create-videobot')\n  if found:flags|=8\n  found2=mod.find_checkout('seigo-gace/GateApp-Bot')\n  if found2:flags|=16\n except Exception:flags|=32\nprint('PROJECT_DISCOVERY_FLAGS='+str(flags))\nsys.exit(flags)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  }
+}
