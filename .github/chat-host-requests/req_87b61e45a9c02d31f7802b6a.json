@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "TGtumbler existing 3 forum topic identities read-only extraction; do not clone or change project layout",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "fbe706ba26d9db66a46c18ead49b9cd480962531",
+    "host_target": "gserver",
+    "command": "set -eu\nprintf 'PROJECT=TGtumbler\\nACTION=TOPIC_IDENTITIES_READ_ONLY\\n'\np=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nif [ ! -d \"$p/.git\" ]; then printf 'CHECKOUT=NOT_FOUND\\n'; exit 3; fi\nprintf 'CHECKOUT=FOUND\\n'\nprintf 'HEAD='; git -C \"$p\" rev-parse HEAD\nprintf 'SCRIPT='; test -f \"$p/artifacts/bot/scripts/exportCommunityTopics.ts\" && echo PRESENT || echo ABSENT\nprintf 'PNPM='; command -v pnpm || true\nprintf 'DATABASE_URL_PRESENT='; if [ -n \"${DATABASE_URL:-}\" ]; then echo YES; else echo NO; fi\nif [ -f \"$p/artifacts/bot/scripts/exportCommunityTopics.ts\" ] && command -v pnpm >/dev/null 2>&1 && [ -n \"${DATABASE_URL:-}\" ]; then cd \"$p\"; pnpm --dir artifacts/bot exec tsx scripts/exportCommunityTopics.ts; else printf 'EXTRACT=PRECONDITION_NOT_MET\\n'; fi\nprintf 'PROJECT_END=TGtumbler\\n'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  }
+}
