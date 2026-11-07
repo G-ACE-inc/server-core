@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "TGtumbler exact ownership admission only; codes 71-75, no writes",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "fda997ca2e008cea74ffed11955c3af9e2158462",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "host_target": "gserver",
+    "command": "python3 - <<'PY'\nimport importlib.util,sys\nfrom pathlib import Path\np=Path('/home/gace/Project/Gserver/repository/scripts/gserver_project_terminal.py')\nif not p.is_file():sys.exit(71)\ns=importlib.util.spec_from_file_location('gace_existing_resolver',str(p));m=importlib.util.module_from_spec(s);s.loader.exec_module(m)\na=m.find_checkout('seigo-gace/create-videobot')\nb=m.find_checkout('seigo-gace/GateApp-Bot')\nif a is None or b is None:sys.exit(72)\naa=a.resolve(strict=True).parts\nbb=b.resolve(strict=True).parts\nif 'TGtumbler' in aa and 'TGtumbler' in bb:sys.exit(73)\nif 'TGtumbler' in aa or 'TGtumbler' in bb:sys.exit(74)\nsys.exit(75)\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  }
+}
