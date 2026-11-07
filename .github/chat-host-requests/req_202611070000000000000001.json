@@ -1,0 +1,31 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "command": "set -euo pipefail\npython3 - <<'PY'\nimport json,pathlib,subprocess\nws=pathlib.Path('/home/gace/Project/Gserver/workspace/G-ACE.code-workspace')\nprint('PROJECT=TGtumbler')\nprint('ACTION=WORKSPACE_TERMINAL_READ_ONLY_SMOKE')\nprint('WORKSPACE_EXISTS='+str(ws.is_file()))\nif not ws.is_file():\n print('VERIFY=NOT_VERIFIED');raise SystemExit(2)\ndata=json.loads(ws.read_text())\nroots=[]\nfor f in data.get('folders',[]):\n p=pathlib.Path(f.get('path',''))\n if not p.is_absolute():p=(ws.parent/p).resolve()\n roots.append((f.get('name',''),p))\n print('WORKSPACE_ROOT='+f.get('name','')+'|'+str(p))\ncandidate=[]\nfor name,p in roots:\n if name=='projects' or 'Project' in str(p):\n  for rel in ('TGtumbler','TGtumbler/GateApp-Bot'):\n   candidate.append(p/rel)\ncandidate += [pathlib.Path('/home/gace/Project/TGtumbler'),pathlib.Path('/home/gace/Project/Gserver/workspace/projects/TGtumbler')]\nseen=set()\nfor p in candidate:\n pp=str(p)\n if pp in seen:continue\n seen.add(pp)\n print('TG_CANDIDATE='+pp+'|'+('DIR' if p.is_dir() else 'MISSING'))\n if p.is_dir():\n  q=subprocess.run(['git','-C',pp,'rev-parse','--show-toplevel'],capture_output=True,text=True,timeout=5)\n  print('TG_GIT_ROOT='+(q.stdout.strip() if q.returncode==0 else 'NOT_GIT_ROOT'))\n  print('TG_DIRECTORY_COMMAND=PASS')\nprint('MUTATIONS=NONE')\nprint('VERIFY=PASS' if any(pathlib.Path(p).is_dir() for p in seen) else 'VERIFY=TG_DIRECTORY_NOT_FOUND')\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
