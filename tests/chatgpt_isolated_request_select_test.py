@@ -27,6 +27,12 @@ class IsolatedRequests(unittest.TestCase):
         self.assertIn("seigo-gace/GateApp-Bot", prepared["command"])
         self.assertIn("pwd; git rev-parse HEAD", prepared["command"])
         source["bounded_host_request"]["project_context"] = {
+            "repository": "seigo-gace/create-videobot"}
+        source["bounded_host_request"]["command"] = "pwd; git rev-parse HEAD"
+        unpinned = m.prepare_data(source)["bounded_host_request"]["command"]
+        self.assertIn("seigo-gace/create-videobot", unpinned)
+        self.assertNotIn("--sha", unpinned)
+        source["bounded_host_request"]["project_context"] = {
             "repository": "../invalid", "sha": "c" * 40}
         with self.assertRaisesRegex(ValueError, "PROJECT_CONTEXT_INVALID"):
             m.prepare_data(source)
