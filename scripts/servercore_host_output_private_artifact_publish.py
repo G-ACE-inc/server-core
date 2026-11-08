@@ -19,12 +19,12 @@ try:
     from scripts.servercore_host_output_cipher_inbox import collect, InboxError
     from scripts.servercore_host_output_gateway_relay import post_json, private_endpoint, canonical_base64, RelayError
     from scripts.servercore_host_output_artifact_assemble import verify_artifact_zip
-    from scripts.servercore_host_output_export import export_output
+    from scripts.servercore_host_output_export import export_output, load_record
 except ModuleNotFoundError:
     from servercore_host_output_cipher_inbox import collect, InboxError
     from servercore_host_output_gateway_relay import post_json, private_endpoint, canonical_base64, RelayError
     from servercore_host_output_artifact_assemble import verify_artifact_zip
-    from servercore_host_output_export import export_output
+    from servercore_host_output_export import export_output, load_record
 
 DEFAULT_WRITER = Path("/home/admin1/logs/servercore-service-deploy")
 REPO = "seigo-gace/TGserver"  # verified private repo, owning existing CI
@@ -36,12 +36,14 @@ class PublishError(ValueError):
 
 
 def independently_expected(request_id, *, writer_dir=DEFAULT_WRITER):
-    path=Path(writer_dir)/(request_id+".json")
-    if path.is_symlink() or not path.is_file():
-        raise PublishError("WRITER_LEDGER_MISSING")
-    record=json.loads(path.read_text(encoding="utf-8"))
-    if record.get("request_id") != request_id:
-        raise PublishError("WRITER_ID_MISMATCH")
+    try:
+        record=load_record(request_id, writer_dir)
+    except ValueError as exc:
+        if str(exc) == "RESULT_UNAVAILABLE":
+            raise PublishError("WRITER_LEDGER_MISSING") from None
+        if str(exc) == "RECORD_ID_MISMATCH":
+            raise PublishError("WRITER_ID_MISMATCH") from None
+        raise
     expected={}
     for name in ("stdout","stderr"):
         value=record.get(name)

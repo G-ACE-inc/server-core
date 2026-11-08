@@ -11,15 +11,30 @@ RESULT_DIR = Path("/home/admin1/logs/servercore-service-deploy")
 REQ = re.compile(r"req_[0-9a-f]{24}\Z")
 
 
-def export_output(request_id, target, *, result_dir=RESULT_DIR, zipped=False):
+def load_record(request_id, result_dir):
+    """Read either the shared Writer ledger or the Gserver adapter ledger."""
     if not REQ.fullmatch(request_id):
         raise ValueError("REQUEST_ID_INVALID")
     source = Path(result_dir) / (request_id + ".json")
     if source.is_symlink() or not source.is_file():
         raise ValueError("RESULT_UNAVAILABLE")
     record = json.loads(source.read_text(encoding="utf-8"))
+    if "result" in record:
+        if record.get("state") != "COMPLETED" or not isinstance(record["result"], dict):
+            raise ValueError("RESULT_INCOMPLETE")
+        record = record["result"]
+        for name in ("stdout", "stderr"):
+            value = record.get(name)
+            digest = record.get(name + "_sha256")
+            if not isinstance(value, str) or not isinstance(digest, str) or hashlib.sha256(value.encode()).hexdigest() != digest:
+                raise ValueError("RESULT_DIGEST_MISMATCH")
     if record.get("request_id") != request_id:
         raise ValueError("RECORD_ID_MISMATCH")
+    return record
+
+
+def export_output(request_id, target, *, result_dir=RESULT_DIR, zipped=False):
+    record = load_record(request_id, result_dir)
     streams = {}
     for name in ("stdout", "stderr"):
         value = record.get(name, "")
