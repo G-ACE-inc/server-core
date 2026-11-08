@@ -166,7 +166,8 @@ Host target、Token、Terminal設定を増やさない。
 
 GPT CHATはProject #1のItemを既存GitHub認証で照合してから、承認済みのGserver Hostへ
 対象Repositoryを渡す。Host側ではProject用の別Token/CLI認証を要求しない。Workspaceに
-登録済みのcheckoutと`projects/`直下のcheckoutをoriginで探す。まだ無ければ既存`projects/`の
+登録済みのcheckoutと`projects/`配下の既存親Projectにあるcheckoutをoriginで探す。
+`旧project/`の履歴用コピーは実行候補から外す。まだ無ければ既存`projects/`の
 直下へ初回だけcloneする。`projects/`は既にWorkspace folderなので、新しいRepositoryを
 Workspace fileへ個別追記する必要はない。Project Itemが確認できない場合はGPT CHATが
 要求を投入しない。Hostでcloneに失敗する、originが一致しない、複数checkoutがある、
