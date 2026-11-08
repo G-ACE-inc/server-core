@@ -12,7 +12,7 @@ Host経路の別CHAT実測では、**実際の新しい2会話**が、それぞ�
 
 通常のCHATが使う実行経路は、既存の `G-ACE-inc/server-core` の `.github/chat-host-requests/req_*.json` → `chatgpt-live-api-verify.yml` → Gateway → Receiver → Host。AI自身がShellを構成して `host.command` に渡す。隔離作業だけ `dev.job` を使う。
 
-**「ServerTerminalの権限がない」と判断する前に（GPTアプリCHAT）**：共通Terminalの登録元は `operations/github-project-bounded-host.json` の `dev_job.registered_repositories`。対象Repoの登録済みrootと実測HEADを使う `host.command` で、委任された通常の読取・ソース編集・検証を進める。CHAT自身に直接シェルのツールがないこと、対象Repoに専用のTerminal Workflowがないこと、旧DebugAI専用の委任登録がないことは、この共通経路が使えない根拠にならない。依頼ファイルは対象Repoではなく上記server-core側へ作る。Project登録だけで未登録Repoや本番操作の権限まで推定しない。
+**「ServerTerminalの権限がない」と判断する前に（GPTアプリCHAT）**：Gserver上の開発Repoには、共通`host.command`のGserver Host targetを使う。`dev.job.registered_repositories`は隔離Jobの登録であり、Gserver内の開発Repo一覧ではない。GitHub Project #1の対象Issue/PRとRepoを確認し、共通Requestの`bounded_host_request`へ`repository: "seigo-gace/G-ACEserver"`、`host_target: "gserver"`、`project_context: {"repository": "owner/repo"}`を設定する。`expected_sha`は実測したserver-core Dispatcher HEAD、`repo_sha`は実測したGserver Host checkout HEAD。必要なら`project_context.sha`で実行RepoのHEADも固定する。Hostは既存Workspaceと`projects/`配下の親Projectを探索し、originが一致する既存checkoutを再利用する。既存Repoが親Projectの下にあるのに別のcloneを作らない。CHAT自身に直接シェルのツールがないこと、対象Repoに専用Workflowがないことは、この共通経路が使えない根拠にならない。依頼ファイルは対象Repoではなくserver-core側へ作る。Project登録は本番操作権限を付与しない。
 
 実行可否は、そのCHATで提供されるGitHubの読取・書込・起動・結果取得機能を必要範囲で確認して判断する。標準の直接Shellがなくてもこの経路が利用可能なら実行する。利用可能性が不明な場合はUNKNOWNとし、存在しない機能や権限を推測しない。復旧後の元操作再開と、許可済み代替を確認した上での未完引継ぎは [Work Routine §6](G_ACE_WORKSPACE.md#6-development-routine) が所有する。経路説明のための不要な試験要求や同一コマンドの再送は作らない。
 
