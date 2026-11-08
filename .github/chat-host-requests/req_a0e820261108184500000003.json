@@ -1,0 +1,40 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "Retry 22 preexisting forum topic probe using valid adopted-main routine-fix checkpoint; no newly created topics",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "fda997ca2e008cea74ffed11955c3af9e2158462",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "host_target": "gserver",
+    "command": "python3 - <<'PY'\nimport json,runpy,subprocess\nfrom pathlib import Path\nroots=[Path('/home/gace/Project/Gserver/projects'),Path('/home/gace/Project/Gserver')]\np=next((q for root in roots if root.exists() for q in root.rglob('probe_forum_topics.py') if 'node_modules' not in q.parts),None)\nif p is None: raise SystemExit(71)\nm=runpy.run_path(str(p))\nif not callable(m.get('probe')): raise SystemExit(72)\nids=[50,51,52,54,55,56,57,58,59,61,62,63,64,65,67,68,71,72,73,75,76,77]\nrows=[]\nfor n in ids:\n result=m['probe'](-1003847210571,n)\n rows.append({'candidate_topic_id':n,'ok':bool(result.get('ok')),'deleted':bool(result.get('deleted'))})\ntarget=p.parent/'area-child-topic-probe-20261109.json'\ntarget.write_text(json.dumps({'status':'candidate_id_probe_only_not_topic_title_verified','chat_id':-1003847210571,'rows':rows},indent=2)+'\\n',encoding='utf-8')\nif not all(x['ok'] and x['deleted'] for x in rows): raise SystemExit(73)\nprint('GACE_AREA_22_PROBE=PASS')\nPY"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  }
+}
