@@ -67,6 +67,24 @@ class FullBridgeTests(unittest.TestCase):
         Path(directory, RID + ".json").write_text(json.dumps({
             "request_id": RID, "stdout": "日本語 result\n", "stderr": ""}), encoding="utf-8")
 
+    def test_gserver_completed_ledger_is_verified_without_reexecution(self):
+        with tempfile.TemporaryDirectory() as d:
+            output = "project path\ncommit sha\n"
+            record = {"state": "COMPLETED", "request_fingerprint": "a" * 64,
+                      "result": {"request_id": RID, "state": "PASS", "exit_code": 0,
+                                 "stdout": output, "stderr": "",
+                                 "stdout_sha256": hashlib.sha256(output.encode()).hexdigest(),
+                                 "stderr_sha256": hashlib.sha256(b"").hexdigest()}}
+            path = Path(d, RID + ".json")
+            path.write_text(json.dumps(record), encoding="utf-8")
+            verified = publish_writer_output(RID, writer_dir=d, verify_only=True)
+            self.assertEqual(verified["state"], "FULL_ZIP_VERIFIED_LOCAL")
+            self.assertEqual(verified["streams"]["stdout"]["chars"], len(output))
+            record["result"]["stdout_sha256"] = "0" * 64
+            path.write_text(json.dumps(record), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "RESULT_DIGEST_MISMATCH"):
+                publish_writer_output(RID, writer_dir=d, verify_only=True)
+
     def test_local_writer_reuses_private_release_without_vault(self):
         with tempfile.TemporaryDirectory() as d:
             self.writer(d)
