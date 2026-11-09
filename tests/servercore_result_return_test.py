@@ -69,6 +69,26 @@ class SinkTests(unittest.TestCase):
             with self.assertRaises(sink.SinkError):
                 sink.accept_record(bad, result_dir=self.dir)
 
+    def test_gserver_public_metadata_matches_original_without_exposing_output(self):
+        raw = "password=秘密\\n確認済み"
+        evidence = {"host_target": "gserver", "repository": "seigo-gace/G-ACEserver",
+                    "repo_sha": SHA, "dispatcher_sha": SHA,
+                    "command_sha256": "b" * 64,
+                    "stdout_sha256": hashlib.sha256(raw.encode()).hexdigest(),
+                    "stderr_sha256": hashlib.sha256(b"").hexdigest()}
+        result = rec(command_id="host.command", stdout=raw, target_evidence=evidence)
+        sink.accept_record(result, result_dir=self.dir)
+        stored = sink.read_record(RID, self.dir)
+        self.assertNotIn(raw, json.dumps(stored, ensure_ascii=False))
+        body = sink.comment_body(stored)
+        self.assertNotIn(raw, body)
+        view = json.loads(body.split("```json\\n", 1)[1].split("\\n```", 1)[0])
+        self.assertEqual(view["stdout_bytes"], len(raw.encode()))
+        self.assertEqual(view["stdout_chars"], len(raw))
+        self.assertEqual(view["stdout_sha256"], evidence["stdout_sha256"])
+        self.assertEqual(view["stdout_origin"], "GSERVER_VALIDATED_TARGET_RAW")
+        self.assertEqual(view["stdout"], "")
+
     def test_first_terminal_wins_and_retryable_is_replaced(self):
         self.assertEqual(sink.accept_record(rec(state="RETRYABLE", exit_code=1), result_dir=self.dir)["state"], "RECORDED")
         self.assertEqual(sink.accept_record(rec(), result_dir=self.dir)["recorded_state"], "PASS")
