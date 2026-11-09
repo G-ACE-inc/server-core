@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport subprocess,sys\ncandidates=[\n'/home/gace/Project/Gserver/projects/GateApp-Bot',\n'/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot',\n'/home/gace/Project/Gserver/repository/projects/TGtumbler/GateApp-Bot',\n'/home/gace/Project/Gserver/workspace/projects/TGtumbler/GateApp-Bot',\n'/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/GateApp-Bot',\n]\nfor n,raw in enumerate(candidates):\n p=Path(raw)\n if not p.exists():continue\n q=subprocess.run(['git','-C',raw,'rev-parse','--show-toplevel'],capture_output=True,text=True)\n if q.returncode or Path(q.stdout.strip()).resolve()!=p.resolve():continue\n origin=subprocess.run(['git','-C',raw,'remote','get-url','origin'],capture_output=True,text=True)\n if origin.returncode or 'GateApp-Bot' not in origin.stdout:continue\n branch=subprocess.run(['git','-C',raw,'branch','--show-current'],capture_output=True,text=True)\n dirty=subprocess.run(['git','-C',raw,'status','--porcelain'],capture_output=True,text=True)\n if branch.stdout.strip()!='integrate/profile-menu-merge-online-20261108':sys.exit(120+n)\n sys.exit((110 if dirty.stdout.strip() else 100)+n)\nsys.exit(90)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
