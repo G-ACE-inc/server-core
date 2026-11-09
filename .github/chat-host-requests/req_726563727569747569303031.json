@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/90e60aed83b0be730ace940525e08b28da7db2e4"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; w=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/.worktrees/issue7-recruitment; test -d \"$w\" || exit 41; h=$(git -C \"$w\" rev-parse HEAD) || exit 42; test \"$h\" = 6ef5069059ca589c552ccaf18371e9cff21c0371 -o \"$h\" = 90e60aed83b0be730ace940525e08b28da7db2e4 || exit 43; test -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\" || exit 44; git -C \"$w\" fetch origin integrate/profile-menu-merge-online-20261108 >/dev/null 2>&1 || exit 45; test \"$(git -C \"$w\" rev-parse FETCH_HEAD)\" = 90e60aed83b0be730ace940525e08b28da7db2e4 || exit 46; git -C \"$w\" merge --ff-only FETCH_HEAD >/dev/null 2>&1 || exit 47; test \"$(git -C \"$w\" rev-parse HEAD)\" = 90e60aed83b0be730ace940525e08b28da7db2e4 || exit 48"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
