@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/345"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "7fede271a9459b998935e1ae9995d7feba27d9c5",
+    "repo_sha": "7fede271a9459b998935e1ae9995d7feba27d9c5",
+    "command": "set -euo pipefail\ncd /home/admin1/server-core\ntest \"$(git rev-parse HEAD)\" = 7fede271a9459b998935e1ae9995d7feba27d9c5\ntest \"$(docker inspect -f '{{.State.Running}}' server-core-bounded-host)\" = true\n! docker inspect server-core-bounded-host-pre-pr345 >/dev/null 2>&1\ndocker image inspect gace-server-core-bounded-host:hostsha-7fede271 >/dev/null\nactivation=$(cat <<'SH'\nset -Eeuo pipefail\nold=server-core-bounded-host\nbackup=server-core-bounded-host-pre-pr345\nimg=gace-server-core-bounded-host:hostsha-7fede271\ntest \"$(docker inspect -f '{{.State.Running}}' \"$old\")\" = true\n! docker inspect \"$backup\" >/dev/null 2>&1\ndocker image inspect \"$img\" >/dev/null\ndocker stop \"$old\" >/dev/null\nif ! docker rename \"$old\" \"$backup\"; then\n  docker start \"$old\" >/dev/null\n  exit 1\nfi\nrollback() {\n  trap - ERR\n  docker rm -f \"$old\" >/dev/null 2>&1 || true\n  docker rename \"$backup\" \"$old\"\n  docker start \"$old\" >/dev/null\n  exit 80\n}\ntrap rollback ERR\ndocker run -d --name \"$old\" --network gace-internal --init --user 1000:1000 --read-only --cap-drop ALL --security-opt no-new-privileges:true --pids-limit 64 --memory 192m --tmpfs /tmp:size=32m,mode=1777 --restart unless-stopped --volumes-from \"$backup\":ro --env-file <(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' \"$backup\") \"$img\" >/dev/null\nsleep 5\ndocker exec \"$old\" python3 -c 'import urllib.request; assert urllib.request.urlopen(\"http://127.0.0.1:8789/healthz\",timeout=3).status==200'\ntest \"$(docker inspect -f '{{.State.Running}}' \"$old\")\" = true\ntest \"$(docker inspect -f '{{.Config.Image}}' \"$old\")\" = \"$img\"\ntrap - ERR\nSH\n)\nsystemd-run --user --on-active=30s --unit=gace-rx-pr345-20261109 /bin/bash -lc \"$activation\" >/dev/null\nprintf 'RECEIVER_SWITCH_SCHEDULED\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
