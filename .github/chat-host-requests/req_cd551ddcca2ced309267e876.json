@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7; https://github.com/seigo-gace/GateApp-Bot/pull/21"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 - <<'PY'\nimport os,subprocess,sys\nfrom pathlib import Path\nroot=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],text=True).strip()).resolve()\nexpected=Path('/home/gace/Project/Gserver/projects/GateApp-Bot').resolve()\nif root!=expected:sys.exit(81)\nif not (root/'deploy/gserver-compose.yaml').is_file():sys.exit(82)\nif not (root/'deploy/secrets/bot_token.txt').is_file():sys.exit(84)\nif not (root/'deploy/secrets/db_password.txt').is_file():sys.exit(85)\nr=subprocess.run(['docker','ps','-q','--filter','name=^/deploy-gaybbs-1$'],capture_output=True,text=True)\nif r.returncode or not r.stdout.strip():sys.exit(86)\nbranch=subprocess.check_output(['git','branch','--show-current'],text=True).strip()\nif branch!='integrate/profile-menu-merge-online-20261108':sys.exit(87)\nif subprocess.check_output(['git','status','--porcelain'],text=True).strip():sys.exit(83)\nsys.exit(0)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
