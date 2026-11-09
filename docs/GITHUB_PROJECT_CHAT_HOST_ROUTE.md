@@ -1,5 +1,14 @@
 # GPT CHAT 共通ServerTerminal入口
 
+## 普段の使い方（GPT CHAT）
+
+1. GitHub Project #1の対象Repoを確認し、共通の `host.command` を使う。GserverをHost targetにして `project_context.repository` に対象Repoを指定する。RepoごとのTerminal登録や新規Workflowは要らない。既存checkoutを再利用し、未配置なら既存Git権限で初回取得する。
+2. 実行結果は元のrequest IDで追う。Issue #10の`stdout_bytes`/ `stderr_bytes`が正で本文プレビューが空なら、**出力なしや実行不能と判断しない**。元コマンドは再実行せず、同じGserver `host.command` で既存の非公開出力回収を呼ぶ。
+3. 回収コマンドはGserver上の既存server-core checkoutから `python3 -B scripts/servercore_host_output_private_artifact_publish.py <元request_id> --writer-ledger --writer-dir "$HOME/.local/state/gserver-terminal/results"`。`--verify-only`は確認だけで転送しない。固定の非公開TGserver Artifact `gace-host-output-<元request_id>` を既存GitHubコネクタで取得し、元request ID・出力バイト数・SHA-256を照合して作業を続ける。既存Artifactがあれば再利用する。
+4. アプリ操作はそのアプリの採用済みCompose・Gserver運用手順に従う。`service.deploy` / `docker.operation` のContabo用登録情報を、Gserverの`host.command`可否と混同しない。実際の拒否はその操作として扱い、Terminal全体を利用不能と報告しない。
+
+公開IssueにHostの出力本文を貼らない。回収が失敗したときは元request ID・失敗段階を追跡し、原因を直して元の作業へ戻る。
+
 ## 通常CHATの開始・別CHAT実測手順
 
 開発手順の正本は [Work Routine §6](G_ACE_WORKSPACE.md#6-development-routine)。新しい通常CHATでも、所有Project/CU Current・適用Profile・対象Sourceをそこで復元する。古い会話の停止指示やNotion議論全文を起動指示として持ち込まない。Current取得は既存GitHub connectorの対象Issue読取で足りる。ローカルCLIが実際に使える場合だけ [対象を絞った復元](LOAD_SCOPE.md)を利用し、取得した同じ本文を読み直さない。
