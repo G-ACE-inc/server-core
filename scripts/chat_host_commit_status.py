@@ -16,21 +16,17 @@ REPOSITORY = "G-ACE-inc/server-core"
 REQUEST_ID = re.compile(r"req_[a-f0-9]{24}\Z")
 SHA = re.compile(r"[a-f0-9]{40}\Z")
 RUN_ID = re.compile(r"[1-9][0-9]{0,19}\Z")
-RESULT_URL = re.compile(
-    r"https://github[.]com/G-ACE-inc/server-core/issues/10#issuecomment-[1-9][0-9]*\Z"
-)
 
 
 def status_payload(request_id, commit_sha, run_id, observation=None):
     if not REQUEST_ID.fullmatch(request_id) or not SHA.fullmatch(commit_sha) or not RUN_ID.fullmatch(run_id):
         raise ValueError("STATUS_LOCATOR_INPUT_INVALID")
     state = "error"
-    result_url = f"https://github.com/{REPOSITORY}/actions/runs/{run_id}"
+    # The connected GitHub status reader exposes target_url, but omits the
+    # description. Link to the Run so CHAT can recover its ID and artifact.
+    run_url = f"https://github.com/{REPOSITORY}/actions/runs/{run_id}"
     result = "RESULT_NOT_RETURNED"
     if isinstance(observation, dict) and observation.get("request_id") == request_id:
-        url = observation.get("result_url")
-        if isinstance(url, str) and RESULT_URL.fullmatch(url):
-            result_url = url
         if observation.get("result_verified") is True:
             if observation.get("state") == "PASS" and observation.get("exit_code") == 0:
                 state, result = "success", "HOST_PASS_OUTPUT_SEPARATE"
@@ -38,7 +34,7 @@ def status_payload(request_id, commit_sha, run_id, observation=None):
                 state, result = "failure", "HOST_FAIL"
     return {
         "state": state,
-        "target_url": result_url,
+        "target_url": run_url,
         "description": f"{result} req={request_id} run={run_id}",
         "context": "gace/server-terminal",
     }
