@@ -366,6 +366,8 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
         error = reply.get("error")
         if error == "DEPLOY_LOCK_BUSY":
             fail("HOST_COMMAND_BUSY", 503)
+        if error == "HOST_COMMAND_REPLAY_INCOMPLETE":
+            fail("HOST_COMMAND_REPLAY_INCOMPLETE", 503)
         if isinstance(error, str) and error in HOST_COMMAND_ADMISSION_ERRORS:
             fail(error, 422)
         fail("HOST_COMMAND_ADMISSION_DENIED", 422)
