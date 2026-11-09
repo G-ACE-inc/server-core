@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 MODULE = Path(__file__).resolve().parents[1] / "scripts/chatgpt_isolated_request_select.py"
 spec = importlib.util.spec_from_file_location("request_select", MODULE)
@@ -55,6 +56,15 @@ class IsolatedRequests(unittest.TestCase):
     def test_separate_commit_request(self):
         self.assertEqual(str(m.select([P], [P])), P)
         self.assertIsNone(m.select([], ["README.md"]))
+
+    def test_selected_file_name_is_the_returned_host_request_id(self):
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d) / "selected.json"
+            with patch.object(m, "git_paths", return_value=[P]), \
+                 patch.object(m, "prepare", return_value={**BASE, "chat_host_request_id": "req_" + "f" * 24}), \
+                 patch.object(m, "TARGET", target):
+                self.assertEqual(m.main(), 0)
+            self.assertEqual(json.loads(target.read_text())["chat_host_request_id"], Path(P).stem)
 
     def test_reject_shared_target_mutation_and_replay(self):
         for added, changed in [([], [P]), ([P], [P, m.LEGACY_TARGET]),

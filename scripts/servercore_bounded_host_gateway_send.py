@@ -93,15 +93,20 @@ def build_event(request, contract):
 def validate_cli(command_id, expected_sha, contract, expected_before=None, reflect_repository=None, reflect_branch=None, repository=None,
                  service=None, deploy_request_id=None, path=None, offset=None, container=None, tail=None,
                  session=None, argv=None, timeout_s=None, fresh=None, repo_sha=None,
-                 docker_operation=None, host_command=None, source_preflight=False, host_target=None):
+                 docker_operation=None, host_command=None, source_preflight=False, host_target=None,
+                 request_id=None):
     allowed = contract.get("allowed_command_ids") or []
     if command_id not in allowed:
         raise SendError("COMMAND_NOT_REGISTERED")
     if not SHA_PATTERN.match(expected_sha):
         raise SendError("EXPECTED_SHA_INVALID")
+    if request_id is not None and (command_id != "host.command" or
+                                   not isinstance(request_id, str) or
+                                   not REQUEST_ID_PATTERN.fullmatch(request_id)):
+        raise SendError("HOST_REQUEST_ID_INVALID")
     request = {
         "schema": contract.get("request_schema"),
-        "id": "req_" + secrets.token_hex(12),
+        "id": request_id if request_id is not None else "req_" + secrets.token_hex(12),
         "command_id": command_id,
         "expected_sha": expected_sha,
     }
@@ -277,6 +282,7 @@ def main():
     parser.add_argument("--repo-sha")
     parser.add_argument("--source-preflight", action="store_true")
     parser.add_argument("--host-target")
+    parser.add_argument("--request-id")
     parser.add_argument("--contract", default=str(DEFAULT_CONTRACT))
     args = parser.parse_args()
     contract = load_contract(args.contract)
@@ -292,7 +298,8 @@ def main():
                            repo_sha=args.repo_sha, docker_operation=args.docker_operation,
                            host_command=args.host_command,
                            source_preflight=args.source_preflight,
-                           host_target=args.host_target)
+                           host_target=args.host_target,
+                           request_id=args.request_id)
     try:
         receipt = send(request, contract)
         print(json.dumps({"state": "QUEUED", "request_id": request["id"], "gateway": receipt}, sort_keys=True))
