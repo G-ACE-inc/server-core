@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/345"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "7fede271a9459b998935e1ae9995d7feba27d9c5",
+    "repo_sha": "7fede271a9459b998935e1ae9995d7feba27d9c5",
+    "command": "set -eu\ncd /home/admin1/server-core\ntest \"$(git rev-parse HEAD)\" = 7fede271a9459b998935e1ae9995d7feba27d9c5\ntest \"$(git hash-object scripts/servercore_bounded_host_receiver.py)\" = 99b7aee32962348085f6d4051f6c56ee929c8b28\ntest \"$(docker inspect -f '{{.State.Running}}' server-core-bounded-host)\" = true\nimg=gace-server-core-bounded-host:hostsha-7fede271\ndocker build --pull=false -q -f Dockerfile.bounded-host -t \"$img\" . >/dev/null\ndocker run --rm --user 65532:65532 --entrypoint python3 \"$img\" -c 'from pathlib import Path; s=Path(\"/app/scripts/servercore_bounded_host_receiver.py\").read_text(); assert \"replay_only\" in s and \"HOST_COMMAND_REPLAY_MISSING\" in s'\nprintf 'RECEIVER_IMAGE_BUILD_PASS\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
