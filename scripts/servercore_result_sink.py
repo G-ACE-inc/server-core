@@ -166,6 +166,13 @@ def accept_record(value, *, result_dir=None, now=None):
                   "recorded_at": stamp, "attempts": attempts, "published": None}
         if "target_evidence" in value:
             record["target_evidence"] = dict(value["target_evidence"])
+            # Preserve validated raw stream metadata without storing raw output.
+            record["target_stream_metadata"] = {
+                stream: {"chars": len(value[stream]),
+                         "bytes": len(value[stream].encode("utf-8")),
+                         "sha256": hashlib.sha256(value[stream].encode("utf-8")).hexdigest()}
+                for stream in ("stdout", "stderr")
+            }
         _write(record_path(value["request_id"], result_dir), record)
     if record["state"] in TERMINAL:
         _WAKE.set()
@@ -272,12 +279,14 @@ def comment_body(record, *, writer_dir=HOST_WRITER_RESULT_DIR):
             view[stream + "_preview_truncated"] = True
             view[stream] = ""
             continue
-        evidence = (writer or {}).get(stream)
+        evidence = (writer or record.get("target_stream_metadata") or {}).get(stream)
         if evidence is not None:
             view[stream + "_chars"] = evidence["chars"]
             view[stream + "_bytes"] = evidence["bytes"]
             view[stream + "_sha256"] = evidence["sha256"]
-            view[stream + "_origin"] = "HOST_WRITER_LEDGER_RAW"
+            view[stream + "_origin"] = (
+                "GSERVER_VALIDATED_TARGET_RAW" if "target_evidence" in record
+                else "HOST_WRITER_LEDGER_RAW")
             view[stream + "_preview_truncated"] = evidence["bytes"] != 0
         else:
             view[stream + "_chars"] = len(full)
