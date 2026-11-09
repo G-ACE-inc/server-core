@@ -22,10 +22,12 @@ class CommitStatusLocatorTests(unittest.TestCase):
         }
         payload = status.status_payload(REQUEST_ID, COMMIT, RUN, observation)
         self.assertEqual(payload["state"], "success")
-        self.assertEqual(payload["target_url"], RESULT)
+        self.assertEqual(payload["target_url"],
+                         f"https://github.com/G-ACE-inc/server-core/actions/runs/{RUN}")
         self.assertIn(REQUEST_ID, payload["description"])
         self.assertIn(RUN, payload["description"])
         self.assertNotIn("secret output", str(payload))
+        self.assertNotIn(RESULT, str(payload))
 
     def test_missing_or_mismatched_result_is_not_reported_as_pass(self):
         for observation in (None, {"request_id": "req_" + "c" * 24,

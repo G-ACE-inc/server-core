@@ -3,7 +3,7 @@
 ## 普段の使い方（GPT CHAT）
 
 1. GitHub Project #1の対象Repoを確認し、共通の `host.command` を使う。GserverをHost targetにして `project_context.repository` に対象Repoを指定する。RepoごとのTerminal登録や新規Workflowは要らない。既存checkoutを再利用し、未配置なら既存Git権限で初回取得する。
-2. 要求コミットの `gace/server-terminal` ステータスから request ID・Run ID・結果URLを読み、結果が未着なら同じRunを追う。PR専用Run検索やIssueコメント全件取得に依存せず、出力本文は既存の非公開経路で回収する。実行結果は元のrequest IDで追う。Issue #10の`stdout_bytes`/ `stderr_bytes`が正で本文プレビューが空なら、**出力なしや実行不能と判断しない**。元コマンドは再実行せず、同じGserver `host.command` で既存の非公開出力回収を呼ぶ。
+2. 要求コミットの `gace/server-terminal` ステータスを既存GitHub接続で読み、`target_url`のActions Run番号を取得する。request IDは要求ファイル名と同一で、Runの観測Artifactに結果URLがある。結果が未着なら同じRunを追う。PR専用Run検索やIssueコメント全件取得に依存せず、出力本文は既存の非公開経路で回収する。Issue #10の`stdout_bytes`/ `stderr_bytes`が正で本文プレビューが空なら、**出力なしや実行不能と判断しない**。元コマンドは再実行せず、同じGserver `host.command` で既存の非公開出力回収を呼ぶ。
 3. 回収コマンドはGserver上の既存server-core checkoutから `python3 -B scripts/servercore_host_output_private_artifact_publish.py <元request_id> --writer-ledger --writer-dir "$HOME/.local/state/gserver-terminal/results"`。`--verify-only`は確認だけで転送しない。固定の非公開TGserver Artifact `gace-host-output-<元request_id>` を既存GitHubコネクタで取得し、元request ID・出力バイト数・SHA-256を照合して作業を続ける。既存Artifactがあれば再利用する。
 4. アプリ操作はそのアプリの採用済みCompose・Gserver運用手順に従う。`service.deploy` / `docker.operation` のContabo用登録情報を、Gserverの`host.command`可否と混同しない。実際の拒否はその操作として扱い、Terminal全体を利用不能と報告しない。
 
