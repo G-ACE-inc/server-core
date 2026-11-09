@@ -276,7 +276,7 @@ def run_docker_operation(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, 
 
 
 HOST_COMMAND_SCHEMA = "gace.servercore-host-command.request/v1"
-HOST_COMMAND_KEYS = {"schema", "id", "repository", "target_sha", "command", "source_preflight"}
+HOST_COMMAND_KEYS = {"schema", "id", "repository", "target_sha", "command", "source_preflight", "replay_only"}
 HOST_COMMAND_MAX_SECONDS = 90
 SOURCE_PREFLIGHT_OK = "__GACE_SOURCE_PREFLIGHT_OK__\n"
 SOURCE_FAILURE_MARKERS = {
@@ -319,7 +319,8 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
     """
     import subprocess
     if (not isinstance(value, dict) or
-            set(value) not in (HOST_COMMAND_KEYS, HOST_COMMAND_KEYS - {"source_preflight"})
+            set(value) - HOST_COMMAND_KEYS or
+            not (HOST_COMMAND_KEYS - {"source_preflight", "replay_only"}) <= set(value)
             or value.get("schema") != HOST_COMMAND_SCHEMA):
         raise AdmissionError("HOST_COMMAND_KEYS_INVALID")
     request_id = _req_id(value["id"])
@@ -332,9 +333,23 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         raise AdmissionError("HOST_COMMAND_INVALID")
     if type(value.get("source_preflight", False)) is not bool:
         raise AdmissionError("HOST_SOURCE_PREFLIGHT_INVALID")
+    if type(value.get("replay_only", False)) is not bool:
+        raise AdmissionError("HOST_COMMAND_REPLAY_MODE_INVALID")
+
+    def checked_duplicate(previous):
+        if (previous.get("repository") != repository
+                or previous.get("source_sha") != target_sha
+                or previous.get("source_preflight", False) != value.get("source_preflight", False)
+                or any(previous.get(key) != fingerprint[key] for key in fingerprint)):
+            raise AdmissionError("HOST_COMMAND_REPLAY_CONFLICT")
+        return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
+
+    fingerprint = command_ingress_fingerprint(command_text)
     previous = read_result(request_id, result_dir)
     if previous is not None:
-        return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
+        return checked_duplicate(previous)
+    if value.get("replay_only", False):
+        raise AdmissionError("HOST_COMMAND_REPLAY_MISSING")
     # Current shared Terminal: its Project #1 registered checkout map is the
     # sole host.command registration source. Legacy DebugAI delegation grants
     # are not part of general Chat Host command admission.
@@ -359,11 +374,11 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         previous = read_result(request_id, result_dir)
         if previous is not None:
-            return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
+            return checked_duplicate(previous)
         base = {"request_id": request_id, "repository": repository, "source_sha": target_sha,
                 "source_preflight": value.get("source_preflight", False),
                 # Hash only the admitted writer-side UTF-8 command; never log its text.
-                **command_ingress_fingerprint(command_text)}
+                **fingerprint}
         write_result(request_id, {**base, "state": "RUNNING"}, result_dir)
         try:
             run = runner or subprocess.run
