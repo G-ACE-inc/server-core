@@ -78,6 +78,11 @@ class GatewaySendTests(unittest.TestCase):
              patch.object(sender, "send", return_value={"ok": True}) as send:
             self.assertEqual(sender.main(), 0)
         self.assertEqual(send.call_args.args[0]["id"], file_id)
+        legacy = sender.validate_cli("host.command", "a" * 40, contract,
+                                     repository="G-ACE-inc/server-core", repo_sha="a" * 40,
+                                     host_command="pwd")
+        self.assertRegex(legacy["id"], r"^req_[a-f0-9]{24}$")
+        self.assertNotEqual(legacy["id"], file_id)
         for bad in ("req_short", "req_" + "A" * 24, "req_" + "b" * 25):
             with self.subTest(bad=bad), self.assertRaisesRegex(sender.SendError, "HOST_REQUEST_ID_INVALID"):
                 sender.validate_cli("host.command", "a" * 40, contract,
