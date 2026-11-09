@@ -191,6 +191,9 @@ def main():
             print("CHAT_ISOLATED_REQUEST=NONE")
             return 0
         data = prepare(selected)
+        # The file is new in this commit, so its validated name is a stable
+        # caller-visible correlation ID for the Host result.
+        data["chat_host_request_id"] = selected.stem
         TARGET.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         print("CHAT_ISOLATED_REQUEST=SELECTED")
         print("CHAT_ISOLATED_REQUEST_FILE=" + str(selected))

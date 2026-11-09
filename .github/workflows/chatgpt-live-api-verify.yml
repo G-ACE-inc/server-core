@@ -107,6 +107,9 @@ jobs:
           }
           send=(python3 scripts/servercore_bounded_host_gateway_send.py --command-id "$command_id" --expected-sha "$expected_sha")
           if [[ "$command_id" == "host.command" ]]; then
+            request_id="$(jq -r '.chat_host_request_id // empty' "$target")"
+            [[ "$request_id" =~ ^req_[a-f0-9]{24}$ ]] || { echo "HOST_REQUEST_ID_INVALID"; exit 48; }
+            send+=(--request-id "$request_id")
             send+=(--repository "$(jq -r '.bounded_host_request.repository' "$target")" --host-command "$(jq -r '.bounded_host_request.command' "$target")" --repo-sha "$(jq -r '.bounded_host_request.repo_sha' "$target")")
             host_target="$(jq -r '.bounded_host_request.host_target // empty' "$target")"
             if [[ -n "$host_target" ]]; then send+=(--host-target "$host_target"); fi

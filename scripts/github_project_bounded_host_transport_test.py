@@ -67,6 +67,30 @@ class GatewaySendTests(unittest.TestCase):
         self.assertEqual(request["repository"], "seigo-gace/astera_v8")
         self.assertEqual(request["command"], "git status --short")
 
+    def test_cli_host_request_id_correlates_with_committed_file(self):
+        import sys
+        contract = {**CONTRACT, "allowed_command_ids": ["host.command"]}
+        file_id = "req_" + "a" * 24
+        argv = ["sender", "--command-id", "host.command", "--expected-sha", "a" * 40,
+                "--repository", "G-ACE-inc/server-core", "--repo-sha", "a" * 40,
+                "--host-command", "pwd", "--request-id", file_id]
+        with patch.object(sys, "argv", argv), patch.object(sender, "load_contract", return_value=contract), \
+             patch.object(sender, "send", return_value={"ok": True}) as send:
+            self.assertEqual(sender.main(), 0)
+        self.assertEqual(send.call_args.args[0]["id"], file_id)
+        legacy = sender.validate_cli("host.command", "a" * 40, contract,
+                                     repository="G-ACE-inc/server-core", repo_sha="a" * 40,
+                                     host_command="pwd")
+        self.assertRegex(legacy["id"], r"^req_[a-f0-9]{24}$")
+        self.assertNotEqual(legacy["id"], file_id)
+        for bad in ("req_short", "req_" + "A" * 24, "req_" + "b" * 25):
+            with self.subTest(bad=bad), self.assertRaisesRegex(sender.SendError, "HOST_REQUEST_ID_INVALID"):
+                sender.validate_cli("host.command", "a" * 40, contract,
+                                    repository="G-ACE-inc/server-core", repo_sha="a" * 40,
+                                    host_command="pwd", request_id=bad)
+        with self.assertRaisesRegex(sender.SendError, "HOST_REQUEST_ID_INVALID"):
+            sender.validate_cli("project.git_head", "a" * 40, CONTRACT, request_id=file_id)
+
     def test_cli_source_reflect_passes_repository_and_branch(self):
         from unittest.mock import patch
         import sys
