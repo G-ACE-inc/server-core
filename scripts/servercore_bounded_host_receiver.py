@@ -43,6 +43,8 @@ HOST_COMMAND_ADMISSION_ERRORS = frozenset({
     "HOST_COMMAND_NOT_REGISTERED", "HOST_COMMAND_ROOT_INVALID",
     "HOST_COMMAND_SHA_MISMATCH", "HOST_COMMAND_KEYS_INVALID",
     "HOST_COMMAND_INVALID", "HOST_SOURCE_PREFLIGHT_INVALID",
+    "HOST_COMMAND_REPLAY_MODE_INVALID", "HOST_COMMAND_REPLAY_CONFLICT",
+    "HOST_COMMAND_REPLAY_MISSING",
     "REPOSITORY_INVALID", "TARGET_SHA_INVALID", "REQUEST_INVALID",
 })
 DOCKER_LOGS_SOCKET = "/run/gace/servercore-docker-logs.sock"
@@ -339,7 +341,17 @@ def dispatch_docker_operation(request, root, socket_path=DEPLOY_SOCKET):
             "read_only": read_only, "exit_code": 0, "state": "DOCKER_OPERATION_PASS"}
 
 def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
-    sha = bounded_host.head_sha(bounded_host.checked_root(root), request["expected_sha"])
+    replay_only = False
+    try:
+        sha = bounded_host.head_sha(bounded_host.checked_root(root), request["expected_sha"])
+    except bounded_host.BoundaryError as exc:
+        if str(exc) != "SOURCE_SHA_MISMATCH":
+            raise
+        # A prior command may have advanced this checkout before its result
+        # reached the Sink. Only the exact durable Writer result may be read;
+        # the Writer must never execute a new command under the stale pin.
+        sha = request["expected_sha"]
+        replay_only = True
     writer_request = {
         "schema": "gace.servercore-host-command.request/v1", "id": request["id"],
         "repository": request["repository"], "target_sha": request["repo_sha"],
@@ -347,6 +359,8 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
     }
     if request.get("source_preflight") is True:
         writer_request["source_preflight"] = True
+    if replay_only:
+        writer_request["replay_only"] = True
     reply = deploy_socket_call(writer_request, socket_path, timeout=120)
     if reply.get("ok") is not True:
         error = reply.get("error")
@@ -360,9 +374,15 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
         if not isinstance(result, dict):
             fail("HOST_COMMAND_RESULT_INVALID", 503)
     else:
+        if replay_only:
+            fail("HOST_COMMAND_REPLAY_MISSING", 422)
         result = reply
+    import hashlib
+    command_bytes = request["command"].encode("utf-8")
     if result.get("request_id") != request["id"] or result.get("repository") != request["repository"] \
-            or result.get("source_sha") != request["repo_sha"]:
+            or result.get("source_sha") != request["repo_sha"] \
+            or (replay_only and (result.get("command_sha256") != hashlib.sha256(command_bytes).hexdigest()
+                                 or result.get("command_bytes") != len(command_bytes))):
         fail("HOST_COMMAND_RESULT_MISMATCH", 503)
     return {"command_id": request["command_id"], "repository": request["repository"],
             "source_sha": sha, "repo_sha": request["repo_sha"], "state": result.get("state"), "exit_code": result.get("exit_code", 1),
