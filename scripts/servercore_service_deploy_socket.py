@@ -342,6 +342,8 @@ def run_host_command(value, *, registry_path=REGISTRY, lock_path=LOCK_PATH, resu
                 or previous.get("source_preflight", False) != value.get("source_preflight", False)
                 or any(previous.get(key) != fingerprint[key] for key in fingerprint)):
             raise AdmissionError("HOST_COMMAND_REPLAY_CONFLICT")
+        if previous.get("state") not in {"HOST_COMMAND_PASS", "FAIL"}:
+            raise AdmissionError("HOST_COMMAND_REPLAY_INCOMPLETE")
         return {"request_id": request_id, "state": "HOST_COMMAND_DUPLICATE", "result": previous}
 
     fingerprint = command_ingress_fingerprint(command_text)
