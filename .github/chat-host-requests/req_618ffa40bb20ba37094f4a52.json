@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 - <<'PY'\nimport subprocess,json,sys\ndef run(*a):\n return subprocess.run(a,capture_output=True,text=True,timeout=22)\ntry:\n x=run('docker','inspect','deploy-gaybbs-1')\n if x.returncode:sys.exit(81)\n c=json.loads(x.stdout)[0]\n print('RUNNING='+str(c['State']['Running']).upper())\n print('IMAGE_MATCH='+str(c['Image']==json.loads(run('docker','image','inspect','gace-tgtumbler-gaybbs:local').stdout)[0]['Id']).upper())\n print('RESTART_COUNT='+str(c['RestartCount']))\n p=run('docker','logs','--tail','150','deploy-gaybbs-1')\n lines=(p.stdout+'\\n'+p.stderr).splitlines()\n print('BOT_READY='+str(any('GAYBBS_BOT_READY' in l for l in lines)).upper())\n for category,phrase in [('STARTUP_FAIL','GAYBBS_STARTUP_FAILED'),('DATABASE_FAIL','DATABASE_URL_REQUIRED'),('TOKEN_FAIL','BOT_TOKEN'),('MIGRATION_FAIL','migrat'),('RECRUITMENT_FAIL','RECRUITMENT'),('ERROR_LOG','GAYBBS_ERROR')]:\n  print(category+'='+str(any(phrase.lower() in l.lower() for l in lines)).upper())\n y=run('docker','inspect','deploy-postgres-1')\n print('DB_RUNNING='+str(json.loads(y.stdout)[0]['State']['Running']).upper() if y.returncode==0 else 'UNKNOWN')\nexcept Exception:sys.exit(89)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
