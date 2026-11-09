@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/345"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "9e654a5c84b1750540296adcf26a32920465c2ea",
+    "repo_sha": "9e654a5c84b1750540296adcf26a32920465c2ea",
+    "command": "set -eu\ncd /home/admin1/server-core\nbefore=9e654a5c84b1750540296adcf26a32920465c2ea\ntarget=7fede271a9459b998935e1ae9995d7feba27d9c5\ntest \"$(git rev-parse HEAD)\" = \"$before\"\ntest \"$(git branch --show-current)\" = main\ntest -z \"$(git status --porcelain -- scripts/servercore_service_deploy_socket.py scripts/servercore_bounded_host_receiver.py)\"\ncommand -v systemd-run >/dev/null\nsystemctl --user is-active --quiet gace-servercore-service-deploy.service\ntest \"$(docker inspect -f '{{.State.Running}}' server-core-bounded-host)\" = true\ngit -c core.hooksPath=/dev/null fetch --no-write-fetch-head origin \"$target\"\ngit merge-base --is-ancestor \"$before\" \"$target\"\ntest \"$(git rev-parse \"$target:scripts/servercore_service_deploy_socket.py\")\" = 81265fddb888af92a1c45ad89a9467ead6e996e7\ntest \"$(git rev-parse \"$target:scripts/servercore_bounded_host_receiver.py\")\" = 99b7aee32962348085f6d4051f6c56ee929c8b28\ngit -c core.hooksPath=/dev/null merge --ff-only \"$target\"\nactivation=$(cat <<'SH'\nset -eu\ncd /home/admin1/server-core\nrollback() {\n  trap - ERR\n  git show 9e654a5c84b1750540296adcf26a32920465c2ea:scripts/servercore_service_deploy_socket.py > scripts/servercore_service_deploy_socket.py\n  git show 9e654a5c84b1750540296adcf26a32920465c2ea:scripts/servercore_bounded_host_receiver.py > scripts/servercore_bounded_host_receiver.py\n  systemctl --user restart gace-servercore-service-deploy.service || true\n  docker restart server-core-bounded-host >/dev/null || true\n  exit 80\n}\ntrap rollback ERR\nsystemctl --user restart gace-servercore-service-deploy.service\ndocker restart server-core-bounded-host >/dev/null\nsystemctl --user is-active --quiet gace-servercore-service-deploy.service\ntest \"$(docker inspect -f '{{.State.Running}}' server-core-bounded-host)\" = true\nSH\n)\nif ! systemd-run --user --on-active=45s --unit=gace-servercore-replay-activate-20261109 /bin/bash -lc \"$activation\"; then\n  git show \"$before:scripts/servercore_service_deploy_socket.py\" > scripts/servercore_service_deploy_socket.py\n  git show \"$before:scripts/servercore_bounded_host_receiver.py\" > scripts/servercore_bounded_host_receiver.py\n  exit 80\nfi\nprintf 'REPLAY_SOURCE_SYNC_AND_RESTART_SCHEDULED\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
