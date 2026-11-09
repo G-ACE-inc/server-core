@@ -70,7 +70,7 @@ class SinkTests(unittest.TestCase):
                 sink.accept_record(bad, result_dir=self.dir)
 
     def test_gserver_public_metadata_matches_original_without_exposing_output(self):
-        raw = "password=秘密\\n確認済み"
+        raw = "password=秘密\n確認済み"
         evidence = {"host_target": "gserver", "repository": "seigo-gace/G-ACEserver",
                     "repo_sha": SHA, "dispatcher_sha": SHA,
                     "command_sha256": "b" * 64,
@@ -82,7 +82,7 @@ class SinkTests(unittest.TestCase):
         self.assertNotIn(raw, json.dumps(stored, ensure_ascii=False))
         body = sink.comment_body(stored)
         self.assertNotIn(raw, body)
-        view = json.loads(body.split("```json\\n", 1)[1].split("\\n```", 1)[0])
+        view = json.loads(body.split("```json\n", 1)[1].split("\n```", 1)[0])
         self.assertEqual(view["stdout_bytes"], len(raw.encode()))
         self.assertEqual(view["stdout_chars"], len(raw))
         self.assertEqual(view["stdout_sha256"], evidence["stdout_sha256"])
