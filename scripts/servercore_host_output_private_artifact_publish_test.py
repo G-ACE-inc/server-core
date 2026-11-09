@@ -6,10 +6,11 @@ import tempfile
 import unittest
 from pathlib import Path
 from contextlib import contextmanager
+from types import SimpleNamespace
 from unittest.mock import patch
 from scripts.servercore_host_output_export import export_output
 from scripts.servercore_host_output_cipher_inbox import store
-from scripts.servercore_host_output_private_artifact_publish import run, publish_writer_output
+from scripts.servercore_host_output_private_artifact_publish import run, publish_writer_output, existing_gh_runner, PublishError
 
 RID="req_"+"9"*24
 
@@ -63,6 +64,39 @@ def setup(directory):
     return inbox,fragments,stdout,stderr
 
 class FullBridgeTests(unittest.TestCase):
+    def test_native_gh_path_is_unchanged(self):
+        with patch("scripts.servercore_host_output_private_artifact_publish.shutil.which",
+                   return_value="/usr/bin/gh"), \
+             patch("scripts.servercore_host_output_private_artifact_publish._existing_wsl_windows_gh") as fallback, \
+             patch("scripts.servercore_host_output_private_artifact_publish.subprocess.run",
+                   return_value=SimpleNamespace(returncode=0)) as execute:
+            existing_gh_runner(["gh", "api", "repos/seigo-gace/TGserver"])
+        fallback.assert_not_called()
+        self.assertEqual(execute.call_args.args[0], ["gh", "api", "repos/seigo-gace/TGserver"])
+
+    def test_wsl_uses_existing_windows_gh_with_translated_release_asset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            asset = Path(directory, "output.zip")
+            asset.write_bytes(b"zip")
+            windows_path = r"\\wsl.localhost\Ubuntu\tmp\output.zip"
+            with patch("scripts.servercore_host_output_private_artifact_publish.shutil.which", return_value=None), \
+                 patch("scripts.servercore_host_output_private_artifact_publish._existing_wsl_windows_gh",
+                       return_value="/mnt/c/Program Files/GitHub CLI/gh.exe"), \
+                 patch("scripts.servercore_host_output_private_artifact_publish.subprocess.run",
+                       side_effect=[SimpleNamespace(stdout=windows_path + "\n"),
+                                    SimpleNamespace(returncode=0)]) as execute:
+                existing_gh_runner(["gh", "release", "create", "tag", str(asset) + "#output.zip"],
+                                   capture_output=True, text=True)
+            self.assertEqual(execute.call_args_list[0].args[0], ["wslpath", "-w", str(asset)])
+            self.assertEqual(execute.call_args_list[1].args[0][0],
+                             "/mnt/c/Program Files/GitHub CLI/gh.exe")
+            self.assertEqual(execute.call_args_list[1].args[0][4], windows_path + "#output.zip")
+            with patch("scripts.servercore_host_output_private_artifact_publish.shutil.which", return_value=None), \
+                 patch("scripts.servercore_host_output_private_artifact_publish._existing_wsl_windows_gh",
+                       return_value="/mnt/c/Program Files/GitHub CLI/gh.exe"):
+                with self.assertRaisesRegex(PublishError, "PRIVATE_RELEASE_ASSET_INVALID"):
+                    existing_gh_runner(["gh", "release", "create", "tag", "missing#output.zip"])
+
     def writer(self, directory):
         Path(directory, RID + ".json").write_text(json.dumps({
             "request_id": RID, "stdout": "日本語 result\n", "stderr": ""}), encoding="utf-8")
