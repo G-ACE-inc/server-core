@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport hashlib,json,re,sys\nrid='req_84634db4f7d904dc258e0019'\np=Path.home()/'.local/state/gserver-terminal/results'/(rid+'.json')\ntry:\n d=json.loads(p.read_text())\n s=d.get('result',d)['stdout']\n if hashlib.sha256(s.encode()).hexdigest()!='0928007dc49d7aa96d693457e05d90cd19a837d5dbc433e6a0869a3064462c9e':sys.exit(88)\nexcept Exception:sys.exit(89)\nrules=[\n (101,r'corepack.*(error|failed|not found)|corepack prepare'),\n (102,r'ERR_PNPM|pnpm.*(error|failed)'),\n (103,r'npm ERR|npm error'),\n (104,r'failed to solve|manifest unknown|failed to fetch'),\n (105,r'permission denied|access denied'),\n (106,r'EAI_AGAIN|ENOTFOUND|ETIMEDOUT|network timeout|TLS handshake'),\n (107,r'no space left|ENOSPC'),\n (108,r'COPY failed|cannot find module'),\n (109,r'ERROR: process'),\n]\nfor code,pattern in rules:\n if re.search(pattern,s,re.I):sys.exit(code)\nsys.exit(120)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
