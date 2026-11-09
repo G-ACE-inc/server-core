@@ -49,6 +49,13 @@ class ReplayTests(unittest.TestCase):
                                         result_dir=self.root / "missing")
             run.assert_not_called()
 
+    def test_incomplete_saved_request_is_retryable_not_a_finished_result(self):
+        directory = self.root / "results"
+        writer.write_result(RID, {**self.saved, "state": "RUNNING"}, directory)
+        with self.assertRaisesRegex(writer.AdmissionError, "HOST_COMMAND_REPLAY_INCOMPLETE"):
+            writer.run_host_command({**self.writer_request, "replay_only": True},
+                                    result_dir=directory)
+
     def test_receiver_uses_saved_result_after_dispatcher_head_advances(self):
         request = {"id": RID, "command_id": "host.command", "repository": REPO,
                    "expected_sha": OLD, "repo_sha": OLD, "command": COMMAND}
