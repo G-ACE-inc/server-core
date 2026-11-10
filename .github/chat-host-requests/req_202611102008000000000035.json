@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/57955cd68bb39626ebbca38d44b7bb034da6dc05"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; sql=\"SELECT (count(*) FILTER (WHERE jsonb_typeof(data->'purposeCodes') IS DISTINCT FROM 'array' OR jsonb_typeof(data->'placeCodes') IS DISTINCT FROM 'array'))::int, (count(*) FILTER (WHERE data->>'mode' NOT IN ('manual','linked') OR data->>'mode' IS NULL))::int, (count(*) FILTER (WHERE step='preview' AND (NULLIF(data->>'title','') IS NULL OR NULLIF(data->>'body','') IS NULL)))::int FROM public_post_drafts WHERE module='announcement' AND data->>'recruitmentFlow'='compact'\"; v=$(docker exec deploy-postgres-1 psql -U gace -d gaybbs -tAqc \"$sql\" | tr -d '[:space:]'); IFS='|' read -r a b c <<EOF\n$v\nEOF\ncase \"$a$b$c\" in ''|*[!0-9]*) exit 73;; esac; code=90; if test \"$a\" -gt 0; then code=$((code+1)); fi; if test \"$b\" -gt 0; then code=$((code+2)); fi; if test \"$c\" -gt 0; then code=$((code+4)); fi; exit \"$code\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
