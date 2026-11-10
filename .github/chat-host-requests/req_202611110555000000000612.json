@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B -c 'import pathlib,http.client,json,sys; token=(pathlib.Path.home()/\".config/tgtumbler/tumblr-operation-app/tumblr-app-access-token\").read_text().strip();p=8081\ndef call(m,path,auth=False):\n c=http.client.HTTPConnection(\"127.0.0.1\",p,timeout=8);h={\"Authorization\":\"Bearer \"+token} if auth else {};c.request(m,path,headers=h);r=c.getresponse();v=(r.status,r.read(500000));c.close();return v\ntry:\n a,b=call(\"GET\",\"/healthz\");assert a==200 and json.loads(b)[\"commit\"]==\"20d1719089f076c91a8fc0a22ef4ceb1961fd71c\",\"REVISION\"\n a,b=call(\"GET\",\"/app.js\",True);assert a==200 and b\"/oauth/start\" in b and b\"/oauth/configure\" not in b and b\"window.prompt\" not in b,\"PROMPT_REMOVAL\"\n a,b=call(\"POST\",\"/oauth/start\");assert a==401,\"AUTH_GUARD\"\n a,b=call(\"POST\",\"/oauth/start\",True);assert a==200,\"START_RESPONSE\"\n u=json.loads(b)[\"authorize_url\"];assert u.startswith(\"https://www.tumblr.com/oauth2/authorize?\") and \"client_secret\" not in u,\"AUTHORIZE_URL\"\n a,b=call(\"GET\",\"/oauth/status\",True);assert a==200 and isinstance(json.loads(b).get(\"connected\"),bool),\"STATUS\"\n print(\"ACTION=TUMBLR_PRIMARY_OAUTH_RUNTIME_READBACK\");print(\"REVISION=PASS\");print(\"PROMPT_REMOVED=PASS\");print(\"AUTH_GUARD=PASS\");print(\"AUTHORIZE_URL=PASS\");print(\"VERIFY=PASS\")\nexcept Exception as e:\n print(\"ACTION=TUMBLR_PRIMARY_OAUTH_RUNTIME_READBACK\");print(\"VERIFY=FAIL\");print(\"CHECK=\"+str(e).splitlines()[0][:56]);sys.exit(41)'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
