@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,http.client,sys\nsha=\"3963464c612366637566b0f3dbbaa4a8848f842b\"\nprint(\"ACTION=DISCOVERY_OFFLINE_RUNTIME_READBACK\")\ntry:\n c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n c.request(\"GET\",\"/healthz\")\n r=c.getresponse()\n data=json.loads(r.read(64000))\n c.close()\n assert r.status==200 and data.get(\"commit\")==sha,\"REVISION_MISMATCH\"\n import unittest\n suite=unittest.defaultTestLoader.discover(\"tests\",pattern=\"test_discovery.py\")\n result=unittest.TextTestRunner(stream=open(\"/dev/null\",\"w\")).run(suite)\n assert result.wasSuccessful() and result.testsRun>=5,\"OFFLINE_TEST_FAILURE\"\n print(\"REVISION=PASS\")\n print(\"DISCOVERY_OFFLINE_TESTS=\"+str(result.testsRun))\n print(\"TUMBLR_LIVE_API_CALLS=0\")\n print(\"VERIFY=PASS\")\nexcept Exception as exc:\n print(\"VERIFY=FAIL\")\n print(\"ERROR_TYPE=\"+type(exc).__name__)\n sys.exit(42)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
