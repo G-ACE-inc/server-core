@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport socket,urllib.request,urllib.error,http.client,json\nhost=\"tumblr.hentaigay.org\"\nprint(\"ACTION=TUMBLR_PUBLIC_INGRESS_READ_ONLY\")\ntry:\n addresses=socket.getaddrinfo(host,443)\n print(\"DNS=RESOLVED\" if addresses else \"DNS=EMPTY\")\nexcept Exception as e: print(\"DNS=ERROR_\"+type(e).__name__)\nfor label,path in ((\"PUBLIC_HEALTH\",\"/healthz\"),(\"PUBLIC_LOGIN\",\"/login\")):\n try:\n  req=urllib.request.Request(\"https://\"+host+path,headers={\"User-Agent\":\"GACE-Diagnostic/1.0\"})\n  with urllib.request.urlopen(req,timeout=9) as res:\n   print(label+\"=HTTP_\"+str(res.status))\n except urllib.error.HTTPError as e: print(label+\"=HTTP_\"+str(e.code))\n except Exception as e: print(label+\"=ERROR_\"+type(e).__name__)\ntry:\n conn=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=6)\n conn.request(\"GET\",\"/healthz\"); response=conn.getresponse(); print(\"LOCAL_HEALTH=HTTP_\"+str(response.status)); conn.close()\nexcept Exception as e: print(\"LOCAL_HEALTH=ERROR_\"+type(e).__name__)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
