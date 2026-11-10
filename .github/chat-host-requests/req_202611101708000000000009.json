@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/172dde309d4214484a138e19009b5c0c3cb2be3e"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; w=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/.worktrees/issue7-recruitment; test \"$(git -C \"$w\" rev-parse HEAD)\" = 172dde309d4214484a138e19009b5c0c3cb2be3e || exit 41; docker exec deploy-postgres-1 psql -U gace -d gaybbs -tAqc \"WITH a AS (SELECT owner_user_id,updated_at,data,step FROM public_post_drafts WHERE module='announcement' AND data->>'recruitmentFlow'='compact' AND step IN ('awaiting_text','awaiting_recruitment_edit')), c AS (SELECT owner_user_id,updated_at,'profile' AS module FROM profile_drafts WHERE step <> 'cancelled' UNION ALL SELECT owner_user_id,updated_at,module FROM public_post_drafts UNION ALL SELECT owner_user_id,updated_at,'room_host' FROM room_host_sessions WHERE expires_at>NOW()), winners AS (SELECT a.owner_user_id,a.step,a.data, (SELECT module FROM c WHERE c.owner_user_id=a.owner_user_id ORDER BY updated_at DESC,module DESC LIMIT 1) AS owner FROM a) SELECT 'ACTIVE_COMPACT='||count(*), 'OWNER_MISMATCH='||count(*) FILTER(WHERE owner IS DISTINCT FROM 'announcement'), 'SCREEN_ID_MISSING='||count(*) FILTER(WHERE NOT (data ? 'screenMessageId')) FROM winners;\"; echo RECRUITMENT_DIAG_READ_ONLY=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
