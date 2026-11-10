@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/604aee429bd08c4ccf4a0f07e0d542c8b1a69e9c"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; cd /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/.worktrees/issue7-recruitment; test -z \"$(git status --porcelain --untracked-files=all)\" || exit 76; docker build --network=host --target build -f artifacts/bot/deploy/Dockerfile.gaybbs -t gace-tgtumbler-gaybbs-build:roompos-20261111 . >/dev/null; docker run --rm --network none --entrypoint /bin/sh gace-tgtumbler-gaybbs-build:roompos-20261111 -c \"cd /src/artifacts/bot && pnpm exec tsx --test tests/roomStagedEntry.test.ts\" >/dev/null; docker build --network=host -f artifacts/bot/deploy/Dockerfile.gaybbs -t gace-tgtumbler-gaybbs:room-position-20261111 . >/dev/null; docker image inspect gace-tgtumbler-gaybbs:room-position-20261111 >/dev/null; echo ROOM_POSITION_TEST_BUILD_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
