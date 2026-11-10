@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/8ab4071c48e153456c9a8340f41e07ebffcec5e9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; q=\"SELECT CASE WHEN EXISTS(SELECT 1 FROM posting_deliveries d JOIN announcement_posts a ON a.announcement_id::text=d.source_id AND a.owner_user_id=d.owner_user_id JOIN public_post_drafts p ON p.owner_user_id=d.owner_user_id AND p.module='announcement' WHERE d.telegram_message_id=4639 AND d.status='sent' AND p.step='published' AND p.data->>'kind'='recruitment' AND p.data->>'screenMessageId' ~ '^[0-9]+$' AND p.data->>'text'=a.text) THEN 0 WHEN EXISTS(SELECT 1 FROM posting_deliveries d JOIN public_post_drafts p ON p.owner_user_id=d.owner_user_id AND p.module='announcement' WHERE d.telegram_message_id=4639 AND p.step='published' AND p.data->>'screenMessageId' ~ '^[0-9]+$') THEN 81 ELSE 82 END\"; n=$(docker exec deploy-postgres-1 psql -U gace -d gaybbs -tAqc \"$q\" | tr -d '[:space:]'); case \"$n\" in 0|81|82) exit \"$n\";; *) exit 83;; esac"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
