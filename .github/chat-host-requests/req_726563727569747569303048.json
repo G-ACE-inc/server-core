@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/57955cd68bb39626ebbca38d44b7bb034da6dc05"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; docker exec deploy-gaybbs-1 node --input-type=module -e 'import https from \"node:https\";import{readFileSync}from\"node:fs\";const t=process.env.BOT_TOKEN||(process.env.BOT_TOKEN_FILE?readFileSync(process.env.BOT_TOKEN_FILE,\"utf8\").trim():null);if(!t)process.exit(42);let req=https.get(\"https://api.telegram.org/bot\"+t+\"/getWebhookInfo\",{family:4,timeout:10000},res=>{let s=\"\";res.on(\"data\",x=>s+=x);res.on(\"end\",()=>{try{let j=JSON.parse(s);if(!j.ok)process.exit(43);if(Number(j.result.pending_update_count||0)>0)process.exit(75);process.exit(0)}catch{process.exit(47)}})});req.on(\"timeout\",()=>req.destroy());req.on(\"error\",()=>process.exit(46))'; echo NO_PENDING_UPDATES=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
