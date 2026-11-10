@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/6bed505c4e750ab92882483be1a293aa5a29b8d8"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; w=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/.worktrees/issue7-recruitment; printf 'WORKTREE_HEAD='; git -C \"$w\" rev-parse HEAD; printf 'LIVE_IMAGE='; docker inspect --format '{{.Image}}' deploy-gaybbs-1; printf 'RUNNING='; docker inspect --format '{{.State.Running}}' deploy-gaybbs-1; printf 'RESTARTS='; docker inspect --format '{{.RestartCount}}' deploy-gaybbs-1; printf 'RECENT_LOG_CLASSIFICATIONS='; docker logs --since 60m deploy-gaybbs-1 2>&1 | grep -E 'GAYBBS_ERROR|WIZARD_|RECRUITMENT_|POST_DRAFT_|Unhandled|409|GAYBBS_BOT_READY' | sed -E 's/[0-9]{5,}/[REDACTED]/g' | tail -35 || true; printf 'DONE\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
