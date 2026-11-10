@@ -1,0 +1,43 @@
+{
+  "base_url": "",
+  "mode": "readonly",
+  "repo": "",
+  "run_id": "",
+  "request": "TGtumbler Tumblr OAuth existing app owner locations metadata-only preflight; no secret values",
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "host_target": "gserver",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B -c 'import os,pathlib,stat; roots=[pathlib.Path(\"/home/gace/.config/tgtumbler\"),pathlib.Path(\"/home/gace/Project/Gserver/projects/TGtumbler\")]; print(\"ACTION=EXISTING_TUMBLR_OAUTH_LOCATION_READ_ONLY\"); total=0; matches=0\nfor root in roots:\n print(\"ROOT_PRESENT=\"+str(root.is_dir()))\n if not root.is_dir(): continue\n for base,dirs,files in os.walk(root,followlinks=False):\n  depth=len(pathlib.Path(base).relative_to(root).parts)\n  dirs[:]=[d for d in dirs if d not in (\".git\",\"node_modules\",\"dist\",\"venv\",\".venv\",\"build\",\"cache\",\"__pycache__\")][:30] if depth<5 else []\n  for name in files[:150]:\n   total+=1\n   if total>4000: break\n   if \"tumblr\" in name.lower() and (\"oauth\" in name.lower() or \"token\" in name.lower()):\n    p=pathlib.Path(base)/name\n    try:\n     s=p.lstat()\n     if stat.S_ISREG(s.st_mode): matches+=1; print(\"CANDIDATE_EXISTS=YES MODE_PRIVATE=\"+str((s.st_mode&0o077)==0))\n    except OSError: pass\n  if total>4000: break\nprint(\"CANDIDATES=\"+str(matches));print(\"SCAN_BOUNDED=YES\")'"
+  },
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_PROJECT_CURRENT",
+    "implementation_context": "implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  }
+}
