@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 - <<'PY'\nimport urllib.request,urllib.error,sys\ndef code(path):\n try:\n  with urllib.request.urlopen(\"https://tumblr.hentaigay.org\"+path,timeout=7) as r:return r.status,dict(r.headers),r.read(4096)\n except urllib.error.HTTPError as e:return e.code,dict(e.headers),e.read(4096)\n except Exception:return 0,{},b\"\"\nh,headers,body=code('/healthz')\nif h!=403:sys.exit(88)\nlow={k.lower():str(v).lower() for k,v in headers.items()}\nblob=body.lower()\nif \"content-security-policy\" in low:sys.exit(71)\nif \"cf-mitigated\" in low:sys.exit(72)\nif b\"error 1020\" in blob or b\"access denied\" in blob:sys.exit(73)\nif b\"cloudflare\" in blob or b\"cloudflare\" in str(low).encode():sys.exit(74)\nif b\"forbidden\" in blob:sys.exit(75)\nsys.exit(76)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
