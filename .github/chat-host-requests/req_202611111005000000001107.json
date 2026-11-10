@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport http.client,json,pathlib,subprocess,tempfile,os,shutil,sys\nfrom tumblrkit.discovery_store import DiscoveryStore\nfrom tumblrkit.media_save import MediaSave,Transcoder\nprint(\"ACTION=TUMBLR_MEDIA_REAL_OFFLINE_E2E\")\ntry:\n root=pathlib.Path.cwd()\n tools=root/\"dist\"/\"data\"/\"media-tools\"\n for name in (\"ffmpeg\",\"ffprobe\"):\n  binary=tools/name\n  assert binary.is_file() and binary.stat().st_mode & 0o077==0,\"TOOL_UNAVAILABLE\"\n  assert subprocess.run([str(binary),\"-version\"],capture_output=True,timeout=15).returncode==0,\"TOOL_BROKEN\"\n c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=7)\n c.request(\"GET\",\"/healthz\");r=c.getresponse();status=r.status;health=json.loads(r.read(20000));c.close()\n assert status==200 and health.get(\"commit\")==\"ae2433c22d565c9b97f8649fc058dfc8a2feca45\",\"WRONG_REVISION\"\n for method,path in ((\"GET\",\"/media/jobs\"),(\"POST\",\"/media/save\"),(\"GET\",\"/media/file/\"+\"0\"*32)):\n  c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=7);c.request(method,path);r=c.getresponse()\n  assert r.status==401,\"MISSING_OWNER_AUTH\"\n  r.read(100);c.close()\n with tempfile.TemporaryDirectory(prefix=\"gace-media-offline-\") as dirname:\n  p=pathlib.Path(dirname);os.chmod(p,0o700)\n  sample=p/\"sample.avi\"\n  cmd=[str(tools/\"ffmpeg\"),\"-hide_banner\",\"-loglevel\",\"error\",\"-nostdin\",\"-y\",\n       \"-f\",\"lavfi\",\"-i\",\"color=c=blue:s=160x90:r=5:d=1\",\n       \"-c:v\",\"mpeg4\",\"-f\",\"avi\",str(sample)]\n  subprocess.run(cmd,check=True,timeout=25,capture_output=True)\n  assert sample.stat().st_size>0\n  class OfflineDownloader:\n   def probe(self,url):return sample.stat().st_size\n   def fetch(self,url,dest,size):\n    shutil.copyfile(sample,dest)\n    return size\n  store=DiscoveryStore(p/\"candidate.sqlite3\")\n  store.save_page(\"tag:offline\",[{\"name\":\"sample\",\"url\":\"https://sample.tumblr.com\"}],\n   [{\"candidate_id\":\"sample:101\",\"blog\":\"sample\",\"post_id\":\"101\",\n    \"url\":\"https://sample.tumblr.com/post/101\",\"title\":\"local synthetic sample\",\n    \"type\":\"video\",\"date\":\"\",\"thumbnail_url\":\"\",\"text_excerpt\":\"\",\n    \"tags\":[],\"note_count\":0,\n    \"media_refs\":[{\"url\":\"https://64.media.tumblr.com/synthetic.mp4\",\"type\":\"video\"}]}],1,complete=True)\n  media=p/\"media\";media.mkdir(mode=0o700)\n  worker=MediaSave(store,media,OfflineDownloader(),Transcoder(str(tools/\"ffprobe\"),str(tools/\"ffmpeg\")))\n  result=worker.save(\"sample:101\",0,rights_confirmed=True)\n  assert result[\"verified\"] is True and result[\"state\"]==\"completed\",\"MP4_JOB_FAILED\"\n  output=worker.file(result[\"job_id\"])\n  assert output.suffix==\".mp4\" and output.stat().st_size>0,\"OUTPUT_MISSING\"\n  assert output.stat().st_mode & 0o077==0,\"OUTPUT_PERMISSIONS\"\n  with open(output,\"rb\") as stream: assert b\"ftyp\" in stream.read(32),\"OUTPUT_FORMAT\"\n  actual=Transcoder(str(tools/\"ffprobe\"),str(tools/\"ffmpeg\"))._probe(output)\n  assert actual[\"video\"]==\"h264\" and all(a==\"aac\" for a in actual[\"audio\"]),\"OUTPUT_CODEC\"\n  assert len(worker.list()[\"jobs\"])==1 and worker.list()[\"jobs\"][0][\"source_post_id\"]==\"101\",\"JOB_RECORD\"\n print(\"REVISION=PASS\")\n print(\"AUTH_GUARDS=PASS\")\n print(\"PINNED_TOOLS=PASS\")\n print(\"REAL_FFMPEG_MP4=PASS\")\n print(\"SOURCE_OUTCOME_AUDIT=PASS\")\n print(\"EXTERNAL_TUMBLR_CALLS=NONE\")\n print(\"VERIFY=PASS\")\nexcept Exception as exc:\n print(\"VERIFY=FAIL\")\n print(\"ERROR_TYPE=\"+type(exc).__name__)\n sys.exit(42)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
