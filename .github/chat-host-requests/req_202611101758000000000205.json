@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 - <<'PY'\nimport http.client,json,pathlib,sys\nsha=\"33dbe23602607c5d765cc59821ae55f223b6b30e\"\nc=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=5);c.request(\"GET\",\"/healthz\");r=c.getresponse();body=r.read();c.close()\nif r.status!=200 or json.loads(body).get(\"commit\")!=sha:sys.exit(71)\nroot=pathlib.Path(\"dist/current\")\njs=(root/\"app.js\").read_text(encoding=\"utf-8\")\ncss=(root/\"styles.css\").read_text(encoding=\"utf-8\")\nhtml=(root/\"index.html\").read_text(encoding=\"utf-8\")\nif not all(x in js for x in (\"function renderView(view)\",\"renderView(turn.view)\",\"result-table\",\"result-chart\")):sys.exit(72)\nif not all(x in css for x in (\".result-table\",\".result-bar-track\")):sys.exit(73)\nif not (html.index('id=\"messages\"')<html.index('id=\"chat-form\"')<html.index('id=\"goal-grid\"')):sys.exit(74)\nif html.count('class=\"goal\"')!=6:sys.exit(75)\nprint(\"LIVE_RESULT_VIEW=PASS\")\nprint(\"LIVE_REVISION=\"+sha)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
