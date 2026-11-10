@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 - <<'PY'\nimport http.client,json,pathlib,sys\nfrom scripts.tumblr_release import source_token\ntarget=\"fa62d40e5b69267eacc535fbe18acf80ee4214f5\"\nc=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=5);c.request(\"GET\",\"/healthz\");r=c.getresponse();body=r.read();c.close()\nif r.status!=200 or json.loads(body).get(\"commit\")!=target:sys.exit(71)\nfrom tumblrkit.tumblr_read import TumblrReadAdapter,adapter_from_env\nfrom tumblrkit.appserve import AppServer\nroot=pathlib.Path(\"dist/current\")\nif \"renderView(turn.view)\" not in (root/\"app.js\").read_text(encoding=\"utf-8\"):sys.exit(72)\ntoken=source_token(pathlib.Path.home()/\".config/tgtumbler/tumblr-operation-app/tumblr-app-access-token\")\nc=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=5)\nc.request(\"POST\",\"/assistant\",body=json.dumps({\"message\":\"投稿一覧を見せて 対象: invalid-demo-target\"}).encode(),headers={\"Content-Type\":\"application/json\",\"Authorization\":\"Bearer \"+token})\nr=c.getresponse();body=r.read();c.close()\nif r.status!=200:sys.exit(73)\nreply=json.loads(body)\nif reply.get(\"executed\") is not False or reply.get(\"state\") not in (\"not_connected\",\"failed\"):sys.exit(74)\nprint(\"LIVE_READONLY_ASSISTANT_CONTRACT=PASS\")\nprint(\"LIVE_REVISION=\"+target)\nprint(\"ADAPTER_STATE=\"+reply.get(\"state\",\"unknown\"))\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
