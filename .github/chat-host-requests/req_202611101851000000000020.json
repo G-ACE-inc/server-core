@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/8551b2d28350c23c80672cb7e6181a2a262e9d16"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; p=deploy-postgres-1; docker inspect \"$p\" >/dev/null 2>&1 || exit 41; q=\"SELECT COUNT(*) FROM posting_deliveries d JOIN posting_topics t ON t.topic_id=d.posting_topic_id JOIN announcement_posts a ON a.announcement_id::text=d.source_id AND d.source_type='announcement' WHERE d.telegram_message_id=4639 AND t.chat_id=-1002373696859 AND t.message_thread_id=1695 AND a.kind='recruitment'\"; c=$(docker exec \"$p\" psql -XAt -U gace -d gaybbs -c \"$q\" 2>/dev/null) || exit 42; test \"$c\" = 1 || exit 43; q2=\"SELECT COUNT(*) FROM public_post_drafts w JOIN announcement_posts a ON a.owner_user_id=w.owner_user_id JOIN posting_deliveries d ON d.source_id=a.announcement_id::text JOIN posting_topics t ON t.topic_id=d.posting_topic_id WHERE w.module='announcement' AND (w.data->>'screenMessageId') ~ '^[0-9]+$' AND d.telegram_message_id=4639 AND t.chat_id=-1002373696859 AND t.message_thread_id=1695\"; n=$(docker exec \"$p\" psql -XAt -U gace -d gaybbs -c \"$q2\" 2>/dev/null) || exit 44; if test \"$n\" = 0; then echo TARGET_POST_FOUND_DM_SCREEN_NOT_IN_ACTIVE_DRAFT; exit 11; fi; if test \"$n\" = 1; then echo TARGET_POST_AND_DM_SCREEN_FOUND; exit 0; fi; exit 45"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
