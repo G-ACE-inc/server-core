@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "tumblr_staging_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 - <<'PY'\nimport http.client,json,os,pathlib,secrets,socket,subprocess,sys,time\ntarget=\"54449c25ec203285f67380c80e3e78be06fe5a83\"\ndef fail(s):\n print(\"STAGE_RESULT=FAIL_\"+s)\n sys.exit(1)\nif not pathlib.Path(\"tumblrkit/appserve.py\").is_file():fail(\"SOURCE_ROOT\")\ndef git(*args):\n v=subprocess.run([\"git\",*args],capture_output=True,text=True)\n if v.returncode:fail(\"GIT\")\n return v.stdout.strip()\nif git(\"branch\",\"--show-current\")!=\"feat/initial-modular-core\":fail(\"BRANCH\")\nif git(\"status\",\"--porcelain\"):fail(\"DIRTY_CHECKOUT\")\ngit(\"fetch\",\"--no-tags\",\"origin\",\"refs/heads/feat/initial-modular-core\")\nif git(\"rev-parse\",\"FETCH_HEAD\")!=target:fail(\"SOURCE_CHANGED\")\ngit(\"merge\",\"--ff-only\",\"FETCH_HEAD\")\nif git(\"rev-parse\",\"HEAD\")!=target:fail(\"TARGET_MISMATCH\")\nv=subprocess.run([sys.executable,\"-B\",\"-m\",\"tumblrkit.appserve\",\"build\",\"--app\",\"app\",\"--dest\",\"dist-staging\",\"--commit\",target],capture_output=True,text=True)\nif v.returncode:fail(\"BUILD\")\nsock=socket.socket()\nif sock.connect_ex((\"127.0.0.1\",8082))==0:fail(\"STAGING_PORT_OCCUPIED\")\nsock.close()\nenv=os.environ.copy()\nenv[\"TUMBLR_APP_ACCESS_TOKEN\"]=secrets.token_urlsafe(32)\nenv[\"TUMBLR_AI_LIVE_ENABLED\"]=\"0\"\nwith open(os.devnull,\"w\") as null:\n p=subprocess.Popen([sys.executable,\"-B\",\"-m\",\"tumblrkit.appserve\",\"serve\",\"--release\",\"dist-staging/current\",\"--bind\",\"127.0.0.1\",\"--port\",\"8082\"],env=env,stdout=null,stderr=null,start_new_session=True)\n try:\n  for _ in range(24):\n   if p.poll() is not None:fail(\"STAGE_START\")\n   try:\n    h=http.client.HTTPConnection(\"127.0.0.1\",8082,timeout=2)\n    h.request(\"GET\",\"/healthz\")\n    q=h.getresponse();data=q.read();h.close()\n    if q.status==200 and json.loads(data).get(\"commit\")==target:break\n   except (OSError,ValueError):pass\n   time.sleep(.25)\n  else:fail(\"STAGE_HEALTH\")\n  def fetch(path,auth=False):\n   c=http.client.HTTPConnection(\"127.0.0.1\",8082,timeout=3)\n   heads={\"Authorization\":\"Bearer \"+env[\"TUMBLR_APP_ACCESS_TOKEN\"]} if auth else {}\n   c.request(\"GET\",path,headers=heads)\n   o=c.getresponse();status=o.status;data=o.read();c.close()\n   return status,data\n  s,d=fetch(\"/\")\n  if s!=401 or b'action=\"/session\"' not in d:fail(\"LOGIN\")\n  s,d=fetch(\"/\",True)\n  if s!=200 or b'id=\"chat-form\"' not in d:fail(\"UI\")\n  s,d=fetch(\"/drafts\",True)\n  if s!=200 or \"drafts\" not in json.loads(d):fail(\"DRAFTS\")\n  print(\"STAGE_RESULT=PASS\")\n  print(\"SOURCE_REVISION=\"+target)\n  print(\"PROVIDER_API_CALLS=ZERO\")\n finally:\n  p.terminate()\n  try:p.wait(timeout=5)\n  except subprocess.TimeoutExpired:p.kill();p.wait(timeout=3)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
