@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/3f160d5d29216e042a0e821ebe216ae9b6f28e30"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; q=\"SELECT CASE WHEN EXISTS(SELECT 1 FROM posting_deliveries d JOIN announcement_posts a ON d.source_type='announcement' AND d.source_id=a.announcement_id::text AND d.owner_user_id=a.owner_user_id WHERE d.telegram_message_id=4639 AND d.status='sent' AND a.kind='recruitment' AND a.status='published' AND (a.conditions->>'dmScreenMessageId') ~ '^[0-9]+$') THEN 0 WHEN EXISTS(SELECT 1 FROM posting_deliveries d JOIN announcement_posts a ON d.source_type='announcement' AND d.source_id=a.announcement_id::text AND d.owner_user_id=a.owner_user_id WHERE d.telegram_message_id=4639 AND d.status='sent' AND a.kind='recruitment' AND a.status='published') THEN 81 WHEN EXISTS (SELECT 1 FROM posting_deliveries WHERE telegram_message_id=4639 AND status='sent' AND source_type='announcement') THEN 82 ELSE 83 END\"; code=$(docker exec deploy-postgres-1 psql -U gace -d gaybbs -tAqc \"$q\" | tr -d '[:space:]'); case \"$code\" in 0|81|82|83) exit \"$code\";; *) exit 84;; esac"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
