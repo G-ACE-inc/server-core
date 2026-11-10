@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport http.client,json,pathlib,sys\nprint(\"ACTION=MEDIA_OWNER_AUTHENTICATED_RUNTIME_READBACK\")\ntry:\n tokenpath=pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\"\n assert tokenpath.is_file() and not tokenpath.is_symlink() and tokenpath.stat().st_mode & 0o077==0\n token=tokenpath.read_text().strip()\n headers={\"Authorization\":\"Bearer \"+token}\n def call(method,path,body=None,extra=None):\n  c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=7)\n  h=dict(headers)\n  if extra:h.update(extra)\n  c.request(method,path,body=body,headers=h)\n  r=c.getresponse();status=r.status;raw=r.read(20000);c.close()\n  return status,raw\n status,raw=call(\"GET\",\"/healthz\")\n assert status==200 and json.loads(raw).get(\"commit\")==\"ae2433c22d565c9b97f8649fc058dfc8a2feca45\",\"SHA_MISMATCH\"\n status,raw=call(\"GET\",\"/media/jobs\")\n assert status==200 and json.loads(raw).get(\"verified\") is True,\"MEDIA_JOBS_BROKEN\"\n status,raw=call(\"GET\",\"/library\")\n assert status==200 and json.loads(raw).get(\"verified\") is True,\"LIBRARY_REGRESSION\"\n status,raw=call(\"GET\",\"/app.js\")\n assert status==200 and b\"/media/save\" in raw and b\"mediaHistory\" in raw,\"MEDIA_UI_NOT_LIVE\"\n denial=json.dumps({\"candidate_id\":\"example:1\",\"media_index\":0,\"rights_confirmed\":False}).encode()\n status,raw=call(\"POST\",\"/media/save\",denial,{\"Content-Type\":\"application/json\"})\n assert status==400,\"RIGHTS_DENIAL_FAILED\"\n print(\"LIVE_SHA=PASS\")\n print(\"OWNER_MEDIA_JOBS=PASS\")\n print(\"LIBRARY_REGRESSION=PASS\")\n print(\"MEDIA_UI=PASS\")\n print(\"RIGHTS_DENIAL=PASS\")\n print(\"EXTERNAL_TUMBLR_REQUESTS=NONE\")\n print(\"VERIFY=PASS\")\nexcept Exception as exc:\n print(\"VERIFY=FAIL\")\n print(\"ERROR_TYPE=\"+type(exc).__name__)\n sys.exit(42)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
