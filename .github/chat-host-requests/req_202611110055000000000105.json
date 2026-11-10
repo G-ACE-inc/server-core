@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/abbf1450f26461a773b2082efaacca63cc9cb3df"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; w=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/.worktrees/issue7-recruitment; test -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\" || exit 76; git -C \"$w\" fetch origin integrate/profile-menu-merge-online-20261108 >/dev/null 2>&1 || exit 71; git -C \"$w\" cat-file -e abbf1450f26461a773b2082efaacca63cc9cb3df^{commit} || exit 73; git -C \"$w\" merge-base --is-ancestor HEAD abbf1450f26461a773b2082efaacca63cc9cb3df || exit 74; git -C \"$w\" merge --ff-only abbf1450f26461a773b2082efaacca63cc9cb3df >/dev/null || exit 75; test \"$(git -C \"$w\" rev-parse HEAD)\" = abbf1450f26461a773b2082efaacca63cc9cb3df || exit 77; p=$(mktemp); python3 \"$w/deploy/repair_legacy_recruitment_buttons.py\" --apply >\"$p\" 2>/dev/null && rc=0 || rc=$?; if test \"$rc\" -eq 0; then rm -f \"$p\"; exit 0; fi; if grep -Eq '^DB_MISMATCH=[1-9][0-9]*$' \"$p\"; then rm -f \"$p\"; exit 85; fi; if grep -Eq '^TELEGRAM_REJECTED=[1-9][0-9]*$' \"$p\"; then rm -f \"$p\"; exit 86; fi; if grep -Eq '^USERNAME_MISSING=[1-9][0-9]*$' \"$p\"; then rm -f \"$p\"; exit 87; fi; if grep -Eq '^BUTTON_SHAPE_INVALID=[1-9][0-9]*$' \"$p\"; then rm -f \"$p\"; exit 88; fi; rm -f \"$p\"; exit \"$rc\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
