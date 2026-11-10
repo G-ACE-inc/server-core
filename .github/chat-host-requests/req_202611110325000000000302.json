@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 - <<'PY'\nimport pathlib,os,sys\npids=[]\nfor d in pathlib.Path(\"/proc\").iterdir():\n if not d.name.isdigit():continue\n try:\n  args=(d/\"cmdline\").read_bytes().replace(b\"\\0\",b\" \").decode(\"utf-8\",\"replace\")\n  if \"tumblrkit.appserve\" in args and \"serve\" in args and \"--port 8081\" in args:pids.append(d)\n except (OSError,PermissionError):pass\nif len(pids)!=1:print(\"TUMBLR_PROCESS_UNIQUE=NO\");sys.exit(30)\nenv=(pids[0]/\"environ\").read_bytes().split(b\"\\0\")\ndef get(name):\n prefix=name.encode()+b\"=\"\n return next((e[len(prefix):] for e in env if e.startswith(prefix)),b\"\")\nblog=get(\"TUMBLR_OWNER_BLOG\")\npath=get(\"TUMBLR_OAUTH_ACCESS_TOKEN_FILE\")\nprint(\"OWNER_BLOG_CONFIGURED=\"+(\"YES\" if blog else \"NO\"))\nprint(\"OAUTH_TOKEN_PATH_CONFIGURED=\"+(\"YES\" if path else \"NO\"))\nvalid=False\nif path:\n try:\n  f=pathlib.Path(os.fsdecode(path)).expanduser()\n  valid=f.is_file() and not f.is_symlink() and f.stat().st_mode & 0o077==0\n except (OSError,ValueError):pass\nprint(\"OWNER_TOKEN_FILE_PROTECTED=\"+(\"YES\" if valid else \"NO\"))\nprint(\"READ_ONLY_CHECK=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
