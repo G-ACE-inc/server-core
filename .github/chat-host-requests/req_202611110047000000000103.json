@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/b2c2fee5d9406fb9f347ee9f5c4bc50911918474"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; w=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/.worktrees/issue7-recruitment; status=$(git -C \"$w\" status --porcelain --untracked-files=all); if test -z \"$status\"; then echo CLEAN_ALREADY; exit 0; fi; other=$(printf '%s\\n' \"$status\" | grep -Ev '^\\?\\? deploy/__pycache__/repair_legacy_recruitment_buttons\\.cpython-[0-9]+\\.pyc$' || true); test -z \"$other\" || exit 76; find \"$w/deploy/__pycache__\" -maxdepth 1 -type f -name 'repair_legacy_recruitment_buttons.cpython-*.pyc' -delete; rmdir \"$w/deploy/__pycache__\" 2>/dev/null || true; test -z \"$(git -C \"$w\" status --porcelain --untracked-files=all)\" || exit 77; echo OWN_PYTHON_CACHE_CLEANED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
