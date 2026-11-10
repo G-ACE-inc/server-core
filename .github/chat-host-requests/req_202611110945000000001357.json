@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/f3493e866bd0ddc002c8fc0468cbd79e61b732b7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; count(){ docker exec deploy-postgres-1 psql -U gace -d gaybbs -Atqc \"$1\" 2>/dev/null; }; code=80; a=$(count \"SELECT count(*) FROM topic_dm_entry_pins WHERE chat_id=-1003847210571 AND message_thread_id=116 AND state='published' AND pinned=TRUE\") || exit 91; test \"$a\" -ge 1 || code=$((code+1)); b=$(count \"SELECT count(*) FROM topic_dm_entry_pins WHERE chat_id=-1002373696859 AND message_thread_id=1605 AND state='published' AND pinned=TRUE\") || exit 92; test \"$b\" -ge 1 || code=$((code+2)); c=$(count \"SELECT count(*) FROM topic_dm_entry_pins WHERE chat_id=-1003770334893 AND message_thread_id=4 AND state='published' AND pinned=TRUE\") || exit 93; test \"$c\" -ge 1 || code=$((code+4)); d=$(count \"SELECT count(*) FROM posting_topics WHERE chat_id=-1003847210571 AND message_thread_id=116 AND verified_at IS NOT NULL\") || exit 94; test \"$d\" -ge 1 || code=$((code+8)); e=$(count \"SELECT count(*) FROM posting_topics WHERE chat_id=-1002373696859 AND message_thread_id=1605 AND verified_at IS NOT NULL\") || exit 95; test \"$e\" -ge 1 || code=$((code+16)); f=$(count \"SELECT count(*) FROM posting_topics WHERE chat_id=-1003770334893 AND message_thread_id=4 AND verified_at IS NOT NULL\") || exit 96; test \"$f\" -ge 1 || code=$((code+32)); exit \"$code\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
