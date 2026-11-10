@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/f3493e866bd0ddc002c8fc0468cbd79e61b732b7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; log=$(mktemp); trap 'rm -f \"$log\"' EXIT; if git archive f3493e866bd0ddc002c8fc0468cbd79e61b732b7 | docker build --pull=false --progress=plain -f artifacts/bot/deploy/Dockerfile.gaybbs -t gace-tgtumbler-gaybbs:candidate-f3493e8 - >\"$log\" 2>&1; then exit 0; fi; if grep -Eqi 'failed to read dockerfile|Dockerfile.*not found|failed to calculate checksum|COPY failed|file not found' \"$log\"; then exit 81; elif grep -Eqi 'ERR_PNPM_OUTDATED_LOCKFILE|ERR_PNPM_LOCKFILE' \"$log\"; then exit 82; elif grep -Eqi 'ERR_PNPM_FETCH|ERR_PNPM_META_FETCH|ECONNREFUSED|ETIMEDOUT|network is unreachable|TLS handshake' \"$log\"; then exit 83; elif grep -Eqi 'corepack.*error|Cannot find matching keyid|corepack.*fail|npm error|CERT_HAS_EXPIRED' \"$log\"; then exit 84; elif grep -Eqi 'error TS[0-9]+|Build failed with|Cannot resolve|Could not resolve' \"$log\"; then exit 85; elif grep -Eqi 'no space left|disk quota' \"$log\"; then exit 86; else exit 87; fi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
