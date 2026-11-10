@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 - <<'PY'\nimport os,subprocess,sys\nif not os.path.exists('tumblrkit/appserve.py'): sys.exit(31)\nif subprocess.run(['git','status','--porcelain'],capture_output=True).stdout.strip():sys.exit(32)\nprocesses=[]\nfor name in os.listdir('/proc'):\n if not name.isdigit():continue\n try:\n  data=open('/proc/'+name+'/cmdline','rb').read().split(b'\\0')\n  args=[s.decode('utf8','replace') for s in data if s]\n  if 'tumblrkit.appserve' in args and 'serve' in args and '-m' in args:processes.append(name)\n except (OSError,PermissionError):pass\nif len(processes)==0:sys.exit(33)\nif len(processes)>1:sys.exit(34)\npid=processes[0]\ntry:cgroup=open('/proc/'+pid+'/cgroup').read()\nexcept OSError:sys.exit(35)\nif 'docker' in cgroup or 'containerd' in cgroup:sys.exit(36)\nif '.service' in cgroup:sys.exit(37)\nsys.exit(38)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
