@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 - <<'PY'\nimport http.client,json,pathlib,sys\nexpected=\"896834588ad5629d7873251999e752b234a271a8\"\nc=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=5);c.request(\"GET\",\"/healthz\");r=c.getresponse();status=r.status;body=r.read();c.close()\nif status!=200 or json.loads(body).get(\"commit\")!=expected:sys.exit(71)\nroot=pathlib.Path(\"dist/current\")\nhtml=(root/\"index.html\").read_text(encoding=\"utf-8\")\ncss=(root/\"styles.css\").read_text(encoding=\"utf-8\")\njs=(root/\"app.js\").read_text(encoding=\"utf-8\")\nif not (html.index('id=\"messages\"')<html.index('id=\"chat-form\"')<html.index('id=\"goal-grid\"')<html.index('class=\"footnote\"')):sys.exit(72)\nif css.count('grid-template-columns:repeat(3,minmax(0,1fr))')<3:sys.exit(73)\nif 'min-height:81px' in css or 'フォロー・タグ・公開候補を確認' in html:sys.exit(74)\nif len(__import__('re').findall('class=\"goal\"',html))!=6:sys.exit(75)\nif 'selectedGoals.add(goal)' not in js:sys.exit(76)\nprint(\"LIVE_LAYOUT_CHAT_FIRST_COMPACT_3X2=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
