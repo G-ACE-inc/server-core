@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,os,pathlib,sys\nfrom tumblrkit.account_runtime import OwnerOAuth\nfrom tumblrkit.tumblr_read import TumblrReadAdapter\nroot=pathlib.Path.home()/\".config/tgtumbler/tumblr-oauth\"\nprint(\"ACTION=TUMBLR_ACCOUNT_POST_CONSENT_READBACK\")\ntry:\n oauth=OwnerOAuth(root,None)\n status=oauth.status()\n print(\"OAUTH_STORED=\"+(\"YES\" if status.get(\"connected\") else \"NO\"))\n if not status.get(\"connected\"):\n  print(\"LIVE_IDENTITY=NOT_ATTEMPTED\")\n  print(\"LIVE_POSTS=NOT_ATTEMPTED\")\n  print(\"VERIFY=INCOMPLETE\")\n  sys.exit(43)\n selected=status.get(\"blog\")\n oauth.blog=selected\n token=oauth.refresh_if_needed()\n identity=oauth.transport.get_json(\"https://api.tumblr.com/v2/user/info\",token)\n user=identity.get(\"response\",{}).get(\"user\",{}) if isinstance(identity,dict) else {}\n blogs=user.get(\"blogs\",[]) if isinstance(user,dict) else []\n matched=isinstance(blogs,list) and any(isinstance(x,dict) and isinstance(x.get(\"name\"),str) and x.get(\"name\",\"\").removesuffix(\".tumblr.com\").lower()==selected for x in blogs)\n print(\"LIVE_IDENTITY=\"+(\"PASS\" if matched else \"FAIL\"))\n if not matched:\n  print(\"LIVE_POSTS=NOT_ATTEMPTED\")\n  print(\"VERIFY=FAIL\")\n  sys.exit(44)\n result=TumblrReadAdapter(selected,root/\"access-token\",token_provider=oauth.refresh_if_needed).perform(\"tumblr.list_posts\",selected,{})\n print(\"LIVE_POSTS=\"+(\"PASS\" if result.get(\"verified\") is True else \"FAIL\"))\n print(\"POST_COUNT=\"+str(len(result.get(\"rows\",[]))))\n print(\"VERIFY=\"+(\"PASS\" if result.get(\"verified\") is True else \"FAIL\"))\n sys.exit(0 if result.get(\"verified\") is True else 45)\nexcept Exception as e:\n print(\"ERROR_TYPE=\"+type(e).__name__)\n print(\"VERIFY=FAIL\")\n sys.exit(46)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
