@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,sys,http.client,pathlib\nsha=\"f2d273fe1cd6dbddfb6b490c320291af650e106b\"\ntoken=(pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\").read_text().strip()\ndef query(path,payload=None,auth=True):\n c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n headers={\"Content-Type\":\"application/json\"}\n if auth:headers[\"Authorization\"]=\"Bearer \"+token\n try:\n  c.request(\"POST\" if payload is not None else \"GET\",path,body=json.dumps(payload).encode() if payload is not None else None,headers=headers)\n  r=c.getresponse();status=r.status;data=r.read(300000)\n  return status,(json.loads(data) if status==200 else None)\n finally:c.close()\ndef need(condition,code,label):\n print(label+\"=\"+(\"PASS\" if condition else \"FAIL\"),flush=True)\n if not condition:sys.exit(code)\ncode,health=query(\"/healthz\")\nneed(code==200 and health.get(\"commit\")==sha,51,\"LIVE_SHA\")\ngoals=[\"巡回\",\"投稿\",\"キャンペーン\",\"紹介\",\"集計\",\"メディア\"]\ncode,data=query(\"/assistant\",{\"message\":\"\",\"goals\":goals})\nneed(code==200 and data.get(\"state\")==\"guidance\" and data.get(\"plan\",{}).get(\"goals\")==goals,52,\"SIX_GOALS\")\nneed(data.get(\"plan\",{}).get(\"not_connected_goals\")==[\"キャンペーン\",\"紹介\"] and data.get(\"executed\") is False,53,\"PLAN_HONEST\")\ncode,data=query(\"/assistant\",{\"selected_action\":\"analytics.get_summary\",\"selected_target\":\"week\"})\nneed(code==200 and data.get(\"state\")==\"completed\" and data.get(\"executed\") is True,54,\"ANALYTICS_EXECUTED\")\nneed(data.get(\"view\",{}).get(\"rows\",[{}])[0].get(\"label\")==\"確認済み候補数\",55,\"REAL_METRICS_ROWS\")\ncode,data=query(\"/assistant\",{\"selected_action\":\"tumblr.publish_draft\",\"selected_target\":\"myblog\"})\nneed(code==200 and data.get(\"state\")==\"confirmation_required\" and data.get(\"executed\") is False,56,\"PUBLISH_CONFIRM\")\ncode,data=query(\"/assistant\",{\"selected_action\":\"tumblr.delete_blog\",\"selected_target\":\"myblog\"})\nneed(code==200 and data.get(\"state\")==\"invalid_tool\" and data.get(\"executed\") is False,57,\"UNKNOWN_REJECT\")\ncode,_=query(\"/assistant\",{\"goals\":goals},auth=False)\nneed(code==401,58,\"UNAUTH_401\")\nprint(\"PROVIDER_CALLS=ZERO\")\nprint(\"ACCEPTANCE=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
