@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/be147fa17653dbf28e297f3369ed06cbf14a9aca"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ncd \"$root\"\ngit fetch -q origin fix/room-position-3-4-20261111\nnew=be147fa17653dbf28e297f3369ed06cbf14a9aca\nold=2706a88b0569b22d72a5a6bba9b417ff3772f0b5\ntest \"$(sha256sum scripts/userbot_room_smoke.py | cut -d' ' -f1)\" = \"$(git show \"$old:scripts/userbot_room_smoke.py\" | sha256sum | cut -d' ' -f1)\" || exit 71\ngit show \"$new:scripts/userbot_room_smoke.py\" > scripts/userbot_room_smoke.py\npython3 -B -c 'import ast; ast.parse(open(\"scripts/userbot_room_smoke.py\").read())'\nexport XDG_RUNTIME_DIR=\"/run/user/$(id -u)\"\nexport DBUS_SESSION_BUS_ADDRESS=\"unix:path=$XDG_RUNTIME_DIR/bus\"\nsystemctl --user stop gace-userbot-verify.service\ntrap 'systemctl --user start gace-userbot-verify.service || true' EXIT\ndeploy/.userbot-venv/bin/python scripts/userbot_room_smoke.py\necho USERBOT_ROOM_STRICT_SCREEN_E2E_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
