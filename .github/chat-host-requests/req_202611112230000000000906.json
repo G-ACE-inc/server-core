@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/8e9b785ac3dad6846295ff9a3cebfd23747a29b4"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; docker exec deploy-postgres-1 psql -U gace -d gaybbs -At -F '|' -c \"SELECT chat_id,message_thread_id,message_id FROM topic_dm_entry_pins WHERE message_thread_id=1695 AND chat_id IN (-1002373696859,-1003770334893) AND state='published' AND message_id>0\" | docker exec -i deploy-gaybbs-1 node -e 'const fs=require(\"fs\"),https=require(\"https\");const token=process.env.BOT_TOKEN_FILE?fs.readFileSync(process.env.BOT_TOKEN_FILE,\"utf8\").trim():process.env.BOT_TOKEN;let raw=\"\";process.stdin.on(\"data\",x=>raw+=x);process.stdin.on(\"end\",async()=>{const [chat,thread,msg]=raw.trim().split(\"|\").map(Number);if(thread!==1695||!Number.isSafeInteger(msg)||msg<1)process.exit(71);const body=JSON.stringify({chat_id:chat,message_id:msg,disable_notification:true});const req=https.request({hostname:\"api.telegram.org\",path:\"/bot\"+token+\"/pinChatMessage\",method:\"POST\",family:4,timeout:15000,headers:{\"Content-Type\":\"application/json\",\"Content-Length\":Buffer.byteLength(body)}},res=>{let s=\"\";res.on(\"data\",x=>s+=x);res.on(\"end\",()=>{let d={};try{d=JSON.parse(s)}catch{}const t=String(d.description||\"\").toLowerCase();const c=t.includes(\"message to pin not found\")?\"MESSAGE_NOT_FOUND\":t.includes(\"not enough rights\")?\"RIGHTS\":t.includes(\"message is not modified\")?\"UNCHANGED\":t.includes(\"message not found\")?\"MESSAGE_NOT_FOUND\":t.includes(\"chat not found\")?\"CHAT_NOT_FOUND\":t.includes(\"message can'\\''t be pinned\")?\"NOT_PINNABLE\":\"OTHER\";console.log(\"PIN_1695_RESULT=\"+(d.ok?\"PASS\":c)+\" HTTP=\"+res.statusCode+\" TG=\"+(d.error_code||0));process.exit(d.ok?0:75)})});req.on(\"error\",()=>process.exit(76));req.end(body)});' ; printf 'ROOM_ROUTE_ROWS\\n'; docker exec deploy-postgres-1 psql -U gace -d gaybbs -At -F '|' -c \"SELECT chat_id,message_thread_id,purpose,enabled,verified_at IS NOT NULL FROM posting_topics WHERE (chat_id=-1003847210571 AND message_thread_id=116) OR (chat_id=-1002373696859 AND message_thread_id=1605) OR (chat_id=-1003770334893 AND message_thread_id=4) ORDER BY chat_id,purpose\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
