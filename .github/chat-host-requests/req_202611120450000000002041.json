@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "runtime_bugfix",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -A -t -c \"SELECT count(*) AS rooms, count(*) FILTER (WHERE a.announcement_id IS NULL) AS missing_announcement, count(*) FILTER (WHERE a.status='draft') AS announcement_draft, count(*) FILTER (WHERE a.status='published') AS announcement_published FROM room_posts r LEFT JOIN announcement_posts a ON a.room_id=r.room_id WHERE r.updated_at>=now()-interval '48 hours'\" && docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -A -t -c \"SELECT coalesce(d.status,'no_delivery') AS delivery_status,count(*) FROM room_posts r JOIN announcement_posts a ON a.room_id=r.room_id LEFT JOIN posting_deliveries d ON d.source_type='announcement' AND d.source_id=a.announcement_id::text WHERE r.updated_at>=now()-interval '48 hours' GROUP BY 1 ORDER BY 1\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
