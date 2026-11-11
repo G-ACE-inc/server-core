@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "runtime_bugfix",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -A -t -c \"SELECT r.room_id,d.revision,d.step,d.data->>'stage',coalesce(t.board_key,'NONE') AS origin_board,coalesce(t.purpose,'NONE') AS origin_purpose,(SELECT count(*) FROM posting_topics p WHERE p.chat_id=s.chat_id AND p.message_thread_id=s.message_thread_id AND p.enabled AND p.verified_at IS NOT NULL AND p.purpose IN ('announcement','room')) AS original_routes,(SELECT count(*) FROM posting_topics p WHERE p.board_key=t.board_key AND p.chat_id=s.chat_id AND p.message_thread_id=CASE t.board_key WHEN 'area_bbs' THEN 116 WHEN 'video_chat' THEN 1605 WHEN 'gay_board' THEN 4 END AND p.enabled AND p.verified_at IS NOT NULL AND p.purpose IN ('announcement','room')) AS online_routes FROM room_posts r JOIN public_post_drafts d ON d.owner_user_id=r.owner_user_id AND d.module='room' AND d.revision=(substring(r.request_key from '[0-9]+$'))::int LEFT JOIN topic_dm_entry_sessions s ON s.owner_user_id=r.owner_user_id AND s.expires_at>now() LEFT JOIN posting_topics t ON t.chat_id=s.chat_id AND t.message_thread_id=s.message_thread_id AND t.enabled WHERE r.updated_at>=now()-interval '48 hours' ORDER BY r.room_id\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
