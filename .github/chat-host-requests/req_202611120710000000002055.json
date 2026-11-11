@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "runtime_bugfix",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "docker exec deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs -e \"const fs=require(\\\"node:fs\\\"),https=require(\\\"node:https\\\");const token=fs.readFileSync(\\\"/run/secrets/bot_token\\\",\\\"utf8\\\").trim();const call=(method,params={})=>new Promise((resolve,reject)=>{const u=new URL(\\\"https://api.telegram.org/bot\\\"+token+\\\"/\\\"+method);for(const [k,v] of Object.entries(params))u.searchParams.set(k,String(v));const req=https.get(u,{family:4,timeout:12000},r=>{let s=\\\"\\\";r.on(\\\"data\\\",x=>s+=x);r.on(\\\"end\\\",()=>{try{const j=JSON.parse(s);if(j.ok)resolve(j.result);else reject(new Error(\\\"BOT_API_REJECTED_\\\"+j.error_code));}catch(e){reject(e)}})});req.on(\\\"error\\\",reject);req.on(\\\"timeout\\\",()=>req.destroy(new Error(\\\"BOT_API_TIMEOUT\\\")))});(async()=>{const me=await call(\\\"getMe\\\");const chat=-1003847210571;const group=await call(\\\"getChat\\\",{chat_id:chat});const member=await call(\\\"getChatMember\\\",{chat_id:chat,user_id:me.id});console.log(\\\"BOT_GETME=PASS\\\");console.log(\\\"GROUP_TYPE=\\\"+(group.type===\\\"supergroup\\\"?\\\"SUPERGROUP\\\":\\\"INVALID\\\"));console.log(\\\"BOT_MEMBER=\\\"+((member.status===\\\"administrator\\\"||member.status===\\\"creator\\\")?\\\"ADMIN\\\":\\\"NOT_ADMIN\\\"));if(group.type!==\\\"supergroup\\\"||![\\\"administrator\\\",\\\"creator\\\"].includes(member.status))process.exit(72)})().catch(e=>{console.log(\\\"PREFLIGHT=\\\"+e.message.replace(/[^A-Z0-9_]/g,\\\"\\\"));process.exit(71)})\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
