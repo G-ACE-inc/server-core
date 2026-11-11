@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/d2590341c0745396b17e6a83764f84922cd90e01"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nfile=\"$root/deploy/gserver-compose.yaml\"\ncmp -s \"$file\" <(git -C \"$root\" show d2590341c0745396b17e6a83764f84922cd90e01:deploy/gserver-compose.yaml) || exit 61\ntest \"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\" = \"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:jitsi-450a4d6)\" || exit 62\ntest \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 63\ndocker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' deploy-gaybbs-1 | grep -q '^GAYBBS_NOTIFICATION_DELIVERY_ENABLED=enabled$' || exit 64\necho NOTIFICATION_WORKER_CONFIG_VERIFIED\necho JITSI_LIVE_IMAGE_UNCHANGED\ndocker exec deploy-postgres-1 psql -U gace -d gaybbs -Atqc \"SELECT 'notification:'||state||':'||count(*) FROM announcement_notifications GROUP BY state ORDER BY state; SELECT 'application:'||status||':'||count(*) FROM announcement_applications GROUP BY status ORDER BY status;\"\necho TRACKED_DIRTY_SCOPE_BEGIN\ngit -C \"$root\" status --porcelain --untracked-files=no"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
