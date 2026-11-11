@@ -1,0 +1,37 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,http.client,pathlib,subprocess,sys\nwant=\"3b2275285f77c26b8a626b2ac6ce4dacd26b1149\"\ndef need(ok,label):\n print(label+\"=\"+(\"PASS\" if ok else \"FAIL\"),flush=True)\n if not ok:sys.exit(42)\nkey=(pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\").read_text().strip()\ndef request(path,payload=None,authed=True):\n c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n headers={\"Content-Type\":\"application/json\"}\n if authed:headers[\"Authorization\"]=\"Bearer \"+key\n try:\n  c.request(\"POST\" if payload is not None else \"GET\",path,\n     json.dumps(payload).encode(\"utf-8\") if payload is not None else None,\n     headers)\n  r=c.getresponse();return r.status,r.read(220000)\n finally:c.close()\nhead=subprocess.run([\"git\",\"rev-parse\",\"HEAD\"],check=True,capture_output=True,text=True,timeout=8).stdout.strip()\nneed(head==want,\"CHECKOUT_EXACT_SHA\")\nstatus,data=request(\"/healthz\",authed=False)\nneed(status==200 and json.loads(data).get(\"commit\")==want,\"RUNNING_EXACT_SHA\")\nstatus,js=request(\"/app.js\")\nneed(status==200 and all(x in js for x in (\n   b\"engagement.like\",b\"engagement.reblog\",b\"engagement.follow\",\n   b\"selected_action:spec[0]\")),\"LIVE_OWNER_UI_ENGAGEMENT\")\nstatus,data=request(\"/assistant\",{\"goals\":[\"巡回\"]})\nview=json.loads(data) if status==200 else {}\nactions={r.get(\"action\") for r in view.get(\"plan\",{}).get(\"recommendations\",[])}\nneed(status==200 and all(x in actions for x in (\n   \"engagement.like\",\"engagement.reblog\",\"engagement.follow\")),\"OWNER_PLAN_ALL_ACTIONS\")\nstatus,data=request(\"/assistant\",{\"selected_action\":\"engagement.like\",\"selected_target\":\"missing:999\"})\nview=json.loads(data) if status==200 else {}\nneed(status==200 and view.get(\"state\")==\"failed\" and view.get(\"executed\") is False,\n     \"UNOBSERVED_TARGET_NO_REMOTE_CALL\")\nstatus,data=request(\"/assistant\",{\"selected_action\":\"engagement.like\",\"selected_target\":\"missing:999\"},authed=False)\nneed(status==401,\"UNAUTHENTICATED_ENGAGEMENT_DENIED\")\nfor suite in (\"test_engagement_runtime.py\",\"test_assistant.py\",\"test_app_serve.py\"):\n p=subprocess.run([sys.executable,\"-B\",\"-m\",\"unittest\",\"discover\",\"-s\",\"tests\",\"-p\",suite,\"-q\"],\n                   stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=45)\n need(p.returncode==0,\"OFFLINE_\"+suite)\nprint(\"REAL_TUMBLR_WRITES=ZERO\",flush=True)\nprint(\"ACCEPTANCE=PASS\",flush=True)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
