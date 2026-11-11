@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,sys,http.client,pathlib,subprocess,os,sqlite3\nwant=\"0f6f5bc38dab254d4df6fe1fdfc7255b2d67a9cd\"\ndef check(name,value):\n print(name+\"=\"+(\"PASS\" if value else \"FAIL\"),flush=True)\n if not value: raise RuntimeError(name)\ndef request(path,token=None):\n c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n headers={\"Authorization\":\"Bearer \"+token} if token else {}\n try:\n  c.request(\"GET\",path,headers=headers)\n  r=c.getresponse(); status=r.status; data=r.read(131072)\n  return status,data\n finally:c.close()\ntry:\n head=subprocess.run([\"git\",\"rev-parse\",\"HEAD\"],capture_output=True,text=True,check=True,timeout=8).stdout.strip()\n check(\"GIT_HEAD\",head==want)\n code,body=request(\"/healthz\")\n check(\"LIVE_HEALTH_SHA\",code==200 and json.loads(body).get(\"commit\")==want)\n for path in (\"/oauth/status\",\"/discovery/candidates\",\"/library\",\"/media/jobs\"):\n  code,_=request(path)\n  check(\"OWNER_GUARD_\"+path.split(\"/\")[1].upper(),code==401)\n key=pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\"\n check(\"OWNER_TOKEN_FILE_PRIVATE\",key.is_file() and not key.is_symlink() and key.stat().st_mode&0o077==0)\n token=key.read_text(encoding=\"utf-8\").strip()\n for path,field in ((\"/oauth/status\",\"connected\"),(\"/discovery/candidates\",\"posts\"),(\"/library\",\"items\"),(\"/media/jobs\",\"jobs\")):\n  code,body=request(path,token)\n  check(\"OWNER_API_\"+path.split(\"/\")[1].upper(),code==200 and field in json.loads(body))\n code,body=request(\"/app.js\",token)\n check(\"LATEST_CLIENT_LOADED\",code==200 and b'/oauth/status' in body and b'blog:' in body and b'\\xe6\\x8a\\x95\\xe7\\xa8\\xbf\\xe3\\x82\\x92\\xe8\\xa6\\x8b\\xe3\\x82\\x8b' in body)\n code,body=request(\"/\",token)\n check(\"LATEST_UI_LOADED\",code==200 and b'id=\"oauth-status\"' in body and b'id=\"show-library\"' in body)\n print(\"REAL_TUMBLR_API_CALLS=ZERO\")\n print(\"ACCEPTANCE=PASS\",flush=True)\nexcept Exception as exc:\n print(\"ACCEPTANCE=FAIL\")\n print(\"FAILURE_TYPE=\"+type(exc).__name__)\n sys.exit(42)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
