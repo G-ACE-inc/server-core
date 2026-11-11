@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/8e9b785ac3dad6846295ff9a3cebfd23747a29b4"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "G-ACE-inc/server-core"
+    },
+    "command": "set -eu; python3 - <<'PY'\nimport json,pathlib,re\np=pathlib.Path.home()/'.local/state/gserver-terminal/results/req_202611112200000000000903.json'\nprint('LEDGER_EXISTS='+str(p.exists()))\nif p.exists():\n d=json.loads(p.read_text())\n s=json.dumps(d,ensure_ascii=False)\n m=re.search(r'PIN_API_FAILED[^\\\\n\\\\r\"]{0,120}',s)\n print('PIN_FAILURE_MARKER='+(m.group(0) if m else 'NOT_EXTRACTED'))\nPY\nprintf 'ROOM_ROUTING_COUNT\\n'; docker exec deploy-postgres-1 psql -U gace -d gaybbs -At -F '|' -c \"SELECT chat_id,message_thread_id,purpose,enabled FROM posting_topics WHERE (chat_id=-1003847210571 AND message_thread_id=116) OR (chat_id=-1002373696859 AND message_thread_id=1605) OR (chat_id=-1003770334893 AND message_thread_id=4) ORDER BY chat_id,purpose\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
