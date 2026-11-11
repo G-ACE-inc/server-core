@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/bc7bb4ff097fffade0545c28e953e4e41a3abcbd"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; test \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 109; docker exec deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs -e 'const fs=require(\"fs\");(async()=>{const token=fs.readFileSync(process.env.BOT_TOKEN_FILE,\"utf8\").trim();const api=async(method,arg)=>{const res=await fetch(\"https://api.telegram.org/bot\"+token+\"/\"+method,{method:\"POST\",headers:{\"content-type\":\"application/json\"},body:JSON.stringify(arg),signal:AbortSignal.timeout(15000)});const j=await res.json();if(!j.ok)throw Error(\"api_failure\");return j.result};const me=await api(\"getMe\",{});if(me.username!==\"GayBBS_bot\")process.exit(110);let code=80;for(const [id,bit] of [[-1003847210571,1],[-1002373696859,2],[-1003770334893,4]]){try{const chat=await api(\"getChat\",{chat_id:id});const member=await api(\"getChatMember\",{chat_id:id,user_id:me.id});if(chat.type!==\"supergroup\"||![\"administrator\",\"creator\"].includes(member.status))code+=bit;}catch{code+=bit;}}process.exit(code)})().catch(()=>process.exit(111))' >/dev/null 2>&1"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
