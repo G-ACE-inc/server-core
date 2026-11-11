@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport os,subprocess,sys\nfrom pathlib import Path\ndef git(*args):\n p=subprocess.run([\"git\",*args],capture_output=True,text=True)\n return p.stdout.strip() if p.returncode==0 else None\nif not Path(\"scripts/tumblr_release.py\").is_file():sys.exit(81)\nif git(\"branch\",\"--show-current\")!=\"feat/initial-modular-core\":sys.exit(82)\nstatus=git(\"status\",\"--porcelain\")\nif status is None:sys.exit(83)\nif status:sys.exit(84)\ntoken=Path.home()/\".config/tgtumbler/tumblr-operation-app/tumblr-app-access-token\"\nif not token.is_file():sys.exit(85)\nroot=Path.cwd().resolve()\nmatches=[]\nfor item in Path(\"/proc\").iterdir():\n if not item.name.isdigit():continue\n try:\n  args=(item/\"cmdline\").read_bytes().split(b\"\\0\")\n  if b\"tumblrkit.appserve\" not in args or b\"serve\" not in args:continue\n  if (item/\"cwd\").resolve()==root:matches.append(item.name)\n except (OSError,PermissionError,ValueError):pass\nif len(matches)!=1:sys.exit(86)\nprint(\"TUMBLR_RELEASE_PREFLIGHT=PASS\")\nprint(\"CURRENT_HEAD=\"+(git(\"rev-parse\",\"HEAD\") or \"UNKNOWN\"))\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
