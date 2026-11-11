@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,sys,http.client,pathlib,subprocess\nwant=\"fd9d67c4b38176edc25295889c157754deb900fb\"\ndef check(label,value):\n print(label+\"=\"+(\"PASS\" if value else \"FAIL\"),flush=True)\n if not value:raise RuntimeError(label)\ndef fetch(path,token=\"\"):\n con=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n try:\n  con.request(\"GET\",path,headers={\"Authorization\":\"Bearer \"+token} if token else {})\n  result=con.getresponse()\n  return result.status,result.read(200000)\n finally:con.close()\ntry:\n actual=subprocess.run([\"git\",\"rev-parse\",\"HEAD\"],check=True,capture_output=True,text=True,timeout=8).stdout.strip()\n check(\"CHECKOUT_SHA\",actual==want)\n status,body=fetch(\"/healthz\")\n check(\"LIVE_SHA\",status==200 and json.loads(body).get(\"commit\")==want)\n token=(pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\").read_text(encoding=\"utf-8\").strip()\n for endpoint in (\"/oauth/status\",\"/discovery/candidates\",\"/library\"):\n  status,_=fetch(endpoint);check(\"UNAUTH_\"+endpoint,status==401)\n  status,body=fetch(endpoint,token);check(\"AUTH_\"+endpoint,status==200 and isinstance(json.loads(body),dict))\n status,body=fetch(\"/app.js\",token)\n check(\"RELATED_TAG_UI\",status==200 and b'observed_cooccurring_tags' in body and b'related_tags' in body)\n status,body=fetch(\"/\",token)\n check(\"OWNER_HOME\",status==200 and b'id=\"chat-form\"' in body)\n check(\"NO_EXTERNAL_PROVIDER_TEST\",True)\n print(\"ACCEPTANCE=PASS\",flush=True)\nexcept Exception as e:\n print(\"ACCEPTANCE=FAIL:\"+type(e).__name__,flush=True)\n sys.exit(42)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
