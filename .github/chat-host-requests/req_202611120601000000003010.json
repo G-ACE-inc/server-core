@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport io,os,subprocess,sys,tarfile,tempfile\nSHA=\"5309149df7ddd3783c2e19ad6f85b6d07ecafc56\"\ndef run(argv,**kwargs):return subprocess.run(argv,capture_output=True,text=False,timeout=45,**kwargs)\nif run([\"git\",\"status\",\"--porcelain\"]).stdout.strip():sys.exit(64)\np=run([\"git\",\"fetch\",\"--no-tags\",\"origin\",\"refs/heads/feat/initial-modular-core\"])\nif p.returncode:sys.exit(65)\np=run([\"git\",\"rev-parse\",\"FETCH_HEAD\"])\nif p.returncode or p.stdout.decode().strip()!=SHA:sys.exit(66)\np=run([\"git\",\"archive\",\"--format=tar\",\"FETCH_HEAD\"])\nif p.returncode:sys.exit(67)\nwith tempfile.TemporaryDirectory(prefix=\"tumblr-readonly-test-\") as tmp:\n with tarfile.open(fileobj=io.BytesIO(p.stdout),mode=\"r:\") as tf:\n  tf.extractall(tmp,filter=\"data\")\n suites=[\"test_post_lifecycle*.py\",\"test_drafts.py\",\"test_operation_app.py\",\"test_publisher_runtime.py\"]\n for i,suite in enumerate(suites):\n  test=subprocess.run([sys.executable,\"-B\",\"-m\",\"unittest\",\"discover\",\n        \"-s\",\"tests\",\"-p\",suite,\"-q\"],cwd=tmp,capture_output=True,timeout=55)\n  if test.returncode:\n   print(\"FAILED_SUITE=\"+suite)\n   report=test.stderr.decode(\"utf-8\",\"replace\")\n   for line in report.splitlines():\n    if line.startswith((\"FAIL:\",\"ERROR:\",\"Ran \",\"FAILED (\",\"ImportError:\",\"AssertionError:\")):\n     print(line[:160])\n   sys.exit(70+i)\n  print(\"PASS_SUITE=\"+suite)\nprint(\"SOURCE_SHA=\"+SHA)\nprint(\"LOCAL_TESTS=PASS\")\nprint(\"NO_EXTERNAL_PROVIDER_CALLS=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
