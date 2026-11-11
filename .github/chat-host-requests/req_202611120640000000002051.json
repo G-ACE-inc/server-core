@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "runtime_bugfix",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -A -t -c \"SELECT coalesce(s.chat_id::text,'none') AS pinned_chat,coalesce(m.feature,'none') AS menu_feature,coalesce(d.data->>'destinationExplicit','none') AS explicit_flag,coalesce(d.data->>'selectedTopicId','none') AS saved_topic,CASE WHEN s.chat_id IS NOT NULL AND s.expires_at>now() THEN 'active' ELSE 'inactive' END AS pinned_session,coalesce((SELECT count(*)::text FROM posting_deliveries x JOIN announcement_posts a ON a.announcement_id::text=x.source_id AND x.source_type='announcement' JOIN room_posts r ON r.room_id=a.room_id WHERE r.owner_user_id=d.owner_user_id),'0') AS linked_deliveries FROM public_post_drafts d LEFT JOIN topic_dm_entry_sessions s ON s.owner_user_id=d.owner_user_id LEFT JOIN board_menu_sessions m ON m.owner_user_id=d.owner_user_id WHERE d.module='room' AND d.step='preview'\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
