@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,sys,http.client,subprocess,pathlib\nwant=\"a45abd68301b4b3b16f3a86f1ed080cf2f80cb8b\"\ndef check(label,condition):\n print(label+\"=\"+(\"PASS\" if condition else \"FAIL\"),flush=True)\n if not condition:raise RuntimeError(label)\ndef get(path,token=None):\n con=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n try:\n  con.request(\"GET\",path,headers={\"Authorization\":\"Bearer \"+token} if token else {})\n  r=con.getresponse()\n  return r.status,r.read(200000)\n finally:con.close()\ntry:\n head=subprocess.run([\"git\",\"rev-parse\",\"HEAD\"],capture_output=True,text=True,check=True,timeout=8).stdout.strip()\n check(\"CHECKOUT_SHA\",head==want)\n status,body=get(\"/healthz\")\n check(\"LIVE_APP_SHA\",status==200 and json.loads(body).get(\"commit\")==want)\n owner=(pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\").read_text(encoding=\"utf-8\").strip()\n for name in (\"oauth/status\",\"discovery/candidates\",\"library\",\"media/jobs\"):\n  st,_=get(\"/\"+name);check(\"UNAUTH_\"+name,st==401)\n  st,body=get(\"/\"+name,owner);check(\"OWNER_\"+name,st==200 and isinstance(json.loads(body),dict))\n for suite in (\"test_library.py\",\"test_media_fallback.py\"):\n  proc=subprocess.run([sys.executable,\"-B\",\"-m\",\"unittest\",\"discover\",\"-s\",\"tests\",\"-p\",suite,\"-q\"],capture_output=True,timeout=35)\n  check(\"OFFLINE_\"+suite,proc.returncode==0)\n print(\"TUMBLR_PROVIDER_CALLS=ZERO\")\n print(\"ACCEPTANCE=PASS\")\nexcept Exception as exc:\n print(\"ACCEPTANCE=FAIL:\"+type(exc).__name__)\n sys.exit(42)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
