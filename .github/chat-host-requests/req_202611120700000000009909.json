@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/d2590341c0745396b17e6a83764f84922cd90e01"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nfile=\"$root/deploy/gserver-compose.yaml\"\nsha=d2590341c0745396b17e6a83764f84922cd90e01\ntest \"$(git -C \"$root\" rev-parse HEAD)\" = 57955cd68bb39626ebbca38d44b7bb034da6dc05 || exit 71\ntest \"$(git -C \"$root\" branch --show-current)\" = integrate/profile-menu-merge-online-20261108 || exit 72\ntest -z \"$(git -C \"$root\" status --porcelain --untracked-files=no)\" || exit 73\ngit -C \"$root\" fetch -q origin fix/room-position-3-4-20261111 || exit 74\nold=$(mktemp); next=$(mktemp)\ntrap 'rm -f \"$old\" \"$next\"' EXIT\ngit -C \"$root\" show 450a4d69691a11529f0e3850b8575bf513247ddc:deploy/gserver-compose.yaml > \"$old\"\ngit -C \"$root\" show \"$sha\":deploy/gserver-compose.yaml > \"$next\"\ncmp -s \"$old\" \"$file\" || exit 75\npython3 - \"$old\" \"$next\" <<'PY'\nimport sys\nfrom pathlib import Path\na=Path(sys.argv[1]).read_text()\nb=Path(sys.argv[2]).read_text()\nassert b==a.replace('      GAYBBS_TOPIC_BOARD_RELEASE: enabled\\n','      GAYBBS_TOPIC_BOARD_RELEASE: enabled\\n      GAYBBS_NOTIFICATION_DELIVERY_ENABLED: enabled\\n',1)\nPY\ntest \"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\" = \"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:jitsi-450a4d6)\" || exit 76\ntest \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 77\ncp \"$next\" \"$file\" || exit 78\nfailure=0\nif ! docker compose -p deploy -f \"$file\" --project-directory \"$root/deploy\" config -q; then failure=79\nelif ! docker compose -p deploy -f \"$file\" --project-directory \"$root/deploy\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1; then failure=80\nelse\n i=0\n failure=81\n while test \"$i\" -lt 15; do\n  if test \"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1 2>/dev/null)\" != \"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:jitsi-450a4d6)\" || test \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1 2>/dev/null)\" != true; then failure=82; break; fi\n  if docker logs --since 3m deploy-gaybbs-1 2>&1 | grep -q 'GAYBBS_BOT_READY bot_id=8872855519'; then\n   if test \"$(docker inspect --format '{{.RestartCount}}' deploy-gaybbs-1)\" = 0 && docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' deploy-gaybbs-1 | grep -q '^GAYBBS_NOTIFICATION_DELIVERY_ENABLED=enabled$'; then failure=0; break; fi\n   failure=83; break\n  fi\n  i=$((i+1)); sleep 3\n done\nfi\nif test \"$failure\" -ne 0; then\n cp \"$old\" \"$file\" || exit 90\n docker compose -p deploy -f \"$file\" --project-directory \"$root/deploy\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || exit 91\n test \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 92\n echo NOTIFICATION_ROLLED_BACK\n exit \"$failure\"\nfi\necho NOTIFICATION_WORKER_LIVE_PASS\necho JITSI_IMAGE_PRESERVED_PASS\necho COMPOSE_NOTIFICATION_SINGLE_LINE_APPLIED\ndocker exec deploy-postgres-1 psql -U gace -d gaybbs -Atqc \"SELECT 'notification:'||state||':'||count(*) FROM announcement_notifications GROUP BY state ORDER BY state; SELECT 'application:'||status||':'||count(*) FROM announcement_applications GROUP BY status ORDER BY status;\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
