@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/7b9cf44f4c6279cfe6c2525afac94971ed88865f"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nw=\"$root/.worktrees/issue7-room-build-classify-7b9cf44\"\ntest ! -e \"$w\" || exit 73\ngit -C \"$root\" cat-file -e 7b9cf44f4c6279cfe6c2525afac94971ed88865f^{commit} || exit 75\ngit -C \"$root\" worktree add --detach \"$w\" 7b9cf44f4c6279cfe6c2525afac94971ed88865f >/dev/null 2>&1 || exit 76\ncleanup(){ git -C \"$root\" worktree remove --force \"$w\" >/dev/null 2>&1 || :; }\ntrap cleanup EXIT\ncd \"$w\"\nlog=$(mktemp)\ntrap 'rm -f \"$log\"; cleanup' EXIT\nif docker build --network=host --pull=false --progress=plain --target build -f artifacts/bot/deploy/Dockerfile.gaybbs -t gace-tgtumbler-gaybbs:roommig-build-7b9cf44 . >\"$log\" 2>&1; then exit 0; fi\nif grep -q 'src/db/migrate.ts:' \"$log\"; then exit 81; fi\nif grep -qi 'unexpected end of file' \"$log\"; then exit 82; fi\nif grep -qi 'unexpected .*token' \"$log\"; then exit 83; fi\nif grep -qi 'Could not resolve' \"$log\"; then exit 84; fi\nif grep -qi 'ERR_PNPM' \"$log\"; then exit 85; fi\nif grep -qi 'no space left on device\\|ENOSPC' \"$log\"; then exit 86; fi\nif grep -qi 'ERROR.*network\\|connection reset\\|timeout' \"$log\"; then exit 87; fi\nif grep -qi 'error:.*migrate' \"$log\"; then exit 88; fi\nif grep -qi 'failed to solve' \"$log\"; then exit 89; fi\nexit 90"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
