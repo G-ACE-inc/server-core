@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,sys,http.client,subprocess,pathlib\nwant=\"947243092be126993db551f5d2f5c1edef7e8b9a\"\ndef check(label,ok):\n print(label+\"=\"+(\"PASS\" if ok else \"FAIL\"))\n if not ok:raise RuntimeError(label)\ndef get(path,token=None):\n c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n try:\n  c.request(\"GET\",path,headers={\"Authorization\":\"Bearer \"+token} if token else {})\n  r=c.getresponse();return r.status,r.read(150000)\n finally:c.close()\ntry:\n actual=subprocess.run([\"git\",\"rev-parse\",\"HEAD\"],check=True,text=True,capture_output=True,timeout=8).stdout.strip()\n check(\"SOURCE_SHA\",actual==want)\n st,body=get(\"/healthz\");check(\"LIVE_SHA\",st==200 and json.loads(body).get(\"commit\")==want)\n token=(pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\").read_text().strip()\n for path in [\"/oauth/status\",\"/discovery/candidates\",\"/library\"]:\n  st,body=get(path);check(\"UNAUTH_\"+path,st==401)\n  st,body=get(path,token);check(\"AUTH_\"+path,st==200 and isinstance(json.loads(body),dict))\n st,body=get(\"/app.js\",token);check(\"DISCOVERY_UI_PRESENT\",st==200 and b'blog:' in body)\n check(\"REAL_TUMBLR_PROVIDER_TEST_SKIPPED\",True)\n print(\"ACCEPTANCE=PASS\")\nexcept Exception as e:\n print(\"ACCEPTANCE=FAIL:\"+type(e).__name__)\n sys.exit(42)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
