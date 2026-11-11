@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nq(){ docker exec deploy-postgres-1 psql -U gace -d gaybbs -Atqc \"$1\" 2>/dev/null; }\nexist=$(q \"SELECT CASE WHEN to_regclass('public.room_join_links') IS NULL THEN 0 ELSE 1 END\") || exit 70\ntest \"$exist\" = 1 || exit 80\nlk=$(q \"SELECT count(*) FROM room_join_links x JOIN room_posts r ON x.room_id=r.room_id WHERE r.updated_at >= '2026-11-11 14:45:00+00' AND r.updated_at < '2026-11-11 15:25:00+00'\") || exit 71\ntest \"$lk\" -gt 0 || exit 81\necho ROOM_JOIN_LINK_ROWS_EXIST"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
