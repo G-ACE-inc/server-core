@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,http.client,pathlib,subprocess,sys\nsha=\"9cc7726601401f20306cd4f355bc1dff3f3d3cfd\"\ntoken=(pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\").read_text().strip()\ndef check(k,ok):\n print(k+\"=\"+(\"PASS\" if ok else \"FAIL\"),flush=True)\n if not ok:sys.exit(42)\ndef call(path,payload=None,auth=True):\n c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n headers={\"Content-Type\":\"application/json\"}\n if auth:headers[\"Authorization\"]=\"Bearer \"+token\n try:\n  c.request(\"POST\" if payload is not None else \"GET\",path,\n    body=json.dumps(payload).encode() if payload is not None else None,headers=headers)\n  r=c.getresponse();raw=r.read(2000000)\n  return r.status,(json.loads(raw) if r.status==200 else None),raw\n finally:c.close()\nlocal=subprocess.run([\"git\",\"rev-parse\",\"HEAD\"],capture_output=True,text=True,timeout=8,check=True).stdout.strip()\ncheck(\"SOURCE_SHA\",local==sha)\nstatus,data,_=call(\"/healthz\")\ncheck(\"LIVE_SHA\",status==200 and data.get(\"commit\")==sha)\nstatus,data,_=call(\"/library?limit=1\")\ncheck(\"LIBRARY_OWNER_READ\",status==200 and data.get(\"verified\") is True)\nitems=data.get(\"items\",[])\nif items:\n  ident=items[0][\"candidate_id\"]\n  status,selected,_=call(\"/library/selected\",{\"candidate_ids\":[ident]})\n  check(\"CROSS_PAGE_EXACT_SELECTION\",status==200 and selected.get(\"verified\") is True and selected[\"items\"][0][\"candidate_id\"]==ident)\nelse:\n  status,_,_=call(\"/library/selected\",{\"candidate_ids\":[\"absent:123\"]})\n  check(\"SELECTION_ROUTE_SAFE_EMPTY_DB\",status==400)\nstatus,_,_=call(\"/library/selected\",{\"candidate_ids\":[\"absent:123\"]},auth=False)\ncheck(\"SELECTION_REJECTS_UNAUTHORIZED\",status==401)\nstatus,_,js=call(\"/app.js\")\ncheck(\"LIVE_GALLERY_AND_POST_PAGING\",status==200 and b'references.slice(offset,offset+50)' in js and b'view.action===\"tumblr.list_posts\"' in js and b'/library/selected' in js)\nfor suite in (\"test_tumblr_read.py\",\"test_library.py\",\"test_app_serve.py\",\"test_operation_app.py\"):\n p=subprocess.run([sys.executable,\"-B\",\"-m\",\"unittest\",\"discover\",\"-s\",\"tests\",\"-p\",suite,\"-q\"],capture_output=True,timeout=45)\n check(\"OFFLINE_\"+suite,p.returncode==0)\nprint(\"TUMBLR_PROVIDER_CALLS=ZERO\")\nprint(\"ACCEPTANCE=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
