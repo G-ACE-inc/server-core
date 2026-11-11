@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "bounded",
+    "design_status": "ADOPTED",
+    "design_adoption": "CONFIRMED",
+    "implementation_context": "existing create-videobot feature branch",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/2"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu; before=$(git rev-parse HEAD); branch=$(git branch --show-current); git fetch --no-tags origin refs/heads/feat/assistant-ai-and-sales-core:refs/remotes/origin/feat/assistant-ai-and-sales-core; test \"$(git rev-parse HEAD)\" = \"$before\" || exit 91; test \"$(git branch --show-current)\" = \"$branch\" || exit 92; git cat-file -e refs/remotes/origin/feat/assistant-ai-and-sales-core^{commit}; echo FEATURE_REF_FETCHED_CURRENT_CHECKOUT_PRESERVED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
