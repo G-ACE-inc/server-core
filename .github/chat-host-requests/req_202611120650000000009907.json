@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/d2590341c0745396b17e6a83764f84922cd90e01"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(git -C \"$root\" rev-parse --show-toplevel)\" = \"$root\" || exit 71\nprintf 'ROOT_BRANCH='; git -C \"$root\" branch --show-current\nprintf 'ROOT_HEAD='; git -C \"$root\" rev-parse HEAD\nprintf 'ROOT_TRACKED_DIRTY='; if test -z \"$(git -C \"$root\" status --porcelain --untracked-files=no)\"; then echo NO; else echo YES; fi\ngit -C \"$root\" fetch -q origin fix/room-position-3-4-20261111\nold=$(mktemp); new=$(mktemp);trap 'rm -f \"$old\" \"$new\"' EXIT\ngit -C \"$root\" show 450a4d69691a11529f0e3850b8575bf513247ddc:deploy/gserver-compose.yaml > \"$old\"\ngit -C \"$root\" show d2590341c0745396b17e6a83764f84922cd90e01:deploy/gserver-compose.yaml > \"$new\"\nprintf 'ROOT_COMPOSE_EQUALS_450='; if cmp -s \"$old\" \"$root/deploy/gserver-compose.yaml\"; then echo YES; else echo NO; fi\nprintf 'COMPOSE_PATCH_ONLY_FLAG='; if diff -u \"$old\" \"$new\" | grep -q '^+      GAYBBS_NOTIFICATION_DELIVERY_ENABLED: enabled$'; then echo YES; else echo NO; fi\nprintf 'LIVE_NOTIFICATION_ENV='; if docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' deploy-gaybbs-1 | grep -q '^GAYBBS_NOTIFICATION_DELIVERY_ENABLED=enabled$'; then echo ENABLED; else echo DISABLED; fi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
