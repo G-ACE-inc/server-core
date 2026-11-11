@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/2192d3c316ba6d5d8431a956d963a423c8d2a55a"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; docker exec deploy-gaybbs-1 node -e 'const pg=require(\"pg\"),c=require(\"crypto\"),fs=require(\"fs\"),https=require(\"https\");const db=new pg.Client({connectionString:process.env.DATABASE_URL});const token=process.env.BOT_TOKEN_FILE?fs.readFileSync(process.env.BOT_TOKEN_FILE,\"utf8\").trim():process.env.BOT_TOKEN;const api=(method,data)=>new Promise((resolve,reject)=>{const body=JSON.stringify(data);const q=https.request({hostname:\"api.telegram.org\",path:\"/bot\"+token+\"/\"+method,method:\"POST\",family:4,timeout:15000,headers:{\"Content-Type\":\"application/json\",\"Content-Length\":Buffer.byteLength(body)}},r=>{let s=\"\";r.on(\"data\",v=>s+=v);r.on(\"end\",()=>{try{resolve(JSON.parse(s))}catch{reject(Error(\"TG_PARSE\"))}})});q.on(\"error\",reject);q.on(\"timeout\",()=>q.destroy(Error(\"TG_TIMEOUT\")));q.end(body)});(async()=>{await db.connect();const result=await db.query(\"SELECT p.chat_id,p.message_thread_id,p.message_id,p.title FROM topic_dm_entry_pins p JOIN posting_topics t ON t.chat_id=p.chat_id AND t.message_thread_id=p.message_thread_id WHERE p.message_thread_id=1695 AND p.chat_id IN (-1002373696859,-1003770334893) AND p.state='\\''published'\\'' AND p.pinned=true AND p.message_id>0 AND p.token_hash IS NOT NULL AND t.enabled=true AND t.purpose='\\''announcement'\\'' AND t.verified_at IS NOT NULL\");if(result.rows.length!==1)throw Error(\"TARGET_NOT_UNIQUE\");const old=result.rows[0],chat=Number(old.chat_id),oldid=Number(old.message_id),thread=Number(old.message_thread_id);const before=await api(\"pinChatMessage\",{chat_id:chat,message_id:oldid,disable_notification:true});if(before.ok)throw Error(\"OLD_MESSAGE_STILL_EXISTS\");if(before.error_code!==400||!String(before.description).toLowerCase().includes(\"message to pin not found\"))throw Error(\"OLD_MESSAGE_NOT_PROVEN_DELETED\");const t=c.randomBytes(24).toString(\"base64url\"),hash=c.createHash(\"sha256\").update(\"GayBBS-menu-v1:\").update(t).digest(\"hex\");const claim=await db.query(\"UPDATE topic_dm_entry_pins SET state='\\''publishing'\\'',pinned=false,message_id=NULL,token_hash=$3,updated_at=NOW() WHERE chat_id=$1 AND message_thread_id=1695 AND message_id=$2 AND state='\\''published'\\'' AND pinned=true RETURNING chat_id\",[chat,oldid,hash]);if(claim.rowCount!==1)throw Error(\"CONCURRENT_CHANGE\");const sent=await api(\"sendMessage\",{chat_id:chat,message_thread_id:thread,text:\"📝 このトピックに投稿するには、下のボタンからBotのDMへ移動してください。\",reply_markup:{inline_keyboard:[[{text:\"📝 投稿メニューを開く\",url:\"https://t.me/GayBBS_bot?start=p_\"+t}]]}});if(!sent.ok||!Number.isSafeInteger(sent.result?.message_id))throw Error(\"SEND_UNCERTAIN_RECONCILE_REQUIRED\");const messageId=sent.result.message_id;await db.query(\"UPDATE topic_dm_entry_pins SET message_id=$3,updated_at=NOW() WHERE chat_id=$1 AND message_thread_id=$2 AND state='\\''publishing'\\'' AND token_hash=$4\",[chat,thread,messageId,hash]);const pinned=await api(\"pinChatMessage\",{chat_id:chat,message_id:messageId,disable_notification:true});if(!pinned.ok)throw Error(\"NEW_PIN_UNCERTAIN_RECONCILE_REQUIRED\");const done=await db.query(\"UPDATE topic_dm_entry_pins SET state='\\''published'\\'',pinned=true,updated_at=NOW() WHERE chat_id=$1 AND message_thread_id=$2 AND message_id=$3 AND token_hash=$4 AND state='\\''publishing'\\'' RETURNING message_id\",[chat,thread,messageId,hash]);if(done.rowCount!==1)throw Error(\"POST_PIN_DB_RECONCILE_REQUIRED\");console.log(\"TOPIC_1695_REPAIRED=YES OLD_ID=\"+oldid+\" NEW_ID=\"+messageId)} )().catch(e=>{console.error(\"REPAIR_FAILED=\"+e.message);process.exitCode=1}).finally(()=>db.end());'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
