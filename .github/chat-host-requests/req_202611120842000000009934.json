@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nexport XDG_RUNTIME_DIR=\"/run/user/$(id -u)\"\nexport DBUS_SESSION_BUS_ADDRESS=\"unix:path=$XDG_RUNTIME_DIR/bus\"\ntest -f \"$root/deploy/secrets/userbot_verify.session\"\nsystemctl --user is-active --quiet gace-userbot-verify.service\nsystemctl --user stop gace-userbot-verify.service\ntrap 'systemctl --user start gace-userbot-verify.service || true' EXIT\ncd \"$root\"\ndeploy/.userbot-venv/bin/python - <<'PY'\nimport asyncio\nfrom telethon import TelegramClient\nfrom scripts.userbot_session import load_credentials, SESSION_BASE\nasync def main():\n    api_id,api_hash=load_credentials()\n    async with TelegramClient(str(SESSION_BASE),api_id,api_hash,auto_reconnect=True) as c:\n        if not await c.is_user_authorized():\n            raise RuntimeError(\"SESSION_NOT_AUTHORIZED\")\n        bot=await c.get_entity(\"GayBBS_bot\")\n        print(\"USERBOT_AUTHORIZED_PASS\")\n        print(\"TARGET_IS_BOT=\"+str(bool(bot.bot)))\n        before=(await c.get_messages(bot,limit=1))\n        cursor=before[0].id if before else 0\n        await c.send_message(bot,\"/start\")\n        for _ in range(12):\n            await asyncio.sleep(1)\n            msgs=await c.get_messages(bot,limit=8)\n            replies=[m for m in msgs if m.id>cursor and not m.out]\n            if replies:break\n        else:raise RuntimeError(\"START_RESPONSE_NOT_RECEIVED\")\n        latest=sorted(replies,key=lambda m:m.id)[-1]\n        buttons=[b.text for row in (latest.buttons or []) for b in row]\n        print(\"BOT_START_RESPONSE_PASS\")\n        print(\"BOT_START_BUTTON_COUNT=\"+str(len(buttons)))\n        print(\"BOT_START_BUTTON_LABELS=\"+\",\".join(buttons))\nasyncio.run(main())\nPY\necho USERBOT_REAL_START_SMOKE_DONE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
