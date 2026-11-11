@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "runtime_bugfix",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nprintf 'SOURCE_SHA='; git rev-parse HEAD\nprintf 'SOURCE_PATH='; pwd\nprintf 'BRANCH='; git branch --show-current\nprintf 'RUNNING_GAYBBS='; docker ps --format '{{.Names}}' | grep -E '^deploy-gaybbs-1$' || true\nprintf 'POSTGRES='; docker ps --format '{{.Names}}' | grep -E '(postgres|db)' | head -3 || true\nprintf 'ISSUE_SIGNALS='\ndocker logs --since '2026-11-11T14:40:00Z' --until '2026-11-11T15:15:00Z' deploy-gaybbs-1 2>&1 | grep -E 'ROOM_RECONCILE_FAILED|POST_PUBLICATION_FAILED|POST_SENT_SOURCE_SYNC_NEEDS_RECONCILE|PUBLISH_NEEDS_RECONCILE' | sed -E 's/(owner|user|chat|source|message|room)[_A-Za-z]*[=:][^, }]+/\\1=REDACTED/g' | tail -12 || true"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
