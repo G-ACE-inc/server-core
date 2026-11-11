@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B -c \"import pathlib,sys; root=pathlib.Path.cwd().resolve(); target=\\\"dc11d7e3b6e94ea0806dd6879f9e4eceefa7ee26\\\"; import subprocess; sha=subprocess.run([\\\"git\\\",\\\"rev-parse\\\",\\\"HEAD\\\"],capture_output=True,text=True).stdout.strip(); entries=[]\\nfor p in pathlib.Path(\\\"/proc\\\").iterdir():\\n if not p.name.isdigit(): continue\\n try:\\n  args=[v.decode(\\\"utf-8\\\",\\\"replace\\\") for v in (p/\\\"cmdline\\\").read_bytes().split(b\\\"\\\\\\\\0\\\") if v]\\n  if \\\"tumblrkit.appserve\\\" not in args or \\\"serve\\\" not in args or (p/\\\"cwd\\\").resolve()!=root: continue\\n  port=next((args[i+1] for i,v in enumerate(args[:-1]) if v==\\\"--port\\\"),None)\\n  port=port or next((v.split(\\\"=\\\",1)[1] for v in args if v.startswith(\\\"--port=\\\")),None)\\n  entries.append(port)\\n except (OSError,ValueError,PermissionError): pass\\nif sha!=target: sys.exit(80)\\nprod=sum(p==\\\"8081\\\" for p in entries); stage=sum(p==\\\"8082\\\" for p in entries); unknown=sum(p is None or p not in (\\\"8081\\\",\\\"8082\\\") for p in entries); sys.exit(60+min(prod,3)*8+min(stage,3)*2+min(unknown,1))\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
