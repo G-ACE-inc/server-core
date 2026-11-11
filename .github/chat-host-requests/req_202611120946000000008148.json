@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "G-ACE-inc/server-core"
+    },
+    "command": "python3 -B -c \"from scripts.servercore_host_output_export import load_record; import sys; r=load_record(\\\"req_202611120933000000008147\\\",\\\"/home/gace/.local/state/gserver-terminal/results\\\"); s=r.get(\\\"stdout\\\",\\\"\\\")+\\\" \\\"+r.get(\\\"stderr\\\",\\\"\\\"); keys=[\\\"OWNER_TOKEN_FILE_MISSING\\\",\\\"OWNER_TOKEN_FILE_PERMISSIONS\\\",\\\"DIRTY_CHECKOUT\\\",\\\"UNEXPECTED_BRANCH\\\",\\\"OWNER_PROCESS_NOT_UNIQUE\\\",\\\"SOURCE_SHA_CHANGED\\\",\\\"SOURCE_SHA_MISMATCH\\\",\\\"SOURCE_GIT_FAILED\\\",\\\"STAGING_NOT_RUNNING\\\",\\\"REVISION_NOT_LIVE\\\",\\\"EXISTING_PRODUCTION_NOT_RUNNING\\\",\\\"PRODUCTION_NOT_RUNNING\\\",\\\"UNKNOWN_PRODUCTION_LISTENER\\\",\\\"STAGING_PORT_IN_USE\\\",\\\"OWNER_FORM_SESSION_REJECTED\\\",\\\"ATTACHMENT_UPLOAD_FAILED\\\",\\\"PRODUCTION_PORT_NOT_RELEASED\\\",\\\"PRODUCTION_NOT_RUNNING\\\",\\\"DRAFT_STORE_UNAVAILABLE\\\",\\\"OWNER_LOGIN_FORM_NOT_LIVE\\\",\\\"UNEXPECTED_BRANCH\\\"]; sys.exit(next((40+i for i,k in enumerate(keys) if \\\"ERROR_CODE=\\\"+k in s),80 if \\\"TUMBLR_RELEASE=FAIL\\\" in s else 81))\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
