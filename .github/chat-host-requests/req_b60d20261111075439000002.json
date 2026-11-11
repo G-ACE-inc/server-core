@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport http.client,json,subprocess,pathlib,unittest,sys\nprint(\"ACTION=MEDIA_SAVE_INDEX_FALLBACK_INDEPENDENT_E2E\")\ntry:\n root=pathlib.Path.cwd()\n expected=\"a003e210d6f5c866118fada3bd356e81d1d92ea0\"\n conn=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n conn.request(\"GET\",\"/healthz\")\n response=conn.getresponse();health=json.loads(response.read(16000));status=response.status;conn.close()\n assert status==200 and health.get(\"commit\")==expected,\"LIVE_SHA_MISMATCH\"\n for method,path in ((\"GET\",\"/media/jobs\"),(\"POST\",\"/media/save\"),(\"GET\",\"/media/file/\"+\"0\"*32)):\n  conn=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n  conn.request(method,path);response=conn.getresponse();code=response.status;response.read(1000);conn.close()\n  assert code==401,\"OWNER_GUARD_FAILED\"\n bin=root/\"dist\"/\"data\"/\"media-extractors\"/\"bin\"\n for tool,version in ((\"gallery-dl\",\"1.32.19\"),(\"yt-dlp\",\"2026.10.26\")):\n  p=bin/tool\n  assert p.is_file() and p.stat().st_mode & 0o077==0,\"PRIVATE_TOOL_MISSING\"\n  check=subprocess.run([str(p),\"--version\"],capture_output=True,timeout=15)\n  assert check.returncode==0 and version.encode() in check.stdout,\"PINNED_VERSION_MISMATCH\"\n js=(root/\"app\"/\"app.js\").read_text()\n assert \"media[cursor].originalIndex\" in js and \"media_index:media[cursor].originalIndex\" in js,\"MEDIA_INDEX_MAPPING_MISSING\"\n suite=unittest.defaultTestLoader.discover(\"tests\",pattern=\"test_*.py\")\n with open(\"/dev/null\",\"w\") as out:\n  result=unittest.TextTestRunner(stream=out).run(suite)\n assert result.wasSuccessful() and result.testsRun>=153,\"OFFLINE_TESTS_FAILED\"\n print(\"LIVE_SHA=PASS\")\n print(\"AUTH_GUARDS=PASS\")\n print(\"EXTRACTORS=PASS\")\n print(\"ORIGINAL_INDEX_MAPPING=PASS\")\n print(\"TEST_COUNT=\"+str(result.testsRun))\n print(\"PROVIDER_TRAFFIC=NONE\")\n print(\"VERIFY=PASS\")\nexcept Exception as exc:\n print(\"VERIFY=FAIL\")\n print(\"ERROR_TYPE=\"+type(exc).__name__)\n sys.exit(42)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
