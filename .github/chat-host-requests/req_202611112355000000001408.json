@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/6864f485c9c40a416b817ff631af0046b9151d3c"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; q(){ docker exec deploy-postgres-1 psql -U gace -d gaybbs -Atqc \"$1\" 2>/dev/null; }; a=$(q \"SELECT count(*) FROM generate_series(49,104) t(id) LEFT JOIN posting_topics p ON p.message_thread_id=t.id AND p.chat_id=-1003847210571 AND p.board_key='area_bbs' AND p.purpose='announcement' AND p.enabled=TRUE AND p.verified_at IS NOT NULL WHERE p.topic_id IS NULL\") || exit 71; b=$(q \"SELECT count(*) FROM generate_series(49,104) t(id) LEFT JOIN topic_dm_entry_pins p ON p.message_thread_id=t.id AND p.chat_id=-1003847210571 AND p.state='published' AND p.pinned=TRUE AND p.message_id>0 WHERE p.message_thread_id IS NULL\") || exit 72; test \"$a\" -le 9 && test \"$b\" -le 9 || exit 73; exit $((100+10*a+b))"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
