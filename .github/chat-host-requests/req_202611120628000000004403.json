@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport os,socket,sys\nfrom pathlib import Path\nroot=Path.cwd().resolve()\nmatches=[]\nother=[]\nfor item in Path(\"/proc\").iterdir():\n if not item.name.isdigit():continue\n try:\n  args=[x for x in (item/\"cmdline\").read_bytes().split(b\"\\0\") if x]\n  if b\"tumblrkit.appserve\" not in args or b\"serve\" not in args:continue\n  if (item/\"cwd\").resolve()==root:matches.append(item.name)\n  else:other.append(item.name)\n except (OSError,PermissionError,ValueError):pass\ns=socket.socket();s.settimeout(1)\nport=(s.connect_ex((\"127.0.0.1\",8081))==0);s.close()\nif len(matches)==0 and not port:sys.exit(91)\nif len(matches)==0 and port:sys.exit(92)\nif len(matches)>1:sys.exit(93)\nif len(matches)==1 and not port:sys.exit(94)\nif other:sys.exit(95)\nprint(\"TUMBLR_RUNNING_PROCESS_AND_PORT=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
