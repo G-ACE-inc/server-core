@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "G-ACE-inc/server-core"
+    },
+    "command": "python3 -B -c \"from scripts.servercore_host_output_export import load_record; import sys; r=load_record(\\\"req_202611120835000000008143\\\",\\\"/home/gace/.local/state/gserver-terminal/results\\\"); s=r.get(\\\"stdout\\\",\\\"\\\")+\\\" \\\"+r.get(\\\"stderr\\\",\\\"\\\"); m={\\\"OWNER_TOKEN_FILE_MISSING\\\":41,\\\"OWNER_TOKEN_FILE_PERMISSIONS\\\":42,\\\"DIRTY_CHECKOUT\\\":43,\\\"UNEXPECTED_BRANCH\\\":44,\\\"OWNER_PROCESS_NOT_UNIQUE\\\":45,\\\"SOURCE_SHA_CHANGED\\\":46,\\\"SOURCE_SHA_MISMATCH\\\":47,\\\"SOURCE_GIT_FAILED\\\":48,\\\"STAGING_NOT_RUNNING\\\":49,\\\"REVISION_NOT_LIVE\\\":50,\\\"EXISTING_PRODUCTION_NOT_RUNNING\\\":51,\\\"PRODUCTION_NOT_RUNNING\\\":52,\\\"UNKNOWN_PRODUCTION_LISTENER\\\":53,\\\"SOURCE_SHA_CHANGED\\\":46}; sys.exit(next((v for k,v in m.items() if \\\"ERROR_CODE=\\\"+k in s),54))\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
