@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "runtime_bugfix",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "docker exec deploy-gaybbs-1 node -e 'const pg=require(\"pg\");const p=new pg.Pool({connectionString:process.env.DATABASE_URL});(async()=>{const q=await p.query(\"SELECT COUNT(*)::int AS rooms, COUNT(*) FILTER (WHERE a.announcement_id IS NULL)::int AS without_announcement, COUNT(*) FILTER (WHERE a.announcement_id IS NOT NULL)::int AS with_announcement, COUNT(*) FILTER (WHERE a.announcement_id IS NOT NULL AND a.status=\\u0027published\\u0027)::int AS published, COUNT(*) FILTER (WHERE a.announcement_id IS NOT NULL AND a.status=\\u0027draft\\u0027)::int AS draft, COUNT(*) FILTER (WHERE a.announcement_id IS NOT NULL AND a.status=\\u0027needs_reconcile\\u0027)::int AS needs_reconcile FROM room_posts r LEFT JOIN announcement_posts a ON a.room_id=r.room_id WHERE r.updated_at>=NOW()-INTERVAL \\u002748 hours\\u0027\");console.log(JSON.stringify(q.rows[0]));const z=await p.query(\"SELECT COALESCE(d.status,\\u0027none\\u0027) AS state,COUNT(*)::int AS n FROM room_posts r JOIN announcement_posts a ON a.room_id=r.room_id LEFT JOIN posting_deliveries d ON d.source_type=\\u0027announcement\\u0027 AND d.source_id=a.announcement_id::text WHERE r.updated_at>=NOW()-INTERVAL \\u002748 hours\\u0027 GROUP BY 1 ORDER BY 1\");console.log(JSON.stringify(z.rows));await p.end()})().catch(e=>{console.log(\"DB_DIAG_ERROR=\"+(e.code||\"UNKNOWN\"));process.exit(72)})'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
