@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/2192d3c316ba6d5d8431a956d963a423c8d2a55a"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; python3 - <<'PY'\nimport subprocess,hashlib,secrets,json\ndef sql(q):\n r=subprocess.run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-At\",\"-c\",q],capture_output=True,text=True,check=True)\n return r.stdout.strip()\njs=\"\"\"const fs=require('fs'),https=require('https');let s='';process.stdin.on('data',x=>s+=x);process.stdin.on('end',()=>{const d=JSON.parse(s),t=process.env.BOT_TOKEN_FILE?fs.readFileSync(process.env.BOT_TOKEN_FILE,'utf8').trim():process.env.BOT_TOKEN,b=JSON.stringify(d.payload);const r=https.request({hostname:'api.telegram.org',path:'/bot'+t+'/'+d.method,method:'POST',family:4,timeout:15000,headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(b)}},res=>{let x='';res.on('data',z=>x+=z);res.on('end',()=>{try{console.log(JSON.stringify(JSON.parse(x)))}catch{process.exitCode=2}})});r.on('error',()=>process.exitCode=3);r.end(b)})\"\"\"\ndef api(method,payload):\n r=subprocess.run([\"docker\",\"exec\",\"-i\",\"deploy-gaybbs-1\",\"node\",\"-e\",js],input=json.dumps(dict(method=method,payload=payload)),text=True,capture_output=True,check=True)\n return json.loads(r.stdout)\nrows=sql(\"SELECT p.chat_id,p.message_thread_id,p.message_id FROM topic_dm_entry_pins p JOIN posting_topics t ON t.chat_id=p.chat_id AND t.message_thread_id=p.message_thread_id WHERE p.message_thread_id=1695 AND p.chat_id IN (-1002373696859,-1003770334893) AND p.state='published' AND p.pinned=true AND p.message_id>0 AND t.enabled=true AND t.purpose='announcement' AND t.verified_at IS NOT NULL\").splitlines()\nif len(rows)!=1: raise Exception(\"PRECONDITION_FAILED\")\nchat,thread,old=map(int,rows[0].split('|'))\nr=api(\"pinChatMessage\",dict(chat_id=chat,message_id=old,disable_notification=True))\nif r.get(\"ok\") or r.get(\"error_code\")!=400 or \"message to pin not found\" not in r.get(\"description\",\"\").lower():raise Exception(\"OLD_MESSAGE_NOT_CONFIRMED_MISSING\")\ntok=secrets.token_urlsafe(24); h=hashlib.sha256((\"GayBBS-menu-v1:\"+tok).encode()).hexdigest()\nq=f\"UPDATE topic_dm_entry_pins SET state='publishing',pinned=false,message_id=NULL,token_hash='{h}',updated_at=NOW() WHERE chat_id={chat} AND message_thread_id={thread} AND message_id={old} AND state='published' AND pinned=true RETURNING message_thread_id\"\nif sql(q)!=str(thread):raise Exception(\"CONCURRENT_CHANGE\")\nr=api(\"sendMessage\",dict(chat_id=chat,message_thread_id=thread,text=\"📝 このトピックに投稿するには、下のボタンからBotのDMへ移動してください。\",reply_markup=dict(inline_keyboard=[[dict(text=\"📝 投稿メニューを開く\",url=\"https://t.me/GayBBS_bot?start=p_\"+tok)]])))\nmid=r.get(\"result\",{}).get(\"message_id\")\nif not r.get(\"ok\") or not isinstance(mid,int) or mid<1:raise Exception(\"SEND_UNCERTAIN\")\nif sql(f\"UPDATE topic_dm_entry_pins SET message_id={mid},updated_at=NOW() WHERE chat_id={chat} AND message_thread_id={thread} AND state='publishing' AND token_hash='{h}' RETURNING message_id\")!=str(mid):raise Exception(\"SAVE_MESSAGE_UNCERTAIN\")\nr=api(\"pinChatMessage\",dict(chat_id=chat,message_id=mid,disable_notification=True))\nif not r.get(\"ok\"):raise Exception(\"PIN_UNCERTAIN\")\nif sql(f\"UPDATE topic_dm_entry_pins SET state='published',pinned=true,updated_at=NOW() WHERE chat_id={chat} AND message_thread_id={thread} AND message_id={mid} AND state='publishing' RETURNING message_id\")!=str(mid):raise Exception(\"READBACK_FAILED\")\nprint(\"REPAIR_1695=PASS OLD=\"+str(old)+\" NEW=\"+str(mid))\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
