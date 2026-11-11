@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport http.client,json,subprocess,pathlib,unittest,sys\nprint(\"ACTION=MEDIA_SAVE_FULL_FALLBACK_OFFLINE_E2E\")\ntry:\n root=pathlib.Path.cwd()\n bin=root/\"dist\"/\"data\"/\"media-extractors\"/\"bin\"\n for tool,version,keywords in ((\"gallery-dl\",\"1.32.19\",(\"--post-range\",\"--filter\",\"--filesize-max\")),(\"yt-dlp\",\"2026.10.26\",(\"--no-playlist\",\"--max-filesize\",\"--extractor-retries\"))):\n  exe=bin/tool\n  assert exe.is_file() and exe.stat().st_mode & 0o077==0,\"PRIVATE_BINARY_MISSING\"\n  check=subprocess.run([str(exe),\"--version\"],capture_output=True,timeout=15)\n  assert check.returncode==0 and version.encode() in check.stdout,\"PINNED_VERSION_MISMATCH\"\n  flags=subprocess.run([str(exe),\"--help\"],capture_output=True,timeout=20)\n  assert flags.returncode==0 and all(x.encode() in flags.stdout for x in keywords),\"CLI_OPTIONS_MISSING\"\n conn=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n conn.request(\"GET\",\"/healthz\")\n response=conn.getresponse();health=json.loads(response.read(16000));status=response.status;conn.close()\n assert status==200 and health.get(\"commit\")==\"fd6e335fad77f1742573bfb37c588298c62267e0\",\"LIVE_SHA_MISMATCH\"\n for method,path in ((\"GET\",\"/media/jobs\"),(\"POST\",\"/media/save\"),(\"GET\",\"/media/file/\"+\"0\"*32)):\n  conn=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n  conn.request(method,path);response=conn.getresponse();code=response.status;response.read(1000);conn.close()\n  assert code==401,\"OWNER_GUARD_FAILED\"\n suite=unittest.defaultTestLoader.discover(\"tests\",pattern=\"test_*.py\")\n with open(\"/dev/null\",\"w\") as out:\n  result=unittest.TextTestRunner(stream=out).run(suite)\n assert result.wasSuccessful() and result.testsRun>=150,\"OFFLINE_TESTS_FAILED\"\n print(\"LIVE_SHA=PASS\")\n print(\"GALLERY_DLP_PINNED=PASS\")\n print(\"YTDLP_PINNED=PASS\")\n print(\"OWNER_ACCESS_GUARDS=PASS\")\n print(\"TEST_COUNT=\"+str(result.testsRun))\n print(\"PROVIDER_TRAFFIC=NONE\")\n print(\"VERIFY=PASS\")\nexcept Exception as exc:\n print(\"VERIFY=FAIL\")\n print(\"ERROR_TYPE=\"+type(exc).__name__)\n sys.exit(42)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
