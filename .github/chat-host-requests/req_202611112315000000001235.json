@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,sys,http.client,pathlib,subprocess\nsha=\"f2d273fe1cd6dbddfb6b490c320291af650e106b\"\ndef check(k,ok):\n print(k+\"=\"+(\"PASS\" if ok else \"FAIL\"),flush=True)\n if not ok:raise RuntimeError(k)\ntoken=(pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\").read_text().strip()\ndef send(path,payload=None,auth=True):\n c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n headers={\"Content-Type\":\"application/json\"}\n if auth:headers[\"Authorization\"]=\"Bearer \"+token\n try:\n  c.request(\"POST\" if payload is not None else \"GET\",path,body=json.dumps(payload).encode() if payload is not None else None,headers=headers)\n  response=c.getresponse()\n  return response.status,json.loads(response.read(300000))\n finally:c.close()\ntry:\n code,health=send(\"/healthz\")\n check(\"LIVE_SHA\",code==200 and health.get(\"commit\")==sha)\n goals=[\"巡回\",\"投稿\",\"キャンペーン\",\"紹介\",\"集計\",\"メディア\"]\n code,data=send(\"/assistant\",{\"message\":\"\",\"goals\":goals})\n check(\"ALL_SIX_GOALS\",code==200 and data.get(\"state\")==\"guidance\" and data.get(\"plan\",{}).get(\"goals\")==goals)\n check(\"UNCONNECTED_GOALS_EXPLICIT\",data.get(\"plan\",{}).get(\"not_connected_goals\")==[\"キャンペーン\",\"紹介\"])\n check(\"NO_AUTO_EXECUTION\",data.get(\"executed\") is False)\n code,data=send(\"/assistant\",{\"selected_action\":\"analytics.get_summary\",\"selected_target\":\"week\"})\n check(\"REAL_ANALYTICS\",code==200 and data.get(\"state\")==\"completed\" and data.get(\"executed\") is True)\n check(\"REAL_ANALYTICS_RECORDS\",data.get(\"view\",{}).get(\"rows\",[{}])[0].get(\"label\")==\"確認済み候補数\")\n code,data=send(\"/assistant\",{\"selected_action\":\"tumblr.publish_draft\",\"selected_target\":\"myblog\"})\n check(\"PUBLISH_CONFIRM_REQUIRED\",code==200 and data.get(\"state\")==\"confirmation_required\" and data.get(\"executed\") is False)\n code,data=send(\"/assistant\",{\"selected_action\":\"tumblr.delete_blog\",\"selected_target\":\"myblog\"})\n check(\"UNREGISTERED_ACTION_REJECTED\",code==200 and data.get(\"state\")==\"invalid_tool\" and data.get(\"executed\") is False)\n code,_=send(\"/assistant\",{\"goals\":goals},auth=False)\n check(\"UNAUTHORIZED_REJECTED\",code==401)\n print(\"PROVIDER_API_CALLS=ZERO\")\n print(\"ACCEPTANCE=PASS\")\nexcept Exception as exc:\n print(\"ACCEPTANCE=FAIL:\"+type(exc).__name__,flush=True)\n sys.exit(42)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
