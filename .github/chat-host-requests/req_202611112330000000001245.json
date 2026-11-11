@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport pathlib,json,http.client,sys,subprocess\nwant=\"3aa6c6fdce23fabce20cf286eec792184273f4e0\"\nowner=(pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\").read_text().strip()\ndef get(path):\n c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n try:\n  c.request(\"GET\",path,headers={\"Authorization\":\"Bearer \"+owner})\n  r=c.getresponse()\n  return r.status,r.read(200000)\n finally:c.close()\ndef ck(ok,label):\n print(label+\"=\"+(\"PASS\" if ok else \"FAIL\"),flush=True)\n if not ok:sys.exit(44)\nstatus,body=get(\"/healthz\")\nck(status==200 and json.loads(body).get(\"commit\")==want,\"PRODUCTION_SHA\")\nstatus,body=get(\"/oauth/status\")\nstate=json.loads(body)\nck(status==200 and state.get(\"connected\") is True,\"OWNER_ACCOUNT_CONNECTED\")\nck(state.get(\"can_publish\") is False,\"PUBLISH_CONSENT_REQUIRED_STILL\")\nstatus,body=get(\"/app.js\")\nck(status==200 and b'connect.textContent=\"\\xe6\\x8a\\x95\\xe7\\xa8\\xbf\\xe6\\xa8\\xa9\\xe9\\x99\\x90\\xe3\\x82\\x92\\xe8\\xbf\\xbd\\xe5\\x8a\\xa0\"' in body,\"OWNER_WRITE_CONSENT_BUTTON_LIVE\")\nck(b'fetch(\"/oauth/start\"' in body,\"ACTUAL_OAUTH_START_WIRED\")\nprint(\"NO_PROVIDER_CALLS=PASS\")\nprint(\"ACCEPTANCE=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
