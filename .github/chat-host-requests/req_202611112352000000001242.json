@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,sys,http.client,pathlib\nwant=\"7d3bd8e4d85bc28a9ee9a1abd86d35f44aaca54b\"\ntoken=(pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\").read_text().strip()\ndef call(path,data=None,auth=True):\n conn=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n headers={\"Content-Type\":\"application/json\"}\n if auth:headers[\"Authorization\"]=\"Bearer \"+token\n try:\n  conn.request(\"POST\" if data is not None else \"GET\",path,\n    body=json.dumps(data).encode() if data is not None else None,headers=headers)\n  result=conn.getresponse(); status=result.status;body=result.read(140000)\n  return status,(json.loads(body) if status==200 and path!=\"/app.js\" else body)\n finally:conn.close()\ndef check(condition,name):\n print(name+\"=\"+(\"PASS\" if condition else \"FAIL\"),flush=True)\n if not condition:sys.exit(42)\nst,body=call(\"/healthz\");check(st==200 and body.get(\"commit\")==want,\"LATEST_PUBLISH_SHA\")\nst,js=call(\"/app.js\");check(st==200 and b'tumblr.publish_draft' in js,\"PUBLISH_UI_LIVE\")\nst,data=call(\"/assistant\",{\"selected_action\":\"tumblr.publish_draft\",\"selected_target\":\"e\"*32})\ncheck(st==200 and data.get(\"executed\") is False and\n data.get(\"state\") in (\"not_connected\",\"failed\"),\"MISSING_DRAFT_NOT_PUBLISHED\")\nst,data=call(\"/assistant\",{\"selected_action\":\"analytics.get_summary\",\"selected_target\":\"week\"})\ncheck(st==200 and data.get(\"state\")==\"completed\",\"ANALYTICS_IN_REAL_CHAT\")\nst,_=call(\"/assistant\",{\"selected_action\":\"tumblr.delete_blog\",\"selected_target\":\"owner\"})\ncheck(st==200,\"POST_ROUTE_STILL_AVAILABLE\")\nprint(\"EXTERNAL_TUMBLR_POST_TESTS=ZERO\")\nprint(\"ACCEPTANCE=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
