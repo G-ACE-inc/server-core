@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport json,sys,http.client,pathlib,subprocess\nsha=\"6460c22419da66cf7f8ad4e2982cffffc9d669fc\"\ntoken=(pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\").read_text().strip()\ndef get(path,payload=None):\n c=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n try:\n  c.request(\"POST\" if payload is not None else \"GET\",path,\n    body=json.dumps(payload).encode() if payload is not None else None,\n    headers={\"Authorization\":\"Bearer \"+token,\"Content-Type\":\"application/json\"})\n  r=c.getresponse();return r.status,r.read(200000)\n finally:c.close()\ndef ck(ok,k):\n print(k+\"=\"+(\"PASS\" if ok else \"FAIL\"))\n if not ok:sys.exit(50)\nst,body=get(\"/healthz\")\nck(st==200 and json.loads(body).get(\"commit\")==sha,\"FINAL_SHA\")\nst,body=get(\"/assistant\",{\"goals\":[\"巡回\",\"投稿\",\"キャンペーン\",\"紹介\",\"集計\",\"メディア\"]})\ndata=json.loads(body)\np=data.get(\"plan\",{})\nck(st==200 and p.get(\"all_actions_count\")==4 and\n len(p.get(\"recommendations\",[]))==4 and p[\"recommendations\"][3][\"action\"]==\"analytics.get_summary\",\n \"ALL_ACTIONS_NOT_TRUNCATED\")\nst,body=get(\"/app.js\")\nck(st==200 and b'plan.recommendations.slice(visibleStart,visibleStart+3)' in body and\n b'visibleStart+=3' in body,\"PLAN_PAGING_IN_LIVE_UI\")\nst,body=get(\"/assistant\",{\"selected_action\":\"analytics.get_summary\",\"selected_target\":\"week\"})\nd=json.loads(body)\nck(st==200 and d.get(\"state\")==\"completed\" and\n d.get(\"view\",{}).get(\"rows\",[{}])[0].get(\"label\")==\"確認済み候補数\",\"ACTUAL_ANALYTICS\")\nprint(\"PROVIDER_CALLS=ZERO\")\nprint(\"ACCEPTANCE=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
