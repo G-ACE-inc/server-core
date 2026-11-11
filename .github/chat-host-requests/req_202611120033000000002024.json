@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "runtime_bugfix",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7#issuecomment-6798508356"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 - <<'PY'\nimport subprocess,sys\np=subprocess.run(['docker','logs','--since','2026-11-11T14:30:00Z','--until','2026-11-11T15:30:00Z','deploy-gaybbs-1'],capture_output=True,text=True,timeout=20)\nif p.returncode:sys.exit(70)\ns=p.stdout+'\\n'+p.stderr\nlines=[x for x in s.splitlines() if '[POST_PUBLICATION_FAILED]' in x or '[ROOM_RECEIPT_RECOVERY_FAILED]' in x or '[ROOM_RECONCILE_FAILED]' in x]\nif not lines:sys.exit(71)\nlast=lines[-1]\nkeys=['PUBLISH_NEEDS_RECONCILE','ROOM_SOURCE_NOT_LINKED','ROOM_SOURCE_NOT_OWNED','ROOM_PUBLICATION_STAGE_INVALID','FEATURE_RELEASE_NOT_VERIFIED','ROOM_PUBLIC_PROFILE_NOT_AVAILABLE','PUBLISH_BOT_NOT_ADMIN','ROOM_PROFILE_MISSING','TOPIC_NOT_VERIFIED','POST_SENT_SOURCE_SYNC_NEEDS_RECONCILE','POST_DRAFT_FINALIZATION_NEEDS_RECONCILE','400:','403:','429:','ROOM_RECONCILE_FAILED']\nfor i,k in enumerate(keys):\n if k in last:sys.exit(80+i)\nsys.exit(99)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
