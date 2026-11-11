@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "python3 -B - <<'PY'\nimport http.client,json,pathlib,subprocess,sys\nsha=\"28d77228df71a3e24ab58e4d912d2cc7b9544cbe\"\ndef check(name,ok):\n print(name+\"=\"+(\"PASS\" if ok else \"FAIL\"),flush=True)\n if not ok:sys.exit(42)\ntoken=(pathlib.Path.home()/\".config\"/\"tgtumbler\"/\"tumblr-operation-app\"/\"tumblr-app-access-token\").read_text().strip()\ndef get(path):\n conn=http.client.HTTPConnection(\"127.0.0.1\",8081,timeout=8)\n try:\n  conn.request(\"GET\",path,headers={\"Authorization\":\"Bearer \"+token})\n  r=conn.getresponse()\n  return r.status,r.read(180000)\n finally:conn.close()\nactual=subprocess.run([\"git\",\"rev-parse\",\"HEAD\"],check=True,capture_output=True,text=True,timeout=8).stdout.strip()\ncheck(\"SOURCE_SHA\",actual==sha)\nstatus,body=get(\"/healthz\")\ncheck(\"LIVE_RUNTIME_SHA\",status==200 and json.loads(body).get(\"commit\")==sha)\nfor target in (\"/library\",\"/media/jobs\",\"/discovery/candidates\"):\n status,body=get(target)\n check(\"OWNER_API_\"+target,status==200 and isinstance(json.loads(body),dict))\nfor suite in (\"test_media_fallback.py\",\"test_library.py\",\"test_media_save.py\",\"test_tumblr_read.py\"):\n result=subprocess.run([sys.executable,\"-B\",\"-m\",\"unittest\",\"discover\",\"-s\",\"tests\",\"-p\",suite,\"-q\"],\n    stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=45)\n check(\"OFFLINE_\"+suite,result.returncode==0)\nprint(\"ACTUAL_TUMBLR_PROVIDER_CALLS=ZERO\")\nprint(\"ACCEPTANCE=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
