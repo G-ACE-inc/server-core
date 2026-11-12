@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nbranch=fix/room-resident-joined-dialog-resolution-20261113\nsha=4de814af43115a7347b997de2636fd942218dc51\nw=\"$r/.worktrees/room-userbot-joined-dialog-4de814a\"\ngit -C \"$r\" fetch -q origin \"$branch\" || exit 70\ntest \"$(git -C \"$r\" rev-parse FETCH_HEAD)\" = \"$sha\" || exit 71\nif test -d \"$w\"; then test \"$(git -C \"$w\" rev-parse HEAD)\" = \"$sha\" || exit 72; else git -C \"$r\" worktree add --detach \"$w\" \"$sha\" >/dev/null || exit 73; fi\ncd \"$w/scripts\"\n\"$r/deploy/.userbot-venv/bin/python\" -B test_userbot_resident_ipc.py || exit 74\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 75\necho JOINED_DIALOG_TEST_PASS\necho USERBOT_UNCHANGED=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
