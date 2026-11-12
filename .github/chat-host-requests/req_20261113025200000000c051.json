@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nsha=eb13afd5e7091c394f99c5a84cd346422cea90d6\ngit fetch --no-tags origin chat/tgtumbler-gserver-deploy-20261106 >/dev/null 2>&1\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$sha\" || { echo STK04_INSPECT_SOURCE_SHA_MISMATCH; exit 71; }\nd=\"$(mktemp -d /tmp/stk04-inspect-build.XXXXXXXX)\"\ntrap 'rm -rf \"$d\"' EXIT\ngit archive \"$sha\" | tar -xf - -C \"$d\"\npodman build --quiet -f \"$d/artifacts/bot/deploy/Dockerfile.gaybbs\" -t localhost/gace-stk04-inspect:eb13afd5 \"$d\" >/dev/null || { echo STK04_INSPECT_IMAGE_BUILD_FAILED; exit 72; }\nnames=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])gaybbs([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$names\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_INSPECT_GROUP_BOT_AMBIGUOUS; exit 73; }\nname=\"$names\"\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true || { echo STK04_INSPECT_BOT_NOT_RUNNING; exit 74; }\nif podman run --rm --entrypoint cat localhost/gace-stk04-inspect:eb13afd5 /app/sticker-topic-pin.mjs | docker exec -i -e STICKER_PIN_MODE=inspect \"$name\" node --input-type=module -; then\n echo STK04_INSPECT_READ_ONLY_COMPLETE\nelse\n echo STK04_INSPECT_READ_ONLY_FAILED\n exit 75\nfi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
