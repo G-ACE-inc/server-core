@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ndocker inspect \"$name\" >/dev/null 2>&1 || exit 61\nif test \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true &&\n docker logs --tail 100 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$';then\n echo STK04_DM_READY=PASS\n exit 0\nfi\nimage=\"$(docker inspect -f '{{.Image}}' \"$name\")\"\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ndbpass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest -f \"$token\" && test -f \"$dbpass\" && test \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 62\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest -n \"$user\" && test \"$net\" = deploy_default || exit 63\ndocker run --rm -i --network \"$net\" --pull never --cap-drop ALL \\\n -e NODE_ENV=production -e VIDEOBOT_RUN_MODE=telegram_poll \\\n -e VIDEOBOT_PRIVATE_INGRESS_ONLY=true -e VIDEOBOT_SCHEMA_MIGRATE=YES \\\n -e VIDEOBOT_TELEGRAM_TOKEN_FILE=/run/secrets/videobot_telegram_token \\\n -e VIDEOBOT_DB_PASSWORD_FILE=/run/secrets/videobot_db_password \\\n -e VIDEOBOT_DB_HOST=deploy-postgres-1 -e VIDEOBOT_DB_NAME=videobot \\\n -e VIDEOBOT_DB_USER=\"$user\" \\\n --mount \"type=bind,source=$token,target=/run/secrets/videobot_telegram_token,readonly\" \\\n --mount \"type=bind,source=$dbpass,target=/run/secrets/videobot_db_password,readonly\" \\\n --entrypoint node \"$image\" --input-type=module <<'JS'\nimport {statSync} from 'node:fs';\nimport {createCreatorPollingRuntime} from './src/runtime/creatorPollingMain.mjs';\nconst stat=statSync(process.env.VIDEOBOT_DB_PASSWORD_FILE);\nif(!stat.isFile())process.exit(70);\nif((stat.mode&0o077)!==0)process.exit(71);\nif(stat.size<12)process.exit(72);\nif(stat.size>4096)process.exit(73);\nif(stat.uid!==process.getuid())process.exit(74);\ntry {\n const rt=await createCreatorPollingRuntime();\n await rt.close();\n console.log('STK04_CREATOR_RUNTIME_CONSTRUCT=PASS');\n} catch(e) {\n const c=String(e?.code??''),m=String(e?.message??'');\n if(m==='CREATOR_POLL_DB_PASSWORD_FILE_INVALID')process.exitCode=80;\n else if(m==='CREATOR_POLL_INTERNAL_DB_CONFIG_INVALID')process.exitCode=81;\n else if(m==='CREATOR_POLL_PRIVATE_MODE_REQUIRED')process.exitCode=82;\n else if(m==='CREATOR_POLL_PRIVATE_DB_SECRET_REQUIRED')process.exitCode=83;\n else if(m==='CREATOR_POLL_PRIVATE_SECRET_MOUNT_REQUIRED')process.exitCode=84;\n else if(m==='CREATOR_POLL_SCHEMA_OWNER_CONSENT_MISSING')process.exitCode=85;\n else if(m==='CREATOR_POLL_EXISTING_WEBHOOK_MUST_NOT_BE_REPLACED')process.exitCode=86;\n else if(c==='28P01'||c==='3D000'||c==='42501')process.exitCode=87;\n else if(c==='ECONNREFUSED'||c==='ENOTFOUND'||c==='ETIMEDOUT')process.exitCode=88;\n else if(c==='ERR_MODULE_NOT_FOUND')process.exitCode=89;\n else if(/VideoBot migration|schema|SQL/i.test(m))process.exitCode=90;\n else if(/TG_|identity|token|bot/i.test(m))process.exitCode=91;\n else process.exitCode=92;\n}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
