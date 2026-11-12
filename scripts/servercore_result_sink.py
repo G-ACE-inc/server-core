@@ -21,7 +21,7 @@ import threading
 import time
 from datetime import datetime, timedelta, timezone
 
-from servercore_result_target import load_target
+from servercore_result_target import load_target, ResultTargetError
 
 SOCKET_PATH = Path("/run/gace/servercore-result.sock")
 RESULT_DIR = Path("/home/admin1/logs/servercore-bounded-results")
@@ -340,9 +340,10 @@ def _gh(args, stdin=None, timeout=40):
     return result.stdout
 
 
-def find_published(request_id, since, runner=_gh):
-    """Query only recent comment pages, not the entire growing Issue history."""
-    issue_path = f"repos/{RESULT_REPOSITORY}/issues/{RESULT_ISSUE}"
+def find_published(request_id, since, runner=_gh, *, target=None):
+    """Query only recent comments on the SAME target selected for this receipt."""
+    target = target or current_publish_target()
+    issue_path = f"repos/{target['repository']}/issues/{target['issue_number']}"
     issue = json.loads(runner(["api", issue_path]))
     count = int(issue.get("comments", 0))
     last = max(1, (count + 99) // 100)
@@ -355,16 +356,32 @@ def find_published(request_id, since, runner=_gh):
     return None
 
 
+def current_publish_target():
+    """Re-read the checked-in target for each unpublished result, without a Sink restart.
+
+    Never switch targets midway through one receipt; the caller snapshots it.
+    Existing published receipts retain their original URL and are not replayed.
+    """
+    try:
+        return load_target()
+    except (ResultTargetError, OSError, ValueError) as exc:
+        raise SinkError("RESULT_TARGET_CONTRACT_UNAVAILABLE") from None
+
+
 def publish_record(request_id, *, result_dir=None, runner=_gh, now=None, writer_dir=HOST_WRITER_RESULT_DIR):
     record = read_record(request_id, result_dir)
     if not record or record.get("state") not in TERMINAL or record.get("published"):
         return None
+    # The Source may have fast-forwarded since this process started. Read the
+    # canonical contract per receipt, so an Issue rotation does not require a
+    # Result Sink restart merely to refresh a module-level constant.
+    target = current_publish_target()
     recorded = datetime.strptime(record["recorded_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
     since = (recorded - timedelta(minutes=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    found = find_published(request_id, since, runner)
+    found = find_published(request_id, since, runner, target=target)
     if not found:
         payload = json.dumps({"body": comment_body(record, writer_dir=writer_dir)})
-        out = runner(["api", "-X", "POST", f"repos/{RESULT_REPOSITORY}/issues/{RESULT_ISSUE}/comments",
+        out = runner(["api", "-X", "POST", f"repos/{target['repository']}/issues/{target['issue_number']}/comments",
                       "--input", "-"], stdin=payload)
         data = json.loads(out)
         found = {"comment_id": int(data["id"]), "url": str(data["html_url"])}
