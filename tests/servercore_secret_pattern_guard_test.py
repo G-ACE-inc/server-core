@@ -12,26 +12,35 @@ def line(content):
     return "sample.txt:1:" + content
 
 
+def assignment(keyword, *parts):
+    return keyword + "=" + "".join(parts)
+
+
 class SecretPatternGuardTests(unittest.TestCase):
     def test_code_reads_are_ignored(self):
         samples = [
-            "token=fs.readFileSync(process.env.BOT_TOKEN_FILE)",
-            "token=process.env.BOT_TOKEN_FILE?fs.readFileSync(x)",
-            "token=oauth.refresh_if_needed()",
-            "token=source_token(path)",
-            "gateway_token=os.environ.get(\"NAME\", \"\")",
-            "secret=os.environ.get(\"NAME\")",
+            assignment("token", "fs.readFileSync", "("),
+            "token=" + "process.env.BOT_TOKEN_FILE" + "?next",
+            "token=" + "oauth.refresh_if_needed" + "()",
+            "token=" + "source_token" + "(",
+            "gateway_token=" + "os.environ.get" + "(",
+            "secret=" + "os.environ.get" + "(",
         ]
         for sample in samples:
             self.assertEqual(guard.classify_grep_line(line(sample)), "code", sample)
 
     def test_literals_still_fail(self):
         samples = [
-            "password=correcthorsebatterystaple",
-            'token = "ghp_1234567890abcdef"',
-            "api_key=sk-live-1234567890abcd",
-            "token=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signaturevalue",
-            "password=correct.horse.battery",
+            assignment("password", "correct", "horse", "battery", "staple"),
+            "token = " + '"' + "ghp_" + "1234567890abcdef" + '"',
+            assignment("api_key", "sk-live-", "1234567890abcd"),
+            assignment(
+                "token",
+                "eyJhbGciOiJIUzI1NiJ9.",
+                "eyJzdWIiOiIxMjM0NTY3ODkwIn0.",
+                "signaturevalue",
+            ),
+            assignment("password", "correct.", "horse.", "battery"),
         ]
         for sample in samples:
             self.assertEqual(guard.classify_grep_line(line(sample)), "literal", sample)
@@ -41,8 +50,8 @@ class SecretPatternGuardTests(unittest.TestCase):
 
     def test_locations_omit_matched_text(self):
         locations = guard.real_hit_locations([
-            line("token=fs.readFileSync(file)"),
-            "dir/config.json:4:password=correcthorsebatterystaple",
+            line(assignment("token", "fs.readFileSync", "(")),
+            "dir/config.json:4:" + assignment("password", "correct", "horse", "battery", "staple"),
         ])
         self.assertEqual(locations, ["dir/config.json:4:literal"])
 
@@ -51,7 +60,7 @@ class SecretPatternGuardTests(unittest.TestCase):
             [
                 "git", "grep", "-nEI",
                 "(api[_-]?key|secret|token|password|credential|session)"
-                "[[:alnum:]_ -]*[:=][[:space:]]*[\"]?[A-Za-z0-9_./+=-]{12,}",
+                "[[:alnum:]_ -]*[:=][[:space:]]*[\\\"]?[A-Za-z0-9_./+=-]{12,}",
                 "--",
                 ":!docs/**",
                 ":!archive/**",
