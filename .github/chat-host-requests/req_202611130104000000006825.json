@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nhead=6d0997b814f3e634916a0b93f08c87b7fe26d269\nsudo -n docker info >/dev/null 2>&1 || { echo STK04_DOCKER_ACCESS_DENIED; exit 66; }\ngit fetch --no-tags origin chat/tgtumbler-gserver-deploy-20261106 >/dev/null 2>&1 || { echo STK04_FETCH_FAILED; exit 67; }\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$head\" || { echo STK04_FETCH_SHA_MISMATCH; exit 68; }\nd=\"$(mktemp -d /tmp/gace-stk04-build.XXXXXXXX)\"\ntrap 'rm -rf \"$d\"' EXIT\ngit archive \"$head\" | tar -xf - -C \"$d\"\ntest -f \"$d/artifacts/bot/scripts/ensureStickerTopicPin.ts\" || { echo STK04_SOURCE_MISSING; exit 69; }\nsudo -n docker build -q -f \"$d/artifacts/bot/deploy/Dockerfile.gaybbs\" -t \"gace-stk04-pin:${head%%????????????????????????????????}\" \"$d\" || { echo STK04_BUILD_FAILED; exit 70; }\nsudo -n docker image inspect \"gace-stk04-pin:${head%%????????????????????????????????}\" --format '{{.Id}}' >/dev/null || { echo STK04_IMAGE_NOT_PRESENT; exit 71; }\nprintf 'STK04_PRODUCTION_IMAGE=BUILT\\nSTK04_SOURCE_SHA=%s\\n' \"$head\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
