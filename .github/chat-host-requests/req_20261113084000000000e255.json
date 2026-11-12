@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || { echo STK04_DIAG_CONTAINER_NOT_RUNNING; exit 61; }\necho STK04_DIAG_CONTAINER_RUNNING=YES\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nconst env=process.env;\nconst pool=new pg.Pool({\n host:env.VIDEOBOT_DB_HOST,database:env.VIDEOBOT_DB_NAME,user:env.VIDEOBOT_DB_USER,\n password:readFileSync(env.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1,\n connectionTimeoutMillis:5000});\nconst egress=createCreatorTelegramFetch(globalThis.fetch);\ntry {\n const {rows}=await pool.query(\n  \"SELECT r.phase,r.kind,r.pack_name,r.file_unique_id,s.state->>'screen' AS screen FROM videobot_sticker_registration_receipts r LEFT JOIN videobot_creator_sessions s ON s.owner_user_id=r.owner_user_id WHERE r.phase<>'registered' ORDER BY r.updated_at DESC LIMIT 3\");\n console.log('STK04_RECENT_PENDING_COUNT='+rows.length);\n const api=createTelegramBotApi({\n  token:readFileSync(env.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim(),\n  fetchImpl:egress.fetch,timeoutMs:15000});\n let index=0;\n for(const row of rows){\n  console.log('STK04_PENDING_'+index+'_PHASE='+row.phase);\n  console.log('STK04_PENDING_'+index+'_SCREEN='+(row.screen??'UNKNOWN'));\n  if(!row.file_unique_id){console.log('STK04_PENDING_'+index+'_REMOTE=NO_UPLOAD_RECEIPT');index++;continue;}\n  try{\n   const set=await api('getStickerSet',{name:row.pack_name});\n   const found=set?.stickers?.some(s=>s.file_unique_id===row.file_unique_id);\n   console.log('STK04_PENDING_'+index+'_REMOTE='+(found?'REGISTERED':'NOT_OBSERVED'));\n  }catch{\n   console.log('STK04_PENDING_'+index+'_REMOTE=READBACK_FAILED');\n  }\n  index++;\n }\n}catch{\n console.log('STK04_DIAG_QUERY_FAILED');\n process.exitCode=70;\n}finally{\n await egress.close();\n await pool.end();\n}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
