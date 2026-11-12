@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nsha=1d97db6d00e47d92ca769e541b5dfe3f1299dee4\nbranch=fix/room-production-public-sync-20261113\nw=\"$r/.worktrees/room-public-sync-1d97db6\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 70\ngit -C \"$r\" fetch -q origin \"$branch\" || exit 71\ntest \"$(git -C \"$r\" rev-parse FETCH_HEAD)\" = \"$sha\" || exit 72\nif test -d \"$w\"; then test \"$(git -C \"$w\" rev-parse HEAD)\" = \"$sha\" || exit 73; else git -C \"$r\" worktree add --detach \"$w\" \"$sha\" >/dev/null || exit 74; fi\ndocker compose -p deploy -f \"$w/deploy/gserver-compose.yaml\" --project-directory \"$r/deploy\" config -q || exit 75\ndocker inspect deploy-gaybbs-1 --format 'BOT_RUNNING={{.State.Running}} BOT_IMAGE_ID={{.Image}}'\ndocker inspect deploy-postgres-1 --format 'DB_RUNNING={{.State.Running}}'\necho DEPLOY_COMPOSE_SOURCE_SHA=\"$sha\"\necho ROOT_COMPOSE_HASH=$(sha256sum \"$r/deploy/gserver-compose.yaml\" | cut -d' ' -f1)\necho STAGED_COMPOSE_HASH=$(sha256sum \"$w/deploy/gserver-compose.yaml\" | cut -d' ' -f1)\ndocker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -F '|' -c \"SELECT e.kind,r.status,COUNT(*) FROM room_source_events e JOIN room_posts r ON r.room_id=e.room_id WHERE e.state='pending' GROUP BY e.kind,r.status ORDER BY e.kind,r.status\" || exit 76\ndocker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -F '|' -c \"SELECT COUNT(*) AS sent_room_deliveries,COUNT(*) FILTER(WHERE d.rendered_text IS NULL) AS missing_original,COUNT(*) FILTER(WHERE d.inline_buttons IS NULL) AS missing_buttons FROM posting_deliveries d JOIN announcement_posts a ON a.announcement_id::text=d.source_id WHERE d.source_type='announcement' AND a.room_id IS NOT NULL AND d.status='sent' AND d.telegram_message_id IS NOT NULL\" || exit 77\necho ROOM_PUBLIC_SYNC_PREFLIGHT_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
