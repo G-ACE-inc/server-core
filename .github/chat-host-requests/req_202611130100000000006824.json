@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nhead=6d0997b814f3e634916a0b93f08c87b7fe26d269\ngit fetch --no-tags origin chat/tgtumbler-gserver-deploy-20261106 >/dev/null 2>&1\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$head\" || { echo STK04_SOURCE_SHA_MISMATCH; exit 72; }\nd=\"$(mktemp -d /tmp/gace-stk04-build.XXXXXXXX)\"\ntrap 'rm -rf \"$d\"' EXIT\ngit archive \"$head\" | tar -xf - -C \"$d\"\ntest -f \"$d/artifacts/bot/scripts/ensureStickerTopicPin.ts\"\ndocker build -q -f \"$d/artifacts/bot/deploy/Dockerfile.gaybbs\" -t \"gace-stk04-pin:${head%%????????????????????????????????}\" \"$d\" >/dev/null\ndocker image inspect \"gace-stk04-pin:${head%%????????????????????????????????}\" --format '{{.Id}}'\nprintf 'STK04_DEPLOY_IMAGE=BUILT\\nSTK04_DEPLOY_SOURCE=%s\\n' \"$head\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
