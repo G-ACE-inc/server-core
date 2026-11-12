@@ -23,7 +23,7 @@
     "repository": "seigo-gace/G-ACEserver",
     "host_target": "gserver",
     "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
-    "repo_sha": "9f07919277f47d927dd33d48c31de8",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
     "project_context": {
       "repository": "seigo-gace/tumblr-integration"
     },
