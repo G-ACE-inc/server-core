@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "CONFIRMED",
+    "implementation_context": "existing_create_videobot_sticker_worktree",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/2"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu; ROOT=\"$(git rev-parse --show-toplevel)\"; DEST=\"$ROOT/.worktrees/sticker-current\"; test -f \"$DEST/.git\" || { echo WORKTREE_MISSING; exit 41; }; test \"$(git -C \"$DEST\" rev-parse HEAD)\" = bcf35887ea430873e792b2f8fabdb3f8b1555c35 || { echo WORKTREE_HEAD_CHANGED; exit 74; }; test -z \"$(git -C \"$DEST\" status --porcelain --untracked-files=all)\" || { echo WORKTREE_DIRTY; exit 44; }; git fetch --no-tags origin refs/heads/feat/assistant-ai-and-sales-core; test \"$(git rev-parse FETCH_HEAD)\" = 867d459dee42f949f5d9b38f862d766c2ab4edc9 || { echo SOURCE_HEAD_CHANGED; exit 73; }; git -C \"$DEST\" checkout --detach 867d459dee42f949f5d9b38f862d766c2ab4edc9; test \"$(git -C \"$DEST\" rev-parse HEAD)\" = 867d459dee42f949f5d9b38f862d766c2ab4edc9; docker image inspect node:22-alpine >/dev/null 2>&1 || exit 46; docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,nodev --security-opt no-new-privileges -v \"$DEST:/work:ro\" -w /work node:22-alpine sh -c 'node --check src/stickers/pgStickerInventory.mjs && node --check src/telegram/creatorWiring.mjs && node --check src/telegram/stickerWizard.mjs && node --check src/runtime/creatorMigrateDockerSmoke.mjs && node --test test/stickerWizard.test.mjs test/stickerPackRegistration.test.mjs test/creatorWiring.test.mjs'; test -z \"$(git -C \"$DEST\" status --porcelain --untracked-files=all)\"; echo STK_PRE_MUTATION_ISOLATED_TESTS_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
