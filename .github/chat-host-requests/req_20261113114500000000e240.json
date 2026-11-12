@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nimage=create-videobot:local-poll\ndocker image inspect \"$image\" >/dev/null 2>&1 || exit 61\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 62\npg_ip=\"$(docker inspect -f '{{with index .NetworkSettings.Networks \"deploy_default\"}}{{.IPAddress}}{{end}}' \"$pg\")\"\necho \"$pg_ip\" | grep -Eq '^(10|172|192)\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$' || exit 63\ndocker run --rm --network host --pull never --read-only --cap-drop ALL \\\n --security-opt no-new-privileges:true --entrypoint node \"$image\" -e '\nconst timer=AbortSignal.timeout(11000);\ntry {\n const res=await fetch(\"https://api.telegram.org\",{signal:timer});\n if(res.status<500)process.exitCode=0;\n else process.exitCode=80;\n} catch {process.exitCode=80;}\n' || { echo STK04_HOST_NET_TELEGRAM_FAIL; exit 80; }\ndocker run --rm --network host --pull never --read-only --cap-drop ALL \\\n --security-opt no-new-privileges:true -e \"STK04_PG_IP=$pg_ip\" --entrypoint node \"$image\" -e '\nconst net=require(\"node:net\");\nconst host=process.env.STK04_PG_IP;\nconst s=net.connect({host,port:5432});\nlet done=false;\nconst finish=ok=>{if(done)return;done=true;s.destroy();process.exitCode=ok?0:81};\ns.once(\"connect\",()=>finish(true));\ns.once(\"error\",()=>finish(false));\ns.setTimeout(6000,()=>finish(false));\n' || { echo STK04_HOST_NET_POSTGRES_TCP_FAIL; exit 81; }\necho STK04_HOST_NET_TELEGRAM_AND_PG_TCP=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
