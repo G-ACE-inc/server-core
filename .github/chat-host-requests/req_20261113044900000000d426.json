@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\np=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$p\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_POSTGRES_NOT_UNIQUE; exit 71; }\ndocker exec -i \"$p\" sh -c 'psql -U \"$POSTGRES_USER\" -d gaybbs -v ON_ERROR_STOP=1 -X -qAt' <<'STK04_SQL'\nBEGIN;\nDO $$\nDECLARE r RECORD;\nBEGIN\n SELECT * INTO r FROM posting_topics WHERE topic_id=112 FOR UPDATE;\n IF NOT FOUND OR r.board_key<>'video_chat' OR r.chat_id<>-1002373696859\n   OR r.message_thread_id<>4291 OR r.enabled IS NOT TRUE\n   OR r.verified_at IS NULL OR r.verified_by IS NULL\n   OR r.purpose NOT IN ('announcement','sticker')\n   OR r.title NOT IN ('(thread:4291)','ステッカーの公開と販売') THEN\n   RAISE EXCEPTION 'STK04_POSTING_TOPIC_ROW_MISMATCH';\n END IF;\n IF EXISTS(SELECT 1 FROM posting_deliveries WHERE posting_topic_id=112) THEN\n   RAISE EXCEPTION 'STK04_PREEXISTING_POSTS_REQUIRE_RECONCILE';\n END IF;\n IF EXISTS(SELECT 1 FROM posting_topics WHERE board_key='video_chat'\n   AND purpose='sticker' AND chat_id=-1002373696859 AND topic_id<>112) THEN\n   RAISE EXCEPTION 'STK04_OTHER_STICKER_TARGET_EXISTS';\n END IF;\nEND $$;\nALTER TABLE posting_topics DROP CONSTRAINT IF EXISTS posting_topics_purpose_check;\nALTER TABLE posting_topics ADD CONSTRAINT posting_topics_purpose_check\n CHECK (purpose IN ('profile','room','announcement','link','sticker'));\nUPDATE posting_topics SET purpose='sticker',title='ステッカーの公開と販売'\n WHERE topic_id=112 AND chat_id=-1002373696859 AND message_thread_id=4291;\nCREATE TABLE IF NOT EXISTS posting_sticker_entry_pins (\n topic_id BIGINT PRIMARY KEY REFERENCES posting_topics(topic_id) ON DELETE RESTRICT,\n creator_bot_id BIGINT NULL CHECK (creator_bot_id > 0),\n creator_bot_username TEXT NOT NULL\n   CHECK (creator_bot_username ~ '^[A-Za-z][A-Za-z0-9_]{4,31}$'),\n status TEXT NOT NULL CHECK (status IN ('sending','sent','pin_requested','pinned_ack','needs_reconcile')),\n telegram_message_id BIGINT CHECK (telegram_message_id > 0),\n created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n CHECK (status='sending' OR telegram_message_id IS NOT NULL)\n);\nALTER TABLE posting_sticker_entry_pins ALTER COLUMN creator_bot_id DROP NOT NULL;\nINSERT INTO posting_sticker_entry_pins\n (topic_id,creator_bot_id,creator_bot_username,status,telegram_message_id)\n VALUES (112,NULL,'CreateVdobot','pinned_ack',4652)\n ON CONFLICT (topic_id) DO NOTHING;\nDO $$\nBEGIN\n IF NOT EXISTS(SELECT 1 FROM posting_sticker_entry_pins WHERE topic_id=112\n AND status='pinned_ack' AND telegram_message_id=4652\n AND lower(creator_bot_username)='createvdobot') THEN\n  RAISE EXCEPTION 'STK04_PIN_RECEIPT_CONFLICT';\n END IF;\nEND $$;\nCOMMIT;\nSELECT 'STK04_LIVE_TOPIC='||topic_id||'|'||purpose||'|'||message_thread_id\n FROM posting_topics WHERE topic_id=112;\nSELECT 'STK04_LIVE_PIN='||topic_id||'|'||status||'|'||telegram_message_id\n FROM posting_sticker_entry_pins WHERE topic_id=112;\nSTK04_SQL\necho STK04_DB_OWNER_MIGRATION=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
