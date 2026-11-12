@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 -B - <<'PY'\nimport os,sys,stat,re,json,tempfile,subprocess,urllib.parse,urllib.request\nfrom pathlib import Path\nroot=Path.cwd().resolve()\nif root.name!='GateApp-Bot':print('STK04_OWNER_ROOT_INVALID');sys.exit(80)\nimage='localhost/gace-stk04-pin:88fb602c'\nif subprocess.run(['podman','image','exists',image],capture_output=True).returncode:\n print('STK04_IMAGE_NOT_BUILT');sys.exit(81)\ntoken_re=re.compile(r'^[0-9]{7,15}:[A-Za-z0-9_-]{30,100}$')\ntokens=[];dburls=[]\ndef add(k,v):\n v=v.strip().strip('\"').strip(\"'\")\n if k=='BOT_TOKEN' and token_re.fullmatch(v):tokens.append(v)\n if k in ('DATABASE_URL','GAYBBS_DATABASE_URL','POSTGRES_URL'):\n  p=urllib.parse.urlsplit(v)\n  if p.scheme in ('postgres','postgresql') and p.hostname and p.path:dburls.append(v)\nadd('BOT_TOKEN',os.environ.get('BOT_TOKEN',''))\nadd('DATABASE_URL',os.environ.get('DATABASE_URL',''))\nfor folder in (root/'deploy',root/'deploy'/'secrets'):\n if not folder.is_dir():continue\n for f in sorted(folder.iterdir()):\n  if not f.is_file() or f.is_symlink() or f.stat().st_size>32768:continue\n  name=f.name.lower()\n  if any(x in name for x in ('userbot','session','auth','phone','oauth')):continue\n  if not ('.env' in name or 'gaybbs' in name or 'bot' in name or 'database' in name or 'postgres' in name):continue\n  st=f.stat()\n  if st.st_mode & 0o077:continue\n  try:s=f.read_text(encoding='utf-8').strip()\n  except (OSError,UnicodeError):continue\n  if token_re.fullmatch(s):tokens.append(s);continue\n  if s.startswith(('postgresql://','postgres://')):add('DATABASE_URL',s);continue\n  for line in s.splitlines():\n   if not line or line.lstrip().startswith('#') or '=' not in line:continue\n   k,v=line.split('=',1);add(k.strip(),v)\ntokens=list(dict.fromkeys(tokens))\ndburls=list(dict.fromkeys(dburls))\nif not tokens:print('STK04_GROUP_TOKEN_UNAVAILABLE_IN_OWNER_CONFIG');sys.exit(82)\ndef me(token):\n try:\n  with urllib.request.urlopen('https://api.telegram.org/bot'+token+'/getMe',timeout=12) as response:\n   j=json.load(response)\n  return j.get('result') if j.get('ok') is True else None\n except Exception:return None\nowners=[t for t in tokens if (me(t) or {}).get('username','').lower()=='gaybbs_bot']\nif len(owners)!=1:print('STK04_GROUP_IDENTITY_NOT_UNIQUE_OR_UNAVAILABLE');sys.exit(83)\nif len(dburls)!=1:print('STK04_DATABASE_NOT_ADMITTED_OR_AMBIGUOUS');sys.exit(84)\nprint('STK04_GROUP_IDENTITY=VERIFIED')\nprint('STK04_DATABASE_CONFIG=IDENTIFIED')\nwith tempfile.TemporaryDirectory(prefix='gace-stk04-live-') as d:\n folder=Path(d)\n tf=folder/'token'\n tf.write_text(owners[0],encoding='utf-8');tf.chmod(0o600)\n ef=folder/'env'\n ef.write_text('BOT_TOKEN_FILE=/run/secrets/gaybbs_pin_token\\nDATABASE_URL='+dburls[0]+'\\n',encoding='utf-8');ef.chmod(0o600)\n cmd=['podman','run','--rm','--network','host','--user','0','--read-only',\n  '--pids-limit','64','--memory','256m','--security-opt','no-new-privileges',\n  '--env-file',str(ef),'--volume',str(tf)+':/run/secrets/gaybbs_pin_token:ro',\n  image,'node','/app/sticker-topic-pin.mjs']\n try:r=subprocess.run(cmd,capture_output=True,text=True,timeout=90)\n except subprocess.TimeoutExpired:\n  print('STK04_PIN_RESULT_UNKNOWN_AFTER_TIMEOUT');sys.exit(85)\n for line in (r.stdout+'\\n'+r.stderr).splitlines():\n  if line.startswith(('STICKER_PIN_OWNER=','STICKER_PIN_TARGET=',\n   'STICKER_PIN_TARGET_SOURCE=','STICKER_PIN_TELEGRAM_ACK=',\n   'STICKER_PIN_MESSAGE_ID=','STICKER_PIN_INDEPENDENT_READBACK=',\n   'STICKER_PIN_RESULT=','STICKER_PIN_ERROR=')):\n   print(line)\n if r.returncode:print('STK04_PIN_OPERATION_FAILED');sys.exit(86)\n if 'STICKER_PIN_TELEGRAM_ACK=YES' not in r.stdout:\n  print('STK04_PIN_UNCONFIRMED');sys.exit(87)\n print('STK04_TOPIC_PIN_TELEGRAM_ACK=PASS')\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
