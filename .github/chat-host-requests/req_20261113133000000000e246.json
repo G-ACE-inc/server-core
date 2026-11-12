@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || { echo STK04_BOT_NOT_RUNNING; exit 61; }\ndocker logs --tail 180 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' || { echo STK04_BOT_READY_MISSING; exit 62; }\nrestarts=\"$(docker inspect -f '{{.RestartCount}}' \"$name\")\"\ntest \"$restarts\" -le 1 || { echo STK04_BOT_RESTART_LOOP; exit 63; }\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 64\ncount=\"$(docker exec \"$pg\" sh -c 'psql -U \"$POSTGRES_USER\" -d videobot -tAc \"SELECT count(*) FROM videobot_poll_cursor\"' 2>/dev/null)\" || { echo STK04_CURSOR_QUERY_FAILED; exit 65; }\ntest \"$count\" -ge 1 || { echo STK04_NO_DURABLE_RECEIVED_UPDATE; exit 66; }\necho STK04_BOT_STABLE_AND_CURSOR=PASS\npacks=\"$(docker exec \"$pg\" sh -c 'psql -U \"$POSTGRES_USER\" -d videobot -tAc \"SELECT count(*) FROM videobot_sticker_packs\"' 2>/dev/null)\" || exit 67\nsessions=\"$(docker exec \"$pg\" sh -c 'psql -U \"$POSTGRES_USER\" -d videobot -tAc \"SELECT count(*) FROM videobot_creator_sessions\"' 2>/dev/null)\" || exit 68\nif test \"$sessions\" -gt 0;then echo STK04_EXISTING_DM_SESSION=YES;else echo STK04_EXISTING_DM_SESSION=NO;fi\nif test \"$packs\" -gt 0;then echo STK04_EXISTING_STICKER_PACK=YES;else echo STK04_EXISTING_STICKER_PACK=NO;fi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
