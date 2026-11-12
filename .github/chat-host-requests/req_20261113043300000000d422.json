@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nprintf 'STK04_USERBOT_IPC_CLIENT_HELP\\n'\npython3 scripts/userbot_test_client.py --help 2>&1 | head -n 110 || true\nprintf 'STK04_RESIDENT_ACTION_NAMES\\n'\ngrep -nE 'ALLOWED|ACTION|action|read_message|messages|pinned|list_topics|get_message|topic|verify' scripts/userbot_resident_ipc.py 2>/dev/null | head -n 85 || true\nprintf 'STK04_USERBOT_SERVICE_FLAGS\\n'\nsystemctl --user is-active gace-userbot-verify.service || true\nsystemctl --user is-enabled gace-userbot-verify.service || true\necho STK04_USERBOT_INSPECTION_DONE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
