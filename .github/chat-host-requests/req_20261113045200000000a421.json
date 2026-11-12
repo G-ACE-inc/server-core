@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/27"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nw=\"$r/.worktrees/room-userbot-joined-dialog-4de814a\"\nb=\"$HOME/.local/state/gace-userbot-joined-dialog-rollback-20261113\"\nu=gace-userbot-verify.service\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 4de814af43115a7347b997de2636fd942218dc51 || exit 70\ntest ! -e \"$b\" || exit 71\ntest \"$(systemctl --user is-active \"$u\")\" = active || exit 72\ntest \"$(stat -c %a \"$r/deploy/secrets/userbot_verify.session\")\" = 600 || exit 73\nmkdir -m 700 -p \"$b\"\ncp -p \"$r/scripts/userbot_resident_ipc.py\" \"$b/userbot_resident_ipc.py\"\nrollback() {\n echo RESIDENT_IPC_ROLLBACK\n cp -p \"$b/userbot_resident_ipc.py\" \"$r/scripts/userbot_resident_ipc.py\"\n systemctl --user restart \"$u\" || :\n}\ntrap rollback ERR\ninstall -m 600 \"$w/scripts/userbot_resident_ipc.py\" \"$r/scripts/userbot_resident_ipc.py.new\"\nmv -f \"$r/scripts/userbot_resident_ipc.py.new\" \"$r/scripts/userbot_resident_ipc.py\"\nbefore=$(systemctl --user show \"$u\" -p MainPID --value)\nsystemctl --user restart \"$u\" || exit 74\nfor i in $(seq 1 30); do\n if test \"$(systemctl --user is-active \"$u\" || :)\" = active && test -S \"$r/deploy/secrets/userbot_verify.sock\"; then\n  if \"$r/deploy/.userbot-venv/bin/python\" -B \"$r/scripts/userbot_test_client.py\" health; then break; fi\n fi\n sleep 1\ndone\n\"$r/deploy/.userbot-venv/bin/python\" -B \"$r/scripts/userbot_test_client.py\" health || exit 75\ntest \"$(systemctl --user show \"$u\" -p MainPID --value)\" != \"$before\" || exit 76\ntest \"$(stat -c %a \"$r/deploy/secrets/userbot_verify.session\")\" = 600 || exit 77\ntest \"$(stat -c %a \"$r/deploy/secrets/userbot_verify.sock\")\" = 600 || exit 78\ntest \"$(systemctl --user is-enabled \"$u\")\" = enabled || exit 79\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true || exit 80\ntrap - ERR\necho JOINED_DIALOG_RESOLUTION_RUNTIME_PASS\necho USERBOT_SESSION_PRESERVED=YES\necho GAYBBS_PRESERVED=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
