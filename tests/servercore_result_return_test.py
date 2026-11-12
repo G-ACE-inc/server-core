@@ -355,6 +355,42 @@ class SinkTests(unittest.TestCase):
         self.assertEqual(sink.publish_record(RID, result_dir=self.dir, runner=online)["comment_id"], 77)
         self.assertNotIn(RID, sink.pending_ids(self.dir))
 
+    def test_each_receipt_uses_one_fresh_target_without_restarting_sink(self):
+        second_id = "req_" + "2" * 24
+        sink.accept_record(rec(), result_dir=self.dir)
+        sink.accept_record(rec(request_id=second_id), result_dir=self.dir)
+        paths = []
+
+        def runner(args, stdin=None, timeout=40):
+            if args[:3] == ["api", "-X", "POST"]:
+                paths.append(args[3])
+                return json.dumps({"id": len(paths), "html_url": "https://github.com/receipt"})
+            if "/comments?" in args[-1]:
+                return "[]"
+            return json.dumps({"comments": 0})
+
+        original = sink.load_target()
+        with patch.object(sink, "load_target", side_effect=[
+            {**original, "issue_number": 351},
+            {**original, "issue_number": 352},
+        ]):
+            sink.publish_record(RID, result_dir=self.dir, runner=runner)
+            sink.publish_record(second_id, result_dir=self.dir, runner=runner)
+
+        self.assertEqual(paths, [
+            "repos/G-ACE-inc/server-core/issues/351/comments",
+            "repos/G-ACE-inc/server-core/issues/352/comments",
+        ])
+        self.assertIsNone(sink.publish_record(RID, result_dir=self.dir, runner=runner))
+        self.assertEqual(len(paths), 2)  # Never repost already-published records.
+
+    def test_unavailable_target_preserves_unpublished_receipt(self):
+        sink.accept_record(rec(), result_dir=self.dir)
+        with patch.object(sink, "load_target", side_effect=sink.ResultTargetError("CONTRACT_UNAVAILABLE")):
+            with self.assertRaisesRegex(sink.SinkError, "RESULT_TARGET_CONTRACT_UNAVAILABLE"):
+                sink.publish_record(RID, result_dir=self.dir)
+        self.assertIn(RID, sink.pending_ids(self.dir))
+
     def test_fixed_publish_target_matches_contract(self):
         contract = json.loads((ROOT / "operations" / "github-project-bounded-host.json").read_text())
         target = contract["result_return"]
