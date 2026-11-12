@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/tree/fix/userbot-resident-room-ipc-20261113"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nbranch=fix/userbot-resident-room-ipc-20261113\nsha=d0bdcaf52040b3a090d055ccaee98783d15e4bbf\nw=\"$r/.worktrees/userbot-room-ipc-d0bdcaf\"\ngit -C \"$r\" fetch -q origin \"$branch\" || exit 74\ntest \"$(git -C \"$r\" rev-parse FETCH_HEAD)\" = \"$sha\" || exit 75\nif test -d \"$w\"; then test \"$(git -C \"$w\" rev-parse HEAD)\" = \"$sha\" || exit 76\nelse mkdir -p \"$r/.worktrees\"; git -C \"$r\" worktree add --detach \"$w\" \"$sha\" >/dev/null 2>&1 || exit 77\nfi\ncd \"$w/scripts\"\ntest -f test_userbot_resident_ipc.py || exit 78\npython3 -B test_userbot_resident_ipc.py || exit 79\nif grep -Eq 'TelegramClient|load_credentials|SESSION_BASE|systemctl.*(stop|restart)' userbot_room_smoke.py; then echo USERBOT_DIRECT_SESSION_REGRESSION; exit 80; fi\necho ROOM_RESIDENT_IPC_OFFLINE_TEST_PASS\necho SOURCE_SHA=\"$sha\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
