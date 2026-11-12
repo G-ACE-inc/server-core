@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo DM_PG_NOT_UNIQUE;exit 71; }\necho DM_PG_RUNNING=YES\ndocker exec \"$pg\" sh -c 'psql -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -tA -c \"SELECT datname FROM pg_database WHERE datallowconn AND NOT datistemplate ORDER BY datname\"' | sed 's/^/DM_DATABASE=/'\ndocker exec \"$pg\" sh -c 'psql -U \"$POSTGRES_USER\" -d gaybbs -tA -c \"SELECT to_regclass('\\''public.videobot_creator_sessions'\\''),to_regclass('\\''public.videobot_sticker_packs'\\'')\" ' | sed 's/^/DM_EXISTING_SCHEMA=/'\ndocker exec \"$pg\" sh -c 'test -n \"$POSTGRES_PASSWORD\" && echo DM_PG_ADMIN_SECRET=SET || echo DM_PG_ADMIN_SECRET=MISSING'\ndocker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}DM_POSTGRES_NETWORK={{$k}}{{println}}{{end}}' \"$pg\"\necho DM_NODE_PG_PORT=5432\necho DM_HOST_NODE_AVAILABLE=\"$(command -v node >/dev/null && echo YES || echo NO)\"\necho DM_HOST_NPM_AVAILABLE=\"$(command -v npm >/dev/null && echo YES || echo NO)\"\necho DM_POSTGRES_PROBE_DONE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
