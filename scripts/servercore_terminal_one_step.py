@@ -129,6 +129,8 @@ def _sink_lookup(request_id, *, socket_path, connect):
 
 
 def _finalize(request_id, plan, receipt, record):
+    if record.get("request_id") != request_id:
+        raise OneStepError("RESULT_REQUEST_ID_MISMATCH")
     state = record["state"]
     host_sha = record.get("host_sha") or ""
     outcome = {"PASS": "HOST_PASS", "FAIL": "HOST_FAIL", "RETRYABLE": "HOST_RETRYABLE"}[state]
@@ -144,16 +146,25 @@ def _finalize(request_id, plan, receipt, record):
 def execute_and_fetch(contract, command_kwargs, *, request_id=None, pinned_sha=None,
                       env=None, opener=None, sink_socket_path=result_lookup.SOCKET,
                       sink_connect=None, sleep=time.sleep):
-    """Submit one Execute through the existing Gateway, then read one Result.
+    """Create exactly one validated Request ID, then execute and correlate it.
 
-    Returns metadata only (never stdout/stderr). Raises :class:`OneStepError`
-    with a distinct class for Gateway, Sink, replay and timeout failures.
+    The CLI also calls this internal executor with its already validated plan;
+    generating a second ID after printing the plan would break correlation.
     """
     if request_id is not None:
-        if not isinstance(request_id, str) or not REQUEST_ID_PATTERN.match(request_id):
+        if not isinstance(request_id, str) or not REQUEST_ID_PATTERN.fullmatch(request_id):
             raise OneStepError("REQUEST_ID_INVALID")
         command_kwargs = dict(command_kwargs, request_id=request_id)
     plan = plan_request(contract, command_kwargs, pinned_sha=pinned_sha)
+    return _execute_plan_and_fetch(
+        plan, contract, env=env, opener=opener, sink_socket_path=sink_socket_path,
+        sink_connect=sink_connect, sleep=sleep)
+
+
+def _execute_plan_and_fetch(plan, contract, *, env=None, opener=None,
+                            sink_socket_path=result_lookup.SOCKET,
+                            sink_connect=None, sleep=time.sleep):
+    """Execute a single previously validated plan without re-generating its ID."""
     rid = plan["request_id"]
     attempts, backoff = _poll_plan(env)
 
@@ -242,8 +253,7 @@ def main(argv=None):
         return 0
 
     try:
-        data = execute_and_fetch(contract, command_kwargs,
-                                 request_id=args.request_id, pinned_sha=args.pinned_sha)
+        data = _execute_plan_and_fetch(plan, contract)
     except OneStepError as exc:
         print(json.dumps({"mode": "LIVE", "state": "FAIL", "request_id": plan["request_id"],
                           "failure_class": str(exc)}, sort_keys=True))
