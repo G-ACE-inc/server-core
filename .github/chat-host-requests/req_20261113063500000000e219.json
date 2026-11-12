@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncontainer=gace-createvdobot-videobot-poll-1\nsrc_token=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$container\")\"\nsrc_db=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$container\")\"\ntest -f \"$src_token\" && test -f \"$src_db\" || { echo CREATOR_MOUNT_SOURCE_MISSING; exit 61; }\nuid_token=\"$(stat -c %u \"$src_token\")\"\nuid_db=\"$(stat -c %u \"$src_db\")\"\ngid_token=\"$(stat -c %g \"$src_token\")\"\ngid_db=\"$(stat -c %g \"$src_db\")\"\nnode_uid=\"$(docker run --rm --network none --pull never --entrypoint id create-videobot:local-poll -u)\"\ntest \"$node_uid\" -ge 1 || { echo CREATOR_IMAGE_USER_INVALID; exit 62; }\nif test \"$uid_token\" = \"$node_uid\" && test \"$uid_db\" = \"$node_uid\";then echo CREATOR_SECRET_OWNERS_MATCH_NODE_UID=PASS; exit 0; fi\nif test \"$uid_token\" = \"$node_uid\" && test \"$uid_db\" != \"$node_uid\";then echo CREATOR_DB_SECRET_OWNER_DIFFERS_FROM_NODE_UID; exit 63; fi\nif test \"$uid_token\" != \"$node_uid\" && test \"$uid_db\" = \"$node_uid\";then echo CREATOR_TOKEN_SECRET_OWNER_DIFFERS_FROM_NODE_UID; exit 64; fi\necho CREATOR_BOTH_SECRET_OWNERS_DIFFER_FROM_NODE_UID\nexit 65"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
