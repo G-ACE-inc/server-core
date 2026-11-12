@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nnames=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])gaybbs([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$names\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_GAYBBS_CONTAINER_NOT_UNIQUE; exit 61; }\nname=\"$names\"\ndocker exec \"$name\" node -e 'const fs=require(\"fs\"); console.log(\"STK04_DOCKER_ENV_DB=\"+(process.env.DATABASE_URL?\"YES\":\"NO\"));console.log(\"STK04_DOCKER_ENV_BOT=\"+(process.env.BOT_TOKEN?\"YES\":process.env.BOT_TOKEN_FILE?\"FILE\":\"NO\"));console.log(\"STK04_DOCKER_WD=\"+process.cwd());console.log(\"STK04_NODE_MODULES=\"+(fs.existsSync(\"/app/node_modules\")?\"YES\":\"NO\"));console.log(\"STK04_STICKER_BUNDLE=\"+(fs.existsSync(\"/app/sticker-topic-pin.mjs\")?\"YES\":\"NO\"));console.log(\"STK04_GAYBBS_BUNDLE=\"+(fs.existsSync(\"/app/gaybbs.mjs\")?\"YES\":\"NO\"));console.log(\"STK04_PG_MODULE=\"+(()=>{try{require.resolve(\"pg\");return \"YES\"}catch{return \"NO\"}})());'\necho STK04_DIAG_EXIT_OK"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
