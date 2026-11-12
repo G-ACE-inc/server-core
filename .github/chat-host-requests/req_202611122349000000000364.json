@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/357"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 -B - <<'GACE_EOF'\nimport hashlib, json\nfrom pathlib import Path\nrequest_id=\"req_202611122326000000000362\"\nledger=Path.home()/\".local/state/gserver-terminal/results\"/(request_id+\".json\")\nrow=json.loads(ledger.read_text(encoding=\"utf-8\"))\nassert row.get(\"state\")==\"COMPLETED\",\"NOT_COMPLETED\"\ndata=row[\"result\"]\nstdout=data[\"stdout\"]\nassert \"CHAT_TERMINAL_DIRECT_E2E=PASS\" in stdout,\"EXPECTED_OUTPUT_MISSING\"\nassert hashlib.sha256(stdout.encode(\"utf-8\")).hexdigest()==\"44dbec2ac2ce9acaa03edfb95a09cc191719b4002f0bbc1264291b9a8d58c80f\",\"STDOUT_DIGEST_MISMATCH\"\nassert data[\"stderr\"]==\"\",\"UNEXPECTED_STDERR\"\nprint(\"HOST_WRITER_OUTPUT_VERIFIED=PASS\")\nGACE_EOF\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
