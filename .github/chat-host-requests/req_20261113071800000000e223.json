@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nsrc=d611f2d4edf8414c21ecd1d43336debfe48319b1\ntarget=\"$HOME/.local/share/gace-create-videobot/sticker-poll-$src\"\nname=gace-createvdobot-videobot-poll-1\ntest -f \"$target/src/runtime/creatorPollingMain.mjs\" && test -f \"$target/deploy/Dockerfile\" || { echo STK04_STAGED_SOURCE_MISSING; exit 61; }\ngit cat-file -e \"$src^{commit}\" || { echo STK04_SOURCE_UNVERIFIED; exit 62; }\ntest \"$(docker inspect -f '{{.Config.User}}' create-videobot:local-poll)\" = node || { echo STK04_CURRENT_IMAGE_USER_MISMATCH; exit 63; }\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ndbpass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ntest -f \"$token\" && test -f \"$dbpass\" || { echo STK04_SECRET_SOURCE_MISSING; exit 64; }\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_POSTGRES_NOT_UNIQUE; exit 65; }\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest -n \"$user\" && test \"$net\" = deploy_default || { echo STK04_DB_OWNER_UNVERIFIED; exit 66; }\nother=\"$(docker ps --format '{{.Names}}' | grep -Ei 'create-videobot|createvdobot|videobot-poll|videobot-telegram' | grep -Fxv \"$name\" || true)\"\ntest -z \"$other\" || { echo STK04_OTHER_CONSUMER_EXISTS; exit 67; }\nlog=\"$(mktemp /tmp/gace-videobot-build.XXXXXXXX)\"\ntrap 'rm -f \"$log\"' EXIT\nif ! docker build --network host --pull=false -f \"$target/deploy/Dockerfile\" -t create-videobot:poll-candidate \"$target\" >\"$log\" 2>&1;then\n echo STK04_IMAGE_BUILD=FAILED\n grep -Ei 'failed|error|denied|network|unavailable' \"$log\" | tail -n 4 | sed -E 's#https?://[^ ]+#URL_REDACTED#g' || true\n exit 68\nfi\ndocker run --rm --network none --pull never --entrypoint node create-videobot:poll-candidate -e \"import('./src/runtime/creatorPollingMain.mjs').then(()=>process.exit(0)).catch(()=>process.exit(1))\" >/dev/null || { echo STK04_RUNTIME_IMPORT_FAILED; exit 69; }\ntest \"$(docker inspect -f '{{.Config.User}}' create-videobot:poll-candidate)\" = node || { echo STK04_CANDIDATE_USER_INVALID; exit 70; }\ndocker image tag create-videobot:local-poll create-videobot:poll-rollback\ndocker image tag create-videobot:poll-candidate create-videobot:local-poll\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$token\"\nexport VIDEOBOT_DB_PASSWORD_SOURCE=\"$dbpass\"\nexport GSERVER_POSTGRES_USER=\"$user\"\nexport GSERVER_POSTGRES_NETWORK=\"$net\"\ndocker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" config --quiet || { echo STK04_COMPOSE_CONFIG_INVALID; exit 71; }\nif ! docker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1;then\n echo STK04_COMPOSE_RECREATE_FAILED\n exit 72\nfi\nsleep 10\nif test \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" != true;then\n echo STK04_CONTAINER_NOT_RUNNING\n docker logs --tail 30 \"$name\" 2>&1 | grep -E '^CREATOR_[A-Z_]+(=|$)' | tail -n 8 || true\n exit 73\nfi\nif ! docker logs --tail 100 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$';then\n echo STK04_READY_UNVERIFIED\n docker logs --tail 30 \"$name\" 2>&1 | grep -E '^CREATOR_[A-Z_]+(=|$)' | tail -n 8 || true\n exit 74\nfi\necho STK04_IMAGE_IMPORT=PASS\necho STK04_DM_POLL_RUNNING=PASS\necho STK04_DM_READY=PASS\ndocker logs --tail 100 \"$name\" 2>&1 | grep -E '^CREATOR_(DM|GATE|POLL)_' | tail -n 8 || true"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
