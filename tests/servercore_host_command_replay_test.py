@@ -56,6 +56,35 @@ class ReplayTests(unittest.TestCase):
             writer.run_host_command({**self.writer_request, "replay_only": True},
                                     result_dir=directory)
 
+    def test_receiver_stale_new_request_reports_source_sha_mismatch(self):
+        # A new request under a stale Dispatcher pin must not get silently
+        # translated into an unhelpful missing-replay error. The caller's
+        # existing SHA mismatch handler can then safely report actual HEAD.
+        request = {"id": RID, "command_id": "host.command", "repository": REPO,
+                   "expected_sha": OLD, "repo_sha": OLD, "command": COMMAND}
+        with patch.object(receiver.bounded_host, "checked_root", side_effect=lambda p: p), \
+             patch.object(receiver.bounded_host, "head_sha",
+                          side_effect=receiver.bounded_host.BoundaryError("SOURCE_SHA_MISMATCH")), \
+             patch.object(receiver, "deploy_socket_call",
+                          return_value={"ok": False, "error": "HOST_COMMAND_REPLAY_MISSING"}) as send:
+            with self.assertRaisesRegex(receiver.bounded_host.BoundaryError,
+                                        "SOURCE_SHA_MISMATCH"):
+                receiver.dispatch_host_command(request, self.root)
+        send.assert_called_once()
+        self.assertTrue(send.call_args.args[0]["replay_only"])
+
+    def test_receiver_incomplete_replay_still_fails_closed(self):
+        request = {"id": RID, "command_id": "host.command", "repository": REPO,
+                   "expected_sha": OLD, "repo_sha": OLD, "command": COMMAND}
+        with patch.object(receiver.bounded_host, "checked_root", side_effect=lambda p: p), \
+             patch.object(receiver.bounded_host, "head_sha",
+                          side_effect=receiver.bounded_host.BoundaryError("SOURCE_SHA_MISMATCH")), \
+             patch.object(receiver, "deploy_socket_call",
+                          return_value={"ok": False, "error": "HOST_COMMAND_REPLAY_INCOMPLETE"}):
+            with self.assertRaisesRegex(receiver.ReceiverError,
+                                        "HOST_COMMAND_REPLAY_INCOMPLETE"):
+                receiver.dispatch_host_command(request, self.root)
+
     def test_receiver_uses_saved_result_after_dispatcher_head_advances(self):
         request = {"id": RID, "command_id": "host.command", "repository": REPO,
                    "expected_sha": OLD, "repo_sha": OLD, "command": COMMAND}
