@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/35"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ntest \"$(docker inspect deploy-postgres-1 --format '{{.State.Running}}')\" = true || exit 70\nrooms=$(docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -c \"SELECT count(*) FROM room_posts WHERE title='【検証】ROOM公開同期テスト' AND created_at>NOW()-INTERVAL '24 hours'\")\ntest \"$rooms\" = 0 || { echo ROOM_TEST_ALREADY_PUBLISHED;exit 71; }\nbefore=$(docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -c \"SELECT count(*) FROM public_post_drafts WHERE module='room' AND data->>'title'='【検証】ROOM公開同期テスト'\")\ntest \"$before\" = 1 || exit 72\ndeleted=$(docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -c \"WITH target AS (DELETE FROM public_post_drafts d WHERE d.module='room' AND d.data->>'title'='【検証】ROOM公開同期テスト' AND NOT EXISTS (SELECT 1 FROM room_posts r WHERE r.owner_user_id=d.owner_user_id AND r.title='【検証】ROOM公開同期テスト') RETURNING 1) SELECT count(*) FROM target\")\ntest \"$deleted\" = 1 || exit 73\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 74\necho ONLY_UNPUBLISHED_ROOM_TEST_DRAFT_CLEARED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
