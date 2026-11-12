@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/34"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 70\ntest \"$(stat -c %a \"$r/deploy/secrets/userbot_verify.session\")\" = 600 || exit 71\nold_inode=$(stat -c %i \"$r/deploy/secrets/userbot_verify.session\")\ngit -C \"$r/.worktrees/userbot-room-public-cb3e13c\" show cb3e13c2156f5f8b04645adb121057e88d1c2b4a:scripts/userbot_room_public_smoke.py | cmp -s - \"$r/scripts/userbot_room_public_smoke.py\" || exit 72\n\"$r/deploy/.userbot-venv/bin/python\" -B \"$r/scripts/userbot_test_client.py\" health || exit 73\ngit -C \"$r\" fetch -q origin fix/room-public-smoke-phase-diagnostics-20261113\ntest \"$(git -C \"$r\" rev-parse FETCH_HEAD)\" = fb6678b24dfad4f0f204699ddbf5109c729fe3aa || exit 74\ntmp=$(mktemp \"$r/scripts/.room_public_smoke.XXXXXX\")\ngit -C \"$r\" show FETCH_HEAD:scripts/userbot_room_public_smoke.py > \"$tmp\"\nchmod 644 \"$tmp\"\npython3 -B - \"$tmp\" <<'PY'\nimport ast,sys,pathlib\nast.parse(pathlib.Path(sys.argv[1]).read_text(encoding='utf8'))\nPY\nbackup=$(mktemp \"$r/scripts/.room_public_smoke_backup.XXXXXX\")\ncp -p \"$r/scripts/userbot_room_public_smoke.py\" \"$backup\"\nmv \"$tmp\" \"$r/scripts/userbot_room_public_smoke.py\"\nif ! systemctl --user restart gace-userbot-verify.service; then cp -p \"$backup\" \"$r/scripts/userbot_room_public_smoke.py\"; systemctl --user restart gace-userbot-verify.service || :; echo ROOM_SMOKE_ACTIVATION_ROLLBACK; exit 75; fi\nready=no\nfor i in $(seq 1 60); do\n if test \"$(systemctl --user is-active gace-userbot-verify.service)\" = active && \"$r/deploy/.userbot-venv/bin/python\" -B \"$r/scripts/userbot_test_client.py\" health >/dev/null 2>&1; then ready=yes; break; fi\n sleep 1\ndone\nif test \"$ready\" != yes; then cp -p \"$backup\" \"$r/scripts/userbot_room_public_smoke.py\"; systemctl --user restart gace-userbot-verify.service || :; echo ROOM_SMOKE_ACTIVATION_ROLLBACK; exit 76; fi\ntest \"$(stat -c %i \"$r/deploy/secrets/userbot_verify.session\")\" = \"$old_inode\" || exit 77\ntest \"$(stat -c %a \"$r/deploy/secrets/userbot_verify.session\")\" = 600 || exit 78\necho USERBOT_PUBLIC_ROOM_PHASE_DIAGNOSTICS_ACTIVE=PASS\necho USERBOT_RESIDENT_AUTH_AND_SESSION_PRESERVED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
