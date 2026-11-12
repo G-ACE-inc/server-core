@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/23"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; r=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot; printf 'ROOT_HEAD='; git -C \"$r\" rev-parse HEAD; printf 'TARGET_HEAD='; git -C \"$r\" rev-parse origin/fix/room-position-3-4-20261111; docker inspect deploy-gaybbs-1 --format 'LIVE_IMAGE={{.Image}} RUNNING={{.State.Running}} RESTARTS={{.RestartCount}}'; docker image inspect gace-tgtumbler-gaybbs:room-live-2467fe6 --format 'CANDIDATE={{.Id}}' 2>/dev/null || echo CANDIDATE=ABSENT; systemctl --user is-active gace-userbot-verify.service; echo ROOM_DEPLOY_PREFLIGHT_DONE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
