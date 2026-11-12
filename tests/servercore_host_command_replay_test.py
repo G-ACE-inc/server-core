@@ -62,9 +62,9 @@ class ReplayTests(unittest.TestCase):
         # existing SHA mismatch handler can then safely report actual HEAD.
         request = {"id": RID, "command_id": "host.command", "repository": REPO,
                    "expected_sha": OLD, "repo_sha": OLD, "command": COMMAND}
-        with patch.object(receiver.bounded_host, "checked_root", side_effect=lambda p: p), \\
+        with patch.object(receiver.bounded_host, "checked_root", side_effect=lambda p: p), \
              patch.object(receiver.bounded_host, "head_sha",
-                          side_effect=receiver.bounded_host.BoundaryError("SOURCE_SHA_MISMATCH")), \\
+                          side_effect=receiver.bounded_host.BoundaryError("SOURCE_SHA_MISMATCH")), \
              patch.object(receiver, "deploy_socket_call",
                           return_value={"ok": False, "error": "HOST_COMMAND_REPLAY_MISSING"}) as send:
             with self.assertRaisesRegex(receiver.bounded_host.BoundaryError,
@@ -76,9 +76,9 @@ class ReplayTests(unittest.TestCase):
     def test_receiver_incomplete_replay_still_fails_closed(self):
         request = {"id": RID, "command_id": "host.command", "repository": REPO,
                    "expected_sha": OLD, "repo_sha": OLD, "command": COMMAND}
-        with patch.object(receiver.bounded_host, "checked_root", side_effect=lambda p: p), \\
+        with patch.object(receiver.bounded_host, "checked_root", side_effect=lambda p: p), \
              patch.object(receiver.bounded_host, "head_sha",
-                          side_effect=receiver.bounded_host.BoundaryError("SOURCE_SHA_MISMATCH")), \\
+                          side_effect=receiver.bounded_host.BoundaryError("SOURCE_SHA_MISMATCH")), \
              patch.object(receiver, "deploy_socket_call",
                           return_value={"ok": False, "error": "HOST_COMMAND_REPLAY_INCOMPLETE"}):
             with self.assertRaisesRegex(receiver.ReceiverError,
