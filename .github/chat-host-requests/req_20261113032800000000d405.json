@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nnames=\"$(docker ps --format '{{.Names}}')\"\npg=\"$(printf '%s\\n' \"$names\" | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ngay=\"$(printf '%s\\n' \"$names\" | grep -Ei '(^|[-_])gaybbs([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_PG_NOT_UNIQUE; exit 65; }\ntest \"$(printf '%s\\n' \"$gay\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_BOT_NOT_UNIQUE; exit 66; }\necho STK04_POSTGRES_DATABASES\ndocker exec \"$pg\" sh -c 'psql -At -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"SELECT datname FROM pg_database WHERE datallowconn AND NOT datistemplate ORDER BY datname\"' | head -n 25\necho STK04_NETWORK_CHECK\ndocker exec \"$gay\" node -e 'const dns=require(\"dns\"),https=require(\"https\");console.log(\"STK04_PROXY_ENV_KEYS=\"+Object.keys(process.env).filter(x=>/proxy/i.test(x)).join(\",\"));dns.lookup(\"api.telegram.org\",(e,a)=>{console.log(\"STK04_DNS=\"+(e?e.code:\"PASS\"));const req=https.get(\"https://api.telegram.org/\",{timeout:8000},r=>{console.log(\"STK04_HTTPS_STATUS=\"+r.statusCode);r.resume()});req.on(\"timeout\",()=>req.destroy(new Error(\"TIMEOUT\")));req.on(\"error\",x=>console.log(\"STK04_HTTPS_ERROR=\"+x.code))})'\necho STK04_DB_NET_CHECK_FINISHED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
