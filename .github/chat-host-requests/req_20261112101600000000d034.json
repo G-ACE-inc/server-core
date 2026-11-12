@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/2"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu; ROOT=\"$(git rev-parse --show-toplevel)\"; test \"$(realpath \"$ROOT\")\" = \"$(pwd -P)\" || { echo CANONICAL_ROOT_MISMATCH; exit 71; }; ORIGIN=\"$(git remote get-url origin)\"; case \"$ORIGIN\" in *seigo-gace/create-videobot* ) ;; *) echo OWNER_ORIGIN_MISMATCH; exit 72;; esac; HEAD_EXPECTED=4744dd1d4b092ca41f4104c427a65b154d9e83e6; REF=feat/assistant-ai-and-sales-core; git fetch --no-tags origin \"refs/heads/$REF\"; REMOTE_SHA=\"$(git rev-parse FETCH_HEAD)\"; test \"$REMOTE_SHA\" = \"$HEAD_EXPECTED\" || { echo UPSTREAM_SHA_CHANGED; exit 73; }; DEST=\"$ROOT/.worktrees/sticker-current\"; test ! -e \"$DEST\" || { echo DEST_ALREADY_EXISTS; exit 74; }; if git worktree list --porcelain | grep -Fx \"branch refs/heads/$REF\" >/dev/null; then echo BRANCH_ALREADY_CHECKED_OUT; exit 75; fi; mkdir -p \"$ROOT/.worktrees\"; git worktree add --detach \"$DEST\" \"$HEAD_EXPECTED\"; test \"$(git -C \"$DEST\" rev-parse HEAD)\" = \"$HEAD_EXPECTED\"; test -z \"$(git -C \"$DEST\" status --porcelain --untracked-files=all)\"; printf 'STICKER_WORKTREE=READY\\nSOURCE_HEAD=%s\\n' \"$HEAD_EXPECTED\"; (cd \"$DEST\" && node --test test/stickerWizard.test.mjs)"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
