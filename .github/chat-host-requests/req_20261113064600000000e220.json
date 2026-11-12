@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nsrc=d611f2d4edf8414c21ecd1d43336debfe48319b1\nname=gace-createvdobot-videobot-poll-1\ngit fetch --no-tags origin feat/assistant-ai-and-sales-core >/dev/null 2>&1 || { echo STK04_FETCH_FAILED; exit 61; }\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$src\" || { echo STK04_SOURCE_SHA_MISMATCH; exit 62; }\ntest \"$(docker inspect -f '{{.Config.User}}' create-videobot:local-poll)\" = node || { echo STK04_IMAGE_USER_UNEXPECTED; exit 63; }\ndocker inspect \"$name\" >/dev/null || { echo STK04_EXISTING_CONTAINER_MISSING; exit 64; }\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ndbpass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ntest -f \"$token\" && test -f \"$dbpass\" && test ! -L \"$token\" && test ! -L \"$dbpass\" || { echo STK04_SECRET_SOURCES_INVALID; exit 65; }\nuid=\"$(docker run --rm --network none --pull never --entrypoint id create-videobot:local-poll -u)\"\ntest \"$(stat -c '%u' \"$token\")\" = \"$uid\" && test \"$(stat -c '%u' \"$dbpass\")\" = \"$uid\" || { echo STK04_SECRET_OWNER_MISMATCH; exit 66; }\ndocker run --rm --network none --pull never --cap-drop ALL --security-opt no-new-privileges:true \\\n --mount \"type=bind,source=$token,target=/run/secrets/videobot_telegram_token,readonly\" \\\n --mount \"type=bind,source=$dbpass,target=/run/secrets/videobot_db_password,readonly\" \\\n --entrypoint /bin/sh create-videobot:local-poll -c 'test -r /run/secrets/videobot_telegram_token && test -r /run/secrets/videobot_db_password' \\\n >/dev/null || { echo STK04_RESTRICTED_SECRET_ACCESS_FAILED; exit 67; }\necho STK04_NONROOT_SECRET_ACCESS=PASS\ntarget=\"$HOME/.local/share/gace-create-videobot/sticker-poll-$src\"\nmkdir -p \"$target\"\nchmod 700 \"$target\"\ngit archive \"$src\" | tar -xf - -C \"$target\" || { echo STK04_STAGE_FAILED; exit 68; }\ntest ! \"$(grep -Ec '^[[:space:]]*user:' \"$target/deploy/compose.videobot.poll.yaml\")\" -gt 0 || { echo STK04_ROOT_OVERRIDE_PRESENT; exit 69; }\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_POSTGRES_NOT_UNIQUE; exit 70; }\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest \"$net\" = deploy_default && test -n \"$user\" || { echo STK04_POSTGRES_OWNER_INVALID; exit 71; }\nother=\"$(docker ps --format '{{.Names}}' | grep -Ei 'create-videobot|createvdobot|videobot-poll|videobot-telegram' | grep -Fxv \"$name\" || true)\"\ntest -z \"$other\" || { echo STK04_DUPLICATE_CREATOR_CONSUMER_PRESENT; exit 72; }\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$token\"\nexport VIDEOBOT_DB_PASSWORD_SOURCE=\"$dbpass\"\nexport GSERVER_POSTGRES_USER=\"$user\"\nexport GSERVER_POSTGRES_NETWORK=\"$net\"\ndocker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" config --quiet || { echo STK04_COMPOSE_INVALID; exit 73; }\ndocker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || { echo STK04_CREATOR_RECREATE_FAILED; exit 74; }\nsleep 9\nif test \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" != true;then\n echo STK04_CREATOR_NOT_RUNNING\n docker logs --tail 20 \"$name\" 2>&1 | grep -E '^CREATOR_[A-Z_]+(=|$)' | tail -n 8 || true\n exit 75\nfi\nif ! docker logs --tail 80 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$';then\n echo STK04_CREATOR_READY_NOT_VERIFIED\n docker logs --tail 20 \"$name\" 2>&1 | grep -E '^CREATOR_[A-Z_]+(=|$)' | tail -n 8 || true\n exit 76\nfi\necho STK04_CREATOR_CONTAINER=RUNNING\necho STK04_CREATOR_DM_POLL_READY=PASS\ndocker logs --tail 80 \"$name\" 2>&1 | grep -E '^CREATOR_(DM|GATE|POLL)_' | tail -n 8 || true"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
