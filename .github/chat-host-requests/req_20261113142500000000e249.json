@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nimage=create-videobot:local-poll\ndocker image inspect \"$image\" >/dev/null 2>&1 || exit 61\ndocker run --rm -i --network none --pull never --read-only --cap-drop ALL \\\n --security-opt no-new-privileges:true --tmpfs /tmp:rw,nosuid,nodev,size=256m,mode=1777 \\\n --entrypoint node \"$image\" --input-type=module <<'JS'\nimport {mkdtemp,rm} from 'node:fs/promises';\nimport {join} from 'node:path';\nimport {execFileSync} from 'node:child_process';\nimport {convertStickerMedia} from './src/stickers/mediaConverter.mjs';\nconst dir=await mkdtemp('/tmp/stk04-image-e2e-');\nlet s,e,v,ve;\nconst ff=(...a)=>execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-nostdin','-y',...a],{timeout:30000,stdio:'ignore'});\ntry{\n const jpg=join(dir,'input.jpg'),mp4=join(dir,'input.mp4');\n ff('-f','lavfi','-i','color=c=red:s=800x600:d=1','-frames:v','1',jpg);\n s=await convertStickerMedia({sourcePath:jpg,kind:'sticker'});\n e=await convertStickerMedia({sourcePath:jpg,kind:'emoji'});\n if(s.format!=='static'||s.check.codec!=='png'||s.check.width!==512||s.check.height!==384)process.exitCode=80;\n if(e.format!=='static'||e.check.codec!=='png'||e.check.width!==100||e.check.height!==100)process.exitCode=81;\n ff('-f','lavfi','-i','color=c=blue:s=320x240:r=15:d=3.6','-c:v','mpeg4','-q:v','5',mp4);\n v=await convertStickerMedia({sourcePath:mp4,kind:'sticker'});\n ve=await convertStickerMedia({sourcePath:mp4,kind:'emoji'});\n if(v.format!=='video'||v.check.codec!=='vp9'||v.check.width!==512||v.check.height!==384||v.check.bytes>256*1024)process.exitCode=82;\n if(ve.format!=='video'||ve.check.codec!=='vp9'||ve.check.width!==100||ve.check.height!==100||ve.check.bytes>256*1024)process.exitCode=83;\n if(!process.exitCode)console.log('STK04_LIVE_IMAGE_FFMPEG_STATIC_VIDEO=PASS');\n}catch(e){\n if(!process.exitCode)process.exitCode=84;\n}finally{\n await s?.cleanup();await e?.cleanup();await v?.cleanup();await ve?.cleanup();\n await rm(dir,{recursive:true,force:true});\n}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
