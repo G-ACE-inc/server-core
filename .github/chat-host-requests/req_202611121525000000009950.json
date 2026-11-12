@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/42bbb68ffb96e5c37a357361019cd8487a684a72"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ncd \"$root\"\ngit fetch -q origin fix/room-position-3-4-20261111\nrev=42bbb68ffb96e5c37a357361019cd8487a684a72\ngit cat-file -e \"$rev^{commit}\"\ntmp=$(mktemp -d /tmp/gace-room-verify-XXXXXX)\ntrap 'rm -rf \"$tmp\"' EXIT\ngit archive \"$rev\" artifacts/bot package.json pnpm-lock.yaml pnpm-workspace.yaml 2>/dev/null | tar -x -C \"$tmp\" || { git archive \"$rev\" artifacts/bot | tar -x -C \"$tmp\"; }\nif test -d \"$root/node_modules\"; then\n ln -s \"$root/node_modules\" \"$tmp/node_modules\"\nfi\nif test -d \"$root/artifacts/bot/node_modules\"; then\n ln -s \"$root/artifacts/bot/node_modules\" \"$tmp/artifacts/bot/node_modules\"\nfi\ncd \"$tmp/artifacts/bot\"\nif test -x node_modules/.bin/tsc; then node_modules/.bin/tsc -p tsconfig.json --noEmit; else echo ROOM_TSC_DEPENDENCY_MISSING; exit 81; fi\necho ROOM_APPLICATION_TYPECHECK_PASS\nexport XDG_RUNTIME_DIR=\"/run/user/$(id -u)\"\nexport DBUS_SESSION_BUS_ADDRESS=\"unix:path=$XDG_RUNTIME_DIR/bus\"\nsystemctl --user is-active --quiet gace-userbot-verify.service\nsystemctl --user is-enabled --quiet gace-userbot-verify.service\necho USERBOT_STILL_RUNNING_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
