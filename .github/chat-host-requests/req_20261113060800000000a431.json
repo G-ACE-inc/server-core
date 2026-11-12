@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/29"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nbranch=fix/room-telegram-rejection-diagnostics-20261113\nsha=1f3575b8ad7a509afe7ef4ec4489f0b9d0f8870b\nw=\"$r/.worktrees/room-error-class-1f3575b\"\ntag=gace-tgtumbler-gaybbs:room-error-class-1f3575b\ngit -C \"$r\" fetch -q origin \"$branch\" || exit 70\ntest \"$(git -C \"$r\" rev-parse FETCH_HEAD)\" = \"$sha\" || exit 71\nif test -d \"$w\"; then test \"$(git -C \"$w\" rev-parse HEAD)\" = \"$sha\" || exit 72; else git -C \"$r\" worktree add --detach \"$w\" \"$sha\" >/dev/null || exit 73; fi\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true || exit 74\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 75\ncd \"$w\"\ndocker build --quiet --pull=false --network=host -f artifacts/bot/deploy/Dockerfile.gaybbs -t \"$tag\" . || exit 76\ndocker image inspect \"$tag\" --format 'IMAGE={{.Id}}'\necho ROOM_TELEGRAM_CLASSIFIER_BUILD_PASS\necho SHA=\"$sha\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
