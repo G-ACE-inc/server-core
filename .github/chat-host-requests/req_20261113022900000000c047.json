@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nimage=localhost/gace-stk04-pin:88fb602c\npodman image exists \"$image\" || { echo STK04_VERIFIED_PIN_IMAGE_MISSING; exit 80; }\nnames=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])gaybbs([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$names\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_GAYBBS_OWNER_NOT_UNIQUE; exit 81; }\nname=\"$names\"\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true || { echo STK04_GAYBBS_NOT_RUNNING; exit 82; }\ndocker exec \"$name\" node --version >/dev/null || { echo STK04_GAYBBS_NODE_UNAVAILABLE; exit 83; }\nresult=\"$(mktemp /tmp/gace-stk04-onshot.XXXXXXXX)\"\ntrap 'rm -f \"$result\"' EXIT\nif podman run --rm --entrypoint cat \"$image\" /app/sticker-topic-pin.mjs | docker exec -i \"$name\" node --input-type=module - >\"$result\" 2>&1; then\n grep -E '^STICKER_PIN_(OWNER|TARGET|TARGET_SOURCE|TELEGRAM_ACK|MESSAGE_ID|INDEPENDENT_READBACK)=' \"$result\" || true\n grep -q '^STICKER_PIN_TELEGRAM_ACK=YES$' \"$result\" || { echo STK04_PIN_API_ACK_NOT_PRESENT; exit 84; }\n echo STK04_PRODUCTION_TELEGRAM_PIN_ACK=PASS\nelse\n grep -E '^STICKER_PIN_(RESULT|ERROR)=' \"$result\" || true\n if grep -q 'STICKER_PIN_ERROR=STICKER_TOPIC_NOT_VERIFIED_OR_AMBIGUOUS' \"$result\"; then exit 85; fi\n if grep -q 'STICKER_PIN_ERROR=STICKER_PIN_DATABASE_NOT_CONFIGURED' \"$result\"; then exit 86; fi\n if grep -q 'STICKER_PIN_ERROR=STICKER_PIN_RECEIPT_NEEDS_RECONCILE' \"$result\"; then exit 87; fi\n echo STK04_PIN_EXECUTION_NOT_VERIFIED\n exit 88\nfi\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
