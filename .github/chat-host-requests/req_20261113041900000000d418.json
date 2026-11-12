@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ngay=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])gaybbs([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$gay\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_GROUP_NOT_UNIQUE; exit 61; }\nstate_dir=\"$HOME/.local/state/gace-stk04\";receipt=\"$state_dir/creator_dm_2373696859.pin\"\ntest -f \"$receipt\" || { echo STK04_RECEIPT_MISSING; exit 62; }\nexec 9>\"$state_dir/creator_dm_2373696859.lock\";flock -n 9 || exit 63\nstatus=\"$(cat \"$receipt\")\"\nif [ \"$status\" = \"PINNED\" ];then echo STK04_ALREADY_PINNED;exit 0;fi\nif [ \"$status\" = \"NEEDS_RECONCILE\" ];then\n echo POSTED:4652 > \"$receipt\"\nelif [ \"$status\" != \"POSTED:4652\" ];then\n echo \"STK04_RECEIPT_CONFLICT\";exit 64\nfi\nout=\"$(mktemp /tmp/gace-stk04-edit.XXXXXXXX)\";trap 'rm -f \"$out\"' EXIT\nif docker exec -i \"$gay\" node --input-type=module - >\"$out\" 2>&1 <<'STK04_RECONCILE_NODE'\nimport fs from \"node:fs\";import https from \"node:https\";\nconst f=process.env.BOT_TOKEN_FILE;\nif(!f?.startsWith(\"/\")){console.error(\"STK04_AUTH_CONFIG_MISSING\");process.exit(2)}\nconst token=fs.readFileSync(f,\"utf8\").trim();\nconst api=(method,obj)=>new Promise((resolve,reject)=>{\nconst b=JSON.stringify(obj);\nconst req=https.request({hostname:\"api.telegram.org\",port:443,family:4,path:\"/bot\"+token+\"/\"+method,method:\"POST\",headers:{\"Content-Type\":\"application/json\",\"Content-Length\":Buffer.byteLength(b)},timeout:12000},resp=>{\nlet s=\"\";resp.on(\"data\",d=>{if(s.length<65536)s+=d});resp.on(\"end\",()=>{try{const j=JSON.parse(s);if(j.ok!==true)reject(Error(\"STK04_\"+method+\"_REJECTED_\"+String(j.error_code??0)));else resolve(j.result)}catch(e){reject(e)}})\n});req.on(\"timeout\",()=>req.destroy(Error(\"STK04_API_TIMEOUT\")));req.on(\"error\",e=>reject(Error(\"STK04_NETWORK_\"+String(e.code??\"UNKNOWN\"))));req.end(b);\n});\ntry{\nconst me=await api(\"getMe\",{});\nif(me.username?.toLowerCase()!==\"gaybbs_bot\"||me.is_bot!==true)throw Error(\"STK04_WRONG_SENDER\");\nconst m=await api(\"editMessageText\",{\n chat_id:-1002373696859,message_id:4652,\n text:\"🎨 ステッカー作成・投稿はこちら\\n下のボタンからCreateVdobotのDMを開いてください。\\n\\n✅ ステッカー投稿メニューに移動\",\n reply_markup:{inline_keyboard:[[{text:\"🎨 投稿はこちら\",url:\"https://t.me/CreateVdobot?start=sticker\"}]]}\n});\nconsole.log(\"STK04_EDIT_RETURN_CHAT_ID=\"+String(m?.chat?.id??\"MISSING\"));\nconsole.log(\"STK04_EDIT_RETURN_MESSAGE_ID=\"+String(m?.message_id??\"MISSING\"));\nconsole.log(\"STK04_EDIT_RETURN_THREAD_ID=\"+String(m?.message_thread_id??\"MISSING\"));\nconsole.log(\"STK04_EDIT_RETURN_IS_TOPIC=\"+String(m?.is_topic_message===true));\nconsole.log(\"STK04_EDIT_RETURN_REPLY_ID=\"+String(m?.reply_to_message?.message_id??\"MISSING\"));\nconst button=m?.reply_markup?.inline_keyboard?.[0]?.[0]?.url;\nconsole.log(\"STK04_EDIT_RETURN_BUTTON=\"+(button===\"https://t.me/CreateVdobot?start=sticker\"?\"PASS\":\"NOT_VERIFIED\"));\nif(Number(m?.chat?.id)!==-1002373696859||m?.message_id!==4652||m?.is_topic_message!==true||\n   m?.message_thread_id!==4291||m?.from?.id!==me.id||button!==\"https://t.me/CreateVdobot?start=sticker\"||\n   (m?.reply_to_message?.message_id!==undefined&&m.reply_to_message.message_id!==4640)) {\n console.log(\"STK04_PIN_BLOCKED_BY_TOPIC_VERIFICATION\");\n process.exitCode=3;\n}else{\n const res=await api(\"pinChatMessage\",{chat_id:-1002373696859,message_id:4652,disable_notification:true});\n if(res!==true)throw Error(\"STK04_PIN_RESULT_NOT_TRUE\");\n console.log(\"STK04_TELEGRAM_PIN_ACK=PASS\");\n console.log(\"STK04_PINNED_MESSAGE_ID=4652\");\n}\n}catch(e){console.error(String(e.message||\"STK04_UNCLASSIFIED\").replace(/[^A-Za-z0-9_]/g,\"_\"));process.exitCode=1}\n\nSTK04_RECONCILE_NODE\nthen\n grep '^STK04_' \"$out\" || true\n if grep -qx 'STK04_TELEGRAM_PIN_ACK=PASS' \"$out\";then\n  echo PINNED > \"$receipt\"\n  echo STK04_PIN_RECEIPT_PERSISTED\n else\n  echo STK04_PIN_API_ACK_MISSING;exit 65\n fi\nelse\n grep '^STK04_' \"$out\" || true\n echo STK04_ORIGINAL_MESSAGE_PRESERVED_NO_RESEND\n exit 66\nfi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
