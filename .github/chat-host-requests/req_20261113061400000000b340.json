@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\npy=\"$r/deploy/.userbot-venv/bin/python\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 70\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 71\ntest \"$(docker inspect deploy-postgres-1 --format '{{.State.Running}}')\" = true || exit 72\n\"$py\" -B \"$r/scripts/userbot_test_client.py\" health || exit 73\nrows=$(docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -F '|' -c \"SELECT DISTINCT t.chat_id,d.telegram_message_id FROM room_status_message_edits q JOIN room_source_events e ON e.event_id=q.room_event_id JOIN posting_deliveries d ON d.delivery_id=q.delivery_id JOIN posting_topics t ON t.topic_id=d.posting_topic_id WHERE q.state='needs_reconcile' AND e.kind='finished' AND d.status='sent' AND d.telegram_message_id IS NOT NULL AND t.enabled=TRUE AND t.purpose IN ('room','announcement') ORDER BY t.chat_id,d.telegram_message_id LIMIT 4\") || exit 74\nif test -z \"$rows\"; then echo ROOM_READBACK_TARGET_COUNT=0; else\n count=$(printf '%s\\n' \"$rows\" | wc -l)\n echo ROOM_READBACK_TARGET_COUNT=\"$count\"\n printf '%s\\n' \"$rows\" | while IFS='|' read -r chat_id message_id; do\n  if \"$py\" -B \"$r/scripts/userbot_test_client.py\" room_public_readback --chat-id \"$chat_id\" --message-id \"$message_id\"; then\n   echo ROOM_READBACK_RESULT=PASS\n  else\n   echo ROOM_READBACK_RESULT=NOT_CONFIRMED\n  fi\n done\nfi\n\"$py\" -B \"$r/scripts/userbot_test_client.py\" health || exit 75\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 76\necho USERBOT_RESIDENT_SESSION=ACTIVE\necho ROOM_PUBLIC_READBACK_CHECK_COMPLETE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
