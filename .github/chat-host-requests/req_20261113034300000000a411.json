@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/25"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nw=\"$r/.worktrees/room-public-sync-1d97db6\"\nu=gace-userbot-verify.service\nold=\"$r/deploy/gserver-compose.yaml\"\nnext=\"$w/deploy/gserver-compose.yaml\"\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 1d97db6d00e47d92ca769e541b5dfe3f1299dee4 || exit 70\ntest \"$(sha256sum \"$old\" | cut -d' ' -f1)\" = 57ec0f1ae8df1123a11781b038ef4d2214a4fac75632c5e95c4854c31b1c5cc1 || exit 71\ntest \"$(sha256sum \"$next\" | cut -d' ' -f1)\" = b9be31cf75231f38eb762563b8fcb0cb2399ebecf65dfedf303037a3d3582ad1 || exit 72\ntest \"$(systemctl --user is-active \"$u\")\" = active || exit 73\nbefore_userbot=$(systemctl --user show \"$u\" -p MainPID --value)\ntest \"$(docker inspect deploy-postgres-1 --format '{{.State.Running}}')\" = true || exit 74\nbefore_pg=$(docker inspect deploy-postgres-1 --format '{{.Id}}')\nbefore_img=$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\ntest \"$before_img\" = \"$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\" || exit 75\ndocker compose -p deploy -f \"$next\" --project-directory \"$r/deploy\" config -q || exit 76\nrollback() {\n echo ROOM_DEPLOY_ROLLBACK_TRIGGERED\n docker compose -p deploy -f \"$old\" --project-directory \"$r/deploy\" up -d --no-deps --force-recreate gaybbs || :\n}\ntrap rollback ERR\ndocker compose -p deploy -f \"$next\" --project-directory \"$r/deploy\" up -d --no-deps --force-recreate gaybbs\nfor i in $(seq 1 24); do\n test \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true || { sleep 1; continue; }\n if docker logs --since 3m deploy-gaybbs-1 2>&1 | grep -q GAYBBS_BOT_READY; then break; fi\n sleep 1\ndone\ndocker logs --since 3m deploy-gaybbs-1 2>&1 | grep -q GAYBBS_BOT_READY || exit 77\ndocker exec deploy-gaybbs-1 sh -c 'test \"$GAYBBS_ROOM_EVENT_WORKER_ENABLED\" = enabled && test \"$GAYBBS_ROOM_STATUS_EDIT_ENABLED\" = enabled' || exit 78\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\" = \"$before_img\" || exit 79\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.RestartCount}}')\" = 0 || exit 80\ntest \"$(docker inspect deploy-postgres-1 --format '{{.Id}}')\" = \"$before_pg\" || exit 81\ntest \"$(systemctl --user show \"$u\" -p MainPID --value)\" = \"$before_userbot\" || exit 82\ntest \"$(systemctl --user is-active \"$u\")\" = active || exit 83\ntrap - ERR\necho ROOM_SYNC_FLAGS_PRODUCTION_PASS\necho GAYBBS_READY_PASS\necho PG_UNCHANGED_PASS\necho USERBOT_PID_UNCHANGED_PASS\necho GAYBBS_ONLY_RECREATED_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
