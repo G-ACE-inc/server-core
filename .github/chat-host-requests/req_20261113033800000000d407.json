@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\np=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' | head -n 1)\"\ntest -n \"$p\" || exit 71\nprintf 'STK04_TABLES\\n'\ndocker exec \"$p\" sh -c 'psql -At -U \"$POSTGRES_USER\" -d gaybbs -c \"SELECT to_regclass(\\x27public.posting_topics\\x27),to_regclass(\\x27public.posting_sticker_entry_pins\\x27)\"' || true\nprintf 'STK04_TOPIC_READBACK\\n'\ndocker exec \"$p\" sh -c 'psql -At -F \"|\" -U \"$POSTGRES_USER\" -d gaybbs -c \"SELECT topic_id,board_key,purpose,chat_id,message_thread_id,title,enabled,verified_at IS NOT NULL AND verified_by IS NOT NULL FROM posting_topics WHERE chat_id=-1002373696859 AND (purpose=\\x27sticker\\x27 OR title ILIKE \\x27%ステッカー%\\x27) ORDER BY topic_id LIMIT 10\"' || echo STK04_TOPIC_QUERY_FAILED\nprintf 'STK04_PIN_RECEIPTS\\n'\ndocker exec \"$p\" sh -c 'psql -At -F \"|\" -U \"$POSTGRES_USER\" -d gaybbs -c \"SELECT topic_id,status,telegram_message_id,creator_bot_username FROM posting_sticker_entry_pins ORDER BY topic_id LIMIT 10\"' || echo STK04_PIN_TABLE_UNAVAILABLE\nprintf 'STK04_HOST_HTTPS\\n'\ncurl -LsS -o /dev/null --connect-timeout 6 --max-time 10 -w 'STK04_HOST_HTTPS_STATUS=%{http_code}\\n' https://api.telegram.org/ || echo STK04_HOST_HTTPS_UNAVAILABLE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
