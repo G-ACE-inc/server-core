@@ -43,6 +43,22 @@ class ResultTargetTests(unittest.TestCase):
         with self.assertRaisesRegex(target.ResultTargetError, "NOT_WRITABLE"):
             target.check_capacity(value, runner=response(0, locked=True))
 
+    def test_api_failure_and_closed_issue_fail_closed(self):
+        value = target.load_target()
+
+        def failed_runner(_args, **_kwargs):
+            return SimpleNamespace(returncode=1, stdout="", stderr="HTTP 403")
+
+        with self.assertRaisesRegex(target.ResultTargetError, "RESULT_TARGET_API_UNAVAILABLE"):
+            target.check_capacity(value, runner=failed_runner)
+
+        def closed_runner(_args, **_kwargs):
+            return SimpleNamespace(returncode=0, stdout=json.dumps({
+                "comments": 0, "locked": False, "state": "closed"}))
+
+        with self.assertRaisesRegex(target.ResultTargetError, "RESULT_TARGET_NOT_WRITABLE"):
+            target.check_capacity(value, runner=closed_runner)
+
     def test_workflow_checks_capacity_before_sender_and_polls_same_issue(self):
         workflow = (ROOT / ".github/workflows/chatgpt-live-api-verify.yml").read_text()
         dispatch = workflow.split("- name: Common bounded Host gateway dispatch", 1)[1]
