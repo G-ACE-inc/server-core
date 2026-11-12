@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nsrc=08c2b587459bab128ffaac3dda7645b1164a8013\nname=gace-createvdobot-videobot-poll-1\ngit fetch --no-tags origin feat/assistant-ai-and-sales-core >/dev/null 2>&1 || { echo STK04_SOURCE_FETCH_FAILED; exit 61; }\ngit cat-file -e \"$src^{commit}\" || { echo STK04_SOURCE_COMMIT_MISSING; exit 62; }\ntarget=\"$HOME/.local/share/gace-create-videobot/sticker-poll-$src\"\nmkdir -p \"$target\" && chmod 700 \"$target\"\ngit archive \"$src\" | tar -xf - -C \"$target\"\ntest -f \"$target/src/telegram/stickerWizard.mjs\" && test -f \"$target/src/runtime/creatorEgress.mjs\" && test -f \"$target/deploy/compose.videobot.poll.yaml\" || { echo STK04_STAGE_INCOMPLETE; exit 63; }\ngrep -Fq 'sticker:defer' \"$target/src/telegram/stickerWizard.mjs\" && test -f \"$target/sql/013_sticker_uploaded_identity.sql\" && grep -Fq 'schema.migrations!==13' \"$target/src/runtime/creatorPollingMain.mjs\" || { echo STK04_IDENTITY_RECOVERY_NOT_STAGED; exit 64; }\ndocker inspect \"$name\" >/dev/null 2>&1 || { echo STK04_EXISTING_OWNER_CONTAINER_MISSING; exit 65; }\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ndbpass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ntest -f \"$token\" && test ! -L \"$token\" && test -f \"$dbpass\" && test ! -L \"$dbpass\" || { echo STK04_EXISTING_SECRET_MOUNT_MISSING; exit 66; }\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_POSTGRES_NOT_UNIQUE; exit 67; }\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest -n \"$user\" && test \"$net\" = deploy_default || { echo STK04_DB_OWNERSHIP_UNVERIFIED; exit 68; }\nother=\"$(docker ps --format '{{.Names}}' | grep -Ei 'create-videobot|createvdobot|videobot-poll|videobot-telegram' | grep -Fxv \"$name\" || true)\"\ntest -z \"$other\" || { echo STK04_SECOND_CREATOR_CONSUMER_PRESENT; exit 69; }\nlog=\"$(mktemp /tmp/stk04-build.XXXXXXXX)\"\ntrap 'rm -f \"$log\"' EXIT\nif ! docker build --network host --pull=false -f \"$target/deploy/Dockerfile\" -t create-videobot:sticker-recovery \"$target\" >\"$log\" 2>&1;then\n echo STK04_IMAGE_BUILD_FAILED\n grep -Ei 'failed|error|unavailable|timeout' \"$log\" | tail -n 5 | sed -E 's#https?://[^ ]+#URL_REDACTED#g' || true\n exit 70\nfi\ndocker run --rm --network none --pull never --entrypoint node create-videobot:sticker-recovery -e \"import('./src/runtime/creatorPollingMain.mjs').then(()=>process.exit(0)).catch(()=>process.exit(1))\" >/dev/null || { echo STK04_CANDIDATE_IMPORT_FAILED; exit 71; }\nuid=\"$(docker run --rm --network none --pull never --entrypoint id create-videobot:sticker-recovery -u)\"\ntest \"$(stat -c '%u' \"$token\")\" = \"$uid\" && test \"$(stat -c '%u' \"$dbpass\")\" = \"$uid\" || { echo STK04_SECRET_USER_MISMATCH; exit 72; }\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$token\" VIDEOBOT_DB_PASSWORD_SOURCE=\"$dbpass\" GSERVER_POSTGRES_USER=\"$user\" GSERVER_POSTGRES_NETWORK=\"$net\"\ndocker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" config --quiet || { echo STK04_COMPOSE_INVALID; exit 73; }\ndocker image tag create-videobot:local-poll create-videobot:poll-rollback\ndocker image tag create-videobot:sticker-recovery create-videobot:local-poll\nif ! docker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1;then\n echo STK04_POLL_RECREATE_FAILED\n docker image tag create-videobot:poll-rollback create-videobot:local-poll\n docker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true\n exit 74\nfi\nsleep 11\nif test \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" != true || ! docker logs --tail 120 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$';then\n echo STK04_RECOVERY_READY_FAILED\n docker logs --tail 120 \"$name\" 2>&1 | grep -E '^CREATOR_[A-Z_]+(=|$)' | tail -n 6 || true\n docker image tag create-videobot:poll-rollback create-videobot:local-poll\n docker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true\n echo STK04_PREVIOUS_IMAGE_RESTORATION_ATTEMPTED\n exit 75\nfi\necho STK04_CREATOR_DM_POLL_READY=PASS\necho STK04_STICKER_RECOVERY_SOURCE_SHA=\"$src\"\ndocker logs --tail 100 \"$name\" 2>&1 | grep -E '^CREATOR_(DM|GATE|POLL)_' | tail -n 7 || true"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
