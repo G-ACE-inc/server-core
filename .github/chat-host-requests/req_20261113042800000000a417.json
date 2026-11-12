@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/26"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nw=\"$r/.worktrees/room-userbot-readback-63f062f\"\nb=\"$HOME/.local/state/gace-userbot-public-readback-rollback-20261113\"\nu=gace-userbot-verify.service\nsha=63f062fc755e625d366fb3ac3e1541878498ea5c\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = \"$sha\" || exit 70\ntest ! -e \"$b\" || exit 71\ntest \"$(systemctl --user is-active \"$u\")\" = active || exit 72\ntest \"$(systemctl --user is-enabled \"$u\")\" = enabled || exit 73\ntest \"$(stat -c %a \"$r/deploy/secrets/userbot_verify.session\")\" = 600 || exit 74\nfor n in userbot_resident_ipc.py userbot_test_client.py; do test -f \"$w/scripts/$n\" && test -f \"$r/scripts/$n\" || exit 75; done\nmkdir -m 700 -p \"$b\"\nfor n in userbot_resident_ipc.py userbot_test_client.py; do cp -p \"$r/scripts/$n\" \"$b/$n\"; done\nrollback() {\n echo USERBOT_CODE_ROLLBACK\n for n in userbot_resident_ipc.py userbot_test_client.py; do cp -p \"$b/$n\" \"$r/scripts/$n\"; done\n systemctl --user restart \"$u\" || :\n}\ntrap rollback ERR\nfor n in userbot_resident_ipc.py userbot_test_client.py; do install -m 600 \"$w/scripts/$n\" \"$r/scripts/$n.new\"; mv -f \"$r/scripts/$n.new\" \"$r/scripts/$n\"; done\ncd \"$r/scripts\"\n\"$r/deploy/.userbot-venv/bin/python\" -B \"$w/scripts/test_userbot_resident_ipc.py\" || exit 76\nbefore=$(systemctl --user show \"$u\" -p MainPID --value)\nsystemctl --user restart \"$u\" || exit 77\nfor i in $(seq 1 30); do\n if test \"$(systemctl --user is-active \"$u\" || :)\" = active && test -S \"$r/deploy/secrets/userbot_verify.sock\"; then\n  if \"$r/deploy/.userbot-venv/bin/python\" -B \"$r/scripts/userbot_test_client.py\" health; then break; fi\n fi\n sleep 1\ndone\n\"$r/deploy/.userbot-venv/bin/python\" -B \"$r/scripts/userbot_test_client.py\" health || exit 78\ntest \"$(systemctl --user show \"$u\" -p MainPID --value)\" != \"$before\" || exit 79\ntest \"$(stat -c %a \"$r/deploy/secrets/userbot_verify.session\")\" = 600 || exit 80\ntest \"$(stat -c %a \"$r/deploy/secrets/userbot_verify.sock\")\" = 600 || exit 81\ntest \"$(systemctl --user is-enabled \"$u\")\" = enabled || exit 82\ntrap - ERR\necho USERBOT_ROOM_PUBLIC_READBACK_RUNTIME_PASS\necho USERBOT_OLD_CODE_SAVED=YES\necho USERBOT_SESSION_REENROLL=NO\necho SOURCE_SHA=\"$sha\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
