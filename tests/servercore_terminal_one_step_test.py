@@ -183,7 +183,7 @@ class OneStepDefaultOffTests(unittest.TestCase):
 
         gateway_send.send = send
         result_lookup.lookup = lookup
-        with patch.dict(os.environ, {"GACE_TERMINAL_ONE_STEP_ENABLED": "1"}), \\
+        with patch.dict(os.environ, {"GACE_TERMINAL_ONE_STEP_ENABLED": "1"}), \
              patch.object(module, "plan_request", wraps=module.plan_request) as planned:
             output = io.StringIO()
             with redirect_stdout(output):
