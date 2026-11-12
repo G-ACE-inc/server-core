@@ -576,6 +576,9 @@ jobs:
             exit 1
           fi
 
+      - name: Secret pattern code-expression classifier
+        run: python3 -m unittest discover -s tests -p servercore_secret_pattern_guard_test.py -v
+
       - name: Secret pattern guard
         run: |
           set -euo pipefail
@@ -600,8 +603,7 @@ jobs:
           )"
           hits="$(printf '%s\n' "$hits" | grep -Ev '=[[:space:]]*(os\.environ\.get|check_token_not_in_env)\(' || true)"
           if [ -n "$hits" ]; then
-            echo "$hits"
-            exit 1
+            printf '%s\n' "$hits" | python3 scripts/servercore_secret_pattern_guard.py
           fi
 
       - name: Shell syntax
