@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nprintf 'CREATOR_DM_RUNTIME_AUDIT_BEGIN\\n'\nprintf 'SOURCE_HEAD=';git rev-parse HEAD\nprintf 'SOURCE_BRANCH=';git branch --show-current\nprintf 'RUNNING_CREATOR_CONTAINERS\\n'\ndocker ps --format '{{.Names}}|{{.Status}}' | grep -Ei 'create|videobot|video-bot|postgres' || true\nprintf 'RELEVANT_DOCKER_NETWORKS\\n'\ndocker network ls --format '{{.Name}}' | grep -Ei 'gserver|tgtumbler' || true\nprintf 'OWNER_PORTS\\n'\nfor f in /opt/videobot/owner/gateOwner.mjs ./deploy/owner/gateOwner.mjs ./owner/gateOwner.mjs; do if test -f \"$f\";then printf 'OWNER_BRIDGE_EXISTS=%s\\n' \"$f\";fi;done\nprintf 'CREATOR_MIGRATION_STATUS\\n'\nif test -d deploy/secrets; then echo PRIVATE_SECRETS_DIR=YES; else echo PRIVATE_SECRETS_DIR=NO;fi\npython3 -B - <<'PY'\nimport json,re,stat,urllib.request,urllib.error\nfrom pathlib import Path\np=Path.cwd()\nsources=[p/'deploy'/'secrets',p/'deploy',Path.home()/'.config'/'create-videobot']\ntokens=set()\nfor d in sources:\n if not d.is_dir():continue\n for f in d.iterdir():\n  try:\n   if f.is_symlink() or not f.is_file():continue\n   st=f.stat()\n   if st.st_mode & 0o022 or not 35<=st.st_size<=8192:continue\n   low=f.name.lower()\n   if any(x in low for x in ('userbot','session','phone','oauth','backup')):continue\n   if not any(x in low for x in ('bot','token','secret','.env')):continue\n   data=f.read_text(encoding='utf-8')\n   if re.fullmatch(r'\\d{7,15}:[A-Za-z0-9_-]{30,100}',data.strip()):tokens.add(data.strip())\n   else:\n    for line in data.splitlines():\n     if '=' not in line or line.lstrip().startswith('#'):continue\n     k,v=line.split('=',1)\n     if 'TOKEN' in k.upper() and any(x in k.upper() for x in ('CREATE','VIDEO','VDO','TELEGRAM')):\n      v=v.strip().strip('\"').strip(\"'\")\n      if re.fullmatch(r'\\d{7,15}:[A-Za-z0-9_-]{30,100}',v):tokens.add(v)\n  except (OSError,UnicodeError):pass\ndef api(token,method):\n req=urllib.request.Request(f'https://api.telegram.org/bot{token}/{method}',data=b'{}',headers={'Content-Type':'application/json'},method='POST')\n with urllib.request.urlopen(req,timeout=12) as r:return json.load(r)\nfor tok in tokens:\n try:\n  me=api(tok,'getMe')\n  if not me.get('ok') or str(me['result'].get('username','')).lower()!='createvdobot':continue\n  print('CREATOR_IDENTITY=VERIFIED')\n  wh=api(tok,'getWebhookInfo')['result']\n  print('CREATOR_WEBHOOK_REGISTERED='+('YES' if wh.get('url') else 'NO'))\n  print('CREATOR_PENDING_UPDATES='+str(wh.get('pending_update_count','UNKNOWN')))\n  print('CREATOR_WEBHOOK_LAST_ERROR='+('YES' if wh.get('last_error_message') else 'NO'))\n  print('CREATOR_WEBHOOK_ALLOWED_UPDATES='+','.join(wh.get('allowed_updates') or []))\n  break\n except Exception:continue\nelse:print('CREATOR_IDENTITY=NOT_VERIFIED')\nPY\nprintf 'CREATOR_DM_RUNTIME_AUDIT_END\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
