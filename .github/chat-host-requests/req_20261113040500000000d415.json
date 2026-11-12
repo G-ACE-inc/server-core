@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ngay=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])gaybbs([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$gay\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_GROUP_CONTAINER_AMBIGUOUS; exit 61; }\ndocker exec -i \"$gay\" node --input-type=module - <<'NODE'\nimport fs from \"node:fs\";import https from \"node:https\";\nconst path=process.env.BOT_TOKEN_FILE;\nif(!path||!path.startsWith(\"/\"))throw Error(\"STK04_BOT_TOKEN_FILE_NOT_CONFIGURED\");\nconst token=fs.readFileSync(path,\"utf8\").trim();\nif(!/^[0-9]{7,15}:[A-Za-z0-9_-]{30,100}$/.test(token))throw Error(\"STK04_BOT_CREDENTIAL_INVALID\");\nfunction api(name,params){return new Promise((ok,bad)=>{\n const data=JSON.stringify(params);const req=https.request({\n hostname:\"api.telegram.org\",port:443,family:4,path:\"/bot\"+token+\"/\"+name,\n method:\"POST\",headers:{\"Content-Type\":\"application/json\",\"Content-Length\":Buffer.byteLength(data)},timeout:12000\n },res=>{let txt=\"\";res.on(\"data\",c=>{if(txt.length<65536)txt+=c});res.on(\"end\",()=>{\n try{const j=JSON.parse(txt);if(j.ok!==true)bad(Error(\"STK04_API_\"+name+\"_REJECTED_\"+String(j.error_code||0)));else ok(j.result)}\n catch(e){bad(e)}\n });});req.on(\"timeout\",()=>req.destroy(Error(\"STK04_TIMEOUT\")));req.on(\"error\",e=>bad(Error(\"STK04_NETWORK_\"+String(e.code||\"UNKNOWN\"))));req.end(data);\n});}\ntry{\n const me=await api(\"getMe\",{});\n if(!me.is_bot||String(me.username).toLowerCase()!==\"gaybbs_bot\")throw Error(\"STK04_WRONG_BOT_IDENTITY\");\n const chat=await api(\"getChat\",{chat_id:-1002373696859});\n if(chat.type!==\"supergroup\"||chat.is_forum!==true||Number(chat.id)!==-1002373696859)throw Error(\"STK04_TARGET_FORUM_UNVERIFIED\");\n const member=await api(\"getChatMember\",{chat_id:-1002373696859,user_id:me.id});\n if(![\"administrator\",\"creator\"].includes(member.status))throw Error(\"STK04_NOT_ADMINISTRATOR\");\n if(member.status===\"administrator\"&&member.can_pin_messages!==true)throw Error(\"STK04_PIN_PERMISSION_DENIED\");\n console.log(\"STK04_GROUP_BOT_AUTH=PASS\");\n console.log(\"STK04_FORUM_ID_VERIFIED=PASS\");\n console.log(\"STK04_BOT_PIN_PERMISSION=PASS\");\n}catch(e){console.error(String(e.message||\"STK04_UNCLASSIFIED\"));process.exitCode=1}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
