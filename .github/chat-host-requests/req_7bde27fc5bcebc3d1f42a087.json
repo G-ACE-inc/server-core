@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/23"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nsha=2467fe6847f5ef9f42ff74ff595cfb23401d678d\nw=\"$r/.worktrees/room-live-2467fe6\"\nf=\"$r/deploy/gserver-compose.yaml\"\ntag=gace-tgtumbler-gaybbs:room-live-2467fe6\nrollback=gace-tgtumbler-gaybbs:rollback-room-2467fe6\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = \"$sha\" || exit 76\ntest -f \"$f\" || exit 45\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 81\ncandidate=$(docker image inspect \"$tag\" --format '{{.Id}}') || exit 51\nold=$(docker inspect deploy-gaybbs-1 --format '{{.Image}}') || exit 52\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true || exit 53\nif test \"$old\" = \"$candidate\"; then echo ROOM_ALREADY_DEPLOYED; echo SOURCE_SHA=\"$sha\"; exit 0; fi\ncurrent_hash=$(docker inspect deploy-gaybbs-1 --format '{{index .Config.Labels \"com.docker.compose.config-hash\"}}')\nexpected_hash=$(docker compose -p deploy -f \"$f\" --project-directory \"$r/deploy\" config --hash gaybbs | awk '{print $NF}')\ntest -n \"$current_hash\" && test \"$current_hash\" = \"$expected_hash\" || exit 46\ndocker image tag \"$old\" \"$rollback\" || exit 54\ndocker image tag \"$candidate\" gace-tgtumbler-gaybbs:local || exit 55\nfail=63\nif ! docker compose -p deploy -f \"$f\" --project-directory \"$r/deploy\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1; then fail=61\nelse\n i=0\n while test \"$i\" -lt 12; do\n  new=$(docker inspect deploy-gaybbs-1 --format '{{.Image}}' 2>/dev/null || :)\n  running=$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}' 2>/dev/null || :)\n  if test \"$new\" != \"$candidate\" || test \"$running\" != true; then fail=62; break; fi\n  if docker logs --since 3m deploy-gaybbs-1 2>&1 | grep -q GAYBBS_BOT_READY; then\n   if test \"$(docker inspect deploy-gaybbs-1 --format '{{.RestartCount}}')\" = 0 && test \"$(systemctl --user is-active gace-userbot-verify.service)\" = active; then\n    echo ROOM_LIVE_DEPLOY_PASS; echo SOURCE_SHA=\"$sha\"; exit 0\n   else fail=64; break; fi\n  fi\n  i=$((i+1)); sleep 3\n done\nfi\ndocker image tag \"$rollback\" gace-tgtumbler-gaybbs:local || exit 70\ndocker compose -p deploy -f \"$f\" --project-directory \"$r/deploy\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || exit 71\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\" = \"$old\" || exit 72\necho ROOM_LIVE_DEPLOY_ROLLED_BACK\nexit \"$fail\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
