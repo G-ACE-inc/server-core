@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ngay=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])gaybbs([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$gay\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo GROUP_CONTAINER_NOT_UNIQUE; exit 65; }\nimage=\"$(docker inspect -f '{{.Config.Image}}' \"$gay\")\"\necho \"STK04_NETWORK_PROBE=BEGIN\"\necho \"STK04_IMAGE_PRESENT=YES\"\necho \"STK04_HOST_CURL_IPV4:\"\ncurl -4 -LsS --connect-timeout 5 --max-time 9 -o /dev/null -w 'HTTP=%{http_code}\\n' https://api.telegram.org/ || true\necho \"STK04_EXISTING_CONTAINER_NODE:\"\ndocker exec \"$gay\" node -e 'const https=require(\"https\");const r=https.get(\"https://api.telegram.org/\",{family:4,timeout:5000},s=>{console.log(\"IPv4_HTTP=\"+s.statusCode);s.resume()});r.on(\"timeout\",()=>r.destroy(new Error(\"TIMEOUT\")));r.on(\"error\",e=>console.log(\"IPv4_ERROR=\"+e.code));' || true\necho \"STK04_HOSTNETWORK_CONTAINER_NODE:\"\ndocker run --rm --network host --entrypoint node \"$image\" -e 'const https=require(\"https\");const r=https.get(\"https://api.telegram.org/\",{family:4,timeout:5000},s=>{console.log(\"HOSTNETWORK_IPV4_HTTP=\"+s.statusCode);s.resume()});r.on(\"timeout\",()=>r.destroy(new Error(\"TIMEOUT\")));r.on(\"error\",e=>console.log(\"HOSTNETWORK_IPV4_ERROR=\"+e.code));' || true\necho \"STK04_NETWORK_PROBE=END\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
