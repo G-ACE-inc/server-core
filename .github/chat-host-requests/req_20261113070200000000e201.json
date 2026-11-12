@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "python3 -B - <<'PY'\nimport sys,os,re,stat,json,fcntl,urllib.request,urllib.error\nfrom pathlib import Path\nCHAT=-1002373696859\nTHREAD=4640\nURL=\"https://t.me/CreateVdobot?start=sticker\"\nif Path.cwd().resolve().name!='create-videobot':\n print(\"STK04_CREATOR_OWNER_WRONG\");sys.exit(61)\ntoken_pattern=re.compile(r\"^[0-9]{7,15}:[A-Za-z0-9_-]{30,100}$\")\ncandidates={}\nfor directory in (Path.cwd()/'deploy'/'secrets',Path.cwd()/'deploy',Path.home()/'.config'/'create-videobot'):\n if not directory.is_dir():continue\n for f in directory.iterdir():\n  try:\n   if not f.is_file() or f.is_symlink():continue\n   st=f.stat()\n   if st.st_mode & 0o022 or not 35<=st.st_size<=8192:continue\n   name=f.name.lower()\n   if any(v in name for v in ('userbot','session','oauth','phone','backup')):continue\n   if not any(v in name for v in ('token','bot','secret','.env')):continue\n   raw=f.read_text(encoding='utf-8')\n   if token_pattern.fullmatch(raw.strip()):\n    candidates.setdefault(raw.strip(),f.name)\n   elif len(raw)<8192:\n    for line in raw.splitlines():\n     if line.lstrip().startswith('#') or '=' not in line:continue\n     key,val=line.split('=',1)\n     if 'TOKEN' in key.upper() and any(k in key.upper() for k in ('CREATE','VIDEO','VDO','TELEGRAM')):\n      val=val.strip().strip('\"').strip(\"'\")\n      if token_pattern.fullmatch(val):candidates.setdefault(val,f.name)\n  except (OSError,UnicodeError):continue\ndef call(token,method,params):\n req=urllib.request.Request(\"https://api.telegram.org/bot\"+token+\"/\"+method,\n  data=json.dumps(params,ensure_ascii=False).encode(),method=\"POST\",\n  headers={\"Content-Type\":\"application/json\"})\n try:\n  with urllib.request.urlopen(req,timeout=15) as res:r=json.load(res)\n except urllib.error.HTTPError as e:\n  raise ValueError(\"API_\"+method+\"_REJECTED_\"+str(e.code))\n except Exception:\n  raise RuntimeError(\"API_\"+method+\"_RESULT_UNKNOWN\")\n if r.get('ok') is not True:raise ValueError(\"API_\"+method+\"_REJECTED_\"+str(r.get('error_code','UNKNOWN')))\n return r.get('result')\nowners=[]\nfor token in candidates:\n try:\n  me=call(token,'getMe',{})\n  if me.get('is_bot') is True and str(me.get('username','')).lower()=='createvdobot':\n   owners.append((token,me))\n except Exception:pass\nif len(owners)!=1:\n print(\"STK04_CREATE_BOT_CREDENTIAL_IDENTITY_NOT_UNIQUE\");sys.exit(62)\ntoken,me=owners[0]\ntry:\n c=call(token,'getChat',{'chat_id':CHAT})\n m=call(token,'getChatMember',{'chat_id':CHAT,'user_id':me['id']})\n if c.get('type')!='supergroup' or int(c.get('id',0))!=CHAT or c.get('is_forum') is not True:\n  raise ValueError(\"STK04_TARGET_CHAT_NOT_VERIFIED\")\n if m.get('status') not in ('administrator','creator') or (m.get('status')=='administrator' and m.get('can_pin_messages') is not True):\n  raise ValueError(\"STK04_CREATOR_PIN_PERMISSION_MISSING\")\nexcept Exception as e:\n print(\"STK04_PREFLIGHT_FAILED_\"+str(e).replace(' ','_')[:100]);sys.exit(63)\nprint(\"STK04_CREATE_IDENTITY_AND_ADMIN=PASS\")\nbase=Path.home()/'.local'/'state'/'create-videobot'/'sticker-pin'\nbase.mkdir(mode=0o700,parents=True,exist_ok=True);base.chmod(0o700)\nreceipt=base/'group2373696859_thread4640.json'\nwith (base/'group2373696859_thread4640.lock').open('w') as lock:\n fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)\n state=json.loads(receipt.read_text()) if receipt.exists() else None\n def persist(status,mid=None):\n  temp=receipt.with_suffix('.new')\n  with temp.open('x') as fp:\n   os.fchmod(fp.fileno(),0o600)\n   json.dump({'status':status,'bot_id':me['id'],'chat_id':CHAT,'thread_id':THREAD,\n    'message_id':mid,'link':URL},fp,ensure_ascii=False)\n   fp.flush();os.fsync(fp.fileno())\n  temp.replace(receipt)\n if state is not None:\n  if int(state.get('chat_id',0))!=CHAT or int(state.get('thread_id',0))!=THREAD or int(state.get('bot_id',0))!=me['id'] or state.get('link')!=URL:\n   print(\"STK04_EXISTING_RECEIPT_OWNER_MISMATCH\");sys.exit(64)\n  if state.get('status')=='pinned_ack':\n   print(\"STK04_CREATOR_PIN_API_ACK=PASS_PREEXISTING\");print('STK04_CREATOR_MESSAGE_ID='+str(state.get('message_id')));sys.exit(0)\n  if state.get('status')!='sent' or not isinstance(state.get('message_id'),int):\n   print(\"STK04_UNKNOWN_WRITE_NO_RESEND_\"+str(state.get('status')));sys.exit(65)\n  mid=state['message_id']\n else:\n  persist('sending')\n  try:\n   sent=call(token,'sendMessage',{\n    'chat_id':CHAT,'message_thread_id':THREAD,\n    'text':'🎨 ステッカーの作成・投稿はこちら\\nボタンからCreateVdobotのDMを開いてください。',\n    'reply_markup':{'inline_keyboard':[[{'text':'🎨 投稿はこちら','url':URL}]]},\n    'disable_notification':True})\n  except ValueError as e:\n   persist('rejected')\n   print(\"STK04_SEND_REJECTED=\"+str(e));sys.exit(66)\n  except Exception:\n   persist('needs_reconcile')\n   print(\"STK04_SEND_UNKNOWN_NO_RESEND\");sys.exit(67)\n  mid=sent.get('message_id')\n  if not isinstance(mid,int) or mid<=0:\n   persist('needs_reconcile')\n   print(\"STK04_SEND_MESSAGE_ID_NOT_VERIFIED\");sys.exit(68)\n  if (sent.get('chat') or {}).get('id')!=CHAT or sent.get('message_thread_id')!=THREAD or sent.get('is_topic_message') is not True or (sent.get('from') or {}).get('id')!=me['id']:\n   persist('needs_reconcile',mid)\n   print('STK04_SEND_WRONG_TOPIC_NEEDS_RECONCILE='+str(mid));sys.exit(69)\n  persist('sent',mid)\n  print(\"STK04_CREATOR_POST_ACK=\"+str(mid))\n try:\n  result=call(token,'pinChatMessage',{'chat_id':CHAT,'message_id':mid,'disable_notification':True})\n except ValueError as e:\n  print('STK04_PIN_REJECTED='+str(e));sys.exit(70)\n except Exception:\n  persist('needs_reconcile',mid)\n  print('STK04_PIN_RESULT_UNKNOWN_NO_RETRY');sys.exit(71)\n if result is not True:\n  persist('needs_reconcile',mid);print(\"STK04_PIN_ACK_NOT_TRUE\");sys.exit(72)\n persist('pinned_ack',mid)\n print(\"STK04_CREATOR_PIN_API_ACK=PASS\")\n print(\"STK04_CREATOR_MESSAGE_ID=\"+str(mid))\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
