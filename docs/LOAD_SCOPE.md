@@ -42,6 +42,10 @@ For GPT app CHAT formal Master reports, follow Rule #17's Master-facing communic
 
 復元結果の`project_status`は取得済みの既存Statusを示す。IssueがOPENでもStatusがDoneなら`PROJECT_STATUS_RECHECK_REQUIRED`として、所有Current・Project表示・自動化を確認する。ツールはStatusを自動修正せず、既存4項目の書込契約も拡張しない。Source/CIの合格だけで未完了CU全体をDoneにしない。
 
+### Gserver Userbot verification — all AI executors (Master 2026-11-12)
+
+When any Gserver-using AI or runner performs Telegram Userbot tests, it **MUST** read and apply [shared Userbot session protection and access mapping](USERBOT_TEST_SAFETY.md) before designing or dispatching the test. This conditional safety policy applies to GPT CHAT, SERVER_AI, Cursor, Composer, Codex and future Gserver AI clients without importing GPT CHAT's orchestration/Notion rules into server executors. The current resident `gace-userbot-verify.service` is the sole session owner. Do **not** stop/restart it for testing or open its SQLite session in a second client. Use only verified, allowlisted resident-service IPC after it exists; otherwise report `BLOCKED_NOT_IMPLEMENTED`. The existing Host authorization and Project Current boundaries remain mandatory.
+
 ## 2. Command Routing
 
 Use the single [README Task Routing table](../README.md#task-routing) to select common Authority. Combine only the rows needed for this task; do not fetch the whole table's documents.
