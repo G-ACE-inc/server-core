@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/29"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nw=\"$r/.worktrees/room-error-class-1f3575b\"\nold=\"$r/deploy/gserver-compose.yaml\"\nnew=\"$w/deploy/gserver-compose.yaml\"\ntag=gace-tgtumbler-gaybbs:room-error-class-1f3575b\nbackup=gace-tgtumbler-gaybbs:rollback-before-error-class\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 1f3575b8ad7a509afe7ef4ec4489f0b9d0f8870b || exit 70\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 71\nuserbot_pid=$(systemctl --user show gace-userbot-verify.service -p MainPID --value)\npg_id=$(docker inspect deploy-postgres-1 --format '{{.Id}}')\nold_id=$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\ntest \"$old_id\" = \"$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\" || exit 72\nnew_id=$(docker image inspect \"$tag\" --format '{{.Id}}')\ntest \"$new_id\" != \"$old_id\" || exit 73\ndocker compose -p deploy -f \"$new\" --project-directory \"$r/deploy\" config -q || exit 74\ndocker tag \"$old_id\" \"$backup\"\nrollback() {\n docker tag \"$backup\" gace-tgtumbler-gaybbs:local\n docker compose -p deploy -f \"$old\" --project-directory \"$r/deploy\" up -d --no-deps --force-recreate gaybbs || :\n echo GAYBBS_ROLLBACK_REQUESTED\n}\ntrap rollback ERR\ndocker tag \"$tag\" gace-tgtumbler-gaybbs:local\ndocker compose -p deploy -f \"$new\" --project-directory \"$r/deploy\" up -d --no-deps --force-recreate gaybbs || exit 75\nfor i in $(seq 1 30); do\n if test \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true && docker logs --since 4m deploy-gaybbs-1 2>&1 | grep -q GAYBBS_BOT_READY; then break; fi\n sleep 1\ndone\ndocker logs --since 4m deploy-gaybbs-1 2>&1 | grep -q GAYBBS_BOT_READY || exit 76\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\" = \"$new_id\" || exit 77\ntest \"$(docker inspect deploy-postgres-1 --format '{{.Id}}')\" = \"$pg_id\" || exit 78\ntest \"$(systemctl --user show gace-userbot-verify.service -p MainPID --value)\" = \"$userbot_pid\" || exit 79\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.RestartCount}}')\" = 0 || exit 80\ntrap - ERR\necho ROOM_EDIT_ERROR_CLASSIFIER_PRODUCTION_PASS\necho POSTGRES_AND_USERBOT_UNCHANGED_PASS\necho SOURCE_SHA=1f3575b8ad7a509afe7ef4ec4489f0b9d0f8870b"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
