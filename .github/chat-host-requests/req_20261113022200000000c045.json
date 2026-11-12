@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nsrc=32a8f2ef5de41fceceb98ccc9532356962c877d5\ngit fetch --no-tags origin chat/tgtumbler-gserver-deploy-20261106 >/dev/null 2>&1\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$src\" || { echo STK04_SOURCE_SHA_MISMATCH; exit 72; }\nd=\"$(mktemp -d /tmp/gace-stk04-live.XXXXXXXX)\"\ntrap 'rm -rf \"$d\"' EXIT\ngit archive \"$src\" | tar -xf - -C \"$d\"\ndocker build --quiet -f \"$d/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-stk04-pin:32a8f2ef \"$d\" >/dev/null || { echo STK04_DOCKER_BUILD_FAILED; exit 73; }\nnames=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])gaybbs([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$names\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_GAYBBS_CONTAINER_NOT_UNIQUE; exit 74; }\nname=\"$names\"\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true || { echo STK04_GAYBBS_NOT_RUNNING; exit 75; }\ndocker exec \"$name\" node --version >/dev/null || { echo STK04_GAYBBS_NODE_MISSING; exit 76; }\noutput=\"$(mktemp /tmp/gace-stk04-result.XXXXXXXX)\"\ntrap 'rm -rf \"$d\"; rm -f \"$output\"' EXIT\nif docker run --rm --entrypoint cat gace-stk04-pin:32a8f2ef /app/sticker-topic-pin.mjs | docker exec -i \"$name\" node --input-type=module - >\"$output\" 2>&1; then\n grep -E '^(STICKER_PIN_(OWNER|TARGET|TARGET_SOURCE|TELEGRAM_ACK|MESSAGE_ID|INDEPENDENT_READBACK)=)' \"$output\" || true\n grep -q '^STICKER_PIN_TELEGRAM_ACK=YES$' \"$output\" || { echo STK04_PIN_ACK_MISSING; exit 77; }\n echo STK04_LIVE_TOPIC_PIN_API_ACK=PASS\nelse\n grep -E '^(STICKER_PIN_(RESULT|ERROR)=)' \"$output\" || true\n echo STK04_LIVE_TOPIC_PIN_OPERATION_FAILED\n exit 78\nfi\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
