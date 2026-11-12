@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ndocker inspect \"$name\" >/dev/null 2>&1 || { echo STK04_BOT_ABSENT; exit 61; }\nstate=\"$(docker inspect -f '{{.State.Status}}' \"$name\")\"\ntest \"$state\" = running || { echo STK04_BOT_NOT_RUNNING; exit 62; }\nlogs=\"$(docker logs --tail 150 \"$name\" 2>&1 || true)\"\nif ! printf '%s\\n' \"$logs\" | grep -q '^CREATOR_DM_POLL_READY=PASS$';then\n echo STK04_DM_POLL_READY_NOT_VERIFIED\n exit 63\nfi\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 64\ncursor=\"$(docker exec \"$pg\" sh -c 'psql -U \"$POSTGRES_USER\" -d videobot -tAc \"SELECT count(*) FROM videobot_poll_cursor\"' 2>/dev/null)\" || exit 65\ntest \"$cursor\" -ge 0 || exit 66\necho STK04_DM_PROCESS=RUNNING\necho STK04_DM_POLL_READY=PASS\nif test \"$cursor\" -gt 0;then echo STK04_DURABLE_UPDATE_CURSOR=YES;else echo STK04_DURABLE_UPDATE_CURSOR=EMPTY;fi\ndocker inspect -f 'STK04_BOT_RESTART_COUNT={{.RestartCount}}' \"$name\"\ndocker logs --tail 50 \"$name\" 2>&1 | grep -E '^CREATOR_(DM|GATE|POLL)_' | tail -n 8 || true"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
