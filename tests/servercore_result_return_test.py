@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -62,6 +63,12 @@ class SinkTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.dir = Path(self.tmp.name) / "r"
+
+    def test_saturated_issue_error_is_named(self):
+        response = SimpleNamespace(returncode=1, stdout="", stderr="Commenting is disabled on issues with more than 2500 comments")
+        with patch.object(sink, "gh_binary", return_value="/usr/bin/gh"), patch.object(sink.subprocess, "run", return_value=response):
+            with self.assertRaisesRegex(sink.SinkError, "RESULT_TARGET_CAPACITY_EXHAUSTED"):
+                sink._gh(["api", "repos/G-ACE-inc/server-core/issues/351"])
 
     def test_validation_fail_closed(self):
         for bad in (rec(request_id="req_x"), rec(state="MAYBE"), rec(exit_code=1000), rec(host_sha="zz"),

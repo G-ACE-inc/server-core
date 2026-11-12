@@ -105,7 +105,8 @@ jobs:
       - name: Bounded Host result return tests
         if: steps.scope.outputs.remote_chat == 'true'
         run: |
-          python3 -m py_compile scripts/servercore_result_sink.py scripts/servercore_bounded_result_poll.py scripts/servercore_result_sink_host_bootstrap.py tests/servercore_result_return_test.py tests/servercore_result_sink_host_bootstrap_test.py
+          python3 -m py_compile scripts/servercore_result_target.py scripts/servercore_result_sink.py scripts/servercore_bounded_result_poll.py scripts/servercore_result_sink_host_bootstrap.py tests/servercore_result_target_test.py tests/servercore_result_return_test.py tests/servercore_result_sink_host_bootstrap_test.py
+          python3 -m unittest discover -s tests -p servercore_result_target_test.py -v
           python3 -m unittest discover -s tests -p servercore_result_return_test.py -v
           python3 -m unittest discover -s tests -p servercore_result_sink_host_bootstrap_test.py -v
       - name: Bounded Host file inspect and Docker log reader tests

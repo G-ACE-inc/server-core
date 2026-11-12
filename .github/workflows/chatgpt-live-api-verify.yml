@@ -89,6 +89,7 @@ jobs:
         env:
           GACE_EVENT_GATEWAY_URL: ${{ vars.GACE_EVENT_GATEWAY_URL }}
           GACE_EVENT_GATEWAY_TOKEN: ${{ secrets.GACE_EVENT_GATEWAY_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           target=/tmp/gace-common-host-request.json
@@ -101,6 +102,10 @@ jobs:
             echo "SERVERCORE_BOUNDED_HOST_DISPATCH=SKIPPED"
             exit 0
           fi
+          # Fail before Gateway dispatch if the registered result Issue cannot
+          # accept another receipt. This also supplies the poll's target.
+          result_issue="$(python3 scripts/servercore_result_target.py --repository "$GITHUB_REPOSITORY")"
+          echo "BOUNDED_RESULT_ISSUE=$result_issue" >> "$GITHUB_ENV"
           command_id="$(jq -r '.bounded_host_request.command_id' "$target")"
           expected_sha="$(jq -r '.bounded_host_request.expected_sha' "$target")"
           if [[ "$expected_sha" == "GITHUB_WORKFLOW_SHA" ]]; then
@@ -156,7 +161,7 @@ jobs:
             target_args+=(--host-target "$BOUNDED_HOST_TARGET" --repo-sha "$BOUNDED_HOST_REPO_SHA" --command-sha256 "$BOUNDED_HOST_COMMAND_SHA")
           fi
           python3 scripts/servercore_bounded_result_poll.py \
-            --repository "$GITHUB_REPOSITORY" --issue 10 \
+            --repository "$GITHUB_REPOSITORY" --issue "$BOUNDED_RESULT_ISSUE" \
             --request-id "$BOUNDED_HOST_REQUEST_ID" \
             --command-id "$BOUNDED_HOST_COMMAND_ID" \
             --expected-sha "$BOUNDED_HOST_EXPECTED_SHA" \

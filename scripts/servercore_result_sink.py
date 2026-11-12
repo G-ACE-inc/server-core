@@ -21,11 +21,14 @@ import threading
 import time
 from datetime import datetime, timedelta, timezone
 
+from servercore_result_target import load_target
+
 SOCKET_PATH = Path("/run/gace/servercore-result.sock")
 RESULT_DIR = Path("/home/admin1/logs/servercore-bounded-results")
 HOST_WRITER_RESULT_DIR = Path("/home/admin1/logs/servercore-service-deploy")
-RESULT_REPOSITORY = "G-ACE-inc/server-core"
-RESULT_ISSUE = 10
+RESULT_TARGET = load_target()
+RESULT_REPOSITORY = RESULT_TARGET["repository"]
+RESULT_ISSUE = RESULT_TARGET["issue_number"]
 MARKER = "GACE_BOUNDED_HOST_RESULT"
 RECORD_SCHEMA = "gace.servercore-bounded-result.record/v1"
 QUERY_SCHEMA = "gace.servercore-bounded-result.query/v1"
@@ -331,6 +334,8 @@ def _gh(args, stdin=None, timeout=40):
     except (OSError, subprocess.TimeoutExpired):
         raise SinkError("GH_EXECUTION_FAILED") from None
     if result.returncode:
+        if "Commenting is disabled on issues with more than 2500 comments" in result.stderr:
+            raise SinkError("RESULT_TARGET_CAPACITY_EXHAUSTED")
         raise SinkError("GH_COMMAND_FAILED")
     return result.stdout
 
