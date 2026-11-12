@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "python3 -B - <<'PY'\nimport urllib.request,urllib.error,sys\nu='https://api.telegram.org/botNOT_A_REAL_TOKEN/getMe'\ndef probe(opener):\n try:\n  opener.open(u,timeout=8).close()\n  return True\n except urllib.error.HTTPError:\n  return True\n except Exception:\n  return False\ndirect=probe(urllib.request.build_opener(urllib.request.ProxyHandler({})))\ndefault=probe(urllib.request.build_opener())\nif default and direct:sys.exit(0)\nif default and not direct:sys.exit(80)\nif direct and not default:sys.exit(81)\nsys.exit(82)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
