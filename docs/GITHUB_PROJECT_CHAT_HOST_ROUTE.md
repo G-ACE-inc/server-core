@@ -9,6 +9,10 @@
 
 公開IssueにHostの出力本文を貼らない。回収が失敗したときは元request ID・失敗段階を追跡し、原因を直して元の作業へ戻る。
 
+## Gserver Userbot 実機テスト経路（全AI共通保護）
+
+GPT CHATは既存の `host.command` から、対象Projectの既存checkoutでUserbot常駐プロセス用の許可制クライアントだけを呼ぶ。Server AI、Cursor、Composer、Codex、その他Gserver利用AIは各自の既存の認可済みローカル実行経路から同じクライアントを呼ぶ。Workerのセッションを別プロセスで開いたり、常駐サービスを一時停止/再起動したりしてはならない。未実装IPCのときは `BLOCKED_NOT_IMPLEMENTED` とし、直接Telethonへ迂回しない。保護規則・対象パス・認可・出力・検証マッピングの正本は [USERBOT_TEST_SAFETY.md](USERBOT_TEST_SAFETY.md)。
+
 ## 通常CHATの開始・別CHAT実測手順
 
 開発手順の正本は [Work Routine §6](G_ACE_WORKSPACE.md#6-development-routine)。新しい通常CHATでも、所有Project/CU Current・適用Profile・対象Sourceをそこで復元する。古い会話の停止指示やNotion議論全文を起動指示として持ち込まない。Current取得は既存GitHub connectorの対象Issue読取で足りる。ローカルCLIが実際に使える場合だけ [対象を絞った復元](LOAD_SCOPE.md)を利用し、取得した同じ本文を読み直さない。
