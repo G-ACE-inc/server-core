@@ -17,7 +17,7 @@
 
 ## Gserver Userbot 実機テスト経路（全AI共通保護）
 
-GPT CHATは既存の `host.command` から、対象Projectの既存checkoutでUserbot常駐プロセス用の許可制クライアントだけを呼ぶ。Server AI、Cursor、Composer、Codex、その他Gserver利用AIは各自の既存の認可済みローカル実行経路から同じクライアントを呼ぶ。Workerのセッションを別プロセスで開いたり、常駐サービスを一時停止/再起動したりしてはならない。未実装IPCのときは `BLOCKED_NOT_IMPLEMENTED` とし、直接Telethonへ迂回しない。保護規則・対象パス・認可・出力・検証マッピングの正本は [USERBOT_TEST_SAFETY.md](USERBOT_TEST_SAFETY.md)。
+GPT CHATは既存の `host.command` から、対象Projectの既存checkoutでUserbot常駐プロセス用の許可制クライアントだけを呼ぶ。Server AI、Cursor、Composer、Codex、その他Gserver利用AIは各自の既存の認可済みローカル実行経路から同じクライアントを呼ぶ。Workerのセッションを別プロセスで開いたり、独立テストのために常駐サービスを停止/再起動したりしてはならない。Masterの2026-11-13訂正により、既存セッションを保持し電話番号・OTP・再ログインを使わないメンテナンス／コード有効化の通常再起動は正本の安全策に従って実行できる。未実装IPCのときは `BLOCKED_NOT_IMPLEMENTED` とし、直接Telethonへ迂回しない。保護規則・対象パス・認可・出力・検証マッピングの正本は [USERBOT_TEST_SAFETY.md](USERBOT_TEST_SAFETY.md)。
 
 ## 通常CHATの開始・別CHAT実測手順
 
