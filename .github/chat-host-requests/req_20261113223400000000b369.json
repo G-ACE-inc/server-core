@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/35"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(docker inspect deploy-postgres-1 --format '{{.State.Running}}')\" = true || exit 70\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 71\ndocker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -F '|' -c \"SELECT r.room_id,r.status,r.revision,a.announcement_id,a.status,coalesce(d.status,'NO_DELIVERY'),coalesce(t.board_key,'NO_BOARD'),coalesce(t.message_thread_id,0),coalesce(d.telegram_message_id,0) FROM room_posts r LEFT JOIN announcement_posts a ON a.room_id=r.room_id LEFT JOIN posting_deliveries d ON d.source_type='announcement' AND d.source_id=a.announcement_id::text LEFT JOIN posting_topics t ON t.topic_id=d.posting_topic_id WHERE r.title='【検証】ROOM公開同期テスト' AND r.created_at>NOW()-INTERVAL '24 hours' ORDER BY r.room_id,d.delivery_id\"\ndocker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -F '|' -c \"SELECT e.kind,q.state,count(*) FROM room_source_events e JOIN room_posts r ON r.room_id=e.room_id LEFT JOIN room_status_message_edits q ON q.room_event_id=e.event_id WHERE r.title='【検証】ROOM公開同期テスト' AND r.created_at>NOW()-INTERVAL '24 hours' GROUP BY e.kind,q.state ORDER BY e.kind,q.state\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 72\necho ROOM_NEW_PUBLIC_DATABASE_READBACK=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
