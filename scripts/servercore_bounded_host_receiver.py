@@ -364,6 +364,12 @@ def dispatch_host_command(request, root, socket_path=DEPLOY_SOCKET):
     reply = deploy_socket_call(writer_request, socket_path, timeout=120)
     if reply.get("ok") is not True:
         error = reply.get("error")
+        if replay_only and error == "HOST_COMMAND_REPLAY_MISSING":
+            # An unrecognized request id cannot be a replay.  The original
+            # dispatcher pin is stale: report the real HEAD via the existing
+            # SOURCE_SHA_MISMATCH handler rather than hiding it behind an
+            # opaque replay error. Never fall back to command execution.
+            raise bounded_host.BoundaryError("SOURCE_SHA_MISMATCH")
         if error == "DEPLOY_LOCK_BUSY":
             fail("HOST_COMMAND_BUSY", 503)
         if error == "HOST_COMMAND_REPLAY_INCOMPLETE":
