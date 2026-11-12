@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nnames=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])gaybbs([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$names\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_RUNNING_GAYBBS_NOT_UNIQUE; exit 63; }\ngay=\"$names\"\nimg=\"$(docker inspect -f '{{.Image}}' \"$gay\")\"\ntoken_path=\"$(docker exec \"$gay\" node -e 'process.stdout.write(process.env.BOT_TOKEN_FILE||\"\")')\"\ntest -n \"$token_path\" || { echo STK04_GROUP_CREDENTIAL_FILE_UNAVAILABLE; exit 64; }\ndocker run -i --rm --read-only --network host --volumes-from \"$gay\":ro --security-opt no-new-privileges --env \"BOT_TOKEN_FILE=$token_path\" --entrypoint node \"$img\" --input-type=module - <<'STICKER_JS'\nimport fs from \"node:fs\";\nconst raw=fs.readFileSync(process.env.BOT_TOKEN_FILE,\"utf8\").trim();\nif(!/^[0-9]{7,15}:[A-Za-z0-9_-]{30,100}$/.test(raw))throw Error(\"STK04_GROUP_BOT_TOKEN_INVALID\");\nconst chatId=-1002373696859;\nconst anchor=4640;\nconst link=\"https://t.me/CreateVdobot?start=sticker\";\nasync function bot(method,params){\n const controller=new AbortController();\n const timer=setTimeout(()=>controller.abort(),12000);\n try {\n  const response=await fetch(\"https://api.telegram.org/bot\"+raw+\"/\"+method,{\n   method:\"POST\",headers:{\"content-type\":\"application/json\"},\n   body:JSON.stringify(params),signal:controller.signal\n  });\n  const j=await response.json();\n  if(!response.ok||j.ok!==true)throw Error(\"STK04_TELEGRAM_\"+method+\"_REJECTED_\"+String(j.error_code??\"UNKNOWN\"));\n  return j.result;\n }finally{clearTimeout(timer);}\n}\ntry{\n const me=await bot(\"getMe\",{});\n if(me.is_bot!==true||me.username?.toLowerCase()!==\"gaybbs_bot\")throw Error(\"STK04_GROUP_BOT_IDENTITY_INVALID\");\n const c=await bot(\"getChat\",{chat_id:chatId});\n if(Number(c.id)!==chatId||c.type!==\"supergroup\"||c.is_forum!==true)throw Error(\"STK04_TARGET_GROUP_NOT_FORUM\");\n const m=await bot(\"getChatMember\",{chat_id:chatId,user_id:me.id});\n if(![\"administrator\",\"creator\"].includes(m.status)||(m.status===\"administrator\"&&m.can_pin_messages!==true))throw Error(\"STK04_PIN_RIGHTS_MISSING\");\n console.log(\"STK04_GROUP_ADMIN_VERIFIED\");\n let sent;\n try{\n  sent=await bot(\"sendMessage\",{\n   chat_id:chatId,\n   reply_parameters:{message_id:anchor,allow_sending_without_reply:false},\n   text:\"🎨 ステッカー作成・投稿はこちら\\n下のボタンからCreateVdobotのDMへ移動できます。\",\n   reply_markup:{inline_keyboard:[[{text:\"🎨 投稿はこちら\",url:link}]]},\n   disable_notification:true\n  });\n }catch(e){console.log(\"STK04_SEND_NOT_CONFIRMED\");throw e;}\n if(!Number.isSafeInteger(sent?.message_id)||sent.message_id<=0){console.log(\"STK04_SEND_RESULT_UNKNOWN\");throw Error(\"STK04_SEND_RESULT_UNKNOWN\");}\n console.log(\"STK04_POST_MESSAGE_ID=\"+sent.message_id);\n console.log(\"STK04_POST_THREAD_ID=\"+(sent.message_thread_id??\"UNVERIFIED\"));\n if(sent.is_topic_message!==true){console.log(\"STK04_POST_NOT_TOPIC\");throw Error(\"STK04_TOPIC_MEMBERSHIP_UNVERIFIED\");}\n const pinned=await bot(\"pinChatMessage\",{chat_id:chatId,message_id:sent.message_id,disable_notification:true});\n if(pinned!==true)throw Error(\"STK04_PIN_RESULT_UNKNOWN\");\n console.log(\"STK04_PIN_API_ACK=PASS\");\n console.log(\"STK04_DM_TARGET=CREATEVDOBOT\");\n}catch(error){\n const msg=String(error?.message??\"UNKNOWN\");\n console.error(msg.startsWith(\"STK04_\")?msg:\"STK04_API_RESULT_UNKNOWN\");\n process.exitCode=1;\n}\nSTICKER_JS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
