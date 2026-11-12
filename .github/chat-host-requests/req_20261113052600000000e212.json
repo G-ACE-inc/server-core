@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ndocker inspect \"$name\" >/dev/null 2>&1 || { echo CREATOR_DIAG_CONTAINER_ABSENT; exit 61; }\ndocker inspect -f 'CREATOR_DIAG_STATE={{.State.Status}} RESTARTS={{.RestartCount}} EXIT={{.State.ExitCode}}' \"$name\"\ndocker logs --tail 120 \"$name\" 2>&1 | python3 -B -c '\nimport sys,re\nlines=sys.stdin.read().splitlines()\nout=[]\nfor line in lines:\n if re.match(r\"^CREATOR_[A-Z_]+(?:=[A-Z_]+)?$\",line):\n  out.append(line)\n elif re.search(r\"(?:Error|error|code|reason|cause):\",line):\n  s=re.sub(r\"[/][A-Za-z0-9_./-]{8,}\", \"PATH_REDACTED\",line)\n  s=re.sub(r\"[0-9]{7,15}:[A-Za-z0-9_-]{30,100}\",\"TOKEN_REDACTED\",s)\n  s=re.sub(r\"postgres(?:ql)?://\\S+\",\"DB_URI_REDACTED\",s)\n  out.append(\"CREATOR_DIAG_ERROR=\"+s[:120])\nfor item in out[-15:]: print(item)\n'\necho CREATOR_DIAG_COMPLETE=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
