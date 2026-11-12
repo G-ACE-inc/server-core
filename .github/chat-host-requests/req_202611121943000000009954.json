@@ -1,0 +1,38 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/23"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "9f07919277f47d927dd33d48c31f8f49d5a31de8",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nsha=2467fe6847f5ef9f42ff74ff595cfb23401d678d\nw=\"$root/.worktrees/room-live-2467fe6\"\nfile=\"$root/deploy/gserver-compose.yaml\"\ntest \"$(git -C \"$root\" rev-parse --show-toplevel)\" = \"$root\" || exit 71\ntest ! -e \"$w\" || exit 72\ntest \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 73\ngit -C \"$root\" fetch -q origin fix/room-position-3-4-20261111 || exit 74\ntest \"$(git -C \"$root\" rev-parse origin/fix/room-position-3-4-20261111)\" = \"$sha\" || exit 75\ngit -C \"$root\" worktree add --detach \"$w\" \"$sha\" >/dev/null 2>&1 || exit 76\ncleanup(){ git -C \"$root\" worktree remove --force \"$w\" >/dev/null 2>&1 || :; }\ntrap cleanup EXIT\ncd \"$w\"\ndocker build --network=host --pull=false -f artifacts/bot/deploy/Dockerfile.gaybbs -t gace-tgtumbler-gaybbs:room-live-2467fe6 . >/dev/null 2>&1 || exit 51\ndocker run --rm --entrypoint node gace-tgtumbler-gaybbs:room-live-2467fe6 --check /app/gaybbs.mjs >/dev/null 2>&1 || exit 52\ncandidate=$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:room-live-2467fe6)\nold=$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\ntest \"$old\" != \"$candidate\" || { echo ALREADY_LIVE_IMAGE; exit 0; }\ncurrent_hash=$(docker inspect --format '{{index .Config.Labels \"com.docker.compose.config-hash\"}}' deploy-gaybbs-1)\nexpected_hash=$(docker compose -p deploy -f \"$file\" --project-directory \"$root/deploy\" config --hash gaybbs | awk '{print $NF}')\ntest \"$current_hash\" = \"$expected_hash\" || exit 46\ndocker image tag \"$old\" gace-tgtumbler-gaybbs:rollback-room-2467fe6\ndocker image tag \"$candidate\" gace-tgtumbler-gaybbs:local\nif ! docker compose -p deploy -f \"$file\" --project-directory \"$root/deploy\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1; then fail=61; else\n fail=63\n i=0\n while test \"$i\" -lt 16; do\n  if test \"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1 2>/dev/null)\" != \"$candidate\" || test \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1 2>/dev/null)\" != true; then fail=62; break; fi\n  if docker logs --since 2m deploy-gaybbs-1 2>&1 | grep -q GAYBBS_BOT_READY; then\n   if test \"$(docker inspect --format '{{.RestartCount}}' deploy-gaybbs-1)\" = 0; then echo ROOM_LIVE_DEPLOY_PASS; echo SOURCE_SHA=\"$sha\"; exit 0; else fail=64; break; fi\n  fi\n  i=$((i+1)); sleep 3\n done\nfi\ndocker image tag gace-tgtumbler-gaybbs:rollback-room-2467fe6 gace-tgtumbler-gaybbs:local || exit 70\ndocker compose -p deploy -f \"$file\" --project-directory \"$root/deploy\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || exit 71\ntest \"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\" = \"$old\" || exit 72\necho ROOM_LIVE_DEPLOY_ROLLED_BACK\nexit \"$fail\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
