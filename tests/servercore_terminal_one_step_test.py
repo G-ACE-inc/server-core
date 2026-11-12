@@ -8,6 +8,8 @@ import tempfile
 import threading
 import unittest
 from contextlib import redirect_stdout
+from unittest.mock import patch
+import os
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -158,6 +160,47 @@ class OneStepOrchestrationTests(unittest.TestCase):
 
 
 class OneStepDefaultOffTests(unittest.TestCase):
+    def test_live_cli_uses_single_planned_id_for_send_and_result(self):
+        # A fixed read command is assigned an ID by the sender. CLI planning
+        # must NOT assign a second ID when it invokes the live runner.
+        observed = {"sent": None, "lookups": 0}
+        original_send = gateway_send.send
+        original_lookup = result_lookup.lookup
+        self.addCleanup(lambda: setattr(gateway_send, "send", original_send))
+        self.addCleanup(lambda: setattr(result_lookup, "lookup", original_lookup))
+
+        def send(request, contract, **kwargs):
+            observed["sent"] = request["id"]
+            return {"ok": True, "receipt": "durable"}
+
+        def lookup(request_id, **kwargs):
+            observed["lookups"] += 1
+            if observed["lookups"] == 1:
+                return {"request_id": request_id, "status": "NOT_RECORDED"}
+            if request_id != observed["sent"]:
+                raise AssertionError("sink lookup must use the exact sent ID")
+            return _recorded(request_id=request_id)
+
+        gateway_send.send = send
+        result_lookup.lookup = lookup
+        with patch.dict(os.environ, {"GACE_TERMINAL_ONE_STEP_ENABLED": "1"}), \\
+             patch.object(module, "plan_request", wraps=module.plan_request) as planned:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = module.main(["--command-id", "project.git_head", "--expected-sha", HEAD_SHA])
+        self.assertEqual(code, 0)
+        self.assertEqual(planned.call_count, 1)
+        self.assertEqual(observed["lookups"], 2)
+        result = json.loads(output.getvalue().splitlines()[0])
+        self.assertEqual(result["request_id"], observed["sent"])
+        self.assertEqual(result["outcome"], "HOST_PASS")
+
+    def test_result_id_mismatch_is_rejected_even_if_lookup_is_mocked(self):
+        with self.assertRaisesRegex(module.OneStepError, "RESULT_REQUEST_ID_MISMATCH"):
+            module._finalize(
+                RID, {"read_only": True, "pinned_sha": None, "effect": "read_only"},
+                {"ok": True}, _recorded(request_id="req_" + "f" * 24))
+
     def test_plan_mode_contacts_nothing_when_disabled(self):
         orig_lookup, orig_send = result_lookup.lookup, gateway_send.send
 
