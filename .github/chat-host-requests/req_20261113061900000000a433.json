@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/29"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ndb=deploy-postgres-1\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true || exit 70\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 71\nsql=\"WITH eligible AS (\n SELECT q.edit_id FROM room_status_message_edits q\n JOIN room_source_events e ON e.event_id=q.room_event_id\n JOIN room_posts r ON r.room_id=e.room_id\n JOIN posting_deliveries d ON d.delivery_id=q.delivery_id\n JOIN posting_topics t ON t.topic_id=d.posting_topic_id\n WHERE q.state='needs_reconcile'\n AND e.kind='finished' AND e.state='applied' AND r.status='finished'\n AND d.status='sent' AND d.telegram_message_id IS NOT NULL AND d.rendered_text IS NOT NULL\n AND t.enabled=TRUE AND t.purpose IN ('room','announcement')\n AND NOT EXISTS(SELECT 1 FROM room_status_message_edits s WHERE s.delivery_id=q.delivery_id AND s.state='sending')\n AND (SELECT COUNT(DISTINCT feature) FROM gaybbs_feature_release_gates\n WHERE feature IN ('room','announcement') AND enabled=TRUE\n AND length(source_commit)=40 AND length(trim(ci_evidence))>0\n AND length(trim(gserver_runtime_evidence))>0 AND length(trim(telegram_e2e_evidence))>0)=2\n ORDER BY q.edit_id LIMIT 1 FOR UPDATE OF q SKIP LOCKED\n)\nUPDATE room_status_message_edits q SET state='pending',updated_at=NOW()\nFROM eligible x WHERE q.edit_id=x.edit_id RETURNING 'ONE_DIAGNOSTIC_EDIT_QUEUED';\"\nresult=$(docker exec \"$db\" psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -c \"$sql\") || exit 72\nprintf '%s\\n' \"$result\" | grep -qx ONE_DIAGNOSTIC_EDIT_QUEUED || exit 73\necho ONE_TERMINAL_DIAGNOSTIC_ATTEMPT=QUEUED\nsleep 32\necho SAFE_TELEGRAM_REJECTION_CLASSES_BEGIN\ndocker logs --since 2m deploy-gaybbs-1 2>&1 | grep 'ROOM_PUBLIC_TELEGRAM_EDIT_REJECTED' | grep -E 'MESSAGE_|TELEGRAM_|NO_TELEGRAM_RESPONSE' | tail -n 3 || :\necho SAFE_TELEGRAM_REJECTION_CLASSES_END\ndocker exec \"$db\" psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -F '|' -c \"SELECT e.kind,q.state,COUNT(*) FROM room_status_message_edits q JOIN room_source_events e ON e.event_id=q.room_event_id GROUP BY e.kind,q.state ORDER BY e.kind,q.state\" || exit 74\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 75\necho TERMINAL_REJECTION_DIAG_EVIDENCE_COLLECTED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
