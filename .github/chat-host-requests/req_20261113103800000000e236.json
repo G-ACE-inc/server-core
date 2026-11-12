@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\nimage=create-videobot:local-poll\ndocker image inspect \"$image\" >/dev/null 2>&1 || { echo STK04_IMAGE_MISSING; exit 61; }\ndocker inspect \"$name\" >/dev/null 2>&1 || { echo STK04_CONTAINER_ABSENT; exit 62; }\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ndbpass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ntest -f \"$token\" && test -f \"$dbpass\" || { echo STK04_MOUNTS_MISSING; exit 63; }\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK04_PG_NOT_UNIQUE; exit 64; }\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest -n \"$user\" && test \"$net\" = deploy_default || { echo STK04_PG_OWNER_UNVERIFIED; exit 65; }\ndocker run --rm -i --network \"$net\" --pull never \\\n --cap-drop ALL --security-opt no-new-privileges:true \\\n -e NODE_ENV=production -e VIDEOBOT_RUN_MODE=telegram_poll \\\n -e VIDEOBOT_PRIVATE_INGRESS_ONLY=true -e VIDEOBOT_SCHEMA_MIGRATE=YES \\\n -e VIDEOBOT_TELEGRAM_TOKEN_FILE=/run/secrets/videobot_telegram_token \\\n -e VIDEOBOT_DB_PASSWORD_FILE=/run/secrets/videobot_db_password \\\n -e VIDEOBOT_DB_HOST=deploy-postgres-1 -e VIDEOBOT_DB_NAME=videobot \\\n -e VIDEOBOT_DB_USER=\"$user\" \\\n --mount \"type=bind,source=$token,target=/run/secrets/videobot_telegram_token,readonly\" \\\n --mount \"type=bind,source=$dbpass,target=/run/secrets/videobot_db_password,readonly\" \\\n --entrypoint node \"$image\" --input-type=module <<'JS'\nimport {createCreatorPollingRuntime} from './src/runtime/creatorPollingMain.mjs';\ntry {\n const rt=await createCreatorPollingRuntime();\n await rt.close();\n console.log('STK04_DIAG_RUNTIME_CONSTRUCT=PASS');\n} catch(e) {\n const code=String(e?.code??'');\n const msg=String(e?.message??'');\n if(code==='28P01')process.exitCode=80;\n else if(code==='3D000')process.exitCode=81;\n else if(code==='42501')process.exitCode=82;\n else if(code==='ECONNREFUSED')process.exitCode=83;\n else if(code==='ENOTFOUND'||code==='EAI_AGAIN')process.exitCode=84;\n else if(code==='ETIMEDOUT'||code==='UND_ERR_CONNECT_TIMEOUT')process.exitCode=85;\n else if(code==='ERR_MODULE_NOT_FOUND')process.exitCode=86;\n else if(code==='ENOENT'||code==='EACCES')process.exitCode=87;\n else if(/source module missing owned dependencies|verified GATE owner provider missing/i.test(msg))process.exitCode=88;\n else if(/CREATOR_POLL_EXISTING_WEBHOOK_MUST_NOT_BE_REPLACED/.test(msg))process.exitCode=89;\n else if(/CREATOR_POLL_SCHEMA_INCOMPLETE|VideoBot migration/.test(msg))process.exitCode=90;\n else if(/verified bot|identity|CREATOR_BOT|TELEGRAM|HTTP/i.test(msg))process.exitCode=91;\n else if(/relation .* does not exist|syntax error|already exists|duplicate|constraint/i.test(msg))process.exitCode=92;\n else if(/getMe|401|403|404|429/.test(msg))process.exitCode=93;\n else if(msg==='CREATOR_POLL_PRIVATE_MODE_REQUIRED')process.exitCode=100;\n else if(msg==='CREATOR_POLL_PRIVATE_SECRET_MOUNT_REQUIRED')process.exitCode=101;\n else if(msg==='CREATOR_POLL_PRIVATE_DB_SECRET_REQUIRED')process.exitCode=102;\n else if(msg==='CREATOR_POLL_DB_PASSWORD_FILE_INVALID')process.exitCode=103;\n else if(msg==='CREATOR_POLL_INTERNAL_DB_CONFIG_INVALID')process.exitCode=104;\n else if(msg==='CREATOR_POLL_GATE_OWNER_PATH_INVALID')process.exitCode=105;\n else if(msg==='CREATOR_POLL_GATE_OWNER_PROVIDER_INVALID')process.exitCode=106;\n else if(msg==='CREATOR_POLL_SCHEMA_OWNER_CONSENT_MISSING')process.exitCode=107;\n else if(/CREATOR_POLL_/.test(msg))process.exitCode=108;\n else process.exitCode=95;\n}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
