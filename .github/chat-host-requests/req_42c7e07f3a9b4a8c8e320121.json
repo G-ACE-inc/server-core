@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/blob/fix/room-position-3-4-20261111/scripts/userbot_test_client.py"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nw=\"$r/.worktrees/room-live-2467fe6\"\nsession=\"$r/deploy/secrets/userbot_verify.session\"\nsock=\"$r/deploy/secrets/userbot_verify.sock\"\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = 2467fe6847f5ef9f42ff74ff595cfb23401d678d || exit 75\ntest -f \"$w/scripts/userbot_test_client.py\" || exit 76\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 81\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 82\ntest \"$(loginctl show-user \"$(id -un)\" -p Linger --value)\" = yes || exit 83\ntest -f \"$session\" && test ! -L \"$session\" && test \"$(stat -c %a \"$session\")\" = 600 || exit 84\npid=$(systemctl --user show gace-userbot-verify.service -p MainPID --value)\ntest -n \"$pid\" && test \"$pid\" != 0 || exit 85\nif test ! -S \"$sock\"; then\n echo RESIDENT_IPC_SOCKET_MISSING\n echo USERBOT_TEST_BLOCKED_NOT_IMPLEMENTED\nelse\n echo RESIDENT_IPC_SOCKET_PRESENT\n test \"$(stat -c %a \"$sock\")\" = 600 || exit 86\n test \"$(stat -c %u \"$sock\")\" = \"$(id -u)\" || exit 87\n python3 -B - \"$r\" \"$w\" <<'PY'\nimport pathlib,sys\nroot=pathlib.Path(sys.argv[1])\nworktree=pathlib.Path(sys.argv[2])\nsys.path.insert(0,str(worktree/\"scripts\"))\nimport userbot_resident_ipc as ipc\nimport userbot_test_client as client\nsocket_path=root/\"deploy\"/\"secrets\"/\"userbot_verify.sock\"\nipc.SOCKET_PATH=socket_path\nclient.SOCKET_PATH=socket_path\nfor action in (\"health\",\"bot_start_menu\"):\n    sys.argv=[\"userbot_test_client.py\",action]\n    if client.main()!=0:\n        print(\"USERBOT_ALLOWED_IPC_ACTION_FAILED=\"+action)\n        sys.exit(88)\nprint(\"USERBOT_ALLOWED_IPC_ACTIONS_PASS\")\nPY\nfi\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 90\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 91\ntest \"$(systemctl --user show gace-userbot-verify.service -p MainPID --value)\" = \"$pid\" || exit 92\ntest -f \"$session\" && test \"$(stat -c %a \"$session\")\" = 600 || exit 93\necho USERBOT_RESIDENT_POSTCHECK_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
