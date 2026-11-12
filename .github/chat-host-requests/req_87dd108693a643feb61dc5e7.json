@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/24"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nw=\"$r/.worktrees/userbot-room-ipc-d0bdcaf\"\ntest -x \"$r/deploy/.userbot-venv/bin/python\" || exit 42\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = d0bdcaf52040b3a090d055ccaee98783d15e4bbf || exit 43\nROOT_DIR=\"$r\" SOURCE_DIR=\"$w\" \"$r/deploy/.userbot-venv/bin/python\" -B - <<'PY'\nimport os, pathlib, sys\nroot=pathlib.Path(os.environ[\"ROOT_DIR\"])\nsource=pathlib.Path(os.environ[\"SOURCE_DIR\"])\nsys.path.insert(0,str(root/\"scripts\"))\nimport userbot_session\nassert userbot_session.SECRETS == root/\"deploy\"/\"secrets\"\nassert callable(userbot_session.load_credentials)\nsys.path.remove(str(root/\"scripts\"))\nsys.path.insert(0,str(source/\"scripts\"))\nimport telethon, userbot_resident_ipc, userbot_room_smoke, userbot_keepalive, userbot_test_client\nassert \"room_private_smoke\" in userbot_resident_ipc.ACTIONS\nassert userbot_resident_ipc.SOCKET_PATH == root/\"deploy\"/\"secrets\"/\"userbot_verify.sock\"\nassert callable(userbot_room_smoke.run)\nassert userbot_test_client.SOCKET_PATH == userbot_resident_ipc.SOCKET_PATH\nprint(\"ROOT_SESSION_API_COMPATIBLE=YES\")\nprint(\"RESIDENT_IPC_STAGING_IMPORT_PASS\")\nprint(\"TELETHON_INSTALLED=YES\")\nPY\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 46\necho USERBOT_SERVICE_UNCHANGED=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
