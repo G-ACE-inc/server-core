@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\nlogs=\"$(docker logs --tail 100 \"$name\" 2>&1 || true)\"\nif printf '%s\\n' \"$logs\" | grep -q '^CREATOR_DM_POLL_READY=PASS$';then exit 0;fi\nif printf '%s\\n' \"$logs\" | grep -Ei 'EACCES|EPERM' >/dev/null;then exit 80;fi\nif printf '%s\\n' \"$logs\" | grep -Eqi 'password authentication failed|28P01';then exit 81;fi\nif printf '%s\\n' \"$logs\" | grep -Eqi 'database .* does not exist|3D000';then exit 82;fi\nif printf '%s\\n' \"$logs\" | grep -Eqi 'permission denied for (relation|table|schema|database)|42501';then exit 83;fi\nif printf '%s\\n' \"$logs\" | grep -Eqi 'ECONNREFUSED|ENETUNREACH|ETIMEDOUT|UND_ERR_CONNECT_TIMEOUT|fetch failed|EAI_AGAIN|ENOTFOUND|EHOSTUNREACH';then exit 84;fi\nif printf '%s\\n' \"$logs\" | grep -Fq 'CREATOR_POLL_EXISTING_WEBHOOK_MUST_NOT_BE_REPLACED';then exit 85;fi\nif printf '%s\\n' \"$logs\" | grep -Eqi 'relation .* does not exist|42P01';then exit 86;fi\nif printf '%s\\n' \"$logs\" | grep -Eqi 'ERR_MODULE_NOT_FOUND|Cannot find module|Cannot find package';then exit 87;fi\nif printf '%s\\n' \"$logs\" | grep -Eqi 'role .* does not exist|28000';then exit 88;fi\nif printf '%s\\n' \"$logs\" | grep -Fq 'CREATOR_POLL_RUNTIME_FAILED';then exit 89;fi\nexit 90"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
