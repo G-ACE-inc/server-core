@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/blob/fix/room-position-3-4-20261111/scripts/userbot_resident_ipc.py"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nsession=\"$r/deploy/secrets/userbot_verify.session\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 81\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 82\ntest \"$(loginctl show-user \"$(id -un)\" -p Linger --value)\" = yes || exit 83\ntest -f \"$session\" && test ! -L \"$session\" && test \"$(stat -c %a \"$session\")\" = 600 || exit 84\npid_before=$(systemctl --user show gace-userbot-verify.service -p MainPID --value)\ntest -n \"$pid_before\" && test \"$pid_before\" != 0 || exit 85\npython3 -B \"$r/scripts/userbot_test_client.py\" health || exit 86\npython3 -B \"$r/scripts/userbot_test_client.py\" bot_start_menu || exit 87\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 88\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 89\ntest \"$(systemctl --user show gace-userbot-verify.service -p MainPID --value)\" = \"$pid_before\" || exit 90\ntest -f \"$session\" && test \"$(stat -c %a \"$session\")\" = 600 || exit 91\necho USERBOT_RESIDENT_MENU_VERIFIED\necho USERBOT_PROCESS_UNCHANGED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
