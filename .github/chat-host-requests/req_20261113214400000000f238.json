@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 61\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest -n \"$user\" && test \"$net\" = deploy_default || exit 62\nsecret=\"$HOME/.local/state/create-videobot/secrets/gserver_postgres_password\"\ntest -f \"$secret\" && test ! -L \"$secret\" && test \"$(stat -c %a \"$secret\")\" = 600 || exit 63\ndocker image inspect create-videobot:local-poll >/dev/null 2>&1 || exit 64\ndocker run --rm --network \"$net\" --pull never --read-only --cap-drop ALL --security-opt no-new-privileges:true \\\n --mount \"type=bind,source=$secret,target=/run/secrets/videobot_db_password,readonly\" \\\n -e \"GSERVER_DB_USER=$user\" --entrypoint node create-videobot:local-poll --input-type=module -e '\nimport pg from \"pg\";\nimport {readFileSync} from \"node:fs\";\nimport {applyCreatorSchema} from \"./src/runtime/creatorMigrate.mjs\";\nconst pass=readFileSync(\"/run/secrets/videobot_db_password\",\"utf8\").trim();\nconst pool=new pg.Pool({host:\"deploy-postgres-1\",port:5432,user:process.env.GSERVER_DB_USER,password:pass,database:\"videobot\",max:1,connectionTimeoutMillis:5000});\ntry {\n await pool.query(\"SELECT 1\");\n const a=await applyCreatorSchema({pool});\n if(a.migrations!==12)throw Object.assign(Error(\"MIGRATION_INCOMPLETE\"),{code:\"MIGRATE_COUNT\"});\n const q=await pool.query(\"SELECT to_regclass($1) IS NOT NULL AS cursor, to_regclass($2) IS NOT NULL AS packs, to_regclass($3) IS NOT NULL AS sessions\",[\"videobot_poll_cursor\",\"videobot_sticker_packs\",\"videobot_creator_sessions\"]);\n if(q.rows.length!==1||!q.rows[0].cursor||!q.rows[0].packs)throw Object.assign(Error(\"MIGRATION_READBACK_MISSING\"),{code:\"MIGRATE_READBACK\"});\n process.stdout.write(\"STK04_DATABASE_MIGRATIONS=12\\n\");\n process.stdout.write(\"STK04_DATABASE_READBACK=PASS\\n\");\n}catch(err) {\n const code=String(err?.code??\"\");\n const exit=code===\"28P01\"?80:code===\"42501\"?81:code===\"3D000\"?82:code===\"ECONNREFUSED\"?83:code===\"ENOTFOUND\"?84:code===\"MIGRATE_READBACK\"?85:code===\"MIGRATE_COUNT\"?86:87;\n process.exitCode=exit;\n}finally{await pool.end()}\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
