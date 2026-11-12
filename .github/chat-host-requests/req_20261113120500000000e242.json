@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nimage=create-videobot:local-poll\ndocker image inspect \"$image\" >/dev/null 2>&1 || exit 61\ndocker run --rm --network host --pull never --read-only --cap-drop ALL \\\n --security-opt no-new-privileges:true --entrypoint node \"$image\" --input-type=module -e '\nimport dns from \"node:dns/promises\";\nimport https from \"node:https\";\nimport {setDefaultResultOrder} from \"node:dns\";\nsetDefaultResultOrder(\"ipv4first\");\nlet ip;\ntry {ip=(await dns.lookup(\"api.telegram.org\",{family:4})).address;}\ncatch{process.exit(80);}\nconst httpsOk=await new Promise(resolve=>{\n const r=https.get(\"https://api.telegram.org\",{family:4,timeout:9000},x=>{\n  x.resume();resolve(x.statusCode>=200&&x.statusCode<500);\n });\n r.on(\"error\",()=>resolve(false));\n r.on(\"timeout\",()=>{r.destroy();resolve(false)});\n});\nif(!httpsOk)process.exit(81);\ntry{\n const r=await fetch(\"https://api.telegram.org\",{signal:AbortSignal.timeout(10000)});\n if(r.status>=200&&r.status<500)process.exit(0);\n process.exit(82);\n}catch(e){\n const c=String(e?.cause?.code??e?.code??\"\");\n if(c===\"ENOTFOUND\"||c===\"EAI_AGAIN\")process.exit(83);\n if(c===\"ETIMEDOUT\"||c===\"UND_ERR_CONNECT_TIMEOUT\")process.exit(84);\n if(c===\"ENETUNREACH\"||c===\"EHOSTUNREACH\")process.exit(85);\n if(c===\"ECONNREFUSED\")process.exit(86);\n if(c.includes(\"CERT\")||c.includes(\"TLS\"))process.exit(87);\n process.exit(88);\n}'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
