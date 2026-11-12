@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/32"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nif test \"$(systemctl --user is-active gace-userbot-verify.service)\" = active; then echo USERBOT_SERVICE=ACTIVE; else echo USERBOT_SERVICE=INACTIVE; fi\nif test -S \"$r/deploy/secrets/userbot_verify.sock\"; then echo USERBOT_SOCKET=PRESENT; else echo USERBOT_SOCKET=MISSING; fi\nif test \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled; then echo USERBOT_UNIT=ENABLED; else echo USERBOT_UNIT=NOT_ENABLED; fi\nif test \"$(stat -c %a \"$r/deploy/secrets/userbot_verify.session\")\" = 600; then echo USERBOT_SESSION_MODE=PRESERVED; else echo USERBOT_SESSION_MODE=INVALID; fi\nif \"$r/deploy/.userbot-venv/bin/python\" -B \"$r/scripts/userbot_test_client.py\" health; then echo USERBOT_RESIDENT_HEALTH=PASS; else echo USERBOT_RESIDENT_HEALTH=FAIL; fi\nif git -C \"$r\" show HEAD:scripts/userbot_resident_ipc.py | cmp -s - \"$r/scripts/userbot_resident_ipc.py\"; then echo USERBOT_ROOT_CODE=REPOSITORY_HEAD; else echo USERBOT_ROOT_CODE=DIFFERS_FROM_HEAD; fi\necho USERBOT_RECOVERY_DIAGNOSTIC_COMPLETE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
