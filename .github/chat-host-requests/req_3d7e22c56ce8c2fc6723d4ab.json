@@ -1,0 +1,34 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/352"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "command": "python3 - <<'GACE_PY_09c92ba936dcd89d'\nimport json\nimport os\nimport subprocess\nfrom pathlib import Path\n\nroot = Path(\"/home/admin1/server-core\")\nbefore = \"49e3aabec05ab3e2637d2611f3213537e279e0fe\"\ntarget = \"0f85ba8fbe2786335dd2fa26c254bf6c30a524a5\"\nhead = subprocess.check_output([\"git\", \"-C\", str(root), \"rev-parse\", \"HEAD\"], text=True).strip()\nif head == before:\n    subprocess.check_call(\n        [\"python3\", \"scripts/servercore_source_reflect.py\",\n         \"--expected-before\", before, \"--target-sha\", target],\n        cwd=root,\n    )\nelif head != target:\n    print(\"SOURCE_HEAD=\" + head)\n    print(\"SOURCE_REFLECT=NOT_AT_EXPECTED_OR_TARGET\")\n    raise SystemExit(81)\nruntime = \"/run/user/\" + str(os.getuid())\nif os.path.isdir(runtime):\n    os.environ[\"XDG_RUNTIME_DIR\"] = runtime\nsubprocess.check_call([\"systemctl\", \"--user\", \"restart\", \"gace-servercore-result-sink.service\"])\nactive = subprocess.check_output(\n    [\"systemctl\", \"--user\", \"is-active\", \"gace-servercore-result-sink.service\"],\n    text=True,\n).strip()\nissue = json.loads((root / \"operations/github-project-bounded-host.json\").read_text())[\"result_return\"][\"issue_number\"]\nafter = subprocess.check_output([\"git\", \"-C\", str(root), \"rev-parse\", \"HEAD\"], text=True).strip()\nprint(\"RESULT_SINK_ACTIVE=\" + active)\nprint(\"RESULT_ISSUE=\" + str(issue))\nprint(\"SOURCE_HEAD=\" + after)\nGACE_PY_09c92ba936dcd89d\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
