@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ndocker inspect \"$name\" >/dev/null 2>&1 || { echo STK04_CONTAINER_MISSING; exit 61; }\nstatus=\"$(docker inspect -f '{{.State.Status}}' \"$name\")\"\nrestarts=\"$(docker inspect -f '{{.RestartCount}}' \"$name\")\"\nlogs=\"$(docker logs --tail 120 \"$name\" 2>&1 || true)\"\nif printf '%s\\n' \"$logs\" | grep -q '^CREATOR_DM_POLL_READY=PASS$' && test \"$status\" = running;then echo STK04_DM_READY_LOG=PASS; exit 0;fi\nif printf '%s\\n' \"$logs\" | grep -q '^CREATOR_POLL_RUNTIME_FAILED$';then echo STK04_RUNTIME_FAILURE_GENERIC=YES; exit 80;fi\nif printf '%s\\n' \"$logs\" | grep -q '^CREATOR_POLL_EXISTING_WEBHOOK_MUST_NOT_BE_REPLACED$';then exit 81;fi\nif printf '%s\\n' \"$logs\" | grep -q '^CREATOR_POLL_PRIVATE_SECRET_MOUNT_REQUIRED$';then exit 82;fi\nif printf '%s\\n' \"$logs\" | grep -q '^CREATOR_POLL_DB_PASSWORD_FILE_INVALID$';then exit 83;fi\nif printf '%s\\n' \"$logs\" | grep -q '^CREATOR_POLL_INTERNAL_DB_CONFIG_INVALID$';then exit 84;fi\nif printf '%s\\n' \"$logs\" | grep -q '^CREATOR_POLL_SCHEMA_INCOMPLETE$';then exit 85;fi\nif printf '%s\\n' \"$logs\" | grep -Eqi 'ERR_MODULE_NOT_FOUND|Cannot find module';then exit 86;fi\nif printf '%s\\n' \"$logs\" | grep -Fq 'CREATOR_POLL_PRIVATE_MODE_REQUIRED';then exit 87;fi\nif test \"$status\" = restarting;then exit 88;fi\nif test \"$status\" != running;then exit 89;fi\nif test \"$restarts\" -ge 3;then exit 90;fi\nexit 91"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
