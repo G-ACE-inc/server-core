@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 61\nf=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/db_password\"}}{{.Source}}{{end}}{{end}}' \"$pg\")\"\ntest -f \"$f\" && test ! -L \"$f\" || exit 62\npython3 -B - \"$f\" <<'PY'\nfrom pathlib import Path\nimport os,sys,stat\np=Path(sys.argv[1])\ns=p.stat()\nbad_mode=bool(s.st_mode & 0o077)\nshort=s.st_size<12 or len(p.read_text().strip())<12\nif s.st_size>4096:sys.exit(83)\nif bad_mode and short:sys.exit(82)\nif bad_mode:sys.exit(80)\nif short:sys.exit(81)\nsys.exit(0)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
