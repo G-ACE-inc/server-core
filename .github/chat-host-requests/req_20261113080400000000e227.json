@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nsrc=d611f2d4edf8414c21ecd1d43336debfe48319b1\ntarget=\"$HOME/.local/share/gace-create-videobot/sticker-poll-$src\"\ntest -f \"$target/src/runtime/main.mjs\" || { echo STK04_STAGE_MAIN_MISSING; exit 61; }\ntest -f \"$target/src/runtime/creatorPollingMain.mjs\" || { echo STK04_STAGE_POLL_MISSING; exit 62; }\ntest -f \"$target/src/runtime/creatorPollingConsumer.mjs\" || { echo STK04_STAGE_CONSUMER_MISSING; exit 63; }\ntest -f \"$target/src/runtime/creatorMigrate.mjs\" || { echo STK04_STAGE_MIGRATE_MISSING; exit 64; }\nbuild_log=\"$(mktemp /tmp/gace-vdobot-fresh.XXXXXXXX)\"\ntrap 'rm -f \"$build_log\"' EXIT\nif ! docker build --no-cache --network host --pull=false \\\n -f \"$target/deploy/Dockerfile\" -t create-videobot:poll-fresh \"$target\" >\"$build_log\" 2>&1;then\n echo STK04_FRESH_IMAGE_BUILD_FAILED\n grep -Ei 'failed|error|unavailable|timeout' \"$build_log\" | tail -n 4 | sed -E 's#https?://[^ ]+#URL_REDACTED#g' || true\n exit 65\nfi\ndocker run --rm --network none --pull never --entrypoint /bin/sh create-videobot:poll-fresh -c '\ntest -f /opt/videobot/src/runtime/main.mjs &&\ntest -f /opt/videobot/src/runtime/creatorPollingMain.mjs &&\ntest -f /opt/videobot/src/runtime/creatorPollingConsumer.mjs &&\ntest -f /opt/videobot/src/runtime/creatorMigrate.mjs &&\ntest -d /opt/videobot/node_modules/pg' >/dev/null || { echo STK04_FRESH_IMAGE_SOURCE_INCOMPLETE; exit 66; }\ndocker run --rm --network none --pull never --entrypoint node create-videobot:poll-fresh -e \\\n \"import('./src/runtime/creatorPollingMain.mjs').then(()=>process.exit(0)).catch(()=>process.exit(1))\" \\\n >/dev/null || { echo STK04_FRESH_IMAGE_IMPORT_FAILED; exit 67; }\ntest \"$(docker image inspect -f '{{.Config.User}}' create-videobot:poll-fresh)\" = node || { echo STK04_FRESH_USER_INVALID; exit 68; }\necho STK04_FRESH_IMAGE_SOURCE_IMPORT=PASS\nname=gace-createvdobot-videobot-poll-1\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ndbpass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ntest -f \"$token\" && test -f \"$dbpass\" || { echo STK04_SECRET_MOUNT_UNAVAILABLE; exit 69; }\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 70\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest -n \"$user\" && test \"$net\" = deploy_default || exit 71\nother=\"$(docker ps --format '{{.Names}}' | grep -Ei 'create-videobot|createvdobot|videobot-poll|videobot-telegram' | grep -Fxv \"$name\" || true)\"\ntest -z \"$other\" || { echo STK04_OTHER_CREATOR_RUNNING; exit 72; }\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$token\" VIDEOBOT_DB_PASSWORD_SOURCE=\"$dbpass\" GSERVER_POSTGRES_USER=\"$user\" GSERVER_POSTGRES_NETWORK=\"$net\"\ndocker image tag create-videobot:local-poll create-videobot:poll-rollback\ndocker image tag create-videobot:poll-fresh create-videobot:local-poll\ndocker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || { echo STK04_RECREATE_FAILED; exit 73; }\nsleep 10\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || { echo STK04_FRESH_NOT_RUNNING; exit 74; }\ndocker logs --tail 100 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' || { echo STK04_FRESH_NOT_READY; exit 75; }\necho STK04_CREATOR_DM_READY=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
