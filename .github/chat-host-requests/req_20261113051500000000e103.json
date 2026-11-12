@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "python3 -B - <<'PY'\nimport os,stat,re,json,urllib.request,urllib.error\nfrom pathlib import Path\nroot=Path.cwd().resolve()\nif root.name!='create-videobot':raise SystemExit('CREATOR_REPOSITORY_NOT_SELECTED')\nhome=Path.home()\ndirs=[root/'deploy'/'secrets',root/'deploy',home/'.config'/'create-videobot',\n root.parent/'CreateVdobot'/'deploy'/'secrets']\npattern=re.compile(r'^\\d{7,15}:[A-Za-z0-9_-]{30,100}$')\ncandidates={}\ndef check_token(token,source):\n if not pattern.fullmatch(token):return\n candidates.setdefault(token,source)\nfor d in dirs:\n if not d.is_dir():continue\n for f in d.iterdir():\n  try:\n   if f.is_symlink() or not f.is_file():continue\n   st=f.stat()\n   if st.st_size>8192 or st.st_size<20 or (st.st_mode & 0o022):continue\n   low=f.name.lower()\n   if any(x in low for x in ('session','userbot','phone','oauth','backup')):continue\n   if not any(x in low for x in ('bot','token','secret','.env')):continue\n   lines=f.read_text(encoding='utf-8').splitlines()\n   if len(lines)==1:check_token(lines[0].strip(),'private_file')\n   if len(lines)<200:\n    for line in lines:\n     if '=' not in line or line.lstrip().startswith('#'):continue\n     k,v=line.split('=',1)\n     if 'TOKEN' in k.upper() and any(x in k.upper() for x in ('CREATE','VIDEO','VDO','TELEGRAM')):\n      check_token(v.strip().strip('\"').strip(\"'\"),'private_env')\n  except (OSError,UnicodeError):pass\nprint('STK04_CREDENTIAL_CANDIDATE_COUNT='+str(len(candidates)))\nfor value,source in candidates.items():\n try:\n  req=urllib.request.Request('https://api.telegram.org/bot'+value+'/getMe',data=b'{}',\n   method='POST',headers={'Content-Type':'application/json'})\n  with urllib.request.urlopen(req,timeout=10) as res:obj=json.load(res)\n  me=obj.get('result') if obj.get('ok') is True else None\n  name=str(me.get('username','')).lower() if isinstance(me,dict) else ''\n  if name!='createvdobot' or me.get('is_bot') is not True:continue\n  print('STK04_CREATE_BOT_IDENTITY=VERIFIED')\n  print('STK04_CREDENTIAL_SOURCE='+source)\n  ident=int(me['id'])\n  def api(method,data):\n   req=urllib.request.Request('https://api.telegram.org/bot'+value+'/'+method,\n     data=json.dumps(data).encode(),method='POST',headers={'Content-Type':'application/json'})\n   try:\n    with urllib.request.urlopen(req,timeout=10) as resp:return json.load(resp)\n   except urllib.error.HTTPError as ex:\n    return {'ok':False,'error_code':ex.code}\n  r=api('getChatMember',{'chat_id':-1002373696859,'user_id':ident})\n  member=r.get('result') if r.get('ok') else None\n  print('STK04_CREATE_BOT_GROUP_STATUS='+str((member or {}).get('status','UNVERIFIED')))\n  print('STK04_CREATE_BOT_CAN_PIN='+('YES' if (member or {}).get('can_pin_messages') is True else 'NO_OR_UNKNOWN'))\n  break\n except Exception:continue\nelse:print('STK04_CREATE_BOT_IDENTITY=NOT_AVAILABLE')\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
