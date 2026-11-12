@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 61\necho \"DM_POSTGRES_ENV_NAMES_BEGIN\"\ndocker exec \"$pg\" sh -c 'env | cut -d= -f1 | grep -E \"^(POSTGRES|PG|DATABASE)\" | sort' || true\necho DM_POSTGRES_ENV_NAMES_END\necho DM_POSTGRES_MOUNTS_BEGIN\ndocker inspect --format '{{range .Mounts}}{{.Destination}}{{println}}{{end}}' \"$pg\" | grep -Ei 'secret|pg|postgres|data' | head -n 20\necho DM_POSTGRES_MOUNTS_END\necho DM_POSTGRES_AUTH_TYPES\ndocker exec \"$pg\" sh -c 'psql -U \"$POSTGRES_USER\" -d gaybbs -tA -c \"SHOW hba_file\"' | xargs -r -I{} docker exec \"$pg\" sh -c 'grep -vE \"^[[:space:]]*(#|$)\" \"{}\" | sed -E \"s/[[:space:]]+/ /g\" | head -n 18'\necho DM_EXISTING_IMAGES\ndocker images --format '{{.Repository}}:{{.Tag}}' | grep -E '^node:|create-videobot|gace.*videobot' | head -n 12 || true\necho DM_DOCKER_BUILDX=$(docker buildx version >/dev/null 2>&1 && echo YES || echo NO)\necho DM_PG_PROBE_END"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
