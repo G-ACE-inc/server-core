@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nw=\"$r/.worktrees/room-live-2467fe6\"\necho TARGET_REPO=$(git -C \"$r\" remote get-url origin | sed -E 's#(https://)[^/]*@#\\1#')\necho ROOT_HEAD=$(git -C \"$r\" rev-parse HEAD)\necho WORKTREE_HEAD=$(git -C \"$w\" rev-parse HEAD)\necho USERBOT_SERVICE_ACTIVE=$(systemctl --user is-active gace-userbot-verify.service || :)\necho USERBOT_SERVICE_ENABLED=$(systemctl --user is-enabled gace-userbot-verify.service || :)\npid=$(systemctl --user show gace-userbot-verify.service -p MainPID --value)\necho USERBOT_PID_IS_LIVE=$([ \"$pid\" != 0 ] && [ -n \"$pid\" ] && test -d \"/proc/$pid\" && echo YES || echo NO)\necho USERBOT_START_TIMESTAMP=$(systemctl --user show gace-userbot-verify.service -p ExecMainStartTimestamp --value)\nfor p in \"$r/scripts/userbot_keepalive.py\" \"$r/scripts/userbot_resident_ipc.py\" \"$r/scripts/userbot_test_client.py\" \"$w/scripts/userbot_keepalive.py\" \"$w/scripts/userbot_resident_ipc.py\" \"$w/scripts/userbot_test_client.py\"; do if test -f \"$p\"; then echo SCRIPT_$(basename \"$p\")_$(test \"$p\" = \"$r/\"* && echo ROOT || echo WORKTREE)=PRESENT; else echo SCRIPT_$(basename \"$p\")_$(test \"$p\" = \"$r/\"* && echo ROOT || echo WORKTREE)=ABSENT; fi; done\nfor p in \"$r/deploy/secrets/userbot_verify.sock\" \"$w/deploy/secrets/userbot_verify.sock\"; do if test -S \"$p\"; then echo IPC_SOCKET_$(test \"$p\" = \"$r/\"* && echo ROOT || echo WORKTREE)=PRESENT; else echo IPC_SOCKET_$(test \"$p\" = \"$r/\"* && echo ROOT || echo WORKTREE)=MISSING; fi; done\necho SESSION_PRESENT=$([ -f \"$r/deploy/secrets/userbot_verify.session\" ] && echo YES || echo NO)\necho SESSION_SAFE_MODE=$([ -f \"$r/deploy/secrets/userbot_verify.session\" ] && test \"$(stat -c %a \"$r/deploy/secrets/userbot_verify.session\")\" = 600 && echo YES || echo NO)\necho UNIT_EXEC_PATH=$(systemctl --user cat gace-userbot-verify.service | grep '^ExecStart=' | sed -E 's#^.*python -u ([^ ]+).*#\\1#' | head -1)\necho USERBOT_CONNECTED_LOG_SEEN=$(journalctl --user -u gace-userbot-verify.service --since '2 days ago' --no-pager -o cat 2>/dev/null | grep -q '^USERBOT_SESSION_CONNECTED' && echo YES || echo NO)\necho READONLY_IPC_DIAG_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
