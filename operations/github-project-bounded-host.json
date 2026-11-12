@@ -87,7 +87,8 @@
   "result_return": {
     "kind": "github_issue_comment",
     "repository": "G-ACE-inc/server-core",
-    "issue_number": 10,
+    "issue_number": 351,
+    "dispatch_comment_ceiling": 2400,
     "marker": "GACE_BOUNDED_HOST_RESULT",
     "result_socket": "/run/gace/servercore-result.sock",
     "stream_limit_chars": 4000,

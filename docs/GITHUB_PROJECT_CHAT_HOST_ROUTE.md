@@ -1,9 +1,15 @@
 # GPT CHAT 共通ServerTerminal入口
 
+## 結果返却先と容量（2026-11-12）
+
+`operations/github-project-bounded-host.json` の `result_return` が共通Terminal結果の返却先を定める。現在の専用先は [Issue #351](https://github.com/G-ACE-inc/server-core/issues/351)。Project/Control Current の Issue #10 は結果を受け付けない（GitHubのコメント上限2500件に到達）。Actionsの依頼送信前に登録先のコメント数・open/locked状態を確認し、登録上限2400件以上、closed/locked、GitHub API不通の場合は依頼を送らず固定エラーを出す。SinkとActionsは同じ登録先を読む。既存の未公開Host結果は元request IDの台帳から返却し、元コマンドを再実行しない。
+
+次回の容量切替は、空の専用結果Issueを作成し、契約の `issue_number` を更新し、Sink・Actions双方を同じSourceに揃えてから新規依頼を再開する。切替前には新規依頼を止め、旧Issueの未公開結果と台帳を突き合わせる。障害時の復旧は新規送信を止めて直前の契約値へ戻す。ただし満杯のIssue #10へ戻しても投稿は回復しないため、台帳を保護し、書き込み可能な専用Issueを再登録する。公開Issueには結果の本文やSecretを貼らない。
+
 ## 普段の使い方（GPT CHAT）
 
 1. GitHub Project #1の対象Repoを確認し、共通の `host.command` を使う。GserverをHost targetにして `project_context.repository` に対象Repoを指定する。RepoごとのTerminal登録や新規Workflowは要らない。既存checkoutを再利用し、未配置なら既存Git権限で初回取得する。
-2. 要求コミットの `gace/server-terminal` ステータスを既存GitHub接続で読み、`target_url`のActions Run番号を取得する。request IDは要求ファイル名と同一で、Runの観測Artifactに結果URLがある。結果が未着なら同じRunを追う。PR専用Run検索やIssueコメント全件取得に依存せず、出力本文は既存の非公開経路で回収する。Issue #10の`stdout_bytes`/ `stderr_bytes`が正で本文プレビューが空なら、**出力なしや実行不能と判断しない**。元コマンドは再実行せず、同じGserver `host.command` で既存の非公開出力回収を呼ぶ。
+2. 要求コミットの `gace/server-terminal` ステータスを既存GitHub接続で読み、`target_url`のActions Run番号を取得する。request IDは要求ファイル名と同一で、Runの観測Artifactに結果URLがある。結果が未着なら同じRunを追う。PR専用Run検索やIssueコメント全件取得に依存せず、出力本文は既存の非公開経路で回収する。登録済み結果Issueの`stdout_bytes`/ `stderr_bytes`が正で本文プレビューが空なら、**出力なしや実行不能と判断しない**。元コマンドは再実行せず、同じGserver `host.command` で既存の非公開出力回収を呼ぶ。
 3. 回収コマンドはGserver上の既存server-core checkoutから `python3 -B scripts/servercore_host_output_private_artifact_publish.py <元request_id> --writer-ledger --writer-dir "$HOME/.local/state/gserver-terminal/results"`。`--verify-only`は確認だけで転送しない。固定の非公開TGserver Artifact `gace-host-output-<元request_id>` を既存GitHubコネクタで取得し、元request ID・出力バイト数・SHA-256を照合して作業を続ける。既存Artifactがあれば再利用する。
 4. アプリ操作はそのアプリの採用済みCompose・Gserver運用手順に従う。`service.deploy` / `docker.operation` のContabo用登録情報を、Gserverの`host.command`可否と混同しない。実際の拒否はその操作として扱い、Terminal全体を利用不能と報告しない。
 
@@ -32,6 +38,8 @@ Host経路の別CHAT実測では、**実際の新しい2会話**が、それぞ�
 失敗時は実際のrequest/Runと拒否コードを確認する。`HOST_COMMAND_SHA_MISMATCH` は対象Repoの実測SHA、`SOURCE_SHA_MISMATCH` はDispatcher SHAを再確認する問題であり、権限不足と報告しない。`HOST_COMMAND_ROOT_INVALID` は登録rootの実在・Git checkoutを所有者と照合し、`HOST_COMMAND_NOT_REGISTERED` は登録漏れとして扱う。`HOST_COMMAND_BUSY` は実行基盤の一時状態。未知の拒否は `HOST_COMMAND_ADMISSION_DENIED` のまま理由UNKNOWNとし、推測で権限拡張しない。`service.deploy` / `docker.operation` の専用Registry・サービス・Compose等の拒否は、その操作範囲だけの問題であり、登録済みRepoへの通常 `host.command` 全体を禁止されたと解釈しない。この専用RegistryはContabo側の保護されたWriterに対するもので、Gserverの独立アプリの配備可否を判定しない。Gserverでは既存 `host.command` からGserver所有の `scripts/gserver_apps.py`（対応する独立アプリ）、`scripts/gserverctl.py`（Core）、またはアプリ所有者が採用済みのCompose手順を使える。対象アプリの手順・Compose・Docker権限を実際に確認し、出た拒否を隠さない。`gserver_apps.py` が受け付けないComposeであっても、それだけでアプリ所有者の採用済み手順を禁止しない。Gserverの既存操作手順を `host.command` から呼ぶこと自体をContabo専用Registryの迂回と扱わない。実際の結果を所有Currentへ残し、独立した通常開発を続ける。
 
 コマンド作成時の軽い自己確認は `docs/COMMAND_ROUTINE.md`、Masterへ直接コマンドを提示する場合は `docs/MASTER_TERMINAL_COMMAND.md` を唯一の作成規則とする。このページに別のコマンド選択規則やゲートは設けない。
+
+**2026-11-12 の実行依頼ミス**：`git fetch origin <branch>` の直後に `origin/<branch>` と要求SHAを比較して失敗した。対象checkoutの `remote.origin.fetch` が別branchだけを追跡している場合、`origin/<branch>` は更新されない。取得したコミットは `FETCH_HEAD` のSHAで確認し、必要な作業用branch/checkoutはその確認済みSHAから作る。古い追跡refを根拠に配備を止めたり、照合を省いて続行したりしない。今回の失敗requestはExit 75で停止し、Docker配備へ進んでいない。
 
 **2026-10-16 横断Repoの結果未着を修正した条件**：`Host Writer ledger.source_sha` は**実行対象Repo**の`repo_sha`であり、`Result Sink receipt.host_sha` は共通**Dispatcher/server-core**の`expected_sha`である。別Repo（例：`seigo-gace/ai-core`）なら異なるのが正常。以前のSink Sourceはこの2値を同一と誤判断して、Writer/Sinkの保存が完了していてもIssue #10への公開を失敗させ、Actionsが240秒待っていた。[PR #296](https://github.com/G-ACE-inc/server-core/pull/296)で、Receiverの既存「実Writer request ID＋対象Repo＋target SHA照合」を維持し、SinkではWriterの実Repo/target SHAを形式検証した上で同Request ID・exit・stateを照合する。同一Repo server-coreを実行した場合は引き続きDispatcher SHAとも完全一致を要求する。別Repoの古い`expected_sha`/古いRequest JSONをテンプレとして再送しない。SHA整合に失敗したら**その時の実Hostと対象Repo HEAD**を独立取得し、新規requestで正しく指定する。過去Requestは履歴証拠でありSelectorは新規追加された単一Requestだけを実行する。Source Merge後も既存Sinkの稼働プロセス更新と未公開結果の実回収を別途検証する。
 

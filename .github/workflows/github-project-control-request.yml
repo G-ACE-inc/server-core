@@ -81,7 +81,7 @@ jobs:
               '- REQUEST_VALIDATION: PASS',
               '- INTERNAL_EVENT_DURABLE_ACCEPT: PASS',
               '- PROJECT_CONTROL_EXECUTION: PENDING_SERVER_RESULT',
-              '- RESULT_SINK: G-ACE-inc/server-core Issue #10',
+              '- RESULT_SINK: see operations/github-project-bounded-host.json result_return',
               `- artifact: github-project-control-request-${context.runId}`,
               `- workflow run: ${runUrl}`,
               '',
