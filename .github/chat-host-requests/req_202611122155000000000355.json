@@ -1,0 +1,34 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/pull/355"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "repo_sha": "49e3aabec05ab3e2637d2611f3213537e279e0fe",
+    "command": "python3 -B - <<'GACE_PY_READBACK'\nimport json, os, pathlib, subprocess\nroot = pathlib.Path(\"/home/admin1/server-core\")\nresult = subprocess.run([\"git\",\"-C\",str(root),\"rev-parse\",\"HEAD\"],capture_output=True,text=True,timeout=20)\nprint(\"HEAD_READ=\" + (\"PASS\" if result.returncode == 0 else \"FAIL\"))\nif result.returncode == 0:\n    print(\"HOST_HEAD=\" + result.stdout.strip())\ntry:\n    target = json.loads((root/\"operations/github-project-bounded-host.json\").read_text())[\"result_return\"][\"issue_number\"]\n    print(\"RESULT_ISSUE=\" + str(target))\nexcept (OSError, ValueError, KeyError, TypeError):\n    print(\"RESULT_ISSUE=UNAVAILABLE\")\npath = pathlib.Path(\"/run/gace/servercore-result.sock\")\nprint(\"SINK_SOCKET=\" + (\"PRESENT\" if path.is_socket() else \"MISSING\"))\nenv = dict(os.environ)\nif pathlib.Path(\"/run/user/\" + str(os.getuid())).is_dir():\n    env[\"XDG_RUNTIME_DIR\"] = \"/run/user/\" + str(os.getuid())\ntry:\n    status = subprocess.run([\"systemctl\",\"--user\",\"is-active\",\"gace-servercore-result-sink.service\"],capture_output=True,text=True,timeout=10,env=env)\n    print(\"SINK_SERVICE=\" + (status.stdout.strip() if status.returncode == 0 else \"NOT_ACTIVE_OR_UNAVAILABLE\"))\nexcept (OSError, subprocess.TimeoutExpired):\n    print(\"SINK_SERVICE=UNAVAILABLE\")\nGACE_PY_READBACK\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
