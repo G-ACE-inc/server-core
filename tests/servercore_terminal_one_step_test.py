@@ -57,6 +57,11 @@ class _SequencedLookup:
         self.calls += 1
         if isinstance(item, Exception):
             raise item
+        # Synthetic fixtures in this test class use RID.  For generated
+        # read-only Request IDs, model the real Sink's exact correlation;
+        # the separate negative test verifies mismatches are rejected.
+        if isinstance(item, dict) and item.get("status") == "RECORDED" and item.get("request_id") == RID:
+            return {**item, "request_id": request_id}
         return item
 
 
