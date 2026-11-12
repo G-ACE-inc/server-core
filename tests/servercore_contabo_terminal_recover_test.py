@@ -57,7 +57,7 @@ class RecoverTests(unittest.TestCase):
             return self.head
         if "fetch" in argv:
             return ""
-        if "servercore_source_reflect.py" in argv:
+        if any(arg.endswith("/servercore_source_reflect.py") for arg in argv):
             if self.fail_reflect:
                 raise m.RecoveryError("COMMAND_FAILED")
             self.head = NEW
@@ -75,7 +75,7 @@ class RecoverTests(unittest.TestCase):
         self.assertEqual((out["before_head"], out["after_head"], out["result_issue"]),
                          (OLD, NEW, 351))
         self.assertEqual(out["result_publication"], "NOT_VERIFIED")
-        self.assertEqual(sum("servercore_source_reflect.py" in call for call in self.commands), 1)
+        self.assertEqual(sum(any(arg.endswith("/servercore_source_reflect.py") for arg in call) for call in self.commands), 1)
         restarts = [call for call in self.commands if "restart" in call]
         self.assertEqual(restarts, [("systemctl", "--user", "restart",
                                      "gace-servercore-result-sink.service")])
@@ -86,7 +86,7 @@ class RecoverTests(unittest.TestCase):
         with patch.object(m, "command", side_effect=self.fake_command):
             out = m.recover(root=self.root)
         self.assertEqual(out["before_head"], out["after_head"])
-        self.assertFalse(any("servercore_source_reflect.py" in call for call in self.commands))
+        self.assertFalse(any(any(arg.endswith("/servercore_source_reflect.py") for arg in call) for call in self.commands))
 
     def test_dirty_checkout_denies_mutation(self):
         self.dirty = True
