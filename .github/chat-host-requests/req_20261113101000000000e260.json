@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\ndocker logs --tail 150 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' || exit 62\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {reconcileStickerRegistration} from './src/stickers/packRegistration.mjs';\nconst e=process.env;\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,\n password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1,connectionTimeoutMillis:5000});\nconst out=createCreatorTelegramFetch(globalThis.fetch);\ntry{\n const {rows}=await pool.query(\n  \"SELECT r.pack_name,r.kind,r.format,r.file_unique_id,r.uploaded_file_unique_id,r.phase,s.state->'stickerPending'->>'setName' AS existing_name,s.state->'stickerPending'->>'title' AS title FROM videobot_sticker_registration_receipts r JOIN videobot_creator_sessions s ON s.owner_user_id=r.owner_user_id WHERE r.phase='needs_reconcile' ORDER BY r.updated_at DESC LIMIT 1\");\n if(rows.length!==1){process.exitCode=80;}\n else{\n  const r=rows[0];\n  if(r.uploaded_file_unique_id!==r.file_unique_id||r.existing_name!==null){process.exitCode=81;}\n  else{\n   const api=createTelegramBotApi({\n    token:readFileSync(e.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim(),\n    fetchImpl:out.fetch,timeoutMs:15000});\n   const result=await reconcileStickerRegistration({\n    telegramApi:api,name:r.pack_name,kind:r.kind,format:r.format,\n    fileUniqueId:r.file_unique_id,expectedTitle:r.title,isNewPack:true});\n   process.exitCode=result.verified===true&&result.proof==='unique_new_pack'&&\n     result.item?.file_unique_id!==r.file_unique_id?0:82;\n  }\n }\n}catch{process.exitCode=70;}\nfinally{await out.close();await pool.end();}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
