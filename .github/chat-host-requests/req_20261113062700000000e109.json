@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nsha=b4ecd358cdb2f12aeb5d996c4112ce052b017430\ngit fetch --no-tags origin feat/assistant-ai-and-sales-core >/dev/null 2>&1 || { echo STK04_FETCH_FAILED; exit 61; }\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$sha\" || { echo STK04_SOURCE_SHA_MISMATCH; exit 62; }\nd=\"$(mktemp -d /tmp/create-vdo-topic.XXXXXXXX)\"\nout=\"$(mktemp /tmp/create-vdo-topic-build.XXXXXXXX)\"\ntrap 'rm -rf \"$d\";rm -f \"$out\"' EXIT\ngit archive \"$sha\" | tar -xf - -C \"$d\"\ntest -f \"$d/src/runtime/creatorStickerPinMain.mjs\" || { echo STK04_ENTRY_SOURCE_MISSING; exit 63; }\nif ! docker build --network host --pull=false -f \"$d/deploy/Dockerfile\" -t create-videobot:sticker-topic-pin \"$d\" >\"$out\" 2>&1;then\n echo STK04_IMAGE_BUILD=FAIL\n grep -Ei 'error|failed|unavailable|network|denied' \"$out\" | tail -n 8 | sed -E 's#https?://[^ ]+#(URL_REDACTED)#g' || true\n exit 64\nfi\necho STK04_IMAGE_BUILD=PASS\ndocker image inspect create-videobot:sticker-topic-pin >/dev/null\ncandidates=()\nfor f in \"$PWD\"/deploy/secrets/* \"$PWD\"/deploy/*token* \"$HOME\"/.config/create-videobot/*; do\n test -f \"$f\" && test ! -L \"$f\" || continue\n case \"$(basename \"$f\" | tr '[:upper:]' '[:lower:]')\" in *userbot*|*session*|*oauth*|*phone*) continue;; esac\n case \"$(basename \"$f\" | tr '[:upper:]' '[:lower:]')\" in *bot*|*token*|*secret*) :;; *) continue;; esac\n mode=\"$(stat -c '%a' \"$f\")\";size=\"$(stat -c '%s' \"$f\")\"\n test \"$mode\" = 600 && test \"$size\" -ge 35 && test \"$size\" -le 512 || continue\n candidates+=(\"$f\")\ndone\ntest \"${#candidates[@]}\" -eq 1 || { echo STK04_OWNER_SECRET_CANDIDATE_COUNT_INVALID; exit 65; }\nstate=\"$HOME/.local/state/create-videobot/sticker-entry\"\nmkdir -p \"$state\";chmod 700 \"$state\"\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"${candidates[0]}\"\nexport VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$state\"\nif ! docker compose -f \"$d/deploy/compose.videobot.topic-pin.yaml\" run --no-build --rm videobot-topic-pin >\"$out\" 2>&1;then\n echo STK04_CREATOR_ONE_SHOT=FAIL\n grep -E '^(CREATOR_|Error|error)' \"$out\" | tail -n 8 || true\n exit 66\nfi\ngrep -E '^CREATOR_STICKER_PIN_' \"$out\" || true\ngrep -qx 'CREATOR_STICKER_PIN_API_ACK=PASS' \"$out\" || { echo STK04_API_ACK_MISSING; exit 67; }\necho STK04_CREATOR_OWNED_TOPIC_PIN=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
