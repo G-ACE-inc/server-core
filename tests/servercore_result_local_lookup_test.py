@@ -44,14 +44,14 @@ class LocalResultTests(unittest.TestCase):
                   "exit_code": 0, "host_sha": "b" * 40,
                   "recorded_at": "2026-11-12T00:00:00Z",
                   "published": None,
-                  "stdout": "token=sensitive-data-do-not-return",
+                  "stdout": "unpublished-stream-should-not-return",
                   "stderr": "private"}
         received = self.fake_sink({"ok": True, "found": True, "record": record})
         result = module.lookup(RID, socket_path=self.path)
         self.assertEqual(result["state"], "PASS")
         self.assertFalse(result["published"])
         self.assertEqual(received, [{"schema": module.SCHEMA, "request_id": RID}])
-        self.assertNotIn("token=", json.dumps(result))
+        self.assertNotIn("unpublished-stream-should-not-return", json.dumps(result))
         self.assertNotIn("private", json.dumps(result))
 
     def test_missing_is_not_mislabeled_success(self):
