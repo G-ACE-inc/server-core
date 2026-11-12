@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nsrc=13cfc4ef03e74b96795dc4008c94eda4de0a76d1\ngit fetch --no-tags origin feat/assistant-ai-and-sales-core >/dev/null 2>&1 || { echo DM_SOURCE_FETCH_FAILED;exit 61; }\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$src\" || { echo DM_SOURCE_SHA_MISMATCH;exit 62; }\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo DM_POSTGRES_NOT_UNIQUE;exit 63; }\nexisting=\"$(docker ps --format '{{.Names}}' | grep -Ei 'create-videobot|createvdobot|videobot-poll|videobot-telegram' || true)\"\ntest -z \"$existing\" || { echo DM_CREATOR_CONSUMER_ALREADY_RUNNING;exit 64; }\nsecret_src=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/db_password\"}}{{.Source}}{{end}}{{end}}' \"$pg\")\"\ntest -f \"$secret_src\" && test ! -L \"$secret_src\" || { echo DM_POSTGRES_OWNER_SECRET_MISSING;exit 65; }\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\ntest -n \"$user\" || { echo DM_POSTGRES_OWNER_MISSING;exit 66; }\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest \"$net\" = \"deploy_default\" || { echo DM_POSTGRES_NETWORK_UNVERIFIED;exit 67; }\ntoken_file=\"$(python3 -B - <<'PY'\nimport json,re,stat,urllib.request\nfrom pathlib import Path\ncandidates=[]\nfor folder in (Path.home()/'.config'/'create-videobot',):\n if not folder.is_dir():continue\n for f in folder.iterdir():\n  try:\n   st=f.lstat()\n   if not stat.S_ISREG(st.st_mode) or st.st_mode & 0o077 or not 35<=st.st_size<=512:continue\n   if any(x in f.name.lower() for x in ('session','userbot','oauth','phone')):continue\n   token=f.read_text(encoding='utf-8').strip()\n   if not re.fullmatch(r'\\d{7,15}:[A-Za-z0-9_-]{30,100}',token):continue\n   req=urllib.request.Request('https://api.telegram.org/bot'+token+'/getMe',\n     data=b'{}',method='POST',headers={'Content-Type':'application/json'})\n   with urllib.request.urlopen(req,timeout=12) as resp:obj=json.load(resp)\n   x=obj.get('result')\n   if obj.get('ok') and x and x.get('is_bot') and str(x.get('username','')).lower()=='createvdobot':\n    candidates.append(str(f))\n  except Exception:continue\nif len(candidates)==1:print(candidates[0])\nPY\n)\"\ntest -n \"$token_file\" || { echo DM_CREATOR_TOKEN_NOT_VERIFIED;exit 68; }\ntarget=\"$HOME/.local/share/gace-create-videobot/sticker-poll-$src\"\nmkdir -p \"$target\"\nchmod 700 \"$HOME/.local/share/gace-create-videobot\" \"$target\"\ngit archive \"$src\" | tar -xf - -C \"$target\"\ntest -f \"$target/src/runtime/creatorPollingMain.mjs\" || { echo DM_POLL_SOURCE_NOT_STAGED;exit 69; }\nbuildlog=\"$(mktemp /tmp/gace-creator-build.XXXXXXXX)\"\ntrap 'rm -f \"$buildlog\"' EXIT\nif ! docker build --network host --pull=false \\\n  -f \"$target/deploy/Dockerfile\" -t create-videobot:local-poll \"$target\" >\"$buildlog\" 2>&1;then\n echo DM_POLL_DOCKER_BUILD=FAILED\n grep -Ei 'failed|error|denied|network|unavailable' \"$buildlog\" | tail -n 6 | sed -E 's#https?://[^ ]+#URL_REDACTED#g' || true\n exit 70\nfi\necho DM_POLL_DOCKER_BUILD=PASS\ndb_exists=\"$(docker exec \"$pg\" sh -c 'psql -U \"$POSTGRES_USER\" -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='\\''videobot'\\''\"')\"\nif test \"$db_exists\" != 1;then\n docker exec \"$pg\" sh -c 'psql -U \"$POSTGRES_USER\" -d postgres -v ON_ERROR_STOP=1 -c \"CREATE DATABASE videobot\"' >/dev/null || { echo DM_POLL_DB_CREATE_FAILED;exit 71; }\nfi\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"\\token_file\"\nexport VIDEOBOT_DB_PASSWORD_SOURCE=\"$secret_src\"\nexport GSERVER_POSTGRES_USER=\"$user\"\nexport GSERVER_POSTGRES_NETWORK=\"$net\"\ndocker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build videobot-poll >/dev/null 2>&1 || { echo DM_POLL_COMPOSE_START_FAILED;exit 72; }\nsleep 7\nname=gace-createvdobot-videobot-poll-1\nif test \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" != true;then\n echo DM_POLL_CONTAINER_NOT_RUNNING\n docker logs --tail 20 \"$name\" 2>&1 | grep -E '^CREATOR_[A-Z_]+=|^CREATOR_[A-Z_]+$' | tail -n 10 || true\n exit 73\nfi\necho DM_POLL_CONTAINER=RUNNING\ndocker logs --tail 80 \"$name\" 2>&1 | grep -E '^CREATOR_(DM|GATE|POLL)_' | tail -n 18 || true\nif ! docker logs --tail 80 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$';then\n echo DM_POLL_READY_NOT_VERIFIED\n exit 74\nfi\necho DM_POLL_READY=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
