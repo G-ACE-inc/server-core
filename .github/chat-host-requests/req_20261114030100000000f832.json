@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "07793df5c1fe9844b8cd97c399821c2433e0dd81",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nSQL=\"SELECT 'PIN_UPDATE_MINUTE='||to_char(updated_at AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI')||' COUNT='||count(*) FROM topic_dm_entry_pins WHERE state='published' GROUP BY 1 ORDER BY 1; SELECT 'PANEL_UPDATE_MINUTE='||state||' '||to_char(updated_at AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI')||' COUNT='||count(*) FROM board_menu_panels WHERE panel_type='posting' GROUP BY 1 ORDER BY 1; SELECT 'PANEL_NEEDS_RECONCILE='||chat_id||':'||message_thread_id||':'||message_id FROM board_menu_panels WHERE panel_type='posting' AND state='needs_reconcile';\"\nRESULT=$(docker compose -p deploy -f \"$P/deploy/gserver-compose.yaml\" exec -T postgres psql -U gace -d gaybbs -Atc \"$SQL\" 2>&1) || exit 32\ngh issue comment 7 --repo seigo-gace/GateApp-Bot --body \"$(printf 'POSTING_MENU_EDIT_MINUTE_DIST_20261113\\n%s' \"$RESULT\")\" >/dev/null || exit 33\necho POSTING_MENU_DISTRIBUTION_RECORDED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
