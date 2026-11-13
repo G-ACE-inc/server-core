@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nn=gace-createvdobot-videobot-poll-1\npg=deploy-postgres-1\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\ncursor=\"$(docker exec \"$pg\" psql -U \"$user\" -d videobot -Atc \"SELECT last_update_id FROM videobot_poll_cursor WHERE consumer_id='createvdobot'\")\"\ntest \"$cursor\" = 2956731 || { echo CURSOR_CHANGED_ABORT; exit 81; }\ndigest=\"$(docker exec \"$pg\" psql -U \"$user\" -d videobot -Atc \"SELECT payload_sha256 FROM videobot_webhook_updates WHERE update_id=2956732 AND status='needs_reconcile'\")\"\ntest \"${#digest}\" -eq 64 || { echo RECEIPT_CHANGED_ABORT; exit 82; }\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$n\")\"\ntest -f \"$token\" || exit 83\ndocker stop -t 15 \"$n\" >/dev/null\nrestore(){ docker start \"$n\" >/dev/null 2>&1 || true; }\ntrap restore EXIT\ndocker run -i --rm --network deploy_default --pull never --mount \"type=bind,source=$token,target=/run/secrets/videobot_telegram_token,readonly\" --entrypoint node -e EXPECTED_SHA256=\"$digest\" create-videobot:local-poll --input-type=module - <<'NODE'\nimport {readFileSync} from 'node:fs';\nimport {createHash} from 'node:crypto';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nsetDefaultResultOrder('ipv4first');setDefaultAutoSelectFamily(false);\nconst token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\nconst r=await fetch('https://api.telegram.org/bot'+token+'/getUpdates',{method:'POST',\n headers:{'Content-Type':'application/json'},\n body:JSON.stringify({offset:2956732,limit:1,timeout:0}),\n signal:AbortSignal.timeout(15000)});\nconst d=await r.json();\nif(!r.ok||d.ok!==true||!Array.isArray(d.result))throw Error('READ_ONLY_TELEGRAM_QUERY_FAILED');\nconst u=d.result[0];\nif(!u||u.update_id!==2956732)throw Error('EXPECTED_UPDATE_NOT_PRESENT');\nconst sha=createHash('sha256').update(JSON.stringify(u)).digest('hex');\nconsole.log('UPDATE_ID_MATCH=PASS');\nconsole.log('PAYLOAD_HASH_MATCH='+(sha===process.env.EXPECTED_SHA256?'YES':'NO'));\nconst v=u.message?.successful_payment?'payment':\n u.purchased_paid_media?'paid_media':\n u.pre_checkout_query?'pre_checkout':\n u.message?(/^\\/start(?:@[A-Za-z0-9_]+)?$/.test(u.message.text??'')?'plain_start':\n /^\\/start(?:@[A-Za-z0-9_]+)? sticker$/.test(u.message.text??'')?'sticker_start':'other_message'):\n u.callback_query?(/^menu:/.test(u.callback_query.data??'')?'menu_callback':\n /^sticker:/.test(u.callback_query.data??'')?'sticker_callback':'other_callback'):'other_update';\nconsole.log('BLOCKED_UPDATE_KIND='+v);\nNODE\necho PENDING_EVENT_CLASSIFIED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
