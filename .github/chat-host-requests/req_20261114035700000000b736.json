@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "3e81e6f4ccb24c9113adcbbaf45c29d066d59957",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 51\nCID=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest -n \"$CID\" || exit 52\nNEXT=$(docker image inspect gace-tgtumbler-gaybbs:room-app-reuse-9738e45 --format '{{.Id}}')\ntest \"$(docker inspect \"$CID\" --format '{{.Image}}')\" = \"$NEXT\" || exit 53\ndocker logs --since=5m \"$CID\" 2>&1 | grep -q GAYBBS_BOT_READY || exit 54\ncd \"$P\"\npython3 -B scripts/userbot_test_client.py health >/tmp/gace-room-app-userbot-health.txt || exit 55\npython3 -B scripts/userbot_test_client.py room_private_smoke >/tmp/gace-room-app-userbot-room-smoke.txt || exit 56\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 57\necho ROOM_APP_REUSE_RUNTIME_AND_RESIDENT_USERBOT_SAFE_SMOKE_PASS\necho SOURCE_SHA=9738e451d8fd9485954bf3737e68a90798e1650b"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
