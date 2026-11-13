@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/0179c474f35d1bf2f4078e6fecebd4ef50b1fcbb"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || { echo STK_VERIFY_BOT_DOWN; exit 61; }\ntest \"$(docker ps --format '{{.Names}}' | grep -Ec '^gace-createvdobot-videobot-poll-1$')\" -eq 1 || { echo STK_VERIFY_POLL_COUNT_INVALID; exit 62; }\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';import{readFileSync}from'node:fs';\nconst e=process.env;const productId='sp_76f23430d1c29ca355960a95';\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1});\ntry{\nconst q=await pool.query(\"SELECT p.product_id,p.price_stars,p.status AS product_status,t.telegram_message_id,t.status AS post_status,t.chat_id,t.message_thread_id,t.display_text FROM videobot_sticker_products p JOIN videobot_sticker_topic_posts t ON t.product_id=p.product_id WHERE p.product_id=$1\",[productId]);\nif(q.rowCount!==1)throw Error('STK_VERIFY_PRODUCT_RECEIPT_NOT_UNIQUE');\nconst p=q.rows[0];\nif(p.product_status!=='published'||p.post_status!=='sent'||Number(p.price_stars)!==50||Number(p.telegram_message_id)<=4664||Number(p.chat_id)!==-1002373696859||Number(p.message_thread_id)!==4640||typeof p.display_text!=='string'||!p.display_text.includes('50 Stars'))throw Error('STK_VERIFY_TOPIC_RECEIPT_INVALID');\nconst source=readFileSync('./src/stickers/topicPublication.mjs','utf8');\nconst bot=readFileSync('./src/telegram/botApi.mjs','utf8');\nconst sales=readFileSync('./src/telegram/stickerSales.mjs','utf8');\nif(!source.includes(\"telegramApi('sendPhoto'\")||!bot.includes('there is no text in the message to edit')||!sales.includes('hentaigay'))throw Error('STK_VERIFY_SOURCE_INCOMPLETE');\nconst pin=JSON.parse(readFileSync('/var/lib/videobot/sticker-entry/group2373696859_thread4640.json','utf8'));\nif(pin.status!=='pinned_ack'||Number(pin.thread_id)!==4640||Number(pin.message_id)===Number(p.telegram_message_id))throw Error('STK_VERIFY_PIN_CHANGED');\nconsole.log('STK_VISIBLE_PREVIEW_POST_RECEIPT=PASS');\nconsole.log('STK_SAME_50_STARS_PRODUCT_AND_TOPIC=PASS');\nconsole.log('STK_PIN_PRESERVED=PASS');\nconsole.log('STK_DM_MENU_FALLBACK_SOURCE=PASS');\nconsole.log('STK_PUBLIC_SHOP_URL_CONFIGURED='+Boolean(e.VIDEOBOT_SHOP_PUBLIC_URL));\n}finally{await pool.end();}\nNODE\necho STK_INDEPENDENT_RUNTIME_READBACK=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
