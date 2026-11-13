@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nimport json,pathlib,re,sys\nrid=\"req_b741ab20261114d3085cb013\"\np=pathlib.Path.home()/\".local/state/gserver-terminal/results\"/(rid+\".json\")\nif not p.is_file():sys.exit(50)\nrecord=json.loads(p.read_text())\nif isinstance(record.get(\"result\"),dict):record=record[\"result\"]\ns=(str(record.get(\"stderr\",\"\"))+\"\\n\"+str(record.get(\"stdout\",\"\"))).lower()\nrules=[\n (61,r\"failed to solve|dockerfile:|failed to compute cache key\"),\n (62,r\"err_pnpm|pnpm.*error|corepack.*error\"),\n (63,r\"no space left\"),\n (64,r\"permission denied\"),\n (65,r\"no such file or directory|cannot stat\"),\n (66,r\"could not resolve|network is unreachable|connection refused|tls handshake\"),\n (67,r\"no matching manifest|image .* not found|manifest unknown\"),\n (68,r\"cannot find module|module not found\"),\n (69,r\"build failed|error:\"),\n]\nfor code,regex in rules:\n if re.search(regex,s):sys.exit(code)\nsys.exit(70)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
