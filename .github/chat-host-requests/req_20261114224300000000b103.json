@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "python3 - <<'PY'\nimport subprocess,os\nfrom pathlib import Path\ndef run(*args):\n try:\n  r=subprocess.run(args,capture_output=True,text=True,timeout=12)\n  return (r.returncode,r.stdout.strip())\n except Exception:return (99,'')\nn='gace-createvdobot-videobot-poll-1'\nc,s=run('docker','inspect','-f','{{.State.Running}}',n)\nprint('BOT_RUNNING='+ (s if c==0 else 'UNKNOWN'))\nc,s=run('docker','inspect','-f','{{.Config.Image}}',n)\nprint('BOT_IMAGE='+ (s[:90] if c==0 else 'UNKNOWN'))\nc,s=run('docker','exec',n,'grep','-c','plain /start belongs to the common home menu','/opt/videobot/src/telegram/stickerWizard.mjs')\nprint('HOME_FIX='+ ('YES' if c==0 and s=='1' else 'NO_OR_UNKNOWN'))\nc,s=run('docker','logs','--tail','500',n)\nprint('POLL_READY='+str('CREATOR_DM_POLL_READY=PASS' in s))\nprint('GATE_READY='+str('CREATOR_GATE_PUBLIC_RELEASE=CONNECTED' in s))\nc,s=run('systemctl','--user','is-active','gace-userbot-verify.service')\nprint('USERBOT_ACTIVE='+ (s if c==0 else 'UNKNOWN'))\nroot=Path.home()/'Project/Gserver/projects/TGtumbler/GateApp-Bot'\nif root.exists():\n files=[str(f.relative_to(root)) for f in root.rglob('*') if f.is_file() and ('userbot' in f.name.lower() or 'ipc' in f.name.lower()) and f.suffix=='.py']\n print('USERBOT_CANDIDATES='+','.join(files[:15]))\nelse:print('USERBOT_OWNER_PATH_MISSING')\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
