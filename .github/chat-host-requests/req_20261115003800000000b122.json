@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nsha=960501dff324a58dd64fd9f3b20d57531bcff752\nn=gace-createvdobot-videobot-poll-1\nroot=\"$(git rev-parse --show-toplevel)\"\ngit fetch --no-tags origin \"$sha\" >/dev/null 2>&1\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$sha\" || exit 61\nwt=\"$root/.worktrees/stk-nav-replay-960501d\"\nif test -e \"$wt\";then test \"$(git -C \"$wt\" rev-parse HEAD)\" = \"$sha\" || exit 62;else mkdir -p \"$root/.worktrees\";git worktree add --detach \"$wt\" \"$sha\" >/dev/null 2>&1;fi\nbase=create-videobot:menu-home-e9cc45d\nimg=create-videobot:menu-replay-960501d\ndocker image inspect \"$base\" >/dev/null || exit 63\ndocker build --network none --pull=false -t \"$img\" -f - \"$wt\" >/dev/null <<'DOCKERFILE'\nFROM create-videobot:menu-home-e9cc45d\nCOPY --chown=node:node src/telegram/creatorWebhookAdmission.mjs /opt/videobot/src/telegram/creatorWebhookAdmission.mjs\nCOPY --chown=node:node src/sales/pgWebhookUpdates.mjs /opt/videobot/src/sales/pgWebhookUpdates.mjs\nDOCKERFILE\ndocker run --rm --network none --pull never --entrypoint node \"$img\" --check /opt/videobot/src/telegram/creatorWebhookAdmission.mjs >/dev/null || exit 64\ndocker run --rm --network none --pull never --entrypoint node \"$img\" --check /opt/videobot/src/sales/pgWebhookUpdates.mjs >/dev/null || exit 65\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$n\")\"\npass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$n\")\"\ntest -f \"$token\" && test -f \"$pass\" || exit 66\npg=deploy-postgres-1\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\npin=\"$HOME/.local/state/create-videobot/sticker-pin\"\ntest -f \"$pin/group2373696859_thread4640.json\" || exit 67\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$token\" VIDEOBOT_DB_PASSWORD_SOURCE=\"$pass\" VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$pin\" GSERVER_POSTGRES_USER=\"$user\" GSERVER_POSTGRES_NETWORK=deploy_default\ncompose=\"$HOME/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/deploy/compose.videobot.poll.yaml\"\ndocker compose -p gace-createvdobot -f \"$compose\" config --quiet || exit 68\nold=\"$(docker inspect -f '{{.Image}}' \"$n\")\"\ndocker image tag \"$old\" create-videobot:before-nav-replay\ndocker image tag \"$img\" create-videobot:local-poll\ndocker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null || exit 69\nsleep 14\ntest \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = true || exit 70\ntest \"$(docker inspect -f '{{.Image}}' \"$n\")\" = \"$(docker image inspect -f '{{.Id}}' \"$img\")\" || exit 71\ncount=\"$(docker inspect -f '{{.RestartCount}}' \"$n\")\"\nsleep 9\ntest \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = true || exit 72\ntest \"$(docker inspect -f '{{.RestartCount}}' \"$n\")\" = \"$count\" || exit 73\ndocker logs --tail 700 \"$n\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' || exit 74\nstate=\"$(docker exec \"$pg\" psql -U \"$user\" -d videobot -Atc \"SELECT status||':'||handled FROM videobot_webhook_updates WHERE update_id=2956732\")\"\ntest \"$state\" = 'completed:true' || { echo NAV_UPDATE_NOT_COMPLETED; exit 75; }\ncursor=\"$(docker exec \"$pg\" psql -U \"$user\" -d videobot -Atc \"SELECT last_update_id FROM videobot_poll_cursor WHERE consumer_id='createvdobot'\")\"\ntest \"$cursor\" -ge 2956732 || exit 76\necho LIVE_DM_POLL_STABLE=PASS\necho BLOCKED_START_RECONCILED=PASS\necho LIVE_MENU_REPLAY_PATCH=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
