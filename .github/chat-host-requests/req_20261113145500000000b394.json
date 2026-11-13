@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/41"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true || exit 70\ntest \"$(docker inspect deploy-postgres-1 --format '{{.State.Running}}')\" = true || exit 71\np=\"docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At\"\nreal_count=$(docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -c \"SELECT count(*) FROM posting_topics t JOIN topic_dm_entry_pins p ON p.chat_id=t.chat_id AND p.message_thread_id=t.message_thread_id WHERE t.enabled=TRUE AND t.purpose='link' AND p.state='published' AND p.pinned=TRUE AND p.message_id IS NOT NULL AND p.token_hash IS NOT NULL\")\ntest \"$real_count\" = 3 || exit 72\nmissing_count=$(docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -c \"SELECT count(*) FROM posting_topics t LEFT JOIN topic_dm_entry_pins p ON p.chat_id=t.chat_id AND p.message_thread_id=t.message_thread_id WHERE t.enabled=TRUE AND (p.chat_id IS NULL OR p.state<>'published' OR p.pinned IS DISTINCT FROM TRUE OR p.message_id IS NULL)\")\ntest \"$missing_count\" = 0 || exit 73\nplaceholders=$(docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -c \"SELECT count(*) FROM topic_dm_entry_pins WHERE title LIKE '(thread:%' AND state='verified' AND pinned=FALSE AND message_id IS NULL\")\ntest \"$placeholders\" = 15 || exit 74\necho REAL_REGISTERED_LINK_PIN_COUNT=\"$real_count\"\necho REGISTERED_ENABLED_TOPIC_MISSING_PINS=\"$missing_count\"\necho PLACEHOLDERS_UNTOUCHED=\"$placeholders\"\npy=\"$r/deploy/.userbot-venv/bin/python\"\n\"$py\" -B \"$r/scripts/userbot_test_client.py\" health || exit 75\n\"$py\" -B \"$r/scripts/userbot_test_client.py\" bot_start_menu || exit 76\n\"$py\" -B \"$r/scripts/userbot_test_client.py\" health || exit 77\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 78\necho TOPIC_ENTRY_COVERAGE_AND_USERBOT_DM=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
