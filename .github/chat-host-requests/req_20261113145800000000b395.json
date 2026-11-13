@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/41"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\npy=\"$r/deploy/.userbot-venv/bin/python\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 70\n\"$py\" -B \"$r/scripts/userbot_test_client.py\" health || exit 71\nrows=$(docker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -F '|' -c \"SELECT chat_id,message_id FROM topic_dm_entry_pins WHERE ((chat_id=-1003847210571 AND message_thread_id=273) OR (chat_id=-1003770334893 AND message_thread_id=18) OR (chat_id=-1002373696859 AND message_thread_id=1724)) AND state='published' AND pinned=TRUE AND message_id IS NOT NULL ORDER BY chat_id,message_thread_id\")\ncount=$(printf '%s\\n' \"$rows\" | wc -l)\ntest \"$count\" = 3 || exit 72\nprintf '%s\\n' \"$rows\" | while IFS='|' read -r chat_id message_id; do\n if \"$py\" -B \"$r/scripts/userbot_test_client.py\" room_public_readback --chat-id \"$chat_id\" --message-id \"$message_id\"; then echo USERBOT_PIN_MESSAGE_READBACK=PASS; else echo USERBOT_PIN_MESSAGE_READBACK=NOT_ACCESSIBLE_OR_NOT_VERIFIED; fi\ndone\n\"$py\" -B \"$r/scripts/userbot_test_client.py\" health || exit 73\necho USERBOT_EXISTING_SESSION_PROTECTED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
