@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport subprocess\nfrom pathlib import Path\nfrom tumblrkit.telegram_bridge_client import LocalTelegramOwner\nq=\"\"\"SELECT d.posting_topic_id::text||','||d.telegram_message_id::text||','||\n CASE WHEN d.owner_user_id=g.owner_user_id THEN '1' ELSE '0' END\n FROM posting_deliveries d\n JOIN posting_topics t ON t.topic_id=d.posting_topic_id\n JOIN targets g ON g.chat_id=t.chat_id AND g.target_type='entry_group'\n WHERE d.status='sent' AND d.source_type='announcement'\n AND d.telegram_message_id IS NOT NULL\n AND t.purpose='announcement' AND t.enabled=TRUE AND t.verified_at IS NOT NULL\n ORDER BY d.delivery_id DESC LIMIT 6\"\"\"\nrows=subprocess.check_output([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",q],text=True,timeout=12).strip().splitlines()\nassert rows, \"NO_EXISTING_RECEIPTS\"\nowner=LocalTelegramOwner(Path.home()/\".config/tgtumbler/bridge/owner-token\")\nfor row in rows:\n topic,message,own=row.split(\",\")\n assert topic.isdecimal() and message.isdecimal() and own in (\"0\",\"1\")\n result=owner.transport({\"action\":\"readback\",\"destination\":topic,\"message_id\":message})\n assert result.get(\"verified\") is (own==\"1\"),\"RECEIPT_OWNER_BOUNDARY_BROKEN\"\nprint(\"REAL_OWNER_BOUND_MPB_RECEIPTS=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
