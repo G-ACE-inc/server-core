@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nconst e=process.env;\nconst config={host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,\n password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1,connectionTimeoutMillis:5000};\nconst pool=new pg.Pool({...config,database:e.VIDEOBOT_DB_NAME});\nconst outgoing=createCreatorTelegramFetch(globalThis.fetch);\ntry {\n const sources=await pool.query(\"SELECT datname FROM pg_database WHERE datallowconn AND NOT datistemplate ORDER BY datname\");\n process.stdout.write('STK04_DATABASES='+sources.rows.map(x=>x.datname).filter(x=>/^(videobot|gaybbs|gateapp|postgres|gserver|telegram|gace)/i.test(x)).join(',')+'\\n');\n const products=await pool.query(\"SELECT COUNT(*)::int AS n FROM videobot_sticker_products WHERE status='published'\");\n const posts=await pool.query(\"SELECT status,COUNT(*)::int AS n FROM videobot_sticker_topic_posts GROUP BY status ORDER BY status\");\n process.stdout.write('STK04_PUBLISHED_PRODUCT_COUNT='+products.rows[0].n+'\\n');\n process.stdout.write('STK04_POST_RECEIPTS='+posts.rows.map(x=>x.status+':'+x.n).join(',')+'\\n');\n const token=readFileSync(e.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim();\n const api=createTelegramBotApi({token,fetchImpl:outgoing.fetch,timeoutMs:25000});\n const me=await api('getMe',{});\n if(me?.is_bot!==true||String(me.username||'').toLowerCase()!=='createvdobot')\n   throw Error('STK04_CREATEVDOBOT_IDENTITY_INVALID');\n const chat=await api('getChat',{chat_id:-1002373696859});\n if(chat?.id!==-1002373696859||chat?.type!=='supergroup'||chat?.is_forum!==true)\n   throw Error('STK04_CHAT_NOT_FORUM');\n const member=await api('getChatMember',{chat_id:-1002373696859,user_id:me.id});\n process.stdout.write('STK04_CREATOR_MEMBER_ADMIN='+\n   (['administrator','creator'].includes(member?.status)?'YES':'NO')+'\\n');\n process.stdout.write('STK04_CREATOR_CHAT_VERIFIED=PASS\\n');\n for (const dbName of sources.rows.map(x=>x.datname).filter(x=>/^(videobot|gaybbs|gateapp|postgres|gserver|telegram|gace)/i.test(x.datname))) {\n   const other=new pg.Pool({...config,database:dbName});\n   try {\n     const table=await other.query(\"SELECT to_regclass('public.posting_topics') AS t\");\n     if(table.rows?.[0]?.t){\n       const topics=await other.query(\"SELECT message_thread_id,title,enabled,verified_at IS NOT NULL AND verified_by IS NOT NULL AS verified FROM posting_topics WHERE board_key='video_chat' AND purpose='sticker' AND chat_id=-1002373696859\");\n       process.stdout.write('STK04_GATE_DB='+dbName+';TOPICS='+topics.rows.map(t=>String(t.message_thread_id)+':'+(t.verified&&t.enabled?'VERIFIED':'UNVERIFIED')).join(',')+'\\n');\n     }\n   }catch{process.stdout.write('STK04_GATE_DB_CHECK_UNAVAILABLE='+dbName+'\\n');}\n   finally{await other.end();}\n }\n}finally{await outgoing.close();await pool.end();}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
