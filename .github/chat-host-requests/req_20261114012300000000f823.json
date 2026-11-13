@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "380f189687c7f28c7771fb12e359c9455ec50493",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nW=\"$HOME/.cache/gace-posting-baseline-20261113\"\ntest -d \"$P\" || exit 31\ntest \"$(git -C \"$P\" rev-parse HEAD)\" = 57955cd68bb39626ebbca38d44b7bb034da6dc05 || exit 32\nif test ! -d \"$W\"; then mkdir -p \"$(dirname \"$W\")\"; git -C \"$P\" worktree add --detach \"$W\" 57955cd68bb39626ebbca38d44b7bb034da6dc05 >/dev/null; fi\ndocker build --pull=false -f \"$W/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:posting-baseline-20261113 \"$W\" >/tmp/gace-posting-baseline-build.log 2>&1 || exit 33\nLIVE=$(docker run --rm --network none --entrypoint sha256sum gace-tgtumbler-gaybbs:local /app/gaybbs.mjs | awk '{print $1}')\nBASE=$(docker run --rm --network none --entrypoint sha256sum gace-tgtumbler-gaybbs:posting-baseline-20261113 /app/gaybbs.mjs | awk '{print $1}')\nMATCH=false; test \"$LIVE\" = \"$BASE\" && MATCH=true\ngh issue comment 7 --repo seigo-gace/GateApp-Bot --body \"GAYBBS_RUNTIME_BASELINE_20261113 live_bundle_equals_checkedout_head=$MATCH current_head=57955cd68bb39626ebbca38d44b7bb034da6dc05\" >/dev/null || true\ntest \"$MATCH\" = true || exit 34\necho GAYBBS_RUNTIME_BASELINE_MATCH_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
