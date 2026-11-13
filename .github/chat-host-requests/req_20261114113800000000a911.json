@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 21\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 22\ntest -f scripts/userbot_test_client.py || exit 23\ntest -f scripts/userbot_resident_ipc.py || exit 24\npython3 -B scripts/userbot_test_client.py health || exit 25\npython3 -B - <<'PY'\nimport ast\nfrom pathlib import Path\ns=ast.parse(Path('scripts/userbot_resident_ipc.py').read_text())\nactions=[]\nfor node in ast.walk(s):\n if isinstance(node,ast.Assign):\n  for name in node.targets:\n   if isinstance(name,ast.Name) and name.id=='ACTIONS':\n    value=node.value\n    if isinstance(value,ast.Call) and value.args:\n     if isinstance(value.args[0],(ast.Set,ast.List,ast.Tuple)):\n      actions=[x.value for x in value.args[0].elts if isinstance(x,ast.Constant) and isinstance(x.value,str)]\nassert 'health' in actions, 'NO_HEALTH_ACTION'\nprint('LIVE_USERBOT_ALLOWED_ACTIONS='+','.join(sorted(actions)))\nprint('LIVE_USERBOT_HAS_CREATEVDOBOT_DM_ACTION='+str(any('vdo' in a or 'creator' in a or 'sticker' in a for a in actions)))\nPY\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 26\necho RESIDENT_USERBOT_HEALTH_AND_ACTIONS=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
