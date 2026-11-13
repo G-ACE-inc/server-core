@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/51922a4f79271b8e29542e32e777666f76b7af12"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nsrc=51922a4f79271b8e29542e32e777666f76b7af12\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || { echo STK_NATIVE_EXISTING_BOT_DOWN; exit 61; }\ngit fetch --no-tags origin feat/assistant-ai-and-sales-core >/dev/null 2>&1 || { echo STK_NATIVE_SOURCE_FETCH_FAILED; exit 62; }\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$src\" || { echo STK_NATIVE_SOURCE_REVISION_CHANGED; exit 63; }\ntarget=\"$HOME/.local/share/gace-create-videobot/native-sticker-$src\"\nmkdir -p \"$target\" && chmod 700 \"$target\"\ngit archive \"$src\" | tar -xf - -C \"$target\"\nfor f in deploy/Dockerfile deploy/compose.videobot.poll.yaml owner/gateOwner.mjs src/runtime/creatorPollingMain.mjs src/stickers/pgStickerPaidPhoto.mjs src/telegram/stickerPaidPhotoFlow.mjs sql/015_sticker_paid_photo_sales.sql;do\n  test -f \"$target/$f\" || { echo STK_NATIVE_REQUIRED_SOURCE_MISSING; exit 64; }\ndone\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ndbpass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ntest -f \"$token\" && test -f \"$dbpass\" || { echo STK_NATIVE_SECRET_SOURCE_NOT_VERIFIED; exit 65; }\npin=\"$HOME/.local/state/create-videobot/sticker-pin\"\nreceipt=\"$pin/group2373696859_thread4640.json\"\ntest -d \"$pin\" && test -f \"$receipt\" && test ! -L \"$receipt\" || { echo STK_NATIVE_ORIGINAL_PIN_RECEIPT_MISSING; exit 66; }\npython3 - \"$receipt\" <<'PY'\nimport json,sys\nv=json.load(open(sys.argv[1],encoding='utf8'))\nassert v.get('status')=='pinned_ack','STK_NATIVE_PIN_NOT_ACKED'\nassert int(v.get('chat_id',0))==-1002373696859,'STK_NATIVE_PIN_CHAT_CHANGED'\nassert int(v.get('thread_id',0))==4640,'STK_NATIVE_PIN_THREAD_CHANGED'\nassert int(v.get('bot_id',0))>0,'STK_NATIVE_PIN_BOT_MISSING'\nassert int(v.get('message_id',0))>0,'STK_NATIVE_PIN_MESSAGE_MISSING'\nassert v.get('link')=='https://t.me/CreateVdobot?start=sticker','STK_NATIVE_PIN_LINK_CHANGED'\nprint('STK_NATIVE_ORIGINAL_PIN_RECEIPT=PASS')\nPY\nother=\"$(docker ps --format '{{.Names}}' | grep -Ei 'create-videobot|createvdobot|videobot-poll|videobot-telegram' | grep -Fxv \"$name\" || true)\"\ntest -z \"$other\" || { echo STK_NATIVE_SECOND_CONSUMER_PRESENT; exit 68; }\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo STK_NATIVE_DB_CONTAINER_AMBIGUOUS; exit 69; }\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest -n \"$user\" && test \"$net\" = deploy_default || { echo STK_NATIVE_DB_OWNER_UNVERIFIED; exit 70; }\nuid=\"$(docker image inspect create-videobot:local-poll -f '{{.Config.User}}')\"\ntest -f \"$token\" && test -f \"$dbpass\" && test -d \"$pin\" || exit 71\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$token\" VIDEOBOT_DB_PASSWORD_SOURCE=\"$dbpass\" VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$pin\"\nexport GSERVER_POSTGRES_USER=\"$user\" GSERVER_POSTGRES_NETWORK=\"$net\"\ndocker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" config --quiet || { echo STK_NATIVE_COMPOSE_INVALID; exit 72; }\nlog=\"$(mktemp /tmp/stk-native-build.XXXXXXXX)\"\ntrap 'rm -f \"$log\"' EXIT\nif ! docker build --network host --pull=false -f \"$target/deploy/Dockerfile\" -t create-videobot:native-sticker-51922a4 \"$target\" >\"$log\" 2>&1;then\n echo STK_NATIVE_BUILD_FAILED;grep -Ei 'failed|error|timeout' \"$log\" | tail -n 5 | sed -E 's#https?://[^ ]+#URL_REDACTED#g' || true;exit 73\nfi\ndocker run --rm --network none --pull never --entrypoint node create-videobot:native-sticker-51922a4 -e \"import('./src/runtime/creatorPollingMain.mjs').then(()=>process.exit(0)).catch(()=>process.exit(1))\" >/dev/null || { echo STK_NATIVE_IMPORT_FAILED; exit 74; }\nnode_uid=\"$(docker run --rm --network none --pull never --entrypoint id create-videobot:native-sticker-51922a4 -u)\"\ntest \"$(stat -c '%u' \"$token\")\" = \"$node_uid\" && test \"$(stat -c '%u' \"$dbpass\")\" = \"$node_uid\" || { echo STK_NATIVE_SECRET_UID_INVALID; exit 75; }\ntest \"$(stat -c '%u' \"$receipt\")\" = \"$node_uid\" || { echo STK_NATIVE_PIN_OWNER_UID_INVALID; exit 76; }\ndocker run --rm --network none --pull never -v \"$pin\":/var/lib/videobot/sticker-entry:ro \\\n  --entrypoint node create-videobot:native-sticker-51922a4 \\\n  -e \"require('node:fs').readFileSync('/var/lib/videobot/sticker-entry/group2373696859_thread4640.json','utf8')\" >/dev/null ||\n  { echo STK_NATIVE_PIN_MOUNT_READ_FAILED; exit 76; }\ndocker image tag create-videobot:local-poll create-videobot:poll-rollback\ndocker image tag create-videobot:native-sticker-51922a4 create-videobot:local-poll\nif ! docker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1;then\n echo STK_NATIVE_RECREATE_FAILED\n docker image tag create-videobot:poll-rollback create-videobot:local-poll\n docker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true\n exit 77\nfi\nsleep 12\nif test \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" != true || ! docker logs --tail 140 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' || ! docker logs --tail 140 \"$name\" 2>&1 | grep -q '^CREATOR_GATE_PUBLIC_RELEASE=CONNECTED$';then\n echo STK_NATIVE_RUNTIME_NOT_READY\n docker logs --tail 80 \"$name\" 2>&1 | grep -E '^CREATOR_[A-Z_]+(=|$)' | tail -n 7 || true\n docker image tag create-videobot:poll-rollback create-videobot:local-poll\n docker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true\n echo STK_NATIVE_ROLLBACK_ATTEMPTED\n exit 78\nfi\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';import{readFileSync}from'node:fs';\nconst e=process.env;\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,\n password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1});\ntry{\n const r=await pool.query(\"SELECT COUNT(*)::int AS n FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('videobot_sticker_paid_photo_sales','videobot_sticker_paid_photo_delivery')\");\n if(r.rows[0]?.n!==2)throw Error('STK_NATIVE_DB_MIGRATION_NOT_PRESENT');\n process.stdout.write('STK_NATIVE_MIGRATION_015=PASS\\n');\n}finally{await pool.end();}\nNODE\necho STK_NATIVE_CREATOR_ONLY_RUNNING=PASS\necho STK_NATIVE_GATE_CONNECT=PASS\necho STK_NATIVE_SOURCE_SHA=\"$src\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
