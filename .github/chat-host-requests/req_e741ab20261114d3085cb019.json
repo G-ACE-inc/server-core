@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.RestartCount}}')\" = 0\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\" = \"$(docker image inspect gace-tgtumbler-gaybbs:profile-candidate --format '{{.Id}}')\"\ndocker exec deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs --input-type=module -e '\nimport {readFileSync} from \"node:fs\";\nconst t=readFileSync(\"/run/secrets/bot_token\",\"utf8\").trim();\nconst r=await fetch(\"https://api.telegram.org/bot\"+t+\"/getMe\",{signal:AbortSignal.timeout(15000)});\nconst d=await r.json();\nif(!d.ok||typeof d.result?.username!==\"string\"||!d.result.username.toLowerCase().includes(\"gaybbs\"))process.exit(2);\n'\nprintf 'PROFILE_RUNTIME_TELEGRAM_AUTH=PASS\\n'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
