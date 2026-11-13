@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';import{readFileSync}from'node:fs';\nconst e=process.env,db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,\n user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,\n password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),\n max:1,connectionTimeoutMillis:5000});\ntry{\n const q=await db.query(\n \"SELECT p.title,p.price_stars,p.status AS product_status,t.status AS post_status,t.chat_id,t.message_thread_id,t.telegram_message_id,t.display_text FROM videobot_sticker_products p LEFT JOIN videobot_sticker_topic_posts t ON t.product_id=p.product_id WHERE p.product_id=$1\",\n ['sp_76f23430d1c29ca355960a95']);\n if(q.rowCount!==1)throw Error('STK_NATIVE_PRODUCT_MISSING');\n const x=q.rows[0];process.stdout.write('STK_NATIVE_PRODUCT_PRICE='+x.price_stars+'\\n');\n process.stdout.write('STK_NATIVE_PRODUCT_STATUS='+x.product_status+'\\n');\n process.stdout.write('STK_NATIVE_POST_STATUS='+x.post_status+'\\n');\n process.stdout.write('STK_NATIVE_POST_CHAT='+x.chat_id+'\\n');\n process.stdout.write('STK_NATIVE_POST_THREAD='+x.message_thread_id+'\\n');\n process.stdout.write('STK_NATIVE_POST_MESSAGE='+x.telegram_message_id+'\\n');\n process.stdout.write('STK_NATIVE_STORED_CAPTION_KIND='+\n (String(x.display_text||'').includes('ステッカー・絵文字パックの固定版素材')?'VERBOSE':\n  String(x.display_text||'')==='🎨 '+x.title?'MINIMAL':'OTHER')+'\\n');\n}finally{await db.end();}\nNODE\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || { echo STK_USERBOT_RESIDENT_INACTIVE; exit 62; }\necho STK_USERBOT_RESIDENT_ACTIVE=PASS\nfor root in \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\" \"$HOME/Project/Gserver/projects\";do\n if test -d \"$root\";then\n  grep -RFl --include='*.py' 'room_public_readback' \"$root/scripts\" \"$root/artifacts\" 2>/dev/null | head -n 4 || true\n fi\ndone\necho STK_IMAGE_PAYWALL_INSPECT_NO_MUTATION=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
