@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "set -euo pipefail\ncurrent=\"$(git rev-parse HEAD)\"\nif test \"$current\" != \"63c9f3fc97fabbdca3667dc04d1c4499e0d715e5\"; then echo \"TUMBLR_CHECKOUT_HEAD_DIFFERS\"; exit 41; fi\nif test -n \"$(git status --porcelain)\"; then echo \"TUMBLR_CHECKOUT_DIRTY\"; exit 42; fi\npython3 -B -c 'import json; from scripts.tumblr_release import request; status,body=request(8081,\"/healthz\"); assert status==200, \"TUMBLR_LIVE_HEALTH_FAILED\"; commit=json.loads(body).get(\"commit\"); assert commit==\"63c9f3fc97fabbdca3667dc04d1c4499e0d715e5\", \"TUMBLR_LIVE_SHA_DIFFERS\"; print(\"TUMBLR_LIVE_REVISION=PASS\")'\nPYTHONPATH=. python3 -B -m unittest discover -s tests -p test_integration.py\nPYTHONPATH=. python3 -B -m unittest discover -s tests -p test_core.py\nPYTHONPATH=. python3 -B -m unittest discover -s tests -p test_analytics_runtime.py\necho TUMBLR_GSERVER_INDEPENDENT=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
