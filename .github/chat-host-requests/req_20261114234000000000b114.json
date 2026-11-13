@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nn=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = true || exit 61\ndocker exec -i \"$n\" node --input-type=module - <<'NODE'\nimport assert from 'node:assert/strict';\nimport {menuPage} from '/opt/videobot/src/telegram/menuPanel.mjs';\nimport {createStickerWizard} from '/opt/videobot/src/telegram/stickerWizard.mjs';\nimport {createCreatorBotUpdateHandler} from '/opt/videobot/src/telegram/creatorBot.mjs';\nconst menu=menuPage('home');\nconst buttons=menu.reply_markup.inline_keyboard.flat();\nassert(buttons.some(x=>x.callback_data==='menu:listing'));\nassert(buttons.some(x=>x.callback_data==='menu:stickers'));\nconst state=new Map();\nstate.set(42,{revision:3,screen:'sticker_reconcile',screenMessageId:301,\nstickerPending:{status:'needs_reconcile',kind:'regular',nonce:'keep',title:'Existing'}});\nconst shown=[];\nconst store={\n read:async id=>state.get(id)||null,\n write:async(id,rev,next)=>{assert.equal(state.get(id)?.revision??0,rev);state.set(id,next);},\n setScreen:async(id,rev,messageId)=>{const cur=state.get(id);assert.equal(cur.revision,rev);state.set(id,{...cur,screenMessageId:messageId});}\n};\nconst api=async()=>true;\nconst screenTransport={show:async(id,old,panel)=>{shown.push(panel);return {messageId:old||301}}};\nconst sticker=createStickerWizard({api,sessionStore:store,screenTransport,publishSticker:async()=>{throw Error('NO_LIVE_PUBLISH')}});\nconst bot=createCreatorBotUpdateHandler({api,sessionStore:store,screenTransport,\n listingStore:{listByOwner:async()=>[],getOwned:async()=>null},\n mediaProcessor:{prepareUserSample:async()=>({fileId:'test',durationSeconds:15})},\n stickerHandler:sticker.handle});\nconst privateMessage=text=>({message:{chat:{type:'private',id:42},from:{id:42},message_id:401,text}});\nconst result=await bot(privateMessage('/start'));\nassert(result?.handled===true);\nassert(shown.length>=1);\nassert(shown.at(-1).reply_markup.inline_keyboard.flat().some(x=>x.callback_data==='menu:stickers'));\nassert.equal(state.get(42).stickerPending?.nonce,'keep');\nconst deep=await sticker.handle(privateMessage('/start sticker'));\nassert.equal(deep?.handled,true);\nassert.equal(state.get(42).screen,'sticker_choose');\nassert.equal(state.get(42).stickerPending?.nonce,'keep');\nconsole.log('LIVE_IMAGE_NORMAL_MENU_RENDER=PASS');\nconsole.log('LIVE_IMAGE_STICKER_DEEP_LINK=PASS');\nconsole.log('UNRESOLVED_STICKER_RECEIPT_PRESERVED=PASS');\nNODE\ndocker logs --tail 700 \"$n\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$'\necho CREATEVDOBOT_LIVE_CODE_SMOKE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
