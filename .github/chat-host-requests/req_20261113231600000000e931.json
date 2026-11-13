@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true || exit 61\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';import{readFileSync}from'node:fs';\nconst e=process.env;\nconst common={host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,\n password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1,connectionTimeoutMillis:4000};\nfor(const name of ['gaybbs','videobot']){\n const db=new pg.Pool({...common,database:name});\n try{\n  const t=await db.query(`SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND (table_name ILIKE '%topic%' OR table_name ILIKE '%pin%' OR table_name ILIKE '%entry%') ORDER BY table_name`);\n  process.stdout.write('STK04_DB_'+name.toUpperCase()+'_TABLES='+t.rows.map(x=>x.table_name).join(',')+'\\n');\n  for(const row of t.rows.filter(x=>['posting_topics','posting_sticker_entry_pins','topic_registry','topics','log_topics','videobot_sticker_entry_pins'].includes(x.table_name))){\n   const cols=await db.query(\"SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name=$1 ORDER BY ordinal_position\",[row.table_name]);\n   process.stdout.write('STK04_DB_'+name.toUpperCase()+'_COLUMNS_'+row.table_name+'='+cols.rows.map(x=>x.column_name).join(',')+'\\n');\n   const q=await db.query('SELECT COUNT(*)::int AS n FROM '+row.table_name);\n   process.stdout.write('STK04_DB_'+name.toUpperCase()+'_COUNT_'+row.table_name+'='+q.rows[0].n+'\\n');\n  }\n }catch(e){process.stdout.write('STK04_DB_'+name.toUpperCase()+'_QUERY_UNAVAILABLE='+String(e.code||e.message||'UNKNOWN').replace(/[^A-Z0-9_]/g,'').slice(0,45)+'\\n');}\n finally{await db.end();}\n}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
