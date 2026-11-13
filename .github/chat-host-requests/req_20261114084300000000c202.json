@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nsql=\"SELECT count(DISTINCT board_key) FROM posting_topics WHERE purpose='profile' AND enabled=TRUE AND verified_at IS NOT NULL AND verified_by IS NOT NULL AND title='みんなのプロフ' AND ((board_key='area_bbs' AND chat_id=-1003847210571) OR (board_key='video_chat' AND chat_id=-1002373696859) OR (board_key='gay_board' AND chat_id=-1003770334893))\"\ncount=\"$(docker exec deploy-postgres-1 psql -U gace -d gaybbs -Atc \"$sql\")\"\nif test \"$count\" != 3; then echo PROFILE_BOARD_VERIFIED_ROUTE_COUNT_NOT_THREE; exit 41; fi\nsql=\"SELECT count(*) FROM gaybbs_feature_release_gates WHERE feature='profile' AND enabled=TRUE AND length(source_commit)=40 AND length(trim(ci_evidence))>0 AND length(trim(gserver_runtime_evidence))>0 AND length(trim(telegram_e2e_evidence))>0 AND approved_by IS NOT NULL\"\ncount=\"$(docker exec deploy-postgres-1 psql -U gace -d gaybbs -Atc \"$sql\")\"\nif test \"$count\" != 1; then echo PROFILE_PUBLIC_RELEASE_GATE_NOT_READY; exit 42; fi\necho PROFILE_BOARD_ROUTE_AND_RELEASE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
