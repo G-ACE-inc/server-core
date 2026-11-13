@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport subprocess,sys\nfrom pathlib import Path\nfrom urllib.error import HTTPError\nfrom tumblrkit.telegram_bridge_client import LocalTelegramOwner\nquery=\"\"\"SELECT d.posting_topic_id::text||','||d.telegram_message_id::text\n FROM posting_deliveries d JOIN posting_topics t ON t.topic_id=d.posting_topic_id\n WHERE d.status='sent' AND d.source_type='announcement'\n AND d.telegram_message_id IS NOT NULL AND t.purpose='announcement'\n AND t.enabled=TRUE AND t.verified_at IS NOT NULL\n ORDER BY d.delivery_id DESC LIMIT 1\"\"\"\ntry:\n row=subprocess.check_output([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",query],text=True,timeout=12,stderr=subprocess.DEVNULL).strip()\nexcept Exception:\n print(\"DIAG_DB_QUERY_ERROR\")\n sys.exit(31)\nif not row:print(\"DIAG_NO_SENT_ANNOUNCEMENT\");sys.exit(27)\nif \",\" not in row:print(\"DIAG_ROW_FORMAT\");sys.exit(33)\ntopic,message=row.split(\",\",1)\nif not topic.isdecimal() or not message.isdecimal():print(\"DIAG_NON_NUMERIC\");sys.exit(34)\ntry:\n owner=LocalTelegramOwner(Path.home()/\".config/tgtumbler/bridge/owner-token\")\n result=owner.transport({\"action\":\"readback\",\"destination\":topic,\"message_id\":message})\nexcept HTTPError as e:\n print(\"DIAG_OWNER_HTTP_\"+str(e.code))\n sys.exit(35)\nexcept Exception:\n print(\"DIAG_OWNER_TRANSPORT\")\n sys.exit(36)\nif result.get(\"verified\") is not True:\n print(\"DIAG_OWNER_FALSE\")\n sys.exit(37)\nprint(\"DIAG_OWNER_READBACK_PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
