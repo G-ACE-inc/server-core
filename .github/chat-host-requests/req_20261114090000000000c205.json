@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -u\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nif ! test -d \"$r\"; then exit 51; fi\nif ! test -d \"$r/.git\" && ! test -f \"$r/.git\"; then exit 52; fi\norigin=\"$(git -C \"$r\" remote get-url origin 2>/dev/null | sed 's#^.*github.com[:/]##;s#\\.git$##')\"\nif test \"$origin\" != seigo-gace/GateApp-Bot; then exit 53; fi\nif test -n \"$(git -C \"$r\" status --porcelain -- scripts/userbot_resident_ipc.py scripts/userbot_test_client.py)\"; then exit 54; fi\nif test \"$(systemctl --user is-active gace-userbot-verify.service 2>/dev/null)\" != active; then exit 55; fi\nif test \"$(systemctl --user is-enabled gace-userbot-verify.service 2>/dev/null)\" != enabled; then exit 56; fi\nif ! test -f \"$r/deploy/secrets/userbot_verify.session\"; then exit 57; fi\nif ! test -S \"$r/deploy/secrets/userbot_verify.sock\"; then exit 58; fi\nif ! python3 -B \"$r/scripts/userbot_test_client.py\" health >/dev/null; then exit 59; fi\necho USERBOT_DISCOVERY_PREFLIGHT=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
