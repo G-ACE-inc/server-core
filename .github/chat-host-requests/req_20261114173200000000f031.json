@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nprintf 'STK_SHOP_EXISTING_RUNTIME='\ndocker ps --format '{{.Names}}' | grep -Ei 'cloudflare|caddy|nginx|traefik|pages|tunnel|gace|createvdobot' | sed -E 's/[^A-Za-z0-9._-]/_/g' | head -n 35 | paste -sd ',' -\nprintf 'STK_SHOP_EXISTING_PROXY_SERVICE='\nsystemctl --user list-units --type=service --no-legend --no-pager | grep -Ei 'cloudflare|caddy|nginx|traefik|tunnel' | awk '{print $1}' | paste -sd ',' - || true\nfor s in createvdobot.g-acebot.com sticker.g-acebot.com g-acebot.com;do\n code=\"$(curl -sS --connect-timeout 3 --max-time 8 -o /dev/null -w '%{http_code}' \"https://$s/\" 2>/dev/null || echo ERROR)\"\n printf 'STK_SHOP_HTTPS_STATUS_%s=%s\\n' \"$s\" \"$code\"\ndone\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\necho STK_SHOP_CURRENT_BOT_RUNNING=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
