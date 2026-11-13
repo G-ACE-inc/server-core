@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "cb78f65083743c4b00eed1ae97d95582ad2d4dff",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nOV=$(mktemp --suffix=.yaml); trap 'rm -f \"$OV\"' EXIT\nprintf 'services:\\n  gaybbs:\\n    image: gace-tgtumbler-gaybbs:posting-menu-resume-20a6020\\n' > \"$OV\"\nset +e\nOUT=$(docker compose -p deploy -f \"$P/deploy/gserver-compose.yaml\" -f \"$OV\" run --rm --no-deps gaybbs node --import /app/preload/telegram-ipv4-preload.mjs /app/recolorPublishedPostingMenus.mjs --resume 2>&1)\nEXIT_CODE=$?\nset -e\nINV=$(printf '%s\\n' \"$OUT\" | grep '^POSTING_MENU_INVENTORY ' | tail -1 || true)\nSUMMARY=$(printf '%s\\n' \"$OUT\" | grep '^POSTING_MENU_EDIT_SUMMARY ' | tail -1 || true)\nFAILS=$(printf '%s\\n' \"$OUT\" | grep '^TOPIC_MENU_EDIT_FAILED ' | sed -E 's/^TOPIC_MENU_EDIT_FAILED ([^ ]+) code=([^ ]+) retry_after=([^ ]+).*$/FAIL topic=\\1 code=\\2 retry_after=\\3/' | head -n 12 || true)\ntest -n \"$SUMMARY\" || exit 31\ngh issue comment 7 --repo seigo-gace/GateApp-Bot --body \"$(printf 'GAYBBS_POSTING_MENU_RESUME_2_20261113 exit=%s\\n%s\\n%s\\n%s' \"$EXIT_CODE\" \"$INV\" \"$SUMMARY\" \"$FAILS\")\" >/dev/null || exit 32\ntest \"$EXIT_CODE\" -eq 0 || exit 33\necho POSTING_MENU_RESUME_TWO_RECORDED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
