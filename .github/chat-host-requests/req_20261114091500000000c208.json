@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\npython3 - \"$r\" <<'PY'\nfrom pathlib import Path\nimport sys\nroot=Path(sys.argv[1])\na=(root/\"scripts/userbot_resident_ipc.py\").read_text()\nb=(root/\"scripts/userbot_test_client.py\").read_text()\nif \"profile_topics_readback\" in a and \"profile_topics_readback\" in b:\n raise SystemExit(70)\nneed_a=['ACTIONS = frozenset({','    if action == \"room_private_smoke\":','\"ROOM_READ_GROUP_NOT_IN_EXISTING_DIALOGS\",']\nneed_b=['        if \"row_sizes\" in result:','        print(\"USERBOT_TEST_RESULT=PASS\")']\nif not all(x in a for x in need_a): raise SystemExit(71)\nif not all(x in b for x in need_b): raise SystemExit(72)\nPY\nsystemctl --user cat gace-userbot-verify.service | grep -q 'userbot_keepalive.py'\necho LIVE_USERBOT_ANCHORS_VERIFIED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
