@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nn=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$n\" 2>/dev/null)\" = true || exit 61\ndocker exec -i \"$n\" node --input-type=module - <<'NODE'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nconst e=process.env,tokenPath=e.VIDEOBOT_TELEGRAM_TOKEN_FILE;\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1,connectionTimeoutMillis:4500});\ntry{\n const s=readFileSync('./src/telegram/stickerWizard.mjs','utf8');\n console.log('STICKER_LINK_START_HANDLER_LOADED='+String(s.includes(\"sticker_choose',stickerDraft:null,waiting:null\")));\n const cursor=await pool.query(\"SELECT last_update_id,(EXTRACT(EPOCH FROM NOW()-updated_at))::int AS seconds_ago FROM videobot_poll_cursor WHERE consumer_id='createvdobot'\");\n console.log('STICKER_POLL_CURSOR_EXISTS='+String(cursor.rowCount===1));\n console.log('STICKER_POLL_CURSOR_AGE_S='+String(cursor.rows[0]?.seconds_ago??'NO_CURSOR'));\n const grouped=await pool.query(\"SELECT COALESCE(state->>'screen','undefined') AS screen,COUNT(*)::int AS n FROM videobot_creator_sessions WHERE updated_at>NOW()-INTERVAL '6 HOURS' GROUP BY 1 ORDER BY n DESC\");\n console.log('STICKER_RECENT_DM_SCREEN_COUNTS='+grouped.rows.map(r=>r.screen+':'+r.n).join(','));\n const p=await pool.query(\"SELECT s.state->>'screen' AS screen,s.state->'stickerPending'->>'status' AS pending,s.state->'stickerEditPending'->>'status' AS edit_pending,s.state->>'stickerDeferred' AS deferred,s.revision,(EXTRACT(EPOCH FROM NOW()-s.updated_at))::int AS age FROM videobot_sticker_products p LEFT JOIN videobot_creator_sessions s ON s.owner_user_id=p.seller_user_id WHERE p.product_id='sp_76f23430d1c29ca355960a95'\");\n if(p.rowCount!==1)throw Error('STICKER_DM_SELLER_RECEIPT_NOT_FOUND');\n const row=p.rows[0];for(const key of ['screen','pending','edit_pending','deferred','revision','age'])console.log('STICKER_SELLER_DM_'+key.toUpperCase()+'='+String(row[key]??'NONE'));\n}finally{await pool.end()}\nNODE\nprintf 'STICKER_POLL_RECENT_HEALTH='\ndocker logs --since=90m \"$n\" 2>&1 | grep -E '^(CREATOR_DM_POLL_READY|CREATOR_DM_UPDATES_HANDLED|CREATOR_POLL_RUNTIME_FAILED)' | tail -n 8 | tr '\\n' ';' || true\nprintf '\\nSTICKER_READ_ONLY_DIAG=PASS\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
