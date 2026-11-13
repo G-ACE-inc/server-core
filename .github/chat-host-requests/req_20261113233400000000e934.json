@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\npython3 - <<'PY'\nimport json,os,pathlib\nroots=[pathlib.Path.home()/'Project'/'Gserver',pathlib.Path.home()/'.local'/'share'/'gace-create-videobot']\nfiles=[]\nfor root in roots:\n if not root.exists():continue\n files.extend(root.rglob('sticker-entry.json'))\nfiles=[p for p in files if p.is_file() and not p.is_symlink()]\nvalid=[]\nfor p in files:\n try:\n  r=json.loads(p.read_text())\n  if (r.get('status')=='pinned_ack' and r.get('chatId')==-1002373696859\n      and r.get('threadId')==4640 and str(r.get('botUsername','')).lower()=='createvdobot'\n      and isinstance(r.get('messageId'),int) and r['messageId']>0):valid.append(p)\n except Exception: pass\nif len(valid)!=1:\n print('STK04_PINNED_RECEIPT_COUNT='+str(len(valid)))\n raise SystemExit(75)\np=valid[0]\nprint('STK04_PINNED_RECEIPT=PASS')\nprint('STK04_PIN_STATE_PATH='+str(p.parent))\nprint('STK04_PIN_STATE_OWNER_UID='+str(p.stat().st_uid))\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
