@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "6d4ec53abccff0d8f008aa6ec4acaca57f1f29da",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nSQL=\"SELECT 'ENTRY|'||p.chat_id||'|'||p.message_thread_id||'|'||replace(p.title,'|','/')||'|'||p.state||'|'||coalesce(to_char(p.updated_at AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI'),'')||'|'||coalesce(string_agg(DISTINCT t.purpose,','),'UNREGISTERED') FROM topic_dm_entry_pins p LEFT JOIN posting_topics t ON t.chat_id=p.chat_id AND t.message_thread_id=p.message_thread_id WHERE p.message_thread_id IN (273,4,18,1695,1724,4291) OR p.updated_at >= '2026-11-13T15:45:00Z' GROUP BY p.chat_id,p.message_thread_id,p.title,p.state,p.updated_at ORDER BY p.chat_id,p.message_thread_id; SELECT 'PANEL|'||p.chat_id||'|'||p.message_thread_id||'|'||p.panel_type||'|'||p.state FROM board_menu_panels p WHERE p.panel_type IN ('general_guide','posting') ORDER BY p.chat_id,p.message_thread_id;\"\nRESULT=$(docker compose -p deploy -f \"$P/deploy/gserver-compose.yaml\" exec -T postgres psql -U gace -d gaybbs -Atc \"$SQL\" 2>&1) || exit 32\ngh issue comment 7 --repo seigo-gace/GateApp-Bot --body \"$(printf 'POSTING_BUTTON_EXCLUSION_CLASSIFICATION_20261113\\n%s' \"$RESULT\")\" >/dev/null || exit 33\necho EXCLUDED_TOPIC_CLASSIFICATION_RECORDED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
