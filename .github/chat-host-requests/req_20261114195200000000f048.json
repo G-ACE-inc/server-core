@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nn=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$n\" 2>/dev/null)\" = true || exit 61\ndocker exec -i \"$n\" node --input-type=module - <<'NODE'\nimport {readFileSync} from 'node:fs';\nimport pg from 'pg';\nconst env=process.env;\nconst wizard=readFileSync('./src/telegram/stickerWizard.mjs','utf8');\nconst shop=readFileSync('./src/stickers/shopHttp.mjs','utf8');\nconsole.log('STK_LIVE_MENU_RECOVERY_PATCH='+String(wizard.includes('前回の素材登録が確認待ち')&&wizard.includes('const topicStickerStart=')));\nconsole.log('STK_LIVE_SHOP_HTTP_MODULE='+String(shop.includes('createStickerShopHandler')));\nconsole.log('STK_LIVE_PUBLIC_APP_URL_CONFIGURED='+String(Boolean(env.VIDEOBOT_SHOP_PUBLIC_URL)));\nconst pool=new pg.Pool({host:env.VIDEOBOT_DB_HOST,user:env.VIDEOBOT_DB_USER,database:env.VIDEOBOT_DB_NAME,password:readFileSync(env.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1,connectionTimeoutMillis:4000});\ntry{\n const r=await pool.query(\"SELECT COUNT(*)::int AS n FROM information_schema.columns WHERE table_name='videobot_sticker_orders' AND column_name='invoice_url'\");\n console.log('STK_SHOP_MIGRATION_016_APPLIED='+String(r.rows[0]?.n===1));\n const p=await pool.query(\"SELECT state->>'screen' AS screen,state->'stickerPending'->>'status' AS pending FROM videobot_creator_sessions WHERE owner_user_id=(SELECT seller_user_id FROM videobot_sticker_products WHERE product_id='sp_76f23430d1c29ca355960a95')\");\n console.log('STK_SELLER_CURRENT_SCREEN='+String(p.rows[0]?.screen??'NONE'));\n console.log('STK_SELLER_PENDING_STATUS='+String(p.rows[0]?.pending??'NONE'));\n}finally{await pool.end()}\nNODE\necho STK_LIVE_IMAGE_MATCHES_SHOP_CCA294=\"$(test \"$(docker inspect -f '{{.Image}}' \"$n\")\" = \"$(docker image inspect create-videobot:shop-cca294 -f '{{.Id}}' 2>/dev/null)\" && echo YES || echo NO)\"\necho STK_READ_ONLY_VERSION_DIAG=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
