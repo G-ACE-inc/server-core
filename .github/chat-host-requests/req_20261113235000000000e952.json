@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\nfor i in $(seq 1 18);do\n  current=\"$(docker inspect -f '{{.Image}}' \"$name\" 2>/dev/null || true)\"\n  approved=\"$(docker image inspect -f '{{.Id}}' create-videobot:native-sticker-c5086bd 2>/dev/null || true)\"\n  if test -n \"$approved\" && test \"$current\" = \"$approved\" &&\n     test \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true &&\n     docker logs --tail 160 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' &&\n     docker logs --tail 160 \"$name\" 2>&1 | grep -q '^CREATOR_GATE_PUBLIC_RELEASE=CONNECTED$';then\n    break\n  fi\n  sleep 5\ndone\ncurrent=\"$(docker inspect -f '{{.Image}}' \"$name\" 2>/dev/null || true)\"\napproved=\"$(docker image inspect -f '{{.Id}}' create-videobot:native-sticker-c5086bd 2>/dev/null || true)\"\ntest -n \"$approved\" && test \"$current\" = \"$approved\" || { echo STK_NATIVE_APPROVED_IMAGE_NOT_RUNNING; exit 81; }\ndocker logs --tail 160 \"$name\" 2>&1 | grep -q '^CREATOR_GATE_PUBLIC_RELEASE=CONNECTED$' || { echo STK_NATIVE_OWNER_NOT_CONNECTED; exit 82; }\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createTelegramVideoFetcher} from './src/telegram/telegramFileFetch.mjs';\nimport {createPostgresStickerSales} from './src/stickers/pgStickerSales.mjs';\nimport {createPostgresStickerTopicPosts} from './src/stickers/pgStickerTopicPosts.mjs';\nimport {createStickerPaidCover} from './src/stickers/stickerPaidCover.mjs';\nimport {createStickerTopicPublisher} from './src/stickers/topicPublication.mjs';\nimport {createGateOwner} from './owner/gateOwner.mjs';\nsetDefaultResultOrder('ipv4first');setDefaultAutoSelectFamily(false);\nconst e=process.env,pid='sp_76f23430d1c29ca355960a95';\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,\n database:e.VIDEOBOT_DB_NAME,password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),\n max:2,connectionTimeoutMillis:5000});\nconst outgoing=createCreatorTelegramFetch(globalThis.fetch);\ntry{\n const sql=await pool.query(\"SELECT p.product_id,p.seller_user_id,p.price_stars,p.status,t.status AS topic_status,t.telegram_message_id FROM videobot_sticker_products p LEFT JOIN videobot_sticker_topic_posts t ON t.product_id=p.product_id WHERE p.product_id=$1\",[pid]);\n if(sql.rowCount!==1||sql.rows[0].status!=='published'||\n    Number(sql.rows[0].price_stars)!==50)\n   throw Error('STK_NATIVE_MASTER_PRODUCT_NOT_VERIFIED');\n if(sql.rows[0].topic_status&&sql.rows[0].topic_status!=='sent')\n   throw Error('STK_NATIVE_UNCERTAIN_EXISTING_TOPIC_RECEIPT');\n const seller=Number(sql.rows[0].seller_user_id);\n if(!Number.isSafeInteger(seller)||seller<=0)\n   throw Error('STK_NATIVE_SELLER_INVALID');\n const botToken=readFileSync(e.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim();\n const api=createTelegramBotApi({token:botToken,fetchImpl:outgoing.fetch,timeoutMs:25000});\n const gate=await createGateOwner({telegramApi:api,pool});\n const publisher=createStickerTopicPublisher({\n   telegramApi:api,getVerifiedStickerTopic:gate.getVerifiedStickerTopic,\n   verifyMembership:gate.verifyMembership,verifyReview:gate.verifyStickerReview,\n   verifyRelease:gate.verifyRelease,\n   receiptStore:createPostgresStickerTopicPosts(pool),\n   salesStore:createPostgresStickerSales(pool),\n   createPaidCover:createStickerPaidCover({fetchSource:createTelegramVideoFetcher({\n      telegramApi:api,token:botToken,fetchImpl:outgoing.fetch})})\n });\n const sent=await publisher.publish({sellerId:seller,productId:pid});\n if(sent?.posted!==true||sent.chatId!==-1002373696859||\n    !Number.isSafeInteger(sent.messageId)||sent.messageId<=0)\n   throw Error('STK_NATIVE_PUBLICATION_NOT_ACKNOWLEDGED');\n const post=await pool.query(\"SELECT status,chat_id,message_thread_id,telegram_message_id FROM videobot_sticker_topic_posts WHERE product_id=$1\",[pid]);\n if(post.rowCount!==1||post.rows[0].status!=='sent'||\n   Number(post.rows[0].chat_id)!==-1002373696859||\n   Number(post.rows[0].message_thread_id)!==4640||\n   Number(post.rows[0].telegram_message_id)!==sent.messageId)\n    throw Error('STK_NATIVE_TOPIC_RECEIPT_INVALID');\n process.stdout.write('STK_NATIVE_STARS_LOCKED_STICKER_IMAGE_PUBLISHED=PASS\\n');\n process.stdout.write('STK_NATIVE_TOPIC_DB_READBACK=PASS\\n');\n process.stdout.write('STK_NATIVE_POST_REUSED='+String(sent.alreadySent===true)+'\\n');\n process.stdout.write('STK_NATIVE_MESSAGE_ID='+sent.messageId+'\\n');\n process.stdout.write('STK_NATIVE_STICKER_BUYER_PAYWALL_READY=PASS\\n');\n}finally{await outgoing.close();await pool.end();}\nNODE\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 83\necho STK_NATIVE_SINGLE_BOT_HEALTH=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
