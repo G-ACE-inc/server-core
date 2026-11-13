@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "7b010ce8c5eada0dd9c5a0b08ee7b981691ad77b",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; LOG=/tmp/gace-posting-baseline-build.log; test -f \"$LOG\" || exit 31; LINES=$(grep -Ei 'ERROR|failed|denied|No space|network|resolve|unavailable|not found|cannot|permission|certificate|timeout' \"$LOG\" | tail -n 12 | cut -c1-220 || true); test -n \"$LINES\" || LINES=$(tail -n 8 \"$LOG\" | cut -c1-180); gh issue comment 7 --repo seigo-gace/GateApp-Bot --body \"$(printf 'GAYBBS_BASELINE_BUILD_DIAGNOSTIC_20261113\\n%s' \"$LINES\")\" >/dev/null; echo BASELINE_BUILD_ERROR_RECORDED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
