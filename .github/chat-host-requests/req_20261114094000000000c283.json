@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nstage=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\ncid=gace-createvdobot-videobot-poll-1\ndocker inspect \"$cid\" >/dev/null\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}')\"\nexport VIDEOBOT_DB_PASSWORD_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}')\"\nexport VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/var/lib/videobot/sticker-entry\"}}{{.Source}}{{end}}{{end}}')\"\nexport GSERVER_POSTGRES_USER=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^VIDEOBOT_DB_USER=//p' | head -n 1)\"\nexport VIDEOBOT_SHOP_PUBLIC_URL=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^VIDEOBOT_SHOP_PUBLIC_URL=//p' | head -n 1)\"\nexport GSERVER_POSTGRES_NETWORK=\"$(docker inspect \"$cid\" --format '{{range $name, $net := .NetworkSettings.Networks}}{{println $name}}{{end}}' | head -n 1)\"\ntest -n \"$GSERVER_POSTGRES_NETWORK\" || exit 55\ntest -n \"$GSERVER_POSTGRES_USER\" || exit 54\ndocker network inspect \"$GSERVER_POSTGRES_NETWORK\" >/dev/null || exit 55\ndocker compose -p gace-createvdobot -f \"$stage/deploy/compose.videobot.poll.yaml\" config --quiet >/dev/null || exit 56\necho EXISTING_NETWORK_COMPOSE_PREFLIGHT=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
