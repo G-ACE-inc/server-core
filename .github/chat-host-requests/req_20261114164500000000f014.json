@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createTelegramVideoFetcher} from './src/telegram/telegramFileFetch.mjs';\nimport {createStickerPaidCover} from './src/stickers/stickerPaidCover.mjs';\nsetDefaultResultOrder('ipv4first');setDefaultAutoSelectFamily(false);\nconst e=process.env,pid='sp_76f23430d1c29ca355960a95';\nconst chatId=-1002373696859,threadId=4640,oldId=4663;\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,\n database:e.VIDEOBOT_DB_NAME,password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),\n max:2,connectionTimeoutMillis:5000});\nconst outgoing=createCreatorTelegramFetch(globalThis.fetch);\ntry{\n const q=await pool.query(\"SELECT p.*,t.status AS post_status,t.chat_id,t.message_thread_id,t.telegram_message_id FROM videobot_sticker_products p JOIN videobot_sticker_topic_posts t ON t.product_id=p.product_id WHERE p.product_id=$1\",[pid]);\n if(q.rowCount!==1)throw Error('STK_REPAIR_PRODUCT_NOT_UNIQUE');\n const p=q.rows[0];\n if(p.status!=='published'||p.post_status!=='sent'||\n   Number(p.price_stars)!==50||Number(p.chat_id)!==chatId||\n   Number(p.message_thread_id)!==threadId||\n   Number(p.telegram_message_id)!==oldId||\n   Number(p.management_fee_bps)!==3000||\n   p.fee_policy_id!=='sticker-admin-30-20261113'||\n   !p.fee_terms_accepted_at)\n  throw Error('STK_REPAIR_EXISTING_POST_STATE_CHANGED');\n const sales=await pool.query('SELECT COUNT(*)::int AS n FROM videobot_sticker_paid_photo_sales WHERE product_id=$1',[pid]);\n const orders=await pool.query('SELECT COUNT(*)::int AS n FROM videobot_sticker_orders WHERE product_id=$1',[pid]);\n if(sales.rows[0].n!==0||orders.rows[0].n!==0)\n  throw Error('STK_REPAIR_PURCHASES_EXIST');\n const token=readFileSync(e.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim();\n const api=createTelegramBotApi({token,fetchImpl:outgoing.fetch,timeoutMs:25000});\n const me=await api('getMe',{});\n if(me?.is_bot!==true||String(me.username||'').toLowerCase()!=='createvdobot')\n  throw Error('STK_REPAIR_NOT_CREATEVDOBOT');\n const pin=JSON.parse(readFileSync('/var/lib/videobot/sticker-entry/group2373696859_thread4640.json','utf8'));\n if(pin.status!=='pinned_ack'||Number(pin.bot_id)!==me.id||\n    Number(pin.chat_id)!==chatId||Number(pin.thread_id)!==threadId||\n    Number(pin.message_id)===oldId)\n   throw Error('STK_REPAIR_FIXED_ENTRY_PROTECTED');\n const member=await api('getChatMember',{chat_id:chatId,user_id:me.id});\n if(!['administrator','creator'].includes(member?.status))\n  throw Error('STK_REPAIR_NO_BOT_TOPIC_ACCESS');\n const transactions=await api('getStarTransactions',{offset:0,limit:100});\n if(!Array.isArray(transactions?.transactions)||transactions.transactions.length===100)\n  throw Error('STK_REPAIR_UNVERIFIED_STARS_HISTORY');\n if(transactions.transactions.some(tx=>JSON.stringify(tx).includes(pid)))\n  throw Error('STK_REPAIR_TELEGRAM_PAYMENT_EXISTS');\n const cover=await createStickerPaidCover({\n   fetchSource:createTelegramVideoFetcher({telegramApi:api,token,fetchImpl:outgoing.fetch})\n })(p);\n if(!(cover instanceof Uint8Array)||cover.byteLength<1||cover.byteLength>10000000)\n  throw Error('STK_REPAIR_COVER_INVALID');\n const caption='🎨 '+p.title;\n // One Telegram operation only; no automatic retry after unknown send result.\n const sent=await api('sendPaidMedia',{\n   chat_id:chatId,message_thread_id:threadId,star_count:50,\n   media:[{type:'photo',media:'attach://sticker_cover'}],\n   sticker_cover_bytes:cover,payload:'stkmedia_'+pid,caption\n });\n if(!Number.isSafeInteger(sent?.message_id)||sent.message_id<=0||\n    sent.message_id===oldId||sent?.chat?.id!==chatId||\n    sent.message_thread_id!==threadId||sent.is_topic_message!==true||\n    sent.from?.id!==me.id||Number(sent.paid_media?.star_count)!==50||\n    sent.paid_media?.paid_media?.length!==1||\n    !['preview','photo'].includes(sent.paid_media.paid_media[0]?.type))\n  throw Error('STK_REPAIR_NEW_PAID_MEDIA_UNVERIFIED');\n console.log('STK_REPAIR_NEW_PAID_MEDIA_ACK=PASS');\n console.log('STK_REPAIR_NEW_MESSAGE_ID='+sent.message_id);\n const saved=await pool.query(\"UPDATE videobot_sticker_topic_posts SET telegram_message_id=$2,display_text=$3,updated_at=NOW() WHERE product_id=$1 AND status='sent' AND telegram_message_id=$4 AND chat_id=$5 AND message_thread_id=$6 RETURNING telegram_message_id\",[pid,sent.message_id,caption,oldId,chatId,threadId]);\n if(saved.rowCount!==1)throw Error('STK_REPAIR_NEW_MESSAGE_RECEIPT_UNCERTAIN');\n console.log('STK_REPAIR_NEW_MESSAGE_DB=PASS');\n // The original collapsed text post is removed only after the Stars photo and\n // durable new receipt have both been confirmed. Never touch the pinned entry.\n const deleted=await api('deleteMessage',{chat_id:chatId,message_id:oldId});\n if(deleted!==true)throw Error('STK_REPAIR_OLD_TEXT_POST_DELETE_UNVERIFIED');\n console.log('STK_REPAIR_OLD_TEXT_POST_REMOVED=PASS');\n console.log('STK_REPAIR_SAME_PRODUCT_SAME_TOPIC=PASS');\n}finally{await outgoing.close();await pool.end();}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
