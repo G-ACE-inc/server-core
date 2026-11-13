@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/51922a4f79271b8e29542e32e777666f76b7af12"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || { echo STK_BUTTON_BOT_DOWN; exit 61; }\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';import{readFileSync}from'node:fs';\nimport{createTelegramBotApi}from'./src/telegram/botApi.mjs';\nimport{createCreatorTelegramFetch}from'./src/runtime/creatorEgress.mjs';\nconst e=process.env;const id='sp_76f23430d1c29ca355960a95',chat=-1002373696859,thread=4640;\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1,connectionTimeoutMillis:6000});\nconst outgoing=createCreatorTelegramFetch(globalThis.fetch);\ntry{\n const q=await pool.query(\"SELECT p.title,p.pack_name,p.kind,p.status AS product_status,p.price_stars,p.management_fee_bps,p.fee_terms_accepted_at,t.status AS post_status,t.chat_id,t.message_thread_id,t.telegram_message_id FROM videobot_sticker_products p JOIN videobot_sticker_topic_posts t ON t.product_id=p.product_id WHERE p.product_id=$1\",[id]);\n if(q.rowCount!==1)throw Error('STK_BUTTON_PRODUCT_NOT_UNIQUE');\n const p=q.rows[0],msg=Number(p.telegram_message_id);\n if(p.product_status!=='published'||p.post_status!=='sent'||Number(p.price_stars)!==50||\n Number(p.management_fee_bps)!==3000||!p.fee_terms_accepted_at||Number(p.chat_id)!==chat||\n Number(p.message_thread_id)!==thread||msg<=4664||!['regular','custom_emoji'].includes(p.kind)||\n typeof p.pack_name!=='string'||!/^[A-Za-z0-9_]{1,64}$/.test(p.pack_name))\n throw Error('STK_BUTTON_PRODUCT_RECEIPT_INVALID');\n const token=readFileSync(e.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim();\n const api=createTelegramBotApi({token,fetchImpl:outgoing.fetch,timeoutMs:25000});\n const me=await api('getMe',{});\n if(me?.is_bot!==true||String(me.username).toLowerCase()!=='createvdobot')throw Error('STK_BUTTON_OWNER_INVALID');\n const set=await api('getStickerSet',{name:p.pack_name});\n if(set?.name!==p.pack_name||!Array.isArray(set.stickers)||set.stickers.length<1)throw Error('STK_BUTTON_PUBLIC_PACK_UNAVAILABLE');\n const pin=JSON.parse(readFileSync('/var/lib/videobot/sticker-entry/group2373696859_thread4640.json','utf8'));\n if(pin.status!=='pinned_ack'||Number(pin.message_id)===msg||Number(pin.thread_id)!==thread)throw Error('STK_BUTTON_PIN_CHANGED');\n const markup={inline_keyboard:[\n [{text:'🎨 パック全体を見る',url:'https://t.me/'+(p.kind==='custom_emoji'?'addemoji/':'addstickers/')+p.pack_name}],\n [{text:'⭐ Starsで購入',url:'https://t.me/CreateVdobot?start=buy_'+id}]\n ]};\n const result=await api('editMessageReplyMarkup',{chat_id:chat,message_id:msg,reply_markup:markup});\n if(!(result?.alreadyCurrent===true||result?.message_id===msg))throw Error('STK_BUTTON_TELEGRAM_EDIT_UNVERIFIED');\n console.log('STK_BUTTON_SAME_POST_UPDATED=PASS');\n console.log('STK_BUTTON_NATIVE_FULL_PACK_LINK=PASS');\n console.log('STK_BUTTON_STARS_DM_ENTRY=PASS');\n console.log('STK_BUTTON_MESSAGE_ID='+msg);\n}finally{await outgoing.close();await pool.end();}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
