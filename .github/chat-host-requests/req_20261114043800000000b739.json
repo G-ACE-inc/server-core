@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "3e81e6f4ccb24c9113adcbbaf45c29d066d59957",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nCURRENT=$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\nEXPECTED=$(docker image inspect gace-tgtumbler-gaybbs:room-like-love-061d9b8 --format '{{.Id}}')\ntest \"$CURRENT\" = \"$EXPECTED\" || { echo GAYBBS_LIKE_LOVE_IMAGE_CHANGED; exit 51; }\nCID=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest \"$(printf '%s\\n' \"$CID\" | grep -c .)\" = 1 || exit 52\ntest \"$(docker inspect \"$CID\" --format '{{.Image}}')\" = \"$EXPECTED\" || { echo GAYBBS_RUNNING_OLDER_IMAGE; exit 53; }\ntest \"$(docker inspect \"$CID\" --format '{{.State.Running}}')\" = true || exit 54\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 55\necho GAYBBS_LIKE_LOVE_LIVE_IMAGE_MATCH_PASS\necho EXPECTED_SOURCE_SHA=061d9b8eff77f112914e8e53632c7cf7ab162798\necho GAYBBS_SERVICE_RUNNING_PASS\necho RESIDENT_USERBOT_SERVICE_ACTIVE_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
