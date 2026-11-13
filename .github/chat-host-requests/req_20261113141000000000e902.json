@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/4"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\nlive=\"$(docker inspect -f '{{.Image}}' \"$name\")\"\ntag=\"$(docker image inspect -f '{{.Id}}' create-videobot:local-poll)\"\ntest \"$live\" = \"$tag\" || exit 62\ndocker logs --tail 120 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' || exit 63\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {createStickerSalesFlow} from './src/telegram/stickerSales.mjs';\nconst e=process.env;\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,\n user:e.VIDEOBOT_DB_USER,password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),\n max:1,connectionTimeoutMillis:5000});\ntry{\n const cols=await pool.query(`SELECT COUNT(*)::int AS n FROM information_schema.columns\n WHERE table_schema='public' AND\n ((table_name='videobot_sticker_products' AND column_name IN\n ('management_fee_bps','fee_policy_id','fee_terms_accepted_at'))\n OR (table_name='videobot_sticker_orders' AND column_name IN\n ('management_fee_bps','fee_policy_id','management_fee_tenths','creator_share_tenths')))`);\n if(cols.rows?.[0]?.n!==7)throw Error('FEE_SCHEMA_INCOMPLETE');\n const db=await pool.query(`SELECT COUNT(*)::int AS total,\n COUNT(*) FILTER (WHERE management_fee_bps=3000 AND fee_policy_id='sticker-admin-30-20261113'\n AND management_fee_tenths=price_stars*3 AND creator_share_tenths=price_stars*7)::int AS verified,\n COUNT(*) FILTER (WHERE management_fee_bps IS NULL)::int AS legacy\n FROM videobot_sticker_orders`);\n if(!db.rows?.length||db.rows[0].total!==db.rows[0].verified+db.rows[0].legacy)\n  throw Error('FEE_ORDER_SNAPSHOT_INVALID');\n let s={revision:0,screen:'home',screenMessageId:null},shown;\n const sessionStore={\n  read:async()=>structuredClone(s),\n  write:async(_id,rev,next)=>{if(rev!==s.revision)throw Error('REVISION');s=structuredClone(next);},\n  setScreen:async(_id,rev,msg)=>{if(rev!==s.revision)throw Error('SCREEN_REVISION');s.screenMessageId=msg;}\n };\n const flow=createStickerSalesFlow({\n  api:async()=>true,sessionStore,screenTransport:{show:async(_id,_prev,panel)=>{shown=panel;return {messageId:10};}},\n  salesStore:{reserveOrder:async()=>{},capturePayment:async()=>{}},\n  packInventory:{getOwnedPack:async()=>({pack_name:'ci_safe_mock',title:'価格確認',kind:'regular'})},\n  publishSnapshot:async()=>{throw Error('NO_PUBLISH');}\n });\n await flow.beginSell({ownerId:1,packName:'ci_safe_mock'});\n const buttons=shown.reply_markup.inline_keyboard.flat().map(b=>b.text);\n if(!['50','100','300','500','1000','自分で決める'].every(t=>buttons.includes(t)))\n  throw Error('FEE_PRESET_BUTTONS_MISSING');\n await flow.handle({callback_query:{id:'offline-only',from:{id:1},message:{\n  chat:{type:'private',id:1},message_id:10},data:'sale:price:300|r1'}});\n if(s.screen!=='sticker_sale_confirm'||s.stickerSale.price!==300||\n !shown.text.includes('管理費90 Stars')||!shown.text.includes('投稿者分210 Stars'))\n  throw Error('FEE_PREVIEW_INCORRECT');\n process.stdout.write('STK03_LIVE_IMAGE_PRESET_6=PASS\\n');\n process.stdout.write('STK03_LIVE_IMAGE_FEE_30_70=PASS\\n');\n process.stdout.write('STK03_DB_MIGRATION_014=PASS\\n');\n process.stdout.write('STK03_DB_ORDER_SNAPSHOT=PASS\\n');\n}finally{await pool.end();}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
