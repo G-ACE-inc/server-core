@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "b7fd01f9442f86e7fcd9889c24b4b3e908e36598",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nCOMPOSE=\"$P/deploy/gserver-compose.yaml\"\nREF=112a927f60636c41dabfdc5bb9e8f09d022791c0\nW=\"$HOME/.cache/gace-room-owner-hotfix-20261114\"\ntest -f \"$COMPOSE\" || exit 31\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 32\nCURRENT=$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\ncase \"$CURRENT\" in sha256:470414d734b3*) ;; *) echo CURRENT_GAYBBS_IMAGE_DRIFT; exit 33 ;; esac\nCID=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest \"$(printf '%s\\n' \"$CID\" | grep -c .)\" = 1 || exit 34\ntest \"$(docker inspect \"$CID\" --format '{{.Image}}')\" = \"$CURRENT\" || exit 35\ngit -C \"$P\" fetch --no-tags origin refs/heads/fix/room-owner-applicant-live-deploy-20261114\ntest \"$(git -C \"$P\" rev-parse FETCH_HEAD)\" = \"$REF\" || exit 36\nif test ! -d \"$W\"; then git -C \"$P\" worktree add --detach \"$W\" \"$REF\" >/dev/null; fi\ndocker build --network host --pull=false -f \"$W/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:room-owner-fix-112a927 \"$W\" >/tmp/gace-room-owner-fix-build.log 2>&1 || exit 37\ndocker run --rm --network none --entrypoint node gace-tgtumbler-gaybbs:room-owner-fix-112a927 --check /app/gaybbs.mjs >/dev/null || exit 38\nNEXT=$(docker image inspect gace-tgtumbler-gaybbs:room-owner-fix-112a927 --format '{{.Id}}')\ntest \"$CURRENT\" != \"$NEXT\" || exit 39\ndocker tag gace-tgtumbler-gaybbs:local gace-tgtumbler-gaybbs:backup-before-room-owner-20261114\ndocker tag gace-tgtumbler-gaybbs:room-owner-fix-112a927 gace-tgtumbler-gaybbs:local\nif ! docker compose -p deploy -f \"$COMPOSE\" up -d --no-deps --no-build gaybbs >/tmp/gaybbs-room-owner-deploy.log 2>&1; then\n docker tag gace-tgtumbler-gaybbs:backup-before-room-owner-20261114 gace-tgtumbler-gaybbs:local\n docker compose -p deploy -f \"$COMPOSE\" up -d --no-deps --no-build gaybbs >/dev/null 2>&1 || true\n exit 40\nfi\nREADY=0\nfor i in 1 2 3 4 5 6 7 8; do\n sleep 2\n LIVE=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\n if test -n \"$LIVE\" && test \"$(docker inspect \"$LIVE\" --format '{{.Image}}')\" = \"$NEXT\" && docker logs --since=90s \"$LIVE\" 2>&1 | grep -q GAYBBS_BOT_READY; then READY=1; break; fi\ndone\nif test \"$READY\" -ne 1; then\n docker tag gace-tgtumbler-gaybbs:backup-before-room-owner-20261114 gace-tgtumbler-gaybbs:local\n docker compose -p deploy -f \"$COMPOSE\" up -d --no-deps --no-build gaybbs >/dev/null 2>&1 || true\n echo GAYBBS_ROOM_OWNER_ROLLED_BACK\n exit 41\nfi\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 42\ngh issue comment 7 --repo seigo-gace/GateApp-Bot --body \"ROOM_OWNER_UI_DEPLOY_20261114 deployed=true source=$REF image=${NEXT:0:19} old_image=${CURRENT:0:19} bot_ready=true resident_userbot=active scoped_service=gaybbs backup=gace-tgtumbler-gaybbs:backup-before-room-owner-20261114\" >/dev/null || exit 43\necho GAYBBS_ROOM_OWNER_UI_DEPLOY_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
