@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nimport json,pathlib,re,sys\np=pathlib.Path.home()/\".local/state/gserver-terminal/results\"/\"req_b741ab20261114d3085cb013.json\"\nif not p.is_file():sys.exit(50)\nr=json.loads(p.read_text())\nif isinstance(r.get(\"result\"),dict):r=r[\"result\"]\ns=(str(r.get(\"stderr\",\"\"))+\"\\n\"+str(r.get(\"stdout\",\"\"))).lower()\npatterns=[\n (71,r\"corepack.*(?:failed|error)|signature|keyid\"),\n (72,r\"failed to solve.*(?:load metadata|resolve source metadata)|failed to fetch|failed to authorize\"),\n (73,r\"failed to solve.*(?:checksum|not found|copy|build context)\"),\n (74,r\"pnpm install|frozen-lockfile|lockfile|err_pnpm\"),\n (75,r\"build:gaybbs|esbuild|typescript\"),\n (76,r\"no space left on device|disk full\"),\n (77,r\"connection timed out|network is unreachable|temporary failure|tls handshake\"),\n (78,r\"permission denied|operation not permitted\"),\n (79,r\"dockerfile parse|unknown instruction\"),\n (80,r\"failed to solve:\"),\n]\nfor code,rx in patterns:\n if re.search(rx,s):sys.exit(code)\nsys.exit(81)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
