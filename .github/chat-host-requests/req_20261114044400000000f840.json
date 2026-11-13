@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "ba59a80f5061df61fc29a3ddbca78dd6777d96f3",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nCOMPOSE=\"$P/deploy/gserver-compose.yaml\"\ntest -f \"$COMPOSE\" || exit 31\nPREV_ID=$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\ncase \"$PREV_ID\" in sha256:7246be5bc24b*) ;; *) echo LIVE_IMAGE_DRIFT_ABORT; exit 32;; esac\nNEW_ID=$(docker image inspect gace-tgtumbler-gaybbs:no-link-no-guide-096b1ea --format '{{.Id}}')\ntest \"$NEW_ID\" != \"$PREV_ID\" || exit 33\nOLD_CID=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest \"$(printf '%s\\n' \"$OLD_CID\" | grep -c .)\" -eq 1 || exit 34\ntest \"$(docker inspect \"$OLD_CID\" --format '{{.Image}}')\" = \"$PREV_ID\" || exit 35\ndocker tag gace-tgtumbler-gaybbs:local gace-tgtumbler-gaybbs:backup-before-no-link-no-guide-20261113\ndocker tag gace-tgtumbler-gaybbs:no-link-no-guide-096b1ea gace-tgtumbler-gaybbs:local\nif ! docker compose -p deploy -f \"$COMPOSE\" up -d --no-deps --no-build gaybbs >/tmp/gaybbs-no-link-deploy.log 2>&1; then\n docker tag gace-tgtumbler-gaybbs:backup-before-no-link-no-guide-20261113 gace-tgtumbler-gaybbs:local\n docker compose -p deploy -f \"$COMPOSE\" up -d --no-deps --no-build gaybbs >/dev/null 2>&1 || true\n exit 36\nfi\nOK=0\nfor i in 1 2 3 4 5 6 7; do\n sleep 2\n CID=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\n if test -n \"$CID\" && test \"$(docker inspect \"$CID\" --format '{{.Image}}')\" = \"$NEW_ID\" && docker logs --since=60s \"$CID\" 2>&1 | grep -q GAYBBS_BOT_READY; then OK=1; break; fi\ndone\nif test \"$OK\" -ne 1; then\n docker tag gace-tgtumbler-gaybbs:backup-before-no-link-no-guide-20261113 gace-tgtumbler-gaybbs:local\n docker compose -p deploy -f \"$COMPOSE\" up -d --no-deps --no-build gaybbs >/dev/null 2>&1 || true\n echo GAYBBS_DEPLOY_ROLLED_BACK\n exit 37\nfi\nSERVICE=$(systemctl --user is-active gace-userbot-verify.service || true)\ntest \"$SERVICE\" = active || exit 38\ngh issue comment 7 --repo seigo-gace/GateApp-Bot --body \"GAYBBS_NO_LINK_NO_GUIDE_DEPLOY_20261113 deployed=true from_image=${PREV_ID:0:19} to_image=${NEW_ID:0:19} bot_ready=true resident_userbot=$SERVICE rollback_tag=gace-tgtumbler-gaybbs:backup-before-no-link-no-guide-20261113 new_topic_posts=0\" >/dev/null || exit 39\necho GAYBBS_NO_LINK_NO_GUIDE_DEPLOY_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
