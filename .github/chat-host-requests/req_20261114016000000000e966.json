@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest -f scripts/userbot_test_client.py && test -f scripts/userbot_resident_ipc.py || exit 62\npython3 - <<'PY'\nfrom pathlib import Path\nfor name in ('scripts/userbot_test_client.py','scripts/userbot_resident_ipc.py'):\n text=Path(name).read_text(encoding='utf-8')\n lines=text.splitlines()\n keys=('room_public_readback','allowed_actions','ACTION','ArgumentParser','add_argument','def main','def _','paid_media','get_messages','message_id','read_message','get_chat')\n matches=[i for i,v in enumerate(lines) if any(key in v for key in keys)]\n selected=sorted({j for i in matches for j in range(max(0,i-2),min(len(lines),i+5))})\n print('STK_RESIDENT_SOURCE='+name)\n for i in selected[:170]:\n  line=lines[i]\n  if any(word in line.lower() for word in ('token','session','password','secret','phone','api_hash','auth_key')):\n   continue\n  print(str(i+1)+':'+line[:220])\nPY\necho STK_RESIDENT_CLIENT_INSPECT=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
