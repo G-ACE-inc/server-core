@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nconst e=process.env,pid='sp_76f23430d1c29ca355960a95';\nconst db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,\npassword:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1,connectionTimeoutMillis:6000});\nconst outgoing=createCreatorTelegramFetch(globalThis.fetch);\ntry{\n const q=await db.query(\"SELECT p.seller_user_id,p.price_stars,t.chat_id,t.message_thread_id,t.telegram_message_id,t.status FROM videobot_sticker_products p JOIN videobot_sticker_topic_posts t ON t.product_id=p.product_id WHERE p.product_id=$1\",[pid]);\n if(q.rowCount!==1||Number(q.rows[0].price_stars)!==50||Number(q.rows[0].chat_id)!==-1002373696859||Number(q.rows[0].message_thread_id)!==4640)\n throw Error('STK_BUYER_VIEW_TARGET_INVALID');\n const m=q.rows[0],token=readFileSync(e.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim();\n const api=createTelegramBotApi({token,fetchImpl:outgoing.fetch,timeoutMs:18000});\n const chat=await api('getChat',{chat_id:-1002373696859});\n const seller=await api('getChatMember',{chat_id:-1002373696859,user_id:Number(m.seller_user_id)});\n const bot=await api('getMe',{});\n if(bot?.is_bot!==true||String(bot.username).toLowerCase()!=='createvdobot')throw Error('STK_BOT_IDENTITY_INVALID');\n console.log('STK_PAID_MEDIA_POST_ID='+Number(m.telegram_message_id));\n console.log('STK_TOPIC_POST_STATE='+String(m.status));\n console.log('STK_SELLER_GROUP_ROLE='+String(seller?.status||'UNKNOWN'));\n console.log('STK_IS_FORUM='+String(chat.is_forum===true));\n const x=await db.query(\"SELECT COUNT(*)::int AS n FROM videobot_sticker_paid_photo_sales WHERE product_id=$1\",[pid]);\n console.log('STK_VERIFIED_STARS_PURCHASE_COUNT='+x.rows[0].n);\n console.log('STK_READ_ONLY_BUYER_DIAG=PASS');\n}finally{await outgoing.close();await db.end()}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
