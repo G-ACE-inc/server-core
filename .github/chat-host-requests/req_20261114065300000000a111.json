@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || { echo BOT_NOT_RUNNING; exit 81; }\ntest \"$(docker ps --format '{{.Names}}' | grep -Ec 'createvdobot|create-videobot|videobot-poll' || true)\" -eq 1 || { echo BOT_MULTIPLE_CONSUMERS; exit 82; }\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport {readFileSync} from 'node:fs';\nimport pg from 'pg';\nconst env=process.env;\nconst fail=(code,message)=>{console.log(message);process.exitCode=code;};\ntry{\n const token=readFileSync(env.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim();\n if(!token)throw Error('TOKEN_MISSING');\n const call=async(method)=>{\n  const result=await fetch('https://api.telegram.org/bot'+token+'/'+method,{signal:AbortSignal.timeout(9000)});\n  const body=await result.json();\n  if(!result.ok||body.ok!==true)throw Error('API_FAILED');\n  return body.result;\n };\n const me=await call('getMe');\n if(me.is_bot!==true||String(me.username).toLowerCase()!=='createvdobot')throw Error('BOT_IDENTITY_MISMATCH');\n console.log('LIVE_CREATEVDOBOT_IDENTITY=PASS');\n const hook=await call('getWebhookInfo');\n if(hook.url!=='')throw Error('WEBHOOK_COMPETING_WITH_POLL');\n console.log('LIVE_CREATOR_POLL_INGRESS=PASS');\n const pool=new pg.Pool({host:env.VIDEOBOT_DB_HOST,database:env.VIDEOBOT_DB_NAME,user:env.VIDEOBOT_DB_USER,password:readFileSync(env.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1});\n try {\n  const r=await pool.query(\"SELECT status,price_stars,jsonb_array_length(items) AS items FROM videobot_sticker_products WHERE product_id=$1\",['sp_76f23430d1c29ca355960a95']);\n  if(r.rowCount!==1||r.rows[0].status!=='published'||Number(r.rows[0].price_stars)!==50||Number(r.rows[0].items)<1)throw Error('STICKER_PRODUCT_MISMATCH');\n  console.log('EXISTING_STICKER_PRODUCT_50_STARS=PASS');\n } finally {await pool.end();}\n}catch(e){\n const allowed=['TOKEN_MISSING','API_FAILED','BOT_IDENTITY_MISMATCH','WEBHOOK_COMPETING_WITH_POLL','STICKER_PRODUCT_MISMATCH'];\n const msg=allowed.includes(e.message)?e.message:'BOT_LIVE_HEALTH_CHECK_FAILED';\n fail(91,msg);\n}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
