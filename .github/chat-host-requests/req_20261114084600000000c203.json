@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npsql(){ docker exec deploy-postgres-1 psql -U gace -d gaybbs -Atc \"$1\"; }\nall=\"$(psql \"SELECT count(*) FROM posting_topics WHERE purpose='profile'\")\"\nif test \"$all\" -eq 0; then exit 31; fi\nnamed=\"$(psql \"SELECT count(*) FROM posting_topics WHERE purpose='profile' AND title='みんなのプロフ'\")\"\nif test \"$named\" -lt 3; then exit 32; fi\ngrouped=\"$(psql \"SELECT count(DISTINCT board_key) FROM posting_topics WHERE purpose='profile' AND title='みんなのプロフ' AND ((board_key='area_bbs' AND chat_id=-1003847210571) OR (board_key='video_chat' AND chat_id=-1002373696859) OR (board_key='gay_board' AND chat_id=-1003770334893))\")\"\nif test \"$grouped\" -lt 3; then exit 33; fi\nverified=\"$(psql \"SELECT count(DISTINCT board_key) FROM posting_topics WHERE purpose='profile' AND enabled=TRUE AND verified_at IS NOT NULL AND verified_by IS NOT NULL AND title='みんなのプロフ' AND ((board_key='area_bbs' AND chat_id=-1003847210571) OR (board_key='video_chat' AND chat_id=-1002373696859) OR (board_key='gay_board' AND chat_id=-1003770334893))\")\"\nif test \"$verified\" -lt 3; then exit 34; fi\nrelease=\"$(psql \"SELECT count(*) FROM gaybbs_feature_release_gates WHERE feature='profile' AND enabled=TRUE AND length(source_commit)=40 AND length(trim(ci_evidence))>0 AND length(trim(gserver_runtime_evidence))>0 AND length(trim(telegram_e2e_evidence))>0 AND approved_by IS NOT NULL\")\"\nif test \"$release\" -ne 1; then exit 35; fi\necho PROFILE_BOARD_RELEASE_READY=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
