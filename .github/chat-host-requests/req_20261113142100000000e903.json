@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/4"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {createVideoBotScreenTransport} from './src/telegram/creatorScreenTransport.mjs';\nimport {createStickerSalesFlow} from './src/telegram/stickerSales.mjs';\nimport {createPostgresCreatorSessionStore} from './src/sales/pgCreatorSessions.mjs';\nimport {createPostgresStickerInventory} from './src/stickers/pgStickerInventory.mjs';\nimport {createPostgresStickerSales} from './src/stickers/pgStickerSales.mjs';\nconst e=process.env;\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,\n user:e.VIDEOBOT_DB_USER,password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),\n max:1,connectionTimeoutMillis:5000});\nconst outgoing=createCreatorTelegramFetch(globalThis.fetch);\ntry{\n const q=await pool.query(`SELECT owner_user_id,revision,screen_message_id,\n state->'stickerSale'->>'packName' AS pack_name FROM videobot_creator_sessions\n WHERE state->>'screen'='sticker_sale_price' AND state->'stickerSale'->>'mode'='seller'`);\n if(q.rows.length===0){process.stdout.write('STK03_NO_LEGACY_PRICE_SCREEN=PASS\\n');}\n else if(q.rows.length!==1){throw Error('STK03_AMBIGUOUS_LEGACY_PRICE_SCREEN');}\n else {\n  const row=q.rows[0],owner=Number(row.owner_user_id);\n  if(!Number.isSafeInteger(owner)||owner<=0||!Number.isSafeInteger(Number(row.revision))||\n     !Number.isSafeInteger(Number(row.screen_message_id))||Number(row.screen_message_id)<=0||\n     typeof row.pack_name!=='string'||!row.pack_name)throw Error('STK03_SCREEN_PRECHECK_FAILED');\n  const token=readFileSync(e.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim();\n  const api=createTelegramBotApi({token,fetchImpl:outgoing.fetch,timeoutMs:15000});\n  const me=await api('getMe',{});\n  if(me?.is_bot!==true||String(me.username||'').toLowerCase()!=='createvdobot')\n   throw Error('STK03_BOT_IDENTITY_UNVERIFIED');\n  const sessionStore=createPostgresCreatorSessionStore(pool);\n  const current=await sessionStore.read(owner);\n  if(current?.screen!=='sticker_sale_price'||current.revision!==Number(row.revision)||\n     current.screenMessageId!==Number(row.screen_message_id)||\n     current.stickerSale?.mode!=='seller'||current.stickerSale?.packName!==row.pack_name)\n    throw Error('STK03_SCREEN_RACE_ABORT');\n  const flow=createStickerSalesFlow({\n   api,sessionStore,screenTransport:createVideoBotScreenTransport(api),\n   salesStore:createPostgresStickerSales(pool),packInventory:createPostgresStickerInventory(pool),\n   publishSnapshot:async()=>{throw Error('STK03_NO_PUBLICATION_IN_REFRESH');}\n  });\n  const result=await flow.beginSell({ownerId:owner,packName:row.pack_name});\n  if(result?.handled!==true||result.locked===true)throw Error('STK03_SCREEN_REFRESH_BLOCKED');\n  const after=await sessionStore.read(owner);\n  if(after?.screen!=='sticker_sale_price'||after.revision!==current.revision+1||\n     !Number.isSafeInteger(after.screenMessageId)||after.screenMessageId<=0)\n   throw Error('STK03_SCREEN_REFRESH_NOT_DURABLE');\n  process.stdout.write('STK03_EXISTING_DM_PRICE_BUTTONS_REFRESHED=PASS\\n');\n }\n}finally{await outgoing.close();await pool.end();}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
