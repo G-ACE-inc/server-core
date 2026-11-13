@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -e\npython3 - <<'PY'\nimport subprocess,re\ndef r(a):\n try:\n  p=subprocess.run(a,capture_output=True,text=True,timeout=15)\n  return (p.returncode,(p.stdout+p.stderr).strip())\n except Exception as e:return 99,type(e).__name__\nn='gace-createvdobot-videobot-poll-1';pg='deploy-postgres-1'\nfor label,a in [('BOT', ['docker','inspect','--format','{{.State.Status}} {{.State.ExitCode}} {{.RestartCount}} {{.Image}}',n]),\n('PATCH',['docker','exec',n,'sh','-c',\"grep -c recoverNavigation /opt/videobot/src/telegram/creatorWebhookAdmission.mjs\"]),\n('SQL',['docker','exec',pg,'sh','-c',\"psql -U \\\"$POSTGRES_USER\\\" -d videobot -Atc \\\"SELECT 'CURSOR='||last_update_id FROM videobot_poll_cursor WHERE consumer_id='createvdobot';SELECT 'UPDATE='||update_id||':'||status||':'||coalesce(handled::text,'NULL') FROM videobot_webhook_updates WHERE update_id>=2956732 ORDER BY update_id LIMIT 4;\\\"\"])]:\n code,out=r(a);print(label+'_EXIT='+str(code));print(label+'='+out[:400])\n_,out=r(['docker','logs','--tail','100',n])\nerrors=[re.sub(r'(?i)(token|password|secret|authorization)\\\\S*','[REDACTED]',x) for x in out.splitlines() if re.search(r'Error|ERROR|CREATOR_POLL|WEBHOOK_|NEEDS_RECONCILE|TypeError',x)]\nprint('ERRORS='+'|'.join(errors[-8:])[:900])\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
