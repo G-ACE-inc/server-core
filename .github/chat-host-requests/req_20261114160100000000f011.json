@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nconst e=process.env,pid='sp_76f23430d1c29ca355960a95';\nconst db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,\n password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1,connectionTimeoutMillis:6000});\ntry{\n const t=await db.query('SELECT p.status AS product_status,p.price_stars,p.title,t.status AS post_status,t.telegram_message_id,t.chat_id,t.message_thread_id,t.display_text FROM videobot_sticker_products p JOIN videobot_sticker_topic_posts t ON p.product_id=t.product_id WHERE p.product_id=$1',[pid]);\n if(t.rowCount!==1)throw Error('STK_PAID_EXISTING_PRODUCT_RECEIPT_ABSENT');\n const r=t.rows[0];\n console.log('STK_PAID_PRODUCT_STATUS='+r.product_status);\n console.log('STK_PAID_TOPIC_STATUS='+r.post_status);\n console.log('STK_PAID_STARS='+r.price_stars);\n console.log('STK_PAID_MESSAGE_ID='+r.telegram_message_id);\n console.log('STK_PAID_THREAD_ID='+r.message_thread_id);\n console.log('STK_PAID_TITLE_ONLY='+(r.display_text==='🎨 '+r.title?'YES':'NO'));\n const sales=await db.query('SELECT COUNT(*)::int AS n FROM videobot_sticker_paid_photo_sales WHERE product_id=$1',[pid]);\n console.log('STK_PAID_COMPLETED_RECEIPTS='+sales.rows[0].n);\n const orders=await db.query('SELECT invoice_state,COUNT(*)::int AS n FROM videobot_sticker_orders WHERE product_id=$1 GROUP BY invoice_state ORDER BY invoice_state',[pid]);\n console.log('STK_PAID_INVOICE_STATES='+orders.rows.map(x=>x.invoice_state+':'+x.n).join(','));\n const current=await db.query(\"SELECT current_database() AS n, (SELECT MAX(version) FROM videobot_sticker_products WHERE product_id=$1)::int AS version\",[pid]);\n console.log('STK_PAID_PRODUCT_VERSION='+current.rows[0].version);\n}finally{await db.end();}\nNODE\necho STK_PAID_EXISTING_POST_SALES_PRECHECK=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
