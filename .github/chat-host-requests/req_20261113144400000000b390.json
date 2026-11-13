@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ntest \"$(docker inspect deploy-postgres-1 --format '{{.State.Running}}')\" = true || exit 70\necho POSTING_TOPIC_COVERAGE\ndocker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -F '|' -c \"SELECT t.board_key,t.purpose,count(*) AS topics,count(*) FILTER(WHERE p.state='published' AND p.pinned=TRUE AND p.message_id IS NOT NULL) AS pin_ready,count(*) FILTER(WHERE p.chat_id IS NULL) AS pin_absent,count(*) FILTER(WHERE p.state IS DISTINCT FROM 'published') AS pin_not_published FROM posting_topics t LEFT JOIN topic_dm_entry_pins p ON p.chat_id=t.chat_id AND p.message_thread_id=t.message_thread_id WHERE t.enabled=TRUE GROUP BY t.board_key,t.purpose ORDER BY t.board_key,t.purpose\"\necho MISSING_REAL_ENTRY\ndocker exec deploy-postgres-1 psql -X -U gace -d gaybbs -v ON_ERROR_STOP=1 -At -F '|' -c \"SELECT t.chat_id,t.message_thread_id,t.title,t.purpose,COALESCE(p.state,'ABSENT') FROM posting_topics t LEFT JOIN topic_dm_entry_pins p ON p.chat_id=t.chat_id AND p.message_thread_id=t.message_thread_id WHERE t.enabled=TRUE AND (p.chat_id IS NULL OR p.state<>'published' OR p.pinned IS DISTINCT FROM TRUE OR p.message_id IS NULL) ORDER BY t.chat_id,t.message_thread_id LIMIT 100\"\necho COVERAGE_AUDIT_COMPLETE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
