@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nstage=\"/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\"\ntest -f \"$stage/deploy/compose.videobot.poll.yaml\" || exit 41\ntest -f \"$stage/src/telegram/stickerSales.mjs\" || exit 42\nprintf 'STAGE_PATH_EXISTS=YES\\n'\nif git -C \"$stage\" rev-parse --is-inside-work-tree >/dev/null 2>&1; then\n printf 'STAGE_GIT=YES\\n'\n printf 'STAGE_HEAD=%s\\n' \"$(git -C \"$stage\" rev-parse HEAD)\"\n printf 'STAGE_BRANCH=%s\\n' \"$(git -C \"$stage\" branch --show-current)\"\n printf 'STAGE_DIRTY_COUNT=%s\\n' \"$(git -C \"$stage\" status --porcelain | wc -l)\"\nelse echo STAGE_GIT=NO; fi\nif test -f \"$stage/deploy/.env\"; then echo COMPOSE_DOTENV=PRESENT; else echo COMPOSE_DOTENV=MISSING; fi\nif test -f \"$stage/.env\"; then echo ROOT_DOTENV=PRESENT; else echo ROOT_DOTENV=MISSING; fi\nif grep -Fq \"stickerLandingPanel\" \"$stage/src/telegram/stickerSales.mjs\"; then echo STAGE_RETURN_FIX=ACTIVE; else echo STAGE_RETURN_FIX=MISSING; fi\nif grep -Fq \"uniqueAcknowledgedAppend\" \"$stage/src/stickers/packRegistration.mjs\"; then echo STAGE_APPEND_FIX=ACTIVE; else echo STAGE_APPEND_FIX=MISSING; fi\nif (cd \"$stage/deploy\" && docker compose -f compose.videobot.poll.yaml config --quiet >/dev/null 2>&1); then echo COMPOSE_CONFIG=PASS; else echo COMPOSE_CONFIG=NEEDS_EXISTING_ENV; fi\necho STAGE_DEPLOY_PREFLIGHT=DONE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
