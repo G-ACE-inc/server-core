@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/51922a4f79271b8e29542e32e777666f76b7af12"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ndocker exec -i gace-createvdobot-videobot-poll-1 node --input-type=module - <<'NODE'\nimport pg from 'pg';import{readFileSync}from'node:fs';\nconst e=process.env;const pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1});\ntry{\n const r=await pool.query(\"SELECT s.state,s.screen_message_id FROM videobot_sticker_products p LEFT JOIN videobot_creator_sessions s ON s.owner_user_id=p.seller_user_id WHERE p.product_id=$1\",['sp_76f23430d1c29ca355960a95']);\n if(r.rowCount!==1){process.exitCode=78;}\n else{\n  const d=r.rows[0].state||{},screen=d.screen||'NONE',mid=r.rows[0].screen_message_id;\n  console.log('STK_SELLER_SCREEN_CATEGORY='+(['sticker_choose','sticker_reconcile','sticker_edit_reconcile','home','sticker_sale_offer'].includes(screen)?screen:'OTHER'));\n  console.log('STK_SELLER_PENDING_REGISTRATION='+Boolean(d.stickerPending));\n  console.log('STK_SELLER_PENDING_EDIT='+Boolean(d.stickerEditPending));\n  console.log('STK_SELLER_SCREEN_MESSAGE='+Boolean(mid));\n  process.exitCode=d.stickerEditPending?71:d.stickerPending?.status==='needs_reconcile'?72:!mid?73:screen==='sticker_choose'?74:0;\n }\n}finally{await pool.end();}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
