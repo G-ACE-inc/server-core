@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nname=gace-createvdobot-videobot-poll-1\nimg=create-videobot:native-sticker-c8c50d4\ntarget=\"$HOME/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\"\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || { echo BOT_NOT_RUNNING; exit 81; }\ntest -f \"$target/deploy/compose.videobot.poll.yaml\" || { echo DEPLOY_SOURCE_NOT_FOUND; exit 82; }\ndocker image inspect \"$img\" >/dev/null || { echo VERIFIED_IMAGE_NOT_FOUND; exit 83; }\ndocker run --rm --network none --pull never --entrypoint grep \"$img\" -q 'ステッカー・絵文字' /opt/videobot/src/telegram/menuPanel.mjs || { echo VERIFIED_MENU_MISSING; exit 84; }\ndocker run --rm --network none --pull never --entrypoint grep \"$img\" -q 'there is no text in the message to edit' /opt/videobot/src/telegram/creatorScreenTransport.mjs || { echo VERIFIED_DM_FIX_MISSING; exit 85; }\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ndbpass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ntest -f \"$token\" && test -f \"$dbpass\" || { echo BOT_SECRET_MOUNT_MISSING; exit 86; }\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || { echo BOT_DB_AMBIGUOUS; exit 87; }\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest -n \"$user\" && test \"$net\" = deploy_default || { echo BOT_DB_NETWORK_INVALID; exit 88; }\npin=\"$HOME/.local/state/create-videobot/sticker-pin\"\ntest -f \"$pin/group2373696859_thread4640.json\" || { echo BOT_EXISTING_PIN_MISSING; exit 89; }\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$token\" VIDEOBOT_DB_PASSWORD_SOURCE=\"$dbpass\"\nexport VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$pin\" GSERVER_POSTGRES_USER=\"$user\" GSERVER_POSTGRES_NETWORK=\"$net\"\ndocker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" config --quiet || { echo BOT_COMPOSE_INVALID; exit 90; }\ntest \"$(docker ps --format '{{.Names}}' | grep -Ec 'createvdobot|create-videobot|videobot-poll' || true)\" -eq 1 || { echo BOT_MULTIPLE_CONSUMERS; exit 91; }\narmed=0\nrollback(){\n  docker image tag create-videobot:menu-before-fix create-videobot:local-poll || true\n  docker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true\n  echo BOT_MENU_ROLLBACK_ATTEMPTED\n}\ntrap 'if test \"$armed\" = 1; then rollback; fi' EXIT\ndocker image tag create-videobot:local-poll create-videobot:menu-before-fix\narmed=1\ndocker image tag \"$img\" create-videobot:local-poll\ndocker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || { echo BOT_RECREATE_FAILED; exit 92; }\nsleep 10\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || { echo BOT_NEW_NOT_RUNNING; exit 93; }\nready=\"$(docker logs --tail 1000 \"$name\" 2>&1 | grep -c '^CREATOR_DM_POLL_READY=PASS$' || true)\"\ngate=\"$(docker logs --tail 1000 \"$name\" 2>&1 | grep -c '^CREATOR_GATE_PUBLIC_RELEASE=CONNECTED$' || true)\"\ntest \"$ready\" -ge 1 || { echo BOT_NEW_POLL_NOT_READY; exit 94; }\ntest \"$gate\" -ge 1 || { echo BOT_NEW_GATE_NOT_CONNECTED; exit 95; }\ndocker exec \"$name\" grep -q 'ステッカー・絵文字' /opt/videobot/src/telegram/menuPanel.mjs || { echo BOT_NEW_HOME_MENU_MISSING; exit 96; }\ndocker exec \"$name\" grep -q 'there is no text in the message to edit' /opt/videobot/src/telegram/creatorScreenTransport.mjs || { echo BOT_NEW_DM_FIX_MISSING; exit 97; }\ntest \"$(docker ps --format '{{.Names}}' | grep -Ec 'createvdobot|create-videobot|videobot-poll' || true)\" -eq 1 || { echo BOT_NEW_MULTIPLE_CONSUMERS; exit 98; }\narmed=0\necho BOT_MENU_RESTORED_SOURCE_RUNTIME=PASS\necho BOT_DM_POLL_READY=PASS\necho BOT_GATE_CONNECTED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
