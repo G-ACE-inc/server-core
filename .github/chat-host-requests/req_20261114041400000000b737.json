@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "3e81e6f4ccb24c9113adcbbaf45c29d066d59957",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nCURRENT=$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\nEXPECTED=$(docker image inspect gace-tgtumbler-gaybbs:room-grid-48dccb7 --format '{{.Id}}')\ntest \"$CURRENT\" = \"$EXPECTED\" || { echo GAYBBS_GRID_NOT_CURRENT; exit 51; }\nCID=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest -n \"$CID\" || exit 52\ntest \"$(docker inspect \"$CID\" --format '{{.Image}}')\" = \"$EXPECTED\" || exit 53\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 54\npython3 \"$P/scripts/userbot_test_client.py\" health || exit 55\npython3 \"$P/scripts/userbot_test_client.py\" room_private_smoke || exit 56\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 57\necho GAYBBS_TAG_GRID_IMAGE_AND_USERBOT_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
