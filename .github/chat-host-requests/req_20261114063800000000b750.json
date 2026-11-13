@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "3e81e6f4ccb24c9113adcbbaf45c29d066d59957",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nCOMPOSE=\"$P/deploy/gserver-compose.yaml\"\nCURRENT=$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\nEXPECTED=$(docker image inspect gace-tgtumbler-gaybbs:room-owner-notification-6ff5df --format '{{.Id}}')\ntest \"$CURRENT\" = \"$EXPECTED\" || { echo FIXED_IMAGE_NOT_ACTIVE; exit 41; }\nCID=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest \"$(docker inspect \"$CID\" --format '{{.Image}}')\" = \"$EXPECTED\" || exit 42\nRESULT=$(docker compose -p deploy -f \"$COMPOSE\" exec -T postgres psql -X -tA -U gace -d gaybbs -v ON_ERROR_STOP=1 <<'SQL'\nWITH eligible AS (\n SELECT ap.application_id,ap.announcement_id,p.owner_user_id\n FROM announcement_applications ap\n JOIN announcement_posts p ON p.announcement_id=ap.announcement_id\n WHERE ap.announcement_id=15 AND p.room_id IS NOT NULL\n   AND ap.status IN ('submitted','held')\n   AND EXISTS (\n    SELECT 1 FROM announcement_notifications n\n    WHERE n.announcement_id=15\n      AND n.event_key='application:'||ap.application_id::text||':submitted'\n      AND n.state='sent')\n), inserted AS (\n INSERT INTO announcement_notifications\n   (announcement_id,recipient_user_id,event_key,payload)\n SELECT announcement_id,owner_user_id,\n   'application:'||application_id::text||':owner_card_repair_v1',\n   jsonb_build_object('applicationId',application_id,'action','submitted')\n FROM eligible\n ON CONFLICT(event_key) DO NOTHING\n RETURNING notification_id\n) SELECT COUNT(*) FROM inserted;\nSQL\n)\ncase \"$RESULT\" in ''|*[!0-9]*) echo ROOM_OWNER_REPAIR_COUNT_INVALID; exit 43;; esac\ntest \"$RESULT\" -ge 1 || { echo NO_PENDING_GENERIC_OWNER_CARDS_TO_REPAIR; exit 44; }\nSTATE=0\nfor i in 1 2 3 4 5 6 7 8 9 10; do\n sleep 2\n STATE=$(docker compose -p deploy -f \"$COMPOSE\" exec -T postgres psql -X -tA -U gace -d gaybbs -v ON_ERROR_STOP=1 -c \"SELECT CASE WHEN COUNT(*)>0 AND COUNT(*) FILTER (WHERE state='sent')=COUNT(*) THEN 1 WHEN COUNT(*) FILTER (WHERE state IN ('failed','needs_reconcile'))>0 THEN 2 ELSE 0 END FROM announcement_notifications WHERE announcement_id=15 AND event_key LIKE 'application:%:owner_card_repair_v1';\")\n if test \"$STATE\" = 1; then break; fi\n if test \"$STATE\" = 2; then echo ROOM_OWNER_REPAIR_DELIVERY_UNCERTAIN; exit 45; fi\ndone\ntest \"$STATE\" = 1 || { echo ROOM_OWNER_REPAIR_STILL_PENDING; exit 46; }\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 47\necho ROOM15_OWNER_RICH_NOTIFICATION_REPAIR_SENT_PASS\necho OWNER_REPAIR_ATTEMPTED=1"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
