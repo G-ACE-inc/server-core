@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/0179c474f35d1bf2f4078e6fecebd4ef50b1fcbb"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || { echo STK_PREVIEW_BOT_NOT_READY; exit 61; }\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createTelegramVideoFetcher} from './src/telegram/telegramFileFetch.mjs';\nimport {createStickerPaidCover} from './src/stickers/stickerPaidCover.mjs';\nconst e=process.env;\nconst productId='sp_76f23430d1c29ca355960a95',chatId=-1002373696859,threadId=4640;\nif(!readFileSync('./src/stickers/topicPublication.mjs','utf8').includes(\"telegramApi('sendPhoto'\"))throw Error('STK_PREVIEW_SOURCE_NOT_DEPLOYED');\nif(!readFileSync('./src/telegram/botApi.mjs','utf8').includes('there is no text in the message to edit'))throw Error('STK_DM_SOURCE_NOT_DEPLOYED');\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1,connectionTimeoutMillis:7000});\nconst outgoing=createCreatorTelegramFetch(globalThis.fetch);\ntry{\n const got=await pool.query(\"SELECT p.product_id,p.seller_user_id,p.title,p.pack_name,p.kind,p.items,p.price_stars,p.status AS product_status,p.management_fee_bps,p.fee_policy_id,p.fee_terms_accepted_at,t.telegram_message_id,t.status AS post_status,t.chat_id,t.message_thread_id FROM videobot_sticker_products p JOIN videobot_sticker_topic_posts t ON t.product_id=p.product_id WHERE p.product_id=$1\",[productId]);\n if(got.rowCount!==1)throw Error('STK_PREVIEW_PRODUCT_NOT_UNIQUE');\n const p=got.rows[0],items=typeof p.items==='string'?JSON.parse(p.items):p.items;\n const oldMessageId=Number(p.telegram_message_id);\n if(p.product_status!=='published'||p.post_status!=='sent'||oldMessageId<=4664||\n Number(p.chat_id)!==chatId||Number(p.message_thread_id)!==threadId||Number(p.price_stars)!==50||\n Number(p.management_fee_bps)!==3000||p.fee_policy_id!=='sticker-admin-30-20261113'||!p.fee_terms_accepted_at||\n !Array.isArray(items)||items.length<1||items.length>200||!items[0]?.file_id||\n typeof p.title!=='string'||!p.title||p.title.length>64)\n   throw Error('STK_PREVIEW_EXISTING_STATE_MISMATCH');\n const token=readFileSync(e.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim();\n const api=createTelegramBotApi({token,fetchImpl:outgoing.fetch,timeoutMs:25000});\n const bot=await api('getMe',{});\n if(bot?.is_bot!==true||String(bot.username).toLowerCase()!=='createvdobot')throw Error('STK_PREVIEW_BOT_IDENTITY_INVALID');\n const pin=JSON.parse(readFileSync('/var/lib/videobot/sticker-entry/group2373696859_thread4640.json','utf8'));\n if(pin.status!=='pinned_ack'||Number(pin.chat_id)!==chatId||Number(pin.thread_id)!==threadId||\n Number(pin.message_id)===oldMessageId||Number(pin.bot_id)!==bot.id)throw Error('STK_PREVIEW_PIN_CHANGED');\n const member=await api('getChatMember',{chat_id:chatId,user_id:bot.id});\n if(!['administrator','creator'].includes(member?.status))throw Error('STK_PREVIEW_BOT_NOT_ADMIN');\n const source=createTelegramVideoFetcher({telegramApi:api,token,fetchImpl:outgoing.fetch});\n const cover=await createStickerPaidCover({fetchSource:source})({...p,items});\n if(!(cover instanceof Uint8Array)||cover.byteLength<100||cover.byteLength>10000000)throw Error('STK_PREVIEW_IMAGE_NOT_READY');\n console.log('STK_PREVIEW_REAL_ITEM_IMAGE=PASS');\n const text='🎨 '+p.title+'\\n⭐ '+Number(p.price_stars)+' Stars · '+items.length+'個';\n const claimed=await pool.query(\"UPDATE videobot_sticker_topic_posts SET status='sending',updated_at=NOW() WHERE product_id=$1 AND status='sent' AND telegram_message_id=$2 AND chat_id=$3 AND message_thread_id=$4 RETURNING product_id\",[productId,oldMessageId,chatId,threadId]);\n if(claimed.rowCount!==1)throw Error('STK_PREVIEW_CONCURRENT_CHANGE');\n const sent=await api('sendPhoto',{chat_id:chatId,message_thread_id:threadId,\n  photo:'attach://sticker_cover',sticker_cover_bytes:cover,caption:text,\n  reply_markup:{inline_keyboard:[[{text:'📦 絵柄を見る・Starsで購入',url:'https://t.me/CreateVdobot?start=buy_'+productId}]]}});\n if(!Number.isSafeInteger(sent?.message_id)||sent.message_id<=oldMessageId||sent?.chat?.id!==chatId||\n sent?.message_thread_id!==threadId||sent?.is_topic_message!==true||sent?.from?.id!==bot.id||\n !Array.isArray(sent?.photo)||sent.photo.length<1)throw Error('STK_PREVIEW_NEW_POST_UNVERIFIED');\n const record=await pool.query(\"UPDATE videobot_sticker_topic_posts SET telegram_message_id=$2,display_text=$3,status='sent',updated_at=NOW() WHERE product_id=$1 AND telegram_message_id=$4 AND status='sending' AND chat_id=$5 AND message_thread_id=$6 RETURNING telegram_message_id\",[productId,sent.message_id,text,oldMessageId,chatId,threadId]);\n if(record.rowCount!==1)throw Error('STK_PREVIEW_NEW_POST_RECEIPT_UNKNOWN');\n console.log('STK_PREVIEW_NEW_POST=PASS');\n console.log('STK_PREVIEW_NEW_MESSAGE_ID='+sent.message_id);\n const removed=await api('deleteMessage',{chat_id:chatId,message_id:oldMessageId});\n if(removed!==true)throw Error('STK_PREVIEW_OLD_TEXT_DELETE_UNKNOWN');\n console.log('STK_PREVIEW_OLD_TEXT_REMOVED=PASS');\n console.log('STK_PREVIEW_SAME_PRODUCT_TOPIC=PASS');\n}finally{await outgoing.close();await pool.end();}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
