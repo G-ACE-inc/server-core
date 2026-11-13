@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "3b992257ec3e107c8a56fb6f42e1064e84cc9017",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu; P=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot; NAMES=$(git -C \"$P\" status --porcelain --untracked-files=normal | sed -E 's/^...//' | grep -E '^(artifacts/bot/src/|artifacts/bot/scripts/|artifacts/bot/build-gaybbs.ts|artifacts/bot/deploy/Dockerfile.gaybbs)' | head -70 | tr '\\n' ';'); TARGETS=$(for f in src/services/topicDmEntry.ts src/services/dmBareStartPostingMenu.ts src/services/telegramDispatcher.ts src/services/menuPanelRenderer.ts src/gaybbsBot.ts build-gaybbs.ts; do if test -n \"$(git -C \"$P\" status --porcelain -- \"artifacts/bot/$f\")\"; then printf \"%s;\" \"$f\"; fi; done); gh issue comment 7 --repo seigo-gace/GateApp-Bot --body \"GAYBBS_CURRENT_DIFF_20261113 target_dirty=$TARGETS other_bot_paths=$NAMES\" >/dev/null; echo SOURCE_DIRTY_INVENTORY_RECORDED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
