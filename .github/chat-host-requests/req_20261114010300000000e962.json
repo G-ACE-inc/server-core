@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\nfor i in $(seq 1 24);do\n  live=\"$(docker inspect -f '{{.Image}}' \"$name\" 2>/dev/null || true)\"\n  image=\"$(docker image inspect -f '{{.Id}}' create-videobot:native-sticker-148770 2>/dev/null || true)\"\n  if test -n \"$image\" && test \"$live\" = \"$image\" &&\n     test \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true &&\n     docker logs --tail 150 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' &&\n     docker logs --tail 150 \"$name\" 2>&1 | grep -q '^CREATOR_GATE_PUBLIC_RELEASE=CONNECTED$';then\n    break\n  fi\n  sleep 5\ndone\nlive=\"$(docker inspect -f '{{.Image}}' \"$name\" 2>/dev/null || true)\"\nimage=\"$(docker image inspect -f '{{.Id}}' create-videobot:native-sticker-148770 2>/dev/null || true)\"\ntest -n \"$image\" && test \"$live\" = \"$image\" || { echo STK_NATIVE_CAPTION_IMAGE_NOT_READY; exit 81; }\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createPostgresStickerSales} from './src/stickers/pgStickerSales.mjs';\nimport {createPostgresStickerTopicPosts} from './src/stickers/pgStickerTopicPosts.mjs';\nimport {createStickerTopicPublisher} from './src/stickers/topicPublication.mjs';\nimport {createGateOwner} from './owner/gateOwner.mjs';\nsetDefaultResultOrder('ipv4first');setDefaultAutoSelectFamily(false);\nconst e=process.env,pid='sp_76f23430d1c29ca355960a95';\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,\n database:e.VIDEOBOT_DB_NAME,password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),\n max:2,connectionTimeoutMillis:5000});\nconst outbound=createCreatorTelegramFetch(globalThis.fetch);\ntry{\n const sql=await pool.query(\"SELECT p.product_id,p.seller_user_id,p.price_stars,p.title,p.status AS product_status,t.status AS topic_status,t.chat_id,t.message_thread_id,t.telegram_message_id FROM videobot_sticker_products p JOIN videobot_sticker_topic_posts t ON t.product_id=p.product_id WHERE p.product_id=$1\",[pid]);\n if(sql.rowCount!==1)throw Error('STK_IMAGE_EXISTING_POST_NOT_FOUND');\n const row=sql.rows[0];\n if(row.product_status!=='published'||row.topic_status!=='sent'||\n    Number(row.price_stars)!==50||Number(row.chat_id)!==-1002373696859||\n    Number(row.message_thread_id)!==4640||\n    !Number.isSafeInteger(Number(row.telegram_message_id))||\n    Number(row.telegram_message_id)<=0)\n   throw Error('STK_IMAGE_ORIGINAL_POST_RECEIPT_INVALID');\n const pin=JSON.parse(readFileSync('/var/lib/videobot/sticker-entry/group2373696859_thread4640.json','utf8'));\n if(pin.status!=='pinned_ack'||Number(pin.message_id)===Number(row.telegram_message_id))\n   throw Error('STK_IMAGE_DO_NOT_TOUCH_PINNED_ENTRY');\n const seller=Number(row.seller_user_id);\n if(!Number.isSafeInteger(seller)||seller<=0)throw Error('STK_IMAGE_SELLER_INVALID');\n const token=readFileSync(e.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim();\n const transport=createTelegramBotApi({token,fetchImpl:outbound.fetch,timeoutMs:25000});\n let captionEdits=0,buttonRemovals=0;\n const api=async(method,args)=>{\n   if(method==='editMessageCaption'){\n     if(args.chat_id!==-1002373696859||\n        Number(args.message_id)!==Number(row.telegram_message_id)||\n        args.caption!=='🎨 '+row.title||\n        Object.hasOwn(args,'reply_markup'))\n       throw Error('STK_IMAGE_UNEXPECTED_CAPTION_MUTATION');\n     captionEdits++;\n   }else if(method==='editMessageReplyMarkup'){\n     if(args.chat_id!==-1002373696859||\n        Number(args.message_id)!==Number(row.telegram_message_id)||\n        Object.hasOwn(args,'reply_markup'))\n       throw Error('STK_IMAGE_UNEXPECTED_MARKUP_MUTATION');\n     buttonRemovals++;\n   }else if(!['getMe','getChat','getChatMember'].includes(method))\n     throw Error('STK_IMAGE_UNEXPECTED_TELEGRAM_OPERATION');\n   return transport(method,args);\n };\n const owner=await createGateOwner({telegramApi:api,pool});\n const route=await owner.getVerifiedStickerTopic();\n if(route.chatId!==-1002373696859||route.threadId!==4640)\n   throw Error('STK_IMAGE_ROUTE_CHANGED');\n const publisher=createStickerTopicPublisher({\n   telegramApi:api,getVerifiedStickerTopic:owner.getVerifiedStickerTopic,\n   verifyMembership:owner.verifyMembership,\n   verifyReview:owner.verifyStickerReview,\n   verifyRelease:owner.verifyRelease,\n   receiptStore:createPostgresStickerTopicPosts(pool),\n   salesStore:createPostgresStickerSales(pool),\n   createPaidCover:async()=>{throw Error('STK_IMAGE_NO_REPUBLICATION');}\n });\n const result=await publisher.edit({sellerId:seller,productId:pid,description:''});\n if(result.verified!==true||captionEdits!==1||buttonRemovals!==1)\n   throw Error('STK_IMAGE_EXISTING_CAPTION_NOT_EDITED');\n const after=await pool.query(\"SELECT status,display_text,telegram_message_id FROM videobot_sticker_topic_posts WHERE product_id=$1\",[pid]);\n if(after.rowCount!==1||after.rows[0].status!=='sent'||\n    Number(after.rows[0].telegram_message_id)!==Number(row.telegram_message_id)||\n    after.rows[0].display_text!=='🎨 '+row.title)\n   throw Error('STK_IMAGE_CAPTION_DB_READBACK_INVALID');\n console.log('STK_NATIVE_EXISTING_IMAGE_CAPTION_MINIMAL=PASS');\n console.log('STK_NATIVE_EXTRA_BUTTON_REMOVED=PASS');\n console.log('STK_NATIVE_PAYWALL_MESSAGE_UNCHANGED=PASS');\n console.log('STK_NATIVE_EXISTING_MESSAGE_ID='+Number(row.telegram_message_id));\n}finally{await outbound.close();await pool.end();}\nNODE\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 82\necho STK_NATIVE_IMAGE_ONLY_BOT_HEALTH=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
