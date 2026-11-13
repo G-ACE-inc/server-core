@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nn=gace-createvdobot-videobot-poll-1\ntarget=\"$HOME/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\"\nimg=create-videobot:menu-home-e9cc45d\ntest \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = true || exit 61\ndocker image inspect \"$img\" >/dev/null || exit 62\ndocker run --rm --network none --pull never --entrypoint grep \"$img\" -q 'A plain /start belongs to the common home menu' /opt/videobot/src/telegram/stickerWizard.mjs || exit 63\ntest -f \"$target/deploy/compose.videobot.poll.yaml\" || exit 64\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$n\")\"\ndbpass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$n\")\"\ntest -f \"$token\" && test -f \"$dbpass\" || exit 65\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-postgres-1)\" = true || exit 66\nuser=\"$(docker exec deploy-postgres-1 sh -c 'printf %s \"$POSTGRES_USER\"')\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' deploy-postgres-1 | sed '/^$/d')\"\npin=\"$HOME/.local/state/create-videobot/sticker-pin\"\ntest -f \"$pin/group2373696859_thread4640.json\" || exit 67\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$token\" VIDEOBOT_DB_PASSWORD_SOURCE=\"$dbpass\" VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$pin\" GSERVER_POSTGRES_USER=\"$user\" GSERVER_POSTGRES_NETWORK=\"$net\"\ncompose=\"$target/deploy/compose.videobot.poll.yaml\"\ndocker compose -p gace-createvdobot -f \"$compose\" config --quiet || exit 68\nprevious=\"$(docker inspect -f '{{.Image}}' \"$n\")\"\nexpected=\"$(docker image inspect -f '{{.Id}}' \"$img\")\"\nif test \"$previous\" = \"$expected\";then echo CURRENT_RUNTIME_ALREADY_MATCHES=PASS;else\n  docker image tag \"$previous\" create-videobot:menu-pre-redraw\n  armed=1\n  rollback(){ docker image tag create-videobot:menu-pre-redraw create-videobot:local-poll; docker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true; echo RESTORE_PREVIOUS_IMAGE_ATTEMPTED; }\n  trap 'if test \"$armed\" = 1;then rollback;fi' EXIT\n  docker image tag \"$img\" create-videobot:local-poll\n  docker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null || exit 69\n  sleep 7\n  test \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = true || exit 70\n  test \"$(docker inspect -f '{{.Image}}' \"$n\")\" = \"$expected\" || exit 71\n  docker exec \"$n\" grep -q 'A plain /start belongs to the common home menu' /opt/videobot/src/telegram/stickerWizard.mjs || exit 72\n  docker logs --tail 600 \"$n\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' || exit 73\n  docker logs --tail 600 \"$n\" 2>&1 | grep -q '^CREATOR_GATE_PUBLIC_RELEASE=CONNECTED$' || exit 74\n  test \"$(docker ps --format '{{.Names}}' | grep -Ec 'createvdobot|create-videobot|videobot-poll' || true)\" -eq 1 || exit 75\n  armed=0\nfi\necho LIVE_MENU_CODE_AND_IMAGE_ID=PASS\necho LIVE_DM_POLL_AND_GATE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
