@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nROOT=\"$(git rev-parse --show-toplevel)\"\ntest \"$(git config --get remote.origin.url | sed 's|.git$||')\" != \"\"\nTARGET=\"ffdc912c98db408e2705f5bbce48727d33123e34\"\nWT=\"$ROOT/.worktrees/profile-live-20261114\"\ngit fetch --no-tags origin refs/heads/feat/profile-recruitment-album-20261114\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$TARGET\"\nif test -e \"$WT\"; then\n test \"$(git -C \"$WT\" rev-parse HEAD)\" = \"$TARGET\"\n test -z \"$(git -C \"$WT\" status --porcelain --untracked-files=all)\"\nelse\n mkdir -p \"$ROOT/.worktrees\"\n git worktree add --detach \"$WT\" \"$TARGET\"\nfi\ntest \"$(git -C \"$WT\" rev-parse HEAD)\" = \"$TARGET\"\ntest -f \"$WT/artifacts/bot/src/bot/profileCompactHandlers.ts\"\ntest -f \"$WT/deploy/gserver-compose.yaml\"\ntest -r \"$ROOT/deploy/secrets/bot_token.txt\"\ntest \"$(id -u)\" = \"1000\"\nPR_STORE=\"$HOME/.local/share/tgtumbler/profile-pr\"\ninstall -d -m 700 \"$PR_STORE\"\ntest -w \"$PR_STORE\"\ndocker compose --project-directory \"$ROOT/deploy\" -f \"$WT/deploy/gserver-compose.yaml\" -p deploy config -q\nORIG=\"$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\"\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true\ndocker build -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:profile-candidate \"$WT\" >/dev/null\ntest \"$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\" = \"$ORIG\"\ndocker tag gace-tgtumbler-gaybbs:local gace-tgtumbler-gaybbs:pre-profile-20261114\nok=0\nrollback(){\n if test \"$ok\" != 1; then\n  docker tag gace-tgtumbler-gaybbs:pre-profile-20261114 gace-tgtumbler-gaybbs:local || true\n  docker compose --project-directory \"$ROOT/deploy\" -f \"$WT/deploy/gserver-compose.yaml\" -p deploy up -d --no-deps --force-recreate gaybbs >/dev/null || true\n fi\n}\ntrap rollback EXIT\ndocker tag gace-tgtumbler-gaybbs:profile-candidate gace-tgtumbler-gaybbs:local\ndocker compose --project-directory \"$ROOT/deploy\" -f \"$WT/deploy/gserver-compose.yaml\" -p deploy up -d --no-deps --force-recreate gaybbs >/dev/null\nsleep 9\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.RestartCount}}')\" = 0\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\" = \"$(docker image inspect gace-tgtumbler-gaybbs:profile-candidate --format '{{.Id}}')\"\ndocker inspect deploy-gaybbs-1 --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -qx 'PROFILE_PR_STORAGE_DIR=/app/profile-pr'\ndocker inspect deploy-gaybbs-1 --format '{{range .Mounts}}{{println .Destination}}{{end}}' | grep -qx '/app/profile-pr'\ndocker exec deploy-postgres-1 psql -U gace -d gaybbs -Atqc \"SELECT COUNT(*) FROM information_schema.columns WHERE table_name='profiles' AND column_name='profile_context';\" | grep -qx 1\nok=1\ntrap - EXIT\nprintf 'PROFILE_PRODUCTION_IMAGE=PASS\\nPROFILE_DB_MIGRATION=PASS\\nPROFILE_MEDIA_STORAGE_MOUNT=PASS\\nPROFILE_PR_HEAD=%s\\n' \"$TARGET\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
