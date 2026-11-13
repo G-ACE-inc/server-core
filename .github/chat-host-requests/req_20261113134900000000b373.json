@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/36"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nw=\"$r/.worktrees/room-editor-balanced-e13ff63\"\ncompose=\"$w/deploy/gserver-compose.yaml\"\nimage=gace-tgtumbler-gaybbs:room-editor-balanced-e13ff63\ntest \"$(git -C \"$w\" rev-parse HEAD)\" = e13ff6364566c2b8a5c3f197ec7c97753b2f5a21\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\nold_userbot=$(systemctl --user show gace-userbot-verify.service -p MainPID --value)\nold_postgres=$(docker inspect deploy-postgres-1 --format '{{.Id}}')\nold_image=$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\nnew_image=$(docker image inspect \"$image\" --format '{{.Id}}')\ntest -n \"$new_image\"\ndocker compose -p deploy -f \"$compose\" --project-directory \"$r/deploy\" config -q\nif test \"$new_image\" = \"$old_image\"; then echo ROOM_EDITOR_NAV_ALREADY_DEPLOYED; exit 0; fi\ndocker tag \"$old_image\" gace-tgtumbler-gaybbs:before-room-editor-balanced-20261113\ndocker tag \"$image\" gace-tgtumbler-gaybbs:local\nif ! docker compose -p deploy -f \"$compose\" --project-directory \"$r/deploy\" up -d --no-deps --force-recreate gaybbs; then\n docker tag gace-tgtumbler-gaybbs:before-room-editor-balanced-20261113 gace-tgtumbler-gaybbs:local\n docker compose -p deploy -f \"$r/deploy/gserver-compose.yaml\" --project-directory \"$r/deploy\" up -d --no-deps --force-recreate gaybbs\n echo ROOM_EDITOR_NAV_DEPLOY_ROLLED_BACK\n exit 75\nfi\nready=no\nfor n in $(seq 1 30); do\n if test \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true && docker logs --since 4m deploy-gaybbs-1 2>&1 | grep -q GAYBBS_BOT_READY; then ready=yes; break; fi\n sleep 1\ndone\nif test \"$ready\" != yes || test \"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\" != \"$new_image\"; then\n docker tag gace-tgtumbler-gaybbs:before-room-editor-balanced-20261113 gace-tgtumbler-gaybbs:local\n docker compose -p deploy -f \"$r/deploy/gserver-compose.yaml\" --project-directory \"$r/deploy\" up -d --no-deps --force-recreate gaybbs\n echo ROOM_EDITOR_NAV_UNHEALTHY_ROLLED_BACK\n exit 76\nfi\ntest \"$(docker inspect deploy-postgres-1 --format '{{.Id}}')\" = \"$old_postgres\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user show gace-userbot-verify.service -p MainPID --value)\" = \"$old_userbot\"\necho ROOM_EDITOR_NAV_PRODUCTION=PASS\necho ROOM_EDITOR_NAV_SOURCE=e13ff6364566c2b8a5c3f197ec7c97753b2f5a21\necho ROOM_EDITOR_NAV_USERBOT_AND_DB=UNCHANGED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
