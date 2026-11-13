@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "c152e941e25af36fa26c9dbc7cb1f7a2cdb9d99e",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nW=\"$HOME/.cache/gace-posting-no-link-no-guide-20261113\"\ngit -C \"$P\" fetch --no-tags origin refs/heads/fix/posting-entry-live-image-6178467-20261113\ntest \"$(git -C \"$P\" rev-parse FETCH_HEAD)\" = 096b1ea4dd65a81819c1fd2e19c333b7ec590642 || exit 31\nif test ! -d \"$W\"; then git -C \"$P\" worktree add --detach \"$W\" 096b1ea4dd65a81819c1fd2e19c333b7ec590642 >/dev/null; fi\ndocker build --network host --pull=false -f \"$W/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:no-link-no-guide-096b1ea \"$W\" >/tmp/gace-menu-no-links-build.log 2>&1 || exit 33\ndocker run --rm --network none --entrypoint node gace-tgtumbler-gaybbs:no-link-no-guide-096b1ea --check /app/gaybbs.mjs >/dev/null\ndocker run --rm --network none --entrypoint node gace-tgtumbler-gaybbs:no-link-no-guide-096b1ea --check /app/recolorPublishedPostingMenus.mjs >/dev/null\ngh issue comment 7 --repo seigo-gace/GateApp-Bot --body \"GAYBBS_MENU_EXCLUSIONS_BUILD_20261113 source=096b1ea4dd65a81819c1fd2e19c333b7ec590642 links=excluded general_guides=excluded image=gace-tgtumbler-gaybbs:no-link-no-guide-096b1ea runtime_switched=false\" >/dev/null\necho GAYBBS_MENU_EXCLUSIONS_BUILD_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
