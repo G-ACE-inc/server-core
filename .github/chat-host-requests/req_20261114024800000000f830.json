@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "5b181d7df95c7b09ecf44b6ee6d18d5b451a49d2",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nCID=$(docker ps --filter ancestor=gace-tgtumbler-gaybbs:local --format '{{.ID}}' | head -1)\ntest -n \"$CID\" || exit 31\nPROJECT=$(docker inspect \"$CID\" --format '{{index .Config.Labels \"com.docker.compose.project\"}}')\ntest \"$PROJECT\" = deploy || exit 32\nOV=$(mktemp --suffix=.yaml); trap 'rm -f \"$OV\"' EXIT\nprintf 'services:\\n  gaybbs:\\n    image: gace-tgtumbler-gaybbs:posting-menu-fix-662522a\\n' > \"$OV\"\nset +e\nOUT=$(docker compose -p \"$PROJECT\" -f \"$P/deploy/gserver-compose.yaml\" -f \"$OV\" run --rm --no-deps gaybbs node --import /app/preload/telegram-ipv4-preload.mjs /app/recolorPublishedPostingMenus.mjs --apply 2>&1)\nSTATUS=$?\nset -e\nSUMMARY=$(printf '%s\\n' \"$OUT\" | grep '^POSTING_MENU_EDIT_SUMMARY ' | tail -1 || true)\ntest -n \"$SUMMARY\" || { echo POSTING_MENU_EDIT_SUMMARY_UNAVAILABLE; exit 33; }\ngh issue comment 7 --repo seigo-gace/GateApp-Bot --body \"GAYBBS_POSTING_MENU_APPLY_20261113 exit=$STATUS $SUMMARY\" >/dev/null || exit 34\ntest \"$STATUS\" -eq 0 || exit 35\nprintf '%s' \"$SUMMARY\" | grep -q '\"existing\":80,\"changed\":80,\"failed\":0,\"newMessages\":0' || exit 36\necho POSTING_MENU_ALL_80_EXISTING_MESSAGES_EDITED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
