@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nROOT=\"$(git rev-parse --show-toplevel)\"\nWT=\"$ROOT/.worktrees/profile-live-20261114\"\nTARGET=\"6445896df387d290b6a0517d8cdb72c0471db4c7\"\ntest -d \"$WT\"\ntest -z \"$(git -C \"$WT\" status --porcelain --untracked-files=all)\"\ngit fetch --no-tags origin refs/heads/feat/profile-recruitment-album-20261114\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$TARGET\"\ngit -C \"$WT\" checkout --detach \"$TARGET\" >/dev/null\ntest \"$(git -C \"$WT\" rev-parse HEAD)\" = \"$TARGET\"\ntest -r \"$ROOT/deploy/secrets/bot_token.txt\"\ntest -w \"$HOME/.local/share/tgtumbler/profile-pr\"\ndocker compose --project-directory \"$ROOT/deploy\" -f \"$WT/deploy/gserver-compose.yaml\" -p deploy config -q\ncommand -v gh >/dev/null\nfor attempt in $(seq 1 18); do\n RUN_ID=\"$(gh run list -R seigo-gace/GateApp-Bot --workflow tgtumbler-gaybbs-package.yml --branch feat/profile-recruitment-album-20261114 --limit 45 --json databaseId,headSha,conclusion --jq '.[] | select(.headSha == \"6445896df387d290b6a0517d8cdb72c0471db4c7\" and .conclusion == \"success\") | .databaseId' | head -n 1)\"\n if test -n \"$RUN_ID\"; then break; fi\n sleep 5\ndone\ntest -n \"$RUN_ID\" || { echo 'PROFILE_CI_BUNDLE_NOT_READY' >&2; exit 33; }\nTEMP=\"$(mktemp -d)\"\ntrap 'rm -rf \"$TEMP\"' EXIT\ngh run download \"$RUN_ID\" -R seigo-gace/GateApp-Bot -n gaybbs-profile-bundle -D \"$TEMP\"\ntest -s \"$TEMP/gaybbs.mjs\"\ncat > \"$TEMP/Dockerfile\" <<'DOCKER'\nFROM gace-tgtumbler-gaybbs:local\nCOPY --chown=node:node gaybbs.mjs /app/gaybbs.mjs\nDOCKER\nORIG=\"$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\"\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true\ndocker build --pull=false --network none -f \"$TEMP/Dockerfile\" -t gace-tgtumbler-gaybbs:profile-candidate \"$TEMP\" >/dev/null\ndocker run --rm --network none --entrypoint node gace-tgtumbler-gaybbs:profile-candidate --check /app/gaybbs.mjs\ntest \"$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\" = \"$ORIG\"\ndocker tag gace-tgtumbler-gaybbs:local gace-tgtumbler-gaybbs:pre-profile-20261114-b741\nchanged=0\nrollback(){\n if test \"$changed\" = 1; then\n  docker tag gace-tgtumbler-gaybbs:pre-profile-20261114-b741 gace-tgtumbler-gaybbs:local || true\n  docker compose --project-directory \"$ROOT/deploy\" -f \"$WT/deploy/gserver-compose.yaml\" -p deploy up -d --no-deps --force-recreate gaybbs >/dev/null || true\n fi\n}\ntrap 'rollback; rm -rf \"$TEMP\"' EXIT\ndocker tag gace-tgtumbler-gaybbs:profile-candidate gace-tgtumbler-gaybbs:local\nchanged=1\ndocker compose --project-directory \"$ROOT/deploy\" -f \"$WT/deploy/gserver-compose.yaml\" -p deploy up -d --no-deps --force-recreate gaybbs >/dev/null\nsleep 10\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.RestartCount}}')\" = 0\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\" = \"$(docker image inspect gace-tgtumbler-gaybbs:profile-candidate --format '{{.Id}}')\"\ndocker inspect deploy-gaybbs-1 --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -qx 'PROFILE_PR_STORAGE_DIR=/app/profile-pr'\ndocker inspect deploy-gaybbs-1 --format '{{range .Mounts}}{{println .Destination}}{{end}}' | grep -qx '/app/profile-pr'\nPG=\"$(docker compose --project-directory \"$ROOT/deploy\" -f \"$WT/deploy/gserver-compose.yaml\" -p deploy ps -q postgres)\"\ntest -n \"$PG\"\ndocker exec \"$PG\" psql -U gace -d gaybbs -Atqc \"SELECT COUNT(*) FROM information_schema.columns WHERE table_name='profiles' AND column_name='profile_context';\" | grep -qx 1\nchanged=0\ntrap 'rm -rf \"$TEMP\"' EXIT\nprintf 'PROFILE_PRODUCTION_IMAGE=PASS\\nPROFILE_MEDIA_STORAGE_MOUNT=PASS\\nPROFILE_DB_MIGRATION=PASS\\nPROFILE_ARTIFACT_RUN=%s\\n' \"$RUN_ID\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
