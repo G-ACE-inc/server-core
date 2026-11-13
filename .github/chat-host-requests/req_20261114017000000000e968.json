@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nconst e=process.env,chat=-1002373696859,messageId=4663,productId='sp_76f23430d1c29ca355960a95';\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,\n password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1,connectionTimeoutMillis:5000});\nconst outgoing=createCreatorTelegramFetch(globalThis.fetch);\nconst token=readFileSync(e.VIDEOBOT_TELEGRAM_TOKEN_FILE,'utf8').trim();\nconst base='https://api.telegram.org/bot'+token+'/';\nasync function call(method,params){\n const resp=await outgoing.fetch(base+method,{method:'POST',headers:{'content-type':'application/json'},\n   body:JSON.stringify(params),signal:AbortSignal.timeout(20000),redirect:'error'});\n let data;\n try{data=await resp.json();}catch{throw Error('STK_IMAGE_TELEGRAM_RESPONSE_UNREADABLE');}\n const description=String(data?.description??'').toLowerCase();\n if(resp.status===200&&data?.ok===true){\n  if(method==='getMe')return {state:'PASS',result:data.result};\n  if(data.result===true||data.result?.message_id===messageId)return {state:'PASS'};\n  throw Error('STK_IMAGE_RESPONSE_UNEXPECTED');\n }\n if(resp.status===400&&description.includes('message is not modified'))return {state:'NO_CHANGE'};\n const cat=description.includes('can\\'t be edited')||description.includes('cannot be edited')||\n    description.includes('message to edit not found')||description.includes('message to be edited not found')\n    ?'EDIT_FORBIDDEN_OR_MISSING':\n    description.includes('message not found')?'MESSAGE_MISSING':\n    'OTHER_TELEGRAM_REJECTION';\n return {state:'REJECTED',code:resp.status,category:cat};\n}\ntry{\n const q=await pool.query(\"SELECT p.title,p.status AS product_status,p.price_stars,t.status AS post_status,t.chat_id,t.message_thread_id,t.telegram_message_id FROM videobot_sticker_products p JOIN videobot_sticker_topic_posts t ON t.product_id=p.product_id WHERE p.product_id=$1\",[productId]);\n if(q.rowCount!==1||q.rows[0].product_status!=='published'||q.rows[0].price_stars!==50||\n Number(q.rows[0].chat_id)!==chat||Number(q.rows[0].message_thread_id)!==4640||\n Number(q.rows[0].telegram_message_id)!==messageId||\n !['sent','needs_reconcile'].includes(q.rows[0].post_status))throw Error('STK_IMAGE_EDIT_TARGET_MISMATCH');\n const me=await call('getMe',{});\n if(me.state!=='PASS'||String(me.result?.username).toLowerCase()!=='createvdobot'||me.result?.is_bot!==true)\n  throw Error('STK_IMAGE_BOT_IDENTITY_WRONG');\n const title=String(q.rows[0].title),caption='🎨 '+title;\n if(caption.length>90)throw Error('STK_IMAGE_CAPTION_LONG');\n const one=await call('editMessageCaption',{chat_id:chat,message_id:messageId,caption});\n console.log('STK_IMAGE_CAPTION_EDIT_STATE='+one.state);\n if(one.category)console.log('STK_IMAGE_CAPTION_ERROR='+one.category);\n const two=await call('editMessageReplyMarkup',{chat_id:chat,message_id:messageId});\n console.log('STK_IMAGE_MARKUP_EDIT_STATE='+two.state);\n if(two.category)console.log('STK_IMAGE_MARKUP_ERROR='+two.category);\n if(['PASS','NO_CHANGE'].includes(one.state)&&['PASS','NO_CHANGE'].includes(two.state)){\n  const save=await pool.query(\"UPDATE videobot_sticker_topic_posts SET status='sent',display_text=$1 WHERE product_id=$2 AND telegram_message_id=$3 AND status IN ('sent','needs_reconcile') RETURNING telegram_message_id\",[caption,productId,messageId]);\n  if(save.rowCount!==1)throw Error('STK_IMAGE_CAPTION_DB_NOT_RECONCILED');\n  console.log('STK_NATIVE_IMAGE_ONLY_RECONCILED=PASS');\n }else{\n  console.log('STK_NATIVE_IMAGE_ONLY_RECONCILED=BLOCKED');\n }\n}finally{await outgoing.close();await pool.end();}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
