@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nn=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = true || exit 81\ntest \"$(docker inspect -f '{{.Image}}' \"$n\")\" = \"$(docker image inspect -f '{{.Id}}' create-videobot:menu-edit-f86b8a7)\" || exit 82\ncount=\"$(docker inspect -f '{{.RestartCount}}' \"$n\")\"\nsleep 9\ntest \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = true || exit 83\ntest \"$(docker inspect -f '{{.RestartCount}}' \"$n\")\" = \"$count\" || exit 84\ndocker logs --tail 500 \"$n\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' || exit 85\ndocker logs --tail 500 \"$n\" 2>&1 | grep -q '^CREATOR_GATE_PUBLIC_RELEASE=CONNECTED$' || exit 86\npg=deploy-postgres-1\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\nstate=\"$(docker exec \"$pg\" psql -U \"$user\" -d videobot -Atc \"SELECT status||':'||handled FROM videobot_webhook_updates WHERE update_id=2956732\")\"\ntest \"$state\" = completed:true || exit 87\ncursor=\"$(docker exec \"$pg\" psql -U \"$user\" -d videobot -Atc \"SELECT last_update_id FROM videobot_poll_cursor WHERE consumer_id='createvdobot'\")\"\ntest \"$cursor\" -ge 2956732 || exit 88\necho POST_RECOVERY_STABLE=PASS\necho NAVIGATION_RECEIPT_DURABLE=PASS\necho SINGLE_BOT_IMAGE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
