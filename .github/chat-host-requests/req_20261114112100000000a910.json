@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nn=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = true || exit 21\ntest \"$(docker ps --format '{{.Names}}' | grep -Ec 'createvdobot|create-videobot|videobot-poll' || true)\" -eq 1 || exit 22\ndocker exec \"$n\" grep -q 'plain /start belongs to the common home menu' /opt/videobot/src/telegram/stickerWizard.mjs || exit 23\ndocker exec \"$n\" grep -q 'ステッカー・絵文字' /opt/videobot/src/telegram/menuPanel.mjs || exit 24\ndocker logs --tail 1000 \"$n\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' || exit 25\ndocker logs --tail 1000 \"$n\" 2>&1 | grep -q '^CREATOR_GATE_PUBLIC_RELEASE=CONNECTED$' || exit 26\npython3 -B - <<'PY'\nimport json,subprocess\nfrom pathlib import Path\nname='gace-createvdobot-videobot-poll-1'\nraw=subprocess.check_output(['docker','inspect',name],text=True)\nobj=json.loads(raw)[0]\ntokenfile=next(m['Source'] for m in obj['Mounts'] if m['Destination']=='/run/secrets/videobot_telegram_token')\nfrom urllib.request import urlopen\ntoken=Path(tokenfile).read_text().strip()\ndef api(method):\n with urlopen('https://api.telegram.org/bot'+token+'/'+method,timeout=14) as r: return json.load(r)\nme=api('getMe')\nassert me.get('ok') and me['result'].get('is_bot'), 'BOT_API_IDENTITY_FAIL'\nassert 'creat' in me['result']['username'].lower() or 'vdo' in me['result']['username'].lower(), 'BOT_USERNAME_UNEXPECTED'\ninfo=api('getWebhookInfo')\nassert info.get('ok') and not info['result'].get('url'), 'BOT_WEBHOOK_CONFLICT'\ncommands=api('getMyCommands')\nassert commands.get('ok'), 'BOT_COMMAND_READBACK_FAIL'\nprint('BOT_API_GETME=PASS')\nprint('BOT_API_POLL_MODE=PASS')\nprint('BOT_CONFIGURED_COMMAND_COUNT='+str(len(commands['result'])))\nPY\necho CREATEVDOBOT_RUNTIME_HEALTH_AND_PATCH=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
