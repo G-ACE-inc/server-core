@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/tumblr-integration/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/tumblr-integration"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport subprocess,sys\nfrom pathlib import Path\nfrom tumblrkit.telegram_bridge_client import LocalTelegramOwner\ndef sql(q):\n return subprocess.check_output([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",q],text=True,timeout=12).strip()\ntopic=sql(\"SELECT topic_id FROM posting_topics WHERE purpose='announcement' AND enabled=TRUE AND verified_at IS NOT NULL AND verified_by IS NOT NULL ORDER BY topic_id LIMIT 1\")\nassert topic.isdecimal(), \"NO_VERIFIED_TOPIC\"\nmembers=sql(\"SELECT tg_user_id FROM gate_sessions WHERE step='approved' ORDER BY updated_at DESC LIMIT 12\").splitlines()\nif not members: print(\"NO_APPROVED_USERS_AVAILABLE\");sys.exit(28)\nowner=LocalTelegramOwner(Path.home()/\".config/tgtumbler/bridge/owner-token\")\nfor uid in members:\n if not uid.isdecimal():continue\n try:\n  r=owner.perform(\"telegram.check_membership\",topic+\":\"+uid,{})\n except Exception:\n  continue\n if r.get(\"verified\") is True:\n  print(\"REAL_APPROVED_JOINED_USER_VERIFIED=PASS\")\n  sys.exit(0)\nprint(\"NO_JOINED_APPROVED_USER_IN_SELECTED_GROUP\")\nsys.exit(29)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
