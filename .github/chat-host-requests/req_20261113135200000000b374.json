@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/36"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nr=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntarget=$(docker image inspect gace-tgtumbler-gaybbs:room-editor-balanced-e13ff63 --format '{{.Id}}')\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true || exit 70\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\" = \"$target\" || exit 71\ntest \"$(docker inspect deploy-postgres-1 --format '{{.State.Running}}')\" = true || exit 72\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 73\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 74\npy=\"$r/deploy/.userbot-venv/bin/python\"\n\"$py\" -B \"$r/scripts/userbot_test_client.py\" health || exit 75\n\"$py\" -B \"$r/scripts/userbot_test_client.py\" bot_start_menu || exit 76\n\"$py\" -B \"$r/scripts/userbot_test_client.py\" room_private_smoke || exit 77\n\"$py\" -B \"$r/scripts/userbot_test_client.py\" health || exit 78\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 79\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\" = \"$target\" || exit 80\necho ROOM_DM_NAV_IMAGE_MATCH=PASS\necho ROOM_DM_NAV_PRIVATE_E2E=PASS\necho USERBOT_AND_POSTGRES=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
