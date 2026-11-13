@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nROOT=\"$(git rev-parse --show-toplevel)\"\nWT=\"$ROOT/.worktrees/profile-live-20261114\"\ntest -d \"$WT\" || exit 41\ntest \"$(git -C \"$WT\" rev-parse HEAD)\" = \"ffdc912c98db408e2705f5bbce48727d33123e34\" || exit 42\ntest -r \"$ROOT/deploy/secrets/bot_token.txt\" || exit 43\ntest \"$(id -u)\" = \"1000\" || exit 44\ntest -w \"$HOME/.local/share/tgtumbler/profile-pr\" || exit 45\ndocker compose --project-directory \"$ROOT/deploy\" -f \"$WT/deploy/gserver-compose.yaml\" -p deploy config -q || exit 46\ndocker image inspect gace-tgtumbler-gaybbs:profile-candidate >/dev/null 2>&1 || exit 47\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true || exit 48\necho 'PROFILE_CANDIDATE_PRESENT=YES'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
