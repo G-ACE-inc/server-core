@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/dd4aaf493386003918af034c5ebcc1684839a34e"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true || exit 61\ndocker logs --tail 200 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' || exit 62\ndocker exec -i \"$name\" node --input-type=module - <<'NODE'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nconst e=process.env,id='sp_76f23430d1c29ca355960a95';\nconst db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,password:readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),max:1});\ntry{\n const q=await db.query(\"SELECT p.price_stars,p.pack_name,p.status AS product_status,t.status,t.chat_id,t.message_thread_id,t.telegram_message_id,t.display_text FROM videobot_sticker_products p JOIN videobot_sticker_topic_posts t ON t.product_id=p.product_id WHERE p.product_id=$1\",[id]);\n if(q.rowCount!==1)throw Error('STK_CATALOG_MISSING');\n const p=q.rows[0];\n if(p.status!=='sent'||p.product_status!=='published'||Number(p.price_stars)!==50||\n Number(p.chat_id)!==-1002373696859||Number(p.message_thread_id)!==4640||\n !Number.isSafeInteger(Number(p.telegram_message_id))||Number(p.telegram_message_id)<=4664||\n !p.display_text?.includes('50 Stars')||!p.display_text?.includes('個'))\n throw Error('STK_CATALOG_READBACK_MISMATCH');\n console.log('STK_CATALOG_POST_RECEIPT=PASS');\n console.log('STK_CATALOG_MESSAGE_ID='+p.telegram_message_id);\n const x=await db.query(\"SELECT COUNT(*)::int AS n FROM videobot_sticker_orders WHERE product_id=$1\",[id]);\n console.log('STK_CATALOG_ORDERS='+x.rows[0].n);\n}finally{await db.end();}\nNODE\necho STK_CATALOG_LIVE_DB_READBACK=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
