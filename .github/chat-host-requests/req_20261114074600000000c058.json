@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/5a93de671ee158205759bb6e264cd3cd48466743"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nROOT=\"$(git rev-parse --show-toplevel)\"\nWT=\"$ROOT/.worktrees/search-colors-5a93de6\"\ntest \"$(git -C \"$WT\" rev-parse HEAD)\" = 5a93de671ee158205759bb6e264cd3cd48466743\ntest -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\"\nprintf 'DOCKER_STATUS='\nif docker info >/dev/null 2>&1; then echo PASS; else echo FAILED; fi\nprintf 'BUILD_CONTEXT_FILES='\nfor f in package.json pnpm-lock.yaml pnpm-workspace.yaml artifacts/bot/deploy/Dockerfile.gaybbs; do test -f \"$WT/$f\" && printf '%s=YES ' \"$f\" || printf '%s=NO ' \"$f\"; done\necho\nTMP=\"$(mktemp)\"\ntrap 'rm -f \"$TMP\"' EXIT\nif docker build --progress=plain -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:search-color-5a93de6 \"$WT\" >\"$TMP\" 2>&1; then\n echo BUILD_STATUS=PASS\nelse\n rc=$?\n echo BUILD_STATUS=FAILED\n echo \"BUILD_EXIT=$rc\"\n python3 - \"$TMP\" <<'PY'\nimport pathlib,sys,re\ns=pathlib.Path(sys.argv[1]).read_text(errors='replace')\npatterns={'DISK_FULL':r'no space left','NETWORK':r'network.*(unreachable|timeout)|connection.*(refused|reset)|i/o timeout','DNS':r'no such host|lookup .* failed','LOCKFILE':r'ERR_PNPM_OUTDATED_LOCKFILE|frozen-lockfile','NODE_IMAGE':r'failed to resolve source metadata|manifest unknown|pull access denied','BUILD_CONTEXT':r'failed to calculate checksum|not found: not found','OOM':r'out of memory|killed|exit code: 137','PERMISSION':r'permission denied','PNPM':r'ERR_PNPM_|pnpm install','ESBUILD':r'esbuild|Could not resolve|✘ \\[ERROR\\]','DOCKER_DAEMON':r'Cannot connect to the Docker daemon','TYPE_ERROR':r'TS[0-9]{4}'}\nfor key,pattern in patterns.items():\n print('BUILD_DIAG_'+key+'='+('YES' if re.search(pattern,s,re.I) else 'NO'))\nprint('BUILD_LOG_LINES='+str(len(s.splitlines())))\nprint('BUILD_LAST_STEP='+str(next((m.group(1) for line in reversed(s.splitlines()) if (m:=re.search(r'^#[0-9]+ \\[([^]]+)\\]',line))), 'UNKNOWN'))[:100])\nPY\nfi\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
