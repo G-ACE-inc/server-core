@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/53"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$(git rev-parse --show-toplevel)\"\napp=\"$root/.worktrees/profile-live-20261114\"\ncompose=\"$app/deploy/gserver-compose.yaml\"\ntest \"$(git -C \"$app\" rev-parse HEAD)\" = \"6445896df387d290b6a0517d8cdb72c0471db4c7\" || exit 70\ntest -z \"$(git -C \"$app\" status --porcelain)\" || exit 71\nlive=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\"\ntagged=\"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:local)\"\nexpected=\"sha256:e110d14ad7feeb8ebb1adcc79a65534f16f540b639dfd22f7a713e3bbf36c6fa\"\ntest \"$live\" = \"$expected\" && test \"$tagged\" = \"$expected\" || exit 72\ntest \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 73\ntest -r \"$root/deploy/secrets/db_password.txt\" && test -r \"$root/deploy/secrets/bot_token.txt\" || exit 74\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ngh run download 43574339239 --repo seigo-gace/GateApp-Bot --name gaybbs-profile-bundle --dir \"$tmp\" >/dev/null\ntest \"$(sha256sum \"$tmp/gaybbs.mjs\" | cut -d' ' -f1)\" = \"69b936caef09c1586a99a1ed6b42f13f8cb97be64cd0b2fbbe3336fe062a8228\" || exit 75\nprintf 'FROM gace-tgtumbler-gaybbs:local\\nCOPY --chown=1000:1000 gaybbs.mjs /app/gaybbs.mjs\\n' > \"$tmp/Dockerfile\"\ndocker build --network none --pull=false -t gace-tgtumbler-gaybbs:chat-selector-f568489 -f \"$tmp/Dockerfile\" \"$tmp\" >/dev/null\ndocker run --rm --network none --entrypoint node gace-tgtumbler-gaybbs:chat-selector-f568489 --check /app/gaybbs.mjs >/dev/null\ncandidate=\"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:chat-selector-f568489)\"\nprintf 'secrets:\\n  db_password:\\n    file: %s\\n  bot_token:\\n    file: %s\\n' \"$root/deploy/secrets/db_password.txt\" \"$root/deploy/secrets/bot_token.txt\" > \"$tmp/override.yaml\"\ndocker compose -p deploy -f \"$compose\" -f \"$tmp/override.yaml\" config -q >/dev/null\ndocker tag gace-tgtumbler-gaybbs:local gace-tgtumbler-gaybbs:rollback-chat-selector-f568489\ndocker tag gace-tgtumbler-gaybbs:chat-selector-f568489 gace-tgtumbler-gaybbs:local\nrollback(){ docker tag gace-tgtumbler-gaybbs:rollback-chat-selector-f568489 gace-tgtumbler-gaybbs:local; docker compose -p deploy -f \"$compose\" -f \"$tmp/override.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || true; }\nif ! docker compose -p deploy -f \"$compose\" -f \"$tmp/override.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null; then rollback; exit 81; fi\nsleep 8\nactual=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1 2>/dev/null || echo absent)\"\nrunning=\"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1 2>/dev/null || echo false)\"\nif test \"$actual\" != \"$candidate\" || test \"$running\" != true; then rollback; exit 82; fi\n{ echo \"CHAT_SELECTOR_DEPLOY=PASS\"; echo \"SOURCE_HEAD=f568489b4a04d51a70c77ace8b6bd4b011df0efe\"; echo \"IMAGE=$actual\"; echo \"RUNNING=true\"; echo \"OLD_IMAGE=$expected\"; echo \"MENU_LINKS=3\"; } | gh issue comment 7 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
