@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/51"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nSVC=deploy-gaybbs-1\nTAG=gace-tgtumbler-gaybbs:local\nNEW=gace-tgtumbler-gaybbs:search-color-5a93de6\nOLD=gace-tgtumbler-gaybbs:before-search-colors-20261114\nlabel=\"$(docker inspect \"$SVC\" --format '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}')\"\nfile=\"${label%%,*}\"\ntest -f \"$file\"\ntest \"$(docker compose -f \"$file\" -p deploy config --hash gaybbs | grep -oE '[a-f0-9]{64}' | head -1)\" = \"$(docker inspect \"$SVC\" --format '{{index .Config.Labels \"com.docker.compose.config-hash\"}}')\" || exit 61\nbefore=\"$(docker inspect \"$SVC\" --format '{{.Image}}')\"\ntest \"$(docker inspect \"$SVC\" --format '{{.State.Running}}')\" = true || exit 62\ntest \"$(docker image inspect \"$TAG\" --format '{{.Id}}')\" = \"$before\" || exit 63\nnewid=\"$(docker image inspect \"$NEW\" --format '{{.Id}}')\" || exit 64\nif [ \"$before\" = \"$newid\" ]; then exit 0; fi\ndocker tag \"$before\" \"$OLD\"\ndocker tag \"$NEW\" \"$TAG\"\nrestore(){\n docker tag \"$OLD\" \"$TAG\" || true\n docker compose -f \"$file\" -p deploy up -d --no-deps gaybbs >/dev/null 2>&1 || true\n}\nif ! docker compose -f \"$file\" -p deploy up -d --no-deps gaybbs >/dev/null 2>&1; then\n restore\n exit 71\nfi\nsleep 6\nif [ \"$(docker inspect \"$SVC\" --format '{{.Image}}')\" != \"$newid\" ] || [ \"$(docker inspect \"$SVC\" --format '{{.State.Running}}')\" != true ]; then\n restore\n exit 72\nfi\nexit 0\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
