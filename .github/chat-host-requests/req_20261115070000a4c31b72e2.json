@@ -1,0 +1,37 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -u\ntarget='theGreatOldDaysofNipponGV'\nmatch=''\nwhile IFS= read -r unit; do\n [ -n \"$unit\" ] || continue\n body=\"$(systemctl --user cat \"$unit\" 2>/dev/null || true)\"\n if printf '%s' \"$body\" | grep -Fqi \"$target\"; then\n   [ -z \"$match\" ] || exit 86\n   match=\"$unit\"\n fi\ndone < <(systemctl --user list-unit-files --type=service --no-legend --plain 2>/dev/null | awk '{print $1}')\n[ -n \"$match\" ] || exit 87\nsystemctl --user is-active --quiet \"$match\" || exit 88\nrecent=\"$(journalctl --user -u \"$match\" --since '-15 minutes' --no-pager -o cat 2>/dev/null || true)\"\nif printf '%s' \"$recent\" | grep -Eiq 'traceback|permission denied|no space left|failed to save|I/O error|mount.*unavailable'; then exit 81; fi\nif printf '%s' \"$recent\" | grep -Eiq 'download|video|message|progress|complete|saved'; then exit 80; fi\nexit 82"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
