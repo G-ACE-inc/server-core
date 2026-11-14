@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncase \"$(git remote get-url origin)\" in *seigo-gace/create-videobot*) ;; *) exit 51;; esac\nroot=\"$(git rev-parse --show-toplevel)\"\nsha=\"faaae3e88c99a7cdfa85a70c91b6b585e3cd7a0d\"\ntest \"$(git -C \"$root/.worktrees/creator-entry-faaae3e\" rev-parse HEAD)\" = \"$sha\" || exit 52\nnewtag=\"create-videobot:creator-entry-faaae3e\"\nnewid=\"$(docker image inspect -f '{{.Id}}' \"$newtag\")\"\nalias=\"create-videobot:creator-entry-live-base-faaae3e\"\nbaseid=\"$(docker image inspect -f '{{.Id}}' \"$alias\")\"\nids=\"$(docker ps -q --filter label=com.docker.compose.service=videobot-poll)\"\ntest \"$(printf '%s\\n' \"$ids\" | grep -c .)\" -eq 1 || exit 53\nbefore=\"$ids\"\nrunningid=\"$(docker inspect -f '{{.Image}}' \"$before\")\"\nif test \"$runningid\" = \"$newid\"; then\n echo CREATOR_EDITOR_ALREADY_DEPLOYED=PASS\n exit 0\nfi\ntest \"$runningid\" = \"$baseid\" || { echo CREATOR_LIVE_VERSION_CHANGED_AGAIN; exit 54; }\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$before\")\"\nfiles=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}' \"$before\")\"\nbase=\"$(printf '%s' \"$files\" | cut -d, -f1)\"\ncase \"$base\" in *compose.videobot.poll.yaml) ;; *) echo CREATOR_UNEXPECTED_COMPOSE; exit 55;; esac\ntest -f \"$base\" || exit 56\ndocker compose -p \"$project\" -f \"$base\" config --quiet || exit 57\noverrides=\"$root/.worktrees/creator-entry-deploy-overrides-faaae3e\"\nmkdir -p \"$overrides\"\ncat > \"$overrides/live.yaml\" <<'YAML'\nservices:\n  videobot-poll:\n    image: create-videobot:creator-entry-faaae3e\nYAML\ncat > \"$overrides/rollback.yaml\" <<'YAML'\nservices:\n  videobot-poll:\n    image: create-videobot:creator-entry-live-base-faaae3e\nYAML\ndocker compose -p \"$project\" -f \"$base\" -f \"$overrides/live.yaml\" config --quiet || exit 58\nchanged=0\nrollback() {\n rc=$?\n trap - ERR\n set +e\n if test \"$changed\" = 1; then\n  docker compose -p \"$project\" -f \"$base\" -f \"$overrides/rollback.yaml\" up -d --no-build --no-deps videobot-poll >/dev/null\n  echo CREATOR_EDITOR_ROLLBACK_ATTEMPTED\n fi\n exit \"$rc\"\n}\ntrap rollback ERR\nchanged=1\ndocker compose -p \"$project\" -f \"$base\" -f \"$overrides/live.yaml\" up -d --no-build --no-deps videobot-poll\nsleep 8\nids2=\"$(docker ps -q --filter label=com.docker.compose.project=\"$project\" --filter label=com.docker.compose.service=videobot-poll)\"\ntest \"$(printf '%s\\n' \"$ids2\" | grep -c .)\" -eq 1 || { echo CREATOR_EDITOR_POLLER_COUNT_INVALID; false; }\ntest \"$(docker inspect -f '{{.Image}}' \"$ids2\")\" = \"$newid\" || { echo CREATOR_EDITOR_IMAGE_MISMATCH; false; }\ntest \"$(docker inspect -f '{{.State.Running}}' \"$ids2\")\" = true || { echo CREATOR_EDITOR_NOT_RUNNING; false; }\ntrap - ERR\necho CREATOR_EDITOR_DIRECT_LINK_RUNTIME=PASS\necho CREATOR_EDITOR_POLLER_COUNT=1\necho CREATOR_EDITOR_SOURCE_SHA=\"$sha\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
