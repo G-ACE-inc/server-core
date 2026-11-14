@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/5a93de671ee158205759bb6e264cd3cd48466743"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nWT=\"$(git rev-parse --show-toplevel)/.worktrees/search-colors-5a93de6\"\ntest \"$(git -C \"$WT\" rev-parse HEAD)\" = 5a93de671ee158205759bb6e264cd3cd48466743\nLOG=\"$(mktemp)\"\ntrap 'rm -f \"$LOG\"' EXIT\nif docker build --progress=plain -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:search-color-5a93de6 \"$WT\" >\"$LOG\" 2>&1; then exit 0; fi\npython3 - \"$LOG\" <<'PY'\nimport pathlib,re,sys\ns=pathlib.Path(sys.argv[1]).read_text(errors=\"replace\")\npatterns=[\n(111,r'Cannot find matching keyid|signature.*key|keyid.*signature'),\n(112,r'corepack: not found|corepack: command not found|/bin/sh: corepack'),\n(113,r'unable to get local issuer certificate|CERT_HAS_EXPIRED|SELF_SIGNED_CERT|TLS'),\n(114,r'connect ETIMEDOUT|network timeout|fetch failed|ECONNRESET|ENOTFOUND'),\n(115,r'403 Forbidden|429 Too Many Requests|401 Unauthorized'),\n(116,r'no space left on device|disk quota exceeded'),\n(117,r'EACCES|permission denied'),\n(118,r'out of memory|killed|exit code: 137'),\n(119,r'Internal Error: Error when performing the request'),\n(120,r'ERR_PNPM_|ERR_SOCKET|ECONNREFUSED'),\n(121,r'Error:.*package manager|pnpm.*version'),\n]\nfor code,pat in patterns:\n if re.search(pat,s,re.I):sys.exit(code)\nsys.exit(122)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
