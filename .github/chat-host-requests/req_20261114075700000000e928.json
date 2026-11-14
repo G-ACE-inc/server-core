@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\necho SINGLE_CREATEVDOBOT=PASS\nprintf 'SHOP_PUBLIC_URL_DEFINED='\nif docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -Eq '^VIDEOBOT_SHOP_PUBLIC_URL=https://[^ ]+'; then echo YES; else echo NO; fi\nfor name in cloudflared nginx caddy traefik; do\n printf 'HOST_PROCESS_%s=' \"$name\"\n if pgrep -af \"$name\" 2>/dev/null | grep -v -E '(pgrep|grep)' >/dev/null; then echo PRESENT; else echo ABSENT; fi\ndone\nprintf 'CLOUDFLARED_SERVICE_STATE='\nsystemctl is-active cloudflared 2>/dev/null || true\nprintf 'CF_CONFIG_DIR_EXISTS='\nif test -d /etc/cloudflared; then echo YES; else echo NO; fi\nprintf 'CF_CONFIG_HAS_HENTAGAY_DOMAIN='\nif grep -ERl 'hentaigay[.]org' /etc/cloudflared /home/gace/.cloudflared 2>/dev/null | head -n1 | grep -q .; then echo YES; else echo NO; fi\nprintf 'SHOP_PRIVATE_HTTP_STATUS='\ndocker exec \"$cid\" node --input-type=module -e 'const r=await fetch(\"http://127.0.0.1:8766/health\");console.log(r.status)' 2>/dev/null || true\nprintf 'SOURCE_CURRENT_SHA='\ngit -C /home/gace/Project/Gserver/projects/TGtumbler/create-videobot rev-parse HEAD\necho READONLY_PREFLIGHT_COMPLETE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
