@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/57"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nname=deploy-gaybbs-1\ncandidate=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:invite-copy-f62d8c3d)\" || exit 74\ntest \"$(docker inspect -f '{{.Image}}' \"$name\")\" = \"$candidate\" || exit 74\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true || exit 63\ndocker exec \"$name\" test -f /app/publishMenuPanels.mjs || exit 75\nstates=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT COUNT(*) FILTER (WHERE state='published')||'|'||COUNT(*) FILTER (WHERE state='needs_reconcile') FROM board_menu_panels WHERE panel_type='posting';\")\"\nIFS='|' read -r published reconcile <<< \"$states\"\ntest \"$published\" -eq 2 && test \"$reconcile\" -eq 1 || { echo PANEL_STATE_CHANGED;exit 74; }\nbefore=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT chat_id||'|'||message_thread_id||'|'||message_id||'|'||state FROM board_menu_panels WHERE panel_type='posting' ORDER BY chat_id;\")\"\nif ! docker exec -e MENU_PUBLISH_PANEL_TYPES=posting -e GAYBBS_PUBLIC_MENU_RELEASE=enabled \"$name\" node --import /app/preload/telegram-ipv4-preload.mjs /app/publishMenuPanels.mjs > /tmp/gace-invite-copy-publish-20261115.log 2>&1;then\n echo PUBLISH_EXISTING_PANEL=FAIL\n exit 91\nfi\nafter=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT chat_id||'|'||message_thread_id||'|'||message_id||'|'||state FROM board_menu_panels WHERE panel_type='posting' ORDER BY chat_id;\")\"\ntest \"$before\" = \"$after\" || { echo PANEL_IDS_CHANGED;exit 92; }\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true || exit 63\necho GATE_COPY_PUBLIC_MENUS_UPDATED=2\necho SAME_MESSAGE_IDS=PASS\necho UNRECONCILED_PANEL_UNTOUCHED=PASS\necho IMAGE_MATCH=PASS\necho USERBOT_ACTIVE=\"$(systemctl --user is-active gace-userbot-verify.service || true)\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
