@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nold=\"sha256:9cc3afe33bf90e59dda71c2ca1fa8214a671e7af4aba90a1dc823dfc4310d6a3\"\nexpected=\"3095bf4cad97ea622f7e8b1f5a188ab93ab196109ad5d0637adc1fa5da797b31\"\nroot=\"$(git rev-parse --show-toplevel)\"\ncompose=\"$root/.worktrees/profile-live-20261114/deploy/gserver-compose.yaml\"\ntest \"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\" = \"$old\" || exit 70\ntest \"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:local)\" = \"$old\" || exit 71\ntest -r \"$root/deploy/secrets/db_password.txt\" && test -r \"$root/deploy/secrets/bot_token.txt\"\ntmp=\"$(mktemp -d)\"; trap 'rm -rf \"$tmp\"' EXIT\ngh run download 43562363710 --repo seigo-gace/GateApp-Bot --name gaybbs-profile-bundle --dir \"$tmp\" >/dev/null\ntest \"$(sha256sum \"$tmp/gaybbs.mjs\" | cut -d' ' -f1)\" = \"$expected\" || exit 72\nprintf 'FROM gace-tgtumbler-gaybbs:local\\nCOPY --chown=1000:1000 gaybbs.mjs /app/gaybbs.mjs\\n' > \"$tmp/Dockerfile\"\ndocker build --network none --pull=false -t gace-tgtumbler-gaybbs:profile-visible-error-f189753 -f \"$tmp/Dockerfile\" \"$tmp\" >/dev/null\ndocker run --rm --network none --entrypoint node gace-tgtumbler-gaybbs:profile-visible-error-f189753 --check /app/gaybbs.mjs >/dev/null\nnew=\"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:profile-visible-error-f189753)\"\nprintf 'secrets:\\n  db_password:\\n    file: %s\\n  bot_token:\\n    file: %s\\n' \"$root/deploy/secrets/db_password.txt\" \"$root/deploy/secrets/bot_token.txt\" > \"$tmp/override.yaml\"\ndocker compose -p deploy -f \"$compose\" -f \"$tmp/override.yaml\" config -q >/dev/null\ndocker tag gace-tgtumbler-gaybbs:local gace-tgtumbler-gaybbs:profile-recovery-f189753\ndocker tag gace-tgtumbler-gaybbs:profile-visible-error-f189753 gace-tgtumbler-gaybbs:local\nrollback(){ docker tag gace-tgtumbler-gaybbs:profile-recovery-f189753 gace-tgtumbler-gaybbs:local; docker compose -p deploy -f \"$compose\" -f \"$tmp/override.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || true; }\nif ! docker compose -p deploy -f \"$compose\" -f \"$tmp/override.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null; then rollback;exit 81;fi\nsleep 4\nactual=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1 2>/dev/null || echo absent)\"\nrunning=\"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1 2>/dev/null || echo false)\"\nif test \"$actual\" != \"$new\" || test \"$running\" != true;then rollback;exit 82;fi\n{ echo PROFILE_DM_VISIBLE_ERROR_DEPLOY=PASS; echo SOURCE=f189753edbdeee7850cbf591cb41b99e6802de62; echo IMAGE=\"$actual\"; echo RUNNING=true; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
