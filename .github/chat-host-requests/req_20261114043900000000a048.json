@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nhead=\"$(git rev-parse HEAD)\"\npath=\"$(git rev-parse --show-toplevel)\"\ndirty=\"$(git status --porcelain | wc -l)\"\nprsha=\"0cfc593e1883c2e0a27748d18d8868118354eac1\"\nif git cat-file -e \"$prsha^{commit}\" 2>/dev/null; then\n if git merge-base --is-ancestor \"$prsha\" HEAD; then merge_status=\"PR47_ANCESTOR\"; else merge_status=\"PR47_NOT_ANCESTOR\"; fi\nelse merge_status=\"PR47_OBJECT_NOT_LOCAL\"; fi\nimage=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1 2>/dev/null || printf ABSENT)\"\nrunning=\"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1 2>/dev/null || printf UNKNOWN)\"\npaths=\"$(git status --porcelain | sed -n '1,16p' | sed -E 's#^[ MADRCU?!]{2} ##' | paste -sd ',' -)\"\nprintf 'PR47_RUNTIME_PREDEPLOY=OBSERVED\\nHEAD=%s\\nDIRTY=%s\\nMERGE_STATUS=%s\\nGAYBBS_RUNNING=%s\\nGAYBBS_IMAGE=%s\\nDIRTY_PATHS_FIRST16=%s\\n' \"$head\" \"$dirty\" \"$merge_status\" \"$running\" \"$image\" \"$paths\" | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
