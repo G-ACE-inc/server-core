@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nroot=\"$(git rev-parse --show-toplevel)\"\ncase \"$(git remote get-url origin)\" in *seigo-gace/create-videobot*) ;; *) exit 51;; esac\nstage=\"$root/.worktrees/video-ui-e60b2076\"\nsha=\"be4f34d04d346aa20be1765884186e907780f364\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = \"$sha\" || exit 62\ntest -z \"$(git -C \"$stage\" status --porcelain --untracked-files=no)\" || exit 63\nnewimage=\"create-videobot:video-ui-be4f34d\"\nnewid=\"$(docker image inspect -f '{{.Id}}' \"$newimage\")\"\nmapfile -t ids < <(docker ps -q --filter label=com.docker.compose.service=videobot-poll)\ntest \"${#ids[@]}\" -eq 1 || exit 71\nbefore=\"${ids[0]}\"\noldid=\"$(docker inspect -f '{{.Image}}' \"$before\")\"\noldtag=\"$(docker inspect -f '{{.Config.Image}}' \"$before\")\"\ncase \"$oldtag\" in create-videobot:local-poll|create-videobot:poll-fresh) ;; *) echo VIDEO_RUNTIME_OWNERSHIP_CHANGED; exit 72;; esac\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$before\")\"\nfiles=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}' \"$before\")\"\ncase \"$files\" in *,*) exit 73;; *compose.videobot.poll.yaml) ;; *) exit 74;; esac\ntest -f \"$files\" || exit 75\ndocker compose -p \"$project\" -f \"$files\" config --quiet || exit 76\nrollback_tag=\"create-videobot:before-video-ui-be4f34d\"\nif docker image inspect \"$rollback_tag\" >/dev/null 2>&1; then\n test \"$(docker image inspect -f '{{.Id}}' \"$rollback_tag\")\" = \"$oldid\" || exit 77\nelse\n docker image tag \"$oldid\" \"$rollback_tag\"\nfi\noverrides=\"$(mktemp -d \"$root/.worktrees/video-ui-overrides.XXXXXXXX\")\"\ncat > \"$overrides/new.yaml\" <<'YAML'\nservices:\n  videobot-poll:\n    image: create-videobot:video-ui-be4f34d\nYAML\ncat > \"$overrides/rollback.yaml\" <<'YAML'\nservices:\n  videobot-poll:\n    image: create-videobot:before-video-ui-be4f34d\nYAML\ndocker compose -p \"$project\" -f \"$files\" -f \"$overrides/new.yaml\" config --quiet || exit 78\nswitched=0\nrollback() {\n rc=$?\n trap - ERR\n set +e\n if test \"$switched\" = 1; then\n   docker compose -p \"$project\" -f \"$files\" -f \"$overrides/rollback.yaml\" up -d --no-build --no-deps videobot-poll >/dev/null\n   echo VIDEO_ROLLBACK_ATTEMPTED\n fi\n rm -rf \"$overrides\"\n exit \"$rc\"\n}\ntrap rollback ERR\nswitched=1\ndocker compose -p \"$project\" -f \"$files\" -f \"$overrides/new.yaml\" up -d --no-build --no-deps videobot-poll\nsleep 8\nmapfile -t after_ids < <(docker ps -q --filter label=com.docker.compose.project=\"$project\" --filter label=com.docker.compose.service=videobot-poll)\ntest \"${#after_ids[@]}\" -eq 1 || { echo VIDEO_POLLER_COUNT_INVALID; false; }\nafter=\"${after_ids[0]}\"\ntest \"$(docker inspect -f '{{.Image}}' \"$after\")\" = \"$newid\" || { echo VIDEO_IMAGE_NOT_APPLIED; false; }\ntest \"$(docker inspect -f '{{.State.Running}}' \"$after\")\" = true || { echo VIDEO_POLLER_NOT_RUNNING; false; }\ntrap - ERR\nrm -rf \"$overrides\"\necho VIDEO_DEPLOY_VERIFIED=PASS\necho VIDEO_DEPLOY_IMAGE_SHA=\"$sha\"\necho VIDEO_POLLER_COUNT=1"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
