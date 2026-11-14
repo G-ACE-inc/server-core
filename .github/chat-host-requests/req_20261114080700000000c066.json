@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/5a93de671ee158205759bb6e264cd3cd48466743"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nDEPLOY=deploy-gaybbs-1\nCANDIDATE=gace-tgtumbler-gaybbs:search-color-5a93de6\nIMG=\"$(docker image inspect \"$CANDIDATE\" --format '{{.Id}}')\"\nACTIVE=\"$(docker inspect \"$DEPLOY\" --format '{{.Image}}')\"\nLOCAL=\"$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\"\ntest \"$ACTIVE\" = \"$LOCAL\" || exit 34\nCOMPOSE=\"$(docker inspect \"$DEPLOY\" --format '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}')\"\ntest -f \"$COMPOSE\" || exit 35\ndocker compose -f \"$COMPOSE\" -p deploy config -q || exit 71\nLOG=\"$(mktemp)\"\ntrap 'rm -f \"$LOG\"' EXIT\nBACKUP=gace-tgtumbler-gaybbs:pre-search-color-5a93de6\ndocker tag \"$ACTIVE\" \"$BACKUP\" || exit 81\ndocker tag \"$CANDIDATE\" gace-tgtumbler-gaybbs:local || exit 82\nactivated=0\nrollback(){\n if [ \"$activated\" != 1 ]; then\n  current=\"$(docker inspect \"$DEPLOY\" --format '{{.Image}}' 2>/dev/null || true)\"\n  if [ \"$current\" = \"$IMG\" ] || [ \"$current\" = \"$ACTIVE\" ] || [ -z \"$current\" ]; then\n   docker tag \"$BACKUP\" gace-tgtumbler-gaybbs:local || true\n   docker compose -f \"$COMPOSE\" -p deploy up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || true\n  fi\n fi\n}\ntrap 'rollback; rm -f \"$LOG\"' EXIT\nif ! docker compose -f \"$COMPOSE\" -p deploy up -d --no-deps --force-recreate gaybbs > \"$LOG\" 2>&1; then\n python3 - \"$LOG\" <<'PY'\nimport pathlib,re,sys\ns=pathlib.Path(sys.argv[1]).read_text(errors=\"replace\")\nfor code,p in [(83,r'port is already allocated|bind: address already in use'),(84,r'permission denied|operation not permitted'),(85,r'failed to create|container name.*already in use'),(86,r'no space left|disk quota'),(87,r'file not found|no such file or directory|not found'),(88,r'healthcheck|unhealthy|dependency failed'),(89,r'network.*not found|network.*failed'),(90,r'error response from daemon')]:\n if re.search(p,s,re.I):sys.exit(code)\nsys.exit(91)\nPY\nfi\nsleep 8\ntest \"$(docker inspect \"$DEPLOY\" --format '{{.Image}}')\" = \"$IMG\" || exit 92\ntest \"$(docker inspect \"$DEPLOY\" --format '{{.State.Running}}')\" = true || exit 93\nactivated=1\ntrap 'rm -f \"$LOG\"' EXIT\nexit 0\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
