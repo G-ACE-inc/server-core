@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/51"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nimport subprocess,sys,json,pathlib,os,time\ndef run(args,timeout=90):\n return subprocess.run(args,capture_output=True,text=True,timeout=timeout)\ndef require(args,timeout=15):\n p=run(args,timeout)\n if p.returncode:raise RuntimeError('PREFLIGHT_FAILED')\n return p.stdout.strip()\nname='deploy-gaybbs-1'\nactive=json.loads(require(['docker','inspect',name]))[0]\nif not active['State']['Running']:sys.exit(61)\nbefore=active['Image']\ntag='gace-tgtumbler-gaybbs:local'\ncandidate='gace-tgtumbler-gaybbs:search-color-5a93de6'\nbackup='gace-tgtumbler-gaybbs:before-search-colors-20261114'\nif require(['docker','image','inspect',tag,'--format','{{.Id}}'])!=before:sys.exit(62)\nnewid=require(['docker','image','inspect',candidate,'--format','{{.Id}}'])\nif before==newid:sys.exit(0)\nraw=active['Config']['Labels']['com.docker.compose.project.config_files']\nfiles=[x.strip() for x in raw.split(',') if x.strip()]\nif len(files)!=2 or not pathlib.Path(files[0]).is_file():sys.exit(63)\nbasepath=pathlib.Path(files[0]).resolve()\nif not basepath.is_relative_to(pathlib.Path.home()):sys.exit(64)\nargs=['docker','compose','-f',str(basepath),'-p','deploy']\ncurrent_hash=active['Config']['Labels']['com.docker.compose.config-hash']\nif current_hash not in require(args+['config','--hash','gaybbs']):sys.exit(65)\nconfig=json.loads(require(args+['config','--format','json']))\nmounts={m['Destination']:pathlib.Path(m['Source']) for m in active.get('Mounts',[]) if m['Type']=='bind'}\npairs=[]\nfor key in ('bot_token','db_password'):\n desired=pathlib.Path(config['secrets'][key]['file'])\n source=mounts.get('/run/secrets/'+key)\n if source is None or not source.is_file():sys.exit(66)\n if desired.parent.resolve()!= (basepath.parent/'secrets').resolve():sys.exit(67)\n if not desired.is_relative_to(pathlib.Path.home()):sys.exit(68)\n if desired.exists():\n  if not desired.samefile(source):sys.exit(69)\n else:\n  if desired.is_symlink():sys.exit(70)\n  pairs.append((desired,source.resolve()))\nfor desired,source in pairs:\n desired.parent.mkdir(mode=0o700,parents=True,exist_ok=True)\n desired.symlink_to(source)\nif run(args+['config','-q'],25).returncode:sys.exit(71)\nif run(['docker','tag',before,backup],15).returncode:sys.exit(72)\nif run(['docker','tag',candidate,tag],15).returncode:sys.exit(73)\np=run(args+['up','-d','--no-deps','gaybbs'],90)\nif p.returncode:\n run(['docker','tag',backup,tag],15)\n restored=run(args+['up','-d','--no-deps','gaybbs'],90)\n if restored.returncode:sys.exit(80)\n sys.exit(81)\ntime.sleep(7)\np=run(['docker','inspect',name],20)\nif p.returncode:sys.exit(82)\nafter=json.loads(p.stdout)[0]\nif after['Image']!=newid or not after['State']['Running']:\n run(['docker','tag',backup,tag],15)\n run(args+['up','-d','--no-deps','gaybbs'],90)\n sys.exit(83)\nsys.exit(0)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
