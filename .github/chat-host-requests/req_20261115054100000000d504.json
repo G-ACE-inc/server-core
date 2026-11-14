@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "cu_verified": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "b093aeb749df626cc95f7d6f1247bc51e840069b",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\npython3 -B - <<'PY'\nimport json,pathlib,subprocess,sys\nroot=pathlib.Path('/mnt/g/GserverStorage/public_channel_videos')\nf=root/'1877875443'\np=root/'_jobs/thegreatolddaysofnippongv.json'\nif not f.is_dir() or not p.is_file(): sys.exit(34)\nd=json.loads(p.read_text())\nget=lambda unit:subprocess.run(['systemctl','--user','show',unit,'-p','ActiveState','--value'],capture_output=True,text=True).stdout.strip()\nif get('gace-userbot-verify.service')!='active':sys.exit(35)\nif any(get(u)=='active' for u in ('gace-public-video-all-joined-retry-20261114.service','gace-public-video-all-joined-20261114.service')):sys.exit(36)\nstate=get('gace-public-video-only-nippon-20261115b.service')\nfiles=list(f.glob('*.mp4'));partial=list(f.glob('*.partial'))\nprint('COLLECTOR='+state+' STATUS='+str(d.get('status'))+' MP4='+str(len(files))+' PARTIAL='+str(len(partial))+' FAILED='+str(d.get('failed'))+' DISCOVERED='+str(d.get('discovered')))\nif state=='active':sys.exit(21)\nif d.get('status')=='complete' and d.get('failed')==0 and not partial and d.get('discovered')==len(files):sys.exit(0)\nsys.exit(22)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
