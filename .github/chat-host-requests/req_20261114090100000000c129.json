@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "8a85652d6c3e3c6a41b499a777b6d1ced8d20c7e",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled\nmountpoint -q /mnt/g\ntest -d /mnt/g/GserverStorage\ngit fetch --no-tags origin 74f012f6074ae513190946d470cbb104961ce037\ntest \"$(git rev-parse FETCH_HEAD)\" = 74f012f6074ae513190946d470cbb104961ce037\npython3 - <<'PY'\nfrom pathlib import Path\nimport subprocess,os,sys\nsha=\"74f012f6074ae513190946d470cbb104961ce037\"\nfor file in (\"userbot_public_video_archive_all.py\",\"userbot_public_video_activate_all.py\"):\n    dest=Path(\"scripts\")/file\n    content=subprocess.check_output([\"git\",\"show\",f\"{sha}:scripts/{file}\"])\n    if dest.exists():\n        if dest.is_symlink() or dest.read_bytes()!=content:\n            raise RuntimeError(f\"STAGED_FILE_CONFLICT:{file}\")\n    else:\n        with dest.open(\"xb\") as fh:fh.write(content)\n        os.chmod(dest,0o644)\n    compile(dest.read_text(),file,\"exec\")\nsys.path.insert(0,str(Path(\"scripts\").resolve()))\nfrom userbot_public_video_activate_all import compose_updates\nupdates=compose_updates(sha)\nprint(\"ALL_PUBLIC_CHANNEL_PREPARE=PASS\")\nprint(\"PAGINATION_UPDATE_FILES=\"+\",\".join(p.name for p in updates))\nPY\npython3 scripts/userbot_test_client.py health\nif systemctl --user list-units --all --no-legend 'gace-public-video-all-joined-20261114.service' | grep -q gace-public-video-all-joined-20261114;then echo ALL_JOB_ALREADY_REGISTERED;exit 77;fi\nsystemd-run --user --collect --unit=gace-public-video-all-joined-20261114 --working-directory=\"$PWD\" /usr/bin/python3 -u scripts/userbot_public_video_activate_all.py --source-commit 74f012f6074ae513190946d470cbb104961ce037\necho ALL_PUBLIC_CHANNELS_JOB_LAUNCHED=YES\nsystemctl --user show gace-public-video-all-joined-20261114.service -p ActiveState -p SubState -p Result --no-pager\necho RESIDENT_PRESERVED=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
