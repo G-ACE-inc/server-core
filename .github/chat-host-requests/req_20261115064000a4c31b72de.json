@@ -1,0 +1,37 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -u\nif ! mountpoint -q /mnt/g; then echo G_UNMOUNTED; exit 21; fi\nunits=\"$(systemctl --user list-units --all --type=service --no-legend --plain 2>/dev/null | grep -Ei 'collect|download|archive' || true)\"\nif [ -z \"$units\" ]; then\n if ps -eo args | grep -Ei '[p]ython.*(collect|download|archive)' >/dev/null; then echo COLLECTOR_PROCESS_FOUND; exit 31; fi\n echo NO_COLLECTOR_UNIT_OR_PROCESS; exit 32\nfi\nactive=\"$(printf '%s\\n' \"$units\" | grep -E ' active running ' | wc -l)\"\nif [ \"$active\" -gt 0 ]; then echo COLLECTOR_UNIT_ACTIVE; exit 33; fi\necho COLLECTOR_UNITS_PRESENT_INACTIVE\nexit 34"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
