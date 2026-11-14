@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nsrc=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\ncid=gace-createvdobot-videobot-poll-1\ntarget=b9db6cb4d59e0efab484ba6df573c08aea8f658b\npath=src/telegram/stickerWizard.mjs\nstage=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\ncompose=\"$stage/deploy/compose.videobot.poll.yaml\"\ntest -d \"$src\" && test -f \"$compose\" || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 62\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 63\ngit -C \"$src\" fetch --no-tags origin feat/assistant-ai-and-sales-core >/dev/null 2>&1 || exit 64\ntest \"$(git -C \"$src\" rev-parse FETCH_HEAD)\" = \"$target\" || exit 65\nnewhash=\"$(git -C \"$src\" show \"$target:$path\" | sha256sum | cut -d' ' -f1)\"\noldhash=\"$(docker exec \"$cid\" sha256sum \"/opt/videobot/$path\" | cut -d' ' -f1)\"\nif test \"$newhash\" = \"$oldhash\";then echo STK02_RUNTIME_ALREADY_CURRENT=PASS;exit 0;fi\nprevious=\"$(git -C \"$src\" show 806ab0d5e26892d92a73be8fa00a8e86494b03a2:\"$path\" | sha256sum | cut -d' ' -f1)\"\ntest \"$oldhash\" = \"$previous\" || { echo STK02_LIVE_HAS_UNEXPECTED_WIZARD;exit 66; }\nrelease=\"$stage/.releases/$target/bot-horizontal\"\nmkdir -p \"$release/src/telegram\"\ngit -C \"$src\" show \"$target:$path\" > \"$release/$path\"\n! grep -q 'web_app' \"$release/$path\" || exit 67\ngrep -q 'offset+=4' \"$release/$path\" || exit 68\ncandidate=create-videobot:horizontal-b9db6c\nif docker image inspect \"$candidate\" >/dev/null 2>&1;then\n  hash=\"$(docker run --rm --network none --entrypoint sha256sum \"$candidate\" \"/opt/videobot/$path\" | cut -d' ' -f1)\"\n  test \"$hash\" = \"$newhash\" || { echo STK02_CANDIDATE_HASH_MISMATCH;exit 69; }\nelse\n  docker tag create-videobot:local-poll create-videobot:rollback-before-horizontal-b9db6c || exit 70\n  printf 'FROM create-videobot:rollback-before-horizontal-b9db6c\\nUSER root\\nCOPY --chown=node:node %s /opt/videobot/%s\\nUSER node\\n' \"$path\" \"$path\" > \"$release/Dockerfile\"\n  docker build --network none --pull=false -t \"$candidate\" \"$release\" >/dev/null || { echo STK02_BUILD_FAILED;exit 71; }\nfi\ndocker run --rm --network none --entrypoint node \"$candidate\" --check \"/opt/videobot/$path\" || exit 72\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}')\"\nexport VIDEOBOT_DB_PASSWORD_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}')\"\nexport VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/var/lib/videobot/sticker-entry\"}}{{.Source}}{{end}}{{end}}')\"\nexport GSERVER_POSTGRES_USER=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^VIDEOBOT_DB_USER=//p' | head -n 1)\"\nexport VIDEOBOT_SHOP_PUBLIC_URL=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^VIDEOBOT_SHOP_PUBLIC_URL=//p' | head -n 1)\"\nexport GSERVER_POSTGRES_NETWORK=\"$(docker inspect \"$cid\" --format '{{range $name, $net := .NetworkSettings.Networks}}{{println $name}}{{end}}' | head -n 1)\"\ntest -n \"$VIDEOBOT_TELEGRAM_TOKEN_SOURCE\" && test -n \"$VIDEOBOT_DB_PASSWORD_SOURCE\" && test -n \"$VIDEOBOT_STICKER_PIN_STATE_SOURCE\" && test -n \"$GSERVER_POSTGRES_USER\" && test -n \"$GSERVER_POSTGRES_NETWORK\" || exit 73\ndocker compose -p gace-createvdobot -f \"$compose\" config --quiet || { echo STK02_COMPOSE_CONFIG_FAILED;exit 74; }\ndocker tag create-videobot:local-poll create-videobot:rollback-before-horizontal-b9db6c || exit 75\ndocker tag \"$candidate\" create-videobot:local-poll || exit 76\nif ! docker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null;then\n  echo STK02_RECREATE_FAILED\n  docker tag create-videobot:rollback-before-horizontal-b9db6c create-videobot:local-poll || true\n  docker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true\n  exit 77\nfi\nready=NO\nfor n in 1 2 3 4 5 6 7 8 9 10 11 12;do\n if test \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true && docker logs \"$cid\" 2>&1 | grep -Fq 'CREATOR_DM_POLL_READY=PASS' && docker logs \"$cid\" 2>&1 | grep -Fq 'STICKER_SHOP_HTTP_READY=PASS';then ready=YES;break;fi\n sleep 3\ndone\nif test \"$ready\" != YES;then\n echo STK02_READY_FAILED\n docker tag create-videobot:rollback-before-horizontal-b9db6c create-videobot:local-poll\n docker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true\n exit 78\nfi\nif test \"$(docker exec \"$cid\" sha256sum \"/opt/videobot/$path\" | cut -d' ' -f1)\" != \"$newhash\";then\n echo STK02_LIVE_HASH_FAILED\n docker tag create-videobot:rollback-before-horizontal-b9db6c create-videobot:local-poll\n docker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true\n exit 79\nfi\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 80\necho STK02_HORIZONTAL_BOT_RUNTIME=PASS\necho STK02_SINGLE_POLLER=PASS\necho STK02_SHOP_ENV_PRESERVED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
