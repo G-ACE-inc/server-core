@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "80f3402d30093222e13c4d0be193d579ad3cab88",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest -d /mnt/g/GserverStorage/public_channel_videos/1877875443\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\nfor unit in gace-public-video-all-joined-retry-20261114.service gace-public-video-all-joined-20261114.service gace-public-video-only-nippon-20261115.service;do\n state=\"$(systemctl --user show \"$unit\" -p ActiveState --value 2>/dev/null || echo not_loaded)\"\n test \"$state\" != active\n test \"$state\" != activating\ndone\ngit fetch --no-tags origin 004757a1eeb5a847fd7adb7de5204f1575e4b3ba\ntest \"$(git rev-parse FETCH_HEAD)\" = 004757a1eeb5a847fd7adb7de5204f1575e4b3ba\npython3 - <<'PY'\nimport os,subprocess,tempfile\nfrom pathlib import Path\nsrc=\"004757a1eeb5a847fd7adb7de5204f1575e4b3ba\"\npath=Path(\"scripts/userbot_public_video_archive.py\")\nactual=path.read_text()\noriginal='        os.chmod(temporary, 0o600)\\n        os.replace(temporary, path)'\nnew_src=subprocess.check_output([\"git\",\"show\",f\"{src}:scripts/userbot_public_video_archive.py\"],text=True)\nstart=new_src.index('        try:\\n            os.chmod(temporary, 0o600)')\nend=new_src.index('\\n    finally:',start)\nnew=new_src[start:end]\nif actual.count(original)!=1 or new not in new_src:raise RuntimeError(\"SOURCE_DIFF_CONFLICT\")\nupdated=actual.replace(original,new,1)\ncompile(updated,str(path),\"exec\")\nfd,tmp=tempfile.mkstemp(prefix=\".gdrive-archive-fix-\",dir=str(path.parent))\ntry:\n with os.fdopen(fd,\"w\") as stream:stream.write(updated)\n os.chmod(tmp,0o644)\n os.replace(tmp,path)\nfinally:\n if os.path.exists(tmp):os.unlink(tmp)\nprint(\"DRVFS_PROGRESS_PATCH=APPLIED\")\nPY\npython3 -m py_compile scripts/userbot_public_video_archive.py\npython3 scripts/userbot_test_client.py health\nsystemd-run --user --collect --unit=gace-public-video-only-nippon-20261115b --working-directory=\"$PWD\" /usr/bin/python3 -u scripts/userbot_public_video_archive.py --channel-username theGreatOldDaysofNipponGV --all\necho TARGET_ARCHIVE_SUBMITTED=YES\nsystemctl --user show gace-public-video-only-nippon-20261115b.service -p ActiveState -p SubState -p Result --no-pager"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
