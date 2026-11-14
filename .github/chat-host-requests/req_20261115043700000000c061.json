@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/55"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntarget=\"$repo/.worktrees/link-pr55-20261115\"\ncd \"$repo\"\ntest \"$(git rev-parse HEAD)\" = 57955cd68bb39626ebbca38d44b7bb034da6dc05 || { echo LIVE_SOURCE_CHANGED; exit 74; }\ntest \"$(realpath \"$repo\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest ! -e \"$target\" || { echo EXISTING_LINK_WORKTREE; git -C \"$target\" rev-parse HEAD; exit 73; }\ngit fetch --no-tags origin refs/heads/chat/link-two-line-telegram-20261114\nhead=\"$(git rev-parse FETCH_HEAD)\"\ntest \"$head\" = eca68464881ec4b26dc399f6c7323153232e2696 || { echo PR_HEAD_CHANGED; exit 74; }\nmkdir -p \"$repo/.worktrees\"\ngit worktree add --detach \"$target\" \"$head\"\ntest \"$(realpath \"$target\")\" = \"$target\"\ntest \"$(git -C \"$target\" rev-parse HEAD)\" = \"$head\"\necho \"LINK_WORKTREE_CREATED=PASS\"\necho \"WORKTREE=$target\"\necho \"HEAD=$head\"\necho \"LIVE_HEAD=$(git -C \"$repo\" rev-parse HEAD)\"\necho \"LIVE_COMPOSE_DIRTY=$(test -n \"$(git -C \"$repo\" status --porcelain -- deploy/gserver-compose.yaml)\" && echo yes || echo no)\"\necho \"PR_FILES_PRESENT=$(test -f \"$target/artifacts/bot/src/services/linkInlineShare.ts\" && echo yes || echo no)\"\necho \"SOURCE_READY=PASS\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
