@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/56"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nbranch=chat/menu-link-creator-runtime-hotfix-20261115\nsource_sha=ba043508a684ab8f7c97cd69785d618373b3812f\nwork=\"$repo/.worktrees/gaybbs-colors-20261115\"\ncompose=\"$repo/deploy/gserver-compose.yaml\"\ntest -f \"$compose\" || exit 67\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 63\nexpected_active=sha256:a690f059c8e59eaf8277d17d0512d2b8209de41eaebefe82bc7bb6344559df29\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$expected_active\" || { echo \"ACTIVE_IMAGE_CHANGED\"; exit 74; }\ngit -C \"$repo\" fetch --no-tags origin \"$branch\"\ntest \"$(git -C \"$repo\" rev-parse FETCH_HEAD)\" = \"$source_sha\" || exit 74\nif test -d \"$work\"; then test -z \"$(git -C \"$work\" status --porcelain --untracked-files=all)\" || exit 76; git -C \"$work\" checkout --detach \"$source_sha\"; else git -C \"$repo\" worktree add --detach \"$work\" \"$source_sha\";fi\ntest \"$(git -C \"$work\" rev-parse HEAD)\" = \"$source_sha\" || exit 74\nlog=\"$(mktemp)\"\ntrap 'rm -f \"$log\"' EXIT\nif ! docker build --network=host --progress=plain -f \"$work/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:creator-colors-ba04350 \"$work\" >\"$log\" 2>&1; then\n if grep -Eq 'ERR_PNPM|frozen-lockfile' \"$log\"; then exit 51;fi\n if grep -Eq 'no space left|ENOSPC' \"$log\"; then exit 52;fi\n if grep -Eq 'network is unreachable|ETIMEDOUT|ECONNREFUSED|TLS handshake' \"$log\"; then exit 53;fi\n exit 55\nfi\nnewid=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:creator-colors-ba04350)\"\nprobe=\"$(docker create gace-tgtumbler-gaybbs:creator-colors-ba04350)\"\ntrap 'docker rm -f \"$probe\" >/dev/null 2>&1 || true; rm -f \"$log\"' EXIT\ndocker cp \"$probe:/app/gaybbs.mjs\" \"$log.bundle\"\ntest -s \"$log.bundle\"\ngrep -q 'クリエーター投稿' \"$log.bundle\" || exit 81\ngrep -q 'dm:talk' \"$log.bundle\" || exit 82\ngrep -q 'dm:invite' \"$log.bundle\" || exit 83\ndocker rm -f \"$probe\"\nrm -f \"$log.bundle\"\ntrap 'rm -f \"$log\"' EXIT\ndocker compose -p deploy -f \"$compose\" config --quiet || exit 68\ndocker image tag \"$expected_active\" gace-tgtumbler-gaybbs:rollback-before-colors-20261115\ncat > \"$work/live-colors.yaml\" <<'YAML'\nservices:\n  gaybbs:\n    image: gace-tgtumbler-gaybbs:creator-colors-ba04350\n    pull_policy: never\nYAML\ncat > \"$work/rollback-colors.yaml\" <<'YAML'\nservices:\n  gaybbs:\n    image: gace-tgtumbler-gaybbs:rollback-before-colors-20261115\n    pull_policy: never\nYAML\ndocker compose -p deploy -f \"$compose\" -f \"$work/live-colors.yaml\" config --quiet || exit 69\nchanged=0\nrollback(){ rc=$?;trap - ERR;set +e;if test \"$changed\" = 1;then docker compose -p deploy -f \"$compose\" -f \"$work/rollback-colors.yaml\" up -d --no-build --no-deps gaybbs >/dev/null 2>&1 && echo COLOR_ROLLBACK=ATTEMPTED || echo COLOR_ROLLBACK=FAILED;fi;exit \"$rc\"; }\ntrap rollback ERR\nchanged=1\ndocker compose -p deploy -f \"$compose\" -f \"$work/live-colors.yaml\" up -d --no-build --no-deps gaybbs >/dev/null\nsleep 8\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$newid\" || false\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || false\ntrap - ERR\necho POSTING_COLOR_RUNTIME_DEPLOY=PASS\necho COLOR_IMAGE=\"$newid\"\necho USERBOT=\"$(systemctl --user is-active gace-userbot-verify.service || true)\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
