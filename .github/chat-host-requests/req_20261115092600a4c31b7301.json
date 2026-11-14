@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -euo pipefail\nroot=/mnt/g/GserverStorage/public_channel_videos\nmountpoint -q /mnt/g\ntest -d \"$root\"\nunits=$(systemctl --user list-unit-files --type=service --no-legend | awk '{print $1}' | while read -r u; do systemctl --user cat \"$u\" 2>/dev/null | grep -Fq 'theGreatOldDaysofNipponGV' && printf '%s\\n' \"$u\" || :; done)\nn=$(printf '%s\\n' \"$units\" | grep -c . || :)\ntest \"$n\" -eq 1 || exit 61\nunit=\"$units\"\nsystemctl --user is-active --quiet \"$unit\" || exit 62\npid=$(systemctl --user show \"$unit\" -p MainPID --value)\ntest \"$pid\" -gt 1 || exit 63\ntest -d \"/proc/$pid\" || exit 64\nbefore=$(cat \"/proc/$pid/io\" 2>/dev/null | awk '/^(rchar|wchar|read_bytes|write_bytes):/{s+=$2}END{print s+0}')\nsleep 4\nafter=$(cat \"/proc/$pid/io\" 2>/dev/null | awk '/^(rchar|wchar|read_bytes|write_bytes):/{s+=$2}END{print s+0}')\ncount=$(find \"$root\" -type f \\( -iname '*.mp4' -o -iname '*.mkv' -o -iname '*.webm' -o -iname '*.mov' -o -iname '*.avi' \\) | wc -l)\nprintf 'TARGET_ACTIVE=1\\nPID=%s\\nIO_BEFORE=%s\\nIO_AFTER=%s\\nVIDEO_EXTENSION_FILES=%s\\n' \"$pid\" \"$before\" \"$after\" \"$count\"\ntest \"$after\" -gt \"$before\" || exit 65"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
