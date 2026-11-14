@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\npython3 - <<'PY' | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\nimport subprocess,json,pathlib,urllib.request,urllib.parse,urllib.error\ncontainer=\"deploy-gaybbs-1\"\ninspect=json.loads(subprocess.check_output([\"docker\",\"inspect\",container],text=True))[0]\nsource=next(m[\"Source\"] for m in inspect[\"Mounts\"] if m[\"Destination\"]==\"/run/secrets/bot_token\")\ntoken=pathlib.Path(source).read_text().strip()\nbase=\"https://api.telegram.org/bot\"+token+\"/\"\ndef invoke(method,params):\n try:\n  body=urllib.parse.urlencode(params).encode()\n  with urllib.request.urlopen(urllib.request.Request(base+method,data=body),timeout=20) as res:\n   obj=json.load(res)\n  return obj.get(\"ok\") is True,str(obj.get(\"description\",\"\"))[:180]\n except urllib.error.HTTPError as e:\n  try: obj=json.load(e); return False,str(obj.get(\"description\",\"HTTP_ERROR\"))[:180]\n  except Exception: return False,\"HTTP_ERROR\"\n except Exception as e: return False,type(e).__name__\ngetme=request=urllib.request.urlopen(base+\"getMe\",timeout=20)\nme=json.load(getme)\nif not me.get(\"ok\"): raise RuntimeError(\"BOT_GETME_FAILED\")\nbot_id=me[\"result\"][\"id\"]\nok_member,member_note=invoke(\"getChatMember\",{\"chat_id\":-1003847210571,\"user_id\":bot_id})\nok_thread,thread_note=invoke(\"sendChatAction\",{\"chat_id\":-1003847210571,\"message_thread_id\":48,\"action\":\"typing\"})\nprint(\"PR47_AREA48_TELEGRAM_PROBE\")\nprint(\"AREA_GROUP_BOT_MEMBER_CHECK=\"+(\"PASS\" if ok_member else \"FAIL\"))\nprint(\"AREA_THREAD_48_CHECK=\"+(\"PASS\" if ok_thread else \"FAIL\"))\nprint(\"GROUP_MEMBER_ERROR=\"+(member_note if not ok_member else \"none\"))\nprint(\"THREAD_ERROR=\"+(thread_note if not ok_thread else \"none\"))\nprint(\"NO_MESSAGE_POSTED=yes\")\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
