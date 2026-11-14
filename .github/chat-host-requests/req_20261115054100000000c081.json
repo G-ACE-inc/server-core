@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\nwork=\"$repo/.worktrees/creator-menu-20261115\"\ntest \"$(git -C \"$repo\" rev-parse HEAD)\" = b69612c64c22af1540b7294625658ebffa946270 || { echo LIVE_CHECKOUT_CHANGED; exit 74; }\ntest ! -e \"$work\" || { echo WORKTREE_ALREADY_EXISTS; exit 73; }\ngit -C \"$repo\" fetch --no-tags origin refs/heads/feat/assistant-ai-and-sales-core\nhead=\"$(git -C \"$repo\" rev-parse FETCH_HEAD)\"\ntest \"$head\" = d8de8f8912ee1d19b2a2bf2171c6cb66d51783a5 || { echo REMOTE_HEAD_CHANGED; exit 74; }\nmkdir -p \"$repo/.worktrees\"\ngit -C \"$repo\" worktree add --detach \"$work\" \"$head\"\necho \"CREATEVDO_BUILD_START\"\nif docker build --pull=false --progress=plain --file \"$work/deploy/Dockerfile\" --tag create-videobot:creator-menu-d8de8f8 \"$work\" > /tmp/createvdo-menu-build-20261115.log 2>&1; then\n echo \"CREATEVDO_IMAGE_BUILD=PASS\"\n docker image inspect --format 'CANDIDATE_IMAGE={{.Id}}' create-videobot:creator-menu-d8de8f8\n docker run --rm --network none --entrypoint node create-videobot:creator-menu-d8de8f8 -e \"import('/opt/videobot/src/runtime/creatorEgress.mjs').then(()=>console.log('UNDICI_MODULE=PASS'))\" || { echo MODULE_TEST_FAIL; exit 3; }\nelse\n tail -35 /tmp/createvdo-menu-build-20261115.log | sed -E 's#[a-zA-Z0-9_-]{50,}#[REDACTED]#g'\n echo CREATEVDO_IMAGE_BUILD=FAIL\n exit 1\nfi\necho \"EXISTING_CONTAINER=$(docker inspect --format '{{.State.Status}} {{.Config.Image}}' gace-createvdobot-videobot-poll-1)\"\necho \"COMPOSE_LABELS\"\ndocker inspect --format '{{index .Config.Labels \"com.docker.compose.project\"}}|{{index .Config.Labels \"com.docker.compose.service\"}}|{{index .Config.Labels \"com.docker.compose.project.working_dir\"}}|{{index .Config.Labels \"com.docker.compose.project.config_files\"}}' gace-createvdobot-videobot-poll-1\necho \"SOURCE_HEAD=$head\"\necho CREATEVDO_BUILD_END"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
