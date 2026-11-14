@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncase \"$(git remote get-url origin)\" in *seigo-gace/create-videobot*) ;; *) exit 51;; esac\nroot=\"$(git rev-parse --show-toplevel)\"\nsha=\"faaae3e88c99a7cdfa85a70c91b6b585e3cd7a0d\"\nstage=\"$root/.worktrees/creator-entry-faaae3e\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = \"$sha\" || exit 52\ntest -z \"$(git -C \"$stage\" status --porcelain --untracked-files=no)\" || exit 53\nnewtag=\"create-videobot:creator-entry-faaae3e\"\nnewid=\"$(docker image inspect -f '{{.Id}}' \"$newtag\")\"\nmapfile -t ids < <(docker ps -q --filter label=com.docker.compose.service=videobot-poll)\ntest \"${#ids[@]}\" -eq 1 || { echo CREATOR_LIVE_POLLER_COUNT_UNEXPECTED; exit 54; }\nbefore=\"${ids[0]}\"\noldtag=\"$(docker inspect -f '{{.Config.Image}}' \"$before\")\"\nif test \"$oldtag\" = \"$newtag\"; then\n  test \"$(docker inspect -f '{{.Image}}' \"$before\")\" = \"$newid\" || exit 55\n  echo CREATOR_EDITOR_ALREADY_LIVE=PASS\n  exit 0\nfi\ncase \"$oldtag\" in\n create-videobot:stars-sticker-shared-361267c) ;;\n *) echo CREATOR_LIVE_IMAGE_CHANGED_DO_NOT_OVERWRITE; exit 56;;\nesac\noldid=\"$(docker inspect -f '{{.Image}}' \"$before\")\"\ntest \"$(docker image inspect -f '{{.Id}}' \"$oldtag\")\" = \"$oldid\" || exit 57\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$before\")\"\nfiles=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}' \"$before\")\"\nbase=\"${files%%,*}\"\ncase \"$base\" in *compose.videobot.poll.yaml) ;; *) exit 58;; esac\ntest -f \"$base\" || exit 59\ndocker compose -p \"$project\" -f \"$base\" config --quiet || exit 60\noverrides=\"$root/.worktrees/creator-entry-runtime-overrides-faaae3e\"\nmkdir -p \"$overrides\"\ncat > \"$overrides/live.yaml\" <<'YAML'\nservices:\n  videobot-poll:\n    image: create-videobot:creator-entry-faaae3e\nYAML\ncat > \"$overrides/rollback.yaml\" <<'YAML'\nservices:\n  videobot-poll:\n    image: create-videobot:stars-sticker-shared-361267c\nYAML\ndocker compose -p \"$project\" -f \"$base\" -f \"$overrides/live.yaml\" config --quiet || exit 61\nchanged=0\nrollback() {\n rc=$?\n trap - ERR\n set +e\n if test \"$changed\" = 1; then\n  docker compose -p \"$project\" -f \"$base\" -f \"$overrides/rollback.yaml\" up -d --no-build --no-deps videobot-poll >/dev/null\n  echo CREATOR_EDITOR_ROLLBACK_ATTEMPTED\n fi\n exit \"$rc\"\n}\ntrap rollback ERR\nchanged=1\ndocker compose -p \"$project\" -f \"$base\" -f \"$overrides/live.yaml\" up -d --no-build --no-deps videobot-poll\nsleep 8\nmapfile -t after_ids < <(docker ps -q --filter label=com.docker.compose.project=\"$project\" --filter label=com.docker.compose.service=videobot-poll)\ntest \"${#after_ids[@]}\" -eq 1 || { echo CREATOR_EDITOR_POLLER_COUNT_INVALID; false; }\nafter=\"${after_ids[0]}\"\ntest \"$(docker inspect -f '{{.Image}}' \"$after\")\" = \"$newid\" || { echo CREATOR_EDITOR_IMAGE_NOT_APPLIED; false; }\ntest \"$(docker inspect -f '{{.State.Running}}' \"$after\")\" = true || { echo CREATOR_EDITOR_NOT_RUNNING; false; }\ntrap - ERR\necho CREATOR_EDITOR_DEPLOY=PASS\necho CREATOR_EDITOR_POLLER_COUNT=1\necho CREATOR_EDITOR_SOURCE_SHA=\"$sha\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
