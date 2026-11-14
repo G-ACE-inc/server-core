@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\nwork=\"$repo/.worktrees/creator-menu-20261115\"\nstage=\"$work/.gace-menu-offline-stage\"\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/deploy\nbase=\"$root/compose.videobot.poll.yaml\"\nlive=\"$repo/.worktrees/video-stars-deploy.MoCiE4eQ/live.yaml\"\ntest \"$(git -C \"$work\" rev-parse HEAD)\" = d8de8f8912ee1d19b2a2bf2171c6cb66d51783a5 || { echo SOURCE_SHA_MISMATCH; exit 74; }\ntest -f \"$base\" && test -f \"$live\" || { echo COMPOSE_FILES_CHANGED; exit 74; }\ntest \"$(docker inspect --format '{{index .Config.Labels \"com.docker.compose.project\"}}' gace-createvdobot-videobot-poll-1)\" = gace-createvdobot || exit 74\ntest \"$(docker inspect --format '{{index .Config.Labels \"com.docker.compose.service\"}}' gace-createvdobot-videobot-poll-1)\" = videobot-poll || exit 74\ntest \"$(docker image inspect --format '{{.Id}}' create-videobot:creator-menu-d8de8f8)\" = sha256:ee5a183876e7a9dfa437d49cc484afdaeef4cd386222603d461a705e3128c2da || { echo CANDIDATE_IMAGE_MISMATCH; exit 74; }\nold=\"$(docker inspect --format '{{.Image}}' gace-createvdobot-videobot-poll-1)\"\ndocker image tag \"$old\" create-videobot:rollback-pre-menu-20261115\ncat > \"$stage/override.yaml\" <<'YAML'\nservices:\n  videobot-poll:\n    image: create-videobot:creator-menu-d8de8f8\n    pull_policy: never\nYAML\ncat > \"$stage/rollback.yaml\" <<'YAML'\nservices:\n  videobot-poll:\n    image: create-videobot:rollback-pre-menu-20261115\n    pull_policy: never\nYAML\ncompose=(docker compose -p gace-createvdobot --project-directory \"$root\" -f \"$base\" -f \"$live\")\n\"${compose[@]}\" -f \"$stage/override.yaml\" config --quiet || { echo COMPOSE_PREFLIGHT_FAILED; exit 76; }\necho \"COMPOSE_PREFLIGHT=PASS\"\n\"${compose[@]}\" -f \"$stage/override.yaml\" up --no-deps --no-build --force-recreate -d videobot-poll || { echo DEPLOY_COMMAND_FAILED; exit 1; }\nsleep 10\nstate=\"$(docker inspect --format '{{.State.Status}}' gace-createvdobot-videobot-poll-1)\"\nimage=\"$(docker inspect --format '{{.Image}}' gace-createvdobot-videobot-poll-1)\"\nif test \"$state\" != running || test \"$image\" != sha256:ee5a183876e7a9dfa437d49cc484afdaeef4cd386222603d461a705e3128c2da; then\n echo \"NEW_IMAGE_UNHEALTHY; state=$state\"\n \"${compose[@]}\" -f \"$stage/rollback.yaml\" up --no-deps --no-build --force-recreate -d videobot-poll || echo ROLLBACK_COMMAND_FAILED\n echo \"CREATOR_DEPLOY_VERIFY=FAIL\"\n exit 1\nfi\necho \"CREATEVDO_CONTAINER_IMAGE=$image\"\necho \"CREATEVDO_RUNNING=PASS\"\necho \"CREATOR_POLL_READY=$(docker logs --since 3m gace-createvdobot-videobot-poll-1 2>&1 | grep -q 'CREATOR_DM_POLL_READY=PASS' && echo PASS || echo NOT_OBSERVED)\"\necho \"STICKER_SHOP_READY=$(docker logs --since 3m gace-createvdobot-videobot-poll-1 2>&1 | grep -q 'STICKER_SHOP_HTTP_READY=PASS' && echo PASS || echo NOT_OBSERVED)\"\necho \"USERBOT_ACTIVE=$(systemctl --user is-active gace-userbot-verify.service || true)\"\necho \"CREATEVDO_DEPLOY_VERIFY=PASS\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
