@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/56"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nstage=\"$repo/.worktrees/menu-hotfix-runtime-20261115\"\ntest \"$(git -C \"$repo\" rev-parse HEAD)\" = 57955cd68bb39626ebbca38d44b7bb034da6dc05 || { echo LIVE_SOURCE_MOVED; exit 74; }\ntest ! -e \"$stage\" || { echo RUNTIME_STAGE_EXISTS; exit 73; }\nmkdir -p \"$stage\"\ngh run download 43638320568 --repo seigo-gace/GateApp-Bot --name gaybbs-profile-bundle --dir \"$stage\"\ntest \"$(sha256sum \"$stage/gaybbs.mjs\" | cut -d' ' -f1)\" = 76ccecd409e9c6ec0515a3f6d8f72063b26ffedaa32c1e47cd8e7b7054109d62 || { echo BUNDLE_SHA_MISMATCH; exit 74; }\ncat > \"$stage/Dockerfile\" <<'DOCKER'\nFROM gace-tgtumbler-gaybbs:local\nUSER root\nCOPY --chown=node:node gaybbs.mjs /app/gaybbs.mjs\nUSER node\nDOCKER\ndocker image inspect gace-tgtumbler-gaybbs:local >/dev/null || { echo BASE_IMAGE_UNAVAILABLE; exit 74; }\ndocker build --pull=false --network=none -t gace-tgtumbler-gaybbs:menu-hotfix-406b3ac \"$stage\" >/tmp/gace-menu-hotfix-build-20261115.log 2>&1 || { tail -30 /tmp/gace-menu-hotfix-build-20261115.log; exit 1; }\ndocker run --rm --network none --entrypoint node gace-tgtumbler-gaybbs:menu-hotfix-406b3ac --check /app/gaybbs.mjs\ndocker image inspect --format 'CANDIDATE={{.Id}}' gace-tgtumbler-gaybbs:menu-hotfix-406b3ac\ndocker inspect --format 'LIVE_IMAGE={{.Image}} LIVE_STATUS={{.State.Status}}' deploy-gaybbs-1\ndocker inspect --format 'COMPOSE_PROJECT={{index .Config.Labels \"com.docker.compose.project\"}} COMPOSE_SERVICE={{index .Config.Labels \"com.docker.compose.service\"}} COMPOSE_ROOT={{index .Config.Labels \"com.docker.compose.project.working_dir\"}} COMPOSE_FILES={{index .Config.Labels \"com.docker.compose.project.config_files\"}}' deploy-gaybbs-1\necho GAYBBS_MENU_HOTFIX_STAGE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
