@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/55"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ncd \"$repo\"\necho \"GAYBBS_BRANCH_AUDIT\"\nprintf 'HEAD='; git rev-parse HEAD\nprintf 'BRANCH='; git branch --show-current\ngit worktree list --porcelain | grep -E '^(worktree|HEAD|branch) ' | head -75\necho \"UNTRACKED_WORKTREES:\"\nfind .worktrees -mindepth 1 -maxdepth 2 -type d -name .git -print 2>/dev/null | head -25 || true\necho \"LINK_DEPLOY_CANDIDATES\"\nfor path in artifacts/bot/src/bot/linkInlineHandlers.ts artifacts/bot/src/services/linkInlineShare.ts artifacts/bot/src/services/linkRichPreview.ts; do\n if test -f \"$path\"; then echo \"$path=PRESENT\"; else echo \"$path=ABSENT\"; fi\ndone\necho \"COMPOSE_SUMMARY\"\ndocker compose -f deploy/gserver-compose.yaml config --services 2>/dev/null | head -20 || true\necho \"GAYBBS_BRANCH_AUDIT_END\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
