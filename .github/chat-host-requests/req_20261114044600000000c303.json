@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "Gserver local G drive read-only inspection",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-6871905683"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/G-ACEserver"
+    },
+    "command": "set -eu\nprintf 'MOUNT_G_CANDIDATES:\\n'\nfindmnt -rn -o TARGET,SOURCE,FSTYPE | grep -Ei '(^/mnt/g[[:space:]]|/gdrive|/drive-g|gserver.*storage|/media/g)' | head -20 || true\nprintf 'G_STORAGE_PATH_CANDIDATES:\\n'\nfor p in /mnt/g /mnt/G /media/g /media/G /home/gace/Project/Gserver/storage /home/gace/Project/Gserver/data /mnt/gserver; do if test -d \"$p\"; then printf '%s\\n' \"$p\"; fi; done\nprintf 'STORAGE_CONFIG_REFS:\\n'\nrg -n -i -m 12 'g.drive|g_drive|/mnt/g|storage_root|media_root' /home/gace/Project/Gserver/repository/config /home/gace/Project/Gserver/repository/docs 2>/dev/null | head -30 | sed -E 's/(token|secret|password)([[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\\1\\2[REDACTED]/g' || true\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
