@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/53"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ncd \"$repo\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 70\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 71\ntest \"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\" = \"sha256:58ae5730a1b9622acc5d34f635318dd39f0c45563b65ab59ee6b9f842f64cab1\" || exit 72\ngit fetch --no-tags origin refs/heads/fix/chat-three-topic-selector-20261114 >/dev/null\ntest \"$(git rev-parse FETCH_HEAD)\" = 5e2e8b2903eade90aa46860e09dba4be50d5c0ff || exit 73\noldhash=\"$(sha256sum scripts/userbot_resident_ipc.py | cut -d' ' -f1)\"\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ncp scripts/userbot_resident_ipc.py \"$tmp/original.py\"\ngit show 5e2e8b2903eade90aa46860e09dba4be50d5c0ff:scripts/userbot_resident_ipc.py > \"$tmp/candidate.py\"\npython3 - \"$tmp/original.py\" \"$tmp/candidate.py\" \"$tmp/updated.py\" <<'PY'\nfrom pathlib import Path\nimport ast,re,sys\nold=Path(sys.argv[1]).read_text()\ncand=Path(sys.argv[2]).read_text()\nmarker='            if action == \"profile_button_smoke\":'\nbegin='            if action in {\"chat_selector_smoke\", \"invite_selector_smoke\"}:'\nassert old.count(marker)==1 and begin not in old\nassert cand.count(marker)==1 and cand.count(begin)==1\nstart=cand.index(begin)\nend=cand.index(marker,start)\nblock=cand[start:end]\nassert 'latest.click' in block and 'get_messages' in block\nassert 'log_out' not in block and 'sign_in' not in block and 'TelegramClient(' not in block\nassert 'ACTIONS = frozenset({' in old\nupdated=re.sub(r'ACTIONS = frozenset\\(\\{([^}]*)\\}\\)',lambda m:'ACTIONS = frozenset({'+m.group(1).rstrip()+', \"chat_selector_smoke\", \"invite_selector_smoke\"})',old,count=1)\nassert updated!=old\nupdated=updated.replace(marker,block+marker,1)\nast.parse(updated)\nPath(sys.argv[3]).write_text(updated)\nPY\npython3 -m py_compile \"$tmp/updated.py\"\ntest \"$(sha256sum scripts/userbot_resident_ipc.py | cut -d' ' -f1)\" = \"$oldhash\" || exit 74\ncp \"$tmp/updated.py\" scripts/userbot_resident_ipc.py\nchmod 600 scripts/userbot_resident_ipc.py\n# Normal session-preserving code-activation restart; no separate Telegram client.\nsystemctl --user restart gace-userbot-verify.service\nsleep 3\nif test \"$(systemctl --user is-active gace-userbot-verify.service)\" != active;then\n cp \"$tmp/original.py\" scripts/userbot_resident_ipc.py\n echo \"USERBOT_CODE_ACTIVATION=FAILED_SERVICE_INACTIVE\"\n exit 80\nfi\nif ! timeout 35s python3 scripts/userbot_test_client.py health >/dev/null 2>&1;then\n echo \"USERBOT_CODE_ACTIVATION=AUTH_OR_IPC_NOT_VERIFIED\"\n exit 81\nfi\nchat=FAIL\ninvite=FAIL\nif timeout 65s python3 scripts/userbot_test_client.py chat_selector_smoke >/dev/null 2>&1;then chat=PASS;fi\nif timeout 65s python3 scripts/userbot_test_client.py invite_selector_smoke >/dev/null 2>&1;then invite=PASS;fi\nactive=\"$(systemctl --user is-active gace-userbot-verify.service || true)\"\nenabled=\"$(systemctl --user is-enabled gace-userbot-verify.service || true)\"\n{ echo \"USERBOT_SELECTOR_LIVE_TEST\";echo \"CHAT_SELECTOR=$chat\";echo \"INVITE_COPY_SELECTOR=$invite\";echo \"USERBOT_ACTIVE=$active\";echo \"USERBOT_ENABLED=$enabled\";echo \"SOURCE_HEAD=$(git rev-parse HEAD)\";echo \"BOT_IMAGE=$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\"; } | gh issue comment 7 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\ntest \"$chat\" = PASS && test \"$invite\" = PASS && test \"$active\" = active && test \"$enabled\" = enabled"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
