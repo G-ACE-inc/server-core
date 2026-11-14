@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ndocker exec -i deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs - <<'JS' | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\nconst fs=require(\"fs\");\nconst token=fs.readFileSync(\"/run/secrets/bot_token\",\"utf8\").trim();\nconst targets=[[\"area_bbs\",-1003847210571,48],[\"video_chat\",-1002373696859,1613],[\"gay_board\",-1003770334893,210]];\nasync function call(method,data){const r=await fetch(\"https://api.telegram.org/bot\"+token+\"/\"+method,{method:\"POST\",headers:{\"content-type\":\"application/json\"},body:JSON.stringify(data)});const j=await r.json();if(!j.ok)throw Error(method+\":\"+String(j.description).slice(0,100));return j.result}\n(async()=>{\n console.log(\"PR47_THREE_TOPIC_SEND_DELETE_SMOKE\");\n let failed=false;\n for(const [board,chat,thread] of targets){\n  let id=null;\n  try{\n   const p=await call(\"sendMessage\",{chat_id:chat,message_thread_id:thread,text:\"🧪 プロフィール掲載テスト（自動削除）\",disable_notification:true});\n   id=p.message_id;\n   if(p.message_thread_id!==thread)throw Error(\"WRONG_THREAD\");\n   const deleted=await call(\"deleteMessage\",{chat_id:chat,message_id:id});\n   if(deleted!==true)throw Error(\"DELETE_FAILED\");\n   console.log(\"TOPIC=\"+board+\":\"+thread+\"|SEND=PASS|DELETE=PASS\");\n  }catch(e){\n   failed=true;console.log(\"TOPIC=\"+board+\":\"+thread+\"|SMOKE=FAIL|CAUSE=\"+String(e.message).replace(/[\\r\\n]/g,\" \").slice(0,130));\n   if(id!==null){try{await call(\"deleteMessage\",{chat_id:chat,message_id:id});console.log(\"CLEANUP=PASS\")}catch{console.log(\"CLEANUP=NOT_VERIFIED\")}}\n  }\n }\n console.log(\"THREE_TOPIC_SMOKE=\"+(failed?\"FAIL\":\"PASS\"));\n if(failed)process.exitCode=81;\n})().catch(e=>{console.log(\"TOPIC_SMOKE_RUNTIME_ERROR=\"+String(e.message).slice(0,100));process.exitCode=82});\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
