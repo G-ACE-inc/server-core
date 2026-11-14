@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "d5c4de72f9baf19082c508ec513ec9df673fa5c0",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\necho 'UNAUTHORIZED_ALL_CHANNEL_JOB_BEFORE'\nsystemctl --user show gace-public-video-all-joined-retry-20261114.service -p ActiveState -p SubState -p Result --no-pager || true\nsystemctl --user show gace-public-video-all-joined-20261114.service -p ActiveState -p SubState -p Result --no-pager || true\necho 'STOP_UNAUTHORIZED_ALL_CHANNEL_WORKERS'\nfor unit in gace-public-video-all-joined-retry-20261114.service gace-public-video-all-joined-20261114.service; do\n  if test \"$(systemctl --user show \"$unit\" -p ActiveState --value 2>/dev/null)\" = active; then\n    systemctl --user stop \"$unit\"\n  fi\n  state=\"$(systemctl --user show \"$unit\" -p ActiveState --value 2>/dev/null || true)\"\n  echo \"$unit=$state\"\n  test \"$state\" != active\ndone\necho 'PROTECT_RESIDENT_USERBOT'\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled\nmountpoint -q /mnt/g\ntest -d /mnt/g/GserverStorage\necho 'EXISTING_PRIORITY_WORKER'\nsystemctl --user show gace-public-video-collect-retry-20261114.service -p ActiveState -p Result --no-pager || true\necho 'PRIORITY_PROGRESS'\nif test -f /mnt/g/GserverStorage/public_channel_videos/_jobs/thegreatolddaysofnippongv.json;then cat /mnt/g/GserverStorage/public_channel_videos/_jobs/thegreatolddaysofnippongv.json;fi\necho 'OTHER_CHANNEL_FILES_ALREADY_PRESENT'\nfind /mnt/g/GserverStorage/public_channel_videos -mindepth 2 -maxdepth 2 -type f ! -path '/mnt/g/GserverStorage/public_channel_videos/1877875443/*' -printf '%h/%f %s\\n' | head -30\necho 'RESIDENT_HEALTH'\npython3 scripts/userbot_test_client.py health"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
