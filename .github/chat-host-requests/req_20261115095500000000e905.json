@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ntag=\"create-videobot:gallery-flow-034fa01\"\nid=\"$(docker image inspect -f '{{.Id}}' \"$tag\")\"\nids=\"$(docker ps -q --filter label=com.docker.compose.service=videobot-poll)\"\ntest \"$(printf '%s\\n' \"$ids\" | grep -c .)\" -eq 1 || exit 41\ntest \"$(docker inspect -f '{{.Image}}' \"$ids\")\" = \"$id\" || exit 42\ntest \"$(docker inspect -f '{{.State.Running}}' \"$ids\")\" = true || exit 43\ndocker run --rm --network none --pull never --read-only --entrypoint node \"$tag\" --input-type=module -e 'import {creatorEditorPanel,openCreatorEditor,editCreatorDraft} from \"./src/telegram/creatorUi.mjs\";let d=openCreatorEditor({sellerId:\"33\"});if(!creatorEditorPanel(d,1,\"await_video\").text.includes(\"タイトルと動画を投稿してください\"))process.exit(71);d=editCreatorDraft(d,{type:\"captionTitle\",text:\"題名\"});d=editCreatorDraft(d,{type:\"paidVideo\",media:{fileId:\"abc_123\"}});let q=creatorEditorPanel(d,2,\"description\");if(q.reply_markup.inline_keyboard[0][0].callback_data!==\"entry:skip|r2\")process.exit(72);let k=creatorEditorPanel(d,3,\"editor\");if(k.entities?.length!==2||k.reply_markup.inline_keyboard[2][0].text!==\"✅ 登録\")process.exit(73);console.log(\"CREATOR_PRODUCTION_UI_FLOW=PASS\")'\necho VIDEO_GALLERY_DEPLOY_INDEPENDENT=PASS\necho POLLER_COUNT=1"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
