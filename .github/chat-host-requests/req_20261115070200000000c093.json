@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/56"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nstage=\"$repo/.worktrees/menu-hotfix-runtime-dual-20261115\"\nnewtag=gace-tgtumbler-gaybbs:menu-hotfix-0bbf7c6\ntest \"$(git -C \"$repo\" rev-parse HEAD)\" = 57955cd68bb39626ebbca38d44b7bb034da6dc05 || exit 74\ntest \"$(sha256sum \"$stage/gaybbs.mjs\" | cut -d' ' -f1)\" = 76ccecd409e9c6ec0515a3f6d8f72063b26ffedaa32c1e47cd8e7b7054109d62 || exit 74\ntest \"$(sha256sum \"$stage/publishMenuPanels.mjs\" | cut -d' ' -f1)\" = 46f007a7a15fefd918d2bd443e492cac2e7542c19b7bd2aac5382b1101f7f036 || exit 74\nnewid=\"$(docker image inspect -f '{{.Id}}' \"$newtag\")\" || { echo CANDIDATE_IMAGE_MISSING; exit 74; }\nmapfile -t existing < <(docker ps -aq --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest \"${#existing[@]}\" -eq 1 || { echo SERVICE_IDENTITY_UNVERIFIED; exit 64; }\nold=\"${existing[0]}\"\ntest \"$(docker inspect -f '{{.Name}}' \"$old\")\" = /deploy-gaybbs-1 || exit 74\ntest \"$(docker inspect -f '{{.State.Running}}' \"$old\")\" = true || exit 74\noldid=\"$(docker inspect -f '{{.Image}}' \"$old\")\"\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$old\")\"\nfiles=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}' \"$old\")\"\nbase=\"${files%%,*}\"\ntest -f \"$base\" || { echo BASE_COMPOSE_UNAVAILABLE; exit 74; }\ndocker compose -p \"$project\" -f \"$base\" config --quiet || exit 74\ndocker image tag \"$oldid\" gace-tgtumbler-gaybbs:rollback-before-menu-20261115\ncat > \"$stage/live-override.yaml\" <<'YAML'\nservices:\n  gaybbs:\n    image: gace-tgtumbler-gaybbs:menu-hotfix-0bbf7c6\n    pull_policy: never\nYAML\ncat > \"$stage/rollback-override.yaml\" <<'YAML'\nservices:\n  gaybbs:\n    image: gace-tgtumbler-gaybbs:rollback-before-menu-20261115\n    pull_policy: never\nYAML\ndocker compose -p \"$project\" -f \"$base\" -f \"$stage/live-override.yaml\" config --quiet || exit 74\nchanged=0\nrollback(){ rc=$?;trap - ERR;set +e;if test \"$changed\" = 1; then docker compose -p \"$project\" -f \"$base\" -f \"$stage/rollback-override.yaml\" up --no-build --no-deps -d gaybbs >/dev/null 2>&1 && echo MENU_ROLLBACK=ATTEMPTED || echo MENU_ROLLBACK=FAILED;fi;exit \"$rc\"; }\ntrap rollback ERR\nchanged=1\ndocker compose -p \"$project\" -f \"$base\" -f \"$stage/live-override.yaml\" up --no-build --no-deps -d gaybbs\nsleep 8\nmapfile -t now < <(docker ps -aq --filter label=com.docker.compose.project=\"$project\" --filter label=com.docker.compose.service=gaybbs)\ntest \"${#now[@]}\" -eq 1 || { echo COUNT_FAILED; false; }\ntest \"$(docker inspect -f '{{.State.Running}}' \"${now[0]}\")\" = true || { echo NOT_RUNNING; false; }\ntest \"$(docker inspect -f '{{.Image}}' \"${now[0]}\")\" = \"$newid\" || { echo IMAGE_MISMATCH; false; }\ntrap - ERR\necho GAYBBS_MENU_IMAGE_DEPLOY=PASS\necho NEW_IMAGE_ID=$newid\necho GAYBBS_READY=\"$(docker logs --since 3m \"${now[0]}\" 2>&1 | grep -q 'GAYBBS_BOT_READY' && echo PASS || echo NOT_OBSERVED)\"\necho USERBOT_ACTIVE=\"$(systemctl --user is-active gace-userbot-verify.service || true)\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
