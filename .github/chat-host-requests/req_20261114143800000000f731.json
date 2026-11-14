@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nsrc=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\ncid=gace-createvdobot-videobot-poll-1\ntarget=806ab0d5e26892d92a73be8fa00a8e86494b03a2\npath=src/telegram/stickerWizard.mjs\nstage=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\ncompose=\"$stage/deploy/compose.videobot.poll.yaml\"\ntest -d \"$src\" && test -f \"$compose\" || { echo STK02_EXISTING_STAGE_MISSING;exit 61; }\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || { echo STK02_POLLER_NOT_RUNNING;exit 62; }\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || { echo STK02_SINGLE_POLLER_UNVERIFIED;exit 63; }\ngit -C \"$src\" fetch --no-tags origin feat/assistant-ai-and-sales-core >/dev/null 2>&1 || exit 64\ngit -C \"$src\" cat-file -e \"$target^{commit}\" || { echo STK02_ROLLBACK_COMMIT_NOT_FOUND;exit 65; }\noldhash=\"$(docker exec \"$cid\" sha256sum \"/opt/videobot/$path\" | cut -d' ' -f1)\"\nnewhash=\"$(git -C \"$src\" show \"$target:$path\" | sha256sum | cut -d' ' -f1)\"\ntest -n \"$newhash\" || exit 66\nif test \"$oldhash\" = \"$newhash\";then echo STK02_RUNTIME_ALREADY_ROLLED_BACK=PASS;exit 0;fi\ntest \"$oldhash\" = \"$(git -C \"$src\" show c4e2673186b9acb187a619d0aa85cc200e93d16e:\"$path\" | sha256sum | cut -d' ' -f1)\" || { echo STK02_UNEXPECTED_LIVE_WIZARD_PROTECT;exit 67; }\nrelease=\"$stage/.releases/$target/bot-only-rollback\"\nmkdir -p \"$release/src/telegram\"\ngit -C \"$src\" show \"$target:$path\" > \"$release/$path\"\n! grep -q 'web_app' \"$release/$path\" || exit 68\ngrep -q 'sticker:edit_pack:' \"$release/$path\" || exit 69\ndocker tag create-videobot:local-poll create-videobot:rollback-before-bot-only-806ab0d\nprintf 'FROM create-videobot:rollback-before-bot-only-806ab0d\\nUSER root\\nCOPY --chown=node:node %s /opt/videobot/%s\\nUSER node\\n' \"$path\" \"$path\" > \"$release/Dockerfile\"\ndocker build --network none --pull=false -t create-videobot:bot-only-806ab0d \"$release\" >/dev/null || exit 70\ndocker run --rm --network none --entrypoint node create-videobot:bot-only-806ab0d --check \"/opt/videobot/$path\" || exit 71\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}')\"\nexport VIDEOBOT_DB_PASSWORD_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}')\"\nexport VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/var/lib/videobot/sticker-entry\"}}{{.Source}}{{end}}{{end}}')\"\nexport GSERVER_POSTGRES_USER=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^VIDEOBOT_DB_USER=//p' | head -n 1)\"\nexport VIDEOBOT_SHOP_PUBLIC_URL=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^VIDEOBOT_SHOP_PUBLIC_URL=//p' | head -n 1)\"\nexport GSERVER_POSTGRES_NETWORK=\"$(docker inspect \"$cid\" --format '{{range $name, $net := .NetworkSettings.Networks}}{{println $name}}{{end}}' | head -n 1)\"\ntest -n \"$VIDEOBOT_TELEGRAM_TOKEN_SOURCE\" && test -n \"$VIDEOBOT_DB_PASSWORD_SOURCE\" && test -n \"$VIDEOBOT_STICKER_PIN_STATE_SOURCE\" && test -n \"$GSERVER_POSTGRES_USER\" && test -n \"$GSERVER_POSTGRES_NETWORK\" || exit 72\ndocker compose -p gace-createvdobot -f \"$compose\" config --quiet || exit 73\nswitched=NO\nrollback(){ trap - ERR; if test \"$switched\" = YES;then docker tag create-videobot:rollback-before-bot-only-806ab0d create-videobot:local-poll; docker compose -p gace-createvdobot -f \"$compose\" up -d --no-deps --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true;echo STK02_ROLLBACK_RECOVERY=ATTEMPTED;fi; }\ntrap 'code=$?;rollback;exit \"$code\"' ERR\ndocker tag create-videobot:bot-only-806ab0d create-videobot:local-poll\nswitched=YES\ndocker compose -p gace-createvdobot -f \"$compose\" up -d --no-deps --no-build --force-recreate videobot-poll >/dev/null\nready=NO\nfor n in 1 2 3 4 5 6 7 8 9 10 11 12;do\n if test \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true && docker logs \"$cid\" 2>&1 | grep -Fq 'CREATOR_DM_POLL_READY=PASS' && docker logs \"$cid\" 2>&1 | grep -Fq 'STICKER_SHOP_HTTP_READY=PASS';then ready=YES;break;fi\n sleep 3\ndone\ntest \"$ready\" = YES || exit 74\ndocker exec \"$cid\" sha256sum \"/opt/videobot/$path\" | cut -d' ' -f1 | grep -Fxq \"$newhash\" || exit 75\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 76\nswitched=NO\ntrap - ERR\necho STK02_BOT_ONLY_RUNTIME_ROLLBACK=PASS\necho STK02_BOT_ONLY_WIZARD_SHA256=\"$newhash\"\necho STK02_SINGLE_POLLER=PASS\necho STK02_PUBLIC_SHOP_PRESERVED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
