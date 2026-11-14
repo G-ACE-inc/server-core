@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "ce440ba34a82699167c5feea441baaaccb4572fb",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -u\necho MOUNT_ENTRY\nfindmnt -T /mnt/g -no SOURCE,TARGET,FSTYPE,OPTIONS 2>&1 || true\necho SYS_MOUNT_LINE\ngrep ' /mnt/g ' /proc/mounts | head -3 || true\necho PRIVILEGE\nif sudo -n true 2>/dev/null;then echo PASSWORDLESS_SUDO=YES;else echo PASSWORDLESS_SUDO=NO;fi\necho MOUNTPOINT_ENTRY\nstat -L /mnt/g 2>&1 | head -6 || true\necho MOUNT_DEFINITIONS\ngrep -R -n -E 'GserverStorage|mount -t drvfs|/mnt/g' /etc/fstab /etc/wsl.conf 2>/dev/null | head -25 || true\necho MOUNT_USERS\nif command -v fuser >/dev/null 2>&1;then timeout 5s fuser -m /mnt/g 2>&1 | head -8 || true;fi\necho WINDOWS_DRIVE_QUERY\nif test -x /mnt/c/Windows/System32/cmd.exe;then timeout 8s /mnt/c/Windows/System32/cmd.exe /c 'if exist G:\\GserverStorage\\ (echo WINDOWS_G_EXISTS) else (echo WINDOWS_G_MISSING)' 2>&1 | head -6; else echo WINDOWS_CMD_INTEROP_NOT_ACCESSIBLE;fi\necho USERBOT\nsystemctl --user is-active gace-userbot-verify.service || true\necho END"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
