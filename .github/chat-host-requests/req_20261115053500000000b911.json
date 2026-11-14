@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncase \"$(git remote get-url origin)\" in *seigo-gace/create-videobot*) ;; *) echo VIDEO_REPO_MISMATCH; exit 61;; esac\nroot=\"$(git rev-parse --show-toplevel)\"\nsha=\"361267cb5e636d4fcc70655c63dada5672a98916\"\ngit fetch --no-tags origin feat/assistant-ai-and-sales-core\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$sha\" || { echo VIDEO_FRESH_HEAD_CHANGED; exit 62; }\nstage=\"$root/.worktrees/video-stars-361267cb\"\nif test -d \"$stage\"; then\n test \"$(git -C \"$stage\" rev-parse HEAD)\" = \"$sha\" || exit 63\n test -z \"$(git -C \"$stage\" status --porcelain --untracked-files=no)\" || exit 64\nelse\n mkdir -p \"$root/.worktrees\"\n git worktree add --detach \"$stage\" \"$sha\"\nfi\nmapfile -t ids < <(docker ps -q --filter label=com.docker.compose.service=videobot-poll)\ntest \"${#ids[@]}\" -eq 1 || { echo VIDEO_POLLER_COUNT_CHANGED; exit 65; }\nid=\"${ids[0]}\"\ntag=\"$(docker inspect -f '{{.Config.Image}}' \"$id\")\"\nprintf 'LIVE_IMAGE_TAG=%s\\n' \"$tag\"\nprintf 'LIVE_IMAGE_ID=%s\\n' \"$(docker inspect -f '{{.Image}}' \"$id\")\"\nfiles=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}' \"$id\")\"\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$id\")\"\ncase \"$files\" in *,*) echo MULTI_COMPOSE; exit 66;; *compose.videobot.poll.yaml) ;; *) echo UNKNOWN_COMPOSE; exit 67;; esac\ntest -f \"$files\" || exit 68\ndocker compose -p \"$project\" -f \"$files\" config --quiet\ndocker image inspect create-videobot:video-ui-be4f34d >/dev/null\necho VIDEO_STARS_DEPLOY_PREFLIGHT=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
