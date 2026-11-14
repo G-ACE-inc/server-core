@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/51"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest -S \"$P/deploy/secrets/userbot_verify.sock\"\npython3 -B - <<'PY'\nimport socket,json\np=\"/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/deploy/secrets/userbot_verify.sock\"\nreq={\"request_id\":\"search-menu-layout-20261114\",\"action\":\"bot_start_menu\"}\nwith socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as s:\n s.settimeout(25)\n s.connect(p)\n s.sendall((json.dumps(req)+\"\\n\").encode())\n out=b\"\"\n while not out.endswith(b\"\\n\"):\n  part=s.recv(8192)\n  if not part:raise RuntimeError(\"USERBOT_IPC_CLOSED\")\n  out+=part\n result=json.loads(out)\n if result.get(\"status\")!=\"PASS\" or result.get(\"menu_matches_contract\") is not True or result.get(\"row_sizes\") != [3,2,2,3]:\n  raise RuntimeError(\"USERBOT_POSTING_MENU_LAYOUT_FAILED\")\n print(\"USERBOT_10_BUTTON_SEARCH_VISIBLE_PASS\")\nPY\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\necho USERBOT_RESIDENT_UNCHANGED_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
