@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/5a93de671ee158205759bb6e264cd3cd48466743"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nWT=\"$(git rev-parse --show-toplevel)/.worktrees/search-colors-5a93de6\"\ntest \"$(git -C \"$WT\" rev-parse HEAD)\" = 5a93de671ee158205759bb6e264cd3cd48466743\nLOG=\"$(mktemp)\"\ntrap 'rm -f \"$LOG\"' EXIT\nif docker build --network=host --progress=plain -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:search-color-5a93de6 \"$WT\" >\"$LOG\" 2>&1; then\n docker image inspect gace-tgtumbler-gaybbs:search-color-5a93de6 >/dev/null\n exit 0\nfi\npython3 - \"$LOG\" <<'PY'\nimport pathlib,re,sys\ns=pathlib.Path(sys.argv[1]).read_text(errors='replace')\nfor code,pattern in [(111,'Cannot find matching keyid'),(113,'CERT_HAS_EXPIRED|certificate'),(119,'Internal Error: Error when performing the request'),(114,'ETIMEDOUT|ENOTFOUND|ECONNRESET'),(115,'403 Forbidden|429 Too Many Requests'),(84,'OUTDATED_LOCKFILE'),(86,'failed to calculate checksum'),(102,'pnpm install --frozen-lockfile'),(103,'build:gaybbs'),(104,'node --check')]:\n if re.search(pattern,s,re.I):sys.exit(code)\nsys.exit(122)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
