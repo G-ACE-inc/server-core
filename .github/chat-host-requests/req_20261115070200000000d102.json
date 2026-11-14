@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/57"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nname=deploy-gaybbs-1\nexpected=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:restore-completed-f19f4f5)\" || exit 74\ntest \"$(docker inspect -f '{{.Image}}' \"$name\")\" = \"$expected\" || { echo RESTORE_ACTIVE_IMAGE_MISMATCH;exit 74; }\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true || exit 63\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nwork=\"$repo/.worktrees/restore-completed-features-20261115\"\ntest \"$(git -C \"$work\" rev-parse HEAD)\" = f19f4f58f195db8ff0886bad18f35bdb163bd694 || exit 74\ntest -f \"$work/artifacts/bot/src/bot/profileCompactHandlers.ts\" || exit 81\ntest -f \"$work/artifacts/bot/src/services/roomPublishedEditor.ts\" || exit 82\ngrep -Fq 'pc:from:recruit' \"$work/artifacts/bot/src/bot/recruitmentHandlers.ts\" || exit 83\ngrep -Fq 'pc:from:room' \"$work/artifacts/bot/src/bot/postingHandlers.ts\" || exit 84\ngrep -Fq 'startCompactProfileEditor' \"$work/artifacts/bot/src/gaybbsBot.ts\" || exit 85\ngrep -Fq 'startSearchEditor' \"$work/artifacts/bot/src/gaybbsBot.ts\" || exit 86\ngrep -Fq 'likeTags' \"$work/artifacts/bot/src/bot/recruitmentHandlers.ts\" || exit 87\ngrep -Fq 'loveTags' \"$work/artifacts/bot/src/bot/recruitmentHandlers.ts\" || exit 88\ndocker exec \"$name\" node --check /app/gaybbs.mjs >/dev/null || exit 89\ndocker exec \"$name\" node -e 'const f=require(\"fs\").readFileSync(\"/app/gaybbs.mjs\",\"utf8\"); for (const x of [\"pc:from:recruit\",\"pc:from:room\",\"search:filter:\",\"room:host:\",\"クリエーター投稿\"]) if(!f.includes(x)) process.exit(81);' || exit 90\necho RESTORE_IMAGE_ACTIVE=PASS\necho SEARCH_FILTER_HANDLER_BUNDLE=PASS\necho PROFILE_COMPACT_HANDLER_BUNDLE=PASS\necho ROOM_PROFILE_REGISTER_BUNDLE=PASS\necho RECRUIT_LIKE_LOVE_PROFILE_LINK=PASS\necho USERBOT=\"$(systemctl --user is-active gace-userbot-verify.service || true)\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
