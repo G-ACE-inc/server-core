@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_PR",
+    "implementation_context": "host_deploy",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/5a93de671ee158205759bb6e264cd3cd48466743"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nROOT=\"$(git rev-parse --show-toplevel)\"\ntest \"$(git -C \"$ROOT\" remote get-url origin | sed 's#^git@github.com:#https://github.com/#; s#\\.git$##')\" = \"https://github.com/seigo-gace/GateApp-Bot\"\nTARGET=5a93de671ee158205759bb6e264cd3cd48466743\nPIN=gace-tgtumbler-gaybbs:profile-screen-7336082\nCANDIDATE=gace-tgtumbler-gaybbs:search-color-5a93de6\nACTIVE=\"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\"\nEXPECTED=\"$(docker image inspect \"$PIN\" --format '{{.Id}}')\"\ntest \"$ACTIVE\" = \"$EXPECTED\" || { echo \"LIVE_IMAGE_CHANGED\" >&2; exit 34; }\nCOMPOSE=\"$(docker inspect deploy-gaybbs-1 --format '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}')\"\ntest -f \"$COMPOSE\" || { echo \"COMPOSE_MISSING\" >&2; exit 35; }\ngit fetch --no-tags origin \"$TARGET\" >/dev/null\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$TARGET\"\nWT=\"$ROOT/.worktrees/search-colors-5a93de6\"\nif [ -e \"$WT\" ]; then\n  test \"$(git -C \"$WT\" rev-parse HEAD)\" = \"$TARGET\"\n  test -z \"$(git -C \"$WT\" status --porcelain)\"\nelse\n  mkdir -p \"$ROOT/.worktrees\"\n  git worktree add --detach \"$WT\" \"$TARGET\" >/dev/null\nfi\ndocker build -q -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\" -t \"$CANDIDATE\" \"$WT\" >/dev/null\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\" = \"$ACTIVE\" || { echo \"LIVE_CHANGED_DURING_BUILD\" >&2; exit 34; }\ndocker compose -f \"$COMPOSE\" -p deploy config -q\nOLD=gace-tgtumbler-gaybbs:pre-search-colors-5a93de6\ndocker tag \"$ACTIVE\" \"$OLD\"\nsuccess=0\nrollback(){\n  if [ \"$success\" != 1 ]; then\n    current=\"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}' 2>/dev/null || true)\"\n    candidateid=\"$(docker image inspect \"$CANDIDATE\" --format '{{.Id}}')\"\n    if [ \"$current\" = \"$candidateid\" ] || [ \"$current\" = \"$ACTIVE\" ]; then\n      docker tag \"$OLD\" gace-tgtumbler-gaybbs:local\n      docker compose -f \"$COMPOSE\" -p deploy up -d --no-deps --force-recreate gaybbs >/dev/null || true\n    fi\n  fi\n}\ntrap rollback EXIT\ndocker tag \"$CANDIDATE\" gace-tgtumbler-gaybbs:local\ndocker compose -f \"$COMPOSE\" -p deploy up -d --no-deps --force-recreate gaybbs >/dev/null\nsleep 6\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.State.Running}}')\" = true\ntest \"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\" = \"$(docker image inspect \"$CANDIDATE\" --format '{{.Id}}')\"\nsuccess=1\ntrap - EXIT\necho \"SEARCH_COLOR_LIVE_IMAGE=PASS\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
