@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/53"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ncd \"$repo\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 70\ntmp=\"$(mktemp -d)\";trap 'rm -rf \"$tmp\"' EXIT\ncp scripts/userbot_resident_ipc.py \"$tmp/original.py\"\npython3 - \"$tmp/original.py\" \"$tmp/updated.py\" <<'PY'\nfrom pathlib import Path\nimport ast,sys\ns=Path(sys.argv[1]).read_text()\nold='''                                raw = [screen.reply_markup.rows[i].buttons[1] for i in range(3)]'''\nnew='''                                raw = [getattr(screen.reply_markup.rows[i].buttons[1], \"button\",\n                                               screen.reply_markup.rows[i].buttons[1]) for i in range(3)]'''\nassert s.count(old)==1\ns=s.replace(old,new)\nast.parse(s)\nPath(sys.argv[2]).write_text(s)\nPY\ncp \"$tmp/updated.py\" scripts/userbot_resident_ipc.py\nchmod 600 scripts/userbot_resident_ipc.py\nsystemctl --user restart gace-userbot-verify.service\nsleep 3\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 71\ntimeout 40s python3 scripts/userbot_test_client.py health >/dev/null 2>&1 || exit 72\npython3 - <<'PY' | gh issue comment 7 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\nimport sys,asyncio,re\nsys.path.insert(0,\"scripts\")\nfrom userbot_test_client import invoke\nr=asyncio.run(invoke(\"invite_selector_smoke\"))\nprint(\"INVITE_COPY_UNWRAPPED_TEST\")\nprint(\"STATUS=\"+str(r.get(\"status\")))\nprint(\"ERROR=\"+re.sub(r'[^A-Z0-9_]','_',str(r.get(\"error\",\"NONE\")).upper()))\ntypes=r.get(\"button_types\")\nif isinstance(types,list) and len(types)==3:\n print(\"UNWRAPPED_TYPES=\"+\",\".join(re.sub(r'[^A-Za-z0-9_]','_',str(t))[:60] for t in types))\nflags=r.get(\"has_copy_fields\")\nif isinstance(flags,list) and len(flags)==3:print(\"HAS_COPY_FIELDS=\"+\",\".join(str(x) for x in flags))\nprint(\"NATIVE_COPY_BUTTONS=\"+str(r.get(\"native_copy_buttons\",\"NOT_VERIFIED\")))\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
