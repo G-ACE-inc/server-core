@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "e53b9402f4fd41bc8ec008a3200d828ca8adfac1",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\npython3 - <<'PY'\nfrom pathlib import Path\nimport os,tempfile\np=Path(\"scripts/userbot_resident_ipc.py\")\ns=p.read_text()\nold='elif action == \"download_channel_video\":'\nnew='elif action in {\"download_channel_video\", \"download_channel_video_step\"}:'\nif s.count(old)!=1 or new in s:\n    raise RuntimeError(\"IPC_REQUEST_SHAPE_PATCH_CONFLICT\")\nnew_text=s.replace(old,new,1)\ncompile(new_text,str(p),\"exec\")\nfd,tmp=tempfile.mkstemp(prefix=\".ipc-shape-\",dir=str(p.parent))\ntry:\n    with os.fdopen(fd,\"w\") as f:f.write(new_text)\n    os.chmod(tmp,0o644)\n    os.replace(tmp,p)\nfinally:\n    if os.path.exists(tmp):os.unlink(tmp)\nprint(\"IPC_STEP_REQUEST_SHAPE=PATCHED\")\nPY\nsystemctl --user restart gace-userbot-verify.service\nok=0\nfor i in 1 2 3 4 5 6 7 8 9 10 11 12;do if python3 scripts/userbot_test_client.py health >/dev/null 2>&1;then ok=1;break;fi;sleep 2;done\ntest \"$ok\" = 1\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\necho IPC_HEALTH_AFTER_SHAPE_FIX=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
