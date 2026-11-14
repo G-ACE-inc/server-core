@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/56"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nstage=\"$repo/.worktrees/menu-hotfix-runtime-dual-20261115\"\ncandidate=gace-tgtumbler-gaybbs:menu-hotfix-0bbf7c6\ncompose=\"$repo/deploy/gserver-compose.yaml\"\ntest \"$(git -C \"$repo\" rev-parse HEAD)\" = 57955cd68bb39626ebbca38d44b7bb034da6dc05 || exit 74\ntest \"$(sha256sum \"$stage/gaybbs.mjs\" | cut -d' ' -f1)\" = 76ccecd409e9c6ec0515a3f6d8f72063b26ffedaa32c1e47cd8e7b7054109d62 || exit 74\ntest \"$(sha256sum \"$stage/publishMenuPanels.mjs\" | cut -d' ' -f1)\" = 46f007a7a15fefd918d2bd443e492cac2e7542c19b7bd2aac5382b1101f7f036 || exit 74\nnewid=\"$(docker image inspect -f '{{.Id}}' \"$candidate\")\" || exit 74\ntest -f \"$compose\" || exit 67\ndocker compose -p deploy -f \"$compose\" config --quiet || exit 68\nmapfile -t ids < <(docker ps -aq --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest \"${#ids[@]}\" -eq 1 || exit 64\ncid=\"${ids[0]}\"\ntest \"$(docker inspect -f '{{.Name}}' \"$cid\")\" = /deploy-gaybbs-1 || exit 64\ntest \"$(docker inspect -f '{{.State.Running}}' \"$cid\")\" = true || exit 63\noldid=\"$(docker inspect -f '{{.Image}}' \"$cid\")\"\nif test \"$oldid\" = \"$newid\"; then\n echo GAYBBS_CANDIDATE_ALREADY_ACTIVE=PASS\n exit 0\nfi\ndocker image tag \"$oldid\" gace-tgtumbler-gaybbs:rollback-creator-20261115\ncat > \"$stage/gaybbs-c094-live.yaml\" <<'YAML'\nservices:\n  gaybbs:\n    image: gace-tgtumbler-gaybbs:menu-hotfix-0bbf7c6\n    pull_policy: never\nYAML\ncat > \"$stage/gaybbs-c094-rollback.yaml\" <<'YAML'\nservices:\n  gaybbs:\n    image: gace-tgtumbler-gaybbs:rollback-creator-20261115\n    pull_policy: never\nYAML\ndocker compose -p deploy -f \"$compose\" -f \"$stage/gaybbs-c094-live.yaml\" config --quiet || exit 69\nchanged=0\nrollback(){ rc=$?; trap - ERR; set +e; if test \"$changed\" = 1; then docker compose -p deploy -f \"$compose\" -f \"$stage/gaybbs-c094-rollback.yaml\" up -d --no-build --no-deps gaybbs >/dev/null 2>&1 && echo ROLLBACK_ATTEMPTED=PASS || echo ROLLBACK_ATTEMPTED=FAIL;fi;exit \"$rc\"; }\ntrap rollback ERR\nchanged=1\ndocker compose -p deploy -f \"$compose\" -f \"$stage/gaybbs-c094-live.yaml\" up -d --no-build --no-deps gaybbs >/dev/null\nsleep 9\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$newid\" || false\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || false\ndocker exec deploy-gaybbs-1 sh -c 'test -s /app/gaybbs.mjs && grep -q \"クリエーター投稿\" /app/gaybbs.mjs && grep -q \"dm:talk\" /app/gaybbs.mjs && grep -q \"dm:invite\" /app/gaybbs.mjs && grep -q \"dm:link\" /app/gaybbs.mjs' || false\ntrap - ERR\necho GAYBBS_MENU_DEPLOY=PASS\necho SOURCE_BUNDLE_SHA=0bbf7c677a22dd63eeadb153404a1c0fdffa2ccb\necho CONTAINER_RUNNING=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
