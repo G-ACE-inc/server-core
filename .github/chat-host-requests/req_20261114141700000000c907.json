@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport {readFileSync} from 'node:fs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createGateOwner} from './owner/gateOwner.mjs';\nsetDefaultResultOrder('ipv4first');\nsetDefaultAutoSelectFamily(false);\ntry{\n const token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\n const api=createTelegramBotApi({token,timeoutMs:15000});\n const owner=await createGateOwner({telegramApi:api,pool:{query:async()=>{throw Error('READ_ONLY_QUERY_NOT_PERMITTED');}}});\n const topic=await owner.getVerifiedStickerTopic();\n if(topic.chatId!==-1002373696859||topic.threadId!==4640||topic.purpose!=='sticker')process.exit(71);\n console.log('CREATEVDOBOT_VERIFIED_STICKER_TOPIC=PASS');\n console.log('THREAD_4640=VERIFIED');\n}catch{console.log('CREATEVDOBOT_VERIFIED_STICKER_TOPIC=FAILED');process.exitCode=72;}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
