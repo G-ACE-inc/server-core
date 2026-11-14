@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/51"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nCID=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest -n \"$CID\" || exit 21\nOLD=$(docker image inspect gace-tgtumbler-gaybbs:profile-screen-7336082 --format '{{.Id}}')\nCURRENT=$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\ntest \"$CURRENT\" = \"$OLD\" || exit 22\ntest \"$(docker inspect \"$CID\" --format '{{.Image}}')\" = \"$OLD\" || exit 23\nNEXT=$(docker image inspect gace-tgtumbler-gaybbs:search-profile-ff7a657 --format '{{.Id}}')\nCONFIG=$(docker inspect \"$CID\" --format '{{index .Config.Labels \"com.docker.compose.config-hash\"}}')\ntest -n \"$CONFIG\" || exit 24\nCF=\"\"\nwhile IFS= read -r CANDIDATE; do\n test -f \"$CANDIDATE\" || continue\n H=$(docker compose --project-directory \"$P/deploy\" -p deploy -f \"$CANDIDATE\" config --hash gaybbs 2>/dev/null | awk '{print $NF}') || continue\n if test \"$H\" = \"$CONFIG\"; then CF=\"$CANDIDATE\"; break; fi\ndone <<EOF\n$P/deploy/gserver-compose.yaml\n$(find \"$P/.worktrees\" -mindepth 2 -maxdepth 4 -name gserver-compose.yaml -type f 2>/dev/null | sort)\nEOF\ntest -n \"$CF\" || { echo NO_MATCHING_COMPOSE_NO_DEPLOY; exit 25; }\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 26\ndocker tag gace-tgtumbler-gaybbs:local gace-tgtumbler-gaybbs:backup-before-search-profile-20261114\ndocker tag gace-tgtumbler-gaybbs:search-profile-ff7a657 gace-tgtumbler-gaybbs:local\nrollback(){\n docker tag gace-tgtumbler-gaybbs:backup-before-search-profile-20261114 gace-tgtumbler-gaybbs:local || true\n docker compose --project-directory \"$P/deploy\" -p deploy -f \"$CF\" up -d --no-deps --no-build --force-recreate gaybbs >/dev/null 2>&1 || true\n}\nif ! docker compose --project-directory \"$P/deploy\" -p deploy -f \"$CF\" up -d --no-deps --no-build --force-recreate gaybbs >/dev/null 2>&1; then rollback; exit 27; fi\nREADY=0\nfor i in 1 2 3 4 5 6 7 8 9 10; do\n sleep 2\n NC=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\n if test -n \"$NC\" && test \"$(docker inspect \"$NC\" --format '{{.Image}}')\" = \"$NEXT\" && docker logs --since=90s \"$NC\" 2>&1 | grep -q GAYBBS_BOT_READY; then READY=1; break; fi\ndone\nif test \"$READY\" != 1; then rollback; exit 28; fi\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 29\necho GAYBBS_SEARCH_MENU_DEPLOY_PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
