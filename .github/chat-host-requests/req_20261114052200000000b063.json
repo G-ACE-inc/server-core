@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ndocker exec deploy-gaybbs-1 node -e '\nconst fs=require(\"fs\");const token=fs.readFileSync(\"/run/secrets/bot_token\",\"utf8\").trim();\nconst api=async (m,p)=>{const r=await fetch(\"https://api.telegram.org/bot\"+token+\"/\"+m,{method:\"POST\",headers:{\"Content-Type\":\"application/json\"},body:JSON.stringify(p)});return r.json()};\n(async()=>{const me=await api(\"getMe\",{});const ch=await api(\"getChat\",{chat_id:-1003847210571});const member=me.ok?await api(\"getChatMember\",{chat_id:-1003847210571,user_id:me.result.id}):{ok:false};console.log(\"AREA_BOT_CHAT=\"+(ch.ok?\"YES\":\"NO\"));console.log(\"AREA_IS_FORUM=\"+String(ch.result?.is_forum===true));console.log(\"AREA_BOT_ADMIN=\"+String(member.result?.status===\"administrator\"||member.result?.status===\"creator\"));console.log(\"AREA_CAN_MANAGE_TOPICS=\"+String(member.result?.can_manage_topics===true));if(!me.ok||!ch.ok||!member.ok)process.exitCode=73})().catch(()=>{console.log(\"AREA_PERMISSION_QUERY_FAILED\");process.exitCode=74})\n' | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
