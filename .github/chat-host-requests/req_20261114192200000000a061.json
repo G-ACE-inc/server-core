@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/53"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ncd \"$repo\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 70\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ncp scripts/userbot_resident_ipc.py \"$tmp/original.py\"\npython3 - \"$tmp/original.py\" \"$tmp/updated.py\" <<'PY'\nfrom pathlib import Path\nimport sys,ast\ns=Path(sys.argv[1]).read_text()\nmarker='\"REQUEST_SIZE_INVALID\",'\nassert s.count(marker)==1\nassert \"INVITE_COPY_BUTTON_TYPE_MISMATCH\" not in s[s.index('safe_codes = {'):]\ns=s.replace(marker,marker+'\\n                \"INVITE_COPY_BUTTON_TYPE_MISMATCH\", \"INVITE_COPY_GATE_MISMATCH\",\\n                \"DM_SELECTOR_SCREEN_NOT_OPENED\", \"CHAT_SELECTOR_URL_MISMATCH\",',1)\nast.parse(s)\nPath(sys.argv[2]).write_text(s)\nPY\ncp \"$tmp/updated.py\" scripts/userbot_resident_ipc.py\nchmod 600 scripts/userbot_resident_ipc.py\nsystemctl --user restart gace-userbot-verify.service\nsleep 3\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 71\nif ! timeout 40s python3 scripts/userbot_test_client.py health >/dev/null 2>&1;then exit 72;fi\nresult=\"$(timeout 70s python3 scripts/userbot_test_client.py invite_selector_smoke 2>&1 || true)\"\n{\n echo \"INVITE_SELECTOR_EXACT_TEST\"\n printf '%s\\n' \"$result\" | grep '^USERBOT_TEST_' | head -5 || true\n echo \"ACTIVE=$(systemctl --user is-active gace-userbot-verify.service)\"\n echo \"ENABLED=$(systemctl --user is-enabled gace-userbot-verify.service)\"\n} | gh issue comment 7 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
