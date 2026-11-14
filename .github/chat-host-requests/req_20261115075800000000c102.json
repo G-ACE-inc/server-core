@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/56"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -u\nname=deploy-gaybbs-1\nif docker inspect \"$name\" >/dev/null 2>&1; then echo BOT_CONTAINER_PRESENT=YES; else echo BOT_CONTAINER_PRESENT=NO; fi\nif test \"$(docker inspect -f '{{.State.Running}}' \"$name\" 2>/dev/null)\" = true; then echo BOT_RUNNING=YES; else echo BOT_RUNNING=NO; fi\nlive=\"$(docker inspect -f '{{.Image}}' \"$name\" 2>/dev/null || true)\"\ncandidate=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:gate-link-final-1cae702 2>/dev/null || true)\"\nif test -n \"$live\" && test \"$live\" = \"$candidate\"; then echo LINK_SOURCE_IMAGE_ACTIVE=YES; else echo LINK_SOURCE_IMAGE_ACTIVE=NO; fi\nif docker exec \"$name\" test -f /app/gaybbs.mjs >/dev/null 2>&1; then echo BOT_BUNDLE_PRESENT=YES; else echo BOT_BUNDLE_PRESENT=NO; fi\nif docker exec deploy-postgres-1 psql -X -q -U gace -d gaybbs -Atc \"SELECT chat_id||'|'||COALESCE(message_id::text,'NONE')||'|'||state FROM board_menu_panels WHERE panel_type='posting' ORDER BY chat_id\" 2>/dev/null; then echo PANEL_READBACK=PASS; else echo PANEL_READBACK=FAIL; fi\necho DIAGNOSTIC_EXIT=0"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
