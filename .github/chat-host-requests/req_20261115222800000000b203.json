@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nROOT=\"$(git rev-parse --show-toplevel)\"\ntest -f \"$ROOT/artifacts/bot/deploy/Dockerfile.gaybbs\" || exit 31\ntest -d \"$ROOT/.git\" || test -f \"$ROOT/.git\" || exit 32\nPARENT=\"$ROOT/.worktrees\"\nmkdir -p \"$PARENT\"\ntest \"$(realpath \"$PARENT\")\" = \"$(realpath \"$ROOT\")/.worktrees\" || exit 33\nfetch_exact(){\n git fetch --no-tags origin \"$1\" >/dev/null\n test \"$(git rev-parse FETCH_HEAD)\" = \"$2\"\n}\nfetch_exact refs/heads/chat/bug-report-userbot-20261115 c2f6478e2b1f8cd04fd8a9f8d4bff7d6000b705e || exit 34\nWT=\"$PARENT/bug-report-20261115\"\nif test -d \"$WT\"; then\n test \"$(git -C \"$WT\" rev-parse HEAD)\" = c2f6478e2b1f8cd04fd8a9f8d4bff7d6000b705e || exit 35\n test -z \"$(git -C \"$WT\" status --porcelain --untracked-files=all)\" || exit 36\nelse\n test ! -e \"$WT\" && test ! -L \"$WT\" || exit 37\n git worktree add --detach \"$WT\" c2f6478e2b1f8cd04fd8a9f8d4bff7d6000b705e >/dev/null\nfi\nfetch_exact refs/heads/chat/userbot-report-recipient-20261115 fea455c072926aa51bdd6e095ced10fa4e96dccc || exit 38\nUW=\"$PARENT/userbot-report-20261115\"\nif test -d \"$UW\"; then\n test \"$(git -C \"$UW\" rev-parse HEAD)\" = fea455c072926aa51bdd6e095ced10fa4e96dccc || exit 39\n test -z \"$(git -C \"$UW\" status --porcelain --untracked-files=all)\" || exit 40\nelse\n test ! -e \"$UW\" && test ! -L \"$UW\" || exit 41\n git worktree add --detach \"$UW\" fea455c072926aa51bdd6e095ced10fa4e96dccc >/dev/null\nfi\ncd \"$UW\"\nPYTHONPATH=scripts python3 -B scripts/test_userbot_resident_ipc.py >/dev/null || exit 42\ncd \"$ROOT\"\nLOG=\"$(mktemp)\"\ntrap 'rm -f \"$LOG\"' EXIT\nif ! docker build --network=host --progress=plain -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:bug-report-c2f6478 \"$WT\" >\"$LOG\" 2>&1; then\n if grep -Eq 'ERR_PNPM|frozen-lockfile|TS[0-9]{4}' \"$LOG\"; then exit 51; fi\n if grep -Eq 'no space left|ENOSPC' \"$LOG\"; then exit 52; fi\n exit 55\nfi\ndocker image inspect gace-tgtumbler-gaybbs:bug-report-c2f6478 >/dev/null\ndocker run --rm --entrypoint sh gace-tgtumbler-gaybbs:bug-report-c2f6478 -c 'test -s /app/gaybbs.mjs && grep -q \"🐞 不具合を報告\" /app/gaybbs.mjs' || exit 56\nprintf 'USERBOT_IDENTITY_UNIT=PASS\\nBUG_REPORT_IMAGE_BUILD=PASS\\nCREATED_NEW_TOP_LEVEL_SIBLING=NO\\n'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
