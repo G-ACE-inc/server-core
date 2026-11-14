@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nroot=\"$(git rev-parse --show-toplevel)\"\ncase \"$(git remote get-url origin)\" in *seigo-gace/create-videobot*) ;; *) exit 51;; esac\nstage=\"$root/.worktrees/video-ui-e60b2076\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = \"e60b2076fa5f87a58e7c7b1e3ee3706b06b1e552\" || exit 62\ntest -z \"$(git -C \"$stage\" status --porcelain --untracked-files=no)\" || exit 63\ngit fetch --no-tags origin feat/assistant-ai-and-sales-core\nsha=\"be4f34d04d346aa20be1765884186e907780f364\"\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$sha\" || exit 64\ngit -C \"$stage\" checkout --detach \"$sha\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = \"$sha\" || exit 65\ndocker image inspect create-videobot:video-ui-e60b2076 >/dev/null 2>&1 || exit 66\ndocker build --pull=false --network none -t create-videobot:video-ui-be4f34d -f - \"$stage\" <<'DOCKERFILE'\nFROM create-videobot:video-ui-e60b2076\nUSER root\nCOPY --chown=node:node src /opt/videobot/src\nCOPY --chown=node:node owner /opt/videobot/owner\nCOPY --chown=node:node sql /opt/videobot/sql\nCOPY --chown=node:node web /opt/videobot/web\nUSER node\nDOCKERFILE\ndocker run --rm --pull never --network none --read-only --entrypoint node -v \"$stage/test:/opt/videobot/test:ro\" create-videobot:video-ui-be4f34d --test test/creatorUi.test.mjs test/creatorWizard.test.mjs test/creatorBot.test.mjs test/managementFee.test.mjs test/pgStarsLedger.test.mjs\necho VIDEO_UI_BE4_IMAGE_FOCUSED_TEST_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
