@@ -1,0 +1,37 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -u\ntarget='theGreatOldDaysofNipponGV'\nunits=()\nwhile IFS= read -r unit; do\n  [ -n \"$unit\" ] || continue\n  body=\"$(systemctl --user cat \"$unit\" 2>/dev/null || true)\"\n  printf '%s' \"$body\" | grep -Fqi \"$target\" && units+=(\"$unit\")\ndone < <(systemctl --user list-unit-files --type=service --no-legend --plain 2>/dev/null | awk '{print $1}')\n[ \"${#units[@]}\" -eq 1 ] || exit 70\nunit=\"${units[0]}\"\nsystemctl --user is-active --quiet \"$unit\" || exit 71\npid=\"$(systemctl --user show \"$unit\" -p MainPID --value)\"\n[ \"$pid\" -gt 0 ] || exit 72\nlog=\"$(journalctl --user -u \"$unit\" --since '2026-11-15 00:00:00' -n 150 --no-pager -o cat 2>/dev/null || true)\"\nif printf '%s' \"$log\" | grep -Eiq 'all (videos|messages) (downloaded|completed)|collection complete|archive complete'; then exit 73; fi\nif printf '%s' \"$log\" | grep -Eiq 'traceback|permission denied|no space left|mount.*(lost|unavailable)|failed to save'; then exit 74; fi\nif printf '%s' \"$log\" | grep -Eiq 'download|video|message|progress'; then exit 75; fi\nexit 76"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
