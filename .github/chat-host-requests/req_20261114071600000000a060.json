@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ndb=\"$(docker ps --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=postgres --format '{{.Names}}' | head -1)\"\ntest -n \"$db\"\nquery=\"SELECT 'PROFILE_TOPIC_TOTAL='||COUNT(*) FROM posting_topics WHERE purpose='profile' AND enabled=TRUE AND verified_at IS NOT NULL AND verified_by IS NOT NULL; SELECT 'PROFILE_TOPIC_BOARDS='||COALESCE(string_agg(board_key||':'||n,',' ORDER BY board_key),'none') FROM (SELECT board_key,COUNT(*) AS n FROM posting_topics WHERE purpose='profile' AND enabled=TRUE AND verified_at IS NOT NULL AND verified_by IS NOT NULL AND title LIKE '%みんなのプロフ%' GROUP BY board_key) s; SELECT 'PROFILE_GATE_READY='||COUNT(*) FROM gaybbs_feature_release_gates WHERE feature='profile' AND enabled=TRUE AND length(source_commit)=40 AND length(trim(ci_evidence))>0 AND length(trim(gserver_runtime_evidence))>0 AND length(trim(telegram_e2e_evidence))>0 AND approved_by IS NOT NULL; SELECT 'PROFILE_GATE_ROW_COUNT='||COUNT(*) FROM gaybbs_feature_release_gates WHERE feature='profile';\"\nout=\"$(docker exec \"$db\" psql -U gace -d gaybbs -A -t -v ON_ERROR_STOP=1 -c \"$query\")\"\nimage=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\"\nrunning=\"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\"\n{ printf 'PR47_LIVE_PROFILE_GATE_READBACK\\n%s\\nIMAGE=%s\\nBOT_RUNNING=%s\\n' \"$out\" \"$image\" \"$running\"; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
