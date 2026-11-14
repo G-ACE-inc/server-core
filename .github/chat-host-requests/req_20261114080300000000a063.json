@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\npython3 - <<'PY' | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\nimport json,pathlib\np=pathlib.Path(\"deploy/forum-topic-ledger-complete-v1.json\")\nprint(\"PR47_EXISTING_TOPIC_LEDGER_INSPECT\")\nprint(\"LEDGER_EXISTS=\"+str(p.is_file()).lower())\nif p.is_file():\n data=json.loads(p.read_text())\n print(\"TOP_KEYS=\"+\",\".join(list(data.keys())[:20]) if isinstance(data,dict) else \"ROOT_LIST\")\n hits=[]\n def scan(x):\n  if isinstance(x,dict):\n   if any(\"みんなのプロフ\" in str(v) for v in x.values() if isinstance(v,str)):\n    hits.append({str(k):str(v)[:110] for k,v in x.items() if k in (\"id\",\"topic_id\",\"thread_id\",\"message_thread_id\",\"title\",\"name\",\"chat_id\",\"group_id\",\"board\",\"board_key\",\"verified_at\",\"verified_by\",\"source\",\"status\")})\n   for v in x.values():scan(v)\n  elif isinstance(x,list):\n   for v in x:scan(v)\n scan(data)\n print(\"PROFILE_TOPIC_MATCHES=\"+str(len(hits)))\n for h in hits[:12]:print(\"PROFILE_TOPIC=\"+json.dumps(h,ensure_ascii=False))\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
