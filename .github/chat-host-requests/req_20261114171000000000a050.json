@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/53"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$(git rev-parse --show-toplevel)\"\napp=\"$root/.worktrees/profile-live-20261114\"\necho \"GSERVER_REPO_HEAD=$(git rev-parse HEAD)\"\necho \"APP_WORKTREE_PRESENT=$(test -d \"$app\" && echo yes || echo no)\"\nif test -d \"$app\"; then\n echo \"APP_HEAD=$(git -C \"$app\" rev-parse HEAD)\"\n echo \"APP_BRANCH=$(git -C \"$app\" branch --show-current)\"\n echo \"APP_DIRTY=$(test -z \"$(git -C \"$app\" status --porcelain)\" && echo no || echo yes)\"\nfi\necho \"LIVE_IMAGE=$(docker inspect --format '{{.Image}}' deploy-gaybbs-1 2>/dev/null || echo absent)\"\necho \"LIVE_RUNNING=$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1 2>/dev/null || echo false)\"\necho \"LOCAL_TAG=$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:local 2>/dev/null || echo absent)\"\necho \"GAYBBS_BUNDLE_PR53_HEAD=f568489b4a04d51a70c77ace8b6bd4b011df0efe\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
