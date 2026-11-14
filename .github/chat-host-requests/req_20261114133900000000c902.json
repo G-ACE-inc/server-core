@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/4"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\nsrc=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\nexpected=\"$(git -C \"$src\" show \"70b754a647b097c28243168565f0ed4906087f9f:src/telegram/stickerSales.mjs\" | sha256sum | cut -d' ' -f1)\" || exit 63\nlive=\"$(docker exec \"$cid\" sha256sum /opt/videobot/src/telegram/stickerSales.mjs | cut -d' ' -f1)\" || exit 64\ntest \"$expected\" = \"$live\" || exit 65\ndocker exec \"$cid\" grep -Fq \"[b('同意して購入へ','sale:accept')]\" /opt/videobot/src/telegram/stickerSales.mjs || exit 66\ndocker exec \"$cid\" grep -Fq \"stickerLandingPanel\" /opt/videobot/src/telegram/stickerSales.mjs || exit 67\ndocker exec \"$cid\" grep -Fq '✅ 登録できました！' /opt/videobot/src/telegram/stickerWizard.mjs || exit 68\ndocker logs --tail 150 \"$cid\" 2>&1 | grep -Fq 'CREATOR_DM_POLL_READY=PASS' || exit 69\nshop=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^VIDEOBOT_SHOP_PUBLIC_URL=//p' | head -n1)\"\ncase \"$shop\" in https://shop.hentaigay.org|https://shop.hentaigay.org/) shopflag=CONFIGURED ;; '') shopflag=UNCONFIGURED ;; *) shopflag=OTHER_CONFIGURED ;; esac\nprintf 'CREATEVDOBOT_SALE_RUNTIME_READBACK=PASS\\nSOURCE_SHA=%s\\nLIVE_FILE_SHA256=%s\\nSINGLE_POLL=PASS\\nOFFER_CONSENT=ACTIVE\\nSTICKER_RETURN=ACTIVE\\nREGISTRATION_SUCCESS_UI=ACTIVE\\nSHOP_URL=%s\\n' \"70b754a647b097c28243168565f0ed4906087f9f\" \"$live\" \"$shopflag\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
