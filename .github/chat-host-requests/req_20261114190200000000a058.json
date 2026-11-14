@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/53"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ncd \"$repo\"\npython3 - <<'PY' | gh issue comment 7 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\nfrom pathlib import Path\nimport re,subprocess,ast\nold=Path(\"scripts/userbot_resident_ipc.py\").read_text()\ncand=subprocess.check_output([\"git\",\"show\",\"5e2e8b2903eade90aa46860e09dba4be50d5c0ff:scripts/userbot_resident_ipc.py\"],text=True)\nmarker='            if action == \"profile_button_smoke\":'\nbegin='            if action in {\"chat_selector_smoke\", \"invite_selector_smoke\"}:'\nprint(\"USERBOT_PATCH_PREFLIGHT\")\nprint(\"OLD_MARKER_COUNT=\"+str(old.count(marker)))\nprint(\"CANDIDATE_MARKER_COUNT=\"+str(cand.count(marker)))\nprint(\"CANDIDATE_INSERT_COUNT=\"+str(cand.count(begin)))\nprint(\"OLD_ACTIONS_PREFIX=\"+str('ACTIONS = frozenset({' in old))\nprint(\"OLD_NEW_ACTION_PRESENT=\"+str(begin in old))\nprint(\"CANDIDATE_BLOCK_END_GT_START=\"+str(cand.find(marker)>cand.find(begin)>=0))\nprint(\"OLD_SERVICE_ACTIVE=\"+str(subprocess.run(['systemctl','--user','is-active','gace-userbot-verify.service'],capture_output=True,text=True).stdout.strip()))\nif begin in cand and marker in cand and 'ACTIONS = frozenset({' in old and marker in old:\n block=cand[cand.index(begin):cand.index(marker,cand.index(begin))]\n updated=re.sub(r'ACTIONS = frozenset\\(\\{([^}]*)\\}\\)',lambda m:'ACTIONS = frozenset({'+m.group(1).rstrip()+', \"chat_selector_smoke\", \"invite_selector_smoke\"})',old,count=1)\n updated=updated.replace(marker,block+marker,1)\n try:ast.parse(updated);print(\"PROPOSED_PATCH_SYNTAX=PASS\")\n except SyntaxError as e:print(\"PROPOSED_PATCH_SYNTAX=FAIL_\"+str(e.lineno))\nelse:print(\"PROPOSED_PATCH_SYNTAX=NOT_EVALUATED\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
