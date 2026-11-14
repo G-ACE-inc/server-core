@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ndb=\"$(docker ps --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=postgres --format '{{.Names}}' | head -1)\"\ntest -n \"$db\"\nsql=\"BEGIN;\nDO \\$\\$ DECLARE n INTEGER; BEGIN\n SELECT COUNT(*) INTO n FROM posting_topics\n WHERE purpose='announcement' AND enabled=TRUE AND verified_by IS NOT NULL AND verified_at IS NOT NULL\n AND title LIKE '%みんなのプロフ%'\n AND ((board_key='video_chat' AND chat_id=-1002373696859 AND message_thread_id=1613)\n OR (board_key='gay_board' AND chat_id=-1003770334893 AND message_thread_id=210));\n IF n<>2 THEN RAISE EXCEPTION 'PROFILE_SOURCE_TOPICS_NOT_VERIFIED'; END IF;\nEND \\$\\$;\nINSERT INTO posting_topics(board_key,purpose,chat_id,message_thread_id,title,verified_by,verified_at,enabled)\nSELECT board_key,'profile',chat_id,message_thread_id,title,verified_by,verified_at,TRUE FROM posting_topics\nWHERE purpose='announcement' AND enabled=TRUE AND verified_by IS NOT NULL AND verified_at IS NOT NULL\nAND title LIKE '%みんなのプロフ%'\nAND ((board_key='video_chat' AND chat_id=-1002373696859 AND message_thread_id=1613)\nOR (board_key='gay_board' AND chat_id=-1003770334893 AND message_thread_id=210))\nON CONFLICT (board_key,purpose,chat_id,message_thread_id) DO NOTHING;\nCOMMIT;\nSELECT 'PROFILE_DESTINATION='||board_key||':'||chat_id||':'||message_thread_id FROM posting_topics WHERE purpose='profile' AND enabled=TRUE ORDER BY board_key;\"\nout=\"$(docker exec \"$db\" psql -U gace -d gaybbs -A -t -v ON_ERROR_STOP=1 -c \"$sql\")\"\n{ echo 'PR47_PROFILE_DESTINATIONS_VERIFIED_IMPORT'; printf '%s\\n' \"$out\"; printf 'BOT_RUNNING=%s\\n' \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\"; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
