@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "b82b8410702d49aff63e16038b547dd584acee0c",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\npython3 -m py_compile scripts/userbot_resident_ipc.py scripts/userbot_test_client.py scripts/userbot_public_video_actions.py scripts/userbot_public_video_collect_once.py\npython3 scripts/userbot_test_client.py health\npython3 - <<'PY'\nimport ast\nfrom pathlib import Path\ns=Path('scripts/userbot_resident_ipc.py').read_text()\nt=ast.parse(s)\na=next(n for n in t.body if isinstance(n,ast.Assign) and any(isinstance(x,ast.Name) and x.id=='ACTIONS' for x in n.targets))\nnames=ast.literal_eval(a.value.args[0])\nneeded={'health','bot_start_menu','room_private_smoke','room_public_readback','room_public_post_smoke','profile_topics_readback','list_joined_public_channels','list_channel_videos','download_channel_video'}\nif not needed <= set(names): raise SystemExit('PUBLIC_VIDEO_ACTIONS_INCOMPLETE')\nprint('USERBOT_ACTIONS_PRESERVED=PASS')\nPY\nprintf 'SERVICE_BEFORE='; systemctl --user is-active gace-userbot-verify.service\nprintf 'ENABLED_BEFORE='; systemctl --user is-enabled gace-userbot-verify.service\nif ! mountpoint -q /mnt/g || ! test -d /mnt/g/GserverStorage; then echo GDRIVE_MOUNT_MISSING; exit 40; fi\nsystemctl --user restart gace-userbot-verify.service\nprintf 'SERVICE_AFTER='; systemctl --user is-active gace-userbot-verify.service\nprintf 'ENABLED_AFTER='; systemctl --user is-enabled gace-userbot-verify.service\npython3 scripts/userbot_test_client.py health\nprintf 'USERBOT_IPC_ACTIVATION=PASS\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
