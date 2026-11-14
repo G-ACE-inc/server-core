@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "d05d4483931de2b8e50d21ee3e3fec1a2dcdac50",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nprintf 'CLIENT_AND_SERVER_ROUTING\\n'\npython3 - <<'PY'\nimport asyncio,sys\nfrom pathlib import Path\nsys.path.insert(0,\"scripts\")\nfrom userbot_test_client import invoke\nasync def main():\n    result=await invoke(\"list_channel_video_page\",channel_id=1877875443)\n    print(\"status:\",result.get(\"status\"))\n    print(\"error:\",str(result.get(\"error\",\"\"))[:220])\nasyncio.run(main())\np=Path(\"scripts/userbot_resident_ipc.py\")\nfor i,line in enumerate(p.read_text().splitlines(),1):\n if 18<=i<=90:\n  print(f\"IPC_{i}:\",line[:240])\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
