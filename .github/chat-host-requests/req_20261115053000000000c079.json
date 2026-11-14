@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\necho \"CREATEVDO_RESTART_DIAG\"\ndocker inspect --format 'STATE={{.State.Status}} EXIT={{.State.ExitCode}} RESTARTS={{.RestartCount}} OOM={{.State.OOMKilled}} ERROR={{.State.Error}}' gace-createvdobot-videobot-poll-1 2>/dev/null || echo NO_CONTAINER\necho \"RECENT_FATAL_CODES\"\ndocker logs --tail 110 gace-createvdobot-videobot-poll-1 2>&1 | sed -E 's#[a-zA-Z0-9_-]{32,}#[REDACTED]#g; s#(https?://)[^[:space:]]+#\\1[REDACTED]#g' | grep -Ei 'error|fail|denied|fatal|missing|not found|failed|permission|migration|startup|invalid|connect|ready|restart|poll|timeout' | tail -30 || true\necho \"DIRTY_TRACKED\"\ngit -C \"$repo\" status --short --untracked-files=no | head -35\necho \"IMAGE_TAG\"\ndocker inspect --format '{{.Config.Image}}' gace-createvdobot-videobot-poll-1\necho \"CREATEVDO_RESTART_DIAG_END\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
