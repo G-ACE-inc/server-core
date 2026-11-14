@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncase \"$(git remote get-url origin)\" in *seigo-gace/create-videobot*) ;; *) exit 51;; esac\nroot=\"$(git rev-parse --show-toplevel)\"\nsha=\"034fa012cf96e0288591fbe4bc16b90cee1acfa0\"\ngit fetch --no-tags origin feat/assistant-ai-and-sales-core\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$sha\" || exit 52\nstage=\"$root/.worktrees/video-gallery-flow-034fa01\"\nmkdir -p \"$root/.worktrees\"\nif test -d \"$stage\"; then\n test \"$(git -C \"$stage\" rev-parse HEAD)\" = \"$sha\" || exit 53\nelse\n git worktree add --detach \"$stage\" \"$sha\"\nfi\ntest -z \"$(git -C \"$stage\" status --porcelain --untracked-files=no)\" || exit 54\nids=\"$(docker ps -q --filter label=com.docker.compose.service=videobot-poll)\"\ntest \"$(printf '%s\\n' \"$ids\" | grep -c .)\" -eq 1 || exit 55\ntag=\"$(docker inspect -f '{{.Config.Image}}' \"$ids\")\"\nprintf 'LIVE_TAG=%s\\n' \"$tag\"\ncase \"$tag\" in create-videobot:*) ;; *) exit 56;; esac\nn=0\nfor f in src/telegram/creatorUi.mjs src/telegram/creatorWizard.mjs src/telegram/creatorBot.mjs src/telegram/creatorScreenTransport.mjs src/telegram/mediaProcessor.mjs src/telegram/privateMediaUpload.mjs src/runtime/creatorPollingMain.mjs src/runtime/creatorMigrate.mjs src/runtime/creatorMigrateDockerSmoke.mjs src/sales/pgListings.mjs src/telegram/paidListingPublisher.mjs; do\n n=$((n+1))\n base=\"$(git show faaae3e88c99a7cdfa85a70c91b6b585e3cd7a0d:\"$f\" | sha256sum | cut -d' ' -f1)\"\n actual=\"$(docker run --rm --network none --pull never --read-only --entrypoint sha256sum \"$tag\" \"/opt/videobot/$f\" | cut -d' ' -f1)\"\n if test \"$base\" != \"$actual\"; then echo \"LIVE_CHANGED_INDEX=$n\";exit \"$((60+n))\";fi\ndone\necho VIDEO_GALLERY_11_SOURCES_EXACT_BASELINE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
