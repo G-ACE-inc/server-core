@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/G-ACEserver"
+    },
+    "command": "set -euo pipefail\nprintf 'ACTION=COLLECTOR_LIVE_DIAGNOSTIC\\n'\nprintf 'USERBOT_SERVICE=%s\\n' \"$(systemctl --user is-active gace-userbot-verify.service || true)\"\nprintf 'G_MOUNT=%s\\n' \"$(findmnt -n -o TARGET /mnt/g || true)\"\nprintf 'COLLECTOR_UNITS\\n'\nsystemctl --user list-units --all --type=service --no-legend | grep -Ei 'collect|telegram|userbot|video' | cut -c1-160 || true\nprintf 'COLLECTOR_PROCESSES\\n'\nps -eo pid,etimes,args | grep -Ei '(video.*collect|collect.*video|theGreatOldDaysofNipponGV)' | grep -v grep | sed -E 's/(api_id|api_hash|token|password)=[^ ]+/\\1=[REDACTED]/Ig' | cut -c1-180 || true\nprintf 'G_COLLECTION_DIRS\\n'\nfind /mnt/g -maxdepth 5 -type d \\( -iname '*nippon*' -o -iname '*telegram*' \\) -print 2>/dev/null | head -30\nprintf 'END_DIAGNOSTIC\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
