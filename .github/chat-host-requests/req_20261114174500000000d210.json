@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "227501bcacd786f807ba95bcf2ace321d5eed5fd",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -u\necho '[WSL_MOUNT_STATUS]'\nls -ld /mnt /mnt/g /mnt/g/GserverStorage 2>&1 || true\necho '[DRIVE_ENTRIES]'\nls -la /mnt 2>&1 | head -35\necho '[MOUNT_FACTS]'\nfindmnt -rn -o TARGET,SOURCE,FSTYPE | grep -E '(/mnt|drvfs|9p)' | head -35 || true\necho '[DRVFS_SETTINGS]'\nif test -f /etc/wsl.conf;then sed -n '1,100p' /etc/wsl.conf;else echo NO_WSL_CONF;fi\necho '[DISK_IDENTITIES]'\nlsblk -o NAME,FSTYPE,LABEL,SIZE,MOUNTPOINTS | head -35 || true\necho '[TARGET_UNIT_STATUS]'\nsystemctl --user show gace-public-video-only-nippon-20261114.service -p ActiveState -p Result --no-pager || true\necho '[RESIDENT]'\nsystemctl --user is-active gace-userbot-verify.service || true\necho '[END]'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
