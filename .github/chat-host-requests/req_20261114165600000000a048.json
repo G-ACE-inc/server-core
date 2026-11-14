@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "production_readback",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest -d \"$repo/.git\" || test -f \"$repo/.git\"\norigin=\"$(git -C \"$repo\" remote get-url origin)\"\ncase \"$origin\" in *seigo-gace/GateApp-Bot*) ;; *) exit 73;; esac\nactive_before=\"$(systemctl --user is-active gace-userbot-verify.service || true)\"\nenabled_before=\"$(systemctl --user is-enabled gace-userbot-verify.service || true)\"\nimage=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1 2>/dev/null || echo absent)\"\nrunning=\"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1 2>/dev/null || echo false)\"\nresult=BLOCKED\nif test \"$active_before\" = active && test \"$running\" = true; then\n  if (cd \"$repo\" && timeout 70s python3 scripts/userbot_test_client.py profile_button_smoke >/dev/null 2>&1); then result=PASS; else result=FAIL; fi\nfi\nactive_after=\"$(systemctl --user is-active gace-userbot-verify.service || true)\"\nenabled_after=\"$(systemctl --user is-enabled gace-userbot-verify.service || true)\"\n{\n  echo \"PROFILE_BUTTON_LIVE_CHECK=$result\"\n  echo \"GAYBBS_RUNNING=$running\"\n  echo \"GAYBBS_IMAGE=$image\"\n  echo \"USERBOT_ACTIVE_BEFORE=$active_before\"\n  echo \"USERBOT_ACTIVE_AFTER=$active_after\"\n  echo \"USERBOT_ENABLED_BEFORE=$enabled_before\"\n  echo \"USERBOT_ENABLED_AFTER=$enabled_after\"\n  echo \"SOURCE_CHECKOUT_HEAD=$(git -C \"$repo\" rev-parse HEAD)\"\n  echo \"LIVE_CHECK_ID=req_20261114165600000000a048\"\n} | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\ntest \"$result\" = PASS && test \"$active_before\" = active && test \"$active_after\" = active && test \"$enabled_before\" = \"$enabled_after\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
