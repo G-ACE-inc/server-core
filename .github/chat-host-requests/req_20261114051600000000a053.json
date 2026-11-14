@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nexpected=\"bd8ef8870c9d1cca807be4d8803ac8ae8fd286eb683928cabdf7d2c243c7fe25\"\nbase=\"sha256:999a9fa61cb476510c60df5afeca6509a077a1c9c5aa820317dd5f5e7660b8c8\"\ntest \"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\" = \"$base\" || exit 71\ntest \"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:local)\" = \"$base\" || exit 72\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ngh run download 43529693435 --repo seigo-gace/GateApp-Bot --name gaybbs-profile-bundle --dir \"$tmp\" >/dev/null\ntest -f \"$tmp/gaybbs.mjs\" || exit 73\nactual=\"$(sha256sum \"$tmp/gaybbs.mjs\" | awk '{print $1}')\"\ntest \"$actual\" = \"$expected\" || exit 74\nprintf 'FROM gace-tgtumbler-gaybbs:local\\nCOPY --chown=1000:1000 gaybbs.mjs /app/gaybbs.mjs\\n' > \"$tmp/Dockerfile\"\ndocker build --network none --pull=false --tag gace-tgtumbler-gaybbs:pr47-candidate --file \"$tmp/Dockerfile\" \"$tmp\" >/dev/null\ndocker run --rm --network none --entrypoint node gace-tgtumbler-gaybbs:pr47-candidate --check /app/gaybbs.mjs >/dev/null\nimage=\"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:pr47-candidate)\"\nprintf 'PR47_CANDIDATE_IMAGE=PASS\\nSOURCE_HEAD=0cfc593e1883c2e0a27748d18d8868118354eac1\\nBUNDLE_SHA256=%s\\nCANDIDATE_IMAGE_ID=%s\\nLIVE_UNCHANGED=YES\\n' \"$actual\" \"$image\" | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
