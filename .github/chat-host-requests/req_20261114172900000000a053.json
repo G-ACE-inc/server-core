@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/53"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nimage=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\"\ntest \"$image\" = \"sha256:154501363ed5c7dd9bcfa66a506450410ccec76553fc08b117aec0e903e4c60a\" || exit 70\ntest \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 71\nbefore=\"$(systemctl --user is-active gace-userbot-verify.service)\"\nenabled_before=\"$(systemctl --user is-enabled gace-userbot-verify.service)\"\ntest \"$before\" = active || exit 72\nif (cd \"$repo\" && timeout 60s python3 scripts/userbot_test_client.py bot_start_menu >/dev/null 2>&1); then smoke=PASS; else smoke=FAIL; fi\nafter=\"$(systemctl --user is-active gace-userbot-verify.service || true)\"\nenabled_after=\"$(systemctl --user is-enabled gace-userbot-verify.service || true)\"\n{ echo \"CHAT_SELECTOR_REGRESSION_SMOKE=$smoke\"; echo \"GAYBBS_IMAGE=$image\"; echo \"USERBOT_ACTIVE_BEFORE=$before\"; echo \"USERBOT_ACTIVE_AFTER=$after\"; echo \"USERBOT_ENABLED_BEFORE=$enabled_before\"; echo \"USERBOT_ENABLED_AFTER=$enabled_after\"; } | gh issue comment 7 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\ntest \"$smoke\" = PASS && test \"$after\" = active && test \"$enabled_before\" = \"$enabled_after\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
