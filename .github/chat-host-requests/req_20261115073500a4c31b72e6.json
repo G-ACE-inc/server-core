@@ -1,0 +1,37 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -u\nroot=/mnt/g/GserverStorage/public_channel_videos\nmountpoint -q /mnt/g || exit 71\ntest -d \"$root\" || exit 72\nunits=$(grep -ril --include='*.service' 'theGreatOldDaysofNipponGV' \"$HOME/.config/systemd/user\" 2>/dev/null || true)\ncount=$(printf '%s\\n' \"$units\" | grep -c . || true)\ntest \"$count\" -eq 1 || exit 73\nunit=${units##*/}\nsystemctl --user is-active --quiet \"$unit\" || exit 74\npid=$(systemctl --user show \"$unit\" -p MainPID --value)\ntest \"$pid\" -gt 1 2>/dev/null || exit 75\ntest -d \"/proc/$pid\" || exit 76\nmatched=$(find \"$root\" -type f -iname '*783*' -print -quit 2>/dev/null)\nif [ -z \"$matched\" ]; then exit 80; fi\nsize=$(stat -c %s \"$matched\" 2>/dev/null || echo 0)\ntest \"$size\" -gt 0 || exit 81\ncase \"$matched\" in *.part|*.tmp|*.download) exit 82;; esac\nexit 83"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
