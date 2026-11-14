@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/54"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nROOT=\"$(git rev-parse --show-toplevel)\"\nBRANCH=\"fix/operation-help-current-menu-20261114\"\nSHA=\"535910f6658cc54a5cbca09250e19d97d3a5554a\"\nWT=\"$ROOT/.worktrees/gaybbs-menu-20261115\"\ngit fetch --no-tags origin \"$BRANCH\"\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$SHA\"\ntest -d \"$WT\"\ntest -z \"$(git -C \"$WT\" status --porcelain --untracked-files=all)\"\ngit -C \"$WT\" checkout --detach \"$SHA\"\ntest \"$(git -C \"$WT\" rev-parse HEAD)\" = \"$SHA\"\nLIVE=\"deploy-gaybbs-1\"\ntest \"$(docker inspect \"$LIVE\" --format '{{.State.Running}}')\" = true\nCOMPOSE=\"$(docker inspect \"$LIVE\" --format '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}')\"\ntest -f \"$COMPOSE\"\ntest \"${COMPOSE##*/}\" = gserver-compose.yaml\ndocker compose -f \"$COMPOSE\" -p deploy config -q\nprintf 'SOURCE_SHA=%s\\nCOMPOSE_PREFLIGHT=PASS\\n' \"$SHA\"\nLOG=\"$(mktemp)\"\ntrap 'rm -f \"$LOG\"' EXIT\nif docker build --network=host --progress=plain -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:menu-20261115-final \"$WT\" >\"$LOG\" 2>&1; then\n docker image inspect gace-tgtumbler-gaybbs:menu-20261115-final >/dev/null\n echo BUILD=PASS\nelse\n if grep -Eq 'ERR_PNPM|frozen-lockfile' \"$LOG\"; then exit 51; fi\n if grep -Eq 'no space left|ENOSPC' \"$LOG\"; then exit 52; fi\n if grep -Eq 'network is unreachable|ETIMEDOUT|ECONNREFUSED|TLS handshake' \"$LOG\"; then exit 53; fi\n exit 55\nfi\ndocker tag gace-tgtumbler-gaybbs:local gace-tgtumbler-gaybbs:before-menu-20261115-final\ngood=0\nrecover(){\n if [ \"$good\" -ne 1 ]; then\n  docker tag gace-tgtumbler-gaybbs:before-menu-20261115-final gace-tgtumbler-gaybbs:local || true\n  docker compose -f \"$COMPOSE\" -p deploy up -d --no-deps --force-recreate gaybbs >/dev/null || true\n fi\n}\ntrap recover EXIT\ndocker tag gace-tgtumbler-gaybbs:menu-20261115-final gace-tgtumbler-gaybbs:local\ndocker compose -f \"$COMPOSE\" -p deploy up -d --no-deps --force-recreate gaybbs >/dev/null\nfor i in $(seq 1 20); do\n if [ \"$(docker inspect \"$LIVE\" --format '{{.State.Running}}')\" = true ] &&\n  docker exec \"$LIVE\" sh -c 'test -s /app/gaybbs.mjs && grep -q \"クリエーター投稿\" /app/gaybbs.mjs && grep -q \"🔗ボタン生成\" /app/gaybbs.mjs && grep -q \"dm:chat-select\" /app/gaybbs.mjs && grep -q \"dm:invite-select\" /app/gaybbs.mjs'; then\n  good=1\n  break\n fi\n sleep 2\ndone\ntest \"$good\" = 1\ntrap - EXIT\nprintf 'GAYBBS_MENU_DEPLOY=PASS\\nBUNDLE_3_BUTTONS=PASS\\nCONTAINER_RUNNING=YES\\n'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
