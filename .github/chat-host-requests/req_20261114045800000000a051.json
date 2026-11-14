@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$(git rev-parse --show-toplevel)\"\ncd \"$root/.worktrees/profile-live-20261114\"\ntest -z \"$(git status --porcelain)\"\ngit fetch --no-tags origin refs/heads/feat/profile-recruitment-album-20261114 >/dev/null 2>&1\nwant=\"0cfc593e1883c2e0a27748d18d8868118354eac1\"\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$want\" || exit 74\nbase=\"$(git merge-base HEAD \"$want\")\"\n{ printf 'PR47_SOURCE_COMPARISON=OBSERVED\\nPROFILE_LIVE_HEAD=%s\\nPR47_HEAD=%s\\nMERGE_BASE=%s\\nPR47_ONLY_COMMITS=%s\\nPROFILE_LIVE_ONLY_COMMITS=%s\\n' \"$(git rev-parse HEAD)\" \"$want\" \"$base\" \"$(git rev-list --count HEAD..\"$want\")\" \"$(git rev-list --count \"$want\"..HEAD)\"; printf 'CHANGED_FILES\\n'; git diff --name-only HEAD \"$want\" | head -45; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
