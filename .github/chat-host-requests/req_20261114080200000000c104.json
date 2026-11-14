@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "6cb1b5f3c8fa5f9250374eabd8582aa7b4e7a878",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest \"$(git rev-parse HEAD)\" = 57955cd68bb39626ebbca38d44b7bb034da6dc05\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\npython3 scripts/userbot_test_client.py health\ngit fetch --no-tags origin d07431ce0e5e2e3db494b90428f2ed8f046d50eb 2338b477b6542aa927f615b70661d6fce8c59c7f\npython3 - <<'PY'\nfrom pathlib import Path\nimport os, subprocess, tempfile, shutil\n\nroot=Path(\"scripts\")\noldsha=\"d07431ce0e5e2e3db494b90428f2ed8f046d50eb\"\nnewsha=\"2338b477b6542aa927f615b70661d6fce8c59c7f\"\ndef source(sha,name):\n    return subprocess.check_output([\"git\",\"show\",f\"{sha}:scripts/{name}\"])\noriginal=source(oldsha,\"userbot_public_video_actions.py\")\nlatest=source(newsha,\"userbot_public_video_actions.py\")\narchive=source(newsha,\"userbot_public_video_archive.py\")\ntarget=root/\"userbot_public_video_actions.py\"\nipc_path=root/\"userbot_resident_ipc.py\"\narchive_path=root/\"userbot_public_video_archive.py\"\n\nif target.read_bytes()!=original: raise RuntimeError(\"VIDEO_MODULE_LIVE_DIFFERS_FROM_EXPECTED\")\nif archive_path.exists() or archive_path.is_symlink(): raise RuntimeError(\"ARCHIVE_JOB_SOURCE_ALREADY_PRESENT\")\nipc=ipc_path.read_text()\ndef only(old,new):\n    global ipc\n    if ipc.count(old)!=1: raise RuntimeError(\"RESIDENT_IPC_ANCHOR_CHANGED\")\n    ipc=ipc.replace(old,new,1)\nonly('\"list_joined_public_channels\", \"list_channel_videos\", \"download_channel_video\"})',\n     '\"list_joined_public_channels\", \"list_channel_videos\", \"download_channel_video\", \"download_channel_video_step\"})')\nonly('{\"list_joined_public_channels\", \"list_channel_videos\", \"download_channel_video\"}:',\n     '{\"list_joined_public_channels\", \"list_channel_videos\", \"download_channel_video\", \"download_channel_video_step\"}:')\nonly('saved = await download_video(client, request[\"channel_id\"], request[\"message_id\"])',\n     'saved = await download_video(client, request[\"channel_id\"], request[\"message_id\"],\\n            max_chunks=16 if action == \"download_channel_video_step\" else None)')\nfor name, payload in [(\"ipc\",ipc.encode()),(\"actions\",latest),(\"archive\",archive)]:\n    compile(payload.decode(),name+\".py\",\"exec\")\n\nwith tempfile.TemporaryDirectory(prefix=\"gace-userbot-code-\") as folder:\n    backups={target:target.read_bytes(),ipc_path:ipc_path.read_bytes()}\n    def atomic(path,data):\n        fd,tmp=tempfile.mkstemp(prefix=\".gace-code-\",dir=str(path.parent))\n        try:\n            with os.fdopen(fd,\"wb\") as out:out.write(data)\n            os.chmod(tmp,0o644)\n            os.replace(tmp,path)\n        finally:\n            if os.path.exists(tmp):os.unlink(tmp)\n    try:\n        atomic(target,latest)\n        atomic(ipc_path,ipc.encode())\n        atomic(archive_path,archive)\n        for path in (target,ipc_path,archive_path):\n            compile(path.read_text(),str(path),\"exec\")\n        # The existing resident session owner remains the only Telegram client.\n        subprocess.run([\"systemctl\",\"--user\",\"restart\",\"gace-userbot-verify.service\"],check=True,timeout=25)\n    except BaseException:\n        for path,data in backups.items():atomic(path,data)\n        archive_path.unlink(missing_ok=True)\n        raise\nprint(\"RESUMABLE_SOURCE=APPLIED\")\nprint(\"ARCHIVE_WORKER_SOURCE=STAGED\")\nprint(\"EXISTING_ROOM_AND_PROFILE_IPC=PRESERVED\")\nPY\nok=0\nfor i in 1 2 3 4 5 6 7 8 9 10 11 12; do if python3 scripts/userbot_test_client.py health >/dev/null 2>&1;then ok=1;break;fi;sleep 2;done\ntest \"$ok\" = 1\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled\npython3 -m py_compile scripts/userbot_public_video_archive.py scripts/userbot_public_video_actions.py scripts/userbot_resident_ipc.py\necho RESUMABLE_RUNTIME=ACTIVE_HEALTH_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
