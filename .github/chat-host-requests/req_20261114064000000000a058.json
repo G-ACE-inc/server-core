@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nold=\"sha256:999a9fa61cb476510c60df5afeca6509a077a1c9c5aa820317dd5f5e7660b8c8\"\ncandidate=\"sha256:0b63fb73669dc7d7ccf1cf9b3012f596710e9faa8eedc5e354151ec3dfb0025d\"\ncompose=\"/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/.worktrees/profile-live-20261114/deploy/gserver-compose.yaml\"\ntest \"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\" = \"$old\"\ntest \"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:local)\" = \"$old\"\ntest \"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:pr47-candidate)\" = \"$candidate\"\nbot_secret=\"$(docker inspect deploy-gaybbs-1 | jq -r '.[0].Mounts[] | select(.Destination==\"/run/secrets/bot_token\") | .Source')\"\ndb_container=\"$(docker ps --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=postgres --format '{{.Names}}' | head -1)\"\ntest -n \"$db_container\"\ndb_secret=\"$(docker inspect \"$db_container\" | jq -r '.[0].Mounts[] | select(.Destination==\"/run/secrets/db_password\") | .Source')\"\ntest -r \"$bot_secret\" && test -r \"$db_secret\"\numask 077\noverride=\"$HOME/.config/tgtumbler/profile47-live-secret-bindings.json\"\nmkdir -p \"$HOME/.config/tgtumbler\"\njq -n --arg db \"$db_secret\" --arg bot \"$bot_secret\" '{secrets:{db_password:{file:$db},bot_token:{file:$bot}}}' > \"$override\"\ndocker compose --project-name deploy -f \"$compose\" -f \"$override\" config -q\ndocker tag gace-tgtumbler-gaybbs:pr47-candidate gace-tgtumbler-gaybbs:local\nrollback(){\n docker tag gace-tgtumbler-gaybbs:pr47-rollback gace-tgtumbler-gaybbs:local\n docker compose --project-name deploy -f \"$compose\" -f \"$override\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || true\n}\nif ! docker compose --project-name deploy -f \"$compose\" -f \"$override\" up -d --no-deps --force-recreate gaybbs >/dev/null; then rollback; exit 82; fi\nsleep 5\nimage=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1 2>/dev/null || echo absent)\"\nrunning=\"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1 2>/dev/null || echo false)\"\nif test \"$image\" != \"$candidate\" || test \"$running\" != true; then rollback; exit 83; fi\nprintf 'PR47_GAYBBS_DEPLOY=PASS\\nSOURCE_SHA=0cfc593e1883c2e0a27748d18d8868118354eac1\\nIMAGE_SHA=%s\\nRUNNING=true\\nPOSTGRES_UNTOUCHED=YES\\nROLLBACK_IMAGE_RETAINED=YES\\n' \"$image\" | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
