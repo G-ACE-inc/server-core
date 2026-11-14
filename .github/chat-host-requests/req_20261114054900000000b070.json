@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$(git rev-parse --show-toplevel)\"\ncd \"$root\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled\ngit fetch --no-tags origin refs/heads/feat/profile-recruitment-album-20261114 >/dev/null 2>&1\ntest \"$(git rev-parse FETCH_HEAD)\" = \"9f9ec5281559b86817a65365d2c6c3e31f7a6b5c\"\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\nfor path in scripts/userbot_resident_ipc.py scripts/userbot_test_client.py; do\n  git show 53451aa78635ba7e94b7db63544e0e7c020d54d7:\"$path\" > \"$tmp/old-$(basename \"$path\")\"\n  cmp \"$tmp/old-$(basename \"$path\")\" \"$path\" >/dev/null || exit 75\n  cp -p \"$path\" \"$tmp/backup-$(basename \"$path\")\"\n  git show FETCH_HEAD:\"$path\" > \"$tmp/new-$(basename \"$path\")\"\ndone\ndeploy/.userbot-venv/bin/python -B -m py_compile \"$tmp/new-userbot_resident_ipc.py\" \"$tmp/new-userbot_test_client.py\"\nrestore(){\n  for path in scripts/userbot_resident_ipc.py scripts/userbot_test_client.py; do\n    cp -p \"$tmp/backup-$(basename \"$path\")\" \"$path\"\n  done\n  systemctl --user restart gace-userbot-verify.service >/dev/null 2>&1 || true\n}\nfor path in scripts/userbot_resident_ipc.py scripts/userbot_test_client.py; do\n  cp \"$tmp/new-$(basename \"$path\")\" \"$path\"\ndone\nif ! systemctl --user restart gace-userbot-verify.service; then restore; exit 81; fi\nsleep 3\nif ! deploy/.userbot-venv/bin/python scripts/userbot_test_client.py health > \"$tmp/health\"; then\n  restore; exit 82\nfi\nif ! deploy/.userbot-venv/bin/python scripts/userbot_test_client.py profile_button_smoke > \"$tmp/button\"; then\n  { echo PROFILE_BUTTON_USERBOT_SMOKE=FAIL; cat \"$tmp/button\"; echo USERBOT_RESTORING_CODE=YES; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n  restore; exit 83\nfi\n{ echo PROFILE_BUTTON_USERBOT_SMOKE=PASS; cat \"$tmp/button\"; echo USERBOT_SERVICE=$(systemctl --user is-active gace-userbot-verify.service); echo USERBOT_ENABLED=$(systemctl --user is-enabled gace-userbot-verify.service); echo USERBOT_HEALTH=$(grep -o 'USERBOT_TEST_RESULT=PASS' \"$tmp/health\"); echo SESSION_FILE_UNCHANGED=YES; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
