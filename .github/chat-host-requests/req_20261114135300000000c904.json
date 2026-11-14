@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/3"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport {readFileSync} from 'node:fs';\nimport pg from 'pg';\nconst {Pool}=pg;\nconst env=process.env;\nconst user=env.VIDEOBOT_DB_USER,host=env.VIDEOBOT_DB_HOST;\nconst password=readFileSync('/run/secrets/videobot_db_password','utf8').trim();\nconst token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\nconst pool=new Pool({host,user,password,database:'videobot',port:5432,max:1,connectionTimeoutMillis:4000});\ntry{\n const p=await pool.query(\"SELECT p.pack_name, COUNT(i.file_id)::int AS db_count FROM videobot_sticker_packs p LEFT JOIN videobot_sticker_items i ON i.pack_name=p.pack_name WHERE p.status='active' GROUP BY p.pack_name ORDER BY p.pack_name LIMIT 100\");\n const q=await pool.query(\"SELECT phase,COUNT(*)::int AS n FROM videobot_sticker_registration_receipts WHERE phase <> 'registered' GROUP BY phase\");\n let apiOk=0,apiFail=0,mismatch=0,withFive=0,largest=0,dbLargest=0;\n for(const row of p.rows){\n  dbLargest=Math.max(dbLargest,row.db_count);\n  try{\n   const result=await fetch('https://api.telegram.org/bot'+token+'/getStickerSet',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:row.pack_name}),signal:AbortSignal.timeout(6000)});\n   const data=await result.json();\n   if(!data.ok||!Array.isArray(data.result?.stickers)){apiFail++;continue;}\n   apiOk++;\n   const count=data.result.stickers.length;\n   largest=Math.max(largest,count);\n   if(count>=5)withFive++;\n   if(count!==row.db_count)mismatch++;\n  }catch{apiFail++;}\n }\n const pending=Object.fromEntries(q.rows.map(v=>[v.phase,v.n]));\n console.log('STICKER_INVENTORY_READBACK=PASS');\n console.log('PACK_ROWS='+p.rowCount);\n console.log('TELEGRAM_PACK_READ_SUCCESS='+apiOk);\n console.log('TELEGRAM_PACK_READ_FAILED='+apiFail);\n console.log('MAX_TELEGRAM_PACK_ITEMS='+largest);\n console.log('MAX_DB_PACK_ITEMS='+dbLargest);\n console.log('PACKS_AT_LEAST_FIVE='+withFive);\n console.log('PACK_COUNT_MISMATCH='+mismatch);\n console.log('REGISTRATION_PENDING='+JSON.stringify(pending));\n const r=await fetch('http://127.0.0.1:8766/shop',{signal:AbortSignal.timeout(4000)});\n console.log('SHOP_HTML_STATUS='+r.status);\n console.log('SHOP_FRAME_HEADER='+(r.headers.has('x-frame-options')?'BLOCKING':'CSP_ONLY'));\n console.log('SHOP_CSP_TELEGRAM='+(r.headers.get('content-security-policy')?.includes('frame-ancestors https://web.telegram.org')?'YES':'NO'));\n const publicUrl=env.VIDEOBOT_SHOP_PUBLIC_URL??'';\n console.log('SHOP_PUBLIC_URL_CONFIGURED='+(publicUrl==='https://shop.hentaigay.org/'||publicUrl==='https://shop.hentaigay.org'?'YES':publicUrl===''?'NO':'OTHER'));\n}catch{console.log('STICKER_INVENTORY_READBACK=FAILED');process.exitCode=1;}\nfinally{await pool.end();}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
