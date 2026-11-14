@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nbase=\"6445896df387d290b6a0517d8cdb72c0471db4c7\"\nwant=\"0cfc593e1883c2e0a27748d18d8868118354eac1\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled\npython3 scripts/userbot_test_client.py health | grep -q '^USERBOT_TEST_RESULT=PASS$'\nsession=\"deploy/secrets/userbot_verify.session\"\ntest -f \"$session\" && test ! -L \"$session\"\nbefore=\"$(stat -c '%d:%i:%a' \"$session\")\"\nfor p in scripts/userbot_resident_ipc.py scripts/userbot_test_client.py; do\n cmp -s \"$p\" <(git show \"$base:$p\") || exit 75\ndone\numask 077\ndir=\"$HOME/.local/state/gace-userbot-activation/pr47-20261114-a066\"\nmkdir -p \"$dir\"\ntest ! -e \"$dir/activated\" || exit 76\ncp -p scripts/userbot_resident_ipc.py \"$dir/userbot_resident_ipc.py\"\ncp -p scripts/userbot_test_client.py \"$dir/userbot_test_client.py\"\nfor p in scripts/userbot_resident_ipc.py scripts/userbot_test_client.py; do\n git show \"$want:$p\" > \"$dir/$(basename \"$p\").new\"\n python3 - \"$dir/$(basename \"$p\").new\" <<'PY'\nimport sys\np=sys.argv[1]\ncompile(open(p,encoding=\"utf-8\").read(),p,\"exec\")\nPY\ndone\nrestore(){\n cp -p \"$dir/userbot_resident_ipc.py\" scripts/userbot_resident_ipc.py\n cp -p \"$dir/userbot_test_client.py\" scripts/userbot_test_client.py\n systemctl --user restart gace-userbot-verify.service >/dev/null 2>&1 || true\n}\ntrap restore ERR\ncp \"$dir/userbot_resident_ipc.py.new\" scripts/userbot_resident_ipc.py\ncp \"$dir/userbot_test_client.py.new\" scripts/userbot_test_client.py\nchmod --reference=\"$dir/userbot_resident_ipc.py\" scripts/userbot_resident_ipc.py\nchmod --reference=\"$dir/userbot_test_client.py\" scripts/userbot_test_client.py\nsystemctl --user restart gace-userbot-verify.service\nsleep 5\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled\ntest \"$(stat -c '%d:%i:%a' \"$session\")\" = \"$before\"\npython3 scripts/userbot_test_client.py health | grep -q '^USERBOT_TEST_RESULT=PASS$'\ntouch \"$dir/activated\"\ntrap - ERR\nif output=\"$(python3 scripts/userbot_test_client.py profile_topics_readback 2>&1)\"; then\n { printf 'PR47_USERBOT_CODE_ACTIVATION=PASS\\nSESSION_IDENTITY_UNCHANGED=YES\\nAUTHORIZED_AFTER=YES\\n'; printf '%s\\n' \"$output\" | grep -E '^(USERBOT_TEST_RESULT|USERBOT_PROFILE_TOPICS)='; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\nelse\n { printf 'PR47_USERBOT_CODE_ACTIVATION=PASS\\nSESSION_IDENTITY_UNCHANGED=YES\\nAUTHORIZED_AFTER=YES\\nPROFILE_TOPICS_READBACK=FAIL\\n'; printf '%s\\n' \"$output\" | tail -c 500; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\nfi\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
