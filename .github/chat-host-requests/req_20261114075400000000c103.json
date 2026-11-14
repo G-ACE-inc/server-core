@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "ff84f0560d1891e89e3ee66043b7660a8d77bf99",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest \"$(git rev-parse HEAD)\" = 57955cd68bb39626ebbca38d44b7bb034da6dc05\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\npython3 scripts/userbot_test_client.py health\ngit fetch --no-tags origin 4d2a721ff147f654663451ebeed35562fb298c03\ntest \"$(git rev-parse FETCH_HEAD)\" = 4d2a721ff147f654663451ebeed35562fb298c03\ntempdir=$(mktemp -d)\ntrap 'rm -rf \"$tempdir\"' EXIT\ngit show e175e3e44a9a602cd4351f3809be496d33b5dad9:scripts/userbot_public_video_actions.py > \"$tempdir/old.py\"\ncmp -s \"$tempdir/old.py\" scripts/userbot_public_video_actions.py || { echo SOURCE_OWNER_CHANGED; exit 71; }\ngit show FETCH_HEAD:scripts/userbot_public_video_actions.py > \"$tempdir/new.py\"\npython3 -m py_compile \"$tempdir/new.py\"\ncp -p scripts/userbot_public_video_actions.py \"$tempdir/rollback.py\"\ncp \"$tempdir/new.py\" scripts/userbot_public_video_actions.py\nchmod 644 scripts/userbot_public_video_actions.py\npython3 -m py_compile scripts/userbot_public_video_actions.py\nif ! systemctl --user restart gace-userbot-verify.service; then\n  cp -p \"$tempdir/rollback.py\" scripts/userbot_public_video_actions.py\n  echo USERBOT_ACTIVATION_RESTART_FAILED; exit 72\nfi\nok=0\nfor i in 1 2 3 4 5 6 7 8 9 10 11 12; do\n  if python3 scripts/userbot_test_client.py health >/dev/null 2>&1; then ok=1;break;fi\n  sleep 2\ndone\nif [ \"$ok\" != 1 ]; then echo USERBOT_POST_RESTART_HEALTH_NOT_VERIFIED; exit 73;fi\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled\necho RESUME_PATCH=DEPLOYED\necho RESIDENT_USERBOT_HEALTH=PASS\necho SESSION_REAUTH=NOT_REQUESTED\necho GOOGLE_DRIVE_ACTIONS=NONE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
