@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/53"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ncd \"$repo\"\npython3 - <<'PY' | gh issue comment 7 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\nfrom pathlib import Path\nimport subprocess,ast\nold=Path(\"scripts/userbot_resident_ipc.py\").read_text()\ncand=subprocess.check_output([\"git\",\"show\",\"db27cab03e08c435c056f72d960a67e183c0f48f:scripts/userbot_resident_ipc.py\"],text=True)\nstart='                                gate_codes = {\"ee538b32b74f\"'\nend='                                await screen.click(text=\"🔙 戻る\")'\nprint(\"INVITE_UI_PATCH_DIAG\")\nprint(\"OLD_START_COUNT=\"+str(old.count(start)))\nprint(\"NEW_START_COUNT=\"+str(cand.count(start)))\nprint(\"OLD_END_COUNT=\"+str(old.count(end)))\nprint(\"NEW_END_COUNT=\"+str(cand.count(end)))\nprint(\"OLD_HAS_NEW_LABELS=\"+str(\"INVITE_COPY_BUTTON_LABELS_MISMATCH\" in old))\nprint(\"SOURCE_HEAD=\"+subprocess.check_output([\"git\",\"rev-parse\",\"HEAD\"],text=True).strip())\nprint(\"SERVICE_ACTIVE=\"+subprocess.check_output([\"systemctl\",\"--user\",\"is-active\",\"gace-userbot-verify.service\"],text=True).strip())\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
