@@ -1,0 +1,37 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -u\nunit=$(systemctl --user list-units --all --type=service --no-legend --plain 2>/dev/null | grep -Ei 'collect|video|userbot' || true)\nprintf 'USERBOT_AND_COLLECTION_SERVICES\\n%s\\n' \"$unit\"\nprintf 'G_MOUNT_PRESENT='\nmountpoint -q /mnt/g && echo YES || echo NO\nprintf 'COLLECTOR_PROCESSES\\n'\nps -eo pid,etimes,comm | grep -Ei 'python|ffmpeg|userbot' | head -30 || true\nprintf 'TARGET_DIR_HINTS\\n'\nfind /mnt/g -maxdepth 4 -type d -iname '*nippon*' -print 2>/dev/null | head -10 || true\nprintf 'COLLECTOR_DIAGNOSTIC_FINISHED\\n'\nexit 0"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
