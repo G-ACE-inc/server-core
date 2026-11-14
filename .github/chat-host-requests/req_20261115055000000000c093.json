@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/56"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nROOT=\"$(git rev-parse --show-toplevel)\"\nBRANCH=\"chat/menu-link-creator-runtime-hotfix-20261115\"\nSHA=\"0bbf7c677a22dd63eeadb153404a1c0fdffa2ccb\"\nWT=\"$ROOT/.worktrees/gaybbs-creator-hotfix-20261115\"\ngit fetch --no-tags origin \"$BRANCH\"\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$SHA\" || exit 74\nif test -d \"$WT\"; then\n test -z \"$(git -C \"$WT\" status --porcelain --untracked-files=all)\" || exit 76\n git -C \"$WT\" checkout --detach \"$SHA\"\nelse\n git worktree add --detach \"$WT\" \"$SHA\"\nfi\ntest \"$(git -C \"$WT\" rev-parse HEAD)\" = \"$SHA\" || exit 74\nLIVE=\"deploy-gaybbs-1\"\ntest \"$(docker inspect \"$LIVE\" --format '{{.State.Running}}')\" = true || exit 63\nCOMPOSE=\"$(docker inspect \"$LIVE\" --format '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}')\"\ntest -f \"$COMPOSE\" || exit 67\ndocker compose -f \"$COMPOSE\" -p deploy config -q\nLOG=\"$(mktemp)\"\ntrap 'rm -f \"$LOG\"' EXIT\nif ! docker build --network=host --progress=plain -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:creator-hotfix-0bbf7c6 \"$WT\" >\"$LOG\" 2>&1; then\n if grep -Eq 'ERR_PNPM|frozen-lockfile' \"$LOG\"; then exit 51; fi\n if grep -Eq 'no space left|ENOSPC' \"$LOG\"; then exit 52; fi\n if grep -Eq 'network is unreachable|ETIMEDOUT|ECONNREFUSED|TLS handshake' \"$LOG\"; then exit 53; fi\n exit 55\nfi\ncontainer=\"$(docker create gace-tgtumbler-gaybbs:creator-hotfix-0bbf7c6)\"\ntrap 'docker rm -f \"$container\" >/dev/null 2>&1 || true; rm -f \"$LOG\"' EXIT\ndocker cp \"$container:/app/gaybbs.mjs\" \"$LOG.bundle\"\ntest -s \"$LOG.bundle\"\ngrep -q 'クリエーター投稿' \"$LOG.bundle\" || exit 81\ngrep -q 'dm:talk' \"$LOG.bundle\" || exit 82\ngrep -q 'dm:invite' \"$LOG.bundle\" || exit 83\ngrep -q 'dm:link' \"$LOG.bundle\" || exit 84\ngrep -q 'プロフ作成' \"$LOG.bundle\" || exit 85\nrm -f \"$LOG.bundle\"\ndocker rm -f \"$container\"\ntrap 'rm -f \"$LOG\"' EXIT\noldid=\"$(docker inspect \"$LIVE\" --format '{{.Image}}')\"\ndocker image tag \"$oldid\" gace-tgtumbler-gaybbs:rollback-before-creator-hotfix-20261115\nnewid=\"$(docker image inspect gace-tgtumbler-gaybbs:creator-hotfix-0bbf7c6 --format '{{.Id}}')\"\ngood=0\nrecover() {\n if test \"$good\" != 1; then\n  docker tag gace-tgtumbler-gaybbs:rollback-before-creator-hotfix-20261115 gace-tgtumbler-gaybbs:local || true\n  docker compose -f \"$COMPOSE\" -p deploy up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || true\n fi\n}\ntrap recover EXIT\ndocker tag gace-tgtumbler-gaybbs:creator-hotfix-0bbf7c6 gace-tgtumbler-gaybbs:local\ndocker compose -f \"$COMPOSE\" -p deploy up -d --no-deps --force-recreate gaybbs >/dev/null\nfor i in $(seq 1 20); do\n active=\"$(docker inspect \"$LIVE\" --format '{{.Image}}' 2>/dev/null || true)\"\n running=\"$(docker inspect \"$LIVE\" --format '{{.State.Running}}' 2>/dev/null || true)\"\n if test \"$active\" = \"$newid\" && test \"$running\" = true; then good=1; break; fi\n sleep 2\ndone\ntest \"$good\" = 1 || exit 86\ntrap - EXIT\nrm -f \"$LOG\"\necho GAYBBS_CREATOR_HOTFIX_DEPLOY=PASS\necho SOURCE_SHA=\"$SHA\"\necho IMAGE_ID=\"$newid\"\necho CONTAINER_RUNNING=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
