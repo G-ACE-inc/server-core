@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/4"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nsrc=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\nstage=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\ncid=gace-createvdobot-videobot-poll-1\ncompose=\"$stage/deploy/compose.videobot.poll.yaml\"\noldsha=cbdb58bff8e51323177d7e454a4b3c0a50c0460e\nsha=70b754a647b097c28243168565f0ed4906087f9f\noldtag=create-videobot:rollback-before-sale-offer-70b754a\nnewtag=create-videobot:poll-sale-offer-70b754a\ntest -d \"$src/.git\" || git -C \"$src\" rev-parse --git-dir >/dev/null\ntest -f \"$compose\" || exit 60\ndocker inspect \"$cid\" >/dev/null || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 62\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 63\ngit -C \"$src\" fetch --no-tags origin feat/assistant-ai-and-sales-core >/dev/null 2>&1 || exit 64\ntest \"$(git -C \"$src\" rev-parse FETCH_HEAD)\" = \"$sha\" || exit 65\ngit -C \"$src\" show \"$oldsha:src/telegram/stickerSales.mjs\" | docker exec -i \"$cid\" cmp - /opt/videobot/src/telegram/stickerSales.mjs || exit 66\ndocker image inspect create-videobot:local-poll >/dev/null || exit 67\ntest \"$(docker image inspect create-videobot:local-poll --format '{{.Id}}')\" = \"$(docker inspect \"$cid\" --format '{{.Image}}')\" || exit 68\nrelease=\"$stage/.releases/$sha/patch\"\nmkdir -p \"$release\"\ngit -C \"$src\" show \"$sha:src/telegram/stickerSales.mjs\" > \"$release/stickerSales.mjs\"\ntest -s \"$release/stickerSales.mjs\" || exit 69\nprintf 'FROM %s\\nUSER root\\nCOPY --chown=node:node stickerSales.mjs /opt/videobot/src/telegram/stickerSales.mjs\\nUSER node\\n' create-videobot:local-poll > \"$release/Dockerfile\"\ndocker tag create-videobot:local-poll \"$oldtag\"\ndocker build --network none --pull=false -t \"$newtag\" \"$release\" >/dev/null || exit 70\ndocker run --rm --network none --entrypoint node \"$newtag\" --check /opt/videobot/src/telegram/stickerSales.mjs || exit 71\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}')\"\nexport VIDEOBOT_DB_PASSWORD_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}')\"\nexport VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/var/lib/videobot/sticker-entry\"}}{{.Source}}{{end}}{{end}}')\"\nexport GSERVER_POSTGRES_USER=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^VIDEOBOT_DB_USER=//p' | head -n 1)\"\nexport VIDEOBOT_SHOP_PUBLIC_URL=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^VIDEOBOT_SHOP_PUBLIC_URL=//p' | head -n 1)\"\nexport GSERVER_POSTGRES_NETWORK=\"$(docker inspect \"$cid\" --format '{{range $name, $net := .NetworkSettings.Networks}}{{println $name}}{{end}}' | head -n 1)\"\ntest -n \"$GSERVER_POSTGRES_USER\" && test -n \"$GSERVER_POSTGRES_NETWORK\" || exit 72\ndocker compose -p gace-createvdobot -f \"$compose\" config --quiet >/dev/null || exit 73\nswitched=NO\nrollback(){ trap - ERR; if test \"$switched\" = YES; then docker tag \"$oldtag\" create-videobot:local-poll; docker compose -p gace-createvdobot -f \"$compose\" up -d --no-deps --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true; echo CREATEVDOBOT_ROLLBACK=ATTEMPTED; fi; }\ntrap 'code=$?; rollback; exit \"$code\"' ERR\ndocker tag \"$newtag\" create-videobot:local-poll\nswitched=YES\ndocker compose -p gace-createvdobot -f \"$compose\" up -d --no-deps --no-build --force-recreate videobot-poll >/dev/null\nready=NO\nfor n in 1 2 3 4 5 6 7 8 9 10 11 12; do\n if docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null | grep -qx true && docker logs \"$cid\" 2>&1 | grep -Fq 'CREATOR_DM_POLL_READY=PASS'; then ready=YES; break; fi\n sleep 3\ndone\ntest \"$ready\" = YES || exit 74\ndocker exec \"$cid\" cat /opt/videobot/src/telegram/stickerSales.mjs | cmp - \"$release/stickerSales.mjs\" || exit 75\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 76\nswitched=NO\ntrap - ERR\nprintf 'CREATEVDOBOT_SALE_OFFER_DEPLOY=PASS\\nSOURCE_SHA=%s\\nSINGLE_POLL=PASS\\n' \"$sha\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
