@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "700a19007dac6b2b5080bf69d760558b9da1c01d",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user show gace-public-video-collect-resume-20261114.service -p ActiveState --value)\" != active\ngit fetch --no-tags origin ffe7e03c8bea293ad83aa38d4be09b11b4a900aa\npython3 - <<'PY'\nfrom pathlib import Path\nimport hashlib,subprocess,tempfile,os\npath=Path(\"scripts/userbot_public_video_archive.py\")\nactual=hashlib.sha256(path.read_bytes()).hexdigest()\nif actual!=\"2e9b2007a367174a7d229f2bf534be055438d3b7ceb7dfecabcfe6369df6c33d\":\n raise RuntimeError(\"ARCHIVE_SOURCE_CHANGED_NOT_OVERWRITING\")\ncontent=subprocess.check_output([\"git\",\"show\",\"ffe7e03c8bea293ad83aa38d4be09b11b4a900aa:scripts/userbot_public_video_archive.py\"])\ncompile(content.decode(),str(path),\"exec\")\nfd,tmp=tempfile.mkstemp(prefix=\".archive-source-\",dir=str(path.parent))\ntry:\n with os.fdopen(fd,\"wb\") as f:f.write(content)\n os.chmod(tmp,0o644)\n os.replace(tmp,path)\nfinally:\n if os.path.exists(tmp):os.unlink(tmp)\nprint(\"ARCHIVE_RETRY_LOGGER=APPLIED\")\nPY\npython3 -m py_compile scripts/userbot_public_video_archive.py\npython3 scripts/userbot_test_client.py health\nif systemctl --user list-units --all --no-legend 'gace-public-video-collect-retry-20261114.service' | grep -q gace-public-video-collect-retry;then echo JOB_ALREADY_STARTED;exit 76;fi\nsystemd-run --user --collect --unit=gace-public-video-collect-retry-20261114 --property=RuntimeMaxSec=43200 --working-directory=\"$PWD\" /usr/bin/python3 -u scripts/userbot_public_video_archive.py --channel-username theGreatOldDaysofNipponGV --recent-limit 3\necho RETRY_ARCHIVE_START=PASS\nsystemctl --user show gace-public-video-collect-retry-20261114.service -p ActiveState -p SubState --no-pager"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
