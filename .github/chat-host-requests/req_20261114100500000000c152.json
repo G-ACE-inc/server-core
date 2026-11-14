@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "cu_verified": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "d795dbd29ad57b7edcbc7291697ac16c93e87289",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user show gace-public-video-all-joined-20261114.service -p ActiveState --value)\" != active\ntest \"$(systemctl --user show gace-public-video-collect-retry-20261114.service -p ActiveState --value)\" != active\nmountpoint -q /mnt/g\npython3 - <<'PY'\nfrom pathlib import Path\nimport os,tempfile\np=Path(\"scripts/userbot_test_client.py\")\ns=p.read_text()\nbefore='        elif action == \"list_channel_videos\":'\nafter=('        elif action == \"list_channel_video_page\":\\n'\n       '            if channel_id is None or chat_id is not None or message_id is not None or limit is not None:\\n'\n       '                raise ValueError(\"VIDEO_PAGE_TARGET_REQUIRED\")\\n'\n       '            request[\"channel_id\"] = channel_id\\n'\n       +before)\nif s.count(before)!=1 or 'elif action == \"list_channel_video_page\":' in s:\n raise RuntimeError(\"LIVE_RESIDENT_CLIENT_PAGE_PATCH_CONFLICT\")\ns=s.replace(before,after,1)\ncompile(s,str(p),\"exec\")\nfd,temp=tempfile.mkstemp(prefix=\".video-page-client-\",dir=str(p.parent))\ntry:\n with os.fdopen(fd,\"w\") as out:out.write(s)\n os.chmod(temp,0o644)\n os.replace(temp,p)\nfinally:\n if os.path.exists(temp):os.unlink(temp)\nprint(\"PAGINATED_CLIENT_ROUTE=PATCHED\")\nPY\npython3 - <<'PY'\nimport asyncio,sys\nsys.path.insert(0,\"scripts\")\nfrom userbot_test_client import invoke\nasync def check():\n r=await invoke(\"list_channel_video_page\",channel_id=1877875443)\n print(\"PAGINATION_LIVE_STATUS=\"+str(r.get(\"status\")))\n print(\"PAGINATION_LIVE_SCANNED=\"+str(r.get(\"scanned\")))\n if r.get(\"status\")!=\"PASS\" or type(r.get(\"videos\")) is not list:raise RuntimeError(\"LIVE_PAGINATION_NOT_READY\")\nasyncio.run(check())\nPY\nif systemctl --user list-units --all --no-legend 'gace-public-video-all-joined-retry-20261114.service' | grep -q gace-public-video-all-joined-retry-20261114;then echo ALL_RETRY_ALREADY_STARTED;exit 77;fi\nsystemd-run --user --collect --unit=gace-public-video-all-joined-retry-20261114 --working-directory=\"$PWD\" /usr/bin/python3 -u scripts/userbot_public_video_archive_all.py\necho ALL_JOINED_ARCHIVE_RETRY=LAUNCHED\nsystemctl --user show gace-public-video-all-joined-retry-20261114.service -p ActiveState -p SubState -p Result --no-pager\necho RESIDENT_UNCHANGED=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
