@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/53"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$(git rev-parse --show-toplevel)\"\napp=\"$root/.worktrees/profile-live-20261114\"\ncompose=\"$app/deploy/gserver-compose.yaml\"\nexpected=\"sha256:154501363ed5c7dd9bcfa66a506450410ccec76553fc08b117aec0e903e4c60a\"\ncurrent=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\"\ntagged=\"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:local)\"\ntest \"$current\" = \"$expected\" && test \"$tagged\" = \"$expected\" || exit 70\ntest \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 71\ntest -r \"$root/deploy/secrets/db_password.txt\" && test -r \"$root/deploy/secrets/bot_token.txt\" || exit 72\ntest -r \"$compose\" || exit 73\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ngh run download 43575207353 --repo seigo-gace/GateApp-Bot --name gaybbs-profile-bundle --dir \"$tmp\" >/dev/null\ntest \"$(sha256sum \"$tmp/gaybbs.mjs\" | cut -d' ' -f1)\" = \"ba28ae41460708fe36dc77c0766000d12d0c55b9a6b95df333da99caadcaed11\" || exit 74\nprintf 'FROM gace-tgtumbler-gaybbs:local\\nCOPY --chown=1000:1000 gaybbs.mjs /app/gaybbs.mjs\\n' > \"$tmp/Dockerfile\"\ndocker build --network none --pull=false -t gace-tgtumbler-gaybbs:invite-c993c89 -f \"$tmp/Dockerfile\" \"$tmp\" >/dev/null\ndocker run --rm --network none --entrypoint node gace-tgtumbler-gaybbs:invite-c993c89 --check /app/gaybbs.mjs >/dev/null\ncandidate=\"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:invite-c993c89)\"\nprintf 'secrets:\\n  db_password:\\n    file: %s\\n  bot_token:\\n    file: %s\\n' \"$root/deploy/secrets/db_password.txt\" \"$root/deploy/secrets/bot_token.txt\" > \"$tmp/override.yaml\"\ndocker compose -p deploy -f \"$compose\" -f \"$tmp/override.yaml\" config -q >/dev/null\ndocker tag gace-tgtumbler-gaybbs:local gace-tgtumbler-gaybbs:rollback-invite-c993c89\ndocker tag gace-tgtumbler-gaybbs:invite-c993c89 gace-tgtumbler-gaybbs:local\nrollback(){ docker tag gace-tgtumbler-gaybbs:rollback-invite-c993c89 gace-tgtumbler-gaybbs:local; docker compose -p deploy -f \"$compose\" -f \"$tmp/override.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || true; }\nif ! docker compose -p deploy -f \"$compose\" -f \"$tmp/override.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null;then rollback;exit 81;fi\nsleep 7\nactual=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1 2>/dev/null || echo absent)\"\nrunning=\"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1 2>/dev/null || echo false)\"\nif test \"$actual\" != \"$candidate\" || test \"$running\" != true;then rollback;exit 82;fi\n{ echo \"COMMUNITY_INVITE_DEPLOY=PASS\";echo \"SOURCE_HEAD=c993c89f0cba3e11980dd71c8c254812f62045c3\";echo \"IMAGE=$actual\";echo \"RUNNING=true\";echo \"ROLLBACK_IMAGE=$expected\";} | gh issue comment 7 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
