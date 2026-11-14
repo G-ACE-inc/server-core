@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "Gserver local G folder and current resident IPC contract",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-6871905683"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nprintf 'LOCAL_G_TOP_LEVEL:\\n'\nfind /mnt/g -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' 2>/dev/null | head -35\nprintf 'USERBOT_IPC_ACTION_REFERENCES:\\n'\ngrep -nE 'ALLOWED|SUPPORTED|action[[:space:]]*==|action[[:space:]]+in|list.*channel|download.*video|video.*download|argparse|choices=' \"$P/scripts/userbot_resident_ipc.py\" \"$P/scripts/userbot_test_client.py\" \"$P/scripts/userbot_keepalive.py\" 2>/dev/null | head -85 || true\nprintf 'USERBOT_SOCKET_LOCATIONS:\\n'\nfind /run/user/\"$(id -u)\" /tmp -maxdepth 3 -type s -printf '%p\\n' 2>/dev/null | grep -Ei 'gace|userbot' | head -12 || true\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
