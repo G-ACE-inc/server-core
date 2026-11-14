@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/7bd0404f340c6f3407b1259513fe694b1a864030"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nW=\"$P/.worktrees/recruit-tumblr-merged-20261114\"\nCOMPOSE=\"$W/deploy/gserver-compose.yaml\"\ntest -f \"$COMPOSE\" || exit 31\ntest \"$(git -C \"$W\" rev-parse HEAD)\" = \"4569f63e41708799bc15137ea4e6caeaf787ce4d\" || exit 32\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 33\nCURRENT=$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\nOLD=$(docker image inspect gace-tgtumbler-gaybbs:recruit-tumblr-4569f6 --format '{{.Id}}')\nNEXT=$(docker image inspect gace-tgtumbler-gaybbs:search-menu-7bd0404 --format '{{.Id}}')\ntest \"$CURRENT\" = \"$OLD\" || { echo SEARCH_MENU_SOURCE_CHANGED_NO_DEPLOY; exit 34; }\ntest \"$NEXT\" != \"$CURRENT\" || exit 35\nCID=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest -n \"$CID\" || exit 36\ntest \"$(docker inspect \"$CID\" --format '{{.Image}}')\" = \"$CURRENT\" || exit 37\ntest -f \"$P/deploy/secrets/bot_token.txt\" || exit 38\ntest -f \"$P/deploy/secrets/db_password.txt\" || exit 39\ndocker compose --project-directory \"$P/deploy\" -p deploy -f \"$COMPOSE\" config -q || exit 40\ndocker tag gace-tgtumbler-gaybbs:local gace-tgtumbler-gaybbs:backup-before-search-menu-20261114\ndocker tag gace-tgtumbler-gaybbs:search-menu-7bd0404 gace-tgtumbler-gaybbs:local\nrollback(){\n docker tag gace-tgtumbler-gaybbs:backup-before-search-menu-20261114 gace-tgtumbler-gaybbs:local || true\n docker compose --project-directory \"$P/deploy\" -p deploy -f \"$COMPOSE\" up -d --no-deps --no-build --force-recreate gaybbs >/dev/null 2>&1 || true\n}\nif ! docker compose --project-directory \"$P/deploy\" -p deploy -f \"$COMPOSE\" up -d --no-deps --no-build --force-recreate gaybbs >/dev/null 2>&1; then rollback; exit 41; fi\nREADY=0\nfor i in 1 2 3 4 5 6 7 8 9 10; do\n sleep 2\n LIVE=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\n if test -n \"$LIVE\" && test \"$(docker inspect \"$LIVE\" --format '{{.Image}}')\" = \"$NEXT\" && docker logs --since=90s \"$LIVE\" 2>&1 | grep -q GAYBBS_BOT_READY; then READY=1; break; fi\ndone\nif test \"$READY\" != 1; then rollback; exit 42; fi\nif ! python3 -B - <<'PY'\nfrom urllib.request import Request,urlopen\nfrom urllib.error import HTTPError\ntry:\n with urlopen(Request(\"http://127.0.0.1:8876/internal/tumblr\",data=b'{}',\n  headers={\"Authorization\":\"Bearer wrong\"},method=\"POST\"),timeout=4):\n  raise SystemExit(1)\nexcept HTTPError as exc:\n if exc.code!=401:raise SystemExit(1)\nPY\nthen rollback; exit 43; fi\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 44\necho GAYBBS_SEARCH_MENU_DEPLOY_READY_AND_BRIDGE_PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
