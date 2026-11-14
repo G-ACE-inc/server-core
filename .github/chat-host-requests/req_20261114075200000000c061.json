@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/5a93de671ee158205759bb6e264cd3cd48466743"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nWT=\"$(git rev-parse --show-toplevel)/.worktrees/search-colors-5a93de6\"\ntest \"$(git -C \"$WT\" rev-parse HEAD)\" = 5a93de671ee158205759bb6e264cd3cd48466743\nLOG=\"$(mktemp)\"\ntrap 'rm -f \"$LOG\"' EXIT\nif docker build --progress=plain -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:search-color-5a93de6 \"$WT\" >\"$LOG\" 2>&1; then exit 0; fi\npython3 - \"$LOG\" <<'PY'\nimport pathlib,re,sys\ns=pathlib.Path(sys.argv[1]).read_text(errors=\"replace\")\npatterns=[\n(101,r'RUN corepack enable|corepack prepare pnpm'),\n(102,r'RUN pnpm install|pnpm install --frozen'),\n(103,r'RUN pnpm --dir artifacts/bot run build:gaybbs'),\n(104,r'RUN node --check'),\n(105,r'RUN npm install --omit=dev'),\n(106,r'COPY .*from=build'),\n(107,r'COPY \\. \\.'),\n(108,r'FROM .*node|load metadata for'),\n]\nm=re.findall(r'ERROR:.*|failed to solve:.*',s,re.I)\ntail=\"\\n\".join(m[-5:]) if m else s[-1200:]\nfor code,pattern in patterns:\n if re.search(pattern,tail,re.I):sys.exit(code)\n# Prefer explicit failure step reference from buildkit output\nsteps=re.findall(r'^#[0-9]+ \\[([^]]+)\\].*ERROR',s,re.I|re.M)\nif steps:\n step=steps[-1].lower()\n for code,pattern in patterns:\n  if re.search(pattern,step,re.I):sys.exit(code)\nsys.exit(109)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
