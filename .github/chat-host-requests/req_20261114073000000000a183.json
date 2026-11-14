@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/50"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nP=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nBASE=49640f90ccf18774eec4f3076f43504415e8c801\nFIX=5591f6dfb9293335b613fdc3d42815a200f34812\ngit -C \"$P\" fetch -q origin feat/tumblr-owner-bridge-live-20261114 fix/gaybbs-search-menu-current-20261114\nWB=\"$P/.worktrees/search-live-baseline-20261114\"\nWF=\"$P/.worktrees/search-live-fixed-20261114\"\nif test -d \"$WB\"; then test \"$(git -C \"$WB\" rev-parse HEAD)\" = \"$BASE\"; else git -C \"$P\" worktree add --detach \"$WB\" \"$BASE\" >/dev/null; fi\nif test -d \"$WF\"; then test \"$(git -C \"$WF\" rev-parse HEAD)\" = \"$FIX\"; else git -C \"$P\" worktree add --detach \"$WF\" \"$FIX\" >/dev/null; fi\ntest -z \"$(git -C \"$WF\" status --porcelain --untracked-files=no)\" || exit 71\ndocker build --network host -f \"$WB/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:search-baseline-49640 \"$WB\"\ndocker build --network host -f \"$WF/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:search-live-fix-5591 \"$WF\"\ndocker run --rm --network none --entrypoint node gace-tgtumbler-gaybbs:search-live-fix-5591 --check /app/gaybbs.mjs\nCID=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest -n \"$CID\" || exit 72\nLIVE=$(docker exec \"$CID\" sha256sum /app/gaybbs.mjs | awk '{print $1}')\nREF=$(docker run --rm --network none --entrypoint sha256sum gace-tgtumbler-gaybbs:search-baseline-49640 /app/gaybbs.mjs | awk '{print $1}')\nif test \"$LIVE\" != \"$REF\"; then echo BASELINE_BUNDLE_MISMATCH_NO_DEPLOY; exit 73; fi\nCF=$(docker inspect \"$CID\" --format '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}')\ncase \"$CF\" in \"$P\"/deploy/gserver-compose.yaml|\"$P\"/.worktrees/*/deploy/gserver-compose.yaml) ;; *) echo COMPOSE_PATH_UNVERIFIED; exit 74;; esac\nCONFIG=$(docker inspect \"$CID\" --format '{{index .Config.Labels \"com.docker.compose.config-hash\"}}')\nEXPECTED=$(docker compose --project-directory \"$P/deploy\" -p deploy -f \"$CF\" config --hash gaybbs | awk '{print $NF}')\ntest \"$CONFIG\" = \"$EXPECTED\" || { echo COMPOSE_CONFIG_MISMATCH_NO_DEPLOY; exit 75; }\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 76\nOLD=$(docker image inspect gace-tgtumbler-gaybbs:local --format '{{.Id}}')\ntest \"$(docker inspect \"$CID\" --format '{{.Image}}')\" = \"$OLD\" || exit 77\nNEXT=$(docker image inspect gace-tgtumbler-gaybbs:search-live-fix-5591 --format '{{.Id}}')\ndocker tag gace-tgtumbler-gaybbs:local gace-tgtumbler-gaybbs:backup-before-search-live-fix-20261114\ndocker tag gace-tgtumbler-gaybbs:search-live-fix-5591 gace-tgtumbler-gaybbs:local\nrollback(){\n docker tag gace-tgtumbler-gaybbs:backup-before-search-live-fix-20261114 gace-tgtumbler-gaybbs:local || true\n docker compose --project-directory \"$P/deploy\" -p deploy -f \"$CF\" up -d --no-deps --no-build --force-recreate gaybbs >/dev/null 2>&1 || true\n}\nif ! docker compose --project-directory \"$P/deploy\" -p deploy -f \"$CF\" up -d --no-deps --no-build --force-recreate gaybbs >/dev/null 2>&1; then rollback; exit 78; fi\nREADY=0\nfor i in 1 2 3 4 5 6 7 8 9 10; do\n sleep 2\n NC=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\n if test -n \"$NC\" && test \"$(docker inspect \"$NC\" --format '{{.Image}}')\" = \"$NEXT\" && docker logs --since=90s \"$NC\" 2>&1 | grep -q GAYBBS_BOT_READY; then READY=1; break; fi\ndone\nif test \"$READY\" != 1; then rollback; exit 79; fi\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 80\necho SEARCH_MENU_DEPLOY_PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
