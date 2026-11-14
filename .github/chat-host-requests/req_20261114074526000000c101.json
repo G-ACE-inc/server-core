@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "f1c9e4bd7d414ee5472e28200bd54becae0cd2db",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nprintf 'ACTIVE='; systemctl --user is-active gace-userbot-verify.service\nprintf 'ENABLED='; systemctl --user is-enabled gace-userbot-verify.service\nprintf 'MOUNT='; mountpoint -q /mnt/g && echo PASS\nprintf 'SOURCE_HEAD='; git rev-parse HEAD\nprintf 'STATUS='; git status --short -- scripts/userbot_public_video_archive.py scripts/userbot_public_video_actions.py scripts/userbot_resident_ipc.py\nprintf 'TARGET_FILES_BEGIN\\n'; if test -d /mnt/g/GserverStorage/public_channel_videos/1877875443; then find /mnt/g/GserverStorage/public_channel_videos/1877875443 -maxdepth 1 -type f -printf '%f %s bytes\\n' | head -20;else echo DIRECTORY_ABSENT;fi\nprintf 'ARCHIVE_JOB='; if test -f /mnt/g/GserverStorage/public_channel_videos/_jobs/thegreatolddaysofnippongv.json;then cat /mnt/g/GserverStorage/public_channel_videos/_jobs/thegreatolddaysofnippongv.json;else echo NO_JOB;fi\nprintf '\\nHEALTH='; python3 scripts/userbot_test_client.py health\nprintf 'RUNNING_COLLECTOR='; pgrep -af 'userbot_public_video_collect_once.py|userbot_public_video_archive.py' | grep -v 'bash -c\\|pgrep' || true\nprintf 'LEDGER_ORIGINAL='; test -f \"$HOME/.local/state/gserver-terminal/results/req_20261114081000000000c085.json\" && echo EXISTS || echo MISSING"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
