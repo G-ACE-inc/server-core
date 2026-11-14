@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ndb=\"$(docker ps --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=postgres --format '{{.Names}}' | head -1)\"\ntest -n \"$db\"\nq=\"SELECT 'AREA_48='||topic_id||'|'||board_key||'|'||purpose||'|'||chat_id||'|'||message_thread_id||'|'||title||'|'||enabled::text FROM posting_topics WHERE chat_id=-1003847210571 AND (message_thread_id=48 OR title ILIKE '%プロフ%') ORDER BY topic_id; SELECT 'PROFILE_ROWS='||COUNT(*) FROM posting_topics WHERE purpose='profile' AND enabled=true; SELECT 'PROFILE_GATE='||enabled::text FROM gaybbs_feature_release_gates WHERE feature='profile';\"\nout=\"$(docker exec \"$db\" psql -U gace -d gaybbs -t -A -v ON_ERROR_STOP=1 -c \"$q\")\"\n{ printf 'PR47_MASTER_AREA48_PREFLIGHT\\n%s\\n' \"$out\"; printf 'BOT_RUNNING=%s\\n' \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\"; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
