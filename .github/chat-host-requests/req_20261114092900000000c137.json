@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "525326746a7f2ef111b25612ca96bd4562d37961",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\nmountpoint -q /mnt/g\ngit fetch --no-tags origin dfecd210114b4c54b9c62fba54a81a40089c2a55\ntest \"$(git rev-parse FETCH_HEAD)\" = dfecd210114b4c54b9c62fba54a81a40089c2a55\npython3 - <<'PY'\nfrom pathlib import Path\nimport subprocess,os,tempfile,sys\nold=\"623596150985274a59e9336b7e45eeb8d65f76d7\";new=\"dfecd210114b4c54b9c62fba54a81a40089c2a55\"\np=Path(\"scripts/userbot_public_video_activate_all.py\")\nif p.is_symlink() or not p.is_file():raise RuntimeError(\"ACTIVATION_STAGING_NOT_FOUND\")\nprevious=subprocess.check_output([\"git\",\"show\",f\"{old}:scripts/userbot_public_video_activate_all.py\"])\nif p.read_bytes()!=previous:raise RuntimeError(\"STAGED_ACTIVATION_HASH_CHANGED\")\nsource=subprocess.check_output([\"git\",\"show\",f\"{new}:scripts/userbot_public_video_activate_all.py\"])\ncompile(source.decode(),str(p),\"exec\")\nfd,tmp=tempfile.mkstemp(prefix=\".activate-public-\",dir=str(p.parent))\ntry:\n with os.fdopen(fd,\"wb\") as out:out.write(source)\n os.chmod(tmp,0o644)\n os.replace(tmp,p)\nfinally:\n if os.path.exists(tmp):os.unlink(tmp)\nsys.path.insert(0,str(Path(\"scripts\").resolve()))\nfrom userbot_public_video_activate_all import compose_updates\nfiles=compose_updates(new)\nprint(\"ALL_HISTORY_SOURCE_PREFLIGHT=PASS\")\nprint(\"PATCHED_MODULE_COUNT=\"+str(len(files)))\nPY\nif systemctl --user list-units --all --no-legend 'gace-public-video-all-joined-20261114.service' | grep -q gace-public-video-all-joined-20261114; then echo FULL_HISTORY_ALREADY_LAUNCHED;exit 77;fi\nsystemd-run --user --collect --unit=gace-public-video-all-joined-20261114 --working-directory=\"$PWD\" /usr/bin/python3 -u scripts/userbot_public_video_activate_all.py --source-commit dfecd210114b4c54b9c62fba54a81a40089c2a55\necho PUBLIC_VIDEO_ALL_JOINED_JOB=STARTED\nsystemctl --user show gace-public-video-all-joined-20261114.service -p ActiveState -p SubState -p Result --no-pager"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
