@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "d4e15d7fb6cac5931f05bd4ee977856a8cdc7ecf",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -u\necho 'GDRIVE_DIAGNOSTIC_BEGIN'\nprintf 'WHO='; id -un\nprintf 'WSL_DISTRO='; printf '%s\\n' \"${WSL_DISTRO_NAME:-UNKNOWN}\"\nprintf 'G_MOUNT='; findmnt -T /mnt/g -no TARGET,SOURCE,FSTYPE,OPTIONS 2>&1 || true\nprintf 'MNT_STATUS='; ls -ld /mnt /mnt/g 2>&1 || true\nprintf 'G_ROOT_CONTENTS='; timeout 8s ls -la /mnt/g 2>&1 | head -35 || true\nprintf 'EXACT_PATH_STATUS='; stat /mnt/g/GserverStorage 2>&1 | head -12 || true\nprintf 'WINDOWS_TEST='; if command -v powershell.exe >/dev/null 2>&1; then timeout 15s powershell.exe -NoProfile -NonInteractive -Command '$p=\"G:\\GserverStorage\"; \"EXISTS=\"+(Test-Path -LiteralPath $p); Get-Item -LiteralPath $p -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName' 2>&1 | head -12; else echo WINDOWS_INTEROP_UNAVAILABLE; fi\nprintf 'WSL_AUTOMOUNT_CONFIG='; if test -f /etc/wsl.conf; then sed -n '1,60p' /etc/wsl.conf; else echo DEFAULT; fi\nprintf 'USERBOT_STATUS='; systemctl --user is-active gace-userbot-verify.service || true\necho 'GDRIVE_DIAGNOSTIC_END'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
