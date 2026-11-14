@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "0ee35791a4781951cfb1c4f1d314c475839f3936",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\nmountpoint -q /mnt/g\ntest -f scripts/userbot_public_video_archive.py\npython3 scripts/userbot_test_client.py health\nif systemctl --user list-units --all --no-legend 'gace-public-video-collect-resume-20261114.service' | grep -q gace-public-video-collect-resume; then echo RESUME_JOB_NAME_COLLISION;exit 72;fi\nsystemd-run --user --collect --unit=gace-public-video-collect-resume-20261114 --property=RuntimeMaxSec=43200 --working-directory=\"$PWD\" /usr/bin/python3 -u scripts/userbot_public_video_archive.py --channel-username theGreatOldDaysofNipponGV --recent-limit 3\necho VIDEO_COLLECTION_RESUME_LAUNCHED=YES\nsystemctl --user show gace-public-video-collect-resume-20261114.service -p ActiveState -p SubState -p Result --no-pager"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
