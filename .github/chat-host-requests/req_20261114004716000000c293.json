@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "gserver_live_bot_readonly",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ndocker inspect gace-createvdobot-videobot-poll-1 --format '{{.State.Running}}' | grep -qx true\ndocker exec -i gace-createvdobot-videobot-poll-1 node --input-type=module <<'JS'\nimport {readFileSync} from 'node:fs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nsetDefaultResultOrder('ipv4first');\nsetDefaultAutoSelectFamily(false);\nconst target=-1004396338340;\nconst file=process.env.VIDEOBOT_TELEGRAM_TOKEN_FILE;\nif(typeof file!=='string'||!file.startsWith('/run/secrets/'))throw Error('BOT_TOKEN_MOUNT_UNAVAILABLE');\nconst token=readFileSync(file,'utf8').trim();\nasync function call(method,data={}) {\n const res=await fetch('https://api.telegram.org/bot'+token+'/'+method,{\n  method:'POST',headers:{'content-type':'application/json'},\n  body:JSON.stringify(data),signal:AbortSignal.timeout(16000)});\n const j=await res.json();\n if(!j.ok)return {ok:false,error_code:j.error_code||null};\n return {ok:true,result:j.result};\n}\ntry{\n const me=await call('getMe');\n if(!me.ok||!Number.isSafeInteger(me.result?.id))throw Error('BOT_IDENTITY_UNAVAILABLE');\n const chat=await call('getChat',{chat_id:target});\n const member=chat.ok?await call('getChatMember',{chat_id:target,user_id:me.result.id}):null;\n console.log(JSON.stringify({\n  target:target,chatConfirmed:chat.ok&&chat.result?.id===target,\n  chatType:chat.ok?chat.result?.type:null,\n  chatTitle:chat.ok?chat.result?.title:null,\n  memberStatus:member?.ok?member.result?.status:null,\n  canInviteUsers:member?.ok?member.result?.can_invite_users===true:null,\n  botAdmin:member?.ok?['administrator','creator'].includes(member.result?.status):false,\n  apiError:chat.ok?null:chat.error_code,\n  memberError:member&&!member.ok?member.error_code:null\n },null,2));\n}catch(err){console.log('CHANNEL_LOOKUP_FAILED='+String(err?.name||'UNKNOWN'));process.exitCode=2}\nJS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
