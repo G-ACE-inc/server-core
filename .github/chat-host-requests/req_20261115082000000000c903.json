@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncase \"$(git remote get-url origin)\" in *seigo-gace/create-videobot*) ;; *) exit 51;; esac\nroot=\"$(git rev-parse --show-toplevel)\"\nsha=\"faaae3e88c99a7cdfa85a70c91b6b585e3cd7a0d\"\nstage=\"$root/.worktrees/creator-entry-faaae3e\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = \"$sha\" || exit 52\ntest -z \"$(git -C \"$stage\" status --porcelain --untracked-files=no)\" || exit 53\nids=\"$(docker ps -q --filter label=com.docker.compose.service=videobot-poll)\"\ntest \"$(printf '%s\\n' \"$ids\" | grep -c .)\" -eq 1 || exit 54\nold=\"$ids\"\noldid=\"$(docker inspect -f '{{.Image}}' \"$old\")\"\noldtag=\"$(docker inspect -f '{{.Config.Image}}' \"$old\")\"\ncase \"$oldtag\" in create-videobot:*) ;; *) echo CREATOR_NOT_OWNED_IMAGE; exit 55;; esac\nalias=\"create-videobot:creator-entry-live-base-faaae3e\"\nif docker image inspect \"$alias\" >/dev/null 2>&1; then\n test \"$(docker image inspect -f '{{.Id}}' \"$alias\")\" = \"$oldid\" || { echo CREATOR_BASE_ALIAS_DIFFERENT; exit 56; }\nelse\n docker image tag \"$oldid\" \"$alias\"\nfi\ndocker build --pull=false --network none -t create-videobot:creator-entry-faaae3e -f - \"$stage\" <<'DOCKERFILE'\nFROM create-videobot:creator-entry-live-base-faaae3e\nUSER root\nRUN node -e 'const fs=require(\"node:fs\");const p=\"/opt/videobot/src/telegram/menuPanel.mjs\";let s=fs.readFileSync(p,\"utf8\");const before=\"[[\\u0027🎬 動画\\u0027,\\u0027menu:video\\u0027],[\\u0027🎨 ステッカー/絵文字\\u0027,\\u0027menu:stickers\\u0027]]\";const after=\"[[\\u0027🎬 ビデオ\\u0027,\\u0027menu:listing\\u0027],[\\u0027🎨 ステッカー／絵文字\\u0027,\\u0027menu:stickers\\u0027]]\";if(!s.includes(before))throw Error(\"CREATOR_LANDING_BASELINE_MISMATCH\");fs.writeFileSync(p,s.replace(before,after));'\nUSER node\nDOCKERFILE\ndocker run --rm --pull never --network none --read-only --entrypoint node -v \"$stage/test:/opt/videobot/test:ro\" create-videobot:creator-entry-faaae3e --test test/menuPanel.test.mjs test/creatorBot.test.mjs test/creatorSourceIntegration.test.mjs\necho CREATOR_EDITOR_CURRENT_IMAGE_PATCH_TEST=PASS\necho CREATOR_EDITOR_BASE_IMAGE_ID=\"$oldid\"\necho CREATOR_EDITOR_IMAGE_READY=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
