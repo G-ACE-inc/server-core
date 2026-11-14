@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncase \"$(git remote get-url origin)\" in *seigo-gace/create-videobot*) ;; *) exit 51;; esac\nroot=\"$(git rev-parse --show-toplevel)\"\nstage=\"$root/.worktrees/video-gallery-flow-034fa01\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = \"034fa012cf96e0288591fbe4bc16b90cee1acfa0\" || exit 52\nnewtag=\"create-videobot:gallery-flow-034fa01\"\nnewid=\"$(docker image inspect -f '{{.Id}}' \"$newtag\")\"\noldid=\"$(docker image inspect -f '{{.Id}}' create-videobot:before-gallery-034fa01)\"\nids=\"$(docker ps -q --filter label=com.docker.compose.service=videobot-poll)\"\ntest \"$(printf '%s\\n' \"$ids\" | grep -c .)\" -eq 1 || exit 54\ntest \"$(docker inspect -f '{{.Image}}' \"$ids\")\" = \"$oldid\" || { echo CURRENT_CREATOR_RUNTIME_CHANGED; exit 55; }\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$ids\")\"\nfiles=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project.config_files\"}}' \"$ids\")\"\nbase=\"$(printf '%s' \"$files\" | cut -d, -f1)\"\ncase \"$base\" in *compose.videobot.poll.yaml) ;; *) exit 56;; esac\ntest -f \"$base\" || exit 57\ndocker compose -p \"$project\" -f \"$base\" config --quiet || exit 58\noverrides=\"$root/.worktrees/gallery-flow-deploy-034fa01\"\nmkdir -p \"$overrides\"\ncat > \"$overrides/live.yaml\" <<'YAML'\nservices:\n  videobot-poll:\n    image: create-videobot:gallery-flow-034fa01\nYAML\ncat > \"$overrides/rollback.yaml\" <<'YAML'\nservices:\n  videobot-poll:\n    image: create-videobot:before-gallery-034fa01\nYAML\ndocker compose -p \"$project\" -f \"$base\" -f \"$overrides/live.yaml\" config --quiet || exit 59\nchanged=0\nrollback() {\n rc=$?\n trap - ERR\n set +e\n if test \"$changed\" = 1; then\n  docker compose -p \"$project\" -f \"$base\" -f \"$overrides/rollback.yaml\" up -d --no-build --no-deps videobot-poll >/dev/null\n  echo CREATOR_VIDEO_FLOW_ROLLBACK_ATTEMPTED\n fi\n exit \"$rc\"\n}\ntrap rollback ERR\nchanged=1\ndocker compose -p \"$project\" -f \"$base\" -f \"$overrides/live.yaml\" up -d --no-build --no-deps videobot-poll\nsleep 8\nafter=\"$(docker ps -q --filter label=com.docker.compose.project=\"$project\" --filter label=com.docker.compose.service=videobot-poll)\"\ntest \"$(printf '%s\\n' \"$after\" | grep -c .)\" -eq 1 || { echo CREATOR_POLLER_COUNT_INVALID; false; }\ntest \"$(docker inspect -f '{{.Image}}' \"$after\")\" = \"$newid\" || { echo CREATOR_IMAGE_MISMATCH; false; }\ntest \"$(docker inspect -f '{{.State.Running}}' \"$after\")\" = true || { echo CREATOR_POLLER_DOWN; false; }\ntrap - ERR\necho VIDEO_GALLERY_DESCRIPTION_STARS_DEPLOY=PASS\necho VIDEO_POLLER_COUNT=1\necho SOURCE_SHA=034fa012cf96e0288591fbe4bc16b90cee1acfa0"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
