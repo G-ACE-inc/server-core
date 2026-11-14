@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/57"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\npython3 - <<'PY'\nfrom pathlib import Path\nimport json,hashlib,re\nrid=\"req_20261115073700000000d107\"\np=Path.home()/\".local/state/gserver-terminal/results\"/(rid+\".json\")\nif p.is_symlink() or not p.is_file():raise SystemExit(67)\nrecord=json.loads(p.read_text(encoding=\"utf-8\"))\nif \"result\" in record:\n if record.get(\"state\")!=\"COMPLETED\":raise SystemExit(68)\n record=record[\"result\"]\nstdout=record.get(\"stdout\",\"\")\nif record.get(\"request_id\")!=rid or not isinstance(stdout,str):raise SystemExit(69)\ndigest=record.get(\"stdout_sha256\")\nif not isinstance(digest,str) or hashlib.sha256(stdout.encode()).hexdigest()!=digest:raise SystemExit(70)\nm=re.search(r\"^USERBOT_TEST_ERROR=([A-Z0-9_]{1,100})$\",stdout,re.M)\nstate=re.search(r\"^USERBOT_TEST_RESULT=(PASS|FAIL|BLOCKED)$\",stdout,re.M)\nif state is None:raise SystemExit(71)\nprint(\"READBACK_STATE=\"+state.group(1))\nif m:\n allowed={\"ROOM_PUBLIC_MESSAGE_NOT_VISIBLE\",\"ROOM_PUBLIC_MESSAGE_OWNER_MISMATCH\",\"ROOM_READ_GROUP_NOT_IN_EXISTING_DIALOGS\",\"RESIDENT_USERBOT_IPC_NOT_AVAILABLE\",\"RESIDENT_USERBOT_IPC_PERMISSIONS_INVALID\",\"ROOM_READ_CHAT_NOT_ALLOWLISTED\",\"TARGET_NOT_BOT\",\"RUNTIMEERROR\",\"VALUEERROR\",\"TIMEOUTERROR\",\"KEYERROR\",\"OSERROR\"}\n print(\"READBACK_ERROR_CLASS=\"+(m.group(1) if m.group(1) in allowed else \"OTHER\"))\nprint(\"REUSED_PREVIOUS_WRITER_RESULT=YES\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
