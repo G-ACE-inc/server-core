@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$(git rev-parse --show-toplevel)\"\n{\necho PROFILE_BUTTON_CHAIN_READBACK\necho HOST_BRANCH=\"$(git branch --show-current)\"\necho IMAGE=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\"\necho BOT_RUNNING=\"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\"\necho USERBOT_ACTIVE=\"$(systemctl --user is-active gace-userbot-verify.service)\"\necho USERBOT_ENABLED=\"$(systemctl --user is-enabled gace-userbot-verify.service)\"\necho USERBOT_IPC_CALLBACK_ACTION=\"$(grep -c profile_button_smoke \"$root/scripts/userbot_resident_ipc.py\" || true)\"\necho USERBOT_IPC_TEST_ACTION=\"$(grep -c profile_button_smoke \"$root/scripts/userbot_test_client.py\" || true)\"\necho RUNTIME_BOT_ERRORS\ndocker logs --since 120m deploy-gaybbs-1 2>&1 | grep -E 'GAYBBS_ERROR|WIZARD_|GAYBBS_BOT_READY|GAYBBS_STARTUP_FAILED|ERROR|Error' | tail -25 | sed -E 's/[0-9]{9,}/[redacted]/g' || true\n} | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
