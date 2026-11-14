@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/7bd0404f340c6f3407b1259513fe694b1a864030"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest -d \"$root/.git\" || git -C \"$root\" rev-parse --git-dir >/dev/null\ngit -C \"$root\" fetch -q origin fix/gaybbs-search-menu-live-20261114\ntest \"$(git -C \"$root\" rev-parse FETCH_HEAD)\" = \"7bd0404f340c6f3407b1259513fe694b1a864030\"\nwt=\"$root/.worktrees/search-menu-live-20261114\"\nif test -d \"$wt\"; then\n  test \"$(git -C \"$wt\" rev-parse HEAD)\" = \"7bd0404f340c6f3407b1259513fe694b1a864030\"\n  test -z \"$(git -C \"$wt\" status --porcelain --untracked-files=no)\"\nelse\n  git -C \"$root\" worktree add --detach \"$wt\" \"7bd0404f340c6f3407b1259513fe694b1a864030\" >/dev/null\nfi\ndocker build --network host --target build -f \"$wt/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:search-build-test-7bd0404 \"$wt\"\ndocker run --rm --network none --entrypoint sh -e DATABASE_URL=postgresql://test:test@localhost:5432/test gace-tgtumbler-gaybbs:search-build-test-7bd0404 -c 'cd /src && pnpm --dir artifacts/bot exec tsx --test tests/dmBareStartPostingMenu.test.ts' \ndocker build --network host -f \"$wt/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:search-menu-7bd0404 \"$wt\"\ndocker run --rm --entrypoint node gace-tgtumbler-gaybbs:search-menu-7bd0404 --check /app/gaybbs.mjs\necho SEARCH_MENU_CANDIDATE_BUILD_TEST_PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
