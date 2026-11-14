@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/51"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nimport subprocess,sys,os\ndef sh(args):\n p=subprocess.run(args,text=True,capture_output=True,timeout=25)\n return p.returncode,p.stdout.strip(),p.stderr.strip()\nrc,active,_=sh(['docker','inspect','deploy-gaybbs-1','--format','{{.Image}}'])\nif rc:sys.exit(61)\nrc,run,_=sh(['docker','inspect','deploy-gaybbs-1','--format','{{.State.Running}}'])\nif rc or run!='true':sys.exit(62)\nrc,local,_=sh(['docker','image','inspect','gace-tgtumbler-gaybbs:local','--format','{{.Id}}'])\nif rc:sys.exit(63)\nrc,cand,_=sh(['docker','image','inspect','gace-tgtumbler-gaybbs:search-color-5a93de6','--format','{{.Id}}'])\nif rc:sys.exit(64)\nif active==cand:sys.exit(0)\nif active!=local:sys.exit(65)\nrc,conf,_=sh(['docker','inspect','deploy-gaybbs-1','--format','{{index .Config.Labels \"com.docker.compose.project.config_files\"}}'])\nif rc or not conf:sys.exit(66)\nif not os.path.isfile(conf):sys.exit(67)\nrc,version,_=sh(['docker','compose','version','--short'])\nif rc:sys.exit(68)\nrc,out,err=sh(['docker','compose','-f',conf,'-p','deploy','--dry-run','up','-d','--no-deps','gaybbs'])\nif rc:\n if 'unknown flag' in err or 'unknown flag' in out:sys.exit(69)\n if 'no such service' in err:sys.exit(70)\n if 'permission denied' in err:sys.exit(71)\n sys.exit(72)\nif 'Recreate' in out or 'Recreate' in err:sys.exit(73)\nif 'Create' in out or 'Create' in err:sys.exit(74)\nsys.exit(75)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
