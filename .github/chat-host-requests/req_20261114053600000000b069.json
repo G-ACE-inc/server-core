@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$(git rev-parse --show-toplevel)\"\nactive=\"$(systemctl --user is-active gace-userbot-verify.service)\"\nenabled=\"$(systemctl --user is-enabled gace-userbot-verify.service)\"\ntest \"$active\" = active && test \"$enabled\" = enabled\nresult=\"$(cd \"$root\" && deploy/.userbot-venv/bin/python scripts/userbot_test_client.py bot_start_menu)\"\nprintf '%s\\n' \"$result\" | grep -q USERBOT_TEST_RESULT=PASS\nimage=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\"\ntest \"$image\" = \"sha256:9cc3afe33bf90e59dda71c2ca1fa8214a671e7af4aba90a1dc823dfc4310d6a3\"\n{ echo PROFILE_BUTTON_AFTER_DEPLOY_SMOKE; printf '%s\\n' \"$result\"; echo USERBOT_ACTIVE_AFTER=$(systemctl --user is-active gace-userbot-verify.service); echo GAYBBS_ACTIVE=$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1); echo GAYBBS_IMAGE=\"$image\"; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
