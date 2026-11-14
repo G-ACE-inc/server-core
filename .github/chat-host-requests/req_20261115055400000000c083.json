@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\nwork=\"$repo/.worktrees/creator-menu-20261115\"\nstage=\"$work/.gace-menu-offline-stage\"\ntest \"$(git -C \"$work\" rev-parse HEAD)\" = d8de8f8912ee1d19b2a2bf2171c6cb66d51783a5 || { echo SOURCE_MISMATCH; exit 74; }\ntest \"$(git -C \"$repo\" rev-parse HEAD)\" = b69612c64c22af1540b7294625658ebffa946270 || { echo LIVE_ROOT_CHANGED; exit 74; }\ntest ! -e \"$stage\" || { echo OFFLINE_STAGE_EXISTS; exit 73; }\ndocker image inspect create-videobot:stars-sticker-shared-361267c >/dev/null\nmkdir -p \"$stage\"\ngh run download 43637297142 --repo seigo-gace/create-videobot --name createvdobot-runtime-deps --dir \"$stage\"\ntest -f \"$stage/createvdobot-runtime-deps.tgz\" || { echo ARTIFACT_MISSING; exit 74; }\ntar -tzf \"$stage/createvdobot-runtime-deps.tgz\" | grep -q '^node_modules/undici/package.json$' || { echo UNDICI_ARTIFACT_MISSING; exit 74; }\ntar -xzf \"$stage/createvdobot-runtime-deps.tgz\" -C \"$stage\"\nfor name in src owner sql web; do cp -a \"$work/$name\" \"$stage/$name\"; done\ncat > \"$stage/Dockerfile\" <<'DOCKER'\nFROM create-videobot:stars-sticker-shared-361267c\nUSER root\nCOPY --chown=node:node node_modules /opt/videobot/node_modules\nCOPY --chown=node:node src /opt/videobot/src\nCOPY --chown=node:node owner /opt/videobot/owner\nCOPY --chown=node:node sql /opt/videobot/sql\nCOPY --chown=node:node web /opt/videobot/web\nUSER node\nDOCKER\ndocker build --pull=false --network none -t create-videobot:creator-menu-d8de8f8 \"$stage\" >/tmp/createvdo-overlay-build-20261115.log 2>&1 || { tail -35 /tmp/createvdo-overlay-build-20261115.log; exit 1; }\ndocker run --rm --network none --entrypoint node create-videobot:creator-menu-d8de8f8 -e 'import(\"/opt/videobot/src/runtime/creatorEgress.mjs\").then(()=>console.log(\"UNDICI_MODULE=PASS\")).catch(()=>process.exit(1))'\ndocker run --rm --network none --entrypoint node create-videobot:creator-menu-d8de8f8 --check /opt/videobot/src/runtime/main.mjs\necho \"MENU_SOURCE_SHA=d8de8f8912ee1d19b2a2bf2171c6cb66d51783a5\"\ndocker image inspect --format 'CANDIDATE_IMAGE={{.Id}}' create-videobot:creator-menu-d8de8f8\ndocker inspect --format 'EXISTING_STATE={{.State.Status}} EXISTING_IMAGE={{.Image}}' gace-createvdobot-videobot-poll-1\ndocker inspect --format 'COMPOSE_PROJECT={{index .Config.Labels \"com.docker.compose.project\"}} COMPOSE_SERVICE={{index .Config.Labels \"com.docker.compose.service\"}}' gace-createvdobot-videobot-poll-1\necho CREATEVDO_OFFLINE_STAGE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
