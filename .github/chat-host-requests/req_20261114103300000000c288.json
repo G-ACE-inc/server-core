@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/issues/5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ndocker inspect \"$cid\" >/dev/null\nstate=\"$(docker inspect \"$cid\" --format '{{.State.Running}}')\"\ntest \"$state\" = true || exit 61\ncount=\"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\"\ntest \"$count\" -eq 1 || exit 62\ndocker exec \"$cid\" grep -Fq 'stickerLandingPanel' /opt/videobot/src/telegram/stickerSales.mjs || exit 63\ndocker exec \"$cid\" grep -Fq 'uniqueAcknowledgedAppend' /opt/videobot/src/stickers/packRegistration.mjs || exit 64\ndocker exec \"$cid\" grep -Fq '✅ 登録できました！' /opt/videobot/src/telegram/stickerWizard.mjs || exit 65\ndocker logs --tail 200 \"$cid\" 2>&1 | grep -Fq 'CREATOR_DM_POLL_READY=PASS' || exit 66\nprintf 'CREATEVDOBOT_RUNTIME_READBACK=PASS\\nPOLL_CONTAINER_COUNT=%s\\nSTICKER_RETURN=ACTIVE\\nAPPEND_RECEIPT=ACTIVE\\nSUCCESS_UI=ACTIVE\\n' \"$count\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
