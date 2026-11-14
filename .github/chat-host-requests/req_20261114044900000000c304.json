@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "Gserver storage path only",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-6871905683"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/G-ACEserver"
+    },
+    "command": "set -eu\nprintf 'WSL_MNT='; ls -1 /mnt | tr '\\n' ','; echo\nprintf 'GSERVER_ROOT_ITEMS='; ls -1 /home/gace/Project/Gserver | head -30 | tr '\\n' ','; echo\nprintf 'G_DRIVE_PATH_PROBES:\\n'\nfor p in /mnt/g /mnt/G /mnt/gdrive /mnt/Gdrive /home/gace/Project/Gserver/storage /home/gace/Project/Gserver/data /home/gace/Project/Gserver/Gdrive; do if test -d \"$p\"; then echo \"EXISTS $p\"; fi; done\nprintf 'DISK_MOUNTS:\\n'\nfindmnt -rn -o TARGET,SOURCE,FSTYPE | grep -E '/mnt/|/media/|/home/gace/Project/Gserver' | head -25 || true\nprintf 'GSERVER_STORAGE_KEYWORDS:\\n'\ngrep -RInE -m 4 'Gドライブ|G:|/mnt/g|storage_root' /home/gace/Project/Gserver/repository/docs 2>/dev/null | head -15 || true\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
