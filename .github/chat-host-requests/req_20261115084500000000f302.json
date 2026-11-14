@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/60"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nname=deploy-gaybbs-1\nimage=gace-tgtumbler-gaybbs:notice-8f3cee44\nexpected=\"$(docker image inspect -f '{{.Id}}' \"$image\")\" || exit 74\ntest \"$(docker inspect -f '{{.Image}}' \"$name\")\" = \"$expected\" || exit 74\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true || exit 63\ndocker exec \"$name\" node --check /app/gaybbs.mjs >/dev/null\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nwork=\"$repo/.worktrees/notice-user-8f3cee44\"\ntest \"$(git -C \"$work\" rev-parse HEAD)\" = 8f3cee44a2ba0dcde5cbf183cc34d46e74434863 || exit 74\ntest -f \"$work/artifacts/bot/src/bot/noticeInteractions.ts\" || exit 81\ntest -f \"$work/artifacts/bot/src/services/noticeEditor.ts\" || exit 81\ngrep -Fq \"Room持ち込み\" \"$work/artifacts/bot/src/bot/postingHandlers.ts\" || exit 82\ngrep -Fq \"pc:from:room\" \"$work/artifacts/bot/src/bot/postingHandlers.ts\" || exit 82\ngrep -Fq \"startCompactProfileEditor\" \"$work/artifacts/bot/src/gaybbsBot.ts\" || exit 83\ngrep -Fq \"startSearchEditor\" \"$work/artifacts/bot/src/gaybbsBot.ts\" || exit 83\ngates=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT feature||':'||CASE WHEN enabled THEN 'ENABLED' ELSE 'DISABLED' END FROM gaybbs_feature_release_gates WHERE feature IN ('announcement','room','profile','search') ORDER BY feature;\")\"\necho GATES_BEGIN\nprintf '%s\\n' \"$gates\"\necho GATES_END\nschema=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('notice_dm_sessions','notice_direct_messages');\")\"\ntest \"$schema\" -eq 2 || exit 84\ntopics=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT count(*) FROM posting_topics WHERE purpose='announcement' AND enabled=TRUE AND verified_at IS NOT NULL AND verified_by IS NOT NULL;\")\"\necho VERIFIED_NOTICE_DESTINATIONS=\"$topics\"\necho NOTICE_DM_TABLES=PASS\necho COMPLETED_FEATURE_SOURCE_PRESERVED=PASS\necho NOTICE_LIVE_IMAGE=PASS\necho TELEGRAM_NOTICE_E2E=NOT_VERIFIED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
