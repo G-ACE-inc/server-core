@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nROOT=\"$(git rev-parse --show-toplevel)\"\nWT=\"$ROOT/.worktrees/bug-report-20261115\"\ntest -d \"$WT\" || exit 31\ntest -z \"$(git -C \"$WT\" status --porcelain --untracked-files=all)\" || exit 32\ngit fetch --no-tags origin refs/heads/chat/bug-report-userbot-20261115 >/dev/null\nSHA=08faea09efc9194f29ea31264fca6e5dd82effa4\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$SHA\" || exit 33\ngit -C \"$WT\" checkout --detach \"$SHA\" >/dev/null\ntest \"$(git -C \"$WT\" rev-parse HEAD)\" = \"$SHA\" || exit 34\nLOG=\"$(mktemp)\"\ntrap 'rm -f \"$LOG\"' EXIT\nif ! docker build --network=host --progress=plain -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:bug-report-08faea0 \"$WT\" >\"$LOG\" 2>&1; then\n if grep -Eq 'ERR_PNPM|frozen-lockfile|TS[0-9]{4}' \"$LOG\"; then exit 51; fi\n if grep -Eq 'no space left|ENOSPC' \"$LOG\"; then exit 52; fi\n exit 55\nfi\ndocker run --rm --entrypoint node gace-tgtumbler-gaybbs:bug-report-08faea0 --check /app/gaybbs.mjs || exit 56\ndocker run --rm --entrypoint sh gace-tgtumbler-gaybbs:bug-report-08faea0 -c 'grep -q \"dm:bug:open\" /app/gaybbs.mjs && grep -q \"GAYBBS_USERBOT_REPORT_CHAT_ID_FILE\" /app/gaybbs.mjs' || exit 57\nprintf 'GAYBBS_REPORT_IMAGE=BUILT\\nSOURCE_SHA_VERIFIED=YES\\n'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
