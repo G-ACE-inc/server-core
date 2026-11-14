@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ndb=\"$(docker ps --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=postgres --format '{{.Names}}' | head -1)\"\ntest -n \"$db\"\nq=\"BEGIN;\nINSERT INTO posting_topics(board_key,purpose,chat_id,message_thread_id,title,verified_by,verified_at,enabled)\nVALUES ('area_bbs','profile',-1003847210571,48,'みんなのプロフ',7880448530,NOW(),TRUE)\nON CONFLICT (board_key,purpose,chat_id,message_thread_id)\nDO UPDATE SET title=EXCLUDED.title,enabled=TRUE,verified_by=EXCLUDED.verified_by,verified_at=EXCLUDED.verified_at\nWHERE posting_topics.title='みんなのプロフ';\nDO \\$\\$ DECLARE n integer; BEGIN SELECT COUNT(*) INTO n FROM posting_topics WHERE purpose='profile' AND enabled AND verified_by IS NOT NULL AND verified_at IS NOT NULL AND ((board_key='area_bbs' AND chat_id=-1003847210571 AND message_thread_id=48) OR (board_key='video_chat' AND chat_id=-1002373696859 AND message_thread_id=1613) OR (board_key='gay_board' AND chat_id=-1003770334893 AND message_thread_id=210)); IF n<>3 THEN RAISE EXCEPTION 'PROFILE_THREE_DESTINATIONS_MISMATCH'; END IF; END \\$\\$;\nCOMMIT;\nSELECT board_key||'|'||purpose||'|'||chat_id||'|'||message_thread_id||'|'||title||'|'||enabled FROM posting_topics WHERE purpose='profile' AND enabled ORDER BY board_key;\"\nout=\"$(docker exec \"$db\" psql -U gace -d gaybbs -A -t -v ON_ERROR_STOP=1 -c \"$q\")\"\n{ echo 'PR47_MASTER_PROFILE_3_BOARD_DB=PASS'; printf '%s\\n' \"$out\"; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
