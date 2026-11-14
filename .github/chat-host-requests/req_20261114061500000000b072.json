@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/47"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$(git rev-parse --show-toplevel)\"\ncd \"$root\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled\ntest \"$(sha256sum scripts/userbot_resident_ipc.py | cut -d' ' -f1)\" = 73c8d2776601c37964f3d833f43ca4224f1506563f1ec08722b4fb0cb0a5014e\ntest \"$(sha256sum scripts/userbot_test_client.py | cut -d' ' -f1)\" = 9c7ac8f91e40a9d27b830d36d1f227542391022fd80a1e6e2c3bb84076e6d02f\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ncp -p scripts/userbot_resident_ipc.py \"$tmp/ipc.py\"\ncp -p scripts/userbot_test_client.py \"$tmp/client.py\"\ndeploy/.userbot-venv/bin/python - <<'PY'\nfrom pathlib import Path\np=Path(\"scripts/userbot_resident_ipc.py\")\ns=p.read_text()\nold='\"bot_start_menu\", \"room_private_smoke\"'\nif s.count(old)!=1: raise SystemExit(\"IPC_ACTION_ANCHOR_MISMATCH\")\ns=s.replace(old,'\"bot_start_menu\", \"profile_button_smoke\", \"room_private_smoke\"',1)\nold='            labels = [[b.text for b in row] for row in latest.buttons]\\n            return {'\nif s.count(old)!=1: raise SystemExit(\"IPC_BUTTON_ANCHOR_MISMATCH\")\nnew='''            labels = [[b.text for b in row] for row in latest.buttons]\n            if action == \"profile_button_smoke\":\n                from datetime import datetime, timezone, timedelta\n                if labels != EXPECTED_MENU:\n                    raise RuntimeError(\"PROFILE_MENU_LAYOUT_INVALID\")\n                clicked_at = datetime.now(timezone.utc)\n                await latest.click(text=\"プロフ作成\")\n                for _ in range(12):\n                    recent = await client.get_messages(bot, limit=80)\n                    for screen in recent:\n                        if screen.out or \"プロフィール｜相手募集と共通入力\" not in (screen.raw_text or \"\"):\n                            continue\n                        updated_at = screen.edit_date or screen.date\n                        if updated_at and updated_at >= clicked_at - timedelta(seconds=2):\n                            return {\"request_id\": request_id, \"action\": action,\n                                    \"status\": \"PASS\", \"profile_editor_opened\": True}\n                    await asyncio.sleep(1)\n                raise RuntimeError(\"PROFILE_BUTTON_SCREEN_NOT_OPENED\")\n            return {'''\ns=s.replace(old,new,1)\np.write_text(s)\np=Path(\"scripts/userbot_test_client.py\")\ns=p.read_text()\nold='        if args.action == \"profile_topics_readback\":'\nif s.count(old)!=1: raise SystemExit(\"CLIENT_ANCHOR_MISMATCH\")\nnew='''        if args.action == \"profile_button_smoke\":\n            if result.get(\"profile_editor_opened\") is not True:\n                raise RuntimeError(\"PROFILE_BUTTON_SCREEN_NOT_OPENED\")\n            print(\"USERBOT_PROFILE_BUTTON=PASS\")\n        if args.action == \"profile_topics_readback\":'''\np.write_text(s.replace(old,new,1))\nPY\ndeploy/.userbot-venv/bin/python -m py_compile scripts/userbot_resident_ipc.py scripts/userbot_test_client.py\nrestore(){\n cp -p \"$tmp/ipc.py\" scripts/userbot_resident_ipc.py\n cp -p \"$tmp/client.py\" scripts/userbot_test_client.py\n systemctl --user restart gace-userbot-verify.service >/dev/null 2>&1 || true\n}\nif ! systemctl --user restart gace-userbot-verify.service >/dev/null; then restore; exit 81; fi\nsleep 3\nif ! deploy/.userbot-venv/bin/python scripts/userbot_test_client.py health > \"$tmp/health\"; then restore; exit 82; fi\nif ! deploy/.userbot-venv/bin/python scripts/userbot_test_client.py profile_button_smoke > \"$tmp/button\"; then\n { echo PROFILE_LIVE_BUTTON=FAIL; cat \"$tmp/button\"; echo CODE_ROLLBACK=STARTED; } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n restore; exit 83\nfi\n{ echo PROFILE_LIVE_BUTTON=PASS; cat \"$tmp/button\"; echo USERBOT_ACTIVE=$(systemctl --user is-active gace-userbot-verify.service); echo USERBOT_ENABLED=$(systemctl --user is-enabled gace-userbot-verify.service); echo USERBOT_HEALTH=$(grep -o 'USERBOT_TEST_RESULT=PASS' \"$tmp/health\"); echo VIDEO_ACTIONS_PRESERVED=$(grep -q list_channel_videos scripts/userbot_resident_ipc.py && echo yes || echo no); } | gh issue comment 4 --repo seigo-gace/GateApp-Bot --body-file - >/dev/null\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
