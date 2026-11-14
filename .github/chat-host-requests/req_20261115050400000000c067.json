@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/55"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nwork=\"$repo/.worktrees/link-pr55-20261115\"\ntest \"$(git -C \"$work\" rev-parse HEAD)\" = eca68464881ec4b26dc399f6c7323153232e2696\ntest \"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\" = true\necho \"PR55_DEPLOY_PRECHECK\"\ndocker image inspect --format 'CANDIDATE={{.Id}}' gace-tgtumbler-gaybbs:link-pr55-eca6846\ndocker inspect --format 'LIVE={{.Image}}' deploy-gaybbs-1\nprintf 'INLINE_SUPPORT='\ndocker exec deploy-gaybbs-1 node -e 'const fs=require(\"fs\");const p=\"/run/secrets/bot_token\";const token=fs.readFileSync(p,\"utf8\").trim(); const c=new AbortController();setTimeout(()=>c.abort(),12000);fetch(\"https://api.telegram.org/bot\"+token+\"/getMe\",{signal:c.signal}).then(r=>r.json()).then(x=>{if(!x.ok||!x.result){console.log(\"BOT_GETME_FAILED\");process.exitCode=2;}else{console.log(x.result.supports_inline_queries===true?\"ENABLED\":\"DISABLED\");console.log(\"BOT_ID=\"+x.result.id)}}).catch(()=>{console.log(\"BOT_GETME_NETWORK_FAIL\");process.exitCode=2})'\necho DB_LINK_SCHEMA_BEGIN\ndocker exec deploy-postgres-1 psql -U gace -d gaybbs -Atc \"SELECT column_name FROM information_schema.columns WHERE table_name='link_button_posts' ORDER BY ordinal_position\" 2>/dev/null || echo DB_QUERY_FAILED\necho DB_LINK_SCHEMA_END\necho DEPLOY_PRECHECK_END"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
