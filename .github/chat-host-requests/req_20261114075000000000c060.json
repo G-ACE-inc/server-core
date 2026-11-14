@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/5a93de671ee158205759bb6e264cd3cd48466743"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nWT=\"$(git rev-parse --show-toplevel)/.worktrees/search-colors-5a93de6\"\ntest \"$(git -C \"$WT\" rev-parse HEAD)\" = 5a93de671ee158205759bb6e264cd3cd48466743\nLOG=\"$(mktemp)\"\ntrap 'rm -f \"$LOG\"' EXIT\nif docker build --progress=plain -f \"$WT/artifacts/bot/deploy/Dockerfile.gaybbs\" -t gace-tgtumbler-gaybbs:search-color-5a93de6 \"$WT\" >\"$LOG\" 2>&1; then exit 0; fi\npython3 - \"$LOG\" <<'PY'\nimport pathlib,re,sys\ns=pathlib.Path(sys.argv[1]).read_text(errors='replace')\ntests=[\n(81,r'no space left|disk quota exceeded'),\n(82,r'network.*(unreachable|timeout)|connection.*(refused|reset)|i/o timeout'),\n(83,r'no such host|lookup .* failed|temporary failure in name resolution'),\n(84,r'ERR_PNPM_OUTDATED_LOCKFILE|frozen-lockfile'),\n(85,r'failed to resolve source metadata|manifest unknown|pull access denied'),\n(86,r'failed to calculate checksum|not found: not found'),\n(87,r'out of memory|killed|exit code: 137'),\n(88,r'permission denied'),\n(89,r'ERR_PNPM_|pnpm install'),\n(90,r'Could not resolve|✘ \\[ERROR\\]|esbuild'),\n(91,r'Cannot connect to the Docker daemon'),\n(92,r'TS[0-9]{4}'),\n(93,r'process .* did not complete successfully|exit code: [1-9]'),\n]\nfor code,pattern in tests:\n if re.search(pattern,s,re.I):sys.exit(code)\nsys.exit(94)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
