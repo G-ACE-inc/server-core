@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/51"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nimport subprocess,sys,time,re,os\ndef run(argv,timeout=35):\n return subprocess.run(argv,capture_output=True,text=True,timeout=timeout)\ndef val(*argv):\n p=run(argv,12)\n if p.returncode:raise RuntimeError('INSPECT_FAILED')\n return p.stdout.strip()\nname='deploy-gaybbs-1'\ntag='gace-tgtumbler-gaybbs:local'\nnew='gace-tgtumbler-gaybbs:search-color-5a93de6'\nold='gace-tgtumbler-gaybbs:before-search-colors-20261114'\nactive=val('docker','inspect',name,'--format','{{.Image}}')\nif val('docker','inspect',name,'--format','{{.State.Running}}')!='true':sys.exit(61)\nif active!=val('docker','image','inspect',tag,'--format','{{.Id}}'):sys.exit(62)\nnewid=val('docker','image','inspect',new,'--format','{{.Id}}')\nif active==newid:sys.exit(0)\nfiles=[x.strip() for x in val('docker','inspect',name,'--format','{{index .Config.Labels \"com.docker.compose.project.config_files\"}}').split(',') if x.strip()]\nif len(files)!=2 or not os.path.isfile(files[0]):sys.exit(63)\nbase=['docker','compose','-f',files[0],'-p','deploy']\ncurrent_hash=val('docker','inspect',name,'--format','{{index .Config.Labels \"com.docker.compose.config-hash\"}}')\nif current_hash not in val(*(base+['config','--hash','gaybbs'])):sys.exit(64)\nif run(['docker','tag',active,old]).returncode:sys.exit(65)\nif run(['docker','tag',new,tag]).returncode:sys.exit(66)\np=run(base+['up','-d','--no-deps','gaybbs'],90)\nif p.returncode:\n err=p.stderr+'\\n'+p.stdout\n run(['docker','tag',old,tag])\n rollback=run(base+['up','-d','--no-deps','gaybbs'],90)\n if rollback.returncode or val('docker','inspect',name,'--format','{{.State.Running}}')!='true':sys.exit(150)\n cases=[\n  (101,r'container name.*already in use|Conflict.*container name'),\n  (102,r'failed to create shim task|OCI runtime create failed|runc create failed'),\n  (103,r'operation not permitted|permission denied|access denied'),\n  (104,r'failed to mount|mount source path|invalid mount config'),\n  (105,r'no such file or directory|file not found|secret.*not found'),\n  (106,r'network.*not found|network.*failed'),\n  (107,r'failed to bind host port|port is already allocated'),\n  (108,r'driver failed programming external connectivity'),\n  (109,r'read-only file system'),\n  (110,r'not a directory'),\n  (111,r'container .* is not running|container .* is restarting'),\n  (112,r'no space left|disk quota'),\n  (113,r'image.*not found|manifest unknown'),\n  (114,r'healthcheck|unhealthy|dependency failed'),\n  (115,r'failed to create container|cannot create container'),\n  (116,r'cannot stop container|failed to stop container'),\n  (117,r'failed to remove container|cannot remove container'),\n  (118,r'context canceled|request canceled'),\n  (119,r'no such container'),\n  (120,r'container .* marked for removal'),\n  (121,r'Error response from daemon'),\n ]\n for code,pat in cases:\n  if re.search(pat,err,re.I):sys.exit(code)\n sys.exit(122)\ntime.sleep(5)\nif val('docker','inspect',name,'--format','{{.Image}}')!=newid or val('docker','inspect',name,'--format','{{.State.Running}}')!='true':\n run(['docker','tag',old,tag]);run(base+['up','-d','--no-deps','gaybbs'],90)\n sys.exit(151)\nsys.exit(0)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
