@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/50"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nCID=$(docker ps -q --filter label=com.docker.compose.project=deploy --filter label=com.docker.compose.service=gaybbs)\ntest -n \"$CID\" || exit 20\nIMAGE=$(docker inspect \"$CID\" --format '{{.Image}}')\nTAGLIST=$(docker image ls --no-trunc --format '{{.Repository}}:{{.Tag}}|{{.ID}}' | awk -F'|' -v id=\"$IMAGE\" '$2==id {print $1}' | head -15)\nLABELS=$(docker image inspect \"$IMAGE\" --format '{{json .Config.Labels}}')\nBUNDLE=$(docker exec \"$CID\" sha256sum /app/gaybbs.mjs | awk '{print $1}')\nBRANCHES=$(git -C /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot worktree list --porcelain | grep '^HEAD ' | tail -10 | cut -d' ' -f2 | cut -c1-12 | tr '\\n' ',')\nBODY=$(printf 'GAYBBS_SEARCH_LIVE_SOURCE_READBACK_20261114\\nIMAGE_SHA=%s\\nTAGS=%s\\nBUNDLE_SHA256=%s\\nWORKTREE_HEADS=%s\\nLABELS=%s' \"$IMAGE\" \"$TAGLIST\" \"$BUNDLE\" \"$BRANCHES\" \"$LABELS\")\ntest -n \"$TAGLIST\"\nif command -v gh >/dev/null 2>&1; then\n gh issue comment 7 --repo seigo-gace/GateApp-Bot --body \"$BODY\" >/dev/null\n echo LIVE_SOURCE_READBACK_RECORDED\nelse\n echo GH_NOT_AVAILABLE\n exit 91\nfi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
