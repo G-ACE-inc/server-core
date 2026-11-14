@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "cu_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/cf42f510001fa5d428d081d32f36d49b27e357f1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nprintf 'GAYBBS_SEARCH_PREFLIGHT\\n'\nprintf 'WORKDIR='; pwd\nprintf 'CHECKOUT_HEAD='; git rev-parse HEAD\nprintf 'CHECKOUT_BRANCH='; git branch --show-current\nprintf 'CHECKOUT_DIRTY='; test -z \"$(git status --porcelain --untracked-files=no)\" && echo NO || echo YES\nprintf 'BOT_IMAGE='; docker inspect deploy-gaybbs-1 --format '{{.Image}}'\nprintf 'BOT_RUNNING='; docker inspect deploy-gaybbs-1 --format '{{.State.Running}}'\nprintf 'BOT_RESTARTS='; docker inspect deploy-gaybbs-1 --format '{{.RestartCount}}'\nprintf 'SEARCH_GATE='; docker exec deploy-postgres-1 psql -U gace -d gaybbs -Atqc \"SELECT count(*) || ':' || COALESCE(bool_and(enabled),'false') FROM gaybbs_feature_release_gates WHERE feature='search'\"\nprintf 'SEARCH_SESSIONS='; docker exec deploy-postgres-1 psql -U gace -d gaybbs -Atqc 'SELECT count(*) FROM gaybbs_search_sessions'\nprintf 'MENU_SEARCH_TOKENS='; docker exec deploy-postgres-1 psql -U gace -d gaybbs -Atqc \"SELECT count(*) FROM board_menu_entry_tokens WHERE feature='search' AND enabled=TRUE AND expires_at>NOW()\"\nprintf 'SEARCH_RUNTIME_READY='; docker logs --tail 120 deploy-gaybbs-1 2>&1 | grep -c 'GAYBBS_BOT_READY' || true\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
