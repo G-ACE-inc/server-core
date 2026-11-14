@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/55"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nwork=\"$repo/.worktrees/link-pr55-20261115\"\ntest \"$(git -C \"$work\" rev-parse HEAD)\" = eca68464881ec4b26dc399f6c7323153232e2696 || { echo LINK_WORKTREE_SHA_MISMATCH; exit 74; }\ntest \"$(git -C \"$repo\" rev-parse HEAD)\" = 57955cd68bb39626ebbca38d44b7bb034da6dc05 || { echo LIVE_SOURCE_CHANGED; exit 74; }\ntest \"$(docker inspect --format '{{.State.Status}}' deploy-gaybbs-1)\" = running || { echo LIVE_BOT_NOT_RUNNING; exit 76; }\ncd \"$work\"\ndocker build --pull=false --progress=plain -f artifacts/bot/deploy/Dockerfile.gaybbs -t gace-tgtumbler-gaybbs:link-pr55-eca6846 . > /tmp/gace-link-pr55-build-20261115.log 2>&1 || { tail -50 /tmp/gace-link-pr55-build-20261115.log; echo LINK_PR55_BUILD=FAIL; exit 1; }\necho LINK_PR55_BUILD=PASS\ndocker image inspect --format 'IMAGE_ID={{.Id}} IMAGE_SIZE={{.Size}}' gace-tgtumbler-gaybbs:link-pr55-eca6846\ndocker run --rm --pull=never --network none --entrypoint node gace-tgtumbler-gaybbs:link-pr55-eca6846 --check /app/gaybbs.mjs\necho LINK_PR55_SYNTAX=PASS\necho LIVE_UNCHANGED_IMAGE=\"$(docker inspect --format '{{.Image}}' deploy-gaybbs-1)\"\necho LIVE_RUNNING=\"$(docker inspect --format '{{.State.Running}}' deploy-gaybbs-1)\"\necho LINK_PR55_STAGED_IMAGE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
