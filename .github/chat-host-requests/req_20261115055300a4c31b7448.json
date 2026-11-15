@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/59"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\ncd \"$root\"\nPYTHONPATH=scripts python3 - <<'PY'\nimport asyncio, os, pathlib, stat, sys\nfrom userbot_test_client import invoke\nfrom userbot_session import SESSION_BASE\nsession=SESSION_BASE.with_suffix(\".session\")\nif not session.is_file() or session.is_symlink() or stat.S_IMODE(session.stat().st_mode)!=0o600: sys.exit(61)\ntry:\n result=asyncio.run(invoke(\"report_recipient_id\"))\nexcept Exception: sys.exit(62)\nif result.get(\"status\")!=\"PASS\": sys.exit(63)\nrecipient=result.get(\"recipient_id\")\nif type(recipient)!=int or not 10000<=recipient<2**53: sys.exit(64)\ntarget=pathlib.Path(\"deploy/secrets/bug_report_recipient.txt\")\nif target.is_symlink(): sys.exit(65)\ntarget.parent.mkdir(parents=True,exist_ok=True)\nfd=os.open(target,os.O_WRONLY|os.O_CREAT|os.O_TRUNC|os.O_NOFOLLOW,0o600)\nwith os.fdopen(fd,\"w\") as f:\n f.write(str(recipient)+\"\\n\")\n f.flush()\n os.fsync(f.fileno())\nif stat.S_IMODE(target.stat().st_mode)!=0o600:sys.exit(66)\nprint(\"REPORT_RECIPIENT_CONFIGURED=YES\")\nPY\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 67"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
