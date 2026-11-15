@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"$root/.worktrees/menu-idempotent-8dc8d56-20261115\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = 8dc8d5638e7711688be549acf1127ea5bc09b1c1 || exit 60\ncontainer=\"$(docker ps --format '{{.Names}}' | grep -E '(^|[-_])gaybbs([-_]|$)' | head -n1)\"\ntest -n \"$container\" || exit 61\ntest \"$(docker inspect -f '{{.State.Running}}' \"$container\")\" = true || exit 62\ntest \"$(docker inspect -f '{{.Image}}' \"$container\")\" = \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:idem-8dc8d56)\" || exit 63\ndocker logs --since 15m \"$container\" 2>&1 | grep -q 'GAYBBS_BOT_READY' || exit 64\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$container\")\"\nrow=\"$(docker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" exec -T postgres psql -U gace -d gaybbs -t -A -c \"SELECT count(DISTINCT chat_id) FROM board_menu_panels WHERE panel_type='posting' AND state='published' AND message_id IS NOT NULL AND chat_id=ANY(ARRAY[-1003847210571,-1002373696859,-1003770334893]::bigint[])\" 2>/dev/null | grep -E '^[0-9]+$' | head -n1)\"\ntest \"$row\" = 3 || exit 65\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 66\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 67\ncd \"$root\"\nPYTHONPATH=scripts timeout 75s python3 scripts/userbot_test_client.py bot_start_menu >/tmp/gace-final-11-menu.log 2>&1 || exit 68\ngrep -q '^USERBOT_TEST_RESULT=PASS$' /tmp/gace-final-11-menu.log || exit 69\ngrep -q '^USERBOT_TEST_MENU_ROWS=3,2,2,3,1$' /tmp/gace-final-11-menu.log || exit 70\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 71\necho LIVE_SHARED_IMAGE=PASS\necho GAYBBS_BOT_READY=PASS\necho ALL_THREE_PUBLISHED_POSTING_PANELS=PASS\necho USERBOT_DM_ELEVEN_LABELS_AND_ROWS=PASS\necho USERBOT_SERVICE_PRESERVED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
