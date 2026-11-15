@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"$root/.worktrees/menu-idempotent-8dc8d56-20261115\"\ncontainer=\"$(docker ps --format '{{.Names}}' | grep -E '(^|[-_])gaybbs([-_]|$)' | head -n1)\"\ntest -n \"$container\" || exit 61\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$container\")\"\nquery=\"SELECT state,CASE WHEN message_id IS NULL THEN 'empty' ELSE 'set' END FROM board_menu_panels WHERE chat_id=-1003770334893 AND panel_type='posting' LIMIT 1\"\noutput=\"$(docker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" exec -T postgres psql -U gace -d gaybbs -t -A -c \"$query\" 2>/dev/null || true)\"\ncase \"$output\" in\n needs_reconcile\\|set*) exit 81;;\n verified\\|set*) exit 82;;\n published\\|set*) exit 83;;\n publishing\\|set*) exit 84;;\n *\\|empty*) exit 85;;\n \"\") exit 86;;\n *) exit 87;;\nesac"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
