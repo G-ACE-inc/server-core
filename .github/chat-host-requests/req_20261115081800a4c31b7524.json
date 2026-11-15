@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"$root/.worktrees/menu-idempotent-8dc8d56-20261115\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = 8dc8d5638e7711688be549acf1127ea5bc09b1c1 || exit 60\ncontainer=\"$(docker ps --format '{{.Names}}' | grep -E '(^|[-_])gaybbs([-_]|$)' | head -n1)\"\ntest -n \"$container\" || exit 61\ntest \"$(docker inspect -f '{{.Image}}' \"$container\")\" = \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:idem-8dc8d56)\" || exit 62\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$container\")\"\nrecord=\"$(docker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" exec -T postgres psql -U gace -d gaybbs -t -A -c \"SELECT state||'|'||message_id::text FROM board_menu_panels WHERE chat_id=-1003770334893 AND panel_type='posting' AND message_id>0 LIMIT 1\" 2>/dev/null || true)\"\ncase \"$record\" in verified\\|*) ;; *) exit 63;;esac\nmid=\"${record#verified|}\"\ncase \"$mid\" in ''|*[!0-9]*)exit 64;;esac\nlog=\"$(mktemp /tmp/gace-single-panel.XXXXXXXX)\"\ntrap 'rm -f \"$log\"' EXIT\nif docker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" run --rm --no-deps -e MENU_PUBLISH_PANEL_TYPES=posting -e MENU_PUBLISH_CHAT_ID=-1003770334893 gaybbs node --import /app/preload/telegram-ipv4-preload.mjs /app/publishMenuPanels.mjs >\"$log\" 2>&1;then\n python3 - \"$log\" \"$mid\" <<'PY'\nimport json,sys\nitems=[]\nfor line in open(sys.argv[1]):\n try:j=json.loads(line)\n except ValueError:continue\n if j.get(\"panel_type\")==\"posting\":items.append(j)\nif len(items)!=1:sys.exit(65)\ni=items[0]\nif int(i.get(\"chat_id\",0))!=-1003770334893 or int(i.get(\"message_id\",0))!=int(sys.argv[2]) or i.get(\"updated_existing\") is not True:sys.exit(66)\nprint(\"EXISTING_GAY_POSTING_PANEL_EDIT=PASS\")\nPY\nelse\n if grep -qi 'message to edit not found' \"$log\";then exit 71;fi\n if grep -qi \"message can't be edited\" \"$log\";then exit 72;fi\n if grep -qi \"not enough rights\" \"$log\";then exit 73;fi\n if grep -qi 'POSTING_DM_FEATURES_NOT_RELEASED' \"$log\";then exit 74;fi\n if grep -qi 'COMMON_GATE_ROUTE_NOT_VERIFIED' \"$log\";then exit 75;fi\n if grep -qi 'PANEL_' \"$log\";then exit 76;fi\n if grep -qi 'MENU_PUBLISH_FAILED' \"$log\";then exit 77;fi\n exit 78\nfi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
