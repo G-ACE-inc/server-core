@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/59"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"$root/.worktrees/userbot-report-cd7368f-20261115\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = cd7368f64f2f45e6a5359cde4d722c910a8d2845 || exit 61\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 62\nsystemctl --user show gace-userbot-verify.service -p ExecStart --value | grep -q 'userbot_keepalive.py' || exit 63\ntest \"$(git -C \"$root\" hash-object scripts/userbot_resident_ipc.py)\" = cab92099b37ba2c9de3f15007e94d651936216e5 || exit 64\ntest \"$(git -C \"$root\" hash-object scripts/userbot_test_client.py)\" = 08a87c2d350906204d555713dd96d54d10ce9c8f || exit 65\nrollback=\"$HOME/.local/state/tgtumbler/bugreport-userbot-code-rollback-20261115\"\nmkdir -p \"$rollback\"\nchmod 700 \"$rollback\"\ncp -p \"$root/scripts/userbot_resident_ipc.py\" \"$rollback/userbot_resident_ipc.py\"\ncp -p \"$root/scripts/userbot_test_client.py\" \"$rollback/userbot_test_client.py\"\ncp \"$stage/scripts/userbot_resident_ipc.py\" \"$root/scripts/userbot_resident_ipc.py\"\ncp \"$stage/scripts/userbot_test_client.py\" \"$root/scripts/userbot_test_client.py\"\ntest \"$(git -C \"$root\" hash-object scripts/userbot_resident_ipc.py)\" = 5ff8abf0e5cd918a12eceb52a81a04472ad218b1 || exit 66\ntest \"$(git -C \"$root\" hash-object scripts/userbot_test_client.py)\" = 7925aeb4a9de84a23c70768049c418d6bf29dcb4 || exit 67\npython3 -m py_compile \"$root/scripts/userbot_resident_ipc.py\" \"$root/scripts/userbot_test_client.py\" || exit 68\nsystemctl --user restart gace-userbot-verify.service || exit 69\nsleep 4\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 70\ncd \"$root\"\nPYTHONPATH=scripts python3 - <<'PY'\nimport asyncio, pathlib, os, stat, sys\nfrom userbot_test_client import invoke\nfrom userbot_resident_ipc import SOCKET_PATH\nfrom userbot_session import SESSION_BASE\nassert SOCKET_PATH.is_socket() and stat.S_IMODE(SOCKET_PATH.stat().st_mode)==0o600\nsession=SESSION_BASE.with_suffix(\".session\")\nassert session.is_file() and not session.is_symlink() and stat.S_IMODE(session.stat().st_mode)==0o600\nstatus=asyncio.run(invoke(\"health\"))\nassert status.get(\"status\")==\"PASS\" and status.get(\"authorized\") is True\nresult=asyncio.run(invoke(\"report_recipient_id\"))\nrecipient=result.get(\"recipient_id\")\nassert result.get(\"status\")==\"PASS\" and type(recipient)==int and 10000<=recipient<2**53\ntarget=pathlib.Path(\"deploy/secrets/bug_report_recipient.txt\")\nassert not target.is_symlink()\ntarget.parent.mkdir(mode=0o700,parents=True,exist_ok=True)\nfd=os.open(target,os.O_WRONLY|os.O_CREAT|os.O_TRUNC|os.O_NOFOLLOW,0o600)\nwith os.fdopen(fd,\"w\") as f:\n    f.write(str(recipient)+\"\\n\")\n    f.flush()\n    os.fsync(f.fileno())\nassert stat.S_IMODE(target.stat().st_mode)==0o600\nprint(\"USERBOT_REPORT_RECIPIENT_PRIVATE_FILE=READY\")\nprint(\"USERBOT_AUTHORIZED=PASS\")\nPY\necho USERBOT_REPORT_ACTIVATION=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
