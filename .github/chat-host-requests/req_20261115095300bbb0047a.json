@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/60"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nwork=\"$repo/.worktrees/notice-approved-bbb0047\"\ncompose=\"$repo/deploy/gserver-compose.yaml\"\nname=deploy-gaybbs-1\nimage=gace-tgtumbler-gaybbs:notice-bbb0047\nrollback=gace-tgtumbler-gaybbs:before-notice-bbb0047\ntest -f \"$compose\" || exit 67\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true || exit 63\nold=\"$(docker inspect -f '{{.Image}}' \"$name\")\"\nexpected=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:notice-88c65fa7)\" || exit 74\ntest \"$old\" = \"$expected\" || { echo NOTICE_BASELINE_CHANGED_NO_DEPLOY; exit 74; }\ngit -C \"$repo\" fetch --no-tags origin feat/announcement-complete-user-20261115\ntest \"$(git -C \"$repo\" rev-parse FETCH_HEAD)\" = bbb0047ca6ad9e1b6f08d8debe340549efeb8702 || exit 74\nif test -d \"$work\";then\n test -z \"$(git -C \"$work\" status --porcelain --untracked-files=all)\" || exit 76\n test \"$(git -C \"$work\" rev-parse HEAD)\" = bbb0047ca6ad9e1b6f08d8debe340549efeb8702 || exit 74\nelse\n git -C \"$repo\" worktree add --detach \"$work\" bbb0047ca6ad9e1b6f08d8debe340549efeb8702\nfi\ntest -f \"$work/artifacts/bot/src/bot/postingHandlers.ts\" || exit 75\ntest -f \"$work/artifacts/bot/tests/noticeEditor.test.ts\" || exit 75\nlog=\"$(mktemp)\"\ntrap 'rm -f \"$log\"' EXIT\nif ! docker build --network=host -f \"$work/artifacts/bot/deploy/Dockerfile.gaybbs\" -t \"$image\" \"$work\" >\"$log\" 2>&1;then\n if grep -Eq 'ERR_PNPM|frozen-lockfile' \"$log\";then exit 51;fi\n if grep -Eq 'no space left|ENOSPC' \"$log\";then exit 52;fi\n exit 55\nfi\ndocker run --rm --network none --entrypoint node \"$image\" --check /app/gaybbs.mjs >/dev/null || exit 81\nnew=\"$(docker image inspect -f '{{.Id}}' \"$image\")\"\ndocker compose -p deploy -f \"$compose\" config --quiet || exit 68\ndocker image tag \"$old\" \"$rollback\"\ncat > \"$work/notice-override.yaml\" <<'YAML'\nservices:\n  gaybbs:\n    image: gace-tgtumbler-gaybbs:notice-bbb0047\n    pull_policy: never\nYAML\ncat > \"$work/notice-rollback.yaml\" <<'YAML'\nservices:\n  gaybbs:\n    image: gace-tgtumbler-gaybbs:before-notice-bbb0047\n    pull_policy: never\nYAML\ndocker compose -p deploy -f \"$compose\" -f \"$work/notice-override.yaml\" config --quiet || exit 69\nchanged=0\nrecover(){ rc=$?;trap - ERR;set +e;if test \"$changed\" = 1;then docker compose -p deploy -f \"$compose\" -f \"$work/notice-rollback.yaml\" up -d --no-build --no-deps gaybbs >/dev/null 2>&1 && echo NOTICE_ROLLBACK=PASS || echo NOTICE_ROLLBACK=FAIL;fi;exit \"$rc\"; }\ntrap recover ERR\nchanged=1\ndocker compose -p deploy -f \"$compose\" -f \"$work/notice-override.yaml\" up -d --no-build --no-deps gaybbs >/dev/null\nsleep 8\ntest \"$(docker inspect -f '{{.Image}}' \"$name\")\" = \"$new\" || false\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true || false\ntrap - ERR\necho NOTICE_APPROVED_DEPLOY=PASS\necho SOURCE=bbb0047ca6ad9e1b6f08d8debe340549efeb8702\necho GAYBBS_IMAGE_MATCH=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
