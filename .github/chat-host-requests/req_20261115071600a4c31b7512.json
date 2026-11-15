@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"$root/.worktrees/shared-menu-a1b687d-20261115\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = a1b687d2982b05f6358974bc428a63a909f98ed1 || exit 60\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest -f \"$root/deploy/secrets/bug_report_recipient.txt\" || exit 62\nnew_id=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:shared-a1b687d)\"\nold_expected=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:bugreport-cfc999ac)\"\ncontainer=\"$(docker ps --format '{{.Names}}' | grep -E '(^|[-_])gaybbs([-_]|$)' | head -n1)\"\ntest -n \"$container\" || exit 63\nold_id=\"$(docker inspect -f '{{.Image}}' \"$container\")\"\ntest \"$old_id\" = \"$old_expected\" || { echo CURRENT_BOT_REVISION_CHANGED_BLOCK; exit 64; }\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$container\")\"\nservice=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.service\"}}' \"$container\")\"\ntest -n \"$project\" && test \"$service\" = gaybbs || exit 65\ndocker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" config --quiet >/dev/null 2>&1 || exit 66\ndocker image tag \"$old_id\" gace-tgtumbler-gaybbs:shared-pre-a1b687d || exit 67\ndocker image tag \"$new_id\" gace-tgtumbler-gaybbs:local || exit 68\nif ! docker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" up -d --no-deps --no-build --force-recreate gaybbs >/tmp/gace-shared-menu-deploy-a1b.log 2>&1; then\n docker image tag \"$old_id\" gace-tgtumbler-gaybbs:local\n docker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" up -d --no-deps --no-build --force-recreate gaybbs >/dev/null 2>&1 || true\n echo SHARED_MENU_DEPLOY_REVERTED\n exit 69\nfi\nsleep 8\ntest \"$(docker inspect -f '{{.State.Running}}' \"$container\" 2>/dev/null)\" = true || exit 70\ntest \"$(docker inspect -f '{{.Image}}' \"$container\")\" = \"$new_id\" || exit 71\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 72\necho SHARED_MENU_BOT_REPLACED=PASS\necho SOURCE_SHA=a1b687d2982b05f6358974bc428a63a909f98ed1\necho NEXT=VERIFY_RUNTIME_TELEGRAM"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
