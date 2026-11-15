@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"$root/.worktrees/menu-idempotent-8dc8d56-20261115\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = 8dc8d5638e7711688be549acf1127ea5bc09b1c1 || exit 60\ncontainer=\"$(docker ps --format '{{.Names}}' | grep -E '(^|[-_])gaybbs([-_]|$)' | head -n1)\"\ntest -n \"$container\" || exit 61\ntest \"$(docker inspect -f '{{.Image}}' \"$container\")\" = \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:idem-8dc8d56)\" || exit 62\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$container\")\"\ncompose=(docker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\")\nsql(){ \"${compose[@]}\" exec -T postgres psql -U gace -d gaybbs -t -A -c \"$1\" 2>/dev/null; }\nrow=\"$(sql \"SELECT panel_id::text||'|'||message_id::text||'|'||message_thread_id::text FROM board_menu_panels WHERE chat_id=-1003770334893 AND panel_type='posting' AND state='needs_reconcile' AND message_id>0 AND message_thread_id>0 LIMIT 2\" || true)\"\ntest \"$(printf '%s\\n' \"$row\" | grep -Ec '^[a-zA-Z0-9_-]+\\|[0-9]+\\|[0-9]+$')\" -eq 1 || exit 63\nIFS='|' read -r panel old_msg thread <<< \"$row\"\ncase \"$panel\" in ''|*[!a-zA-Z0-9_-]*)exit 64;;esac\nbackup=\"$HOME/.local/state/tgtumbler/gay-panel-missing-original-20261115.record\"\nmkdir -p \"$(dirname \"$backup\")\"\ntest ! -e \"$backup\" || exit 65\numask 077\nprintf 'panel_id=%s\\nchat_id=-1003770334893\\nthread_id=%s\\nold_message_id=%s\\nevidence=Telegram message to edit not found, req_20261115081800a4c31b7524\\n' \"$panel\" \"$thread\" \"$old_msg\" > \"$backup\"\nchmod 600 \"$backup\"\nsql \"UPDATE board_menu_panels SET state='verified',message_id=NULL,pinned=FALSE,updated_at=NOW() WHERE panel_id='$panel' AND chat_id=-1003770334893 AND panel_type='posting' AND state='needs_reconcile' AND message_id=$old_msg AND message_thread_id=$thread\" >/dev/null || exit 66\ncount=\"$(sql \"SELECT count(*) FROM board_menu_panels WHERE panel_id='$panel' AND state='verified' AND message_id IS NULL AND pinned=FALSE\" | grep -E '^[0-9]+$' | head -n1)\"\ntest \"$count\" = 1 || exit 67\nlog=\"$(mktemp /tmp/gace-gay-replace-missing.XXXXXXXX)\"\ntrap 'rm -f \"$log\"' EXIT\nif ! \"${compose[@]}\" run --rm --no-deps -e MENU_PUBLISH_PANEL_TYPES=posting -e MENU_PUBLISH_CHAT_ID=-1003770334893 gaybbs node --import /app/preload/telegram-ipv4-preload.mjs /app/publishMenuPanels.mjs >\"$log\" 2>&1;then\n if grep -qi 'MENU_PUBLISH_FAILED' \"$log\";then exit 71;fi\n exit 72\nfi\npython3 - \"$log\" \"$old_msg\" <<'PY'\nimport json,sys\nfound=[]\nfor line in open(sys.argv[1]):\n try: v=json.loads(line)\n except ValueError:continue\n if v.get(\"panel_type\")==\"posting\":found.append(v)\nif len(found)!=1:sys.exit(73)\nv=found[0]\nif int(v.get(\"chat_id\",0))!=-1003770334893 or v.get(\"updated_existing\") is not False or int(v.get(\"message_id\",0))<=0 or int(v[\"message_id\"])==int(sys.argv[2]):sys.exit(74)\nprint(\"GAY_PANEL_REPLACEMENT_PUBLISHED=PASS\")\nPY\nstatus=\"$(sql \"SELECT state FROM board_menu_panels WHERE panel_id='$panel' AND message_id IS NOT NULL\" | grep -E '^(published|verified|needs_reconcile)$' | head -n1)\"\ntest \"$status\" = published || exit 75\necho THREE_BOARD_GAY_PANEL_PUBLISHED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
