@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/59"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\ncd \"$root\"\nPYTHONPATH=scripts python3 - <<'PY'\nfrom pathlib import Path\nimport os,ast\np=Path(\"scripts/userbot_resident_ipc.py\")\nsrc=p.read_text()\nneedle='ACTIONS = frozenset({'\nanchor='    if action == \"room_private_smoke\":'\nif src.count(needle)!=1 or src.count(anchor)!=1:raise SystemExit(61)\nif 'if action == \"read_gay_posting_panel\":' in src:raise SystemExit(62)\nblock='''    if action == \"read_gay_posting_panel\":\n        if set(request) != {\"request_id\", \"action\", \"message_id\"}:\n            raise ValueError(\"REQUEST_SHAPE_INVALID\")\n        mid = request[\"message_id\"]\n        if not isinstance(mid, int) or mid <= 0 or mid > 100000000:\n            raise ValueError(\"MESSAGE_ID_INVALID\")\n        bot_user = await client.get_entity(\"GayBBS_bot\")\n        panel = await client.get_messages(-1003770334893, ids=mid)\n        if not panel:\n            return {\"request_id\": request_id, \"action\": action, \"status\": \"FAIL\", \"error\": \"PANEL_NOT_FOUND\"}\n        rows = [[b.text for b in row] for row in (panel.buttons or [])]\n        return {\"request_id\": request_id, \"action\": action, \"status\": \"PASS\",\n                \"bot_authored\": panel.sender_id == bot_user.id,\n                \"has_bug_report\": bool(rows and rows[-1] == [\"🐞 不具合を報告\"]),\n                \"row_sizes\": [len(r) for r in rows]}\n'''\nnew=src.replace(needle,needle+'\"read_gay_posting_panel\", ',1).replace(anchor,block+anchor,1)\nast.parse(new)\nbackup=Path.home()/\".local/state/tgtumbler/bugreport-ipc-panel-read-20261115\"\nbackup.parent.mkdir(parents=True,exist_ok=True)\nif backup.exists():raise SystemExit(63)\nbackup.write_text(src)\nos.chmod(backup,0o600)\ntmp=p.with_name(\".userbot_resident_ipc.panel-read.tmp\")\nwith tmp.open(\"x\") as f:f.write(new)\nos.chmod(tmp,p.stat().st_mode&0o777)\nos.replace(tmp,p)\nPY\npython3 -m py_compile scripts/userbot_resident_ipc.py || exit 64\nsystemctl --user restart gace-userbot-verify.service || exit 65\nsleep 4\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 66\nPYTHONPATH=scripts python3 - <<'PY'\nimport asyncio\nfrom userbot_test_client import invoke\nr=asyncio.run(invoke(\"health\"))\nassert r.get(\"status\")==\"PASS\" and r.get(\"authorized\") is True\nprint(\"USERBOT_PANEL_READ_READY=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
