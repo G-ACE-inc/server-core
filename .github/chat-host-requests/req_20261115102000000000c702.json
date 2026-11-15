@@ -1,0 +1,37 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -eu\ntarget='theGreatOldDaysofNipponGV'\nroot='/mnt/g/GserverStorage/public_channel_videos'\nmountpoint -q /mnt/g || exit 71\ntest -d \"$root\" || exit 72\nif ps -eo args= | grep -F \"$target\" | grep -E '[p]ython|[u]serbot|[c]ollect|[t]elethon' >/dev/null; then\n  printf 'COLLECTOR=PROCESS_PRESENT\\nACTION=NO_DUPLICATE\\n'\n  exit 0\nfi\nfound=''\nscope=''\nfor mode in user system; do\n  if [ \"$mode\" = user ]; then units=\"$(systemctl --user list-unit-files --type=service --no-legend --plain 2>/dev/null | awk '{print $1}')\"; else units=\"$(systemctl list-unit-files --type=service --no-legend --plain 2>/dev/null | awk '{print $1}')\"; fi\n  for unit in $units; do\n    if [ \"$mode\" = user ]; then body=\"$(systemctl --user cat \"$unit\" 2>/dev/null || true)\"; else body=\"$(systemctl cat \"$unit\" 2>/dev/null || true)\"; fi\n    if printf '%s' \"$body\" | grep -Fq \"$target\"; then\n      test -z \"$found\" || exit 73\n      found=\"$unit\"\n      scope=\"$mode\"\n    fi\n  done\ndone\ntest -n \"$found\" || exit 74\nif [ \"$scope\" = user ]; then\n  if systemctl --user is-active --quiet \"$found\"; then printf 'COLLECTOR=UNIT_ACTIVE\\nACTION=NO_DUPLICATE\\n'; exit 0; fi\n  systemctl --user start \"$found\"\n  systemctl --user is-active --quiet \"$found\" || exit 75\nelse\n  if systemctl is-active --quiet \"$found\"; then printf 'COLLECTOR=UNIT_ACTIVE\\nACTION=NO_DUPLICATE\\n'; exit 0; fi\n  systemctl start \"$found\"\n  systemctl is-active --quiet \"$found\" || exit 75\nfi\nprintf 'COLLECTOR=RESTARTED_EXISTING_UNIT\\nACTION=RESUMED\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
