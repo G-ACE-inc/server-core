@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/60"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nservice=gace-userbot-verify.service\nsession=\"$repo/deploy/secrets/userbot_verify.session\"\ntest \"$(systemctl --user is-active \"$service\")\" = active || exit 61\ntest \"$(systemctl --user is-enabled \"$service\")\" = enabled || exit 62\ntest -f \"$session\" && test ! -L \"$session\" || exit 63\ntest \"$(stat -c %a \"$session\")\" = 600 || exit 64\ninode=\"$(stat -c %i \"$session\")\"\npython3 -B \"$repo/scripts/userbot_test_client.py\" health\ngit -C \"$repo\" fetch --no-tags origin feat/announcement-complete-user-20261115\ntest \"$(git -C \"$repo\" rev-parse FETCH_HEAD)\" = a760ea3ddad98f9c435d834c8db0a396b9b50f86 || exit 74\nstage=\"$(mktemp -d)\"\ntrap 'rm -rf \"$stage\"' EXIT\ngit -C \"$repo\" show 9962d952b11d0c58439a3dd2514ce23d01699fb7:scripts/userbot_notice_smoke.py > \"$stage/expected.py\"\ngit -C \"$repo\" show FETCH_HEAD:scripts/userbot_notice_smoke.py > \"$stage/new.py\"\ngit -C \"$repo\" show FETCH_HEAD:scripts/test_userbot_notice_smoke.py > \"$stage/test_userbot_notice_smoke.py\"\ntest -s \"$stage/new.py\" || exit 75\ntest -f \"$repo/scripts/userbot_notice_smoke.py\" && test ! -L \"$repo/scripts/userbot_notice_smoke.py\" || exit 75\ncmp -s \"$stage/expected.py\" \"$repo/scripts/userbot_notice_smoke.py\" || exit 76\ncp -p \"$repo/scripts/userbot_notice_smoke.py\" \"$stage/original.py\"\nmkdir \"$stage/tests\"\ncp \"$stage/new.py\" \"$stage/tests/userbot_notice_smoke.py\"\ncp \"$stage/test_userbot_notice_smoke.py\" \"$stage/tests/test_userbot_notice_smoke.py\"\n\"$repo/deploy/.userbot-venv/bin/python\" -B -m py_compile \"$stage/tests/\"*.py\nPYTHONPATH=\"$stage/tests:$repo/scripts\" \"$repo/deploy/.userbot-venv/bin/python\" -B -m unittest discover -s \"$stage/tests\" -p 'test_userbot_notice_smoke.py' -v\nchanged=0\nrollback(){ rc=$?;trap - ERR;set +e;if test \"$changed\" = 1;then cp -p \"$stage/original.py\" \"$repo/scripts/userbot_notice_smoke.py\";systemctl --user restart \"$service\";sleep 5;python3 -B \"$repo/scripts/userbot_test_client.py\" health >/dev/null 2>&1 && echo USERBOT_CODE_ROLLBACK=PASS || echo USERBOT_CODE_ROLLBACK=FAIL;fi;exit \"$rc\"; }\ntrap rollback ERR\ninstall -m 0644 \"$stage/new.py\" \"$repo/scripts/userbot_notice_smoke.py\"\nchanged=1\nsystemctl --user restart \"$service\"\nready=0\nfor _ in 1 2 3 4 5 6 7 8 9 10;do\n if systemctl --user is-active --quiet \"$service\" && python3 -B \"$repo/scripts/userbot_test_client.py\" health >/dev/null 2>&1;then ready=1;break;fi\n sleep 2\ndone\ntest \"$ready\" = 1 || exit 67\ntest \"$(stat -c %i \"$session\")\" = \"$inode\" || exit 68\ntest \"$(stat -c %a \"$session\")\" = 600 || exit 69\ntest \"$(systemctl --user is-enabled \"$service\")\" = enabled || exit 70\ntrap - ERR\necho USERBOT_VIDEO_TEST_ACTIVATED=PASS\necho USERBOT_EXISTING_SESSION_PRESERVED=PASS\nset +e\nout=\"$(python3 -B \"$repo/scripts/userbot_test_client.py\" notice_private_smoke 2>&1)\"\nrc=$?\nset -e\nprintf '%s\\n' \"$out\"\ntest \"$(systemctl --user is-active \"$service\")\" = active || exit 71\ntest \"$(systemctl --user is-enabled \"$service\")\" = enabled || exit 72\ntest \"$(stat -c %i \"$session\")\" = \"$inode\" || exit 73\ntest \"$(stat -c %a \"$session\")\" = 600 || exit 74\necho USERBOT_POST_VIDEO_TEST_SERVICE=PASS\nif test \"$rc\" != 0;then\n case \"$out\" in\n  *NOTICE_VIDEO_CLASSIFICATION_INVALID*) exit 90;;\n  *NOTICE_ACTUAL_VIDEO_PREVIEW_MISSING*) exit 96;;\n  *NOTICE_CANCEL_MENU_NOT_RESTORED*) exit 97;;\n  *NOTICE_VIDEO_INPUT_NOT_DELETED*) exit 98;;\n  *NOTICE_VIDEO_FIXTURE_ENCODER_MISSING*) exit 79;;\n  *NOTICE_EXISTING_DRAFT_REFUSED*) exit 99;;\n esac\n exit 83\nfi\necho USERBOT_NOTICE_PHOTO_VIDEO_CANCEL=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
