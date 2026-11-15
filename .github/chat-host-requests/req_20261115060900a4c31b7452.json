@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"$root/.worktrees/bug-report-cfc999ac-20261115\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = cfc999ac40962b936c6dbe83648d0d2fab421fdd || exit 61\ntest -f \"$root/deploy/secrets/bug_report_recipient.txt\" || exit 62\ncontainer=\"$(docker ps --format '{{.Names}}' | grep -E '(^|[-_])gaybbs([-_]|$)' | head -n1)\"\ntest -n \"$container\" || exit 63\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$container\")\"\ntest \"$(docker inspect -f '{{.Image}}' \"$container\")\" = \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:bugreport-cfc999ac)\" || exit 64\ndocker logs --since 10m \"$container\" 2>&1 | grep -q 'GAYBBS_BOT_READY' || exit 65\numask 077\nlog=\"$(mktemp /tmp/gace-posting-menu-bugreport.XXXXXXXX)\"\ntrap 'rm -f \"$log\"' EXIT\ndocker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" run --rm --no-deps -e MENU_PUBLISH_PANEL_TYPES=posting gaybbs node --import /app/preload/telegram-ipv4-preload.mjs /app/publishMenuPanels.mjs >\"$log\" 2>&1 || { echo BUGREPORT_MENU_PUBLISH_FAILED; exit 66; }\npython3 - \"$log\" <<'PY'\nimport json,sys\nrows=[]\nfor line in open(sys.argv[1]):\n try:x=json.loads(line)\n except (ValueError,TypeError):continue\n if x.get(\"panel_type\")==\"posting\" and \"message_id\" in x:\n  rows.append(int(x[\"chat_id\"]))\nexpected={-1003847210571,-1002373696859,-1003770334893}\nif set(rows)!=expected or len(rows)!=3:sys.exit(67)\nprint(\"GAYBBS_POSTING_PANELS=3_OF_3\")\nprint(\"BUG_REPORT_LAST_ROW=11\")\nPY\necho GAYBBS_BUG_REPORT_MENU_PUBLISH=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
