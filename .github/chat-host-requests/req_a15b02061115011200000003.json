@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\nsrc=ec00440306f6d802310f48ff2dc4953beae61848\ntarget=\"$HOME/.local/share/gace-create-videobot/sticker-poll-$src\"\ntest -f \"$target/deploy/compose.videobot.poll.yaml\" || { echo VIDEO_STAGE_MISSING; exit 61; }\ndocker run --rm --network none --pull never --entrypoint /bin/sh create-videobot:local-poll -c 'grep -q \"Myビデオを見る\" /opt/videobot/src/telegram/creatorUi.mjs' || { echo VIDEO_IMAGE_OLD; exit 62; }\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ndbpass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\npin=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/var/lib/videobot/sticker-entry\"}}{{.Source}}{{end}}{{end}}' \"$name\")\"\ntest -f \"$token\" && test -f \"$dbpass\" && test -d \"$pin\" || { echo VIDEO_EXISTING_MOUNT_NOT_FOUND; exit 63; }\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 64\nuser=\"$(docker exec \"$pg\" sh -c 'printf %s \"$POSTGRES_USER\"')\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest -n \"$user\" && test \"$net\" = deploy_default || exit 65\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$token\" VIDEOBOT_DB_PASSWORD_SOURCE=\"$dbpass\" VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$pin\" GSERVER_POSTGRES_USER=\"$user\" GSERVER_POSTGRES_NETWORK=\"$net\"\ndocker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" config --quiet || { echo VIDEO_COMPOSE_CONFIG_BAD; exit 66; }\ndocker compose -p gace-createvdobot -f \"$target/deploy/compose.videobot.poll.yaml\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || { echo VIDEO_COMPOSE_RESTART_FAILED; exit 67; }\nsleep 10\ntest \"$(docker inspect -f '{{.State.Running}}' \"$name\")\" = true || { echo VIDEO_POLLER_NOT_RUNNING; exit 68; }\ndocker logs --tail 100 \"$name\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$' || { echo VIDEO_POLLER_READY_MISSING; exit 69; }\ndocker exec \"$name\" sh -c 'grep -q \"Myビデオを見る\" /opt/videobot/src/telegram/creatorUi.mjs && grep -q \"replyToMessageId\" /opt/videobot/src/telegram/creatorScreenTransport.mjs && command -v ffmpeg >/dev/null' || { echo VIDEO_RUNNING_CODE_MISMATCH; exit 70; }\necho VIDEO_MYVIDEOS_PREVIEW_LIVE_CODE=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
