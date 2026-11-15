@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"$root/.worktrees/bug-report-f173f8e-20261115\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = f173f8e86d1abb0eb105251261cfc0b31dc2f954 || exit 60\ndocker image inspect gace-tgtumbler-gaybbs:bugreport-f173f8e >/dev/null || exit 61\ncontainer=\"$(docker ps --format '{{.Names}}' | grep -E '(^|[-_])gaybbs([-_]|$)' | head -n1)\"\ntest -n \"$container\" || exit 62\nproject=\"$(docker inspect -f '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$container\")\"\noverride=\"$(mktemp /tmp/gace-gay-publish-override.XXXXXXXX.yaml)\"\nlog=\"$(mktemp /tmp/gace-gay-publish.XXXXXXXX)\"\nchmod 600 \"$override\" \"$log\"\ntrap 'rm -f \"$override\" \"$log\"' EXIT\nprintf 'services:\\n  gaybbs:\\n    image: gace-tgtumbler-gaybbs:bugreport-f173f8e\\n' >\"$override\"\ndocker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" -f \"$override\" config --quiet >/dev/null 2>&1 || exit 63\nold=\"$(docker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" exec -T postgres psql -U gace -d gaybbs -t -A -c \"SELECT message_id FROM board_menu_panels WHERE chat_id=-1003770334893 AND panel_type='posting' AND state='needs_reconcile' AND message_id>0 AND message_thread_id>0\" 2>/dev/null)\" || exit 64\ntest \"$(printf '%s\\n' \"$old\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 65\nchanged=\"$(docker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" exec -T postgres psql -U gace -d gaybbs -t -A -c \"UPDATE board_menu_panels SET state='verified',updated_at=NOW() WHERE chat_id=-1003770334893 AND panel_type='posting' AND state='needs_reconcile' AND message_id=$old AND message_thread_id>0 RETURNING panel_id\" 2>/dev/null)\" || exit 66\ntest -n \"$changed\" && test \"$(printf '%s\\n' \"$changed\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 67\ndocker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" -f \"$override\" run --rm --no-deps -e MENU_PUBLISH_PANEL_TYPES=posting -e MENU_PUBLISH_CHAT_ID=-1003770334893 gaybbs node --import /app/preload/telegram-ipv4-preload.mjs /app/publishMenuPanels.mjs >\"$log\" 2>&1 || { echo GAY_TARGETED_REPUBLISH_FAILED; exit 68; }\npython3 - \"$log\" \"$old\" <<'PY'\nimport json,sys\nrows=[]\nfor line in open(sys.argv[1]):\n try:x=json.loads(line)\n except (ValueError,TypeError):continue\n if x.get(\"panel_type\")==\"posting\":rows.append(x)\nassert len(rows)==1 and int(rows[0][\"chat_id\"])==-1003770334893\nassert int(rows[0][\"message_id\"])==int(sys.argv[2]) and rows[0][\"updated_existing\"] is True\nprint(\"GAY_EXISTING_POSTING_MENU_UPDATED=PASS\")\nPY\ncount=\"$(docker compose -p \"$project\" --project-directory \"$root/deploy\" -f \"$stage/deploy/gserver-compose.yaml\" exec -T postgres psql -U gace -d gaybbs -t -A -c \"SELECT count(*) FROM board_menu_panels WHERE chat_id=-1003770334893 AND panel_type='posting' AND state='published' AND message_id=$old\" 2>/dev/null)\" || exit 69\ntest \"$count\" = 1 || exit 70\necho GAY_EXISTING_MENU=UPDATED_WITHOUT_DUPLICATE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
