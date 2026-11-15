@@ -1,0 +1,37 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/G-ACEserver/issues/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -u\ntarget='theGreatOldDaysofNipponGV'\nroot=/mnt/g/GserverStorage/public_channel_videos\nmountpoint -q /mnt/g || exit 71\ntest -d \"$root\" || exit 72\nmatches=0\nunit=''\nwhile IFS= read -r candidate; do\n  [ -n \"$candidate\" ] || continue\n  body=\"$(systemctl --user cat \"$candidate\" 2>/dev/null || true)\"\n  if printf '%s' \"$body\" | grep -Fqi \"$target\"; then\n    matches=$((matches+1))\n    unit=\"$candidate\"\n  fi\ndone < <(systemctl --user list-unit-files --type=service --no-legend --plain 2>/dev/null | awk '{print $1}')\n[ \"$matches\" -eq 1 ] || exit 73\nif ! systemctl --user is-active --quiet \"$unit\"; then\n  systemctl --user start \"$unit\" || exit 74\n  systemctl --user is-active --quiet \"$unit\" || exit 75\n  printf 'COLLECTOR_RESTORED\\n'\n  exit 0\nfi\npid=\"$(systemctl --user show \"$unit\" -p MainPID --value 2>/dev/null)\"\n[ \"$pid\" -gt 1 ] 2>/dev/null || exit 76\ntest -r \"/proc/$pid/io\" || exit 77\na=\"$(awk '/^(rchar|wchar|read_bytes|write_bytes):/{s+=$2}END{printf \"%.0f\",s}' \"/proc/$pid/io\")\"\nsleep 12\nb=\"$(awk '/^(rchar|wchar|read_bytes|write_bytes):/{s+=$2}END{printf \"%.0f\",s}' \"/proc/$pid/io\")\"\ntest \"$b\" -ge \"$a\" || exit 78\nif [ \"$b\" -gt \"$a\" ]; then printf 'ACTIVE_AND_IO_ADVANCING\\n'; exit 0; fi\nprintf 'ACTIVE_WITHOUT_IO_CHANGE\\n'\nexit 79"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
