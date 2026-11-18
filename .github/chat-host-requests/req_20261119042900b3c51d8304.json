@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"$root/.worktrees/bug-report-autoack-5bac2a0-20261119\"\ncompose=\"$root/deploy/gserver-compose.yaml\"\nsecret=\"$root/deploy/secrets/bug_report_recipient.txt\"\nbackup=\"$root/deploy/secrets/.bug_report_recipient.pre-autoack-20261119\"\noldtag=\"gace-tgtumbler-gaybbs:rollback-pre-autoack-20261119\"\nnewtag=\"gace-tgtumbler-gaybbs:bug-autoack-5bac2a0\"\ntest -f \"$compose\" && test -s \"$secret\" || exit 60\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = \"5bac2a001e3617dcb44214158059349a54cf8cff\" || exit 61\ngit -C \"$root\" merge-base --is-ancestor \"$(git -C \"$root\" rev-parse HEAD)\" \"$(git -C \"$stage\" rev-parse HEAD)\" || exit 62\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 63\nexpected=\"$(awk -F '\"' '/MENU_PUBLISH_ADMIN_ID:/ {print $2; exit}' \"$stage/deploy/gserver-compose.yaml\")\"\ntest -n \"$expected\" && [[ \"$expected\" =~ ^[0-9]+$ ]] || exit 64\noldvalue=\"$(tr -d '\\r\\n' < \"$secret\")\"\ntest -n \"$oldvalue\" && [[ \"$oldvalue\" =~ ^[0-9]+$ ]] || exit 65\nmapfile -t ids < <(docker ps -q --filter label=com.docker.compose.service=gaybbs)\ntest \"${#ids[@]}\" -eq 1 || exit 66\ncid=\"${ids[0]}\"\nproject=\"$(docker inspect \"$cid\" --format '{{index .Config.Labels \"com.docker.compose.project\"}}')\"\ntest -n \"$project\" && test \"$project\" != \"<no value>\" || exit 67\ntest -n \"$(docker image inspect \"$newtag\" --format '{{.Id}}')\" || exit 68\ndocker image tag gace-tgtumbler-gaybbs:local \"$oldtag\"\ncp -p \"$secret\" \"$backup\"\nchmod 600 \"$backup\"\nchanged=0\nrollback(){\n rc=$?\n trap - ERR\n if [ \"$changed\" = 1 ]; then\n  cp -p \"$backup\" \"$secret\"\n  docker image tag \"$oldtag\" gace-tgtumbler-gaybbs:local\n  docker compose -p \"$project\" -f \"$compose\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || true\n fi\n echo GAYBBS_RELEASE=ROLLBACK_REQUIRED\n exit \"$rc\"\n}\ntrap rollback ERR\numask 077\ntmp=\"$(mktemp \"$root/deploy/secrets/.recipient.XXXXXXXX\")\"\nprintf '%s\\n' \"$expected\" > \"$tmp\"\nchmod 600 \"$tmp\"\nmv -f \"$tmp\" \"$secret\"\nchanged=1\ndocker image tag \"$newtag\" gace-tgtumbler-gaybbs:local\ndocker compose -p \"$project\" -f \"$compose\" up -d --no-deps --force-recreate gaybbs >/dev/null\nnewcid=\"$(docker compose -p \"$project\" -f \"$compose\" ps -q gaybbs)\"\ntest -n \"$newcid\" || exit 69\nready=0\nfor i in $(seq 1 30); do\n if [ \"$(docker inspect \"$newcid\" --format '{{.State.Running}}')\" = true ] && docker logs \"$newcid\" 2>&1 | grep -q 'GAYBBS_BOT_READY'; then ready=1; break; fi\n sleep 2\ndone\ntest \"$ready\" -eq 1 || exit 70\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 71\ntest \"$(tr -d '\\r\\n' < \"$secret\")\" = \"$expected\" || exit 72\nchanged=0\ntrap - ERR\necho GAYBBS_RELEASE=PASS\necho GAYBBS_BOT_READY=PASS\necho REPORT_RECIPIENT_PRIVATE_SETTING=VERIFIED\necho USERBOT_SERVICE_PRESERVED=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
