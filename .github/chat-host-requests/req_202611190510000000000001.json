@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nname=gace-createvdobot-videobot-poll-1\necho TARGET_REPO_HEAD=\"$(git rev-parse --short=12 HEAD 2>/dev/null || echo UNKNOWN)\"\nif ! docker inspect \"$name\" >/dev/null 2>&1;then echo POLLER=NOT_FOUND;exit 61;fi\necho POLLER_RUNNING=\"$(docker inspect -f '{{.State.Running}}' \"$name\")\"\necho POLLER_RESTART_COUNT=\"$(docker inspect -f '{{.RestartCount}}' \"$name\")\"\necho POLLER_IMAGE_ID=\"$(docker inspect -f '{{.Image}}' \"$name\" | cut -c1-26)\"\nif docker exec \"$name\" test -f /opt/videobot/src/telegram/creatorWizard.mjs;then\n  echo VIDEO_WIZARD=FOUND\n  docker exec \"$name\" grep -q 'legacyEditorTap' /opt/videobot/src/telegram/creatorWizard.mjs && echo LEGACY_CALLBACK_FIX=PRESENT || echo LEGACY_CALLBACK_FIX=MISSING\n  docker exec \"$name\" grep -q 'Myビデオを見る' /opt/videobot/src/telegram/creatorUi.mjs && echo MYVIDEOS_BUTTON=PRESENT || echo MYVIDEOS_BUTTON=MISSING\n  docker exec \"$name\" grep -R -l -E '登録画面へ|投稿する|中止' /opt/videobot/src --include='*.mjs' 2>/dev/null | sed -E 's@/opt/videobot/src/@@' | head -n 12 || true\n  docker exec \"$name\" sh -c 'command -v ffmpeg && command -v ffprobe' | sed -E 's@^@MEDIA_BINARY=@'\nfi\necho POLLER_READY_LINE_COUNT=\"$(docker logs --since 72h \"$name\" 2>&1 | grep -c '^CREATOR_DM_POLL_READY=PASS$' || true)\"\necho POLLER_RUNTIME_FAILED_LINES=\"$(docker logs --since 72h \"$name\" 2>&1 | grep -Ec 'CREATOR_POLL_RUNTIME_FAILED|WIZARD_EDIT_RESULT_UNKNOWN|file exceeds Bot API download limit|preview Telegram upload failed|video too short' || true)\"\necho DIAGNOSTIC_READ_ONLY=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
