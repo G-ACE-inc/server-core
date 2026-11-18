@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\necho PROJECT_ROOT_PRESENT=\"$(test -d \"$root/.git\" && echo YES || echo NO)\"\nif test -d \"$root/.git\"; then echo PROJECT_HEAD=\"$(git -C \"$root\" rev-parse --short=12 HEAD)\"; fi\nmapfile -t ids < <(docker ps -q --filter label=com.docker.compose.service=gaybbs)\necho GAYBBS_CONTAINER_COUNT=\"${#ids[@]}\"\ntest \"${#ids[@]}\" -eq 1 || exit 66\ncid=\"${ids[0]}\"\necho GAYBBS_RUNNING=\"$(docker inspect -f '{{.State.Running}}' \"$cid\")\"\necho GAYBBS_IMAGE=\"$(docker inspect -f '{{.Config.Image}}' \"$cid\")\"\necho GAYBBS_IMAGE_ID=\"$(docker inspect -f '{{.Image}}' \"$cid\" | cut -c1-20)\"\ndocker exec \"$cid\" sh -c 'if grep -Fq \"startPayload===\\\"link\\\"\" /app/gaybbs.mjs; then echo LINK_START_ROUTER=PRESENT; else echo LINK_START_ROUTER=NOT_FOUND; fi; if grep -Fq \"dm:link\" /app/gaybbs.mjs; then echo LINK_DM_CALLBACK=PRESENT; else echo LINK_DM_CALLBACK=NOT_FOUND; fi' || true\necho LINK_PANEL_DB_BEGIN\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT chat_id||'|'||message_thread_id||'|'||state||'|'||COALESCE(message_id::text,'NULL')||'|'||revision FROM board_menu_panels WHERE panel_type='posting' ORDER BY chat_id, message_thread_id\" || true\necho LINK_PANEL_DB_END\necho LINK_FEATURE_GATE_BEGIN\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT feature||'|'||CASE WHEN enabled THEN 'ENABLED' ELSE 'DISABLED' END FROM gaybbs_feature_release_gates WHERE feature='link'\" || true\necho LINK_FEATURE_GATE_END\necho USERBOT_RESIDENT=\"$(systemctl --user is-active gace-userbot-verify.service 2>/dev/null || true)\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
