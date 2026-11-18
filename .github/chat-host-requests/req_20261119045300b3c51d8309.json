@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ncompose=\"$root/deploy/gserver-compose.yaml\"\nsecret=\"$root/deploy/secrets/bug_report_recipient.txt\"\nbackup=\"$root/deploy/.gserver-compose.pre-report-mount-20261119.bak\"\ntest -s \"$secret\" && test -f \"$compose\" || exit 60\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\nmapfile -t ids < <(docker ps -q --filter label=com.docker.compose.service=gaybbs)\ntest \"${#ids[@]}\" -eq 1 || exit 62\ncid=\"${ids[0]}\"\nproject=\"$(docker inspect \"$cid\" --format '{{index .Config.Labels \"com.docker.compose.project\"}}')\"\ntest -n \"$project\" && test \"$project\" != \"<no value>\" || exit 63\ntest ! -e \"$backup\" || exit 64\ncp -p \"$compose\" \"$backup\"\nchmod 600 \"$backup\"\nchanged=0\nrollback(){\n rc=$?\n trap - ERR\n if [ \"$changed\" = 1 ]; then\n  cp -p \"$backup\" \"$compose\"\n  docker compose -p \"$project\" -f \"$compose\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || true\n fi\n echo GAYBBS_SECRET_MOUNT_REPAIR=ROLLED_BACK\n exit \"$rc\"\n}\ntrap rollback ERR\npython3 - \"$compose\" <<'PY'\nfrom pathlib import Path\nimport sys\npath=Path(sys.argv[1])\ntext=path.read_text()\na=\"      BOT_TOKEN_FILE: /run/secrets/bot_token\\n\"\nb=\"      - bot_token\\n\"\nroot=\"\\nsecrets:\\n\"\nif text.count(a)!=1 or text.count(b)!=1 or text.count(root)!=1 or \"bug_report_recipient\" in text:\n    raise SystemExit(65)\nif \"\\nservices:\\n\" not in \"\\n\"+text or text.rfind(root)<text.index(\"  gaybbs:\"):\n    raise SystemExit(66)\ntext=text.replace(a,a+\"      GAYBBS_USERBOT_REPORT_CHAT_ID_FILE: /run/secrets/bug_report_recipient\\n\",1)\ntext=text.replace(b,b+\"      - bug_report_recipient\\n\",1)\ntext=text.rstrip()+\"\\n  bug_report_recipient:\\n    file: ./secrets/bug_report_recipient.txt\\n\"\npath.write_text(text)\nPY\nchanged=1\ndocker compose -p \"$project\" -f \"$compose\" config --quiet || exit 67\ndocker compose -p \"$project\" -f \"$compose\" up -d --no-deps --force-recreate gaybbs >/dev/null || exit 68\nnewcid=\"$(docker compose -p \"$project\" -f \"$compose\" ps -q gaybbs)\"\ntest -n \"$newcid\" || exit 69\ndocker exec \"$newcid\" test -r /run/secrets/bug_report_recipient || exit 70\nready=0\nfor i in $(seq 1 30); do\n if [ \"$(docker inspect \"$newcid\" --format '{{.State.Running}}')\" = true ] && docker logs \"$newcid\" 2>&1 | grep -q 'GAYBBS_BOT_READY'; then ready=1; break; fi\n sleep 2\ndone\ntest \"$ready\" -eq 1 || exit 71\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 72\nchanged=0\ntrap - ERR\necho GAYBBS_SECRET_MOUNT_REPAIR=PASS\necho GAYBBS_BOT_READY=PASS\necho REPORT_RECIPIENT_SECRET_READABLE=PASS\necho USERBOT_RESIDENT_PRESERVED=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
