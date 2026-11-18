@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nmapfile -t ids < <(docker ps -q --filter label=com.docker.compose.service=gaybbs)\ntest \"${#ids[@]}\" -eq 1 || exit 60\ncid=\"${ids[0]}\"\ndocker exec \"$cid\" test -r /run/secrets/bug_report_recipient || exit 61\ndocker exec -i \"$cid\" node --import /app/preload/telegram-ipv4-preload.mjs --input-type=module <<'JS'\nimport {readFileSync} from \"node:fs\";\nconst token=readFileSync(\"/run/secrets/bot_token\",\"utf8\").trim();\nconst recipient=readFileSync(\"/run/secrets/bug_report_recipient\",\"utf8\").trim();\nif(!/^[0-9]+$/.test(recipient)||!token)process.exit(62);\ntry {\n const response=await fetch(\"https://api.telegram.org/bot\"+token+\"/sendMessage\",{\n  method:\"POST\",\n  headers:{\"content-type\":\"application/json\"},\n  body:JSON.stringify({chat_id:recipient,text:\"🐞 不具合報告通知の接続テスト（実際の不具合報告ではありません）\"})\n });\n const data=await response.json();\n if(response.ok&&data.ok&&String(data.result?.chat?.id)===recipient&&Number.isSafeInteger(data.result?.message_id)){\n  console.log(\"REPORT_OPERATOR_DM_DELIVERY=PASS\");\n }else{\n  console.log(\"REPORT_OPERATOR_DM_DELIVERY=FAIL\");\n  process.exitCode=63;\n }\n}catch{\n console.log(\"REPORT_OPERATOR_DM_DELIVERY=UNKNOWN\");\n process.exitCode=64;\n}\nJS\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 65\necho USERBOT_SERVICE_PRESERVED=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
