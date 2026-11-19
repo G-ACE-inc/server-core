@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 71\nsystemctl --user is-enabled --quiet gace-userbot-verify.service || exit 72\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || exit 73\nstage=\"$root/.worktrees/bug-report-dual-delivery-0f3633f\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = 0f3633fd67b1c0c5faafdfa38924fd2e61369e6c || exit 74\npython3 -B - \"$root\" \"$stage\" <<'PY'\nfrom pathlib import Path\nimport re,sys,os,subprocess,shutil\nroot,stage=map(Path,sys.argv[1:])\npath=root/\"scripts/userbot_resident_ipc.py\"\nbefore=path.read_text()\nincoming=(stage/\"scripts/userbot_resident_ipc.py\").read_text()\nif \"bug_report_inbox_provision\" in before:\n print(\"USERBOT_LOCAL_PROVISION_ALREADY_PRESENT\")\n sys.exit(76)\nactions=re.search(r'^ACTIONS = frozenset\\(\\{.*\\}\\)$',before,re.M)\nif actions is None or '\"health\"' not in actions.group(0):sys.exit(77)\nblock_start=incoming.find('    if action == \"bug_report_inbox_provision\":')\nblock_end=incoming.find('    if action == \"profile_topics_readback\":',block_start)\nif block_start<0 or block_end<0:sys.exit(78)\nblock=incoming[block_start:block_end]\nanchor='    if action == \"profile_topics_readback\":'\nif before.count(anchor)!=1 or 'from userbot_session import SECRETS' not in before:sys.exit(79)\nnew=before[:actions.end()-2]+', \"bug_report_inbox_provision\"'+before[actions.end()-2:]\nnew=new.replace(anchor,block+anchor,1)\ncompile(new,str(path),\"exec\")\nbackup=root/\"deploy/.userbot-code-backup-20261119\"\nbackup.mkdir(mode=0o700,exist_ok=True)\ntarget=backup/\"userbot_resident_ipc.before_dual_delivery.py\"\nif target.exists():sys.exit(80)\ntarget.write_text(before)\ntarget.chmod(0o600)\ntmp=path.with_name(path.name+\".bugdual.tmp\")\nif tmp.exists():sys.exit(81)\ntmp.write_text(new)\ntmp.chmod(path.stat().st_mode&0o777)\nos.replace(tmp,path)\nprint(\"USERBOT_IPC_PATCH_APPLIED=YES\")\nPY\nsystemctl --user restart gace-userbot-verify.service || exit 82\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 83\nsystemctl --user is-enabled --quiet gace-userbot-verify.service || exit 84\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || exit 85\n(cd \"$root/scripts\" && PYTHONDONTWRITEBYTECODE=1 python3 -B userbot_test_client.py health) || exit 86\n(cd \"$root/scripts\" && PYTHONDONTWRITEBYTECODE=1 python3 -B userbot_test_client.py bug_report_inbox_provision) || exit 87\ntest -f \"$root/deploy/secrets/bug_report_userbot_account.txt\" || exit 88\ntest \"$(stat -c %a \"$root/deploy/secrets/bug_report_userbot_account.txt\")\" = 600 || exit 89\necho USERBOT_PROVISION_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
