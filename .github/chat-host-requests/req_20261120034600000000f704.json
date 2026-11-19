@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 71\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || exit 72\npython3 - \"$root\" <<'PY'\nfrom pathlib import Path\nimport sys\nroot=Path(sys.argv[1])\nipc=(root/\"scripts/userbot_resident_ipc.py\").read_text()\nclient=(root/\"scripts/userbot_test_client.py\").read_text()\nneed_ipc=[\n 'if action == \"profile_topics_readback\":',\n 'if action == \"room_public_readback\" else {\"request_id\", \"action\"})',\n '\"PROFILE_READ_MULTIPLE_TOPICS\",',\n '\"profile_topics_readback\"',\n]\nneed_client=[\n 'async def invoke(action: str, chat_id: int | None = None, message_id: int | None = None) -> dict:',\n '        elif chat_id is not None or message_id is not None:',\n '    parser.add_argument(\"--message-id\", type=int)',\n '        result = asyncio.run(invoke(args.action, args.chat_id, args.message_id))',\n '        if args.action == \"profile_topics_readback\":',\n]\nfor i,x in enumerate(need_ipc):\n if ipc.count(x)!=1:sys.exit(81+i)\nfor i,x in enumerate(need_client):\n if client.count(x)!=1:sys.exit(90+i)\nif \"profile_topics_by_id\" in ipc or \"profile_topics_by_id\" in client:sys.exit(99)\nPY\necho USERBOT_SURGICAL_PATCH_ANCHORS_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
