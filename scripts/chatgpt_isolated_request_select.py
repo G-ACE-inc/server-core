@@ -133,12 +133,27 @@ def prepare(path):
     return prepare_data(data)
 
 
+def sibling_effect_active(data, key):
+    """True only when this request actually declares another effect.
+
+    A missing gitops or source-reflect object is an independent request.
+    A present object remains fail-closed unless enabled is exactly false,
+    so a real concurrent effect cannot pass by omission of the flag.
+    """
+    if key not in data:
+        return False
+    effect = data[key]
+    if not isinstance(effect, dict) or effect.get("enabled") is not False:
+        return True
+    return False
+
+
 def prepare_data(data, *, command_diagnostics=None):
     if not isinstance(data, dict) or data.get("bounded_host_request", {}).get("enabled") is not True:
         raise ValueError("REQUEST_NOT_ENABLED")
     if data.get("chat_decision_checkpoint", {}).get("phase") != "START":
         raise ValueError("START_RECEIPT_MISSING")
-    if data.get("gitops_request", {}).get("enabled") is not False or data.get("source_reflect_request", {}).get("enabled") is not False:
+    if sibling_effect_active(data, "gitops_request") or sibling_effect_active(data, "source_reflect_request"):
         raise ValueError("CONCURRENT_EFFECT_DENIED")
     if data.get("server_command_id") or data.get("run_id"):
         raise ValueError("OTHER_COMMAND_DENIED")

@@ -1,5 +1,7 @@
+import copy
 import importlib.util
 import json
+import shutil
 import subprocess
 from pathlib import Path
 import tempfile
@@ -248,6 +250,94 @@ class IsolatedRequests(unittest.TestCase):
                 p.write_text(json.dumps(mutate))
                 with self.assertRaises(ValueError):
                     m.prepare(p)
+
+    def test_omitted_sibling_effects_are_independent_requests(self):
+        # 2026-11-19 req_20261119140600000000c601 was denied before Host
+        # dispatch because absent effect objects were read as enabled.
+        minimal = {
+            "bounded_host_request": {
+                "enabled": True, "command_id": "host.command", "host_target": "gserver",
+                "repository": "seigo-gace/G-ACEserver", "expected_sha": "a" * 40,
+                "repo_sha": "b" * 40, "command": "printf TERMINAL_READONLY_OK\\n",
+                "project_context": {"repository": "seigo-gace/create-videobot"},
+            },
+            "chat_decision_checkpoint": {"phase": "START"},
+        }
+        prepared = m.prepare_data(copy.deepcopy(minimal))
+        self.assertNotIn("gitops_request", prepared)
+        self.assertNotIn("source_reflect_request", prepared)
+        self.assertNotIn("project_context", prepared["bounded_host_request"])
+        self.assertIn("create-videobot", prepared["bounded_host_request"]["command"])
+        self.assertIn("printf TERMINAL_READONLY_OK", prepared["bounded_host_request"]["command"])
+        one_side = copy.deepcopy(minimal)
+        one_side["gitops_request"] = {"enabled": False}
+        self.assertIs(m.prepare_data(one_side)["gitops_request"]["enabled"], False)
+        for key, value in (
+            ("gitops_request", {"enabled": True}),
+            ("source_reflect_request", {"enabled": True}),
+            ("gitops_request", {}),
+            ("source_reflect_request", {"enabled": None}),
+            ("gitops_request", "false"),
+            ("source_reflect_request", None),
+        ):
+            with self.subTest(key=key, value=value):
+                candidate = copy.deepcopy(minimal)
+                candidate[key] = value
+                with self.assertRaisesRegex(ValueError, "CONCURRENT_EFFECT_DENIED"):
+                    m.prepare_data(candidate)
+
+    def test_distinct_commits_stay_independent_and_one_commit_cannot_carry_two(self):
+        first = ".github/chat-host-requests/req_" + "a" * 24 + ".json"
+        second = ".github/chat-host-requests/req_" + "b" * 24 + ".json"
+        self.assertEqual(str(m.select([first], [first])), first)
+        self.assertEqual(str(m.select([second], [second])), second)
+        with self.assertRaisesRegex(ValueError, "REQUEST_PATH_DENIED"):
+            m.select([first, second], [first, second])
+
+    def test_workflow_validation_accepts_omitted_effects_and_rejects_active_ones(self):
+        workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/chatgpt-live-api-verify.yml").read_text()
+        start = workflow.index("jq -e '") + len("jq -e '")
+        filt = workflow[start:workflow.index("' \"$target\"", start)]
+        self.assertIn('has("gitops_request")', filt)
+        self.assertIn('has("source_reflect_request")', filt)
+        self.assertNotIn(".gitops_request.enabled == false and .source_reflect_request.enabled == false", filt)
+
+        def inactive(document, key):
+            if key not in document:
+                return True
+            effect = document[key]
+            return isinstance(effect, dict) and effect.get("enabled") is False
+
+        def admit(document):
+            bounded = document.get("bounded_host_request") or {}
+            expected = (bounded.get("enabled") is True
+                        and inactive(document, "gitops_request")
+                        and inactive(document, "source_reflect_request")
+                        and (document.get("server_command_id") or "") == ""
+                        and (document.get("run_id") or "") == "")
+            if shutil.which("jq"):
+                completed = subprocess.run(
+                    ["jq", "-e", filt], input=json.dumps(document),
+                    text=True, capture_output=True, check=False)
+                self.assertEqual(completed.returncode == 0, expected)
+            return expected
+
+        independent = {
+            "bounded_host_request": {"enabled": True, "command_id": "host.command"},
+            "chat_decision_checkpoint": {"phase": "START"},
+        }
+        explicit = {**independent, "gitops_request": {"enabled": False},
+                    "source_reflect_request": {"enabled": False},
+                    "server_command_id": "", "run_id": ""}
+        self.assertTrue(admit(independent))
+        self.assertTrue(admit(explicit))
+        self.assertFalse(admit({**independent, "gitops_request": {"enabled": True},
+                                "source_reflect_request": {"enabled": False}}))
+        self.assertFalse(admit({**independent, "gitops_request": {"enabled": False},
+                                "source_reflect_request": {"enabled": True}}))
+        self.assertFalse(admit({**independent, "gitops_request": {}}))
+        self.assertFalse(admit({**explicit, "server_command_id": "service.deploy"}))
+        self.assertFalse(admit({**explicit, "run_id": "1"}))
 
 if __name__ == "__main__":
     unittest.main()
