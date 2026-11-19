@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nprintf 'CREATEVDOBOT_DEPLOY_MAPPING_READONLY\\n'\nprintf 'PROJECT_HEAD='; git rev-parse HEAD\nprintf 'PROJECT_REF='; git symbolic-ref -q --short HEAD || true\nprintf 'PROJECT_STATUS_PATHS\\n'; git status --porcelain=v1 --untracked-files=normal | cut -c4-\nprintf 'PROJECT_DIFF_STAT\\n'; git diff --stat || true\nprintf 'COMMIT_SUMMARY='; git log -1 --format='%s'\nprintf 'RELEVANT_TREE_PATHS\\n'; git ls-tree -r --name-only HEAD | grep -E '(^deploy/|creatorPolling|paidVideoOptimize|docker-compose|compose\\.ya?ml|src/)' | head -55 || true\nprintf 'PARENT_FILES\\n'; find .. -maxdepth 3 -type f \\( -name '*videobot*compose*.yaml' -o -name 'compose.videobot*.yaml' -o -name 'docker-compose*.yml' \\) -print | head -35 || true\nprintf 'CURRENT_POLL_COMPOSE_LABELS\\n'; docker inspect gace-createvdobot-videobot-poll-1 --format 'image={{.Image}} project={{index .Config.Labels \"com.docker.compose.project\"}} config={{index .Config.Labels \"com.docker.compose.project.config_files\"}} workdir={{index .Config.Labels \"com.docker.compose.project.working_dir\"}}'\nprintf 'POLL_ENV_KEY_NAMES\\n'; docker inspect gace-createvdobot-videobot-poll-1 --format '{{range .Config.Env}}{{println .}}{{end}}' | cut -d= -f1 | grep -E 'VIDEOBOT_|CREATEVDOBOT_|NODE_ENV|DATABASE_' | sort\nprintf 'POLL_MOUNT_DESTINATIONS\\n'; docker inspect gace-createvdobot-videobot-poll-1 --format '{{range .Mounts}}{{println .Destination}}{{end}}'\nprintf 'LOCAL_API_CONTAINER_COUNT='; docker ps --format '{{.Names}}' | grep -Ec 'telegram-bot-api|local-bot-api' || true\nprintf 'VIDEO_SOURCE_SHA_AVAILABLE='; if git cat-file -e 081bde33eba03a1409dbd2f4bbf4d08233e8d40d^{commit} 2>/dev/null; then printf yes; else printf no; fi; printf '\\n'\n"
+  }
+}
