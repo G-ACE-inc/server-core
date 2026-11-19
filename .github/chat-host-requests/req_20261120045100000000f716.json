@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\nstage=\"$root/.worktrees/userbot-profile-topics-f711\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = 2a57653896161eed36b0c97d598a3ee9670259a5 || exit 71\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 72\npython3 - \"$root\" \"$stage\" <<'PY'\nfrom pathlib import Path\nimport sys,os,ast,stat\nroot,stage=map(Path,sys.argv[1:])\np=root/\"scripts/userbot_resident_ipc.py\"\noriginal=p.read_text()\nsource=(stage/\"scripts/userbot_resident_ipc.py\").read_text()\nbegin='    if action == \"profile_topics_by_id\":'\nend='    if action == \"profile_topics_readback\":'\nif original.count(begin)!=2 or source.count(begin)!=1 or original.count(end)!=1 or source.count(end)!=1:sys.exit(80)\na_end=original.index(end)\na=original.rfind(begin,0,a_end)\nx_end=source.index(end)\nx=source.rfind(begin,0,x_end)\nif a<0 or x<0 or \"GetForumTopicsByIDRequest\" not in original[a:a_end]:sys.exit(81)\nnewblock=source[x:x_end]\nif \"GetForumTopicsRequest\" not in newblock:sys.exit(82)\nmerged=original[:a]+newblock+original[a_end:]\nif 'PROFILE_TOPIC_SCAN_CURSOR_INVALID' not in merged:\n if merged.count('\"PROFILE_TOPIC_IDS_INVALID\",')!=1:sys.exit(83)\n merged=merged.replace('\"PROFILE_TOPIC_IDS_INVALID\",',\n   '\"PROFILE_TOPIC_IDS_INVALID\", \"PROFILE_TOPIC_SCAN_CURSOR_INVALID\", \"PROFILE_TOPIC_SCAN_LIMIT_REACHED\",',1)\nast.parse(merged)\nbackup=stage/\"live_userbot_resident_ipc_before_f716.py\"\nif backup.exists() or backup.is_symlink():sys.exit(84)\nbackup.write_text(original)\nbackup.chmod(0o600)\ntmp=root/\"scripts/.userbot_resident_ipc.f716.tmp\"\nif tmp.exists() or tmp.is_symlink():sys.exit(85)\nmode=stat.S_IMODE(p.stat().st_mode)\nfd=os.open(tmp,os.O_CREAT|os.O_EXCL|os.O_WRONLY|os.O_NOFOLLOW,0o600)\nwith os.fdopen(fd,\"w\",encoding=\"utf8\") as h:\n h.write(merged);h.flush();os.fsync(h.fileno())\nos.chmod(tmp,mode)\nos.replace(tmp,p)\nprint(\"INSTALLED_TELETHON_TOPIC_LOOKUP_SURGICAL_PATCH_PASS\")\nPY\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 73\necho USERBOT_HANDLER_READY_FOR_CONTROLLED_CODE_ACTIVATION"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
