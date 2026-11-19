@@ -1,0 +1,29 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -eu\nprintf 'GACE_REBOOT_DIAGNOSTIC_READONLY\\n'\nprintf 'UPTIME='; uptime -p || true\nprintf 'BOOT_ID='; cat /proc/sys/kernel/random/boot_id || true\nprintf 'DOCKER='; systemctl is-active docker || true\nprintf 'USERBOT='; systemctl is-active gace-userbot-verify.service || true\nprintf 'SERVICES\\n'; systemctl list-units --type=service --state=running --no-legend --no-pager | grep -Ei 'gace|servercore|cloudflared|docker|userbot' || true\nprintf 'CONTAINERS\\n'; docker ps --format '{{.Names}} {{.Status}}' || true\nprintf 'DISK\\n'; df -h / /mnt/g 2>/dev/null || true\n"
+  }
+}
