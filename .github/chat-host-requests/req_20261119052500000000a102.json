@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\nstage=\"$root/.worktrees/bug-report-dual-delivery-0f3633f\"\ntest -d \"$stage\" || exit 71\npython3 -B - \"$root\" \"$stage\" <<'PY'\nfrom pathlib import Path\nimport subprocess,sys,tempfile\nroot,stage=map(Path,sys.argv[1:])\npaths=[\"scripts/userbot_resident_ipc.py\",\"scripts/userbot_room_smoke.py\",\"scripts/userbot_test_client.py\"]\nwith tempfile.TemporaryDirectory() as tmp:\n  for i,p in enumerate(paths):\n    base=subprocess.run([\"git\",\"-C\",str(root),\"show\",\"HEAD:\"+p],capture_output=True,check=True).stdout\n    local=(root/p).read_bytes()\n    remote=(stage/p).read_bytes()\n    files=[]\n    for j,data in enumerate((local,base,remote)):\n      f=Path(tmp)/f\"{i}-{j}.py\"\n      f.write_bytes(data)\n      files.append(str(f))\n    out=subprocess.run([\"git\",\"merge-file\",\"-p\",*files],capture_output=True)\n    if out.returncode!=0:\n      print(\"MERGE_CONFLICT_INDEX=\"+str(i))\n      sys.exit(80+i)\n    if b\"<<<<<<<\" in out.stdout:\n      sys.exit(83+i)\n    print(\"MERGE_CLEAN_INDEX=\"+str(i)+\",LOCAL_CHANGED=\"+str(local!=base)+\",OUTPUT_BYTES=\"+str(len(out.stdout)))\nprint(\"THREE_WAY_MERGE_PREFLIGHT_PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
