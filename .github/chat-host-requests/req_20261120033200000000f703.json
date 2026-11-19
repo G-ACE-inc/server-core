@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\ngit -C \"$root\" fetch --no-tags origin refs/heads/chat/bug-report-userbot-20261115 || exit 71\ntest \"$(git -C \"$root\" rev-parse FETCH_HEAD)\" = 3764ab0737d82db33f42f9accd8b2b6d1af88698 || exit 72\nstage=\"$root/.worktrees/userbot-profile-topics-f703\"\ntest ! -e \"$stage\" || exit 73\ngit -C \"$root\" worktree add --detach \"$stage\" FETCH_HEAD || exit 74\nPYTHONPATH=\"$stage/scripts\" python3 -B -m unittest discover -s \"$stage/scripts\" -p 'test_userbot_resident_ipc.py' -q || exit 75\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 76\nsystemctl --user is-enabled --quiet gace-userbot-verify.service || exit 77\npython3 - \"$root\" <<'PY'\nfrom pathlib import Path\nimport sys\np=Path(sys.argv[1])/\"scripts/userbot_resident_ipc.py\"\ns=p.read_text()\nanchors=['\"profile_topics_readback\"','if action == \"profile_topics_readback\":','\"REQUEST_SHAPE_INVALID\"','\"PROFILE_READ_MULTIPLE_TOPICS\"']\nfor i,a in enumerate(anchors):\n if s.count(a)<1:sys.exit(81+i)\nif \"profile_topics_by_id\" in s:sys.exit(85)\nPY\necho TOPIC_ID_TESTS_AND_LIVE_PATCH_PREFLIGHT_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
