@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\nstage=\"$root/.worktrees/gaybbs-gate-blacklist-e614\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = 8e0cad32f8a843afee4ce933b2dfb5a4f1903d6f || exit 71\ndocker image inspect gace-tgtumbler-gaybbs:gate-blacklist-e614 >/dev/null || exit 72\nold=\"$(docker ps --filter label=com.docker.compose.service=gaybbs --format '{{.ID}}')\"\ntest \"$(printf '%s\\n' \"$old\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 73\nproject=\"$(docker inspect --format '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$old\")\"\ntest -n \"$project\" && test \"$project\" != \"<no value>\" || exit 74\ncurrent=\"$(docker inspect --format '{{.Image}}' \"$old\")\"\ntest \"$current\" = \"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:reaudit-afb725a)\" || exit 75\ndocker tag \"$current\" gace-tgtumbler-gaybbs:pre-blacklist-20261120 || exit 76\n(cd \"$root/deploy\" && docker compose -p \"$project\" -f gserver-compose.yaml config -q) || exit 77\ndocker tag gace-tgtumbler-gaybbs:gate-blacklist-e614 gace-tgtumbler-gaybbs:local || exit 78\nif ! docker compose -p \"$project\" -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs; then\n docker tag gace-tgtumbler-gaybbs:pre-blacklist-20261120 gace-tgtumbler-gaybbs:local\n docker compose -p \"$project\" -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs || true\n exit 79\nfi\nnow=\"$(docker ps --filter label=com.docker.compose.service=gaybbs --filter label=com.docker.compose.project=\"$project\" --format '{{.ID}}')\"\ntest \"$(printf '%s\\n' \"$now\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 80\ntest \"$(docker inspect --format '{{.Image}}' \"$now\")\" = \"$(docker image inspect --format '{{.Id}}' gace-tgtumbler-gaybbs:gate-blacklist-e614)\" || exit 81\nfor i in $(seq 1 30); do docker logs \"$now\" 2>&1 | grep -q 'GAYBBS_BOT_READY' && break; sleep 1; done\ndocker logs \"$now\" 2>&1 | grep -q 'GAYBBS_BOT_READY' || exit 82\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 83\necho GAYBBS_BLACKLIST_GATE_LIVE_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
