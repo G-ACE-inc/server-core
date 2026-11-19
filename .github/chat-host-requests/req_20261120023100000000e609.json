@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\npython3 - \"$root\" <<'PY'\nimport sys,pathlib\ns=(pathlib.Path(sys.argv[1])/\"scripts/userbot_resident_ipc.py\").read_text()\nold='''        await menu.click(text=\"🐞 不具合を報告\")\n        for _ in range(8):\n            screens = await client.get_messages(bot, ids=menu.id)\n            if screens is not None and \"下の入力欄\" in (screens.raw_text or \"\"):\n                break\n            await asyncio.sleep(1)\n        else:\n            raise RuntimeError(\"USERBOT_BUG_REPORT_SCREEN_NOT_OPENED\")'''\nprint(\"USERBOT_SMOKE_OLD_BLOCK_MATCH=\"+str(s.count(old)))\nprint(\"USERBOT_NEW_BLOCK_EXISTS=\"+str(\"USERBOT_BUG_REPORT_STALE_MENU_REMAINS\" in s))\nif s.count(old)!=1:sys.exit(61)\nif \"USERBOT_BUG_REPORT_STALE_MENU_REMAINS\" in s:sys.exit(62)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
