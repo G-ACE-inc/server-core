@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nsrc=29b243129b44f9b3f922c304479dc114e0830151\nn=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect -f '{{.State.Running}}' \"$n\" 2>/dev/null)\" = true || exit 61\ntest \"$(git remote get-url origin | sed 's#\\.git$##')\" = \"https://github.com/seigo-gace/create-videobot\" || exit 62\ngit fetch --no-tags origin refs/heads/feat/assistant-ai-and-sales-core >/dev/null 2>&1\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$src\" || exit 63\ntarget=\"$HOME/.local/share/gace-create-videobot/sticker-poll-$src\"\nmkdir -p \"$target\"\ngit archive \"$src\" | tar -x -C \"$target\"\ngrep -q '規約・約款に同意済み' \"$target/src/telegram/creatorUi.mjs\" || exit 64\ndocker build --network host --pull=false -f \"$target/deploy/Dockerfile\" -t create-videobot:creator-$src \"$target\" >/dev/null 2>&1 || exit 65\ndocker run --rm --network none --entrypoint sh create-videobot:creator-$src -c 'grep -q \"ved_video_\" /opt/videobot/src/telegram/creatorWizard.mjs || grep -q \"openOwnedVideo\" /opt/videobot/src/telegram/creatorWizard.mjs; command -v ffmpeg >/dev/null' || exit 66\ntoken=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}' \"$n\")\"\npass=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}' \"$n\")\"\npin=\"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/var/lib/videobot/sticker-entry\"}}{{.Source}}{{end}}{{end}}' \"$n\")\"\ntest -f \"$token\" && test -f \"$pass\" && test -d \"$pin\" || exit 67\npg=\"$(docker ps --format '{{.Names}}' | grep -E '(^|[-_])postgres([-_]|$)' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 68\nusr=\"$(docker exec \"$pg\" printenv POSTGRES_USER)\"\nnet=\"$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' \"$pg\" | sed '/^$/d')\"\ntest -n \"$usr\" && test \"$net\" = deploy_default || exit 69\ntest -z \"$(docker ps --format '{{.Names}}' | grep -Ei 'create-videobot|createvdobot|videobot-poll|videobot-telegram' | grep -Fxv \"$n\" || true)\" || exit 70\nshop=\"$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' \"$n\" | sed -n 's/^VIDEOBOT_SHOP_PUBLIC_URL=//p' | head -n 1)\"\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$token\" VIDEOBOT_DB_PASSWORD_SOURCE=\"$pass\" VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$pin\" GSERVER_POSTGRES_USER=\"$usr\" GSERVER_POSTGRES_NETWORK=\"$net\" VIDEOBOT_SHOP_PUBLIC_URL=\"$shop\"\ncompose=\"$target/deploy/compose.videobot.poll.yaml\"\ndocker compose -p gace-createvdobot -f \"$compose\" config --quiet || exit 71\ndocker image tag create-videobot:local-poll create-videobot:creator-rollback\ndocker image tag create-videobot:creator-$src create-videobot:local-poll\nif ! docker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1; then\n docker image tag create-videobot:creator-rollback create-videobot:local-poll\n docker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true\n exit 72\nfi\nsleep 10\nif test \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" != true || ! docker logs --tail 100 \"$n\" 2>&1 | grep -q '^CREATOR_DM_POLL_READY=PASS$'; then\n docker image tag create-videobot:creator-rollback create-videobot:local-poll\n docker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true\n exit 73\nfi\ndocker exec \"$n\" sh -c 'grep -q \"openOwnedVideo\" /opt/videobot/src/telegram/creatorWizard.mjs && grep -q \"規約・約款\" /opt/videobot/src/telegram/creatorUi.mjs' || exit 74\necho VIDEO_CREATOR_UI_LIVE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
