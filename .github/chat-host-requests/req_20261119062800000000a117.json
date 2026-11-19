@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\nc=\"$(docker ps --filter label=com.docker.compose.service=gaybbs --format '{{.ID}}')\"\ntest \"$(printf '%s\\n' \"$c\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 71\ndocker exec \"$c\" node --import /app/preload/telegram-ipv4-preload.mjs --input-type=module -e '\nimport {readFileSync} from \"node:fs\";\nconst token=readFileSync(\"/run/secrets/bot_token\",\"utf8\").trim();\nconst targets=[\n [\"operator\",\"/run/secrets/bug_report_recipient\"],\n [\"userbot\",\"/run/secrets/bug_report_userbot_account\"]\n];\nfor(const [name,path] of targets){\n const id=readFileSync(path,\"utf8\").trim();\n if(!/^[1-9][0-9]{4,18}$/.test(id))process.exit(name===\"operator\"?72:73);\n const result=await fetch(\"https://api.telegram.org/bot\"+token+\"/sendMessage\",{\n  method:\"POST\",headers:{\"Content-Type\":\"application/json\"},\n  body:JSON.stringify({chat_id:id,text:\"🐞 不具合報告通知・本番接続テスト（実際の不具合報告ではありません）\"})\n });\n const data=await result.json();\n if(!result.ok||!data.ok||!Number.isInteger(data.result?.message_id)){\n  console.log(\"REPORT_TEST_\"+name.toUpperCase()+\"=FAILED\");\n  process.exit(name===\"operator\"?74:75);\n }\n console.log(\"REPORT_TEST_\"+name.toUpperCase()+\"=TELEGRAM_ACCEPTED\");\n}\n' || exit 76\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 77\necho DUAL_TARGET_BOT_API_TEST_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
