@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "G-ACE-inc/server-core"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport sys,json,re\nsys.path.insert(0,\"/home/gace/Project/Gserver/repository\")\nfrom scripts.servercore_host_output_export import load_record\nr=load_record(\"req_20261120030000000000e616\",\"/home/gace/.local/state/gserver-terminal/results\")\ns=r.get(\"stdout\",\"\")\nm=re.search(r\"(?m)^USERBOT_PROFILE_TOPICS=(.+)$\",s)\nif not m:sys.exit(90)\ntopics=json.loads(m.group(1))\norder=[\"area_bbs\",\"video_chat\",\"gay_board\"]\nif len(topics)!=3 or [x.get(\"board\") for x in topics]!=order:sys.exit(91)\nmask=sum(1<<i for i,x in enumerate(topics) if not x.get(\"found\") or not isinstance(x.get(\"thread_id\"),int) or x[\"thread_id\"]<=0)\nsys.exit(100+mask)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
