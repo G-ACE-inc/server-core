@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nprintf 'CREATOR_WORKTREE_AND_RUNTIME_MAPPING\\n'\nprintf 'WORKTREES\\n'; git worktree list --porcelain | grep -E '^(worktree |HEAD |branch |detached)' | head -65 || true\nprintf 'MAIN_PROJECT_BRANCHES\\n'; git branch --list --format='%(refname:short)|%(objectname:short)' | head -20 || true\nprintf 'DEPLOY_HOME_CONTENTS\\n'; find \"$HOME/.local/share/gace-create-videobot\" -maxdepth 3 -type f \\( -name 'Dockerfile' -o -name 'compose.videobot.poll.yaml' -o -name '.env.example' \\) -print 2>/dev/null | head -30 || true\nprintf 'DEPLOYED_IMAGE_METADATA\\n'; docker image inspect sha256:79ee66291b1e52ae71460cde30e752b5cd356d97ff2cf2fd307797b99b823cd4 --format 'created={{.Created}} size={{.Size}} tags={{json .RepoTags}}'\nprintf 'POLL_CONTAINER_COMMAND\\n'; docker inspect gace-createvdobot-videobot-poll-1 --format 'image={{.Config.Image}} entrypoint={{json .Config.Entrypoint}} command={{json .Config.Cmd}} restart={{.HostConfig.RestartPolicy.Name}}'\nprintf 'LOCAL_API_IMAGE_PRESENT\\n'; docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -Ei 'telegram-bot-api' || true\nprintf 'FFMPEG_HOST='; command -v ffmpeg || true\nprintf 'SECURE_CREDENTIAL_KEYS_PRESENT_ONLY\\n'; for v in TELEGRAM_API_ID TELEGRAM_API_HASH VIDEOBOT_LOCAL_API_ID VIDEOBOT_LOCAL_API_HASH; do if [ -n \"${!v:-}\" ]; then printf '%s=yes\\n' \"$v\"; else printf '%s=no_env\\n' \"$v\"; fi; done\nprintf 'POLL_ENV_TERMS_PRESENT='; docker inspect gace-createvdobot-videobot-poll-1 --format '{{range .Config.Env}}{{println .}}{{end}}' | cut -d= -f1 | grep -Fx CREATEVDOBOT_TERMS_URL >/dev/null && echo yes || echo no\n"
+  }
+}
