@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\nstage=\"$root/.worktrees/userbot-profile-topics-f703\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = 3764ab0737d82db33f42f9accd8b2b6d1af88698 || exit 71\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 72\nsystemctl --user is-enabled --quiet gace-userbot-verify.service || exit 73\ntest \"$(stat -c %a \"$root/deploy/secrets/userbot_verify.session\")\" = 600 || exit 74\ninode=\"$(stat -c %i \"$root/deploy/secrets/userbot_verify.session\")\"\npython3 \"$root/scripts/userbot_test_client.py\" health || exit 75\nsystemctl --user restart gace-userbot-verify.service || exit 76\nfor i in $(seq 1 20); do\n if systemctl --user is-active --quiet gace-userbot-verify.service &&\n    test -S \"$root/deploy/secrets/userbot_verify.sock\" &&\n    python3 \"$root/scripts/userbot_test_client.py\" health >/dev/null 2>&1; then break; fi\n sleep 2\ndone\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 77\nsystemctl --user is-enabled --quiet gace-userbot-verify.service || exit 78\ntest \"$inode\" = \"$(stat -c %i \"$root/deploy/secrets/userbot_verify.session\")\" || exit 79\ntest \"$(stat -c %a \"$root/deploy/secrets/userbot_verify.session\")\" = 600 || exit 80\ntest \"$(stat -c %a \"$root/deploy/secrets/userbot_verify.sock\")\" = 600 || exit 81\npython3 \"$root/scripts/userbot_test_client.py\" health || exit 82\npython3 - \"$root\" \"$stage\" <<'PY'\nimport subprocess,sys,runpy,re\nfrom pathlib import Path\nroot,stage=map(Path,sys.argv[1:])\ndb=subprocess.check_output([\"docker\",\"ps\",\"--filter\",\"label=com.docker.compose.service=postgres\",\"--format\",\"{{.ID}}\"],text=True).splitlines()\nif len(db)!=1:sys.exit(83)\nsql=\"\"\"SELECT board_key,message_thread_id,title FROM posting_topics\n WHERE purpose='profile' AND enabled IS TRUE\n ORDER BY CASE board_key WHEN 'area_bbs' THEN 1 WHEN 'video_chat' THEN 2 WHEN 'gay_board' THEN 3 ELSE 4 END\"\"\"\nraw=subprocess.check_output([\"docker\",\"exec\",db[0],\"psql\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-tA\",\"-F\",\":\",\"-c\",sql],text=True).splitlines()\nif len(raw)!=3:sys.exit(84)\nids=[]\nfor board,line in zip((\"area_bbs\",\"video_chat\",\"gay_board\"),raw):\n parts=line.split(\":\",2)\n if len(parts)!=3 or parts[0]!=board or \"プロフ\" not in parts[2] or not parts[1].isdecimal():sys.exit(85)\n tid=int(parts[1])\n if not 1<=tid<=2147483647:sys.exit(86)\n ids.append(tid)\nsys.path.insert(0,str(root/\"scripts\"))\nimport userbot_resident_ipc\nsys.modules[\"userbot_resident_ipc\"]=userbot_resident_ipc\nsys.argv=[str(stage/\"scripts/userbot_test_client.py\"),\"profile_topics_by_id\",\"--topic-ids\",\",\".join(map(str,ids))]\nrunpy.run_path(sys.argv[0],run_name=\"__main__\")\nPY\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 87\nsystemctl --user is-enabled --quiet gace-userbot-verify.service || exit 88\npython3 \"$root/scripts/userbot_test_client.py\" health || exit 89\necho GAYBBS_THREE_PROFILE_TOPICS_EXACT_ID_E2E_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
