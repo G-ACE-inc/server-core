@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "G-ACE-inc/server-core"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport sys,re\nsys.path.insert(0,\"/home/gace/Project/Gserver/repository\")\nfrom scripts.servercore_host_output_export import load_record\nrecord=load_record(\"req_20261120020700000000e602\",\"/home/gace/.local/state/gserver-terminal/results\")\nout=record.get(\"stdout\",\"\")\nerr=record.get(\"stderr\",\"\")\nterms=[\n\"USERBOT_BUG_REPORT_MENU_NOT_VISIBLE\",\n\"USERBOT_BUG_REPORT_SCREEN_NOT_OPENED\",\n\"USERBOT_REPORT_E2E_INCOMPLETE\",\n\"RESIDENT_USERBOT_NOT_AUTHORIZED\",\n\"USERBOT_TEST_ERROR=RUNTIMEERROR\",\n\"USERBOT_TEST_ERROR=TIMEOUTERROR\",\n\"USERBOT_TEST_ERROR=ATTRIBUTEERROR\",\n\"USERBOT_TEST_ERROR=VALUEERROR\",\n\"USERBOT_TEST_ERROR=CONTRACT_MISMATCH\",\n\"USERBOT_TEST_RESULT=BLOCKED\",\n\"USERBOT_TEST_RESULT=FAIL\",\n\"USERBOT_TEST_RESULT=PASS\",\n]\nmask=0\nfor i,t in enumerate(terms):\n if t in out or t in err:mask|=1<<i\nprint(\"REPORT_E2E_CLASSIFICATION_MASK=\"+str(mask))\nsys.exit(20 + (terms.index(next((t for t in terms if t in out or t in err),\"USERBOT_TEST_RESULT=PASS\"))))\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
