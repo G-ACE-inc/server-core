@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\nstage=\"$root/.worktrees/bug-report-dual-delivery-0f3633f\"\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 71\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || exit 72\npython3 -B - \"$root\" \"$stage\" <<'PY'\nimport re,sys,os\nfrom pathlib import Path\nroot,stage=map(Path,sys.argv[1:])\nipc=root/\"scripts/userbot_resident_ipc.py\"\nclient=root/\"scripts/userbot_test_client.py\"\na=ipc.read_text();b=client.read_text();incoming=(stage/\"scripts/userbot_resident_ipc.py\").read_text()\nif \"bug_report_delivery_smoke\" in a:sys.exit(73)\npos=incoming.find('    if action == \"bug_report_delivery_smoke\":')\nend=incoming.find('    if action == \"room_private_smoke\":',pos)\nif pos<0 or end<0:sys.exit(74)\nanchor='    if action == \"room_private_smoke\":'\nif a.count(anchor)!=1 or a.count('ACTIONS = frozenset(')!=1:sys.exit(75)\nmatch=re.search(r'^ACTIONS = frozenset\\(\\{.*\\}\\)$',a,re.M)\nif match is None:sys.exit(76)\nnew_a=a[:match.end()-2]+', \"bug_report_delivery_smoke\"'+a[match.end()-2:]\nnew_a=new_a.replace(anchor,incoming[pos:end]+anchor,1)\nold='timeout=90 if request.get(\"action\") == \"room_public_post_smoke\" else 30'\nnew='timeout=95 if request.get(\"action\") in {\"room_public_post_smoke\", \"bug_report_delivery_smoke\"} else 30'\nif new in new_a:pass\nelif old in new_a:new_a=new_a.replace(old,new,1)\nelse:sys.exit(77)\nold2='100 if action == \"room_public_post_smoke\" else 40'\nnew2='110 if action in {\"room_public_post_smoke\", \"bug_report_delivery_smoke\"} else 40'\nif old2 not in b:sys.exit(78)\nnew_b=b.replace(old2,new2,1)\ncompile(new_a,str(ipc),\"exec\");compile(new_b,str(client),\"exec\")\nbackup=root/\"deploy/.userbot-code-backup-20261119\"\nbackup.mkdir(mode=0o700,exist_ok=True)\nfor path,old in ((ipc,a),(client,b)):\n dest=backup/(path.name+\".before_report_smoke\")\n if dest.exists():sys.exit(79)\n dest.write_text(old)\n dest.chmod(0o600)\nfor path,new_text in ((ipc,new_a),(client,new_b)):\n tmp=path.with_name(path.name+\".report-smoke.tmp\")\n if tmp.exists():sys.exit(80)\n tmp.write_text(new_text)\n tmp.chmod(path.stat().st_mode&0o777)\n os.replace(tmp,path)\nprint(\"SMOKE_IPC_LOCAL_PATCH_PASS\")\nPY\nsystemctl --user restart gace-userbot-verify.service || exit 81\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 82\nfor i in $(seq 1 20); do test -S \"$root/deploy/secrets/userbot_verify.sock\" && break; sleep 1; done\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || exit 83\n(cd \"$root/scripts\" && PYTHONDONTWRITEBYTECODE=1 python3 -B userbot_test_client.py health) || exit 84\necho USERBOT_REPORT_E2E_READY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
