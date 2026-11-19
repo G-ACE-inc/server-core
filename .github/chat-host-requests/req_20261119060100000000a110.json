@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\ntest -r \"$root/deploy/secrets/bug_report_userbot_account.txt\" || exit 71\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 72\ndocker image inspect gace-tgtumbler-gaybbs:bugdual-0f3633f >/dev/null || exit 73\ncurrent=\"$(docker ps --filter label=com.docker.compose.service=gaybbs --format '{{.ID}}')\"\ntest \"$(printf '%s\\n' \"$current\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 74\nproj=\"$(docker inspect --format '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$current\")\"\ntest -n \"$proj\" && test \"$proj\" != \"<no value>\" || exit 75\nold=\"$(docker inspect --format '{{.Image}}' \"$current\")\"\ndocker image inspect \"$old\" >/dev/null || exit 76\ndocker tag \"$old\" gace-tgtumbler-gaybbs:pre-dual-20261119 || exit 77\ndocker tag gace-tgtumbler-gaybbs:bugdual-0f3633f gace-tgtumbler-gaybbs:local || exit 78\nif ! docker compose -p \"$proj\" -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs; then\n docker tag gace-tgtumbler-gaybbs:pre-dual-20261119 gace-tgtumbler-gaybbs:local\n docker compose -p \"$proj\" -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs || true\n exit 79\nfi\nnow=\"$(docker ps --filter label=com.docker.compose.service=gaybbs --filter label=com.docker.compose.project=\"$proj\" --format '{{.ID}}')\"\ntest \"$(printf '%s\\n' \"$now\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 80\ndocker exec \"$now\" sh -c 'test -r /run/secrets/bug_report_recipient && test -r /run/secrets/bug_report_userbot_account' || exit 81\nfor n in $(seq 1 25); do\n docker logs \"$now\" 2>&1 | grep -q 'GAYBBS_BOT_READY' && break\n sleep 1\ndone\ndocker logs \"$now\" 2>&1 | grep -q 'GAYBBS_BOT_READY' || exit 82\npg=\"$(docker ps --filter label=com.docker.compose.project=\"$proj\" --filter label=com.docker.compose.service=postgres --format '{{.ID}}')\"\ntest -n \"$pg\" || exit 83\ntest \"$(docker exec \"$pg\" psql -U gace -d gaybbs -tA -c \"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='gaybbs_bug_report_userbot_delivery';\")\" = 1 || exit 84\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 85\necho DUAL_REPORT_BOT_LIVE_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
