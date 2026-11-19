@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\nstage=\"$root/.worktrees/userbot-profile-topics-f703\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = 3764ab0737d82db33f42f9accd8b2b6d1af88698 || exit 71\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 72\nsystemctl --user is-enabled --quiet gace-userbot-verify.service || exit 73\npython3 - \"$root\" \"$stage\" <<'PY'\nfrom pathlib import Path\nimport sys,ast,os,stat\nroot,stage=map(Path,sys.argv[1:])\nlive=root/\"scripts/userbot_resident_ipc.py\"\ns=live.read_text()\nup=(stage/\"scripts/userbot_resident_ipc.py\").read_text()\nneedle='    if action == \"profile_topics_by_id\":'\nlast='    if action == \"profile_topics_readback\":'\nif up.count(needle)!=1 or up.count(last)!=1:sys.exit(80)\nnewblock=up[up.index(needle):up.index(last)]\nif not newblock.strip() or \"GetForumTopicsByIDRequest\" not in newblock:sys.exit(81)\nanchors=['\"profile_topics_readback\",','    if set(request) != expected:',last,'\"PROFILE_READ_MULTIPLE_TOPICS\",']\nfor i,a in enumerate(anchors):\n if s.count(a)!=1:sys.exit(82+i)\nif 'profile_topics_by_id' in s:sys.exit(86)\ns=s.replace('\"profile_topics_readback\",','\"profile_topics_readback\", \"profile_topics_by_id\",',1)\ns=s.replace('    if set(request) != expected:',\n '''    if action == \"profile_topics_by_id\":\n        expected = {\"request_id\", \"action\", \"topic_ids\"}\n    if set(request) != expected:''',1)\ns=s.replace(last,newblock+last,1)\ns=s.replace('\"PROFILE_READ_MULTIPLE_TOPICS\",','\"PROFILE_READ_MULTIPLE_TOPICS\", \"PROFILE_TOPIC_IDS_INVALID\",',1)\nast.parse(s)\nbackup=stage/\"live_userbot_resident_ipc_before_f705.py\"\nif backup.exists() or backup.is_symlink():sys.exit(90)\nbackup.write_bytes(live.read_bytes())\nbackup.chmod(0o600)\ntmp=root/\"scripts/.userbot_resident_ipc.f705.tmp\"\nif tmp.exists() or tmp.is_symlink():sys.exit(91)\nmode=stat.S_IMODE(live.stat().st_mode)\nfd=os.open(tmp,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)\nwith os.fdopen(fd,\"w\",encoding=\"utf8\") as f:\n f.write(s)\n f.flush()\n os.fsync(f.fileno())\nos.chmod(tmp,mode)\nos.replace(tmp,live)\nif \"profile_topics_by_id\" not in live.read_text():sys.exit(92)\nprint(\"USERBOT_SOURCE_SURGICAL_PATCH_STAGE_PASS\")\nPY\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 74\necho USERBOT_CODE_UPDATED_SERVICE_NOT_RESTARTED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
