@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 71\npython3 -B - \"$root\" <<'PY'\nimport re,sys,os\nfrom pathlib import Path\nroot=Path(sys.argv[1])\npath=root/\"scripts/userbot_resident_ipc.py\"\nbefore=path.read_text()\nnames=('bug_report_send_smoke','bug_report_inbox_check')\nif any(n in before for n in names):sys.exit(72)\nm=re.search(r'^ACTIONS = frozenset\\(\\{.*\\}\\)$',before,re.M)\nif m is None:sys.exit(73)\nline=m.group(0)\nnew_line=line[:-2]+', \"bug_report_send_smoke\", \"bug_report_inbox_check\"})'\nanchor='    if action == \"profile_topics_readback\":'\nif before.count(anchor)!=1:sys.exit(74)\nblock='''    if action == \"bug_report_send_smoke\":\n        from datetime import datetime, timezone\n        bot = await client.get_entity(\"GayBBS_bot\")\n        if not bot.bot:\n            raise RuntimeError(\"TARGET_NOT_BOT\")\n        msgs = await client.get_messages(bot, limit=100)\n        menus = [m for m in msgs if not m.out and any(\n            getattr(button, \"text\", \"\") == \"🐞 不具合を報告\"\n            for row in (m.buttons or []) for button in row)]\n        if not menus:\n            raise RuntimeError(\"BUG_REPORT_BUTTON_NOT_VISIBLE\")\n        menu = max(menus, key=lambda x: x.id)\n        await menu.click(text=\"🐞 不具合を報告\")\n        for i in range(8):\n            screen = await client.get_messages(bot, ids=menu.id)\n            if screen and \"不具合を報告\" in (screen.raw_text or \"\"):\n                break\n            await asyncio.sleep(1)\n        marker = \"IPC_BUG_REPORT_E2E_\" + request_id\n        sent = await client.send_message(bot, marker)\n        for i in range(12):\n            msgs = await client.get_messages(bot, limit=100)\n            confirm = any(not m.out and \"不具合報告を受け付けました\" in (m.raw_text or \"\")\n                          and marker in (m.raw_text or \"\") for m in msgs)\n            if confirm:\n                deleted = await client.get_messages(bot, ids=sent.id) is None\n                if not deleted:\n                    raise RuntimeError(\"BUG_REPORT_INPUT_NOT_DELETED\")\n                return {\"request_id\":request_id,\"action\":action,\"status\":\"PASS\",\n                        \"report_confirmed\":True,\"input_deleted\":True}\n            await asyncio.sleep(1)\n        raise RuntimeError(\"BUG_REPORT_CONFIRMATION_MISSING\")\n    if action == \"bug_report_inbox_check\":\n        from datetime import datetime, timezone, timedelta\n        bot = await client.get_entity(\"GayBBS_bot\")\n        msgs = await client.get_messages(bot, limit=150)\n        fresh = datetime.now(timezone.utc) - timedelta(minutes=15)\n        seen = any(not m.out and getattr(m,\"sender_id\",None) == bot.id\n                   and m.date >= fresh and \"報告ID:\" in (m.raw_text or \"\")\n                   and \"IPC_BUG_REPORT_E2E_\" in (m.raw_text or \"\")\n                   for m in msgs)\n        if not seen:\n            raise RuntimeError(\"BUG_REPORT_USERBOT_INBOX_MISSING\")\n        return {\"request_id\":request_id,\"action\":action,\"status\":\"PASS\",\n                \"report_notification_received\":True}\n'''\nafter=before[:m.start()]+new_line+before[m.end():]\nafter=after.replace(anchor,block+anchor,1)\ncompile(after,str(path),\"exec\")\nbackup=root/\"deploy/.userbot-code-backup-20261119\"/\"userbot_resident_ipc.before_report_e2e.py\"\nif backup.exists():sys.exit(75)\nbackup.write_text(before)\nbackup.chmod(0o600)\ntemp=path.with_name(path.name+\".report-e2e.tmp\")\nif temp.exists():sys.exit(76)\ntemp.write_text(after)\ntemp.chmod(path.stat().st_mode&0o777)\nos.replace(temp,path)\nprint(\"REPORT_IPC_SAFE_PATCH_PASS\")\nPY\nsystemctl --user restart gace-userbot-verify.service || exit 77\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 78\nfor i in $(seq 1 20); do test -S \"$root/deploy/secrets/userbot_verify.sock\" && break; sleep 1; done\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || exit 79\n(cd \"$root/scripts\" && PYTHONDONTWRITEBYTECODE=1 python3 -B userbot_test_client.py health) || exit 80\necho REPORT_E2E_USERBOT_READY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
