@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nprintf 'CREATEVDOBOT_TERMS_DEPLOY_PREFLIGHT\\n'\nR=/home/gace/.local/share/gace-create-videobot/sticker-poll-32de51235279b64bfa5abb35efb0ec5d31f1c3bf\nprintf 'DEPLOY_ROOT_PRESENT='; test -d \"$R\" && echo yes || echo no\nprintf 'DEPLOY_COMPOSE_PRESENT='; test -f \"$R/deploy/compose.videobot.poll.yaml\" && echo yes || echo no\nprintf 'DEPLOY_ENV_PRESENT='; test -f \"$R/deploy/.env\" && echo yes || echo no\nprintf 'DEPLOY_OWNER_ADAPTER_PRESENT='; test -f \"$R/owner/gateOwner.mjs\" && echo yes || echo no\nprintf 'DEPLOY_IMAGE_PRESENT='; docker image inspect create-videobot:local-poll --format '{{.Id}}' 2>/dev/null || echo no\nprintf 'BOT_API_EXECUTABLE='; command -v telegram-bot-api || true\nprintf 'LOCAL_API_RUNNING_COUNT='; docker ps --format '{{.Names}}' | grep -Ec 'telegram-bot-api|local-bot-api' || true\nprintf 'TERMS_HTTP='\ncurl -L -sS -o /tmp/cv-terms-check-$$.html -w '%{http_code}' --connect-timeout 8 --max-time 25 https://tgtumbler-docs.pages.dev/createvdobot-terms.html\nprintf '\\n'\nT=/tmp/cv-terms-check-$$.html\nfor x in '投稿者の自己責任' '規約バージョン：1.0' '70％を投稿者' '30％を運営管理費'; do if grep -Fq \"$x\" \"$T\"; then echo 'TERMS_SECTION_PASS'; else echo 'TERMS_SECTION_MISSING'; fi; done\nrm -f \"$T\"\n"
+  }
+}
