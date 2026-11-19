@@ -61,6 +61,7 @@ jobs:
             echo "COMMON_TERMINAL_IDLE=YES"
             exit 0
           fi
+          # Missing gitops/source-reflect objects are inactive. A present object still requires enabled == false.
           jq -e '.bounded_host_request.enabled == true and (if has("gitops_request") then .gitops_request.enabled == false else true end) and (if has("source_reflect_request") then .source_reflect_request.enabled == false else true end) and (.server_command_id // "") == "" and (.run_id // "") == ""' "$target" >/dev/null
           echo "COMMON_TERMINAL_ONLY=PASS"
 
