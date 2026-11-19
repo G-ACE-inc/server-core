@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=\"$(git rev-parse --show-toplevel)\"\ntest \"$(realpath \"$root\")\" = /home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot || exit 70\nstage=\"$root/.worktrees/gaybbs-common-gate-screen-711d7d6\"\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = 711d7d6e3a4c076377a3c18b425177714cae4d8c || exit 71\ndocker image inspect gace-tgtumbler-gaybbs:shared-711d7d6 >/dev/null || exit 72\nold=\"$(docker ps --filter label=com.docker.compose.service=gaybbs --format '{{.ID}}')\"\ntest \"$(printf '%s\\n' \"$old\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 73\nproject=\"$(docker inspect --format '{{index .Config.Labels \"com.docker.compose.project\"}}' \"$old\")\"\ntest -n \"$project\" && test \"$project\" != \"<no value>\" || exit 74\noldImage=\"$(docker inspect --format '{{.Image}}' \"$old\")\"\ndocker tag \"$oldImage\" gace-tgtumbler-gaybbs:pre-gate-screen-20261119 || exit 75\n(cd \"$root/deploy\" && docker compose -p \"$project\" -f gserver-compose.yaml config -q) || exit 76\ndocker tag gace-tgtumbler-gaybbs:shared-711d7d6 gace-tgtumbler-gaybbs:local || exit 77\nif ! docker compose -p \"$project\" -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs; then\n docker tag gace-tgtumbler-gaybbs:pre-gate-screen-20261119 gace-tgtumbler-gaybbs:local\n docker compose -p \"$project\" -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs || true\n exit 78\nfi\nnow=\"$(docker ps --filter label=com.docker.compose.service=gaybbs --filter label=com.docker.compose.project=\"$project\" --format '{{.ID}}')\"\ntest \"$(printf '%s\\n' \"$now\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 79\nfor i in $(seq 1 25); do docker logs \"$now\" 2>&1 | grep -q 'GAYBBS_BOT_READY' && break; sleep 1; done\ndocker logs \"$now\" 2>&1 | grep -q 'GAYBBS_BOT_READY' || exit 80\ndb=\"$(docker ps --filter label=com.docker.compose.project=\"$project\" --filter label=com.docker.compose.service=postgres --format '{{.ID}}')\"\ntest -n \"$db\" || exit 81\ntest \"$(docker exec \"$db\" psql -U gace -d gaybbs -tA -c \"SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='gate_sessions' AND column_name='requested_talk_index';\")\" = 1 || exit 82\nsystemctl --user is-active --quiet gace-userbot-verify.service || exit 83\necho GAYBBS_COMMON_GATE_SCREEN_LIVE_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
