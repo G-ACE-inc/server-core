@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/58"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "G-ACE-inc/server-core"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport sys,re\nsys.path.insert(0,\"/home/gace/Project/Gserver/repository\")\nfrom scripts.servercore_host_output_export import load_record\nr=load_record(\"req_20261120035600000000f706\",\"/home/gace/.local/state/gserver-terminal/results\")\ns=r.get(\"stdout\",\"\")\ne=r.get(\"stderr\",\"\")\nfor line in s.splitlines():\n if line.startswith((\"USERBOT_TEST_RESULT=\",\"USERBOT_TEST_ERROR=\",\"USERBOT_TEST_ACTION=\",\"USERBOT_PROFILE_TOPIC_IDS=\",\"USERBOT_TEST_MENU_ROWS=\")):\n  print(line[:200])\nprint(\"STDERR_VALUE_CLASS=\"+(\"PYTHON_EXCEPTION\" if \"Traceback\" in e else \"NON_TRACEBACK\"))\nif \"ACTION_NOT_ALLOWLISTED\" in s or \"ACTION_NOT_ALLOWLISTED\" in e:sys.exit(41)\nif \"PROFILE_TOPIC_IDS_INVALID\" in s or \"PROFILE_TOPIC_IDS_INVALID\" in e:sys.exit(42)\nif \"PROFILE_READ_GROUP_NOT_IN_EXISTING_DIALOGS\" in s or \"PROFILE_READ_GROUP_NOT_IN_EXISTING_DIALOGS\" in e:sys.exit(43)\nif \"USERBOT_TEST_ERROR=INTERNAL\" in s:sys.exit(44)\nif \"USERBOT_TEST_ERROR=RUNTIMEERROR\" in s:sys.exit(45)\nsys.exit(46)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
