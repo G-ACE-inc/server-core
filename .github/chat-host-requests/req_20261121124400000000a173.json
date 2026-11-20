@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/65"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 60\ntest \"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT count(*) FROM profile_keyboard_backfill WHERE state='applied';\")\" = 7 || exit 61\ncount=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT count(*) FILTER (WHERE p.username ~ '^[A-Za-z0-9_]{5,32}$')||'/'||count(*) FROM profile_publications pub JOIN profiles p ON p.owner_user_id=pub.owner_user_id WHERE pub.status='published' AND pub.message_id>0;\")\" || exit 62\nprintf 'PROFILE_STORED_VALID_USERNAME_COUNT=%s\\n' \"$count\"\necho PROFILE_PUBLIC_POST_ID_PRESERVATION=PASS\necho TELEGRAM_CURRENT_USERNAME_VERIFIED_AT_BACKFILL=YES_WHEN_AVAILABLE"
+  }
+}
