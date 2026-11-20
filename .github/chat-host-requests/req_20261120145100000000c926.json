@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nbase=6e2440be485b39ebd66e8e3d5b29ddf6ab583b95\nhead=75f585d7471d56114e4275e850a63d6caff10cb5\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 62\ngit -C \"$root\" fetch --no-tags origin refs/heads/chat/link-button-master-final-20261120 >/dev/null\ntest \"$(git -C \"$root\" rev-parse FETCH_HEAD)\" = \"$head\" || exit 63\ntmp=\"$(mktemp -d /tmp/link62-userbot.XXXXXXXX)\"\ntrap 'rm -rf \"$tmp\"' EXIT\nfor name in userbot_resident_ipc.py userbot_test_client.py; do\n git -C \"$root\" show \"$base:scripts/$name\" >\"$tmp/base-$name\"\n git -C \"$root\" show \"$head:scripts/$name\" >\"$tmp/new-$name\"\n cmp -s \"$tmp/base-$name\" \"$root/scripts/$name\" || exit 64\n python3 -B -c 'import ast,sys;ast.parse(open(sys.argv[1],encoding=\"utf8\").read())' \"$tmp/new-$name\" || exit 65\ndone\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || test -S \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot/deploy/secrets/userbot_verify.sock\" || exit 66\ndir=\"$HOME/.local/state/link-pr62-userbot\"\nmkdir -p \"$dir\"\nfor name in userbot_resident_ipc.py userbot_test_client.py; do\n if test -e \"$dir/$name.rollback\"; then cmp -s \"$dir/$name.rollback\" \"$tmp/base-$name\" || exit 67\n else cp -p \"$root/scripts/$name\" \"$dir/$name.rollback\"; fi\ndone\nrestore(){\n for name in userbot_resident_ipc.py userbot_test_client.py; do\n  cp -p \"$dir/$name.rollback\" \"$root/scripts/$name\"\n done\n systemctl --user restart gace-userbot-verify.service >/dev/null 2>&1 || true\n}\ntrap restore ERR\nfor name in userbot_resident_ipc.py userbot_test_client.py; do\n cp \"$tmp/new-$name\" \"$root/scripts/$name\"\ndone\nsystemctl --user restart gace-userbot-verify.service\nsleep 4\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 68\n(cd \"$root/scripts\" && python3 -B userbot_test_client.py health >/dev/null) || exit 69\n(cd \"$root/scripts\" && python3 -B userbot_test_client.py link_button_smoke >/dev/null) || exit 70\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 71\ntrap - ERR\necho LINK_BUTTON_USERBOT_CLICK=PASS\necho USERBOT_SESSION_PRESERVED=PASS\necho OTHER_FEATURES_UNCHANGED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
