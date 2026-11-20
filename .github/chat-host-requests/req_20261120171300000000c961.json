@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nsrc=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\ncid=gace-createvdobot-videobot-poll-1\nbase=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nprev=\"$base/.releases/93cf8687677b418e4b2a04820ed3906851f03d1e/unified-stars\"\ntest -d \"$src/.git\" && test -f \"$base/deploy/compose.videobot.poll.yaml\" || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 62\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 63\nfor p in src/telegram/creatorWiring.mjs src/telegram/salesPanel.mjs src/sales/pgUnifiedStarsSales.mjs; do\n test -f \"$prev/$p\" || exit 64\n live=\"$(docker exec \"$cid\" sha256sum \"/opt/videobot/$p\" | cut -d' ' -f1)\" || exit 65\n prior=\"$(sha256sum \"$prev/$p\" | cut -d' ' -f1)\" || exit 66\n test \"$live\" = \"$prior\" || exit 67\ndone\ndocker exec \"$cid\" grep -Fq \"'020_owner_update_jobs.sql'\" /opt/videobot/src/runtime/creatorMigrate.mjs || exit 68\ndocker exec \"$cid\" grep -Fq \"if(schema.migrations!==20)\" /opt/videobot/src/runtime/creatorPollingMain.mjs || exit 69\ndocker exec \"$cid\" grep -Fq \"let recoveryCursor=0,recoveryInFlight=null,workerError=null;\" /opt/videobot/src/runtime/creatorPollingMain.mjs || exit 70\ndocker exec \"$cid\" grep -Fq \"async confirmRefund(telegramTransactionId,maxPages=3)\" /opt/videobot/src/sales/pgStarsLedger.mjs || exit 71\ndocker exec \"$cid\" test ! -e /opt/videobot/src/sales/pgCreatorRefundReconciler.mjs || exit 72\ndocker exec \"$cid\" test ! -e /opt/videobot/sql/021_sticker_refunds.sql || exit 73\necho STARS_REFUND_RUNTIME_BASELINE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
