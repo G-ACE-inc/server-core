@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 61\ncommand -v gh >/dev/null || exit 62\ngh auth status >/dev/null 2>&1 || exit 63\ntmp=\"$(mktemp -d /tmp/gaybbs-link62-compare.XXXXXXXX)\"\ntrap 'rm -rf \"$tmp\"' EXIT\nmkdir -p \"$tmp/base\" \"$tmp/target\"\ngh run download 44583321273 -R seigo-gace/GateApp-Bot -n gaybbs-profile-bundle -D \"$tmp/base\" >/dev/null 2>&1 || exit 64\ngh run download 44753258961 -R seigo-gace/GateApp-Bot -n gaybbs-profile-bundle -D \"$tmp/target\" >/dev/null 2>&1 || exit 65\ndocker cp deploy-gaybbs-1:/app/gaybbs.mjs \"$tmp/live.mjs\"\ntest -s \"$tmp/live.mjs\" && test -s \"$tmp/base/gaybbs.mjs\" && test -s \"$tmp/target/gaybbs.mjs\" || exit 66\ndocker run --rm --network none -v \"$tmp/target:/candidate:ro\" --entrypoint node gace-tgtumbler-gaybbs:local --check /candidate/gaybbs.mjs >/dev/null || exit 67\nif ! cmp -s \"$tmp/base/gaybbs.mjs\" \"$tmp/live.mjs\"; then echo LINK_ONLY_BASELINE_MISMATCH=YES; exit 71; fi\necho LINK_ONLY_BASELINE_MATCH=PASS\necho OFFLINE_ARTIFACT=PASS\necho CURRENT_PRODUCTION_UNCHANGED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
