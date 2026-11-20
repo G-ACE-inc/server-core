@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nsrc=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\ncid=gace-createvdobot-videobot-poll-1\nstage=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nexpected=807cea978e88b04cffbc27eb4497183671ac79cf\ntest -d \"$src/.git\" || exit 61\ntest -f \"$stage/deploy/compose.videobot.poll.yaml\" || exit 62\ntest -s \"$stage/.releases/3437487eee840ff65810f04caf685dba96efc976/video-terms-and-description-image/create-videobot-image.tar.gz\" || exit 63\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 64\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 65\ngit -C \"$src\" config --get remote.origin.url | grep -Eq 'github.com[:/]seigo-gace/create-videobot(\\.git)?$' || exit 66\ngit -C \"$src\" fetch --no-tags origin feat/assistant-ai-and-sales-core >/dev/null 2>&1 || exit 67\ntest \"$(git -C \"$src\" rev-parse FETCH_HEAD)\" = \"$expected\" || exit 68\nfor p in src/telegram/creatorWizard.mjs src/telegram/creatorUi.mjs src/telegram/paidListingPublisher.mjs src/telegram/salesPanel.mjs; do\n  docker exec \"$cid\" test -s \"/opt/videobot/$p\" || exit 69\n  git -C \"$src\" cat-file -e \"$expected:$p\" || exit 70\ndone\ndocker exec \"$cid\" test -f /opt/videobot/src/sales/pgUnifiedStarsSales.mjs || exit 71\ndocker exec \"$cid\" test -f /opt/videobot/src/sales/pgCreatorRefundReconciler.mjs || exit 72\ndocker exec \"$cid\" grep -Fq 'createPostgresUnifiedStarsSales' /opt/videobot/src/telegram/creatorWiring.mjs || exit 73\ndocker exec \"$cid\" grep -Fq 'creatorRefundReconciler' /opt/videobot/src/telegram/creatorWiring.mjs || exit 74\ndocker exec \"$cid\" test -f /opt/videobot/owner/gateOwner.mjs || exit 75\ndocker exec \"$cid\" node --check /opt/videobot/src/telegram/creatorWizard.mjs || exit 76\ndocker exec \"$cid\" node --check /opt/videobot/src/telegram/salesPanel.mjs || exit 77\necho CREATOR_COMMON_LIVE_PREFLIGHT=PASS\necho CREATOR_EXISTING_STARS_UNIFIED=PASS\necho CREATOR_EXISTING_REFUND_ACCOUNTING=PASS\necho CREATOR_SINGLE_POLLER=PASS\necho CREATOR_RELEASE_SOURCE_HEAD=$expected\necho CREATOR_RUNTIME_MUTATION=NO"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
