@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nsha=15e86a1f7777ec537353d9284300cd5de61b6245\nstage=\"$root/.worktrees/link-pr62-15e86a1\"\ntest -d \"$root/.git\" || exit 61\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 62\ngit -C \"$root\" fetch --no-tags origin refs/heads/chat/link-button-master-final-20261120\ntest \"$(git -C \"$root\" rev-parse FETCH_HEAD)\" = \"$sha\" || exit 63\nif test -d \"$stage\"; then\n  test \"$(git -C \"$stage\" rev-parse HEAD)\" = \"$sha\" || exit 64\n  test -z \"$(git -C \"$stage\" status --porcelain)\" || exit 65\nelse\n  mkdir -p \"$root/.worktrees\"\n  git -C \"$root\" worktree add --detach \"$stage\" \"$sha\"\nfi\ntest -f \"$stage/artifacts/bot/deploy/Dockerfile.gaybbs\" || exit 66\ndocker build --pull=false -t gace-tgtumbler-gaybbs:link-pr62-candidate -f \"$stage/artifacts/bot/deploy/Dockerfile.gaybbs\" \"$stage\" >/tmp/gace-link62-build-log 2>&1 || { tail -n 16 /tmp/gace-link62-build-log >&2; exit 67; }\ndocker image inspect gace-tgtumbler-gaybbs:link-pr62-candidate >/dev/null\necho \"PR62_CANDIDATE_IMAGE_BUILT=PASS\"\necho \"PRODUCTION_CONTAINER_UNTOUCHED=PASS\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
