@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nf=\"$root/scripts/userbot_resident_ipc.py\"\nhelper=\"$root/scripts/userbot_link_flow_smoke.py\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest -f \"$f\" && test ! -L \"$f\" && test ! -e \"$helper\" || exit 62\ngrep -Fq 'if action == \"link_button_smoke\":' \"$f\" || exit 63\ngit -C \"$root\" fetch --no-tags origin refs/heads/chat/link-button-master-final-20261120 >/dev/null\ntest \"$(git -C \"$root\" rev-parse FETCH_HEAD)\" = bfe9f019711759cba48749de1125deeb73408b72 || exit 64\ntmp=\"$(mktemp -d /tmp/link62-flow.XXXXXXXX)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ngit -C \"$root\" show FETCH_HEAD:scripts/userbot_link_flow_smoke.py >\"$tmp/helper.py\"\ncp -p \"$f\" \"$tmp/old.py\"\npython3 -B - \"$f\" \"$tmp\" <<'PY'\nimport ast,sys,pathlib\nf,t=map(pathlib.Path,sys.argv[1:])\ns=f.read_text(encoding=\"utf8\")\na='\"link_button_smoke\",'\nb='    if action == \"room_private_smoke\":'\nif s.count(a)!=1 or s.count(b)!=1:raise SystemExit(65)\ns=s.replace(a,a+' \"link_registration_smoke\",',1)\ns=s.replace(b,'''    if action == \"link_registration_smoke\":\n        from userbot_link_flow_smoke import run\n        result=await run(client)\n        if not all(result.get(k) is True for k in (\n                \"link_editor_opened\", \"two_line_button_accepted\",\n                \"blue_selected\", \"preview_present\", \"registration_receipt\")):\n            raise RuntimeError(\"LINK_REGISTRATION_SMOKE_INCOMPLETE\")\n        return {\"request_id\": request_id, **result}\n'''+b,1)\nast.parse(s)\nast.parse((t/\"helper.py\").read_text(encoding=\"utf8\"))\n(t/\"new.py\").write_text(s,encoding=\"utf8\")\nPY\nrestore(){\n cp -p \"$tmp/old.py\" \"$f\"\n rm -f \"$helper\"\n systemctl --user restart gace-userbot-verify.service >/dev/null 2>&1 || true\n}\ntrap restore ERR\ncp \"$tmp/new.py\" \"$f\"\ncp \"$tmp/helper.py\" \"$helper\"\nsystemctl --user restart gace-userbot-verify.service\nsleep 4\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 66\n(cd \"$root/scripts\" && python3 -B userbot_test_client.py health >/dev/null) || exit 67\n(cd \"$root/scripts\" && python3 -B userbot_test_client.py link_registration_smoke >/dev/null) || exit 68\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 69\ntrap - ERR\necho LINK_CREATION_REGISTRATION_USERBOT=PASS\necho USERBOT_SERVICE_RETAINS_SESSION=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
