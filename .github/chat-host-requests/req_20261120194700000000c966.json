@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nipc=\"$root/scripts/userbot_resident_ipc.py\"\nhelper=\"$root/scripts/userbot_link_photo_caption_smoke.py\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 62\ntest -f \"$ipc\" && test ! -L \"$ipc\" && test ! -e \"$helper\" || exit 63\nowner=\"$(cat \"$root/deploy/secrets/bug_report_userbot_account.txt\")\"\n[[ \"$owner\" =~ ^[1-9][0-9]{3,18}$ ]] || exit 64\nsafe=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT CASE WHEN step='preview' AND data->>'text' IN ('Rich編集の安全テスト','個別編集済みの安全テスト') AND NOT data ? 'shareCode' THEN 'TEST_ONLY' ELSE 'OTHER' END FROM public_post_drafts WHERE owner_user_id=$owner AND module='link';\" 2>/dev/null)\" || exit 65\ntest \"$safe\" = TEST_ONLY || exit 66\ngit -C \"$root\" fetch --no-tags origin refs/heads/chat/link-button-master-final-20261120 >/dev/null\ntest \"$(git -C \"$root\" rev-parse FETCH_HEAD)\" = 01bd0bc0c2d192e88dc8b965ad31586eff1a3868 || exit 67\ntemp=\"$(mktemp -d /tmp/link-photo-caption.XXXXXXXX)\"\ntrap 'rm -rf \"$temp\"' EXIT\ngit -C \"$root\" show FETCH_HEAD:scripts/userbot_link_photo_caption_smoke.py >\"$temp/helper.py\"\ncp -p \"$ipc\" \"$temp/original.py\"\npython3 -B - \"$ipc\" \"$temp\" <<'PY'\nimport ast,sys\nfrom pathlib import Path\nf,t=map(Path,sys.argv[1:]);s=f.read_text(encoding=\"utf8\")\ndef once(a,b):\n global s\n if s.count(a)!=1:raise SystemExit(68)\n s=s.replace(a,b,1)\nonce('\"link_send_saved_smoke\",','\"link_send_saved_smoke\", \"link_photo_caption_smoke\",')\nonce('    if action == \"link_send_saved_smoke\":',\n'''    if action == \"link_photo_caption_smoke\":\n        from userbot_link_photo_caption_smoke import run\n        return {\"request_id\":request_id,**await run(client)}\n    if action == \"link_send_saved_smoke\":''')\nonce('                response = await asyncio.wait_for(',\n'''                if request.get(\"action\") == \"link_photo_caption_smoke\":\n                    response = await asyncio.wait_for(process_request(client, request),timeout=95)\n                else:\n                    response = await asyncio.wait_for(''')\nast.parse(s);ast.parse((t/\"helper.py\").read_text(encoding=\"utf8\"))\n(t/\"updated.py\").write_text(s,encoding=\"utf8\")\nPY\nrestore(){\n cp -p \"$temp/original.py\" \"$ipc\"\n rm -f \"$helper\"\n systemctl --user restart gace-userbot-verify.service >/dev/null 2>&1 || true\n}\ntrap restore ERR\ncp \"$temp/updated.py\" \"$ipc\"\ncp \"$temp/helper.py\" \"$helper\"\nsystemctl --user restart gace-userbot-verify.service\nsleep 4\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 69\npython3 -B - \"$root\" <<'PY'\nimport asyncio,json,os,stat,sys,uuid\nfrom pathlib import Path\nroot=Path(sys.argv[1]);sys.path.insert(0,str(root/\"scripts\"))\nfrom userbot_resident_ipc import SOCKET_PATH\nif not SOCKET_PATH.is_socket() or SOCKET_PATH.is_symlink():sys.exit(70)\nst=SOCKET_PATH.stat()\nif st.st_uid!=os.getuid() or stat.S_IMODE(st.st_mode)!=0o600:sys.exit(71)\nasync def invoke(action):\n reader,writer=await asyncio.wait_for(asyncio.open_unix_connection(str(SOCKET_PATH)),5)\n try:\n  rid=uuid.uuid4().hex\n  writer.write((json.dumps({\"request_id\":rid,\"action\":action})+\"\\n\").encode());await writer.drain()\n  line=await asyncio.wait_for(reader.readline(),115)\n  if not line:sys.exit(72)\n  result=json.loads(line)\n  if result.get(\"request_id\") not in (rid,None):sys.exit(73)\n  if result.get(\"status\")!=\"PASS\":sys.exit(74)\n  if action==\"link_photo_caption_smoke\":\n   wanted=(\"photo_received\",\"caption_input_sent\",\"preview_ready\",\"photo_registration_receipt\")\n   if not all(result.get(k) is True for k in wanted):sys.exit(75)\n finally:\n  writer.close();await writer.wait_closed()\nasync def run():\n await invoke(\"health\")\n await invoke(\"link_photo_caption_smoke\")\n await invoke(\"health\")\nasyncio.run(run())\nPY\nafter=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT CASE WHEN media_kind='photo' AND media_caption='画像の補足' AND content='' AND share_code IS NOT NULL THEN 'PHOTO_CAPTION_PERSISTED' ELSE 'BAD' END FROM link_button_posts WHERE owner_user_id=$owner AND status='draft' ORDER BY created_at DESC LIMIT 1;\" 2>/dev/null)\" || exit 76\ntest \"$after\" = PHOTO_CAPTION_PERSISTED || exit 77\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 78\ntrap - ERR\necho LINK_PHOTO_UPLOAD_CAPTION_REGISTER=PASS\necho LINK_DB_PHOTO_CAPTION_READBACK=PASS\necho USERBOT_SESSION_PRESERVED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
