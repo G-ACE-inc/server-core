@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nbase_run=44583321273\nlink_run=44753258961\noriginal=gace-tgtumbler-gaybbs:local\ncandidate=gace-tgtumbler-gaybbs:link-pr62-4a1c5be3\nrollback=gace-tgtumbler-gaybbs:rollback-pr62-20261120\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 62\nold_id=\"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\"\ntest \"$(docker image inspect -f '{{.Id}}' \"$original\")\" = \"$old_id\" || exit 63\ntmp=\"$(mktemp -d /tmp/link62-release.XXXXXXXX)\"\ntrap 'rm -rf \"$tmp\"' EXIT\nmkdir -p \"$tmp/base\" \"$tmp/link\" \"$tmp/overlay\"\ngh run download \"$base_run\" -R seigo-gace/GateApp-Bot -n gaybbs-profile-bundle -D \"$tmp/base\" >/dev/null 2>&1 || exit 64\ngh run download \"$link_run\" -R seigo-gace/GateApp-Bot -n gaybbs-profile-bundle -D \"$tmp/link\" >/dev/null 2>&1 || exit 65\ndocker cp deploy-gaybbs-1:/app/gaybbs.mjs \"$tmp/live.mjs\"\ncmp -s \"$tmp/base/gaybbs.mjs\" \"$tmp/live.mjs\" || exit 66\ndocker run --rm --network none -v \"$tmp/link:/source:ro\" --entrypoint node \"$original\" --check /source/gaybbs.mjs >/dev/null || exit 67\ncp \"$tmp/link/gaybbs.mjs\" \"$tmp/overlay/gaybbs.mjs\"\ncat >\"$tmp/overlay/Dockerfile\" <<'EOF'\nFROM gace-tgtumbler-gaybbs:local\nCOPY --chown=1000:1000 gaybbs.mjs /app/gaybbs.mjs\nEOF\ndocker build --pull=false --network none -t \"$candidate\" -f \"$tmp/overlay/Dockerfile\" \"$tmp/overlay\" >/dev/null 2>&1 || exit 68\nnew_id=\"$(docker image inspect -f '{{.Id}}' \"$candidate\")\"\ntest \"$old_id\" != \"$new_id\" || exit 69\nif docker image inspect \"$rollback\" >/dev/null 2>&1; then\n  test \"$(docker image inspect -f '{{.Id}}' \"$rollback\")\" = \"$old_id\" || exit 70\nelse docker tag \"$old_id\" \"$rollback\"; fi\nrestore(){\n  docker tag \"$rollback\" \"$original\"\n  docker compose -p deploy -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || true\n}\ntrap restore ERR\ndocker tag \"$candidate\" \"$original\"\ndocker compose -p deploy -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null\nsleep 7\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$new_id\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ndocker exec deploy-gaybbs-1 node --input-type=module -e '\nimport fs from \"node:fs\";\nconst p=process.env.BOT_TOKEN_FILE;\nconst token=p?fs.readFileSync(p,\"utf8\").trim():process.env.BOT_TOKEN;\nif(!token)process.exit(51);\ntry{const response=await fetch(\"https://api.telegram.org/bot\"+token+\"/getMe\",{signal:AbortSignal.timeout(10000)});const json=await response.json();if(!json.ok||json.result.username!==\"GayBBS_bot\")process.exit(52);}catch{process.exit(53)}\n'\ntrap - ERR\necho LINK_PR62_RUNTIME_IMAGE=PASS\necho LINK_PR62_BOT_AUTH=PASS\necho LINK_PR62_ROLLBACK_PRESERVED=PASS\necho OTHER_COMPOSE_SERVICES_NOT_RECREATED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
