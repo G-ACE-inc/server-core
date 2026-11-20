@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nrelease=\"$root/.releases/37d1ce2cd32ebf4c1fd7ca32a95add62443d191b/preview-instructions-no-fee\"\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 61\ntest -s \"$release/src/telegram/creatorUi.mjs\" && test -s \"$release/candidate-tests.log\" && test -s \"$release/baseline-tests.log\" || exit 62\nlive=\"$(docker inspect \"$cid\" --format '{{.Image}}')\"\ntagged=\"$(docker image inspect create-videobot:local-poll --format '{{.Id}}' 2>/dev/null || echo missing)\"\nold=\"$(docker image inspect create-videobot:before-preview-instructions-37d1ce2c --format '{{.Id}}' 2>/dev/null || echo missing)\"\nnext=\"$(docker image inspect create-videobot:preview-instructions-37d1ce2c-verified --format '{{.Id}}' 2>/dev/null || echo missing)\"\necho VIDEO_PREVIEW_STAGE_TESTS_EXIST=YES\nif test \"$live\" = \"$tagged\";then echo VIDEO_LIVE_MATCHES_DEPLOY_TAG=YES;else echo VIDEO_LIVE_MATCHES_DEPLOY_TAG=NO;fi\nif test \"$live\" = \"$old\";then echo VIDEO_LIVE_MATCHES_BEFORE_IMAGE=YES;else echo VIDEO_LIVE_MATCHES_BEFORE_IMAGE=NO;fi\nif test \"$live\" = \"$next\";then echo VIDEO_LIVE_MATCHES_NEW_IMAGE=YES;else echo VIDEO_LIVE_MATCHES_NEW_IMAGE=NO;fi\nif test \"$next\" = missing;then echo VIDEO_PREVIEW_CANDIDATE_IMAGE=ABSENT;exit 63;fi\nif test \"$(docker exec \"$cid\" sha256sum /opt/videobot/src/telegram/creatorUi.mjs | awk '{print $1}')\" = \"$(sha256sum \"$release/src/telegram/creatorUi.mjs\" | awk '{print $1}')\";then echo VIDEO_LIVE_PREVIEW_TARGET=NEW;else echo VIDEO_LIVE_PREVIEW_TARGET=OLDER_OR_OTHER;fi\necho VIDEO_READ_ONLY_STATUS=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
