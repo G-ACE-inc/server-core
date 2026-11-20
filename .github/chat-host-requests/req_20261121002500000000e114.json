@@ -1,0 +1,41 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nfrom pathlib import Path\nimport re,sys\np=Path('/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/.releases/807cea978e88b04cffbc27eb4497183671ac79cf/video-production-compat/test-results.log')\nif p.is_symlink() or not p.is_file():sys.exit(61)\ns=p.read_text(errors='replace')\nheaders=list(re.finditer(r'(?m)^not ok \\d+ - (.+)$',s))\nif not headers:sys.exit(62)\nnames=['creatorWizard.test.mjs','creatorUi.test.mjs','creatorBot.test.mjs','creatorSourceIntegration.test.mjs','paidListingPublisher.test.mjs','salesPanel.test.mjs','pgUnifiedStarsSales.test.mjs']\nmask=0\nfor i,h in enumerate(headers):\n tail=s[h.start():(headers[i+1].start() if i+1<len(headers) else len(s))]\n location=re.search(r'location:\\s+.*?/test/([A-Za-z0-9_.-]+)',tail)\n if not location:sys.exit(63)\n try:ind=names.index(location.group(1))\n except ValueError:sys.exit(64)\n mask|=1<<ind\nif mask<=0 or mask>127:sys.exit(65)\nprint('VIDEO_REGRESSION_FAILURE_SET_CLASSIFIED=YES')\nsys.exit(100+mask)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
