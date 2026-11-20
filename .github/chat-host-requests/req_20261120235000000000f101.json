@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\ndocker exec -i \"$cid\" node --input-type=module <<'NODE'\nimport {openCreatorEditor,editCreatorDraft,creatorEditorPanel} from '/opt/videobot/src/telegram/creatorUi.mjs';\nlet d=openCreatorEditor({sellerId:'55566'});\nd=editCreatorDraft(d,{type:'captionTitle',text:'test'});\nd=editCreatorDraft(d,{type:'paidVideo',media:{fileId:'video_abc123'}});\nd=editCreatorDraft(d,{type:'thumbnail',media:{fileId:'photo_abc123'}});\nd=editCreatorDraft(d,{type:'sample',media:{fileId:'sample_abc123',durationSeconds:22.5}});\nd=editCreatorDraft(d,{type:'preset',stars:50});\nconst e=openCreatorEditor({sellerId:'55566',existing:{id:'item_abc',sellerId:'55566',revision:2,title:'test',paidVideo:{fileId:'video_abc123'},thumbnail:{fileId:'photo_abc123'},sample:{fileId:'sample_abc123',durationSeconds:22.5},priceStars:50}});\nfor(const [tag,draft] of [['CREATE',d],['EDIT',e]]) {\n const p=creatorEditorPanel(draft,3);\n const text=p.text;\n console.log(tag+'_FEE_OR_PAYOUT_IN_PREVIEW='+/販売手数料|運営管理費|管理費\\d|取り分|30%|70%|実払出|引き出し可能/.test(text));\n console.log(tag+'_REGISTRATION_GUIDE='+(/登録方法|登録手続き/.test(text)));\n console.log(tag+'_EDIT_GUIDE='+(/編集方法|変更したい項目/.test(text)));\n console.log(tag+'_GUIDE_AFTER_FIELDS='+(text.indexOf('有料本編：')>=0&&(/登録方法|編集方法/.test(text.slice(text.indexOf('有料本編：')+1)))));\n console.log(tag+'_BUTTONS='+p.reply_markup.inline_keyboard[0].map(b=>b.text).join('|'));\n console.log(tag+'_ENTITY_VALID='+p.entities.every(e=>['［編集］','［未登録］'].includes(text.slice(e.offset,e.offset+e.length))));\n}\nNODE\necho CREATOR_PREVIEW_DIAGNOSTIC_READONLY=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
