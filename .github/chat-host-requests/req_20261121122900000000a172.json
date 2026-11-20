@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/65"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 61\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 62\ntest \"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT count(*) FROM profile_keyboard_backfill WHERE state='applied';\")\" = 7 || exit 63\ntest -f \"$root/scripts/userbot_test_client.py\" && test -f \"$root/scripts/userbot_resident_ipc.py\" || exit 64\nrecords=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -At -F '|' -c \"SELECT chat_id,message_id FROM profile_publications WHERE status='published' AND message_id>0 ORDER BY chat_id,thread_id,message_id;\")\" || exit 65\nchecked=0\nwhile IFS='|' read -r chat message;do\n test -n \"$chat\" && test -n \"$message\" || exit 66\n if PYTHONPATH=\"$root/scripts\" python3 -B \"$root/scripts/userbot_test_client.py\" room_public_readback --chat-id \"$chat\" --message-id \"$message\" >/dev/null;then\n  checked=$((checked+1))\n else\n  echo PROFILE_USERBOT_EXISTING_MESSAGE_VISIBILITY=BLOCKED\n  exit 67\n fi\ndone <<< \"$records\"\ntest \"$checked\" = 7 || exit 68\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 69\necho PROFILE_EXISTING_MESSAGES_VISIBLE_BY_RESIDENT_USERBOT=7_OF_7\necho PROFILE_EXISTING_MESSAGE_IDS=UNCHANGED\necho RESIDENT_USERBOT_SESSION=UNCHANGED\necho PROFILE_READ_ONLY_TELEGRAM_INSPECTION=PASS"
+  }
+}
