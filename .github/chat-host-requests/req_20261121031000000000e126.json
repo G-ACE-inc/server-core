@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport sys\nfrom pathlib import Path\nroots=[Path('/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot'),\n       Path('/home/gace/Project/Gserver/projects/TGtumbler'),\n       Path('/home/gace/Project/Gserver')]\nseen={}\nfor root in roots:\n if not root.is_dir():continue\n for f in root.rglob('*userbot*.py'):\n  if f.is_file() and len(f.relative_to(root).parts)<=8 and '.venv' not in f.parts and 'node_modules' not in f.parts:\n   seen[f.as_posix()]=f\n if seen:break\nif not seen:sys.exit(61)\nscripts=[f for f in seen.values() if f.name=='userbot_keepalive.py']\nif len(scripts)!=1:sys.exit(62)\nsource=scripts[0].read_text(encoding='utf8')\nif 'log_out(' in source or 'sign_in(' in source:\n # Existing service may support maintenance, but not safe to assume\n pass\nipc_listener=('start_unix_server' in source or\n              ('AF_UNIX' in source and '.bind(' in source))\nclients=[p for p in seen.values() if p!=scripts[0] and ('client' in p.name or 'ipc' in p.name)]\nresident_owner=source.count('TelegramClient(')==1\nverified_actions=('ALLOWED_ACTIONS' in source or 'ALLOWED_TEST_ACTIONS' in source or 'allowlisted' in source.lower())\nif not ipc_listener:sys.exit(70)\nif not clients:sys.exit(71)\nif not resident_owner:sys.exit(72)\nif not verified_actions:sys.exit(73)\nprint('USERBOT_RESIDENT_IPC_CLIENT_PRESENT=PASS')\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
