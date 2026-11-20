@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport json,hashlib,re,sys\nfrom pathlib import Path\nrid='req_20261120242000000000f107'\np=Path.home()/'.local/state/gserver-terminal/results'/(rid+'.json')\nif p.is_symlink() or not p.is_file():sys.exit(61)\no=json.loads(p.read_text());r=o.get('result',o);e=r.get('stderr','')\nif r.get('request_id')!=rid or hashlib.sha256(e.encode()).hexdigest()!='689060b9a41d45097357760f01e7e922396328e4ce9059ddb30f640a67b927e2':sys.exit(62)\nroot=Path('/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/.releases/37d1ce2cd32ebf4c1fd7ca32a95add62443d191b/preview-instructions-no-fee-v3')\nsource=(root/'src/telegram/creatorUi.mjs').read_text()\nif source.count('export function creatorEditorPanel(')!=1:sys.exit(80)\nif source.count('function creatorEditorPanelBase(')!=1:sys.exit(81)\nm=re.search(r\"does not provide an export named ['\\\"]([^'\\\"]+)['\\\"]\",e)\nif m:\n names=['creatorEditorPanel','creatorDescriptionPanel','openCreatorEditor','editCreatorDraft','creatorReviewPanel','creatorFieldPanel','CREATOR_TERMS_VERSION','managementFeeDisclosure','videoInfoPanel']\n if m.group(1) not in names:sys.exit(109)\n sys.exit(110+names.index(m.group(1)))\nif 'PREVIEW_CONTAINS_FINANCIAL_DISCLOSURE' in e:sys.exit(120)\nif 'PREVIEW_EDIT_LINK_OFFSETS_INVALID' in e:sys.exit(121)\nif 'AssertionError' in e or 'ERR_ASSERTION' in e:sys.exit(122)\nif 'ERR_MODULE_NOT_FOUND' in e:sys.exit(123)\nsys.exit(125)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
