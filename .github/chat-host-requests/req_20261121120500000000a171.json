@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/65"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nsource=641e5b8b599a6457dddfccf256c9316d9c361d0a\nci_package=44838974338\nci_profile=44838974493\ntest \"$(gh run view \"$ci_package\" -R seigo-gace/GateApp-Bot --json headSha,conclusion --jq '.headSha+\" \"+.conclusion')\" = \"$source success\" || exit 60\ntest \"$(gh run view \"$ci_profile\" -R seigo-gace/GateApp-Bot --json headSha,conclusion --jq '.headSha+\" \"+.conclusion')\" = \"$source success\" || exit 61\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 62\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:profile-five-5598)\" || exit 63\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 64\nbefore=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT chat_id||':'||thread_id||':'||message_id||':'||owner_user_id||':'||synced_revision FROM profile_publications WHERE status='published' AND message_id>0 ORDER BY chat_id,thread_id,message_id;\")\" || exit 65\ntest \"$(printf '%s\\n' \"$before\" | wc -l)\" -eq 7 || exit 66\ntest \"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT count(*) FROM profile_keyboard_backfill;\")\" = 0 || exit 67\ntmp=\"$(mktemp -d /tmp/gace-profile-seven-edit.XXXXXXXX)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ngh run download \"$ci_package\" -R seigo-gace/GateApp-Bot -n gaybbs-profile-bundle -D \"$tmp\" >/dev/null 2>&1 || exit 68\ntest -s \"$tmp/backfillExistingProfileKeyboards.mjs\" || exit 69\ndocker run --rm --network none -v \"$tmp:/bundle:ro\" --entrypoint node gace-tgtumbler-gaybbs:profile-five-5598 --check /bundle/backfillExistingProfileKeyboards.mjs >/dev/null || exit 70\ndry=\"$(docker exec -i deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs --input-type=module - --dry-run < \"$tmp/backfillExistingProfileKeyboards.mjs\")\" || exit 71\nprintf '%s\\n' \"$dry\" | grep -Fq '\"existing_posts\":7' || exit 72\nprintf '%s\\n' \"$dry\" | grep -Fq '\"applied\":0' || exit 73\nprintf '%s\\n' \"$dry\" | grep -Fq '\"uncertain\":0' || exit 74\necho EXISTING_SEVEN_PRECHECK=PASS\nif applied=\"$(docker exec -i deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs --input-type=module - --apply < \"$tmp/backfillExistingProfileKeyboards.mjs\")\";then\n printf '%s\\n' \"$applied\"\nelse\n echo PROFILE_SEVEN_UPDATE_NEEDS_RECONCILE\n exit 75\nfi\nprintf '%s\\n' \"$applied\" | grep -Fq '\"existing_posts\":7' || exit 76\nprintf '%s\\n' \"$applied\" | grep -Fq '\"applied\":7' || exit 77\nprintf '%s\\n' \"$applied\" | grep -Fq '\"uncertain\":0' || exit 78\nafter=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT chat_id||':'||thread_id||':'||message_id||':'||owner_user_id||':'||synced_revision FROM profile_publications WHERE status='published' AND message_id>0 ORDER BY chat_id,thread_id,message_id;\")\" || exit 79\ntest \"$before\" = \"$after\" || exit 80\nstates=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT state||'='||count(*) FROM profile_keyboard_backfill GROUP BY state ORDER BY state;\")\" || exit 81\nprintf '%s\\n' \"$states\"\ntest \"$states\" = 'applied=7' || exit 82\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 83\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 84\necho EXISTING_PROFILE_MARKUP_UPDATED=SEVEN_OF_SEVEN\necho ORIGINAL_PUBLICATION_IDENTITIES=UNCHANGED\necho EXISTING_PUBLICATION_DELETE_OR_REPOST=NONE\necho BOT_RUNTIME=RUNNING\necho USERBOT_SESSION=ACTIVE"
+  }
+}
