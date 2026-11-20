@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || exit 62\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT 1 FROM link_button_posts LIMIT 0;\" >/dev/null 2>&1 || exit 63\ncount=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT COUNT(*) FROM link_button_posts WHERE content='リンク機能テスト用の本文' AND status='draft' AND share_code IS NOT NULL;\" 2>/dev/null)\" || exit 64\ntest \"$count\" -ge 1 || exit 65\npython3 -B - \"$root\" <<'PY'\nfrom pathlib import Path\nimport sys\nroot=Path(sys.argv[1])\nsys.path.insert(0,str(root/\"scripts\"))\ntry:\n from userbot_resident_ipc import SOCKET_PATH\nexcept Exception:sys.exit(66)\nif not SOCKET_PATH.is_socket():sys.exit(67)\nif SOCKET_PATH!=root/\"deploy/secrets/userbot_verify.sock\":sys.exit(68)\nPY\necho LINK_INLINE_READ_ONLY_PREREQS=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
