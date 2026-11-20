@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/65"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nprintf 'PROFILE_PREDEPLOY_AUDIT\\n'\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 60\ndocker inspect deploy-gaybbs-1 --format 'IMAGE={{.Image}}'\ndocker image inspect gace-tgtumbler-gaybbs:link-mp4-document-4d24 --format 'EXPECTED_IMAGE={{.Id}}'\ndocker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d ' ' -f1 | sed 's/^/BUNDLE_SHA256=/'\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT 'PROFILE_PUBLISHED='||count(*) FROM profile_publications WHERE status='published' AND message_id>0;\"\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT 'PROFILE_ELIGIBLE='||count(*) FROM profile_publications pub JOIN profiles p ON p.owner_user_id=pub.owner_user_id AND p.status='published' JOIN posting_topics t ON t.chat_id=pub.chat_id AND t.message_thread_id=pub.thread_id AND t.purpose='profile' AND t.enabled=TRUE AND t.verified_by IS NOT NULL AND t.verified_at IS NOT NULL WHERE pub.status='published' AND pub.synced_revision>0 AND pub.message_id>0 AND pub.public_snapshot IS NOT NULL;\"\nprintf 'POSTS_UNMODIFIED=YES\\n'"
+  }
+}
