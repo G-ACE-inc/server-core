@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport re,sys\nfrom pathlib import Path\nr=Path('/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/.releases/807cea978e88b04cffbc27eb4497183671ac79cf/video-production-compat')\nlog=r/'test-results.log'\nif not log.is_file():sys.exit(61)\nfailed=re.search(r'(?m)^not ok \\d+ - ([^\\n]+)',log.read_text(errors='replace'))\nif not failed:sys.exit(62)\nfiles=['creatorWizard.test.mjs','creatorUi.test.mjs','creatorSourceIntegration.test.mjs','paidListingPublisher.test.mjs']\nnames=[]\nfor f in files:\n t=(r/'test'/f).read_text()\n names.extend([a or b for a,b in re.findall(r'(?m)^test\\((?:\\x27([^\\x27]+)\\x27|\"([^\"]+)\")',t)])\nif len(names)!=55:sys.exit(63)\nname=failed.group(1).strip()\nif name not in names:sys.exit(64)\nsys.exit(100+names.index(name))\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
