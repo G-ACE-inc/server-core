@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nr=\"$root/.releases/807cea978e88b04cffbc27eb4497183671ac79cf/video-production-compat\"\ntest -d \"$r\" || exit 61\nexport VIDEO_RELEASE_DIAG=\"$r\"\npython3 -B - <<'PY'\nimport os,sys\nfrom pathlib import Path\nr=Path(os.environ[\"VIDEO_RELEASE_DIAG\"])\nui=(r/'src/telegram/creatorUi.mjs').read_text()\nwiz=(r/'src/telegram/creatorWizard.mjs').read_text()\npub=(r/'src/telegram/paidListingPublisher.mjs').read_text()\nsal=(r/'src/telegram/salesPanel.mjs').read_text()\nchecks=[\n('ui-title',ui,'export function creatorEditorPanel('),\n('ui-terms-old-new',ui,'・返品・返金は法令とTelegram','購入者都合の通常返金はありません'),\n('wiz-import-old-new',wiz,'creatorEditorPanel, creatorReviewPanel','creatorEditorPanel, creatorDescriptionPanel'),\n('wiz-anchor-old-new',wiz,\"if(next.screen==='editor' &&\",\"if(['editor','description'].includes(next.screen)\"),\n('wiz-nextscreen-old-new',wiz,\"const nextScreen=error?old.screen:'editor';\",\"const nextScreen=error?old.screen:firstVideo?'description':'editor';\"),\n('wiz-wait-old-new',wiz,\"waiting:error?old.waiting:null,\",\"waiting:error?old.waiting:firstVideo?'description':null,\"),\n('wiz-render',wiz,\"?creatorFieldPanel(draft,old.field||old.waiting,rev,note)\",\":nextScreen==='description'\"),\n('pub-base-old-new',pub,\"const caption=listing.title+(listing.description?\",\"const buyerNotice=\"),\n('sal-summary-old-new',sal,'返金控除後売上：','公式決済訂正反映後売上：'),\n('sal-history-old-new',sal,\"row.type==='refund'?'返金'\",\"row.type==='refund'?'公式決済取消'\")]\nfor n,(label,source,*needles) in enumerate(checks):\n if not any(t in source for t in needles):\n  print('VIDEO_PATCH_UNMATCHED='+label)\n  sys.exit(80+n)\nprint('VIDEO_PATCH_GENERAL_ANCHORS=PASS')\nif not (r/'Dockerfile').is_file():\n print('VIDEO_PATCH_DOCKERFILE=NOT_CREATED')\n sys.exit(101)\nprint('VIDEO_PATCH_DOCKERFILE=EXISTS')\nPY\nif docker image inspect create-videobot:video-description-807cea97-tested >/dev/null 2>&1; then\n echo VIDEO_PATCH_IMAGE=BUILT\nelse echo VIDEO_PATCH_IMAGE=NOT_BUILT;exit 102;fi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
