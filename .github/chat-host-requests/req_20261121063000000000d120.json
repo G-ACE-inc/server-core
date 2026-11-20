@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 61\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:link-ui-05849c)\" || exit 62\ncd \"$root\"\ngit fetch --no-tags origin chat/link-button-master-final-20261120 >/dev/null 2>&1 || exit 63\ntest \"$(git rev-parse FETCH_HEAD)\" = 9483f0c7f73644a6258a15610b5a3fd23b5e56f0 || exit 64\ntest \"$(git hash-object scripts/userbot_link_photo_caption_smoke.py)\" = \"$(git rev-parse FETCH_HEAD:scripts/userbot_link_photo_caption_smoke.py)\" || exit 65\ntmp=\"$(mktemp -d /tmp/gace-link-photo-verified.XXXXXXXX)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ngit show FETCH_HEAD:scripts/userbot_test_client.py > \"$tmp/userbot_test_client.py\"\nPYTHONPATH=\"$root/scripts\" python3 -B \"$tmp/userbot_test_client.py\" health >/dev/null || exit 66\nif PYTHONPATH=\"$root/scripts\" python3 -B \"$tmp/userbot_test_client.py\" link_photo_caption_smoke >\"$tmp/result.txt\" 2>&1; then\n test \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 67\n PYTHONPATH=\"$root/scripts\" python3 -B \"$tmp/userbot_test_client.py\" health >/dev/null || exit 68\n echo LINK_PHOTO_REGISTER_EDIT_E2E=PASS\nelse\n reason=\"$(sed -n 's/^USERBOT_TEST_ERROR=//p' \"$tmp/result.txt\" | head -1)\"\n test \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 69\n PYTHONPATH=\"$root/scripts\" python3 -B \"$tmp/userbot_test_client.py\" health >/dev/null || exit 70\n case \"$reason\" in\n  *EXISTING_DRAFT_BLOCKED*)exit 81;;\n  *UNCLASSIFIED_MENU*|*MENU_NOT_FOUND*)exit 82;;\n  *UNCLASSIFIED_PHOTO*)exit 83;;\n  *UNCLASSIFIED_PAIR*)exit 84;;\n  *UNCLASSIFIED_REGISTER*)exit 85;;\n  *UNCLASSIFIED_EDIT*|*EDIT_PREVIEW*)exit 86;;\n  *UNCLASSIFIED_REREGISTER*)exit 87;;\n  *REGISTERED_CODE_MISSING*|*EDIT_CODE_CHANGED*)exit 88;;\n  *SCREEN_NOT_FOUND*)exit 89;;\n  *)exit 90;;\n esac\nfi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
