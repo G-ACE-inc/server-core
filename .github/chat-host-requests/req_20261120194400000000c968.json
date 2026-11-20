@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\ndocker exec \"$cid\" grep -Fq \"'getMyStarBalance'\" /opt/videobot/src/telegram/botApi.mjs || exit 63\ndocker exec \"$cid\" test -f /opt/videobot/src/sales/pgCreatorRefundReconciler.mjs || exit 64\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport {readFileSync} from 'node:fs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nsetDefaultResultOrder('ipv4first');\nsetDefaultAutoSelectFamily(false);\nconst path=process.env.VIDEOBOT_TELEGRAM_TOKEN_FILE;\nif(typeof path!=='string'||!path.startsWith('/run/secrets/'))process.exit(65);\nconst token=readFileSync(path,'utf8').trim();\nconst api=createTelegramBotApi({token,\n baseUrl:process.env.VIDEOBOT_LOCAL_API_URL||'https://api.telegram.org',\n timeoutMs:25000});\ntry{\n const balance=await api('getMyStarBalance',{});\n if(!Number.isSafeInteger(balance?.amount)||balance.amount<0)\n   throw Error('OFFICIAL_STARS_BALANCE_INVALID');\n console.log('OFFICIAL_BOT_STARS_BALANCE=READ_VERIFIED');\n}catch(error){console.log('OFFICIAL_BOT_STARS_BALANCE=NOT_VERIFIED');process.exit(66);}\ntry{\n const result=await api('getStarTransactions',{offset:0,limit:5});\n if(!Array.isArray(result?.transactions)||result.transactions.length>5)\n   throw Error('OFFICIAL_TRANSACTIONS_INVALID');\n console.log('OFFICIAL_BOT_STARS_TRANSACTIONS=READ_VERIFIED');\n}catch(error){console.log('OFFICIAL_BOT_STARS_TRANSACTIONS=NOT_VERIFIED');process.exit(67);}\nNODE\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {createPostgresUnifiedStarsSales} from './src/sales/pgUnifiedStarsSales.mjs';\nconst env=process.env;\nconst pool=new pg.Pool({host:env.VIDEOBOT_DB_HOST,user:env.VIDEOBOT_DB_USER,\n database:env.VIDEOBOT_DB_NAME,\n password:readFileSync(env.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),\n max:1,connectionTimeoutMillis:5000});\ntry{\n const q=await pool.query(\"SELECT to_regclass('videobot_sticker_refunds') IS NOT NULL AS refunds,to_regclass('videobot_stars_refund_audit_cursor') IS NOT NULL AS cursor\");\n if(q.rows.length!==1||q.rows[0].refunds!==true||q.rows[0].cursor!==true)\n  throw Error('REFUND_LEDGER_SCHEMA_MISSING');\n const sample=await pool.query(\"SELECT seller_user_id FROM videobot_stars_ledger UNION SELECT seller_user_id FROM videobot_sticker_products LIMIT 1\");\n const id=sample.rows.length?Number(sample.rows[0].seller_user_id):1;\n const summary=await createPostgresUnifiedStarsSales({pool}).getSummary(id);\n if(summary.payoutReady!==false)throw Error('UNVERIFIED_PAYOUT_EXPOSED');\n const cursor=await pool.query(\"SELECT next_offset FROM videobot_stars_refund_audit_cursor WHERE cursor_id=1\");\n if(cursor.rows.length>1)throw Error('AUDIT_CURSOR_DUPLICATE');\n console.log('STARS_REAL_PG_SELLER_ACCOUNTING=READ_VERIFIED');\n}catch(error){console.log('STARS_REAL_PG_SELLER_ACCOUNTING=NOT_VERIFIED');process.exitCode=68;\n}finally{await pool.end();}\nNODE\necho OFFICIAL_STARS_READONLY_E2E=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
