@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nr=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/.releases/807cea978e88b04cffbc27eb4497183671ac79cf/video-production-compat\ntest -s \"$r/src/telegram/creatorWizard.mjs\" && test ! -e \"$r/Dockerfile\" || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 62\nexport GACE_VIDEO_ROOT=\"$r\"\npython3 -B - <<'PY'\nimport os,re,sys\nfrom pathlib import Path\nroot=Path(os.environ['GACE_VIDEO_ROOT'])\np=root/'src/telegram/creatorWizard.mjs'\nw=p.read_text()\nif \"const nextScreen=error?old.screen:firstVideo?'description':'editor';\" not in w:sys.exit(81)\nif \"waiting:error?old.waiting:firstVideo?'description':null,\" not in w:sys.exit(82)\nif 'creatorDescriptionPanel' not in w:sys.exit(83)\nrx=r\"(?<!\\w)statusPanel\\(\\s*draft\\s*,\\s*rev\\s*,\\s*note\\s*,\\s*nextScreen\\s*\\)\"\nif \"nextScreen==='description'\\n\" not in w:\n replacement=\"nextScreen==='description' ? creatorDescriptionPanel(draft,rev,note) : statusPanel(draft,rev,note,nextScreen)\"\n w,n=re.subn(rx,lambda m:replacement,w)\n if n!=1:sys.exit(84)\np.write_text(w)\nprint('VIDEO_DESCRIPTION_RENDER_COMPAT=PASS')\nPY\nold=create-videobot:pre-video-description-807cea97\nnew=create-videobot:video-description-807cea97-tested\ntest -z \"$(docker images -q \"$new\")\" || exit 63\ndocker tag create-videobot:local-poll \"$old\" || exit 64\n{ echo \"FROM $old\";echo 'USER root';for p in src/telegram/creatorWizard.mjs src/telegram/creatorUi.mjs src/telegram/paidListingPublisher.mjs src/telegram/salesPanel.mjs test/creatorWizard.test.mjs test/creatorUi.test.mjs test/creatorBot.test.mjs test/creatorSourceIntegration.test.mjs test/paidListingPublisher.test.mjs test/salesPanel.test.mjs test/pgUnifiedStarsSales.test.mjs;do echo \"COPY --chown=node:node $p /opt/videobot/$p\";done;echo 'USER node';} > \"$r/Dockerfile\"\ndocker build --network none --pull=false -t \"$new\" \"$r\" >/dev/null || exit 65\nfor p in src/telegram/creatorWizard.mjs src/telegram/creatorUi.mjs src/telegram/paidListingPublisher.mjs src/telegram/salesPanel.mjs;do\n docker run --rm --network none --entrypoint node \"$new\" --check \"/opt/videobot/$p\" || exit 66\ndone\nif ! docker run --rm --network none -w /opt/videobot --entrypoint node \"$new\" --test test/creatorWizard.test.mjs test/creatorUi.test.mjs test/creatorBot.test.mjs test/creatorSourceIntegration.test.mjs test/paidListingPublisher.test.mjs test/salesPanel.test.mjs test/pgUnifiedStarsSales.test.mjs > \"$r/test-results.log\" 2>&1;then\n echo VIDEO_COMPAT_TEST=FAIL\n grep -E '^not ok |^# pass |^# fail ' \"$r/test-results.log\" | head -n 25 || true\n exit 67\nfi\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 68\ntest \"$(docker image inspect create-videobot:local-poll --format '{{.Id}}')\" = \"$(docker inspect \"$cid\" --format '{{.Image}}')\" || exit 69\necho VIDEO_COMPAT_IMAGE=TEST_PASS\necho VIDEO_RUNTIME_CHANGED=NO"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
