@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 62\nnewid=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:link-ui-05849c)\" || exit 63\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$newid\" || exit 64\npython3 \"$root/scripts/userbot_test_client.py\" health || exit 65\npython3 \"$root/scripts/userbot_test_client.py\" link_photo_caption_smoke || exit 66\npython3 \"$root/scripts/userbot_test_client.py\" health || exit 67\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 68\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 69\necho LINK_PHOTO_RECEIPT_EDIT_E2E=PASS\necho RESIDENT_USERBOT_PROTECTED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
