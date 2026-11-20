@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nf=\"$root/scripts/userbot_resident_ipc.py\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest -f \"$f\" && test ! -L \"$f\" || exit 62\n! grep -Fq '\"link_inline_query_smoke\"' \"$f\" || exit 63\ntmp=\"$(mktemp -d /tmp/link62-inline-act.XXXXXXXX)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ncp -p \"$f\" \"$tmp/before.py\"\npython3 -B - \"$f\" \"$tmp\" <<'PY'\nfrom pathlib import Path\nimport ast,sys\nf=Path(sys.argv[1]);tmp=Path(sys.argv[2]);s=f.read_text(encoding=\"utf8\")\ndef one(a,b):\n global s\n if s.count(a)!=1: raise SystemExit(65)\n s=s.replace(a,b,1)\none('\"link_registration_smoke\",','\"link_registration_smoke\", \"link_inline_query_smoke\",')\none('    if set(request) != expected:',\n'''    if action == \"link_inline_query_smoke\":\n        expected={\"request_id\",\"action\",\"code\"}\n    if set(request) != expected:''')\none('    if action == \"link_registration_smoke\":',\n'''    if action == \"link_inline_query_smoke\":\n        code=request[\"code\"]\n        if not isinstance(code,str) or not re.fullmatch(r\"[A-Za-z0-9_-]{24}\",code):\n            raise ValueError(\"LINK_CODE_INVALID\")\n        bot=await client.get_entity(\"GayBBS_bot\")\n        if not getattr(bot,\"bot\",False):\n            raise RuntimeError(\"LINK_BOT_INVALID\")\n        results=await client.inline_query(bot,code)\n        if len(results)!=1:\n            raise RuntimeError(\"LINK_INLINE_RESULT_NOT_FOUND\")\n        return {\"request_id\":request_id,\"action\":action,\"status\":\"PASS\",\n                \"inline_result_found\":True}\n    if action == \"link_registration_smoke\":''')\nast.parse(s)\n(tmp/\"after.py\").write_text(s,encoding=\"utf8\")\nPY\nrestore(){\n cp -p \"$tmp/before.py\" \"$f\"\n systemctl --user restart gace-userbot-verify.service >/dev/null 2>&1 || true\n}\ntrap restore ERR\ncp \"$tmp/after.py\" \"$f\"\nsystemctl --user restart gace-userbot-verify.service\nsleep 4\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 66\npython3 -B - \"$root\" <<'PY'\nimport asyncio,json,os,re,stat,subprocess,sys,uuid\nfrom pathlib import Path\nroot=Path(sys.argv[1]);sys.path.insert(0,str(root/\"scripts\"))\nfrom userbot_resident_ipc import SOCKET_PATH\nif not SOCKET_PATH.is_socket() or SOCKET_PATH.is_symlink():sys.exit(67)\nst=SOCKET_PATH.stat()\nif st.st_uid!=os.getuid() or stat.S_IMODE(st.st_mode)!=0o600:sys.exit(68)\nsql=(\"SELECT share_code FROM link_button_posts WHERE content='リンク機能テスト用の本文' \"\n     \"AND status='draft' AND share_code IS NOT NULL ORDER BY created_at DESC LIMIT 1;\")\nx=subprocess.run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-X\",\"-v\",\"ON_ERROR_STOP=1\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",sql],capture_output=True,text=True,timeout=15)\nif x.returncode:sys.exit(69)\ncode=x.stdout.strip()\nif not re.fullmatch(r\"[A-Za-z0-9_-]{24}\",code):sys.exit(70)\nasync def run():\n for action in (\"health\",\"link_inline_query_smoke\"):\n  reader,writer=await asyncio.wait_for(asyncio.open_unix_connection(str(SOCKET_PATH)),5)\n  try:\n   rid=uuid.uuid4().hex\n   req={\"request_id\":rid,\"action\":action}\n   if action==\"link_inline_query_smoke\":req[\"code\"]=code\n   writer.write((json.dumps(req)+\"\\n\").encode());await writer.drain()\n   line=await asyncio.wait_for(reader.readline(),42)\n   if not line:sys.exit(71)\n   result=json.loads(line)\n   if result.get(\"request_id\") not in (rid,None):sys.exit(72)\n   if result.get(\"status\")!=\"PASS\":sys.exit(73)\n   if action==\"link_inline_query_smoke\" and result.get(\"inline_result_found\") is not True:sys.exit(74)\n  finally:\n   writer.close();await writer.wait_closed()\nasyncio.run(run())\nPY\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 75\ntrap - ERR\necho LINK_INLINE_POST_CODE_QUERY=PASS\necho USERBOT_AUTH_STATE=ACTIVE\necho NO_GROUP_POST=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
