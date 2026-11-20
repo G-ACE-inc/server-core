@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "staging_existing_owner_verified_image",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/actions/runs/44662287852"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nSOURCE_SHA=38edb681675101d2023d154671f98dc4a7dada67\nRUN_ID=44662287852\nROOT=\"$HOME/.local/share/gace-create-videobot/offline-artifacts/$SOURCE_SHA\"\ntest \"$(docker inspect --format '{{.Image}}' gace-createvdobot-videobot-poll-1)\" = \"sha256:79ee66291b1e52ae71460cde30e752b5cd356d97ff2cf2fd307797b99b823cd4\" || { echo 'LIVE_IMAGE_CHANGED_ABORT'; exit 75; }\ncommand -v gh >/dev/null; command -v docker >/dev/null; command -v gzip >/dev/null\nmkdir -p \"$ROOT\"\nif [ ! -f \"$ROOT/create-videobot-image.tar.gz\" ]; then\n  gh run download \"$RUN_ID\" --repo seigo-gace/create-videobot --name \"create-videobot-offline-$SOURCE_SHA\" --dir \"$ROOT\"\nfi\ncd \"$ROOT\"\nsha256sum -c create-videobot-image.tar.gz.sha256 >/dev/null\nprintf 'OFFLINE_ARTIFACT_CHECKSUM=PASS\\n'\ngzip -dc create-videobot-image.tar.gz | docker load >/dev/null\nprintf 'STAGED_IMAGE_ID='; docker image inspect create-videobot:local-telegram --format '{{.Id}}'\nprintf 'ACTIVE_POLL_IMAGE_UNCHANGED='; docker inspect gace-createvdobot-videobot-poll-1 --format '{{.Image}}'\nprintf 'STAGED_SHA=%s\\n' \"$SOURCE_SHA\"\n"
+  }
+}
