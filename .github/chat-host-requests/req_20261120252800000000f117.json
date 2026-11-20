@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nr=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/.releases/37d1ce2cd32ebf4c1fd7ca32a95add62443d191b/preview-instructions-no-fee-v7\nimage=create-videobot:preview-guide-v7-37d1ce2c-verified\ntest -s \"$r/src/telegram/creatorUi.mjs\" || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 62\ndocker image inspect \"$image\" >/dev/null 2>&1 || exit 63\npython3 -B - \"$r\" <<'PY'\nfrom pathlib import Path\nimport sys\np=Path(sys.argv[1])\ns=(p/'src/telegram/creatorUi.mjs').read_text()\nif s.count('function creatorEditorPanelBase(')!=1:sys.exit(64)\nq=p/'debugCreatorUi2.mjs'\nif q.exists():sys.exit(65)\nq.write_text(s+'\\nexport {creatorEditorPanelBase};\\n')\nPY\nset +e\ndocker run --rm -i --network none -v \"$r/debugCreatorUi2.mjs:/opt/videobot/src/telegram/debugCreatorUi2.mjs:ro\" --entrypoint node \"$image\" --input-type=module <<'NODE'\nimport {openCreatorEditor,editCreatorDraft,creatorEditorPanelBase} from '/opt/videobot/src/telegram/debugCreatorUi2.mjs';\nconst owner='112233';\nlet d=openCreatorEditor({sellerId:owner});\nd=editCreatorDraft(d,{type:'captionTitle',text:'test'});\nd=editCreatorDraft(d,{type:'paidVideo',media:{fileId:'video_123abc'}});\nd=editCreatorDraft(d,{type:'thumbnail',media:{fileId:'photo_123abc'}});\nd=editCreatorDraft(d,{type:'sample',media:{fileId:'sample_123abc',durationSeconds:22.8}});\nd=editCreatorDraft(d,{type:'preset',stars:50});\nconst ed=openCreatorEditor({sellerId:owner,existing:{id:'test_video',sellerId:owner,revision:2,title:'test',priceStars:50,paidVideo:{fileId:'video_123abc'},thumbnail:{fileId:'photo_123abc'},sample:{fileId:'sample_123abc',durationSeconds:22.8},rightsVerified:true,adultConsentVerified:true,feeTermsAccepted:true}});\nconst c=creatorEditorPanelBase(d,7,'editor');\nconst e=creatorEditorPanelBase(ed,7,'editor');\nconst cbs=p=>p.reply_markup.inline_keyboard.flat().map(b=>String(b.callback_data||''));\nconst texts=p=>p.reply_markup.inline_keyboard.flat().map(b=>String(b.text||''));\nconst ecb=cbs(e);\nconst stems=['entry:register','edit:save','edit:update','edit:preview','edit:register','video:save','edit:cancel','edit:return'];\nconst mask=stems.reduce((sum,name,i)=>sum+(ecb.some(s=>s.startsWith(name))?(1<<i):0),0);\nprocess.exit(mask||200);\nNODE\ncode=$?\nset -e\ntest \"$code\" -ge 100 && test \"$code\" -le 163 || exit 66\necho LIVE_VIDEO_PREVIEW_BUTTON_DIAGNOSTIC=CLASSIFIED\nexit \"$code\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
