@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nsrc=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\ncid=gace-createvdobot-videobot-poll-1\nstage=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\ntest -f \"$stage/deploy/compose.videobot.poll.yaml\" && test -d \"$src/.git\" || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 62\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 63\ntest \"$(git -C \"$src\" rev-parse --show-toplevel)\" = \"$src\" || exit 64\ngit -C \"$src\" config --get remote.origin.url | grep -Eq 'github.com[:/]seigo-gace/create-videobot(\\.git)?$' || exit 65\ndocker exec \"$cid\" grep -Fq \"salesProvider:starsLedger,starsLedger,\" /opt/videobot/src/telegram/creatorWiring.mjs || exit 66\ndocker exec \"$cid\" grep -Fq \"if(row.type==='withdrawal')return label;\" /opt/videobot/src/telegram/salesPanel.mjs || exit 67\nfor p in src/telegram/creatorWiring.mjs src/telegram/salesPanel.mjs;do\n live=\"$(docker exec \"$cid\" sha256sum \"/opt/videobot/$p\" | cut -d' ' -f1)\" || exit 68\n old=\"$(git -C \"$src\" show 25e003fb431abce5a777e964f04c1bd8567e9a70:\"$p\" | sha256sum | cut -d' ' -f1)\" || exit 69\n prior=\"$(git -C \"$src\" show 28b1ab9ee02215be5919f5a2b004509714e2681c:\"$p\" | sha256sum | cut -d' ' -f1)\" || exit 70\n test \"$live\" = \"$old\" || test \"$live\" = \"$prior\" || exit 71\ndone\necho CREATEVDOBOT_RUNTIME_PATCH_BASE_VERIFIED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
