@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nr=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/.releases/807cea978e88b04cffbc27eb4497183671ac79cf/video-production-compat\ntest -s \"$r/src/telegram/creatorWizard.mjs\" && test ! -e \"$r/Dockerfile\" || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 62\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 63\nexport GACE_VIDEO_ROOT=\"$r\"\npython3 -B - <<'PY'\nimport os,re,sys\nfrom pathlib import Path\nroot=Path(os.environ['GACE_VIDEO_ROOT'])\ndef fail(i):sys.exit(80+i)\np=root/'src/telegram/creatorWizard.mjs'\nw=p.read_text()\nif 'creatorDescriptionPanel' not in w:fail(1)\n# Preserve the existing customized editor message anchoring. Add only the\n# optional description reply once; no generic UI transport replacement.\nif \"next.screen==='description' &&\" not in w:\n anchor='    await sessionStore.write(ownerId,expected,next);'\n if w.count(anchor)!=1:fail(2)\n add=\"    if(next.screen==='description' && Number.isSafeInteger(next.previewMessageId) && next.previewMessageId>0)\\n      drawn.replyToMessageId=next.previewMessageId;\\n\"\n w=w.replace(anchor,add+anchor)\nchanges=[\n (r\"const nextScreen\\s*=\\s*error\\s*\\?\\s*old\\.screen\\s*:\\s*'editor'\\s*;\",\n   \"const nextScreen=error?old.screen:firstVideo?'description':'editor';\",3),\n (r\"waiting\\s*:\\s*error\\s*\\?\\s*old\\.waiting\\s*:\\s*null\\s*,\",\n   \"waiting:error?old.waiting:firstVideo?'description':null,\",4),\n]\nfor rx,value,k in changes:\n if value in w:continue\n w,n=re.subn(rx,lambda m:value,w)\n if n!=1:fail(k)\n# The live renderer has its own additional branches; replace only the\n# terminal status panel subexpression without rebuilding that state machine.\nold=r\"statusPanel\\(\\s*draft\\s*,\\s*rev\\s*,\\s*note\\s*,\\s*nextScreen\\s*\\)\"\nnew=\"nextScreen==='description' ? creatorDescriptionPanel(draft,rev,note) : statusPanel(draft,rev,note,nextScreen)\"\nif new not in w:\n w,n=re.subn(old,lambda m:new,w)\n if n!=1:fail(5)\np.write_text(w)\npub=root/'src/telegram/paidListingPublisher.mjs'\ns=pub.read_text()\nif '購入者都合の通常返金なし' not in s:\n m=re.search(r'(?m)^([ \\t]*)const caption=([^\\n]+);[ \\t]*$',s)\n if not m:fail(6)\n notice=\"購入前に内容と価格（'+listing.priceStars+' Stars）を確認してください。購入者都合の通常返金なし（法令・Telegram公式の正当な例外を除く）。\"\n replacement=m.group(1)+\"const buyerNotice='\"+notice+\"';\\n\"+m.group(1)+\"const caption=(\"+m.group(2)+\")+'\\\\n\\\\n'+buyerNotice;\"\n pub.write_text(s[:m.start()]+replacement+s[m.end():])\nsales=root/'src/telegram/salesPanel.mjs'\ns=sales.read_text()\nfor old,new,k in [('返金控除後売上：','公式決済訂正反映後売上：',7),(\"row.type==='refund'?'返金'\",\"row.type==='refund'?'公式決済取消'\",8)]:\n if new in s:continue\n if s.count(old)!=1:fail(k)\n s=s.replace(old,new)\nsales.write_text(s)\nprint('VIDEO_LIVE_COMPAT_TARGET_PATCHED=PASS')\nPY\nold=create-videobot:pre-video-description-807cea97\nnew=create-videobot:video-description-807cea97-tested\ntest -z \"$(docker images -q \"$new\")\" || exit 64\ndocker tag create-videobot:local-poll \"$old\" || exit 65\n{ echo \"FROM $old\";echo 'USER root';for p in src/telegram/creatorWizard.mjs src/telegram/creatorUi.mjs src/telegram/paidListingPublisher.mjs src/telegram/salesPanel.mjs test/creatorWizard.test.mjs test/creatorUi.test.mjs test/creatorBot.test.mjs test/creatorSourceIntegration.test.mjs test/paidListingPublisher.test.mjs test/salesPanel.test.mjs test/pgUnifiedStarsSales.test.mjs;do echo \"COPY --chown=node:node $p /opt/videobot/$p\";done;echo 'USER node';} > \"$r/Dockerfile\"\ndocker build --network none --pull=false -t \"$new\" \"$r\" >/dev/null || exit 66\nfor p in src/telegram/creatorWizard.mjs src/telegram/creatorUi.mjs src/telegram/paidListingPublisher.mjs src/telegram/salesPanel.mjs;do\n docker run --rm --network none --entrypoint node \"$new\" --check \"/opt/videobot/$p\" || exit 67\ndone\nif ! docker run --rm --network none -w /opt/videobot --entrypoint node \"$new\" --test test/creatorWizard.test.mjs test/creatorUi.test.mjs test/creatorBot.test.mjs test/creatorSourceIntegration.test.mjs test/paidListingPublisher.test.mjs test/salesPanel.test.mjs test/pgUnifiedStarsSales.test.mjs > \"$r/test-results.log\" 2>&1;then\n echo VIDEO_OFFLINE_REGRESSION=FAIL\n grep -E '^not ok |^# pass |^# fail ' \"$r/test-results.log\" | head -n 25 || true\n exit 68\nfi\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 69\ntest \"$(docker image inspect create-videobot:local-poll --format '{{.Id}}')\" = \"$(docker inspect \"$cid\" --format '{{.Image}}')\" || exit 70\necho VIDEO_PRODUCTION_COMPAT_TEST=PASS\necho VIDEO_PRODUCTION_SINGLE_POLLER_PRESERVED=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
