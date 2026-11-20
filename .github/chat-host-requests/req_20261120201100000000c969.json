@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\ndocker exec \"$cid\" grep -Fq 'reconcileIncremental' /opt/videobot/src/runtime/creatorPollingMain.mjs || exit 63\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nconst env=process.env;\nconst pool=new pg.Pool({host:env.VIDEOBOT_DB_HOST,user:env.VIDEOBOT_DB_USER,\n database:env.VIDEOBOT_DB_NAME,\n password:readFileSync(env.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),\n max:1,connectionTimeoutMillis:5000});\ntry {\n const cursor=await pool.query('SELECT next_offset,last_complete_at FROM videobot_stars_refund_audit_cursor WHERE cursor_id=1');\n if(cursor.rows.length!==1)throw Error('CURSOR_NOT_COMMITTED');\n const row=cursor.rows[0],offset=Number(row.next_offset);\n if(!Number.isSafeInteger(offset)||offset<0)throw Error('CURSOR_INVALID');\n if(row.last_complete_at!==null) console.log('STARS_REFUND_OFFICIAL_AUDIT=AT_LEAST_ONE_FULL_PASS');\n else console.log('STARS_REFUND_OFFICIAL_AUDIT=PARTIAL_PAGES');\n const q=await pool.query('SELECT COUNT(*)::int AS n FROM videobot_sticker_refunds');\n if(q.rows.length!==1||q.rows[0].n<0)throw Error('REFUND_TABLE_UNAVAILABLE');\n console.log('STARS_REFUND_DURABLE_AUDIT_CURSOR=PASS');\n}catch(error){console.log('STARS_REFUND_DURABLE_AUDIT_CURSOR=NOT_VERIFIED');process.exitCode=64;}\nfinally{await pool.end();}\nNODE\necho STARS_REFUND_AUDIT_LIVE_READBACK=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
