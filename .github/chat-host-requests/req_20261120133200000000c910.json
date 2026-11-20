@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "existing_videobot_deploy_admission_preflight",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nprintf 'CREATEVDOBOT_DEPLOY_PREFLIGHT\\n'\nprintf 'PWD='; pwd\nprintf 'HEAD='; git rev-parse HEAD\nprintf 'DIRTY_TRACKED='; git status --porcelain --untracked-files=no | wc -l\nprintf 'FETCH_REMOTES\\n'; git remote -v | sed -E 's#(https?://)[^/@]+:[^/@]+@#\\1[REDACTED]@#g' | head -2\nprintf 'COMPOSE_LABELS\\n'; docker inspect --format '{{index .Config.Labels \"com.docker.compose.project\"}} {{index .Config.Labels \"com.docker.compose.project.working_dir\"}} {{index .Config.Labels \"com.docker.compose.project.config_files\"}} {{index .Config.Labels \"com.docker.compose.service\"}}' gace-createvdobot-videobot-poll-1\nprintf 'COMPOSE_FILES\\n'; ls -l deploy/compose.videobot.poll.yaml deploy/Dockerfile 2>&1\nprintf 'RUNTIME_ENV_KEYS\\n'; docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' gace-createvdobot-videobot-poll-1 | cut -d= -f1 | sort | grep -E '^VIDEOBOT_|^CREATEVDOBOT_|^GSERVER_' || true\nprintf 'RUNTIME_VOLUMES\\n'; docker inspect --format '{{range .Mounts}}{{println .Destination}}{{end}}' gace-createvdobot-videobot-poll-1 | sort\nprintf 'DOCKER_IMAGE\\n'; docker inspect --format '{{.Image}}' gace-createvdobot-videobot-poll-1\nprintf 'HOST_DISK\\n'; df -h . | tail -1\n"
+  }
+}
