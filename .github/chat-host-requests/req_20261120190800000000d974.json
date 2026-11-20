@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nsrc=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\ncid=gace-createvdobot-videobot-poll-1\ntest -d \"$src/.git\" || { echo CREATEVDOBOT_CHECKOUT=NOT_FOUND; exit 61; }\nprintf 'CREATEVDOBOT_CHECKOUT_HEAD=%s\\n' \"$(git -C \"$src\" rev-parse HEAD)\"\nprintf 'CREATEVDOBOT_TRACKED_DIRTY_COUNT=%s\\n' \"$(git -C \"$src\" status --porcelain --untracked-files=no | wc -l | tr -d ' ')\"\nstate=\"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null || echo unavailable)\"\nprintf 'CREATEVDOBOT_SINGLE_POLLER_RUNNING=%s\\n' \"$state\"\ntest \"$state\" = true || exit 62\nprintf 'CREATEVDOBOT_ACTIVE_IMAGE_SHA=%s\\n' \"$(docker inspect \"$cid\" --format '{{.Image}}')\"\nif docker exec \"$cid\" grep -Fq 'creatorDescriptionPanel' /opt/videobot/src/telegram/creatorWizard.mjs; then echo VIDEO_OPTIONAL_DESCRIPTION_LIVE=YES; else echo VIDEO_OPTIONAL_DESCRIPTION_LIVE=NO; fi\nif docker exec \"$cid\" grep -Fq '購入者都合の通常返金なし' /opt/videobot/src/telegram/paidListingPublisher.mjs; then echo VIDEO_NO_REFUND_NOTICE_LIVE=YES; else echo VIDEO_NO_REFUND_NOTICE_LIVE=NO; fi\nif docker exec \"$cid\" grep -Fq 'VIDEO_TOPIC_NOT_CONNECTED' /opt/videobot/src/owner/gateOwner.mjs; then echo VIDEO_GATE_ADAPTER_STUB_PRESENT=YES; else echo VIDEO_GATE_ADAPTER_STUB_PRESENT=NO_OR_DIFFERENT; fi\nif docker exec \"$cid\" test -f /opt/videobot/src/sales/pgUnifiedStarsSales.mjs; then echo UNIFIED_STARS_SALES_MODULE_LIVE=YES; else echo UNIFIED_STARS_SALES_MODULE_LIVE=NO; fi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
