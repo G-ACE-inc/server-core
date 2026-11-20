@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ncd \"$root\"\ntest -f scripts/userbot_resident_ipc.py && test ! -L scripts/userbot_resident_ipc.py || exit 60\ntest -f scripts/userbot_link_photo_caption_smoke.py || exit 61\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 62\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 63\ntmp=\"$(mktemp -d /tmp/gace-photo-resident-route.XXXXXXXX)\"\ncp scripts/userbot_resident_ipc.py \"$tmp/old.py\"\npython3 - \"$tmp/old.py\" \"$tmp/new.py\" <<'PY'\nfrom pathlib import Path\nimport ast,sys\nsource=Path(sys.argv[1]).read_text(encoding=\"utf-8\")\nif \"link_photo_caption_smoke\" in source:raise SystemExit(70)\nif \"ACTIONS = frozenset(\" not in source:raise SystemExit(71)\nbegin=source.index(\"ACTIONS = frozenset(\")\nposition=source.find('\"link_rich_flow_smoke\"',begin)\nif position<0 or position>source.index(\"\\n\",begin):raise SystemExit(72)\nsource=source[:position]+'\"link_photo_caption_smoke\", '+source[position:]\nneedle='    if action == \"link_rich_flow_smoke\":'\nif source.count(needle)!=1:raise SystemExit(73)\nbranch='    if action == \"link_photo_caption_smoke\":\\n        from userbot_link_photo_caption_smoke import run\\n        return {\"request_id\": request_id, **await run(client)}\\n'\nsource=source.replace(needle,branch+needle,1)\ncompile(source,str(sys.argv[2]),\"exec\")\nPath(sys.argv[2]).write_text(source,encoding=\"utf-8\")\nPY\nswapped=0\nok=0\ncleanup(){\n rc=$?\n trap - EXIT\n if test \"$swapped\" = 1 && test \"$ok\" != 1; then\n  cp \"$tmp/old.py\" \"$root/scripts/userbot_resident_ipc.py\" || true\n  systemctl --user restart gace-userbot-verify.service || true\n fi\n rm -rf \"$tmp\"\n exit \"$rc\"\n}\ntrap cleanup EXIT\ncp \"$tmp/new.py\" scripts/userbot_resident_ipc.py\nswapped=1\nsystemctl --user restart gace-userbot-verify.service || exit 74\ngit fetch --no-tags origin chat/link-button-master-final-20261120 >/dev/null 2>&1 || exit 75\ntest \"$(git rev-parse FETCH_HEAD)\" = 9483f0c7f73644a6258a15610b5a3fd23b5e56f0 || exit 76\ngit show FETCH_HEAD:scripts/userbot_test_client.py > \"$tmp/userbot_test_client.py\" || exit 77\nready=0\nfor i in $(seq 1 15); do\n if test \"$(systemctl --user is-active gace-userbot-verify.service)\" = active && PYTHONPATH=\"$root/scripts\" python3 -B \"$tmp/userbot_test_client.py\" health >/dev/null 2>&1; then ready=1; break;fi\n sleep 2\ndone\ntest \"$ready\" = 1 || exit 78\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 79\nok=1\necho PHOTO_RESIDENT_ACTION_ROUTE=PASS\necho USERBOT_SESSION_HEALTH=PASS\necho ORIGINAL_LOCAL_IPC_RETAINED_EXCEPT_NARROW_ROUTE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
