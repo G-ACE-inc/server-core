@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nparent=\"$root/.releases/3437487eee840ff65810f04caf685dba96efc976\"\ndest=\"$parent/video-terms-and-description-image\"\ntest -f \"$root/deploy/compose.videobot.poll.yaml\" || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 62\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 63\ntest \"$(df -Pm \"$root\" | tail -n 1 | awk '{print $4}')\" -gt 1024 || exit 64\ntest ! -e \"$dest\" || { echo VIDEO_RELEASE_IMAGE_STAGING=ALREADY_EXISTS_NOT_OVERWRITTEN; exit 65; }\nmkdir -p \"$parent\" || exit 66\nwork=\"$(mktemp -d \"$parent/.image-staging.XXXXXXXX\")\" || exit 67\ntrap 'rm -rf \"$work\"' EXIT\ngh run download 44800613884 --repo seigo-gace/create-videobot --name create-videobot-offline-3437487eee840ff65810f04caf685dba96efc976 --dir \"$work\" >/dev/null 2>&1 || { echo IMAGE_ARTIFACT_FETCH=FAILED; exit 68; }\ntest -s \"$work/create-videobot-image.tar.gz\" && test -s \"$work/create-videobot-image.tar.gz.sha256\" || exit 69\n(cd \"$work\" && sha256sum -c create-videobot-image.tar.gz.sha256 >/dev/null) || exit 70\ngzip -t \"$work/create-videobot-image.tar.gz\" || exit 71\nmv \"$work\" \"$dest\" || exit 72\ntrap - EXIT\ntest -s \"$dest/create-videobot-image.tar.gz\" || exit 73\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 74\necho VIDEO_RELEASE_IMAGE_STAGING=VERIFIED\necho VIDEO_RELEASE_IMAGE_LIVE_ACTIVATED=NO\necho EXISTING_POLLER_PRESERVED=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
