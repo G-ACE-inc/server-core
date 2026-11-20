@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport json,hashlib,sys\nfrom pathlib import Path\nrid='req_20261120232000000000e106'\np=Path.home()/'.local/state/gserver-terminal/results'/(rid+'.json')\nif p.is_symlink() or not p.is_file():sys.exit(61)\nrec=json.loads(p.read_text(encoding='utf-8'))\nrec=rec.get('result',rec)\nif rec.get('request_id')!=rid or str(rec.get('exit_code'))!='80':sys.exit(62)\nout=rec.get('stdout');err=rec.get('stderr')\nif not isinstance(out,str) or not isinstance(err,str):sys.exit(63)\nif hashlib.sha256(out.encode()).hexdigest()!='d450be4ab3cf1ebde8c3f16d78e30e3eacd56012c085db0a5ceea804ecbce684':sys.exit(64)\nif hashlib.sha256(err.encode()).hexdigest()!='b4ef704223915b40ab97f50b9a527f9ffb6ece5a9f53506c3d7a0ece7d0b6f58':sys.exit(64)\nlabels=['description_panel','review_version_marker','review_terms','wizard_import','wizard_preview_anchor','wizard_next_screen','wizard_waiting','wizard_render','paid_media_caption','sales_summary','sales_history']\nhits=[i for i,label in enumerate(labels) if 'VIDEO_COMPAT_ANCHOR_MISMATCH='+label in out+'\\n'+err]\nif len(hits)!=1:sys.exit(65)\nsys.exit(100+hits[0])\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
