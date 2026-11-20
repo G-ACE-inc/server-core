@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ncd \"$root\"\ntest -d .git || exit 60\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 62\ngit fetch --no-tags origin chat/link-button-master-final-20261120 >/dev/null 2>&1 || exit 63\nnew=1c7d6a7888b3cd118e5f522d3337f1acb50d509a\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$new\" || exit 64\nfile=scripts/userbot_link_video_caption_smoke.py\nsaved=scripts/userbot_link_saved_message_smoke.py\nipc=scripts/userbot_resident_ipc.py\ntest ! -e \"$file\" && test ! -L \"$file\" || exit 65\ntest -f \"$saved\" && test ! -L \"$saved\" || exit 66\ntest \"$(git hash-object \"$saved\")\" = \"$(git rev-parse 2a14860de125d9ddb944e2138a69fde14b917c9c:$saved)\" || exit 67\ntest -f \"$ipc\" && test ! -L \"$ipc\" || exit 68\ntmp=\"$(mktemp -d /tmp/gace-link-video-check.XXXXXXXX)\"\ncp \"$saved\" \"$tmp/saved_old.py\"\ncp \"$ipc\" \"$tmp/ipc_old.py\"\ngit show \"$new:$file\" >\"$tmp/video_new.py\" || exit 69\ngit show \"$new:$saved\" >\"$tmp/saved_new.py\" || exit 70\ngit show \"$new:scripts/userbot_test_client.py\" >\"$tmp/userbot_test_client.py\" || exit 71\npython3 - \"$tmp\" <<'PY'\nfrom pathlib import Path\nimport sys\nbase=Path(sys.argv[1])\ns=(base/\"ipc_old.py\").read_text(encoding=\"utf-8\")\nif \"link_video_caption_smoke\" in s:raise SystemExit(72)\nmark=\"ACTIONS = frozenset(\"\nif mark not in s:raise SystemExit(73)\nbegin=s.index(mark)\nend=s.index(\"\\n\",begin)\npos=s.find('\"link_photo_caption_smoke\"',begin,end)\nif pos<0:raise SystemExit(74)\ns=s[:pos]+'\"link_video_caption_smoke\", '+s[pos:]\nneedle='    if action == \"link_photo_caption_smoke\":'\nif s.count(needle)!=1:raise SystemExit(75)\nnewbranch='    if action == \"link_video_caption_smoke\":\\n        from userbot_link_video_caption_smoke import run\\n        return {\"request_id\":request_id,**await run(client)}\\n'\ns=s.replace(needle,newbranch+needle,1)\n(base/\"ipc_new.py\").write_text(s,encoding=\"utf-8\")\nfor p in (\"ipc_new.py\",\"video_new.py\",\"saved_new.py\",\"userbot_test_client.py\"):\n compile((base/p).read_bytes(),str(base/p),\"exec\")\nPY\nswapped=0\nok=0\ncleanup(){\n rc=$?\n trap - EXIT\n if test \"$swapped\" = 1 && test \"$ok\" != 1; then\n  cp \"$tmp/saved_old.py\" \"$saved\" || true\n  cp \"$tmp/ipc_old.py\" \"$ipc\" || true\n  rm -f \"$file\"\n  systemctl --user restart gace-userbot-verify.service || true\n fi\n rm -rf \"$tmp\"\n exit \"$rc\"\n}\ntrap cleanup EXIT\ncp \"$tmp/video_new.py\" \"$file\"\ncp \"$tmp/saved_new.py\" \"$saved\"\ncp \"$tmp/ipc_new.py\" \"$ipc\"\nswapped=1\nsystemctl --user restart gace-userbot-verify.service || exit 76\nready=0\nfor i in $(seq 1 15); do\n if test \"$(systemctl --user is-active gace-userbot-verify.service)\" = active && PYTHONPATH=\"$root/scripts\" python3 -B \"$tmp/userbot_test_client.py\" health >/dev/null 2>&1; then ready=1;break;fi\n sleep 2\ndone\ntest \"$ready\" = 1 || exit 77\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 78\nok=1\necho LINK_VIDEO_TEST_ROUTE=PASS\necho USERBOT_EXISTING_SESSION=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
