@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/63"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nprintf 'GAYBBS_LIVE_SOURCE_DELTA\\n'\nprintf 'HEAD='; git rev-parse HEAD\nprintf 'DIRTY_FILES_BEGIN\\n'; git status --short --untracked-files=all; printf 'DIRTY_FILES_END\\n'\nprintf 'PROFILE_DIFF_BEGIN\\n'; git diff -- artifacts/bot/src/services/profilePublicView.ts artifacts/bot/src/bot/profileViewerHandlers.ts artifacts/bot/src/services/profileRepository.ts artifacts/bot/src/services/telegramDispatcher.ts artifacts/bot/src/bot/postingHandlers.ts artifacts/bot/src/db/migrate.ts; printf 'PROFILE_DIFF_END\\n'\nprintf 'RELEVANT_HASHES_BEGIN\\n'\nfor p in artifacts/bot/src/services/profilePublicView.ts artifacts/bot/src/bot/profileViewerHandlers.ts artifacts/bot/src/services/profileRepository.ts artifacts/bot/src/services/telegramDispatcher.ts artifacts/bot/src/bot/postingHandlers.ts artifacts/bot/src/db/migrate.ts; do if test -f \"$p\"; then sha256sum \"$p\"; else printf 'ABSENT %s\\n' \"$p\"; fi; done\nprintf 'RELEVANT_HASHES_END\\n'\nprintf 'RUNTIME_CONTAINERS_BEGIN\\n'; docker ps -a --format '{{.Names}}|{{.Image}}|{{.Status}}' | grep -Ei 'gaybbs|tgtumbler|gateapp' || true; printf 'RUNTIME_CONTAINERS_END\\n'\nprintf 'COMPOSE_CANDIDATES_BEGIN\\n'; find /home/gace/Project/Gserver/projects/TGtumbler -maxdepth 5 -type f \\( -name '*.yaml' -o -name '*.yml' \\) | grep -Ei 'gaybbs|compose|deploy' | head -n 40 || true; printf 'COMPOSE_CANDIDATES_END\\n'\n"
+  }
+}
