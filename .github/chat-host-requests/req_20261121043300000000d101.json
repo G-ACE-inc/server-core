@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest -d \"$root/.git\" || exit 60\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\npython3 - \"$root\" <<'PY'\nimport ast,pathlib,sys\nroot=pathlib.Path(sys.argv[1])\np=root/\"scripts/userbot_test_client.py\"\nsrc=p.read_text(encoding=\"utf-8\")\ntree=ast.parse(src)\ntokens={\"link_rich_flow_smoke\",\"link_photo_caption_smoke\"}\nfound={t:(t in src) for t in tokens}\nif not found[\"link_rich_flow_smoke\"]:raise SystemExit(80)\nif found[\"link_photo_caption_smoke\"]:raise SystemExit(81)\nifexps=[n for n in ast.walk(tree) if isinstance(n,ast.IfExp) and \"link_rich_flow_smoke\" in (ast.get_source_segment(src,n.test) or \"\")]\nif len(ifexps)==1:\n n=ifexps[0]\n test=n.test\n if isinstance(test,ast.Compare) and isinstance(test.comparators[0],ast.Set):raise SystemExit(82)\n raise SystemExit(83)\nif len(ifexps)>1:raise SystemExit(84)\nif any(isinstance(n,ast.If) and \"link_rich_flow_smoke\" in (ast.get_source_segment(src,n.test) or \"\") for n in ast.walk(tree)):raise SystemExit(85)\nraise SystemExit(86)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
