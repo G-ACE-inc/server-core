@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "current_public_createvdobot_runtime_preflight",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nprintf 'CREATEVDOBOT_CURRENT_PREDEPLOY_CHECK\\n'\nprintf 'HEAD='; git rev-parse HEAD\nprintf 'LOCAL_TRACKED_DIRTY='; git status --porcelain --untracked-files=no | wc -l\nprintf 'ORIGIN_BRANCH='; git branch -r --contains HEAD | head -3\nprintf 'CURRENT_CONTAINERS\\n'; docker ps -a --format '{{.Names}} {{.Image}} {{.Status}}' | grep -Ei 'videobot|telegram-bot-api' || true\nprintf 'COMPOSE_OWNER\\n'; docker inspect --format '{{index .Config.Labels \"com.docker.compose.project.working_dir\"}}' gace-createvdobot-videobot-poll-1\nprintf 'IMAGE_ID='; docker inspect --format '{{.Image}}' gace-createvdobot-videobot-poll-1\nprintf 'UI_MARKERS\\n'; docker exec gace-createvdobot-videobot-poll-1 sh -c 'grep -c \"変更したい項目の\" /opt/videobot/src/telegram/creatorUi.mjs || true'\nprintf 'VIDEO_GATE_MARKERS\\n'; docker exec gace-createvdobot-videobot-poll-1 sh -c 'grep -n \"VIDEO_TOPIC_NOT_CONNECTED\\|VIDEO_REVIEW_NOT_CONNECTED\" /opt/videobot/owner/gateOwner.mjs || true'\nprintf 'DEPLOYMENT_ARTIFACTS\\n'; find /home/gace/.local/share/gace-create-videobot -mindepth 1 -maxdepth 2 -type f -name 'compose.videobot.poll.yaml' | wc -l\nprintf 'PRODUCTION_ENV_KEY_NAMES\\n'; docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' gace-createvdobot-videobot-poll-1 | cut -d= -f1 | grep -E '^(VIDEOBOT_|CREATEVDOBOT_)' | sort\nprintf 'OWNER_DIRS\\n'; ls -ld /home/gace/Project/Gserver/projects/TGtumbler/create-videobot /home/gace/.local/share/gace-create-videobot\n"
+  }
+}
