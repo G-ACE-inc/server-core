@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nlive=\"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" || exit 61\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 62\nold=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:rollback-pr62-20261120)\" || exit 63\nnew=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:link-pr62-4a1c5be3)\" || exit 64\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 65\nif test \"$live\" = \"$old\"; then echo LIVE_IMAGE=ROLLBACK_ORIGINAL; elif test \"$live\" = \"$new\"; then echo LIVE_IMAGE=LINK_CANDIDATE; exit 74; else echo LIVE_IMAGE=UNKNOWN; exit 75; fi\ndocker exec deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs --input-type=module -e '\nimport fs from \"node:fs\";\nconst p=process.env.BOT_TOKEN_FILE;\nconst token=p?fs.readFileSync(p,\"utf8\").trim():process.env.BOT_TOKEN;\ntry {const r=await fetch(\"https://api.telegram.org/bot\"+token+\"/getMe\",{signal:AbortSignal.timeout(12000)});const j=await r.json();if(!j.ok||j.result.username!==\"GayBBS_bot\")process.exit(68);}catch{process.exit(69)}\n' || exit 70\necho BOT_API_WITH_IPV4=PASS\necho USERBOT_SERVICE=ACTIVE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
