@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nsrc=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\ncid=gace-createvdobot-videobot-poll-1\ncandidates='28b1ab9ee02215be5919f5a2b004509714e2681c 25e003fb431abce5a777e964f04c1bd8567e9a70 93cf8687677b418e4b2a04820ed3906851f03d1e 4274b9717b28fc7fba9b37233dd1c6834f6982ab c22ffc587781874ef463c2d912774376fb4e55a8 807cea978e88b04cffbc27eb4497183671ac79cf'\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\nmask=0\nbit=1\nfor p in src/telegram/creatorWizard.mjs src/telegram/creatorUi.mjs src/telegram/paidListingPublisher.mjs src/telegram/salesPanel.mjs; do\n live=\"$(docker exec \"$cid\" sha256sum \"/opt/videobot/$p\" | awk '{print $1}')\" || exit 62\n found=NO\n for commit in $candidates; do\n  if git -C \"$src\" cat-file -e \"$commit:$p\" 2>/dev/null; then\n    value=\"$(git -C \"$src\" show \"$commit:$p\" | sha256sum | awk '{print $1}')\"\n    if test \"$value\" = \"$live\"; then found=YES; echo \"VIDEO_BASE_MATCH_$bit=$commit\"; break; fi\n  fi\n done\n if test \"$found\" = NO; then echo \"VIDEO_BASE_MATCH_$bit=UNKNOWN\";mask=$((mask+bit));fi\n bit=$((bit*2))\ndone\nif test \"$mask\" -gt 0;then echo \"VIDEO_LIVE_UNKNOWN_MASK=$mask\";exit $((80+mask));fi\necho VIDEO_LIVE_ALL_FILES_MATCH_VERIFIED_SOURCE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
