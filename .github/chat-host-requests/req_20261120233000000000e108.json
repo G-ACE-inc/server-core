@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport json,hashlib,sys\nfrom pathlib import Path\nrid='req_20261120232000000000e106'\npath=Path.home()/'.local/state/gserver-terminal/results'/(rid+'.json')\nif path.is_symlink() or not path.is_file():sys.exit(61)\nraw=json.loads(path.read_text(encoding='utf-8'))\nrec=raw.get('result',raw)\nif rec.get('request_id')!=rid or str(rec.get('exit_code'))!='80':sys.exit(62)\nout=rec.get('stdout');err=rec.get('stderr')\nif not isinstance(out,str) or not isinstance(err,str):sys.exit(63)\nexpected_out='6394a6d89a666a24724aff1b2bdd40088a6eb6373ce88d7482e47f64efc0d09c'\nexpected_err='e6642a401db97dd3d99cc904a591abe9d6f9bad98c53a107f7e867033016c1d3'\nif hashlib.sha256(out.encode()).hexdigest()!=expected_out or hashlib.sha256(err.encode()).hexdigest()!=expected_err:sys.exit(64)\nlabels=['description_panel','review_version_marker','review_terms','wizard_import','wizard_preview_anchor','wizard_next_screen','wizard_waiting','wizard_render','paid_media_caption','sales_summary','sales_history']\nhits=[i for i,label in enumerate(labels) if 'VIDEO_COMPAT_ANCHOR_MISMATCH='+label in out+'\\n'+err]\nif len(hits)!=1:sys.exit(65)\nprint('VIDEO_COMPAT_FAILURE_CLASS_VERIFIED=YES')\nsys.exit(100+hits[0])\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
