@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 61\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 62\nidfile=\"$root/deploy/secrets/bug_report_userbot_account.txt\"\ntest -f \"$idfile\" && test ! -L \"$idfile\" || exit 63\nowner=\"$(cat \"$idfile\")\"\n[[ \"$owner\" =~ ^[1-9][0-9]{3,18}$ ]] || exit 64\nn=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT COUNT(*) FROM link_button_posts WHERE owner_user_id=$owner AND content='リンク機能テスト用の本文' AND share_code IS NOT NULL AND status='draft';\" 2>/dev/null)\" || exit 65\ntest \"$n\" -ge 1 || exit 66\nlogs=\"$(docker logs --since 75m --tail 1500 deploy-gaybbs-1 2>&1 || true)\"\nif printf '%s' \"$logs\" | grep -Fq '[LINK_INLINE_QUERY_FAILED]'; then\n if printf '%s' \"$logs\" | grep -Eiq '(RICH_MESSAGE|RICH_BLOCK|Bad Request|BUTTON_DATA_INVALID)'; then exit 71; fi\n if printf '%s' \"$logs\" | grep -Eiq '(LINK_SHARE_READBACK|LINK_OWNER|LINK_MEDIA|LINK_STYLE|LINK_URL)'; then exit 72; fi\n exit 73\nfi\necho LINK_INLINE_TEST_OWNER_MATCH=PASS\necho LINK_INLINE_BOT_ERROR_LOG=NONE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
