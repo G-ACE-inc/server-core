@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nold_tag=gace-tgtumbler-gaybbs:link-mp4-doc-24bade\nnew_tag=gace-tgtumbler-gaybbs:link-rich-recovery-c063\nrollback=gace-tgtumbler-gaybbs:rollback-link-rich-recovery-20261121\nlocal_tag=gace-tgtumbler-gaybbs:local\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 61\noldid=\"$(docker image inspect -f '{{.Id}}' \"$old_tag\")\" || exit 62\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 63\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$oldid\" || exit 64\ntest \"$(docker image inspect -f '{{.Id}}' \"$local_tag\")\" = \"$oldid\" || exit 65\ndocker logs --tail 240 deploy-gaybbs-1 2>&1 | grep -Fq 'GAYBBS_BOT_READY' || exit 66\ntest \"$(gh run view 44820979550 -R seigo-gace/GateApp-Bot --json headSha,conclusion --jq '.headSha+\" \"+.conclusion')\" = \"c0633db84b38cd6a030ac4de6650d2592057ad25 success\" || exit 67\ntest \"$(gh run view 44820979540 -R seigo-gace/GateApp-Bot --json headSha,conclusion --jq '.headSha+\" \"+.conclusion')\" = \"c0633db84b38cd6a030ac4de6650d2592057ad25 success\" || exit 68\ntmp=\"$(mktemp -d /tmp/gace-rich-recovery.XXXXXXXX)\"\nswapped=0\nok=0\ncleanup(){\n rc=$?\n trap - EXIT\n if test \"$swapped\" = 1 && test \"$ok\" != 1; then\n  docker tag \"$rollback\" \"$local_tag\" || true\n  docker compose -p deploy -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || true\n fi\n rm -rf \"$tmp\"\n exit \"$rc\"\n}\ntrap cleanup EXIT\nmkdir -p \"$tmp/old\" \"$tmp/new\" \"$tmp/overlay\"\ngh run download 44819022588 -R seigo-gace/GateApp-Bot -n gaybbs-profile-bundle -D \"$tmp/old\" >/dev/null 2>&1 || exit 69\ngh run download 44820979550 -R seigo-gace/GateApp-Bot -n gaybbs-profile-bundle -D \"$tmp/new\" >/dev/null 2>&1 || exit 70\ndocker cp deploy-gaybbs-1:/app/gaybbs.mjs \"$tmp/live.mjs\"\ncmp -s \"$tmp/old/gaybbs.mjs\" \"$tmp/live.mjs\" || exit 71\ndocker run --rm --network none -v \"$tmp/new:/bundle:ro\" --entrypoint node \"$old_tag\" --check /bundle/gaybbs.mjs >/dev/null || exit 72\ncp \"$tmp/new/gaybbs.mjs\" \"$tmp/overlay/gaybbs.mjs\"\ncat >\"$tmp/overlay/Dockerfile\" <<'EOF'\nFROM gace-tgtumbler-gaybbs:local\nCOPY --chown=1000:1000 gaybbs.mjs /app/gaybbs.mjs\nEOF\ndocker build --pull=false --network none -t \"$new_tag\" -f \"$tmp/overlay/Dockerfile\" \"$tmp/overlay\" >/dev/null 2>&1 || exit 73\nnewid=\"$(docker image inspect -f '{{.Id}}' \"$new_tag\")\"\ntest \"$newid\" != \"$oldid\" || exit 74\nif docker image inspect \"$rollback\" >/dev/null 2>&1;then\n test \"$(docker image inspect -f '{{.Id}}' \"$rollback\")\" = \"$oldid\" || exit 75\nelse docker tag \"$oldid\" \"$rollback\";fi\ndocker tag \"$new_tag\" \"$local_tag\"\nswapped=1\ndocker compose -p deploy -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 76\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$newid\" || exit 77\nready=0\nfor i in $(seq 1 14);do\n if docker logs --tail 240 deploy-gaybbs-1 2>&1 | grep -Fq 'GAYBBS_BOT_READY';then ready=1;break;fi\n sleep 5\ndone\ntest \"$ready\" = 1 || exit 78\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 79\nok=1\necho LINK_MEDIA_CLASSIFICATION_IMAGE=APPLIED\necho BOT_READY=PASS\necho USERBOT_ACTIVE=PASS\necho ROLLBACK_IMAGE_RETAINED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
