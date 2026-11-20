@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ncd \"$root\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 61\ngit fetch --no-tags origin chat/link-button-master-final-20261120 >/dev/null 2>&1 || exit 62\nnew=c0633db84b38cd6a030ac4de6650d2592057ad25\nold=63249b632c61198f6a357564101da7b5da38361b\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$new\" || exit 63\nf=scripts/userbot_link_video_caption_smoke.py\ntest \"$(git hash-object \"$f\")\" = \"$(git rev-parse \"$old:$f\")\" || exit 64\ntmp=\"$(mktemp -d /tmp/gace-mp4-doc-regression.XXXXXXXX)\"\ncp \"$f\" \"$tmp/old.py\"\ngit show FETCH_HEAD:\"$f\" >\"$tmp/new.py\" || exit 65\ngit show FETCH_HEAD:scripts/userbot_test_client.py >\"$tmp/userbot_test_client.py\" || exit 66\npython3 - \"$tmp/new.py\" <<'PY'\nfrom pathlib import Path\nimport sys\ncompile(Path(sys.argv[1]).read_bytes(),sys.argv[1],\"exec\")\nPY\nswapped=0\nok=0\ncleanup(){\n rc=$?\n trap - EXIT\n if test \"$swapped\" = 1 && test \"$ok\" != 1; then\n  cp \"$tmp/old.py\" \"$root/$f\" || true\n  systemctl --user restart gace-userbot-verify.service || true\n fi\n rm -rf \"$tmp\"\n exit \"$rc\"\n}\ntrap cleanup EXIT\ncp \"$tmp/new.py\" \"$f\"\nswapped=1\nsystemctl --user restart gace-userbot-verify.service || exit 67\nready=0\nfor i in $(seq 1 15); do\n if test \"$(systemctl --user is-active gace-userbot-verify.service)\" = active && PYTHONPATH=\"$root/scripts\" python3 -B \"$tmp/userbot_test_client.py\" health >/dev/null 2>&1;then ready=1;break;fi\n sleep 2\ndone\ntest \"$ready\" = 1 || exit 68\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 69\nok=1\necho TELEGRAM_MP4_DOCUMENT_TEST=ACTIVE\necho USERBOT_PRESERVED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
