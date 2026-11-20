@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport re,sys\nfrom pathlib import Path\np=Path('/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/.releases/807cea978e88b04cffbc27eb4497183671ac79cf/video-production-compat/test-results.log')\nif not p.is_file():sys.exit(61)\ns=p.read_text(errors='replace')\ntitles=[m.group(1).strip() for m in re.finditer(r'(?m)^not ok \\d+ - ([^\\n]+)$',s)]\nkeys=[\n 'creator DM callback/standard input/price flow uses one existing screen and revision',\n 'creator confirms rights and explicitly publishes only after verified store/receipt response',\n 'changing paid main refreshes the private album while preserving price and description',\n 'video upload -> inline edit -> explicit terms -> publish once -> personal list',\n 'description remains optional and editable through inline text only',\n 'initial video upload asks for optional description after private preview and accepts direct text',\n 'skip on optional description keeps the real album and reaches the ordinary editor once',\n 'buyer can read no-voluntary-refund notice before the official Stars unlock'\n]\nmask=0\nfor i,k in enumerate(keys):\n if k in titles:mask|=1<<i\nif mask==0:sys.exit(62)\nsys.exit(mask)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
