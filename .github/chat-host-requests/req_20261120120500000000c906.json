@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "videobot_private_db_readonly_posting_diagnosis",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nprintf 'CREATEVDOBOT_DB_READONLY_STATUS\\n'\ndocker exec -i gace-createvdobot-videobot-poll-1 node <<'GACE_NODE_DB_DIAG'\nconst fs=require('node:fs');\nconst pg=require('pg');\n(async()=>{\n const e=process.env;\n const client=new pg.Client({host:e.VIDEOBOT_DB_HOST||'deploy-postgres-1',port:5432,database:e.VIDEOBOT_DB_NAME||'videobot',user:e.VIDEOBOT_DB_USER,password:fs.readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim(),connectionTimeoutMillis:5000});\n try{\n  await client.connect();\n  await client.query('BEGIN READ ONLY');\n  for(const [label,sql,params] of [\n   ['LISTING_STATUS',\"SELECT status,count(*)::int AS n FROM videobot_listings GROUP BY status ORDER BY status\",[]],\n   ['RECEIPT_STATUS',\"SELECT status,count(*)::int AS n FROM videobot_post_receipts GROUP BY status ORDER BY status\",[]],\n   ['SESSION_PUBLISHING',\"SELECT coalesce(state->>'publishing','none') AS mode,count(*)::int AS n FROM videobot_creator_sessions GROUP BY 1 ORDER BY 1\",[]],\n   ['SESSION_EDITOR_MODE',\"SELECT coalesce(state->'draft'->>'mode','none') AS mode,count(*)::int AS n FROM videobot_creator_sessions GROUP BY 1 ORDER BY 1\",[]],\n   ['NAMED_LISTING',\"SELECT status,count(*)::int AS n FROM videobot_listings WHERE title=$1 GROUP BY status\",['肉便器']]\n  ]) {const q=await client.query(sql,params);console.log(label+'='+JSON.stringify(q.rows));}\n  await client.query('ROLLBACK');\n }catch(err){console.log('DB_DIAG_ERROR='+String(err.code||err.message).slice(0,80));process.exitCode=43;}\n finally{await client.end().catch(()=>{});}\n})();\nGACE_NODE_DB_DIAG\n"
+  }
+}
