@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\nsql=\"SELECT CASE WHEN p.media_kind='photo' AND p.media_file_id IS NOT NULL AND p.share_code=d.data->>'shareCode' THEN 'REGISTERED' WHEN d.data ? 'shareCode' THEN 'CODE_ONLY' WHEN d.data::text LIKE '%写真付きのリンク%' THEN 'BUTTON_READY' WHEN d.data ? 'media' THEN 'MEDIA_ONLY' ELSE 'NONE' END FROM public_post_drafts d LEFT JOIN link_button_posts p ON p.owner_user_id=d.owner_user_id AND p.share_code=d.data->>'shareCode' WHERE d.module='link' AND d.data::text LIKE '%写真付きのリンク%' LIMIT 1;\"\nv=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"$sql\")\" || exit 61\ncase \"$v\" in REGISTERED)exit 80;;CODE_ONLY)exit 81;;BUTTON_READY)exit 82;;MEDIA_ONLY)exit 83;;*)exit 84;;esac"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
