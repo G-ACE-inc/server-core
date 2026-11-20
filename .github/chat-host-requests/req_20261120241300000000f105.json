@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npython3 -B - <<'PY'\nimport json,hashlib,sys\nfrom pathlib import Path\nrid='req_20261120240500000000f104'\npath=Path.home()/'.local/state/gserver-terminal/results'/(rid+'.json')\nif not path.is_file() or path.is_symlink():sys.exit(61)\nraw=json.loads(path.read_text())\nd=raw.get('result',raw)\nif d.get('request_id')!=rid or str(d.get('exit_code'))!='1':sys.exit(62)\nerr=d.get('stderr','')\nif not isinstance(err,str):sys.exit(63)\nif hashlib.sha256(err.encode()).hexdigest()!='bc927cd50e154d0036711f82d1d2326b688c7282b2f3071212ffb766752dd42d':sys.exit(64)\nsignatures=[\n'PREVIEW_CONTAINS_FINANCIAL_DISCLOSURE',\n'PREVIEW_EDIT_LINK_OFFSETS_INVALID',\n'DUPLICATE_PREVIEW_GUIDANCE',\n'PREVIEW_MESSAGE_TOO_LONG',\n'AssertionError',\n'ERR_ASSERTION',\n'ERR_MODULE_NOT_FOUND',\n'does not provide an export named',\n'invalid editor state',\n'invalid file',\n'Unexpected token',\n'creatorEditorPanel',\n'no such file or directory']\nmatches=[i for i,key in enumerate(signatures) if key in err]\nif not matches:sys.exit(65)\n# Exit returns one safe classification; detailed stderr remains in private Host ledger.\nsys.exit(110+matches[0])\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
