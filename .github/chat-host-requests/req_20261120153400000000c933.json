@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62",
+    "purpose_cu_aligned": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nipc=\"$root/scripts/userbot_resident_ipc.py\"\nclient=\"$root/scripts/userbot_test_client.py\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest -f \"$ipc\" && test -f \"$client\" || exit 62\ntest ! -L \"$ipc\" && test ! -L \"$client\" || exit 63\ntest ! \"$(grep -l 'link_inline_query_smoke' \"$ipc\" || true)\" || exit 64\ntmp=\"$(mktemp -d /tmp/link62-inline.XXXXXXXX)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ncp -p \"$ipc\" \"$tmp/ipc.old\"\ncp -p \"$client\" \"$tmp/client.old\"\npython3 -B - \"$ipc\" \"$client\" \"$tmp\" <<'PY'\nimport ast,pathlib,sys\nf,c,t=map(pathlib.Path,sys.argv[1:])\ndef rep(s,a,b):\n if s.count(a)!=1:raise SystemExit(65)\n return s.replace(a,b,1)\ns=f.read_text()\ns=rep(s,'\"link_registration_smoke\",','\"link_registration_smoke\", \"link_inline_query_smoke\",')\ns=rep(s,'    if set(request) != expected:',\n'''    if action == \"link_inline_query_smoke\":\n        expected={\"request_id\",\"action\",\"code\"}\n    if set(request) != expected:''')\ns=rep(s,'    if action == \"link_registration_smoke\":',\n'''    if action == \"link_inline_query_smoke\":\n        code=request[\"code\"]\n        if not isinstance(code,str) or not re.fullmatch(r\"[A-Za-z0-9_-]{24}\",code):\n            raise ValueError(\"LINK_CODE_INVALID\")\n        bot=await client.get_entity(\"GayBBS_bot\")\n        if not getattr(bot,\"bot\",False):raise RuntimeError(\"LINK_BOT_INVALID\")\n        results=await client.inline_query(bot,code)\n        if len(results)!=1:raise RuntimeError(\"LINK_INLINE_RESULT_NOT_FOUND\")\n        return {\"request_id\":request_id,\"action\":action,\"status\":\"PASS\",\n                \"inline_result_found\":True}\n    if action == \"link_registration_smoke\":''')\nast.parse(s);(t/\"ipc.new\").write_text(s)\ns=c.read_text()\ns=rep(s,'topic_ids: list[int] | None = None) -> dict:', 'topic_ids: list[int] | None = None, code: str | None = None) -> dict:')\ns=rep(s,'        if action == \"room_public_readback\":',\n'''        if action == \"link_inline_query_smoke\":\n            if not isinstance(code,str) or not re.fullmatch(r\"[A-Za-z0-9_-]{24}\",code):\n                raise ValueError(\"LINK_CODE_INVALID\")\n            request[\"code\"]=code\n        elif action == \"room_public_readback\":''')\ns=rep(s,'elif chat_id is not None or message_id is not None or topic_ids is not None:',\n'elif chat_id is not None or message_id is not None or topic_ids is not None or code is not None:')\ns=rep(s,'    parser.add_argument(\"--chat-id\", type=int)',\n'    parser.add_argument(\"--code\")\\n    parser.add_argument(\"--chat-id\", type=int)')\ns=rep(s,'invoke(args.action, args.chat_id, args.message_id, topic_ids)',\n'invoke(args.action, args.chat_id, args.message_id, topic_ids, args.code)')\nast.parse(s);(t/\"client.new\").write_text(s)\nPY\nrestore(){\n cp -p \"$tmp/ipc.old\" \"$ipc\"\n cp -p \"$tmp/client.old\" \"$client\"\n systemctl --user restart gace-userbot-verify.service >/dev/null 2>&1 || true\n}\ntrap restore ERR\ncp \"$tmp/ipc.new\" \"$ipc\"\ncp \"$tmp/client.new\" \"$client\"\nsystemctl --user restart gace-userbot-verify.service\nsleep 4\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 66\n(cd \"$root/scripts\" && python3 -B userbot_test_client.py health >/dev/null) || exit 67\ntrap - ERR\necho LINK_INLINE_TEST_ADAPTER=READY\necho USERBOT_AUTH_HEALTH=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
