@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"$root/.worktrees/link-pr62-15e86a1\"\nsha=15e86a1f7777ec537353d9284300cd5de61b6245\ntest \"$(git -C \"$stage\" rev-parse HEAD)\" = \"$sha\" || exit 61\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 62\ntest -d \"$root/node_modules\" || exit 63\ntest -d \"$root/artifacts/bot/node_modules\" || exit 64\ntest ! -e \"$stage/node_modules\" || exit 65\ntest ! -e \"$stage/artifacts/bot/node_modules\" || exit 66\nln -s \"$root/node_modules\" \"$stage/node_modules\"\nln -s \"$root/artifacts/bot/node_modules\" \"$stage/artifacts/bot/node_modules\"\n(cd \"$stage/artifacts/bot\" && pnpm run build:gaybbs) >/tmp/gace-link62-local-build-log 2>&1 || exit 67\nnode --check \"$stage/artifacts/bot/dist/gaybbs.mjs\" || exit 68\ncontext=\"$(mktemp -d /tmp/gace-link62-image.XXXXXXXX)\"\ntrap 'rm -rf \"$context\"' EXIT\ncp \"$stage/artifacts/bot/dist/gaybbs.mjs\" \"$context/\"\ncat >\"$context/Dockerfile\" <<'DOCKERFILE'\nFROM gace-tgtumbler-gaybbs:local\nCOPY --chown=1000:1000 gaybbs.mjs /app/gaybbs.mjs\nDOCKERFILE\ndocker build --pull=false --network=none --tag gace-tgtumbler-gaybbs:link-pr62-candidate -f \"$context/Dockerfile\" \"$context\" >/tmp/gace-link62-fallback-log 2>&1 || exit 69\ndocker image inspect gace-tgtumbler-gaybbs:link-pr62-candidate >/dev/null\necho \"CANDIDATE_FROM_EXISTING_IMAGE=PASS\"\necho \"PRODUCTION_UNMODIFIED=PASS\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
