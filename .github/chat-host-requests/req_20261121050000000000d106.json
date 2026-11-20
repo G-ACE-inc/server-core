@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 61\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:link-ui-05849c)\" || exit 62\ntest \"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT count(*) FROM public_post_drafts WHERE module='link' AND step='preview' AND data->>'text'='個別編集済みの安全テスト' AND NOT (data ? 'shareCode') AND data::text LIKE '%一番目%';\")\" = 1 || exit 63\ncd \"$root\"\ngit fetch --no-tags origin chat/link-button-master-final-20261120 >/dev/null 2>&1 || exit 64\ntest \"$(git rev-parse FETCH_HEAD)\" = 1e5b41d236ea47de214ed29eeea9477bcec539a6 || exit 65\ntest \"$(git hash-object scripts/userbot_link_rich_flow_smoke.py)\" = \"$(git rev-parse FETCH_HEAD:scripts/userbot_link_rich_flow_smoke.py)\" || exit 66\ntmp=\"$(mktemp -d /tmp/gace-link-register-e2e.XXXXXXXX)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ngit show FETCH_HEAD:scripts/userbot_test_client.py > \"$tmp/userbot_test_client.py\" || exit 67\nPYTHONPATH=\"$root/scripts\" python3 -B \"$tmp/userbot_test_client.py\" health >/dev/null || exit 68\nif PYTHONPATH=\"$root/scripts\" python3 -B \"$tmp/userbot_test_client.py\" link_rich_flow_smoke >/dev/null 2>&1; then\n test \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 69\n PYTHONPATH=\"$root/scripts\" python3 -B \"$tmp/userbot_test_client.py\" health >/dev/null || exit 70\n echo LINK_RICH_REGISTER_EDIT_E2E=PASS\n echo USERBOT_PRESERVED=PASS\nelse\n test \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 71\n PYTHONPATH=\"$root/scripts\" python3 -B \"$tmp/userbot_test_client.py\" health >/dev/null || exit 72\n exit 80\nfi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
