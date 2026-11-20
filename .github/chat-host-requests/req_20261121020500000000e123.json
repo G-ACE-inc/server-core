@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nprior=\"$root/.releases/807cea978e88b04cffbc27eb4497183671ac79cf/video-production-compat\"\ntarget=\"$root/.releases/807cea978e88b04cffbc27eb4497183671ac79cf/video-old-runtime-test-baseline\"\nimage=create-videobot:video-old-runtime-tests-807cea97\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\ntest \"$(docker image inspect create-videobot:local-poll --format '{{.Id}}')\" = \"$(docker inspect \"$cid\" --format '{{.Image}}')\" || exit 63\ntest -s \"$prior/test-results.log\" && test -s \"$prior/test/creatorWizard.test.mjs\" && test -s \"$prior/test/paidListingPublisher.test.mjs\" || exit 64\ntest ! -e \"$target\" && test -z \"$(docker images -q \"$image\")\" || exit 65\nmkdir -p \"$target/test\"\nfor p in creatorWizard.test.mjs creatorUi.test.mjs creatorBot.test.mjs creatorSourceIntegration.test.mjs paidListingPublisher.test.mjs;do cp \"$prior/test/$p\" \"$target/test/$p\";done\n{ echo 'FROM create-videobot:local-poll';echo 'USER root';for p in creatorWizard.test.mjs creatorUi.test.mjs creatorBot.test.mjs creatorSourceIntegration.test.mjs paidListingPublisher.test.mjs;do echo \"COPY --chown=node:node test/$p /opt/videobot/test/$p\";done;echo 'USER node';} > \"$target/Dockerfile\"\ndocker build --network none --pull=false -t \"$image\" \"$target\" >/dev/null || exit 66\ndocker run --rm --network none -w /opt/videobot --entrypoint node \"$image\" --test test/creatorWizard.test.mjs test/creatorUi.test.mjs test/creatorBot.test.mjs test/creatorSourceIntegration.test.mjs test/paidListingPublisher.test.mjs > \"$target/test-results.log\" 2>&1 || true\nexport VIDEO_PRIOR=\"$prior\" VIDEO_BASELINE=\"$target\"\npython3 -B - <<'PY'\nimport os,re,sys\nfrom pathlib import Path\na=Path(os.environ['VIDEO_PRIOR'])/'test-results.log'\nb=Path(os.environ['VIDEO_BASELINE'])/'test-results.log'\ndef failset(p):\n s=p.read_text(errors='replace')\n return {x.strip() for x in re.findall(r'(?m)^not ok \\d+ - ([^\\n]+)',s)}\ncand=failset(a);base=failset(b)\nif not cand or not base:sys.exit(70)\nintroduced=cand-base\nnewtests=[\n'initial video upload asks for optional description after private preview and accepts direct text',\n'skip on optional description keeps the real album and reaches the ordinary editor once',\n'buyer can read no-voluntary-refund notice before the official Stars unlock']\nif any(t in cand for t in newtests):sys.exit(71)\nif not any(t in base for t in newtests):sys.exit(72)\nif introduced:\n print('VIDEO_NEW_REGRESSION_TESTS_PRESENT=YES')\n sys.exit(90+min(30,len(introduced)))\nprint('VIDEO_SOURCE_TEST_FAILURES_NO_WORSE_THAN_LIVE_BASELINE=PASS')\nprint('VIDEO_NEW_DESCRIPTION_SKIP_BUYER_NOTICE_TESTS=PASS')\nPY\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 74\ntest \"$(docker image inspect create-videobot:local-poll --format '{{.Id}}')\" = \"$(docker inspect \"$cid\" --format '{{.Image}}')\" || exit 75\necho VIDEO_BASELINE_COMPARISON_NO_LIVE_MUTATION=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
