@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/62"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 62\npython3 -B - \"$root\" <<'PY'\nimport asyncio, json, os, re, socket, stat, subprocess, sys, uuid\nfrom pathlib import Path\nroot=Path(sys.argv[1])\nsys.path.insert(0,str(root/\"scripts\"))\nfrom userbot_resident_ipc import SOCKET_PATH\nif not SOCKET_PATH.is_socket() or SOCKET_PATH.is_symlink():sys.exit(63)\ninfo=SOCKET_PATH.stat()\nif info.st_uid!=os.getuid() or stat.S_IMODE(info.st_mode)!=0o600:sys.exit(64)\nquery=(\"SELECT share_code FROM link_button_posts \"\n       \"WHERE content='リンク機能テスト用の本文' AND status='draft' \"\n       \"AND created_at > NOW()-INTERVAL '6 hours' AND share_code IS NOT NULL \"\n       \"ORDER BY created_at DESC LIMIT 1;\")\nres=subprocess.run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-X\",\"-v\",\"ON_ERROR_STOP=1\",\n \"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",query],capture_output=True,text=True,timeout=10)\nif res.returncode:sys.exit(65)\ncode=res.stdout.strip()\nif not re.fullmatch(r\"[A-Za-z0-9_-]{24}\",code):sys.exit(66)\nasync def do():\n reader,writer=await asyncio.wait_for(asyncio.open_unix_connection(str(SOCKET_PATH)),5)\n try:\n  for action in (\"health\",\"link_inline_query_smoke\"):\n   rid=uuid.uuid4().hex\n   req={\"request_id\":rid,\"action\":action}\n   if action==\"link_inline_query_smoke\":req[\"code\"]=code\n   writer.write((json.dumps(req)+\"\\n\").encode());await writer.drain()\n   line=await asyncio.wait_for(reader.readline(),35)\n   if not line:sys.exit(67)\n   data=json.loads(line)\n   if data.get(\"request_id\") not in (rid,None):sys.exit(68)\n   if data.get(\"status\")!=\"PASS\":sys.exit(69)\n   if action==\"link_inline_query_smoke\" and data.get(\"inline_result_found\") is not True:sys.exit(70)\n finally:\n  writer.close();await writer.wait_closed()\nasyncio.run(do())\nprint(\"LINK_REGISTERED_INLINE_QUERY=PASS\")\nprint(\"NO_TELEGRAM_PUBLIC_POST=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
