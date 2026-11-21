@@ -1,0 +1,31 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/65"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nprintf 'STARTLESS_PREDEPLOY_AUDIT\\n'\nprintf 'SOURCE_HEAD='; git rev-parse HEAD\nprintf 'CONTAINER_RUNNING='; docker inspect -f '{{.State.Running}}' deploy-gaybbs-1\nprintf 'RUNNING_IMAGE='; docker inspect -f '{{.Image}}' deploy-gaybbs-1\nprintf 'EXPECTED_TAG_IMAGE='; docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:profile-split-tags-e776\nprintf 'LOCAL_TAG_IMAGE='; docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:local\nprintf 'USERBOT_ACTIVE='; systemctl --user is-active gace-userbot-verify.service\nprintf 'PREEXISTING_POST_COUNTS\\n'\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT 'MENU='||count(*) FROM board_menu_panels WHERE state='published' AND pinned=TRUE AND message_id>0; SELECT 'TOPIC='||count(*) FROM topic_dm_entry_pins WHERE state='published' AND pinned=TRUE AND message_id>0; SELECT 'BOARD='||count(*) FROM topic_board_posts WHERE state='published' AND message_id>0; SELECT 'PROFILE='||count(*) FROM profile_publications WHERE status='published' AND message_id>0; SELECT 'MENU_TOPIC_BOARD_OVERLAP='||count(*) FROM (SELECT chat_id,message_id FROM board_menu_panels WHERE state='published' AND message_id>0 UNION ALL SELECT chat_id,message_id FROM topic_dm_entry_pins WHERE state='published' AND message_id>0 UNION ALL SELECT chat_id,message_id FROM topic_board_posts WHERE state='published' AND message_id>0) x GROUP BY chat_id,message_id HAVING count(*)>1;\" \nprintf 'GATE_ROUTING_PRESENT='; docker exec deploy-gaybbs-1 sh -lc 'test -s /app/gaybbs.mjs && echo YES'\nprintf 'SOURCE_DIFF_COUNT='; git status --porcelain | wc -l"
+  }
+}
