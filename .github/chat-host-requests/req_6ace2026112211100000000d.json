@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "resident_userbot_surgical_activation_dryrun",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -u\nsvc=gace-userbot-verify.service\nprintf 'USERBOT_RUNTIME_AUDIT_READBACK_BEGIN\\n'\nprintf 'SERVICE_ACTIVE=%s\\n' \"$(systemctl --user is-active \"$svc\" 2>/dev/null || true)\"\nprintf 'SERVICE_ENABLED=%s\\n' \"$(systemctl --user is-enabled \"$svc\" 2>/dev/null || true)\"\nprintf 'SERVICE_SUBSTATE=%s\\n' \"$(systemctl --user show \"$svc\" -p SubState --value 2>/dev/null || true)\"\nprintf 'SERVICE_RESTART_COUNT=%s\\n' \"$(systemctl --user show \"$svc\" -p NRestarts --value 2>/dev/null || true)\"\nprintf 'SESSION_FILE=%s\\n' \"$(test -f deploy/secrets/userbot_verify.session && echo EXISTS || echo MISSING)\"\nprintf 'IPC_SOCKET=%s\\n' \"$(test -S deploy/secrets/userbot_verify.sock && echo EXISTS || echo MISSING)\"\nprintf 'TOPIC_AUDIT_ACTION=%s\\n' \"$(grep -q '\"topic_entry_audit\"' scripts/userbot_resident_ipc.py && echo INSTALLED || echo ABSENT)\"\nprintf 'AUDIT_CLIENT=%s\\n' \"$(test -f scripts/userbot_topic_audit_client.py && echo EXISTS || echo MISSING)\"\nprintf 'ROLLBACK_FILES=%s\\n' \"$(find ../.userbot-topic-audit-rollback -maxdepth 1 -type f 2>/dev/null | wc -l)\"\nprintf 'HEALTH_CHECK_BEGIN\\n'\npython3 scripts/userbot_test_client.py health 2>&1 | head -n 12\nprintf 'HEALTH_CHECK_END\\n'\nprintf 'USERBOT_RUNTIME_AUDIT_READBACK_END\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
