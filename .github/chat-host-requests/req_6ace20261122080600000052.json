@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/deploy\ncompose=\"$root/compose.videobot.poll.yaml\"\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\nnew_id=\"$(docker image inspect create-videobot:video-sale-1695 --format '{{.Id}}')\"\nold_id=\"$(docker inspect \"$cid\" --format '{{.Image}}')\"\ntest \"$new_id\" != \"$old_id\"\nverified=\"$(docker exec deploy-postgres-1 sh -c 'psql -X -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -Atc \"select count(*) from posting_topics where purpose='\\''video_sale'\\'' and board_key='\\''video_chat'\\'' and chat_id=-1002373696859 and message_thread_id=1695 and enabled and verified_by is not null and verified_at is not null;\"')\"\ntest \"$verified\" = 1 || exit 61\ndocker run --rm --network none --entrypoint node create-videobot:video-sale-1695 --input-type=module -e '\nimport{createTelegramBotApi}from\"./src/telegram/botApi.mjs\";\nconst t=\"123:\"+(\"A\".repeat(32));\nconst f=async()=>({status:200,json:async()=>({ok:true,result:{id:123}})});\nconst a=createTelegramBotApi({token:t,fetchImpl:f});\nawait a(\"getChat\",{chat_id:-1002373696859});\nawait a(\"getChatMember\",{chat_id:-1002373696859,user_id:123});\n' >/dev/null\nbackup=\"$compose.video-sale-1695.backup\"\ntest ! -e \"$backup\"\ncp -p \"$compose\" \"$backup\"\nrestore(){ cp -p \"$backup\" \"$compose\"; (cd \"$root\" && docker compose -f \"$compose\" up -d --no-deps --no-build --force-recreate videobot-poll) >/dev/null 2>&1 || true; }\ntrap restore EXIT\npython3 - \"$compose\" <<'PY'\nfrom pathlib import Path\nimport sys,re\np=Path(sys.argv[1]);lines=p.read_text().splitlines(keepends=True)\nstart=next((i for i,x in enumerate(lines) if re.match(r'^  videobot-poll:\\s*$',x.rstrip())),None)\nif start is None:raise SystemExit('SERVICE_MISSING')\nend=next((i for i in range(start+1,len(lines)) if re.match(r'^  [\\w-]+:\\s*$',lines[i].rstrip())),len(lines))\ns=lines[start:end]\nif any('VIDEOBOT_VIDEO_SALE_THREAD_ID' in x or 'VIDEOBOT_VIDEO_SALE_TOPIC_TITLE' in x for x in s):raise SystemExit('ENV_ALREADY_SET_RECONCILE')\nimage=next((i for i in range(start+1,end) if re.match(r'^    image:\\s*',lines[i])),None)\nif image is None or 'create-videobot:local-poll' not in lines[image]:raise SystemExit('IMAGE_BASELINE_UNEXPECTED')\nlines[image]=re.sub(r'create-videobot:local-poll','create-videobot:video-sale-1695',lines[image])\nenv=next((i for i in range(start+1,end) if re.match(r'^    environment:\\s*$',lines[i].rstrip())),None)\nif env is None:raise SystemExit('ENV_BLOCK_MISSING')\nfollowing=next((x for x in lines[env+1:end] if x.strip() and not x.lstrip().startswith('#')),None)\nif following is None:raise SystemExit('ENV_STYLE_UNKNOWN')\nif following.startswith('      - '):\n add=['      - VIDEOBOT_VIDEO_SALE_THREAD_ID=1695\\n','      - VIDEOBOT_VIDEO_SALE_TOPIC_TITLE=💰️稼げる有料動画投稿\\n']\nelif re.match(r'^      [A-Za-z_][A-Za-z0-9_]*:',following):\n add=['      VIDEOBOT_VIDEO_SALE_THREAD_ID: \"1695\"\\n','      VIDEOBOT_VIDEO_SALE_TOPIC_TITLE: \"💰️稼げる有料動画投稿\"\\n']\nelse:raise SystemExit('ENV_STYLE_UNSUPPORTED')\nlines[env+1:env+1]=add\np.write_text(''.join(lines))\nPY\n(cd \"$root\" && docker compose -f \"$compose\" config --quiet)\n(cd \"$root\" && docker compose -f \"$compose\" up -d --no-deps --no-build --force-recreate videobot-poll) >/dev/null\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$new_id\"\ndocker exec \"$cid\" node -e 'if(process.env.VIDEOBOT_VIDEO_SALE_THREAD_ID!==\"1695\"||!process.env.VIDEOBOT_VIDEO_SALE_TOPIC_TITLE?.includes(\"稼げる有料動画投稿\"))process.exit(75)'\ndocker exec \"$cid\" node --input-type=module -e 'import{configuredVideoSaleTopic}from\"./owner/gateOwner.mjs\";if(configuredVideoSaleTopic().threadId!==1695)process.exit(76)'\nfor i in 1 2 3 4 5 6 7 8;do\n if docker logs \"$cid\" --tail 130 2>&1 | grep -q 'CREATOR_DM_POLL_READY=PASS';then break;fi\n sleep 2\ndone\ndocker logs \"$cid\" --tail 130 2>&1 | grep -q 'CREATOR_DM_POLL_READY=PASS'\ntrap - EXIT\necho VIDEO_SALE_DEPLOY_RUNTIME=PASS\necho VIDEO_SALE_TOPIC=1695"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
