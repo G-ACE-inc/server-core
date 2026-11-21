@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/8bb60a13d2fdab757291675345230f2b99448966"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(docker image inspect create-videobot:creator-top-8bb60a13-stage --format '{{.Id}}')\" || exit 63\ndocker exec -i \"$cid\" node --input-type=module <<'NODE'\nimport assert from 'node:assert/strict';\nimport {menuPage} from '/opt/videobot/src/telegram/menuPanel.mjs';\nconst h=menuPage('home'), p=menuPage('purchase');\nassert.deepEqual(h.reply_markup.inline_keyboard.map(row=>row.map(b=>b.text)),[\n  ['🎬 動画','🎨 ステッカー／絵文字'],\n  ['🔙 戻る','⭐ 売上・引き出し','⭐ 購入']\n]);\nassert.equal(h.reply_markup.inline_keyboard[1][0].url,'https://t.me/c/2373696859/1613');\nassert.equal(h.reply_markup.inline_keyboard[1][1].callback_data,'menu:sales');\nassert.equal(h.reply_markup.inline_keyboard[1][2].callback_data,'menu:purchase');\nassert.deepEqual(p.reply_markup.inline_keyboard[0].map(x=>x.url),['https://t.me/PremiumBot','https://fragment.com/stars']);\nassert.equal(p.reply_markup.inline_keyboard[1][0].callback_data,'menu:home');\nassert.match(h.text,/売上・履歴/);\nassert.match(h.text,/購入先（Telegram／Fragment）/);\nassert.match(p.text,/価格や支払条件を確認/);\nconsole.log('CREATOR_TOP_INDEPENDENT_MENU_READBACK=PASS');\nNODE\ndocker exec \"$cid\" grep -Fq \"code==='menu:purchase'\" /opt/videobot/src/telegram/creatorWizard.mjs || exit 64\ndocker logs \"$cid\" 2>&1 | grep -Fq 'CREATOR_DM_POLL_READY=PASS' || exit 65\ndocker logs \"$cid\" 2>&1 | grep -Fq 'STICKER_SHOP_HTTP_READY=PASS' || exit 66\necho 'CREATOR_TOP_PRODUCTION_INDEPENDENT_READBACK=PASS'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
