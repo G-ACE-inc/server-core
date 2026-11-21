@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/deploy\ncompose=\"$root/compose.videobot.poll.yaml\"\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\ntest -f \"$compose\"\nactual=\"$(docker exec deploy-postgres-1 sh -c 'psql -X -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -Atc \"select count(*) from posting_topics where purpose='\\''video_sale'\\'' and chat_id=-1002373696859 and message_thread_id=1695 and enabled and verified_at is not null and verified_by is not null;\"')\"\ntest \"$actual\" = 1 || exit 61\nstage=\"$(mktemp -d /tmp/gace-video-sale-1695.XXXXXX)\"\ntrap 'rm -rf \"$stage\"' EXIT\ndocker cp \"$cid:/opt/videobot/owner/gateOwner.mjs\" \"$stage/gateOwner.mjs\"\npython3 - \"$stage/gateOwner.mjs\" \"$compose\" <<'PY'\nfrom pathlib import Path\nimport sys,re\np=Path(sys.argv[1]);s=p.read_text()\ndef swap(old,new):\n global s\n if s.count(old)!=1:raise ValueError('LIVE_OWNER_ANCHOR_INVALID '+old[:32])\n s=s.replace(old,new)\nswap('function same(arg){',\"\"\"export function configuredVideoSaleTopic(env=process.env){\n const raw=env.VIDEOBOT_VIDEO_SALE_THREAD_ID;\n const title=env.VIDEOBOT_VIDEO_SALE_TOPIC_TITLE;\n if(typeof raw!=='string'||!/^[1-9][0-9]*$/.test(raw)||\n    !Number.isSafeInteger(Number(raw))||typeof title!=='string'||!title.trim()||title.length>100)\n  throw Error('VIDEO_SALE_TOPIC_CONFIGURATION_MISSING');\n return Object.freeze({id:Number(raw),board:'video_chat',purpose:'video_sale',\n chatId:ROUTE.chatId,threadId:Number(raw),title:title.trim(),enabled:true,verified:true});\n}\nfunction same(arg){\"\"\")\nswap('export async function createGateOwner({telegramApi,pool}={}){','export async function createGateOwner({telegramApi,pool,env=process.env}={}){')\nswap(' await receipt();\\n return Object.freeze({',\"\"\"  await receipt();\n  const verifyVideoTopic=async()=>{\n    const t=configuredVideoSaleTopic(env);\n    if(t.threadId===ROUTE.threadId)throw Error('VIDEO_TOPIC_STICKER_COLLISION');\n    const chat=await telegramApi('getChat',{chat_id:t.chatId});\n    if(chat?.id!==t.chatId||chat.type!=='supergroup'||chat.is_forum!==true)\n      throw Error('VIDEO_GROUP_NOT_VERIFIED');\n    const member=await telegramApi('getChatMember',{chat_id:t.chatId,user_id:me.id});\n    if(!['administrator','creator'].includes(member?.status))\n      throw Error('VIDEO_BOT_ADMIN_REQUIRED');\n    return t;\n  };\n  return Object.freeze({\"\"\")\nswap(\"   getVerifiedVideoTopic:async()=>{throw Error('VIDEO_TOPIC_NOT_CONNECTED');},\", \"   getVerifiedVideoTopic:verifyVideoTopic,\")\nswap(\"   verifyReview:async()=>{throw Error('VIDEO_REVIEW_NOT_CONNECTED');},\", \"\"\"   async verifyReview({sellerId,listingId,revision}={}){\n     if(!/^[1-9][0-9]*$/.test(String(sellerId))||\n        !/^[A-Za-z0-9_-]{1,40}$/.test(String(listingId))||\n        !Number.isSafeInteger(revision)||revision<1)return false;\n     const q=await pool.query(\n       \"SELECT 1 FROM videobot_listings WHERE listing_id=$1 AND seller_user_id=$2 AND revision=$3 AND status IN ('draft','ready') AND rights_verified=TRUE AND adult_consent_verified=TRUE AND fee_terms_accepted_at IS NOT NULL AND management_fee_bps=3000 AND price_stars IS NOT NULL AND thumbnail_file_id IS NOT NULL AND sample_file_id IS NOT NULL AND paid_video_file_id IS NOT NULL LIMIT 1\",\n       [listingId,Number(sellerId),revision]);\n     return q.rowCount===1;\n   },\"\"\")\nswap(\"   async verifyRelease(args={}){\\n     if(args.purpose!=='sticker'||!same(args))return false;\", \"\"\"   async verifyRelease(args={}){\n     if(args.purpose==='video_sale'){\n       const t=await verifyVideoTopic();\n       return Number(args.chatId)===t.chatId&&Number(args.threadId)===t.threadId;\n     }\n     if(args.purpose!=='sticker'||!same(args))return false;\"\"\")\np.write_text(s)\nc=Path(sys.argv[2]);lines=c.read_text().splitlines(keepends=True)\nstart=next((i for i,x in enumerate(lines) if re.match(r'^  videobot-poll:\\s*$',x.rstrip())),None)\nif start is None:raise ValueError('SERVICE_MISSING')\nend=next((i for i in range(start+1,len(lines)) if re.match(r'^  [\\w-]+:\\s*$',lines[i].rstrip())),len(lines))\nif any('VIDEOBOT_VIDEO_SALE_THREAD_ID' in x or 'VIDEOBOT_VIDEO_SALE_TOPIC_TITLE' in x for x in lines[start:end]):raise ValueError('EXISTING_ENV_NEEDS_RECONCILE')\nenv=next((i for i in range(start+1,end) if re.match(r'^    environment:\\s*$',lines[i].rstrip())),None)\nif env is None:raise ValueError('ENV_BLOCK_MISSING')\nfollowing=next((x for x in lines[env+1:end] if x.strip() and not x.lstrip().startswith('#')),None)\nif following is None:raise ValueError('ENV_STYLE_UNKNOWN')\nif following.startswith('      - '):\n addition=['      - VIDEOBOT_VIDEO_SALE_THREAD_ID=1695\\n','      - VIDEOBOT_VIDEO_SALE_TOPIC_TITLE=💰️稼げる有料動画投稿\\n']\nelif re.match(r'^      [A-Za-z_][A-Za-z0-9_]*:',following):\n addition=['      VIDEOBOT_VIDEO_SALE_THREAD_ID: \"1695\"\\n','      VIDEOBOT_VIDEO_SALE_TOPIC_TITLE: \"💰️稼げる有料動画投稿\"\\n']\nelse:raise ValueError('ENV_STYLE_UNSUPPORTED')\nstage=Path(sys.argv[1]).parent\n(stage/'compose.videobot.poll.yaml').write_text(''.join(lines[:env+1]+addition+lines[env+1:]))\nPY\nnode --check \"$stage/gateOwner.mjs\"\nold_image=\"$(docker inspect \"$cid\" --format '{{.Image}}')\"\nprintf 'FROM %s\\nCOPY gateOwner.mjs /opt/videobot/owner/gateOwner.mjs\\n' \"$old_image\" > \"$stage/Dockerfile\"\ndocker build --network none --pull=false -t create-videobot:video-sale-1695 \"$stage\" >/dev/null\ndocker run --rm --network none --entrypoint node create-videobot:video-sale-1695 --input-type=module -e 'import {configuredVideoSaleTopic} from \"./owner/gateOwner.mjs\";const t=configuredVideoSaleTopic({VIDEOBOT_VIDEO_SALE_THREAD_ID:\"1695\",VIDEOBOT_VIDEO_SALE_TOPIC_TITLE:\"💰️稼げる有料動画投稿\"});if(t.threadId!==1695)process.exit(5)' >/dev/null\n(cd \"$root\" && docker compose -f \"$stage/compose.videobot.poll.yaml\" config --quiet)\necho VIDEO_SALE_IMAGE_STAGED=PASS\necho VIDEO_SALE_COMPOSE_STAGED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
