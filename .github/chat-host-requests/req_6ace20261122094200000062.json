@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\ndocker exec -i \"$cid\" node --input-type=module <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {createPostgresPostingReceiptStore} from '/opt/videobot/src/sales/pgPostingReceipts.mjs';\nimport {createPostgresListingStore} from '/opt/videobot/src/sales/pgListings.mjs';\nconst e=process.env;\nconst password=readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim();\nconst url='postgresql://'+encodeURIComponent(e.VIDEOBOT_DB_USER)+':'+encodeURIComponent(password)+'@'+e.VIDEOBOT_DB_HOST+':5432/'+e.VIDEOBOT_DB_NAME;\nconst pool=new pg.Pool({connectionString:url,max:2,connectionTimeoutMillis:5000});\nconst id='389558ba-a38b-42a1-b92e-e98143df3e2d';\ntry{\n const q=await pool.query(\"SELECT seller_user_id,revision,status FROM videobot_listings WHERE listing_id=$1\",[id]);\n if(q.rowCount!==1)throw Error('LISTING_NOT_UNIQUE');\n const owner=Number(q.rows[0].seller_user_id);\n const revision=Number(q.rows[0].revision);\n const status=q.rows[0].status;\n const receipts=createPostgresPostingReceiptStore(pool);\n const receipt=await receipts.read(id+':'+(status==='published'?revision-1:revision));\n if(!receipt||receipt.status!=='sent')throw Error('TELEGRAM_SEND_NOT_CONFIRMED');\n const free=(receipt.freeMessageIds??[]).map(Number);\n const paid=Number(receipt.paidMessageId);\n if(free.length!==2||free[0]===free[1]||\n    free.some(x=>!Number.isSafeInteger(x)||x<1)||\n    !Number.isSafeInteger(paid)||paid<1)throw Error('POST_MESSAGE_ID_READBACK_INVALID');\n if(status==='published'){console.log('VIDEO_ALREADY_PUBLISHED=PASS');}\n else {\n  if(status!=='draft'&&status!=='ready')throw Error('LISTING_STATUS_REQUIRES_MANUAL_RECONCILE');\n  const listings=createPostgresListingStore(pool);\n  await listings.markPublished(owner,id,revision,{posted:true,freeMessageIds:free,paidMessageId:paid});\n }\n const latest=await pool.query(\"SELECT status,revision FROM videobot_listings WHERE listing_id=$1\",[id]);\n if(latest.rows[0]?.status!=='published')throw Error('LISTING_PUBLISHED_READBACK_FAILED');\n console.log('VIDEO_PUBLICATION_DB=PASS');\n console.log('VIDEO_TOPIC_THREAD=1695');\n console.log('FREE_MESSAGE_IDS='+free.join(','));\n console.log('PAID_MESSAGE_ID='+paid);\n console.log('VIDEO_REVISION='+latest.rows[0].revision);\n}finally{await pool.end()}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
