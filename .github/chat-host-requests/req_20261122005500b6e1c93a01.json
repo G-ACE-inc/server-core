@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "video_sale_current_runtime_diagnostic",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\necho VIDEO_LIVE_RUNNING=PASS\ndocker exec \"$cid\" node --input-type=module -e '\nimport {readFileSync} from \"node:fs\";\nfor(const [tag,p] of [[\"OWNER\",\"/opt/videobot/owner/gateOwner.mjs\"],[\"WIRING\",\"/opt/videobot/src/telegram/creatorWiring.mjs\"]]){\n const s=readFileSync(p,\"utf8\");\n console.log(tag+\"_FILE_PRESENT=YES\");\n if(tag===\"OWNER\"){\n  console.log(\"VIDEO_TOPIC_CONFIG_IMPLEMENTED=\"+s.includes(\"configuredVideoSaleTopic\"));\n  console.log(\"VIDEO_RELEASE_ALLOWANCE_IMPLEMENTED=\"+/verifyRelease[\\\\s\\\\S]{0,450}video_sale/.test(s));\n  console.log(\"VIDEO_THREAD_ENV_PRESENT=\"+Boolean(process.env.VIDEOBOT_VIDEO_SALE_THREAD_ID));\n  console.log(\"VIDEO_TITLE_ENV_PRESENT=\"+Boolean(process.env.VIDEOBOT_VIDEO_SALE_TOPIC_TITLE));\n }else console.log(\"VIDEO_PUBLISH_WIRED=\"+s.includes(\"publishVideoListing\"));\n}\n'\necho VIDEO_DIAG_COMPLETE=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
