@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "video_sale_topic_registered_and_listing_eligibility",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ntopic_count=\"$(docker exec deploy-postgres-1 sh -c 'psql -X -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -Atc \"SELECT count(*) FROM posting_topics WHERE purpose='\\''video_sale'\\'' AND chat_id=-1002373696859 AND enabled=true AND verified_by IS NOT NULL AND verified_at IS NOT NULL;\"')\"\necho \"TOPIC_COUNT=$topic_count\"\ntest \"$topic_count\" = 1 || exit 61\ndocker exec -i gace-createvdobot-videobot-poll-1 node --input-type=module <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nconst e=process.env;\nconst u=e.VIDEOBOT_DATABASE_URL_FILE?readFileSync(e.VIDEOBOT_DATABASE_URL_FILE,'utf8').trim():'postgresql://'+encodeURIComponent(e.VIDEOBOT_DB_USER)+':'+encodeURIComponent(readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim())+'@'+e.VIDEOBOT_DB_HOST+':5432/'+e.VIDEOBOT_DB_NAME;\nconst c=new pg.Client({connectionString:u,connectionTimeoutMillis:5000});\ntry{\n await c.connect();\n const r=await c.query(\"select status, rights_verified,adult_consent_verified,fee_terms_accepted_at is not null as terms,thumbnail_file_id is not null as thumbnail,sample_file_id is not null as sample,paid_video_file_id is not null as video from videobot_listings where status='draft' limit 2\");\n console.log('DRAFT_ROWS='+r.rowCount);\n for(const row of r.rows)console.log('DRAFT_ELIGIBILITY='+JSON.stringify(row));\n}finally{await c.end().catch(()=>{})}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
