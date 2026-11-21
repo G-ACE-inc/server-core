@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "G-ACE-inc/server-core"
+    },
+    "command": "set -eu\nname=gace-host-output-req_6ace20261122045100000032\nids=\"$(gh api \"repos/seigo-gace/TGserver/actions/artifacts?name=$name&per_page=30\" --jq '.artifacts[] | select(.expired == false) | [.id,.workflow_run.id] | @tsv')\"\ncount=\"$(printf '%s\\n' \"$ids\" | grep -cE '^[0-9]+[[:space:]][0-9]+$' || true)\"\ntest \"$count\" -eq 1 || exit 71\nartifact_id=\"$(printf '%s\\n' \"$ids\" | awk '{print $1}')\"\nrun_id=\"$(printf '%s\\n' \"$ids\" | awk '{print $2}')\"\ngh issue comment 351 --repo G-ACE-inc/server-core --body \"PRIVATE_OUTPUT_LOCATOR request=req_6ace20261122045100000032 private_run_id=$run_id private_artifact_id=$artifact_id (locator only)\" >/dev/null\necho PRIVATE_ARTIFACT_LOCATOR_RECORDED=YES"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
