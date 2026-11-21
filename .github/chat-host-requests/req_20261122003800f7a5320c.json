@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\necho VIDEOBOT_RUNNING=YES\ndocker exec \"$cid\" node --input-type=module <<'NODE'\nimport {readFileSync} from 'node:fs';\nconst env=process.env;\nconsole.log('VIDEO_TOPIC_CONFIG_PRESENT='+Boolean(env.VIDEOBOT_VIDEO_SALE_THREAD_ID));\nconsole.log('VIDEO_TOPIC_TITLE_CONFIG_PRESENT='+Boolean(env.VIDEOBOT_VIDEO_SALE_TOPIC_TITLE));\nconst owner=readFileSync('/opt/videobot/owner/gateOwner.mjs','utf8');\nconsole.log('VIDEO_PROVIDER_STUB='+owner.includes('VIDEO_TOPIC_NOT_CONNECTED'));\nconst w=readFileSync('/opt/videobot/src/telegram/creatorWiring.mjs','utf8');\nconsole.log('VIDEO_WIRING_OLD_REVIEW_GATE='+w.includes('verifyReview:gateOwner.verifyReview'));\nconst p=readFileSync('/opt/videobot/src/telegram/paidListingPublisher.mjs','utf8');\nconsole.log('VIDEO_PUBLISHER_OLD_REVIEW_GATE='+p.includes('listing review not approved'));\nNODE\ndocker exec \"$cid\" node --input-type=module <<'NODE'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nconst env=process.env;\nlet url=env.VIDEOBOT_DATABASE_URL_FILE?readFileSync(env.VIDEOBOT_DATABASE_URL_FILE,'utf8').trim():null;\nif(!url){\n const pass=readFileSync(env.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim();\n url='postgresql://'+encodeURIComponent(env.VIDEOBOT_DB_USER)+':'+encodeURIComponent(pass)+'@'+env.VIDEOBOT_DB_HOST+':5432/'+env.VIDEOBOT_DB_NAME;\n}\nconst c=new pg.Client({connectionString:url,connectionTimeoutMillis:3000});\ntry{\n await c.connect();\n const rows=await c.query(\"SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('videobot_listings','videobot_post_receipts','videobot_video_listings')\");\n console.log('VIDEO_TABLE_NAMES='+rows.rows.map(x=>x.table_name).join(','));\n const cols=await c.query(\"SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='public' AND table_name IN ('videobot_listings','videobot_post_receipts','videobot_video_listings') ORDER BY table_name,ordinal_position\");\n for(const table of [...new Set(cols.rows.map(x=>x.table_name))])console.log('COLUMNS_'+table+'='+cols.rows.filter(x=>x.table_name===table).map(x=>x.column_name).join(','));\n}catch(e){console.log('VIDEO_DB_CHECK_ERROR_CODE='+(e.code||'UNKNOWN'));process.exitCode=76}\nfinally{await c.end().catch(()=>{})}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
