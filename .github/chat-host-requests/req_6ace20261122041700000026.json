@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ndocker exec deploy-postgres-1 sh -c 'psql -X -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -Atc \"select '\\''DB='\\''||current_database(); select '\\''SALE_COUNT='\\''||count(*) from posting_topics where purpose='\\''video_sale'\\''; select '\\''MATCHING='\\''||purpose||'\\'':'\\''||message_thread_id||'\\'':'\\''||title from posting_topics where chat_id=-1002373696859 and (title ilike '\\''%稼げる%'\\'' or title ilike '\\''%有料動画%'\\'') order by purpose;\"'\ndocker exec deploy-gaybbs-1 node -e 'try{let u=new URL(process.env.DATABASE_URL);console.log(\"GATE_DATABASE_NAME=\"+u.pathname.slice(1));console.log(\"GATE_DB_HOST=\"+u.hostname)}catch(e){console.log(\"GATE_DATABASE_URL_UNAVAILABLE\")}'\ncid=gace-createvdobot-videobot-poll-1\ndocker exec \"$cid\" sh -c 'for f in /opt/videobot/owner/gateOwner.mjs /opt/videobot/src/telegram/creatorWiring.mjs /opt/videobot/src/sales/pgListings.mjs; do printf \"LIVE_FILE=%s\\n\" \"$f\"; sha256sum \"$f\"; done'\npython3 - <<'PY'\nfrom pathlib import Path\np=Path('/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/deploy/compose.videobot.poll.yaml')\nprint('COMPOSE_PRESENT',p.is_file())\nif p.is_file():\n for line in p.read_text().splitlines():\n  s=line.strip()\n  if any(k in s for k in ('env_file:', 'VIDEOBOT_VIDEO_SALE_', 'environment:', 'image:', 'volumes:', 'secrets:','build:')):\n   if 'PASSWORD' not in s and 'TOKEN' not in s:print('COMPOSE_KEY',s[:180])\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
