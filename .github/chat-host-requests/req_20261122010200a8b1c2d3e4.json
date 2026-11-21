@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "existing_gserver_bot_topic_button_audit",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nprintf 'AUDIT_STAGE=RUNTIME_LOCATOR\\n'\nprintf 'REPO_HEAD=%s\\n' \"$(git rev-parse --short HEAD)\"\nprintf 'FILE_MATCHES_BEGIN\\n'\nfind . -maxdepth 6 -type f \\( -iname '*topic*' -o -iname '*pin*' -o -iname '*posting*' -o -iname '*menu*' \\) -not -path '*/node_modules/*' -not -path '*/.git/*' | head -n 35 | cut -c 1-140\nprintf 'FILE_MATCHES_END\\n'\nprintf 'SERVICE_MATCHES_BEGIN\\n'\nsystemctl --user list-units --type=service --no-pager --plain 2>/dev/null | grep -Ei 'gaybbs|gateapp|telegram|userbot' | head -n 12 | cut -c1-130 || true\nprintf 'SERVICE_MATCHES_END\\n'\nprintf 'DOCKER_MATCHES_BEGIN\\n'\ndocker ps --format '{{.Names}}' 2>/dev/null | grep -Ei 'bot|gay|gate|telegram' | head -n 15 || true\nprintf 'DOCKER_MATCHES_END\\n'\nprintf 'PARENT_DIRS_BEGIN\\n'\nfind . -maxdepth 2 -type d -not -path '*/.git*' | head -n 24\nprintf 'PARENT_DIRS_END\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
