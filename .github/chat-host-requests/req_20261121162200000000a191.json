@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/65"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nprintf 'STARTLESS_LEDGER_READONLY\\n'\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT state||'='||count(*) FROM startless_public_post_migrations GROUP BY state ORDER BY state;\"\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT kind||':'||state||'='||count(*) FROM startless_public_post_migrations GROUP BY kind,state ORDER BY kind,state;\"\nprintf 'UNCERTAIN_TOPIC_CONTEXT\\n'\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -At -F '|' -c \"SELECT m.chat_id,m.message_id,p.message_thread_id,LEFT(p.title,30) FROM startless_public_post_migrations m LEFT JOIN topic_dm_entry_pins p ON p.chat_id=m.chat_id AND p.message_id=m.message_id WHERE m.state='uncertain' ORDER BY m.chat_id,m.message_id;\"\nprintf 'USERBOT='; systemctl --user is-active gace-userbot-verify.service\nprintf 'BOT='; docker inspect -f '{{.State.Running}}' deploy-gaybbs-1\necho NO_MUTATIONS=TRUE"
+  }
+}
