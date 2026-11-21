@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ndocker exec -i deploy-postgres-1 sh -c 'psql -X -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\"' <<'SQL'\nBEGIN;\nDO $$\nDECLARE old_check text; existing_condition text; sale_count integer;\nBEGIN\nSELECT pg_get_constraintdef(oid) INTO old_check\nFROM pg_constraint WHERE conrelid='posting_topics'::regclass AND conname='posting_topics_purpose_check' AND contype='c';\nIF old_check IS NULL OR left(old_check,7)<>'CHECK (' THEN RAISE EXCEPTION 'PURPOSE_CONSTRAINT_UNEXPECTED'; END IF;\nSELECT count(*) INTO sale_count FROM posting_topics WHERE purpose='video_sale';\nIF sale_count<>0 THEN RAISE EXCEPTION 'SALE_PREEXISTS_RECONCILE'; END IF;\nIF (SELECT count(*) FROM posting_topics WHERE board_key='video_chat' AND chat_id=-1002373696859\nAND message_thread_id=1695 AND purpose='announcement' AND title ILIKE '%稼げる有料動画投稿%'\nAND enabled AND verified_by IS NOT NULL AND verified_at IS NOT NULL)<>1\nTHEN RAISE EXCEPTION 'VERIFIED_SOURCE_TOPIC_NOT_UNIQUE'; END IF;\nexisting_condition:=substr(old_check,8,length(old_check)-8);\nEXECUTE 'ALTER TABLE posting_topics DROP CONSTRAINT posting_topics_purpose_check';\nEXECUTE format('ALTER TABLE posting_topics ADD CONSTRAINT posting_topics_purpose_check CHECK ((%s) OR purpose = %L)',existing_condition,'video_sale');\nEND $$;\nINSERT INTO posting_topics(board_key,purpose,chat_id,message_thread_id,title,verified_by,verified_at,enabled)\nSELECT board_key,'video_sale',chat_id,message_thread_id,title,verified_by,verified_at,TRUE\nFROM posting_topics WHERE board_key='video_chat' AND chat_id=-1002373696859 AND message_thread_id=1695\nAND purpose='announcement' AND title ILIKE '%稼げる有料動画投稿%' AND enabled\nAND verified_by IS NOT NULL AND verified_at IS NOT NULL;\nDO $$\nBEGIN\nIF (SELECT count(*) FROM posting_topics WHERE purpose='video_sale' AND enabled\nAND chat_id=-1002373696859 AND message_thread_id=1695 AND verified_by IS NOT NULL)<>1\nTHEN RAISE EXCEPTION 'VIDEO_SALE_NOT_INSERTED'; END IF;\nEND $$;\nCOMMIT;\nSELECT 'VIDEO_SALE_ROUTE_COUNT='||count(*) FROM posting_topics WHERE purpose='video_sale' AND enabled;\nSQL"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
