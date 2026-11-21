@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/65"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nprintf 'STARTLESS_UNCERTAIN_POLICY_READONLY\\n'\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -At -F '|' -c \"SELECT m.chat_id,m.message_id,p.message_thread_id,LEFT(p.title,40),CASE WHEN EXISTS(SELECT 1 FROM posting_topics t WHERE t.chat_id=p.chat_id AND t.message_thread_id=p.message_thread_id AND t.purpose='link') THEN 'BLOCK_LINK_TOPIC' WHEN EXISTS(SELECT 1 FROM board_menu_panels b WHERE b.chat_id=p.chat_id AND b.message_thread_id=p.message_thread_id AND b.panel_type='general_guide') THEN 'BLOCK_GUIDE' WHEN p.title ILIKE '%総合案内%' OR p.title ILIKE '%コミュニテーリング%' OR p.title ILIKE '%相互リング%' OR p.title ILIKE '%ﾘﾝｸ%' OR p.title ILIKE '%コミュニティリンク%' THEN 'BLOCK_TITLE' ELSE 'NOT_BLOCKED_BY_POLICY' END FROM startless_public_post_migrations m JOIN topic_dm_entry_pins p ON p.chat_id=m.chat_id AND p.message_id=m.message_id WHERE m.state='uncertain' ORDER BY m.chat_id,m.message_id;\"\nprintf 'APPLIED_COUNT='; docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT count(*) FROM startless_public_post_migrations WHERE state='applied';\"\necho NO_MODIFICATION=TRUE"
+  }
+}
