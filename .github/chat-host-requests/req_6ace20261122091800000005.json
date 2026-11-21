@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "inspect_exact_live_userbot_patch_anchors",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nfrom pathlib import Path\nfor name in (\"scripts/userbot_resident_ipc.py\",\"scripts/userbot_test_client.py\"):\n s=Path(name).read_text().splitlines()\n print(\"BEGIN\",name,len(s))\n patterns=(\"ACTIONS =\",\"expected = (\",\"if action == \\\"health\\\"\",\"timeout=\",\"safe_codes =\",\n           \"REQUEST_SIZE_INVALID\",\"async def invoke\",\"elif action == \\\"room_public_readback\\\"\",\n           \"else 40)\",\"parser.add_argument(\\\"--message-id\\\"\",\"asyncio.run(invoke(\",\n           \"if args.action == \\\"bug_report_delivery_smoke\\\"\")\n matches=[i for i,v in enumerate(s) if any(p in v for p in patterns)]\n selected=set()\n for i in matches:\n  selected.update(range(max(0,i-2),min(len(s),i+10)))\n for i in sorted(selected):\n  print(str(i+1)+\": \"+s[i])\n print(\"END\",name)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
