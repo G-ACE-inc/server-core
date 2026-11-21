@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "unposted_listing_counts_and_gate_container_discovery",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nprintf 'CONTAINERS_BEGIN\\n'\ndocker ps --format '{{.Names}}' | grep -Ei 'gate|gaybbs|createvdobot|video|telegram' | head -n 20 || true\nprintf 'CONTAINERS_END\\n'\ndocker exec -i \"$cid\" node --input-type=module <<'NODE'\nimport pg from 'pg';import{readFileSync}from'node:fs';\nconst e=process.env;\nconst u=e.VIDEOBOT_DATABASE_URL_FILE?readFileSync(e.VIDEOBOT_DATABASE_URL_FILE,'utf8').trim():'postgresql://'+encodeURIComponent(e.VIDEOBOT_DB_USER)+':'+encodeURIComponent(readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim())+'@'+e.VIDEOBOT_DB_HOST+':5432/'+e.VIDEOBOT_DB_NAME;\nconst c=new pg.Client({connectionString:u,connectionTimeoutMillis:5000});\ntry{\nawait c.connect();\nfor(const [name,sql] of [\n ['LISTING','select status,count(*)::integer as n from videobot_listings group by status order by status'],\n ['POST','select status,count(*)::integer as n from videobot_post_receipts group by status order by status'],\n ['UNPOSTED',\"select count(*)::integer as n from videobot_listings l where not exists (select 1 from videobot_post_receipts r where r.listing_id=l.listing_id and r.revision=l.revision and r.status='sent' and r.paid_message_id is not null)\"]\n]){\n const q=await c.query(sql);\n for(const row of q.rows)console.log(name+'='+JSON.stringify(row));\n}\n}finally{await c.end().catch(()=>{})}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
