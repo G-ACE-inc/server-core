@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ndocker exec deploy-postgres-1 sh -c 'psql -X -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\"' <<'SQL'\nBEGIN;\nDO $$\nDECLARE n int;\nBEGIN\nSELECT count(*) INTO n FROM posting_topics\n WHERE board_key='video_chat' AND chat_id=-1002373696859\n AND enabled=TRUE AND verified_by IS NOT NULL AND verified_at IS NOT NULL\n AND (title ILIKE '%稼げる有料動画投稿%' OR title ILIKE '%稼げる%有料動画%');\nIF n <> 1 THEN RAISE EXCEPTION 'VIDEO_SALE_EXISTING_TOPIC_AMBIGUOUS: %',n; END IF;\nSELECT count(*) INTO n FROM posting_topics WHERE purpose='video_sale' AND enabled=TRUE;\nIF n > 1 THEN RAISE EXCEPTION 'MULTIPLE_SALE_ROUTES'; END IF;\nIF n = 1 AND NOT EXISTS (\n SELECT 1 FROM posting_topics v JOIN posting_topics e\n ON v.chat_id=e.chat_id AND v.message_thread_id=e.message_thread_id\n WHERE v.purpose='video_sale' AND v.enabled=TRUE AND e.board_key='video_chat'\n AND e.chat_id=-1002373696859 AND e.verified_by IS NOT NULL\n AND e.enabled=TRUE AND (e.title ILIKE '%稼げる有料動画投稿%' OR e.title ILIKE '%稼げる%有料動画%')\n) THEN RAISE EXCEPTION 'SALE_TOPIC_CONFLICT'; END IF;\nEND $$;\nINSERT INTO posting_topics(board_key,purpose,chat_id,message_thread_id,title,verified_by,verified_at,enabled)\nSELECT 'video_chat','video_sale',chat_id,message_thread_id,title,verified_by,verified_at,TRUE\n FROM posting_topics\n WHERE board_key='video_chat' AND chat_id=-1002373696859\n AND enabled=TRUE AND verified_by IS NOT NULL AND verified_at IS NOT NULL\n AND (title ILIKE '%稼げる有料動画投稿%' OR title ILIKE '%稼げる%有料動画%')\n ON CONFLICT (board_key,purpose,chat_id,message_thread_id) DO NOTHING;\nCOMMIT;\nSELECT 'VIDEO_SALE_ROUTE_COUNT='||count(*) FROM posting_topics WHERE purpose='video_sale' AND enabled=TRUE;\nSQL"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
