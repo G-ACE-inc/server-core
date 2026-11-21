@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/deploy\ncompose=\"$root/compose.videobot.poll.yaml\"\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\nold_image=\"$(docker inspect \"$cid\" --format '{{.Image}}')\"\ntest \"$(docker image inspect create-videobot:video-sale-1695 --format '{{.Id}}')\" = \"$old_image\"\ntest -f \"$compose\"\nstage=\"$(mktemp -d /tmp/gace-video-receipt-fix.XXXXXX)\"\ntrap 'rm -rf \"$stage\"' EXIT\ndocker cp \"$cid:/opt/videobot/src/sales/pgPostingReceipts.mjs\" \"$stage/pgPostingReceipts.mjs\"\npython3 - \"$stage/pgPostingReceipts.mjs\" <<'PY'\nfrom pathlib import Path\nimport sys\np=Path(sys.argv[1]);s=p.read_text()\nold=\"\"\"      return {status:row.status,freeMessageIds:row.free_message_ids ?? null,\n        paidMessageId:row.paid_message_id==null?null:Number(row.paid_message_id)};\"\"\"\nnew=\"\"\"      const freeMessageIds=row.free_message_ids==null?null:row.free_message_ids.map(value=>{\n        const n=Number(value);\n        if(!Number.isSafeInteger(n)||n<=0)throw new Error('PERSISTED_FREE_MESSAGE_ID_INVALID');\n        return n;\n      });\n      return {status:row.status,freeMessageIds,\n        paidMessageId:row.paid_message_id==null?null:Number(row.paid_message_id)};\"\"\"\nif s.count(old)!=1:raise SystemExit('RECEIPT_SOURCE_BASELINE_MISMATCH')\np.write_text(s.replace(old,new))\nPY\nchmod 644 \"$stage/pgPostingReceipts.mjs\"\ndocker exec -i \"$cid\" node --input-type=module --check < \"$stage/pgPostingReceipts.mjs\"\ndocker tag \"$old_image\" create-videobot:video-receipt-base-1695\nprintf 'FROM create-videobot:video-receipt-base-1695\\nCOPY pgPostingReceipts.mjs /opt/videobot/src/sales/pgPostingReceipts.mjs\\n' > \"$stage/Dockerfile\"\ndocker build --network none --pull=false -t create-videobot:video-sale-1695-receipt-fixed \"$stage\" >/dev/null\ndocker run --rm --network none --entrypoint node create-videobot:video-sale-1695-receipt-fixed --input-type=module -e '\nimport {createPostgresPostingReceiptStore} from \"./src/sales/pgPostingReceipts.mjs\";\nconst store=createPostgresPostingReceiptStore({query:async()=>({rows:[{status:\"sent\",free_message_ids:[\"4689\",\"4690\"],paid_message_id:\"4691\"}]})});\nconst r=await store.read(\"video1:1\");\nif(r.freeMessageIds[0]!==4689||r.freeMessageIds[1]!==4690||r.paidMessageId!==4691)process.exit(5);\nconsole.log(\"RECEIPT_BIGINT_ARRAY_FIX_TEST=PASS\");\n'\nbackup=\"$compose.video-receipt-1695.backup\"\ntest ! -e \"$backup\"\ncp -p \"$compose\" \"$backup\"\nrollback(){ cp -p \"$backup\" \"$compose\"; (cd \"$root\" && docker compose -p gace-createvdobot -f \"$compose\" up -d --no-deps --no-build --force-recreate videobot-poll) >/dev/null 2>&1 || true; }\ntrap 'rollback; rm -rf \"$stage\"' EXIT\npython3 - \"$compose\" <<'PY'\nfrom pathlib import Path\nimport sys,re\np=Path(sys.argv[1]);lines=p.read_text().splitlines(keepends=True)\nstart=next((i for i,x in enumerate(lines) if re.match(r'^  videobot-poll:\\s*$',x.rstrip())),None)\nif start is None:raise SystemExit('SERVICE_MISSING')\nend=next((i for i in range(start+1,len(lines)) if re.match(r'^  [\\w-]+:\\s*$',lines[i].rstrip())),len(lines))\nmatches=[i for i in range(start+1,end) if re.match(r'^    image:\\s*',lines[i])]\nif len(matches)!=1 or 'create-videobot:video-sale-1695' not in lines[matches[0]]:\n raise SystemExit('IMAGE_IDENTITY_MISMATCH')\nlines[matches[0]]=lines[matches[0]].replace('create-videobot:video-sale-1695','create-videobot:video-sale-1695-receipt-fixed')\np.write_text(''.join(lines))\nPY\n(cd \"$root\" && docker compose -p gace-createvdobot -f \"$compose\" config --quiet)\n(cd \"$root\" && docker compose -p gace-createvdobot -f \"$compose\" up -d --no-deps --no-build --force-recreate videobot-poll) >/dev/null\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(docker image inspect create-videobot:video-sale-1695-receipt-fixed --format '{{.Id}}')\"\ndocker exec -i \"$cid\" node --input-type=module <<'NODE'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {createPostgresPostingReceiptStore} from '/opt/videobot/src/sales/pgPostingReceipts.mjs';\nconst e=process.env;\nif(e.VIDEOBOT_VIDEO_SALE_THREAD_ID!=='1695')throw Error('TOPIC_ENV_INVALID');\nconst pass=readFileSync(e.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim();\nconst url='postgresql://'+encodeURIComponent(e.VIDEOBOT_DB_USER)+':'+encodeURIComponent(pass)+'@'+e.VIDEOBOT_DB_HOST+':5432/'+e.VIDEOBOT_DB_NAME;\nconst pool=new pg.Pool({connectionString:url,max:1,connectionTimeoutMillis:5000});\ntry{\n const r=await pool.query(\"SELECT listing_id,status,revision FROM videobot_listings WHERE listing_id=$1\",['389558ba-a38b-42a1-b92e-e98143df3e2d']);\n if(r.rowCount!==1||r.rows[0].status!=='published'||Number(r.rows[0].revision)!==2)throw Error('LISTING_READBACK_MISMATCH');\n const saved=await createPostgresPostingReceiptStore(pool).read('389558ba-a38b-42a1-b92e-e98143df3e2d:1');\n if(saved?.status!=='sent'||saved.freeMessageIds?.[0]!==4689||saved.freeMessageIds?.[1]!==4690||saved.paidMessageId!==4691)throw Error('LIVE_MESSAGE_RECEIPT_MISMATCH');\n console.log('VIDEO_POSTED_AND_RECEIPT_NORMALIZED=PASS');\n}finally{await pool.end()}\nNODE\nfor i in 1 2 3 4 5 6 7 8; do\n if docker logs \"$cid\" --tail 160 2>&1 | grep -q 'CREATOR_DM_POLL_READY=PASS' && docker logs \"$cid\" --tail 160 2>&1 | grep -q 'STICKER_SHOP_HTTP_READY=PASS'; then break;fi\n sleep 2\ndone\ndocker logs \"$cid\" --tail 160 2>&1 | grep -q 'CREATOR_DM_POLL_READY=PASS'\ndocker logs \"$cid\" --tail 160 2>&1 | grep -q 'STICKER_SHOP_HTTP_READY=PASS'\ntrap - EXIT\nrm -rf \"$stage\"\necho VIDEO_RECEIPT_LIVE_PATCH=PASS\necho VIDEO_AND_STICKER_POLL_READY=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
