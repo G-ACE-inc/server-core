@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "gateapp_verified_video_topic_db_readback",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ncid=deploy-gaybbs-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ndocker exec -i \"$cid\" node --input-type=module <<'NODE'\nimport pg from 'pg';\nconst u=process.env.DATABASE_URL;\nif(!u)throw Error('GATE_DATABASE_URL_UNAVAILABLE');\nconst c=new pg.Client({connectionString:u,connectionTimeoutMillis:5000});\ntry{\nawait c.connect();\nconst t=await c.query(\"select table_name from information_schema.tables where table_schema='public' and table_name in ('posting_topics','gaybbs_feature_release_gates')\");\nconsole.log('OWNER_TABLES='+t.rows.map(r=>r.table_name).join(','));\nif(t.rows.some(r=>r.table_name==='posting_topics')){\n const q=await c.query(\"select topic_id,board_key,purpose,chat_id,message_thread_id,title,enabled,verified_at is not null as has_verification,verified_by is not null as has_verifier from posting_topics where purpose='video_sale' order by topic_id limit 5\");\n for(const row of q.rows)console.log('VIDEO_SALE_TOPIC='+JSON.stringify(row));\n console.log('VIDEO_SALE_TOPIC_COUNT='+q.rowCount);\n}\nif(t.rows.some(r=>r.table_name==='gaybbs_feature_release_gates')){\n const z=await c.query(\"select feature,enabled,approved_by is not null as has_approval from gaybbs_feature_release_gates where feature='video_sale' limit 5\");\n for(const row of z.rows)console.log('RELEASE='+JSON.stringify(row));\n}\n}finally{await c.end().catch(()=>{})}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
