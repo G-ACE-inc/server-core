@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "production_readonly_diagnostic",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\necho VIDEO_RUNTIME_RUNNING=PASS\ndocker exec \"$cid\" sh -c 'grep -n \"VIDEO_TOPIC_NOT_CONNECTED\\|VIDEO_REVIEW_NOT_CONNECTED\\|getVerifiedVideoTopic\\|verifyReview\" /opt/videobot/owner/gateOwner.mjs | head -n 18'\ndocker exec \"$cid\" sh -c 'grep -n \"VIDEO_PUBLICATION_PRE_SEND_REJECTED\\|PUBLISH_NEEDS_RECONCILE\\|markPublished\" /opt/videobot/src/telegram/creatorWizard.mjs | head -n 16'\ndocker exec \"$cid\" sh -c 'grep -n \"getVerifiedVideoTopic\\|verifyReview\\|sendPaidMedia\" /opt/videobot/src/telegram/paidListingPublisher.mjs | head -n 20'\ndocker exec \"$cid\" node --input-type=module <<'NODE'\nimport pg from 'pg';\nconst c=new pg.Client({connectionString:process.env.DATABASE_URL});\ntry {\n await c.connect();\n const tables=await c.query(\"SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name LIKE 'videobot_%' AND (table_name LIKE '%listing%' OR table_name LIKE '%receipt%' OR table_name LIKE '%session%') ORDER BY table_name\");\n console.log(\"VIDEO_TABLES=\"+tables.rows.map(x=>x.table_name).join(\",\"));\n for(const row of tables.rows) {\n  const cols=await c.query(\"SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name=$1 ORDER BY ordinal_position\",[row.table_name]);\n  console.log(\"VIDEO_COLUMNS_\"+row.table_name+\"=\"+cols.rows.map(x=>x.column_name).join(\",\"));\n }\n} catch(e){console.log(\"VIDEO_DB_DIAGNOSTIC=\"+e.code);process.exitCode=78}\nfinally {await c.end().catch(()=>{})}\nNODE\necho VIDEO_READONLY_DIAGNOSTIC=COMPLETE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
