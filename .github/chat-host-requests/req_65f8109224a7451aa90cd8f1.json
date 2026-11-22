@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6#issuecomment-7073178065"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\ndocker exec \"$cid\" sh -c 'command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null' || exit 63\ndocker exec \"$cid\" sh -c 'test -d /var/lib/videobot/media-work && test -w /var/lib/videobot/media-work' || exit 64\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nconst e=process.env,db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\ntry{\nconst q=await db.query(\"SELECT l.seller_user_id,l.thumbnail_file_id,l.sample_file_id,l.price_stars,l.paid_video_file_id FROM videobot_post_receipts a JOIN videobot_listings l ON l.listing_id=a.listing_id WHERE a.paid_message_id=4691 AND a.free_message_ids=ARRAY[4689,4690]::bigint[]\");\nif(q.rowCount!==1)process.exitCode=71;\nelse{\nconst r=q.rows[0];\nif(!(Number(r.seller_user_id)>0 && typeof r.thumbnail_file_id==='string' && r.thumbnail_file_id.length>5 && typeof r.sample_file_id==='string' && r.sample_file_id.length>5 && typeof r.paid_video_file_id==='string' && Number.isInteger(r.price_stars)))process.exitCode=72;\nelse console.log('VIDEO_ALBUM_SOURCE_FILES_AND_SELLER_ELIGIBLE=PASS');\n}\n}catch{process.exitCode=79}finally{await db.end()}\nJS\necho VIDEO_ALBUM_MEDIA_PIPELINE_PREFLIGHT=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
