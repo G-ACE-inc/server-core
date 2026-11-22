@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\ndocker exec -i \"$cid\" node --input-type=module <<'JS'\nimport {readdirSync,readFileSync} from 'node:fs';\nimport {join} from 'node:path';\nconst root='/opt/videobot/src', hits=[];\nfunction scan(dir){\n for(const e of readdirSync(dir,{withFileTypes:true})){\n  const p=join(dir,e.name);\n  if(e.isDirectory())scan(p);\n  else if(e.isFile()&&p.endsWith('.mjs')){\n   const lines=readFileSync(p,'utf8').split('\\n');\n   for(let i=0;i<lines.length;i++){\n    const line=lines[i].trim();\n    if(/(sendVideo|sendMediaGroup|sendPaidMedia|copyMessage|forwardMessage|publishVideoListing|buildPaidMediaRequest)/.test(line)){\n     hits.push({module:p.slice(root.length+1),line:i+1,text:line.slice(0,170)});\n    }\n   }\n  }\n }\n}\nscan(root);\nfor(const h of hits)console.log(h.module+':'+h.line+' '+h.text);\nconsole.log('SCANNED_PUBLICATION_REFERENCES='+hits.length);\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
