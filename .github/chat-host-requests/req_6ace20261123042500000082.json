@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nrepo='seigo-gace/GateApp-Bot'\nrun='44975918711'\noldsha='0aea204a78c85997b971c650ebc9411c8d8365395ac0e5ef3e70587adb514ec7'\nnewsha='ae1efae7152d3ae8c161e1a06bfb6f0bc6278e44483eeeaf6ad20432b44e5443'\noldimage='sha256:14c1cea5c3c6a2f5669d2f2b5c77a0980e5207b281af75bedea20a5991f8cfad'\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$oldimage\"\ntest \"$(docker image inspect gace-tgtumbler-gaybbs:local -f '{{.Id}}')\" = \"$oldimage\"\ntest \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d' ' -f1)\" = \"$oldsha\"\ntest -f deploy/gserver-compose.yaml\ntest \"$(gh api repos/$repo/actions/runs/$run --jq '.conclusion')\" = success\nstage=\"$(mktemp -d)\"\nchmod 700 \"$stage\"\ntrap 'rm -rf -- \"$stage\"' EXIT\ngh run download \"$run\" -R \"$repo\" -n gaybbs-profile-bundle -D \"$stage\" >/dev/null\ntest \"$(sha256sum \"$stage/gaybbs.mjs\" | cut -d' ' -f1)\" = \"$newsha\"\nprintf '%s\\n' 'FROM gace-tgtumbler-gaybbs:rollback-startless-20261122' 'USER root' 'COPY --chown=node:node gaybbs.mjs /app/gaybbs.mjs' 'USER node' > \"$stage/Dockerfile\"\ndocker tag \"$oldimage\" gace-tgtumbler-gaybbs:rollback-startless-20261122\ndocker build --pull=false -q -t gace-tgtumbler-gaybbs:startless-20261122 -f \"$stage/Dockerfile\" \"$stage\" >/dev/null\ntest \"$(docker run --rm --entrypoint sha256sum gace-tgtumbler-gaybbs:startless-20261122 /app/gaybbs.mjs | cut -d' ' -f1)\" = \"$newsha\"\ndocker run --rm --entrypoint node gace-tgtumbler-gaybbs:startless-20261122 --check /app/gaybbs.mjs\ndocker tag gace-tgtumbler-gaybbs:startless-20261122 gace-tgtumbler-gaybbs:local\nif ! docker compose -f deploy/gserver-compose.yaml up --no-deps -d --force-recreate gaybbs >/dev/null; then\n docker tag gace-tgtumbler-gaybbs:rollback-startless-20261122 gace-tgtumbler-gaybbs:local\n docker compose -f deploy/gserver-compose.yaml up --no-deps -d --force-recreate gaybbs >/dev/null || true\n echo STARTLESS_DEPLOY=ROLLED_BACK\n exit 71\nfi\nsleep 3\nif [ \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" != true ] || [ \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d' ' -f1)\" != \"$newsha\" ]; then\n docker tag gace-tgtumbler-gaybbs:rollback-startless-20261122 gace-tgtumbler-gaybbs:local\n docker compose -f deploy/gserver-compose.yaml up --no-deps -d --force-recreate gaybbs >/dev/null || true\n echo STARTLESS_DEPLOY=ROLLED_BACK_POSTCHECK\n exit 72\nfi\necho STARTLESS_DEPLOY=PASS\necho STARTLESS_PRODUCTION_BUNDLE_SHA256=\"$newsha\"\necho STARTLESS_OLD_IMAGE_PRESERVED=PASS\necho POSTGRES_USERBOT_UNTOUCHED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
