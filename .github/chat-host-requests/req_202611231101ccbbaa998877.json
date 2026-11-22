@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7077544438"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nconst e=process.env;\nconst db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\ntry {\n const old=await db.query(\"SELECT listing_id FROM videobot_post_receipts WHERE paid_message_id=$1\",[4691]);\n if(old.rowCount!==1)process.exitCode=61;\n else {\n  const id=old.rows[0].listing_id;\n  const receipts=await db.query(\"SELECT revision,status,free_message_ids,paid_message_id,topic_id FROM videobot_post_receipts WHERE listing_id=$1 ORDER BY revision\",[id]);\n  const listing=await db.query(\"SELECT revision,status,price_stars,thumbnail_file_id,sample_file_id,paid_video_file_id,rights_verified,adult_consent_verified,fee_terms_accepted_at FROM videobot_listings WHERE listing_id=$1\",[id]);\n  const ledger=await db.query(\"SELECT COUNT(*)::int AS n FROM videobot_stars_ledger WHERE listing_id=$1 AND kind=$2\",[id,'paid']);\n  if(listing.rowCount!==1)process.exitCode=62;\n  else if(receipts.rowCount<2)process.exitCode=63;\n  else if(receipts.rows.some(x=>x.status!=='sent'||!x.paid_message_id||!Array.isArray(x.free_message_ids)||x.free_message_ids.length!==2))process.exitCode=64;\n  else if(Number(ledger.rows[0].n)>0)process.exitCode=65;\n  else if(!listing.rows[0].paid_video_file_id||Number(listing.rows[0].price_stars)!==10)process.exitCode=66;\n  else if(!listing.rows[0].rights_verified||!listing.rows[0].adult_consent_verified||!listing.rows[0].fee_terms_accepted_at)process.exitCode=67;\n  else {console.log('REPOST_PREFLIGHT_NO_RECORDED_BUYERS=PASS');console.log('OLD_RECEIPTS='+receipts.rowCount);}\n }\n} catch(error) {\n console.error('REPOST_PREFLIGHT_DB_ERROR_CODE='+String(error?.code??'other').slice(0,12));\n process.exitCode=79;\n} finally {await db.end()}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
