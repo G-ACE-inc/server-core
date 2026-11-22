@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6#issuecomment-7081630967"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport {readFileSync} from 'node:fs';\nimport {createHash} from 'node:crypto';\nconst expected=[[\"src/telegram/paidListingPublisher.mjs\",\"660a8cc706a804cbe3aa2339030d82cf58f768f6\"],[\"src/telegram/paidMedia.mjs\",\"9711d0a134402d53e053253946893ee3ba6327e8\"],[\"src/telegram/freeAlbum.mjs\",\"9fa7e7be8c002d0767f0b8ac6f06bfe884266441\"],[\"src/telegram/creatorWiring.mjs\",\"37a499821cb3ab48402daf97af8ad5d40e46d21d\"],[\"src/telegram/creatorWizard.mjs\",\"4aec2aaf284b6e1a39ab64c86553857153a7cec1\"],[\"src/telegram/botApi.mjs\",\"2a7243e152196636bda64d6a7d70a0f97c527635\"],[\"src/sales/pgListings.mjs\",\"1eed29f3eb81ae7757bb79ff1149e6f6397a6e9e\"],[\"src/sales/pgPostingReceipts.mjs\",\"c568cce493e95217963d46f8d1ff1379e42c1824\"],[\"src/sales/pgStarsLedger.mjs\",\"1bf31a61c7fc5c3adacd395e5341f8d864887ece\"],[\"src/runtime/creatorPollingMain.mjs\",\"aac9a60ca059114125721d9d4d29af7cd91e6b02\"],[\"src/telegram/creatorScreenTransport.mjs\",\"437df3964c7293d9af8a80e5d7a25c91e39c8b4a\"],[\"src/telegram/mediaProcessor.mjs\",\"b197c902d074c6e6928b0ba1089f282aaf28a9a2\"]];\nlet changed=0;\nfor (let i=0;i<expected.length;i++){\n const [path,gitsha]=expected[i];\n let state='MISSING';\n try{\n  const buffer=readFileSync('/opt/videobot/'+path);\n  const header=Buffer.from('blob '+buffer.length+'\\\\0');\n  const real=createHash('sha1').update(header).update(buffer).digest('hex');\n  state=real===gitsha?'SAME':'DIFFERENT';\n }catch{}\n if(state!=='SAME')changed++;\n console.log(String(i+1).padStart(2,'0')+':'+state);\n}\nprocess.exitCode=changed?60+changed:0;\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
