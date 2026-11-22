@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/68"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport subprocess,json,sys,pathlib\ndef run(a,timeout=20):\n p=subprocess.run(a,capture_output=True,text=True,timeout=timeout)\n if p.returncode:raise RuntimeError(\"READ_FAILED_\"+a[0])\n return p.stdout.strip()\nfiles=[str(x) for x in pathlib.Path(\"deploy\").rglob(\"*\") if x.is_file() and (\"gaybbs\" in x.name.lower() or \"compose\" in x.name.lower())][:45]\nsource=run([\"git\",\"status\",\"--porcelain\"]).splitlines()\nprobe=run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"node\",\"-e\",\"const fs=require('fs');const s=fs.readFileSync('/app/gaybbs.mjs','utf8');console.log(JSON.stringify({has_startless:s.includes('gdm:'),has_search_restart_text:s.includes('Botの /start から共通メニュー'),has_video_specialist_guard:s.includes('VIDEO_SPECIALIST_ENTRY_TOPIC_IDS'),has_public_button_adapter:s.includes('publicNavigationButton')}))\"])\ninspect=run([\"docker\",\"inspect\",\"-f\",\"{{json .Config.Labels}}\",\"deploy-gaybbs-1\"])\nlabels=json.loads(inspect)\nsafe_labels={k:v for k,v in labels.items() if k in [\"com.docker.compose.project\",\"com.docker.compose.service\",\"com.docker.compose.project.working_dir\",\"com.docker.compose.project.config_files\"]}\nobj={\"deploy_files\":files,\"dirty_count\":len(source),\"dirty_sample\":[x[3:] for x in source[:25]],\"running_runtime\":json.loads(probe),\"compose_labels\":safe_labels}\nbody=\"STARTLESS_LIVE_DIAGNOSTIC=\"+json.dumps(obj,ensure_ascii=False,separators=(\",\",\":\"))\np=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/68/comments\",\"-f\",\"body=\"+body],capture_output=True,text=True,timeout=45)\nif p.returncode:sys.exit(70)\nprint(\"LIVE_STARTLESS_AND_DEPLOY_PATH_DIAGNOSTIC=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
