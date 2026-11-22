@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "global_startless_existing_public_posts_read_only_preflight",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\necho CONTAINER_LAYOUT_BEGIN\ndocker exec deploy-gaybbs-1 sh -c 'pwd; find /app -maxdepth 3 -iname \"*startless*\" -o -iname \"*package.json\" 2>/dev/null | head -n 25; node -v' || true\necho CONTAINER_LAYOUT_END\necho DB_TABLE_BEGIN\ndocker exec deploy-postgres-1 sh -c 'psql -X -q -U \"$POSTGRES_USER\" -d gaybbs -At -c \"SELECT table_name FROM information_schema.tables WHERE table_schema=\\x27public\\x27 AND table_name LIKE \\x27%startless%\\x27\"' || true\ndocker exec deploy-postgres-1 sh -c 'psql -X -q -U \"$POSTGRES_USER\" -d gaybbs -At -c \"SELECT COUNT(*) FROM board_menu_panels WHERE state=\\x27published\\x27\"' || true\necho DB_TABLE_END"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
