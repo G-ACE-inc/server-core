@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/68"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport json,sys\nfrom pathlib import Path\np=Path(\"deploy/state/startless-repeated-start-repairs-20261122\")\nfor topic in (102,104,116,1000,81,92,103,50):\n f=p/f\"{topic}.json\"\n if not f.is_file(): sys.exit(60)\n try: state=json.loads(f.read_text())[\"state\"]\n except Exception: sys.exit(61)\n if state!=\"VERIFIED\": sys.exit(62)\nif (p/\"52.json\").exists(): sys.exit(63)\nf=p/\"51.json\"\nif not f.exists(): sys.exit(64)\ntry: status=json.loads(f.read_text())[\"state\"]\nexcept Exception: sys.exit(65)\nif status==\"VERIFIED\": sys.exit(0)\nif status==\"UNKNOWN\": sys.exit(81)\nif status==\"ATTEMPTING\":sys.exit(82)\nif status==\"DENIED\":sys.exit(83)\nif status==\"UNCERTAIN\":sys.exit(84)\nsys.exit(85)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
