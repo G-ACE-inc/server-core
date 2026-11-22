@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6#issuecomment-7072284274"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nimport {createCreatorTelegramFetch} from '/opt/videobot/src/runtime/creatorEgress.mjs';\nimport {createTelegramBotApi} from '/opt/videobot/src/telegram/botApi.mjs';\nsetDefaultResultOrder('ipv4first');\nsetDefaultAutoSelectFamily(false);\nconst env=process.env,pw=readFileSync('/run/secrets/videobot_db_password','utf8').trim();\nconst token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\nconst db=new pg.Pool({host:env.VIDEOBOT_DB_HOST,database:env.VIDEOBOT_DB_NAME,user:env.VIDEOBOT_DB_USER,password:pw,max:1,connectionTimeoutMillis:5000});\nconst transport=createCreatorTelegramFetch();\nconst api=createTelegramBotApi({token,fetchImpl:transport.fetch,timeoutMs:25000});\nconst fail=code=>{throw Object.assign(new Error(code),{code});};\ntry {\n const q=await db.query(\"SELECT a.delivery_key AS old_key,a.free_message_ids AS old_free,a.paid_message_id AS old_paid,b.delivery_key AS new_key,b.status AS new_status,b.free_message_ids AS new_free,b.paid_message_id AS new_paid,b.topic_id,l.title,l.description,l.price_stars,l.status AS listing_status FROM videobot_post_receipts a JOIN videobot_listings l ON l.listing_id=a.listing_id JOIN videobot_post_receipts b ON b.listing_id=l.listing_id AND b.revision=l.revision WHERE a.paid_message_id=4691 AND a.free_message_ids=ARRAY[4689,4690]::bigint[]\");\n if(q.rowCount!==1)fail('RECEIPT_PAIR_INVALID');\n const r=q.rows[0];\n if(r.new_status!=='sent'||r.old_paid!=4691||!Array.isArray(r.new_free)||r.new_free.length!==2||r.new_free.some(id=>[4689,4690,4691].includes(Number(id)))||!['published','paused'].includes(r.listing_status))fail('RECEIPT_NOT_ELIGIBLE');\n if(!Number.isSafeInteger(r.price_stars)||r.price_stars<1||r.price_stars>25000||!Number.isSafeInteger(Number(r.topic_id)))fail('PRICE_TOPIC_INVALID');\n if(Number(r.topic_id)!==Number(env.VIDEOBOT_VIDEO_SALE_THREAD_ID))fail('TOPIC_CHANGED');\n const oldPurchases=await db.query(\"SELECT count(*)::integer AS n FROM videobot_stars_ledger WHERE delivery_key=$1 AND kind='paid'\",[r.old_key]);\n if(oldPurchases.rows[0].n<1)fail('BUYER_PROTECTION_HISTORY_MISSING');\n const bot=await api('getMe',{});\n if(String(bot?.username||'').toLowerCase()!=='createvdobot')fail('BOT_IDENTITY_CHANGED');\n const chatId=-1002373696859;\n const first=Number(r.old_free[0]),paid=Number(r.old_paid);\n if(!Number.isSafeInteger(first)||!Number.isSafeInteger(paid)||first<=0||paid<=0||first===paid)fail('NEW_IDS_INVALID');\n const base=r.title+(r.description?'\\n'+r.description:'');\n const paidCaption=base;\n const freeCaption=base;\n if(paidCaption.length>1024||freeCaption.length>1024)fail('CAPTION_LIMIT');\n const paidAck=await api('editMessageCaption',{chat_id:chatId,message_id:paid,caption:paidCaption});\n if(paidAck?.alreadyCurrent!==true && (paidAck?.message_id!==paid||paidAck?.caption!==paidCaption))fail('PAID_CAPTION_READBACK_FAILED');\n console.log('OLD_PAID_CAPTION_ONLY_CREATOR_TEXT=PASS');\n const freeAck=await api('editMessageCaption',{chat_id:chatId,message_id:first,caption:freeCaption});\n if(freeAck?.alreadyCurrent!==true && (freeAck?.message_id!==first||freeAck?.caption!==freeCaption))fail('FREE_ALBUM_CAPTION_READBACK_FAILED');\n console.log('OLD_FREE_ALBUM_CAPTION_ONLY_CREATOR_TEXT=PASS');\n console.log('PREEXISTING_PURCHASER_MEDIA_PRESERVED=PASS');\n console.log('NO_NEW_TELEGRAM_POSTS=PASS');\n}catch(e){\n console.error('LINKED_POST_UPDATE=FAIL');\n process.exitCode=1;\n}finally{\n await transport.close();await db.end();\n}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
