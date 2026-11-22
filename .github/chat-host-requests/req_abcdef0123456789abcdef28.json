@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/66"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport json,subprocess,sys\nchat=-1002373696859\nallowed={1695,4640,1613}\nextra=set();seen=set();n=0\nfor page in range(16):\n p=subprocess.run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",str(chat),\"--page\",str(page)],capture_output=True,text=True,timeout=125)\n if p.returncode:sys.exit(60)\n docs=[json.loads(z.split(\"=\",1)[1]) for z in p.stdout.splitlines() if z.startswith(\"USERBOT_TOPIC_AUDIT=\")]\n if len(docs)!=1 or docs[0].get(\"chat\")!=\"video\":sys.exit(61)\n rows=docs[0].get(\"rows\",[])\n for r in rows:\n  t=r.get(\"topic_id\")\n  if not isinstance(t,int) or t<1 or t in seen:sys.exit(62)\n  seen.add(t);n+=1\n  if r.get(\"post_button\")==\"PRESENT\" and t not in allowed:extra.add(t)\n if not docs[0].get(\"has_more\"):break\nelse:sys.exit(63)\nresult={\"topic_count\":n,\"unwanted_post_button_count\":len(extra),\"unwanted_topic_ids\":sorted(extra),\"allowed_specialist_topic_ids\":sorted(allowed)}\ntext=\"Video forum read-only resident Userbot posting-button audit; no session change or Telegram mutations. \"+json.dumps(result,separators=(',',':'))\np=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/68/comments\",\"-f\",\"body=\"+text],capture_output=True,text=True,timeout=35)\nif p.returncode:sys.exit(64)\nprint(\"VIDEO_ONLY_THREE_TOPIC_AUDIT_COMMENT=CREATED\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
