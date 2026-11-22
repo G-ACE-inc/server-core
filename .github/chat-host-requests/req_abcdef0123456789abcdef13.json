@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/68"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ncd \"$root\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 60\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\nquery(){ docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"$1\"; }\ntest \"$(query \"SELECT count(*) FROM startless_public_post_migrations WHERE state='applied';\")\" = 104 || exit 62\ntest \"$(query \"SELECT count(*) FROM startless_public_post_migrations WHERE state='uncertain';\")\" = 11 || exit 63\ntest \"$(query \"SELECT count(*) FROM startless_public_post_migrations;\")\" = 115 || exit 64\ntest \"$(query \"SELECT count(*) FROM profile_publications WHERE status='published' AND message_id>0;\")\" = 7 || exit 65\ntest \"$(query \"SELECT count(*) FROM profile_keyboard_backfill WHERE state='applied';\")\" = 7 || exit 66\npython3 - <<'PY'\nimport json,sys\nfrom pathlib import Path\np=Path(\"deploy/state/startless-repeated-start-repairs-20261122\")\nfor topic in (102,104,116,1000,81,92,103,50,52):\n f=p/f\"{topic}.json\"\n if not f.is_file() or json.loads(f.read_text()).get(\"state\")!=\"VERIFIED\":sys.exit(67)\na=p/\"51.json\"\nb=Path(\"deploy/state/startless-repeated-start-reconcile-51-20261122/51.json\")\nif json.loads(a.read_text()).get(\"state\")!=\"UNCERTAIN\":sys.exit(68)\nif json.loads(b.read_text()).get(\"state\")!=\"VERIFIED\":sys.exit(69)\nPY\necho GAYBBS_STARTLESS_MIGRATIONS_APPLIED=104_OF_115\necho GAYBBS_REMAINING_UNCERTAIN=11\necho EXISTING_TEN_REPAIRED=VERIFIED\necho SEVEN_PROFILE_POSTS_PRESERVED=PASS\necho BOT_AND_RESIDENT_USERBOT=ACTIVE\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
