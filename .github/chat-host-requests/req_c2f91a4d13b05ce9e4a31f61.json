@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ndocker exec \"$cid\" node --input-type=module -e '\nimport pg from \"pg\";\nimport {readFileSync} from \"node:fs\";\nconst pass=readFileSync(\"/run/secrets/videobot_db_password\",\"utf8\").trim();\nconst env=process.env;\nconst pool=new pg.Pool({host:env.VIDEOBOT_DB_HOST,database:env.VIDEOBOT_DB_NAME,user:env.VIDEOBOT_DB_USER,password:pass,connectionTimeoutMillis:4000,max:1});\ntry {\n const r=await pool.query(\"SELECT status,free_message_ids,paid_message_id FROM videobot_post_receipts WHERE paid_message_id=$1 OR $2::bigint=ANY(free_message_ids) OR $3::bigint=ANY(free_message_ids)\",[4691,4689,4690]);\n if(r.rowCount===0)process.exitCode=71;\n else if(r.rowCount!==1)process.exitCode=72;\n else if(r.rows[0].status!==\"sent\")process.exitCode=73;\n else if(r.rows[0].paid_message_id==4691 && r.rows[0].free_message_ids?.includes(\"4689\"))process.exitCode=74;\n else process.exitCode=75;\n} catch(e) {process.exitCode=76} finally {await pool.end();}\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
