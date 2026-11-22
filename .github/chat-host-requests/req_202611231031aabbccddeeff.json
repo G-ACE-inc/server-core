@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7077544438"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nconst e=process.env;let pool=null;\ntry{\n const pw=readFileSync('/run/secrets/videobot_db_password','utf8').trim();\n pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:pw,max:1,connectionTimeoutMillis:5000});\n const a=await pool.query(\"SELECT COUNT(*)::int AS n FROM videobot_post_receipts\");\n if(a.rows[0].n<1)process.exitCode=71;\n else {\n  const old=await pool.query(\"SELECT listing_id,revision,status,paid_message_id FROM videobot_post_receipts WHERE paid_message_id=4691\");\n  if(old.rowCount!==1)process.exitCode=72;\n  else{\n   const b=await pool.query(\"SELECT revision,status,paid_message_id FROM videobot_post_receipts WHERE listing_id=$1 ORDER BY revision DESC\",[old.rows[0].listing_id]);\n   if(b.rowCount<2)process.exitCode=73;\n   else if(!b.rows.some(x=>x.status==='sent'))process.exitCode=74;\n   else console.log('TWO_VIDEO_VERSIONS_DB_LOOKUP=PASS');\n  }\n }\n}catch(e){\n const c=e?.code;\n process.exitCode=c==='42P01'?81:c==='42703'?82:c==='28P01'?83:c==='ETIMEDOUT'?84:89;\n}finally{if(pool)await pool.end()}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
