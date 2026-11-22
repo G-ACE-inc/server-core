@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/68"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport json,subprocess,sys\nq=\"\"\"SELECT m.chat_id,p.message_thread_id,m.message_id FROM startless_public_post_migrations m JOIN topic_dm_entry_pins p ON p.chat_id=m.chat_id AND p.message_id=m.message_id WHERE m.state='uncertain' AND NOT (EXISTS(SELECT 1 FROM posting_topics t WHERE t.chat_id=p.chat_id AND t.message_thread_id=p.message_thread_id AND t.purpose='link') OR EXISTS(SELECT 1 FROM board_menu_panels b WHERE b.chat_id=p.chat_id AND b.message_thread_id=p.message_thread_id AND b.panel_type='general_guide') OR p.title ILIKE '%総合案内%' OR p.title ILIKE '%コミュニテーリング%' OR p.title ILIKE '%相互リング%' OR p.title ILIKE '%ﾘﾝｸ%' OR p.title ILIKE '%コミュニティリンク%') ORDER BY m.chat_id,m.message_id\"\"\"\np=subprocess.run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-X\",\"-v\",\"ON_ERROR_STOP=1\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-At\",\"-F\",\"|\",\"-c\",q],capture_output=True,text=True,timeout=30)\nif p.returncode:sys.exit(60)\nlines=[line for line in p.stdout.splitlines() if line.strip()]\nif len(lines)!=5:sys.exit(61)\nnot_found=0\nfor line in lines:\n chat,thread,mid=map(int,line.split(\"|\"))\n r=subprocess.run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",str(chat),\"--topic-id\",str(thread)],capture_output=True,text=True,timeout=125)\n if r.returncode:sys.exit(62)\n docs=[json.loads(z.split(\"=\",1)[1]) for z in r.stdout.splitlines() if z.startswith(\"USERBOT_TOPIC_AUDIT=\")]\n if len(docs)!=1:sys.exit(63)\n matches=[(row.get(\"migration\") or {}) for row in docs[0].get(\"rows\",[]) if row.get(\"topic_id\")==thread and (row.get(\"migration\") or {}).get(\"message_id\")==mid]\n if len(matches)!=1:sys.exit(64)\n if matches[0].get(\"transport\")==\"NOT_FOUND\":not_found+=1\nprint(\"EXACT_UNAVAILABLE_ORIGINAL_POST_COUNT=\"+str(not_found))\nsys.exit(100+not_found)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
