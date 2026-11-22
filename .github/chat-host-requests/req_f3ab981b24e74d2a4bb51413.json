@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6#issuecomment-7071978244"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {writeFile,mkdir,access} from 'node:fs/promises';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nimport {createCreatorTelegramFetch} from '/opt/videobot/src/runtime/creatorEgress.mjs';\nimport {createTelegramBotApi} from '/opt/videobot/src/telegram/botApi.mjs';\nsetDefaultResultOrder('ipv4first');setDefaultAutoSelectFamily(false);\nconst e=process.env;\nconst pw=readFileSync('/run/secrets/videobot_db_password','utf8').trim();\nconst token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:pw,max:1,connectionTimeoutMillis:5000,idleTimeoutMillis:1000});\nconst network=createCreatorTelegramFetch();\nconst api=createTelegramBotApi({token,fetchImpl:network.fetch,timeoutMs:25000});\nconst bad=(code)=>{const x=new Error(code);x.code=code;throw x;};\ntry{\n const q=await pool.query(\"SELECT a.delivery_key AS old_key,a.listing_id,a.revision AS old_revision,a.topic_id,a.status AS old_status,a.free_message_ids AS old_free,a.paid_message_id AS old_paid,b.delivery_key AS new_key,b.status AS new_status,b.free_message_ids AS new_free,b.paid_message_id AS new_paid,l.revision AS current_revision,l.status AS listing_status FROM videobot_post_receipts a JOIN videobot_listings l ON l.listing_id=a.listing_id JOIN videobot_post_receipts b ON b.listing_id=a.listing_id AND b.revision=l.revision AND b.topic_id=a.topic_id WHERE a.paid_message_id=4691 AND a.free_message_ids=ARRAY[4689,4690]::bigint[]\");\n if(q.rowCount!==1)bad('CLEANUP_RECEIPT_PAIR_MISSING');\n const r=q.rows[0];\n if(r.old_status!=='sent'||r.new_status!=='sent'||r.current_revision!==r.old_revision+1||r.old_paid!=4691||r.new_paid==4691||!Array.isArray(r.new_free)||r.new_free.length!==2||r.new_free.some(v=>[4689,4690,4691].includes(Number(v)))||!['published','paused'].includes(r.listing_status))bad('CLEANUP_SALE_INTEGRITY_FAILED');\n if(!e.VIDEOBOT_VIDEO_SALE_THREAD_ID||Number(e.VIDEOBOT_VIDEO_SALE_THREAD_ID)!==Number(r.topic_id))bad('CLEANUP_TOPIC_CHANGED');\n const sale=await pool.query(\"SELECT COUNT(*)::integer AS n FROM videobot_stars_ledger WHERE delivery_key=$1 AND kind='paid'\",[r.old_key]);\n if(sale.rows[0].n<1)bad('OLD_PAID_PRESERVATION_NOT_VERIFIED');\n const me=await api('getMe',{});\n if(String(me?.username||'').toLowerCase()!=='createvdobot')bad('WRONG_BOT');\n const chatId=-1002373696859;\n const stateDir=(e.VIDEOBOT_VIDEO_WORK_ROOT||'/var/lib/videobot/media-work')+'/replacements/legacy-4689-4691';\n await mkdir(stateDir,{recursive:true,mode:0o700});\n for(const mid of [4689,4690]){\n   const intent=stateDir+'/delete-'+mid+'.intent';\n   const ack=stateDir+'/delete-'+mid+'.ack';\n   let hasAck=false;\n   try{await access(ack);hasAck=true;}catch{}\n   if(hasAck){console.log('ORIGINAL_FREE_ALREADY_REMOVED_'+mid+'=PASS');continue;}\n   try{await writeFile(intent,'authorized replacement cleanup for legacy free message '+mid+'\\n',{flag:'wx',mode:0o600});}\n   catch{bad('OLD_DELETE_OUTCOME_UNKNOWN_'+mid);}\n   const deleted=await api('deleteMessage',{chat_id:chatId,message_id:mid});\n   if(deleted!==true)bad('TELEGRAM_DELETE_NOT_ACKNOWLEDGED_'+mid);\n   await writeFile(ack,'Telegram deleteMessage success: '+mid+'\\n',{flag:'wx',mode:0o600});\n   console.log('ORIGINAL_FREE_REMOVED_'+mid+'=PASS');\n }\n console.log('ORIGINAL_PURCHASED_PAID_4691_PRESERVED=PASS');\n console.log('NEW_NATIVE_GALLERY_AND_PAID_RECEIPTS_PRESERVED=PASS');\n}catch(err){\n console.error('LEGACY_CLEANUP_STOP='+String(err.code||'SAFE_STOP'));\n process.exitCode=1;\n}finally{await network.close();await pool.end();}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
