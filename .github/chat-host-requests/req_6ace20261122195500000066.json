@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "global_startless_existing_public_posts_read_only_preflight",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nprintf 'GAYBBS_CONTAINERS_BEGIN\\n'\ndocker ps --format '{{.Names}}|{{.Image}}' | grep -Ei 'gaybbs|postgres' || true\nprintf 'GAYBBS_CONTAINERS_END\\n'\nprintf 'STARTLESS_SOURCE_BEGIN\\n'\ntest -f artifacts/bot/scripts/refreshStartlessExistingPosts.ts && echo REFRESH_SCRIPT_PRESENT || true\ntest -f artifacts/bot/dist/scripts/refreshStartlessExistingPosts.js && echo REFRESH_BUILT_PRESENT || true\ntest -f artifacts/bot/src/services/startlessExistingPosts.ts && echo SERVICE_SOURCE_PRESENT || true\nprintf 'STARTLESS_SOURCE_END\\n'\nprintf 'STARTLESS_DB_BEGIN\\n'\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei 'postgres' || true)\"\nif [ -n \"$pg\" ]; then\ndocker exec \"$pg\" sh -c 'psql -X -q -U \"$POSTGRES_USER\" -d gaybbs -At -F \"|\" -c \"SELECT to_regclass(\\x27public.startless_public_post_migrations\\x27); SELECT state,COUNT(*) FROM startless_public_post_migrations GROUP BY state ORDER BY state;\"' || true\nfi\nprintf 'STARTLESS_DB_END\\n'\necho STARTLESS_RUNTIME_PREFLIGHT_FINISHED"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
