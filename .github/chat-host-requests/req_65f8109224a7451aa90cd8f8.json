@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7073396568"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nimport {mkdir,rm,stat,chmod} from 'node:fs/promises';\nimport {execFile} from 'node:child_process';import {promisify} from 'node:util';\nimport {setDefaultResultOrder} from 'node:dns';import {setDefaultAutoSelectFamily} from 'node:net';\nimport {createCreatorTelegramFetch} from '/opt/videobot/src/runtime/creatorEgress.mjs';\nimport {createTelegramBotApi} from '/opt/videobot/src/telegram/botApi.mjs';\nimport {createTelegramVideoFetcher} from '/opt/videobot/src/telegram/telegramFileFetch.mjs';\nsetDefaultResultOrder('ipv4first');setDefaultAutoSelectFamily(false);\nconst e=process.env,db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\nconst network=createCreatorTelegramFetch(),exec=promisify(execFile);\nconst token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\nconst api=createTelegramBotApi({token,fetchImpl:network.fetch,timeoutMs:25000});\nconst fetch=createTelegramVideoFetcher({telegramApi:api,token,fetchImpl:network.fetch,maxBytes:19000000});\nlet dir=null,stage=71,committed=false;\ntry{\n const q=await db.query(\"SELECT l.thumbnail_file_id,l.sample_file_id FROM videobot_post_receipts a JOIN videobot_listings l ON l.listing_id=a.listing_id WHERE a.paid_message_id=4691 AND a.free_message_ids=ARRAY[4689,4690]::bigint[]\");\n if(q.rowCount!==1)throw Error('INPUT_NOT_UNIQUE');\n dir='/tmp/gace-approved-album-f7c48d2e';await mkdir(dir,{mode:0o700});\n stage=72;const photo=await fetch(q.rows[0].thumbnail_file_id,dir);\n stage=73;const sample=await fetch(q.rows[0].sample_file_id,dir);\n const filter=\"scale=480:640:force_original_aspect_ratio=decrease,pad=480:640:(ow-iw)/2:(oh-ih)/2:color=black\";\n const outputPhoto=dir+'/album-photo.jpg',outputVideo=dir+'/album-video.mp4';\n stage=74;await exec('ffmpeg',['-nostdin','-hide_banner','-loglevel','error','-i',photo.path,'-vf',filter,'-frames:v','1','-q:v','3','-y',outputPhoto],{timeout:45000,maxBuffer:100000});\n stage=75;try{\n  await exec('ffmpeg',['-nostdin','-hide_banner','-loglevel','error','-i',sample.path,'-t','30','-map','0:v:0','-map','0:a?','-vf',filter,'-c:v','libx264','-threads','1','-preset','ultrafast','-crf','25','-maxrate','2000k','-bufsize','4000k','-pix_fmt','yuv420p','-c:a','aac','-b:a','96k','-movflags','+faststart','-y',outputVideo],{timeout:60000,maxBuffer:100000});\n }catch(e){\n const t=String(e.stderr||'').toLowerCase();\n if(e.killed||e.signal==='SIGTERM')stage=81;\n else if(t.includes('no space left on device'))stage=82;\n else if(t.includes('unknown encoder'))stage=83;\n else if(t.includes('error while opening encoder'))stage=84;\n else if(t.includes('invalid argument'))stage=85;\n else if(t.includes('resource temporarily unavailable'))stage=86;\n else if(t.includes('conversion failed'))stage=87;\n else stage=88;\n throw e;\n }\n stage=76;for(const f of [outputPhoto,outputVideo]){\n  const info=await stat(f);\n  if(info.size<100||info.size>19000000)throw Error('PREVIEW_SIZE_OUT_OF_BOUNDS');\n  const probe=await exec('ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=width,height','-of','csv=p=0',f],{timeout:30000,maxBuffer:10000});\n  if(probe.stdout.trim()!=='480,640')throw Error('PREVIEW_ASPECT_NOT_PORTRAIT');\n }\n await chmod(outputPhoto,0o600);await chmod(outputVideo,0o600);\n committed=true;\n console.log('PRESENTATION_TWO_MEDIA_3_TO_4_WITHOUT_CROPPING=PASS');\n console.log('ORIGINAL_SOURCE_AND_PAID_VIDEO_UNCHANGED=PASS');\n}catch(e){console.error('ALBUM_LAYOUT_SAFE_DRY_RUN_STAGE='+stage);process.exitCode=stage;}\nfinally{if(dir&&!committed)await rm(dir,{recursive:true,force:true});await network.close();await db.end();}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
