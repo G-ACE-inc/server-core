@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/68"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nroot=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nsource=9655437b10ecb9063ee596d3901fdb1e8244136e\nci_profile=44977636085\nci_package=44977636086\ncurrent_tag=gace-tgtumbler-gaybbs:startless-batch-db17\nnew_tag=gace-tgtumbler-gaybbs:startless-help-9655437\nrollback=gace-tgtumbler-gaybbs:rollback-help-20261122\nlocal_tag=gace-tgtumbler-gaybbs:local\ntest \"$(gh run view \"$ci_profile\" -R seigo-gace/GateApp-Bot --json headSha,conclusion --jq '.headSha+\" \"+.conclusion')\" = \"$source success\" || exit 60\ntest \"$(gh run view \"$ci_package\" -R seigo-gace/GateApp-Bot --json headSha,conclusion --jq '.headSha+\" \"+.conclusion')\" = \"$source success\" || exit 61\noldid=\"$(docker image inspect -f '{{.Id}}' \"$current_tag\")\" || exit 62\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 63\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$oldid\" || exit 64\ntest \"$(docker image inspect -f '{{.Id}}' \"$local_tag\")\" = \"$oldid\" || exit 65\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 66\ntest -z \"$(docker images -q \"$new_tag\")\" || exit 67\ntest \"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT count(*) FROM profile_keyboard_backfill WHERE state='applied';\")\" = 7 || exit 68\nbefore=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT chat_id||':'||thread_id||':'||message_id||':'||owner_user_id||':'||synced_revision FROM profile_publications WHERE status='published' AND message_id>0 ORDER BY chat_id,thread_id,message_id;\")\" || exit 69\ntest \"$(printf '%s\\n' \"$before\" | wc -l)\" -eq 7 || exit 70\ntmp=\"$(mktemp -d /tmp/gace-startless-help-build.XXXXXXXX)\"\nswapped=0\nok=0\ncleanup(){\n rc=$?\n trap - EXIT\n if test \"$swapped\" = 1 && test \"$ok\" != 1; then\n  docker tag \"$rollback\" \"$local_tag\" || true\n  docker compose -p deploy -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null 2>&1 || true\n fi\n rm -rf \"$tmp\"\n exit \"$rc\"\n}\ntrap cleanup EXIT\ngh run download \"$ci_package\" -R seigo-gace/GateApp-Bot -n gaybbs-profile-bundle -D \"$tmp\" >/dev/null 2>&1 || exit 71\ntest -s \"$tmp/gaybbs.mjs\" && test -s \"$tmp/backfillExistingProfileKeyboards.mjs\" && test -s \"$tmp/refreshStartlessExistingPosts.mjs\" || exit 72\ndocker run --rm --network none -v \"$tmp:/bundle:ro\" --entrypoint node \"$current_tag\" --check /bundle/gaybbs.mjs >/dev/null || exit 73\ndocker run --rm --network none -v \"$tmp:/bundle:ro\" --entrypoint node \"$current_tag\" --check /bundle/refreshStartlessExistingPosts.mjs >/dev/null || exit 74\ncat >\"$tmp/Dockerfile\" <<'DOCKER'\nFROM gace-tgtumbler-gaybbs:startless-batch-db17\nCOPY --chown=1000:1000 gaybbs.mjs /app/gaybbs.mjs\nCOPY --chown=1000:1000 backfillExistingProfileKeyboards.mjs /app/backfillExistingProfileKeyboards.mjs\nCOPY --chown=1000:1000 refreshStartlessExistingPosts.mjs /app/refreshStartlessExistingPosts.mjs\nDOCKER\ndocker build --network none --pull=false -t \"$new_tag\" -f \"$tmp/Dockerfile\" \"$tmp\" >/dev/null 2>&1 || exit 75\nnewid=\"$(docker image inspect -f '{{.Id}}' \"$new_tag\")\"\ntest \"$newid\" != \"$oldid\" || exit 76\nif docker image inspect \"$rollback\" >/dev/null 2>&1; then\n test \"$(docker image inspect -f '{{.Id}}' \"$rollback\")\" = \"$oldid\" || exit 77\nelse\n docker tag \"$oldid\" \"$rollback\"\nfi\ndocker tag \"$new_tag\" \"$local_tag\"\nswapped=1\ndocker compose -p deploy -f \"$root/deploy/gserver-compose.yaml\" up -d --no-deps --force-recreate gaybbs >/dev/null || exit 78\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 79\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$newid\" || exit 80\nready=0\nfor i in $(seq 1 18);do\n if docker logs --tail 240 deploy-gaybbs-1 2>&1 | grep -Fq GAYBBS_BOT_READY;then ready=1;break;fi\n sleep 5\ndone\ntest \"$ready\" = 1 || exit 81\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 82\nafter=\"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT chat_id||':'||thread_id||':'||message_id||':'||owner_user_id||':'||synced_revision FROM profile_publications WHERE status='published' AND message_id>0 ORDER BY chat_id,thread_id,message_id;\")\" || exit 83\ntest \"$before\" = \"$after\" || exit 84\ntest \"$(docker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atc \"SELECT count(*) FROM profile_keyboard_backfill WHERE state='applied';\")\" = 7 || exit 85\ntest \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d ' ' -f1)\" = \"$(sha256sum \"$tmp/gaybbs.mjs\" | cut -d ' ' -f1)\" || exit 86\nok=1\necho STARTLESS_HELP_BOT_IMAGE=APPLIED\necho EXISTING_PROFILE_SEVEN=UNCHANGED\necho USERBOT_SESSION=ACTIVE\necho ROLLBACK_IMAGE=RETAINED\necho STARTLESS_EXISTING_POST_REPAIR=SEPARATE\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
