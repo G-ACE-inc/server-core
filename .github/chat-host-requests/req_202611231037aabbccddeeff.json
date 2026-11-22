@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7077544438"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || exit 61\nspec=\"$(docker exec -w /opt/videobot \"$cid\" node --input-type=module -e '\nimport pg from \"pg\";import {readFileSync} from \"node:fs\";\nconst e=process.env,pw=readFileSync(\"/run/secrets/videobot_db_password\",\"utf8\").trim();\nconst db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:pw,max:1,connectionTimeoutMillis:5000});\ntry{\nconst old=await db.query(\"SELECT listing_id,revision,free_message_ids,paid_message_id,topic_id FROM videobot_post_receipts WHERE paid_message_id=4691 AND status='sent'\");\nif(old.rowCount!==1)process.exitCode=70;\nelse{\n const q=await db.query(\"SELECT revision,free_message_ids,paid_message_id,topic_id FROM videobot_post_receipts WHERE listing_id=$1 AND status='sent' ORDER BY revision DESC\",[old.rows[0].listing_id]);\n const a=old.rows[0],b=q.rows.find(r=>Number(r.paid_message_id)!==4691);\n if(!b||!Array.isArray(a.free_message_ids)||!Array.isArray(b.free_message_ids)||a.free_message_ids.length!==2||b.free_message_ids.length!==2)process.exitCode=71;\n else console.log(JSON.stringify({old:{ids:[...a.free_message_ids,a.paid_message_id].map(Number),thread:Number(a.topic_id)},recent:{ids:[...b.free_message_ids,b.paid_message_id].map(Number),thread:Number(b.topic_id)}}));\n}\n}catch{process.exitCode=79}finally{await db.end()}\n')\" || exit 62\nGACE_SPEC=\"$spec\" \"$root/deploy/.userbot-venv/bin/python\" -B - <<'PY'\nimport asyncio,json,os,pathlib,uuid,sys\ndata=json.loads(os.environ[\"GACE_SPEC\"])\nsock=pathlib.Path(\"/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/deploy/secrets/userbot_verify.sock\")\nasync def call(group):\n reader,writer=await asyncio.wait_for(asyncio.open_unix_connection(str(sock)),5)\n try:\n  k=uuid.uuid4().hex\n  q={\"request_id\":k,\"action\":\"video_sale_payment_form\",\"chat_id\":-1002373696859,\n     \"thread_id\":group[\"thread\"],\"message_ids\":group[\"ids\"]}\n  writer.write((json.dumps(q)+\"\\n\").encode());await writer.drain()\n  response=await asyncio.wait_for(reader.readline(),40)\n  if not response:sys.exit(71)\n  result=json.loads(response)\n  if result.get(\"status\")!=\"PASS\":sys.exit(72)\n  if result.get(\"request_id\")!=k:sys.exit(73)\n  return result\n finally:\n  writer.close();await writer.wait_closed()\ntry:\n old=asyncio.run(call(data[\"old\"]))\n new=asyncio.run(call(data[\"recent\"]))\n if new.get(\"stars_purchase_form\") is not True or old.get(\"stars_purchase_form\") is not True:sys.exit(74)\n if new.get(\"currency_xtr\") is not True or old.get(\"currency_xtr\") is not True:sys.exit(75)\n if new.get(\"quote_matches_media\") is not True or old.get(\"quote_matches_media\") is not True:sys.exit(76)\n if new.get(\"not_purchased\") is not True or old.get(\"not_purchased\") is not True:sys.exit(77)\n print(\"TELEGRAM_NEW_PAID_VIDEO_PURCHASE_FORM=PASS\")\n print(\"TELEGRAM_NEW_PAID_VIDEO_PRICE_XTR=PASS\")\nexcept TimeoutError:sys.exit(78)\nexcept ConnectionError:sys.exit(79)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
