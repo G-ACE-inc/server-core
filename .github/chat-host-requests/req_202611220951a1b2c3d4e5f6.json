@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6#issuecomment-7077210864"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 61\ntest -f \"$root/deploy/compose.videobot.poll.yaml\" || exit 62\ndocker exec -i \"$cid\" node --input-type=module <<'JS'\nimport {readFileSync} from 'node:fs';\nconst p=readFileSync('/opt/videobot/src/telegram/paidListingPublisher.mjs','utf8');\nconst r=readFileSync('/opt/videobot/src/sales/pgPostingReceipts.mjs','utf8');\nif(!p.includes('const claim=await store.claim'))process.exit(63);\nif(!p.includes('const key=listing.id'))process.exit(64);\nif(!r.includes('async read(key)'))process.exit(65);\nif(r.includes('findOtherDelivery')||p.includes('VIDEO_EXISTING_PUBLICATION_REQUIRES_EDIT'))process.exit(66);\nconsole.log('DUPLICATE_GUARD_LIVE_BASELINE_PATCHABLE=PASS');\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
