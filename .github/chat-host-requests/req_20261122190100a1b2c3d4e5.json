@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7076840991"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ndocker exec -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport assert from 'node:assert/strict';\nimport {buildFreeAlbumRequest} from '/opt/videobot/src/telegram/freeAlbum.mjs';\nimport {buildPaidMediaRequest} from '/opt/videobot/src/telegram/paidMedia.mjs';\nconst f=buildFreeAlbumRequest({chatId:-1002373696859,messageThreadId:1613,thumbnailFileId:'testPhoto_123',sampleFileId:'testSample_456'});\nassert.equal(f.media.length,2);\nassert.equal(f.media[0].type,'photo');\nassert.equal(f.media[1].type,'video');\nassert.equal(f.media[0].has_spoiler,true);\nassert.equal(f.media[1].has_spoiler,true);\nconst p=buildPaidMediaRequest({chatId:-1002373696859,messageThreadId:1613,mediaFileId:'testPaid_789',priceStars:10,payload:'test_123:1'});\nassert.equal(p.star_count,10);\nassert.equal(p.media.length,1);\nassert.equal(p.media[0].type,'video');\nassert.notEqual(p.media[0].media,f.media[1].media);\nconsole.log('LIVE_FREE_ALBUM_SPOILERS_AND_PAID_REQUEST_SCHEMA=PASS');\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
