@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/71"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport json,subprocess,sys\ndef take(cmd):\n p=subprocess.run(cmd,capture_output=True,text=True,timeout=25)\n return p.stdout.strip() if p.returncode==0 else \"FAILED\"\nresult={\"staged_mode\":take([\"stat\",\"-c\",\"%a\",\"deploy/state/startless-pr71-stage/gaybbs.mjs\"]),\n\"original_running_mode\":take([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"stat\",\"-c\",\"%a\",\"/app/gaybbs.mjs\"]),\n\"original_container_user\":take([\"docker\",\"inspect\",\"-f\",\"{{.Config.User}}\",\"deploy-gaybbs-1\"]),\n\"new_image_user\":take([\"docker\",\"image\",\"inspect\",\"-f\",\"{{.Config.User}}\",\"gace-tgtumbler-gaybbs:startless-pr71-20261122\"]),\n\"original_container_running\":take([\"docker\",\"inspect\",\"-f\",\"{{.State.Running}}\",\"deploy-gaybbs-1\"])}\nr=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/68/comments\",\"-f\",\"body=STARTLESS_IMAGE_MODE_ORIGINAL_VS_PATCHED=\"+json.dumps(result,separators=(\",\",\":\"))],capture_output=True,text=True,timeout=45)\nif r.returncode:sys.exit(70)\nprint(\"STARTLESS_IMAGE_MODE_PRECHECK=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
