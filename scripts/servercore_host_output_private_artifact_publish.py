@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 import zipfile
@@ -33,6 +34,41 @@ RID = re.compile(r"req_[a-f0-9]{24}\Z")
 
 class PublishError(ValueError):
     pass
+
+
+def _existing_wsl_windows_gh():
+    """Reuse the PC's installed GitHub CLI when WSL has no Linux gh."""
+    try:
+        if "microsoft" not in Path("/proc/sys/kernel/osrelease").read_text().lower():
+            return None
+    except OSError:
+        return None
+    binary = Path("/mnt/c/Program Files/GitHub CLI/gh.exe")
+    return str(binary) if binary.is_file() else None
+
+
+def existing_gh_runner(args, **kwargs):
+    """Run native gh, or the existing Windows gh with a translated ZIP path."""
+    if not isinstance(args, list) or not args or args[0] != "gh":
+        raise PublishError("GITHUB_COMMAND_INVALID")
+    if shutil.which("gh"):
+        return subprocess.run(args, **kwargs)
+    binary = _existing_wsl_windows_gh()
+    if binary is None:
+        return subprocess.run(args, **kwargs)
+    command = [binary, *args[1:]]
+    if args[1:3] == ["release", "create"]:
+        if len(args) < 5:
+            raise PublishError("PRIVATE_RELEASE_ASSET_INVALID")
+        path, separator, label = args[4].partition("#")
+        if separator != "#" or label != "output.zip" or not Path(path).is_file():
+            raise PublishError("PRIVATE_RELEASE_ASSET_INVALID")
+        translated = subprocess.run(["wslpath", "-w", path], capture_output=True,
+                                    text=True, timeout=10, check=True).stdout.strip()
+        if not translated.startswith("\\\\wsl.localhost\\"):
+            raise PublishError("PRIVATE_RELEASE_ASSET_PATH_INVALID")
+        command[4] = translated + "#output.zip"
+    return subprocess.run(command, **kwargs)
 
 
 def independently_expected(request_id, *, writer_dir=DEFAULT_WRITER):
@@ -222,13 +258,13 @@ def main():
     try:
         if x.writer_ledger:
             result=publish_writer_output(x.request_id,writer_dir=x.writer_dir,
-                                         verify_only=x.verify_only)
+                                         verify_only=x.verify_only,runner=existing_gh_runner)
         else:
             token=Path(x.vault_token_file).read_text().strip()
             result=run(x.request_id,cipher_root=x.cipher_root,writer_dir=x.writer_dir,
                        vault_base=x.vault_base,vault_token=token,
                        expected_key_ref=x.vault_key_ref,expected_consumer=x.vault_consumer,
-                       verify_only=x.verify_only)
+                       verify_only=x.verify_only,runner=existing_gh_runner)
         print(json.dumps(result,sort_keys=True))
     except (PublishError,InboxError,RelayError,ValueError,OSError) as exc:
         print("CU40_PRIVATE_OUTPUT_HANDOFF=FAILED")
