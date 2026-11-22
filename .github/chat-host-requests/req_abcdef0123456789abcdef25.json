@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/68"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 60\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\npython3 - <<'PY'\nimport json,subprocess,sys\nfrom pathlib import Path\nbase=Path(\"deploy/state\")\npaths={4291:base/\"startless-recover-missing-topic4291-20261122-retry1.json\",4672:base/\"startless-recover-missing-topic4672-20261122.json\",1:base/\"startless-recover-missing-topic1-20261122.json\"}\nd={k:json.loads(v.read_text()) for k,v in paths.items()}\nif any(d[t].get(\"state\")!=\"VERIFIED\" for t in (4291,4672)):sys.exit(62)\nif d[1].get(\"state\")!=\"TELEGRAM_SEND_UNCERTAIN\":sys.exit(63)\ndef db(q):\n p=subprocess.run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-X\",\"-q\",\"-v\",\"ON_ERROR_STOP=1\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",q],capture_output=True,text=True,timeout=30)\n if p.returncode:sys.exit(64)\n return p.stdout.strip()\nfor topic in (4291,4672):\n mid=d[topic].get(\"message_id\")\n if not isinstance(mid,int) or mid<=0:sys.exit(65)\n if db(f\"SELECT message_id,state,pinned FROM topic_dm_entry_pins WHERE chat_id=-1002373696859 AND message_thread_id={topic}\")!=f\"{mid}|published|t\":sys.exit(66)\nif db(\"SELECT message_id,state,pinned FROM topic_dm_entry_pins WHERE chat_id=-1002373696859 AND message_thread_id=1\")!=\"4703|needs_reconcile|f\":sys.exit(67)\nfor topic in (4291,4672,1):\n a=subprocess.run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",\"-1002373696859\",\"--topic-id\",str(topic)],capture_output=True,text=True,timeout=125)\n if a.returncode:sys.exit(68)\n b=[json.loads(z.split(\"=\",1)[1]) for z in a.stdout.splitlines() if z.startswith(\"USERBOT_TOPIC_AUDIT=\")]\n if len(b)!=1 or len(b[0].get(\"rows\",[]))!=1:sys.exit(69)\n row=b[0][\"rows\"][0]\n if topic in (4291,4672):\n  if row.get(\"post_button\")!=\"PRESENT\" or d[topic][\"message_id\"] not in row.get(\"pin_message_ids\",[])+row.get(\"history_message_ids\",[]):sys.exit(70)\n else:\n  if row.get(\"post_button\")!=\"ABSENT\":sys.exit(71)\nif db(\"SELECT (SELECT count(*) FROM startless_public_post_migrations WHERE state='applied')::text||'|'||(SELECT count(*) FROM startless_public_post_migrations WHERE state='uncertain')\")!=\"104|11\":sys.exit(72)\nprint(\"RESTORED_TOPIC_4291_4672=VERIFIED;TOPIC_1=UNCERTAIN_NO_RETRY;BOT_USERBOT=ACTIVE;ORIGINAL_STARTLESS_LEDGER=104_11\")\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
