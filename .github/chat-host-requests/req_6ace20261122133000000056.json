@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "remaining_forum_posting_coverage_readback",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nimport json\nfrom pathlib import Path\nfor directory in ('deploy/state/missing-normal-topic-buttons-20261122','deploy/state/general-topic-button-recovery-20261122','deploy/state/existing-normal-pin-repair-20261122','deploy/state/profile-topic-only-20261122','deploy/state/topic-creator-missing-20261122'):\n root=Path(directory)\n print('LEDGER',root.name)\n for p in sorted(root.rglob('*.json')) if root.is_dir() else []:\n  try:r=json.loads(p.read_text())\n  except Exception:r={'state':'UNREADABLE'}\n  safe={k:r.get(k) for k in ('state','topic','topic_id','message_id','pinned','code','error_code') if k in r}\n  print(str(p.relative_to(root)),json.dumps(safe,ensure_ascii=False))\nPY\nprintf 'USERBOT_HEALTH='\npython3 scripts/userbot_test_client.py health 2>&1 | grep -E 'USERBOT_TEST_RESULT|STATUS' | head -n 2\necho READBACK_LEDGER_COMPLETE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
