@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7077544438"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\npython3 -B - <<'PY'\nfrom pathlib import Path\nroot=Path('/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot')\ncap=[]\nfor p in root.rglob('*.py'):\n try:s=p.read_text()\n except:continue\n if 'video_sale_payment_form' in s:\n  cap.append((p,s))\nif not cap:raise SystemExit(61)\nhas_id=any('get_me(' in s for p,s in cap)\nhas_self=any('self_user_id' in s or 'owner_id' in s or 'user_id' in s for p,s in cap)\nhas_test=any('test_buyer' in s or 'buyer_id' in s for p,s in cap)\nif has_id and has_test:raise SystemExit(0)\nif has_id and has_self:raise SystemExit(71)\nif has_id:raise SystemExit(72)\nraise SystemExit(73)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
