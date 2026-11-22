@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "profile_three_topic_only_buttons_dryrun",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\npython3 - <<'PY'\nimport json,subprocess,sys\nfrom pathlib import Path\nfor chat,topic,group,expected in [\n (-1002373696859,1613,'video',{4623,4609,4595}),\n (-1003770334893,210,'category',{1133,1115,1097}),\n (-1003847210571,48,'area',None)\n]:\n p=subprocess.run([sys.executable,'scripts/userbot_topic_audit_client.py','--chat-id',str(chat),'--page','0'],capture_output=True,text=True,timeout=110)\n if p.returncode:raise SystemExit(61)\n results=[json.loads(x.split('=',1)[1]) for x in p.stdout.splitlines() if x.startswith(\"USERBOT_TOPIC_AUDIT=\")]\n if len(results)!=1:raise SystemExit(62)\n item=next((x for x in results[0]['rows'] if x['topic_id']==topic),None)\n ledger=Path('deploy/state/profile-topic-only-20261122')/(str(topic)+'.json')\n if not ledger.is_file() or not item:raise SystemExit(63)\n record=json.loads(ledger.read_text())\n if record.get('state')!='PUBLISHED' or item.get('post_button')!='PRESENT' or 'profile' not in item.get('button_types',[]):raise SystemExit(64)\n mids=set(record['message_ids'])\n if expected is not None and mids!=expected:raise SystemExit(65)\n if not mids.issubset(set(item.get('history_message_ids',[]))):raise SystemExit(66)\n print(f\"PROFILE_BUTTON_LIVE_VERIFIED_TOPIC={topic} MESSAGES={','.join(map(str,sorted(mids)))}\")\nprint(\"PROFILE_THREE_TOPICS_USERBOT_READBACK=PASS\")\nPY\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
