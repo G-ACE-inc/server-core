@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true\nroot=\"$(mktemp -d)\"\ntrap 'rm -rf \"$root\"' EXIT\ndocker cp \"$cid\":/opt/videobot/src/telegram/paidListingPublisher.mjs \"$root/paidListingPublisher.mjs\"\ntest \"$(git hash-object \"$root/paidListingPublisher.mjs\")\" = 46520c56ce0ab1940e313a4c15d3d385b06adcef || { echo SOURCE_CHANGED; exit 71; }\npython3 - \"$root/paidListingPublisher.mjs\" <<'PY'\nfrom pathlib import Path\nimport sys\np=Path(sys.argv[1]);s=p.read_text()\nold=\"\"\"    const paidResult=await telegramApi('sendPaidMedia',paid);\n    if (!Number.isSafeInteger(paidResult?.message_id) || paidResult.message_id <= 0)\n      throw new Error('paid media acknowledgment invalid');\n    await store.recordPaid(key,paidResult.message_id);\"\"\"\nnew=\"\"\"    const paidResult=await telegramApi('sendPaidMedia',paid);\n    // Message IDs are not evidence that Telegram accepted a native Stars lock.\n    const nativePaid=paidResult?.paid_media;\n    if (!Number.isSafeInteger(paidResult?.message_id) || paidResult.message_id <= 0 ||\n        paidResult.chat?.id !== topic.chatId ||\n        (paidResult.message_thread_id != null && paidResult.message_thread_id !== topic.threadId) ||\n        !nativePaid || nativePaid.star_count !== listing.priceStars ||\n        !Array.isArray(nativePaid.paid_media) || nativePaid.paid_media.length !== 1)\n      throw new Error('paid media acknowledgment invalid: native Stars lock not confirmed');\n    await store.recordPaid(key,paidResult.message_id);\"\"\"\nif s.count(old)!=1: raise SystemExit('PATCH_ANCHOR_MISMATCH')\np.write_text(s.replace(old,new))\nPY\nimage=\"$(docker inspect \"$cid\" --format '{{.Config.Image}}')\"\ndocker image inspect \"$image\" >/dev/null\nprintf 'FROM %s\\nCOPY paidListingPublisher.mjs /opt/videobot/src/telegram/paidListingPublisher.mjs\\n' \"$image\" > \"$root/Dockerfile\"\ntag=gace-createvdobot-paidlock-ack-20261123\ndocker build --quiet -t \"$tag\" \"$root\" >/dev/null\ndocker run --rm --network none --entrypoint node \"$tag\" --check /opt/videobot/src/telegram/paidListingPublisher.mjs\ndocker run --rm -i --network none --entrypoint node \"$tag\" --input-type=module <<'JS'\nimport assert from 'node:assert/strict';\nimport { publishVideoListing } from '/opt/videobot/src/telegram/paidListingPublisher.mjs';\nconst mk=good=>{\n const db=new Map(), calls=[];\n const store={read:async k=>db.get(k),claim:async ({key})=>{db.set(key,{status:'sending'});return {claimed:true}},recordFree:async(k,ids)=>{db.set(k,{status:'sending',freeMessageIds:ids})},recordPaid:async(k,id)=>{db.set(k,{...db.get(k),status:'sent',paidMessageId:id})},markUnknown:async k=>{db.set(k,{...db.get(k),status:'needs_reconcile'})}};\n const listing={id:'sale001',sellerId:'123',revision:1,title:'test',priceStars:10,thumbnail:{fileId:'photo001'},sample:{fileId:'sample001'},paidVideo:{fileId:'paid001'},rightsVerified:true,adultConsentVerified:true,ownerConfirmedPublish:true,feeTermsAccepted:true,managementFeeBps:3000};\n const deps={listing,store,getVerifiedVideoTopic:async()=>({purpose:'video_sale',board:'video_chat',enabled:true,verified:true,chatId:-100123456,threadId:9,title:'video',id:9}),verifyMembership:async()=>true,verifyReview:async()=>true,verifyRelease:async()=>true,telegramApi:async(method,params)=>{calls.push(method);if(method==='sendMediaGroup')return [{message_id:11,media_group_id:'groupX'},{message_id:12,media_group_id:'groupX'}];return good?{message_id:13,chat:{id:-100123456},message_thread_id:9,paid_media:{star_count:10,paid_media:[{type:'video'}]}}:{message_id:13,chat:{id:-100123456},video:{file_id:'paid001'}}}};\n return {deps,db,calls};\n};\nfor(const good of [true,false]){const v=mk(good);if(good){const result=await publishVideoListing(v.deps);assert.equal(result.posted,true);assert.equal(v.db.get('sale001:1').status,'sent')}else{await assert.rejects(()=>publishVideoListing(v.deps),/native Stars lock not confirmed/);assert.equal(v.db.get('sale001:1').status,'needs_reconcile')}assert.deepEqual(v.calls,['sendMediaGroup','sendPaidMedia'])}\nconsole.log('VIDEO_PAID_ACK_GATE_SYNTHETIC_TEST=PASS');\nJS\necho \"PAIDLOCK_STAGED_IMAGE=$tag\"\necho \"PAIDLOCK_STAGED_IMAGE_ID=$(docker image inspect \"$tag\" --format '{{.Id}}')\"\necho \"BASE_RUNNING_IMAGE=$image\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
