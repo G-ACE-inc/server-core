@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/66"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport json,os,subprocess,sys,time\nfrom pathlib import Path\nCHAT=-1002373696859\nTARGETS={1605:([4637,4621,4607],4621),1634:([4625,4611,4597],4625),1723:([4695],4695)}\nLEDGER=Path(\"deploy/state/startless-video-specialists-only-withdraw-20261122\")\ndef run(args,input=None,timeout=120):\n return subprocess.run(args,input=input,capture_output=True,text=True,timeout=timeout)\ndef db(q):\n r=run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-X\",\"-q\",\"-v\",\"ON_ERROR_STOP=1\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",q],timeout=30)\n if r.returncode:raise RuntimeError(\"DB_ERROR\")\n return r.stdout.strip()\ndef audit(topic):\n r=run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",str(CHAT),\"--topic-id\",str(topic)],timeout=125)\n if r.returncode:raise RuntimeError(\"AUDIT_FAILED\")\n x=[json.loads(s.split(\"=\",1)[1]) for s in r.stdout.splitlines() if s.startswith(\"USERBOT_TOPIC_AUDIT=\")]\n if len(x)!=1 or len(x[0].get(\"rows\",[]))!=1:raise RuntimeError(\"AUDIT_RESPONSE\")\n return x[0][\"rows\"][0]\ndef persist(file,obj,first=False):\n dest=file if first else file.with_suffix(\".next\")\n with os.fdopen(os.open(dest,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),\"w\") as f:\n  json.dump(obj,f,sort_keys=True);f.flush();os.fsync(f.fileno())\n if not first:os.replace(dest,file)\nnode=r\"\"\"\n'use strict';\nconst fs=require('node:fs'),https=require('node:https');\nconst token=fs.readFileSync(process.env.BOT_TOKEN_FILE||'/run/secrets/bot_token','utf8').trim(),t=__TASK_JSON__;\nconst agent=new https.Agent({family:4,keepAlive:false,timeout:20000});\nfunction api(name,data){return new Promise((resolve,reject)=>{const b=JSON.stringify(data);\n const req=https.request({hostname:'api.telegram.org',path:'/bot'+token+'/'+name,method:'POST',agent,timeout:25000,\n headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(b)}},res=>{\n let s='';res.on('data',x=>{if(s.length<16000)s+=x});res.on('end',()=>{\n try{const v=JSON.parse(s);resolve(v.ok?{ok:true,val:v.result}:{ok:false,code:v.error_code})}\n catch{reject(Error('BAD_RESPONSE'))}})});\n req.on('error',()=>reject(Error('UNCERTAIN_TRANSPORT')));req.on('timeout',()=>req.destroy(Error('UNCERTAIN_TIMEOUT')));req.end(b)})}\n(async()=>{const me=await api('getMe',{});\n if(!me.ok||me.val.username?.toLowerCase()!=='gaybbs_bot'||me.val.id===8086265383)throw Error('WRONG_BOT');\n if(t.mode==='identity'){console.log(JSON.stringify({state:'BOT_OK'}));return}\n if(t.mode!=='remove_markup'||t.chat!==-1002373696859||!Number.isInteger(t.mid)||t.mid<1)throw Error('INVALID_ACTION');\n const edit=await api('editMessageReplyMarkup',{chat_id:t.chat,message_id:t.mid});\n console.log(JSON.stringify({state:edit.ok?'MARKUP_REMOVED':'EDIT_DENIED',code:edit.ok?null:edit.code}));\n if(!edit.ok)process.exitCode=2;\n})().catch(e=>{console.log(JSON.stringify({state:'EDIT_UNKNOWN',kind:String(e.message||'UNKNOWN')}));process.exitCode=3});\n\"\"\"\ndef bot(task):\n r=run([\"docker\",\"exec\",\"-i\",\"deploy-gaybbs-1\",\"node\",\"-\"],input=node.replace(\"__TASK_JSON__\",json.dumps(task)),timeout=90)\n try:\n  d=[json.loads(x) for x in r.stdout.splitlines() if x.startswith(\"{\")]\n  return r.returncode,d[0] if len(d)==1 else {\"state\":\"UNKNOWN\"}\n except:return r.returncode,{\"state\":\"UNKNOWN\"}\nif run([\"systemctl\",\"--user\",\"is-active\",\"gace-userbot-verify.service\"]).stdout.strip()!=\"active\":sys.exit(60)\nif run([\"docker\",\"inspect\",\"-f\",\"{{.State.Running}}\",\"deploy-gaybbs-1\"]).stdout.strip()!=\"true\":sys.exit(61)\nc,ident=bot({\"mode\":\"identity\"});assert c==0 and ident.get(\"state\")==\"BOT_OK\"\nfor topic,(ids,primary) in TARGETS.items():\n if (LEDGER/str(topic)).exists():sys.exit(62)\n if db(f\"SELECT message_id,state,pinned FROM topic_dm_entry_pins WHERE chat_id={CHAT} AND message_thread_id={topic}\")!=f\"{primary}|published|t\":sys.exit(63)\n row=audit(topic)\n if row.get(\"post_button\")!=\"PRESENT\" or row.get(\"pin_message_ids\")!=[] or row.get(\"history_message_ids\")!=ids or row.get(\"button_types\")!=[\"normal\"]:sys.exit(64)\nLEDGER.mkdir(parents=True,exist_ok=True,mode=0o700)\nfor topic,(ids,primary) in TARGETS.items():\n d=LEDGER/str(topic);d.mkdir(mode=0o700)\n for mid in ids:\n  f=d/(str(mid)+\".json\")\n  row=audit(topic)\n  if mid not in row.get(\"history_message_ids\",[]):sys.exit(65)\n  persist(f,{\"state\":\"EDIT_ATTEMPTING\",\"topic_id\":topic,\"message_id\":mid},first=True)\n  code,result=bot({\"mode\":\"remove_markup\",\"chat\":CHAT,\"mid\":mid})\n  if code or result.get(\"state\")!=\"MARKUP_REMOVED\":\n   persist(f,{\"state\":result.get(\"state\",\"UNKNOWN\"),\"topic_id\":topic,\"message_id\":mid})\n   sys.exit(66)\n  persist(f,{\"state\":\"MARKUP_REMOVED_ACK\",\"topic_id\":topic,\"message_id\":mid})\n row=audit(topic)\n if row.get(\"post_button\")!=\"ABSENT\" or row.get(\"history_message_ids\")!=[]:sys.exit(67)\n r=db(f\"UPDATE topic_dm_entry_pins SET state='needs_reconcile',pinned=FALSE,updated_at=NOW() WHERE chat_id={CHAT} AND message_thread_id={topic} AND message_id={primary} AND state='published' AND pinned=TRUE RETURNING message_id\")\n if r!=str(primary):sys.exit(68)\n for mid in ids:\n  f=d/(str(mid)+\".json\")\n  persist(f,{\"state\":\"VERIFIED_DISABLED_BY_MASTER\",\"topic_id\":topic,\"message_id\":mid,\"original_post_preserved\":True})\n print(\"VIDEO_TOPIC_\"+str(topic)+\"_HISTORIC_BUTTONS_WITHDRAWN=\"+str(len(ids)))\nif run([\"systemctl\",\"--user\",\"is-active\",\"gace-userbot-verify.service\"]).stdout.strip()!=\"active\":sys.exit(69)\nprint(\"VIDEO_UNAPPROVED_SEVEN_MARKUPS_REMOVED=VERIFIED;NO_MESSAGES_DELETED=YES\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
