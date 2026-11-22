@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7072884435"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nf=\"$root/scripts/userbot_resident_ipc.py\"\nstage=\"$root/.releases/video-sale-readback-295952ab\"\nunit=gace-userbot-verify.service\nsession=\"$root/deploy/secrets/userbot_verify.session\"\ntest \"$(systemctl --user is-active \"$unit\")\" = active || exit 61\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || exit 62\ntest \"$(stat -c %a \"$session\")\" = 600 || exit 63\nbefore=\"$(stat -c '%d:%i' \"$session\")\"\ncp -p \"$f\" \"$stage/before-video-spoiler-fix.py\"\npython3 -B - \"$f\" <<'PY'\nfrom pathlib import Path\nimport ast,sys\np=Path(sys.argv[1]);s=p.read_text()\na='for m in free]'\nb='for m in messages[:2]]'\nc='getattr(free[0],\"raw_text\",\"\")'\nd='getattr(messages[0],\"raw_text\",\"\")'\nif s.count(a)!=2 or s.count(c)!=1:sys.exit(65)\ns=s.replace(a,b).replace(c,d)\nast.parse(s)\np.write_text(s)\nPY\narmed=YES\nrollback(){ cp -p \"$stage/before-video-spoiler-fix.py\" \"$f\" || true;systemctl --user restart \"$unit\" || true; }\ntrap 'if test \"$armed\" = YES;then rollback;fi' EXIT\nsystemctl --user restart \"$unit\" || exit 66\nready=NO\nfor i in 1 2 3 4 5 6 7 8;do\n if test \"$(systemctl --user is-active \"$unit\" 2>/dev/null)\" = active && test -S \"$root/deploy/secrets/userbot_verify.sock\";then ready=YES;break;fi\n sleep 2\ndone\ntest \"$ready\" = YES || exit 67\npython3 -B \"$root/scripts/userbot_test_client.py\" health | grep -Fq 'USERBOT_TEST_RESULT=PASS' || exit 68\ntest \"$(stat -c '%d:%i' \"$session\")\" = \"$before\" && test \"$(stat -c %a \"$session\")\" = 600 || exit 69\narmed=NO\necho RESIDENT_USERBOT_SPOILER_READBACK_CORRECTED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
