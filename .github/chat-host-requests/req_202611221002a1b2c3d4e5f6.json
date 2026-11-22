@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6#issuecomment-7077210864"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nrelease=\"$root/.releases/87ee908e21692254b0290a64cde84a67d0fafa72/duplicate-guard-stage\"\nold=\"create-videobot:before-duplicate-guard-87ee908e\"\nnew=\"create-videobot:duplicate-guard-87ee908e-stage\"\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\nbaseline_image=\"$(docker inspect \"$cid\" --format '{{.Image}}')\"\nbaseline_container=\"$(docker inspect \"$cid\" --format '{{.Id}}')\"\ntest -n \"$baseline_image\" && test -n \"$baseline_container\" || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 63\ntest ! -e \"$release\" && test -z \"$(docker images -q \"$new\")\" || exit 62\nmkdir -p \"$release/src/telegram\" \"$release/src/sales\"\ndocker cp \"$cid:/opt/videobot/src/telegram/paidListingPublisher.mjs\" \"$release/src/telegram/paidListingPublisher.mjs\"\ndocker cp \"$cid:/opt/videobot/src/sales/pgPostingReceipts.mjs\" \"$release/src/sales/pgPostingReceipts.mjs\"\npython3 - \"$release\" <<'PY'\nfrom pathlib import Path\nimport sys\nroot=Path(sys.argv[1]);p=root/'src/telegram/paidListingPublisher.mjs';r=root/'src/sales/pgPostingReceipts.mjs'\na=p.read_text();b=r.read_text()\nneedle=\"  const claim=await store.claim({key,listingId:listing.id,revision:listing.revision,topicId:topic.id});\"\nif a.count(needle)!=1 or \"VIDEO_EXISTING_PUBLICATION_REQUIRES_EDIT\" in a:sys.exit(65)\na=a.replace(needle,\"\"\"  const ownReceipt=await store.read(key);\n  if(ownReceipt?.status==='sent' && Array.isArray(ownReceipt.freeMessageIds) &&\n     ownReceipt.freeMessageIds.length===2 && Number.isSafeInteger(ownReceipt.paidMessageId))\n    return {posted:true,alreadySent:true,freeMessageIds:ownReceipt.freeMessageIds,\n      paidMessageId:ownReceipt.paidMessageId};\n  if(typeof store.findOtherDelivery==='function'){\n    const other=await store.findOtherDelivery({listingId:listing.id,key});\n    if(other){\n      const error=new Error('VIDEO_EXISTING_PUBLICATION_REQUIRES_EDIT');\n      error.code='VIDEO_PUBLICATION_PRE_SEND_REJECTED';\n      throw error;\n    }\n  }\n\"\"\"+needle)\nanchor=\"    async read(key) {\"\nif b.count(anchor)!=1 or \"findOtherDelivery\" in b:sys.exit(66)\nb=b.replace(anchor,\"\"\"    async findOtherDelivery({listingId,key}) {\n      if(typeof listingId!=='string'||!ID.test(listingId))throw new Error('invalid listing');\n      validKey(key);\n      const result=await pool.query(\n        \"SELECT delivery_key,status FROM videobot_post_receipts WHERE listing_id=$1 AND delivery_key<>$2 AND status IN ('sending','sent','needs_reconcile') ORDER BY updated_at ASC LIMIT 1\",\n        [listingId,key]\n      );\n      return result.rows?.length?{key:result.rows[0].delivery_key,status:result.rows[0].status}:null;\n    },\n\"\"\"+anchor)\np.write_text(a);r.write_text(b)\nPY\ndocker tag \"$baseline_image\" \"$old\"\ncat > \"$release/Dockerfile\" <<EOF\nFROM $old\nUSER root\nCOPY --chown=node:node src/telegram/paidListingPublisher.mjs /opt/videobot/src/telegram/paidListingPublisher.mjs\nCOPY --chown=node:node src/sales/pgPostingReceipts.mjs /opt/videobot/src/sales/pgPostingReceipts.mjs\nUSER node\nEOF\ndocker build --network none --pull=false -t \"$new\" \"$release\" >/dev/null || exit 70\ndocker run --rm --network none --entrypoint node \"$new\" --check /opt/videobot/src/telegram/paidListingPublisher.mjs || exit 71\ndocker run --rm --network none --entrypoint node \"$new\" --check /opt/videobot/src/sales/pgPostingReceipts.mjs || exit 72\ndocker run --rm --network none -w /opt/videobot --entrypoint node \"$new\" --input-type=module -e '\nimport {publishVideoListing} from \"./src/telegram/paidListingPublisher.mjs\";\nimport {createPostgresPostingReceiptStore} from \"./src/sales/pgPostingReceipts.mjs\";\nlet calls=0;\nconst listing={id:\"sale001\",sellerId:\"user1\",revision:2,title:\"Test\",thumbnail:{fileId:\"photo001\"},sample:{fileId:\"sample001\",durationSeconds:30},paidVideo:{fileId:\"paid001\"},priceStars:10,rightsVerified:true,adultConsentVerified:true,ownerConfirmedPublish:true,feeTermsAccepted:true,managementFeeBps:3000};\nconst store={read:async()=>null,claim:async()=>{calls++;return {claimed:true}},findOtherDelivery:async()=>({key:\"sale001:1\",status:\"sent\"}),recordFree:async()=>{},recordPaid:async()=>{},markUnknown:async()=>{}};\ntry{await publishVideoListing({listing,store,getVerifiedVideoTopic:async()=>({id:1,purpose:\"video_sale\",board:\"video_chat\",enabled:true,verified:true,chatId:-100123,threadId:1,title:\"Sale\"}),telegramApi:async()=>{calls++}});process.exit(74)}\ncatch(e){if(e.message!==\"VIDEO_EXISTING_PUBLICATION_REQUIRES_EDIT\"||calls!==0)process.exit(75)}\nconst db=createPostgresPostingReceiptStore({query:async(sql,params)=>{if(!sql.includes(\"ORDER BY updated_at ASC\"))throw Error(\"bad query\");return {rows:[{delivery_key:\"sale001:1\",status:\"sent\"}]}}});\nconst other=await db.findOtherDelivery({listingId:\"sale001\",key:\"sale001:2\"});\nif(other?.key!==\"sale001:1\")process.exit(76);\nconsole.log(\"DUPLICATE_VIDEO_RUNTIME_GUARD_STAGE=PASS\");\n' || exit 73\ntest \"$(docker inspect \"$cid\" --format '{{.Id}}')\" = \"$baseline_container\" || exit 77\nprintf '%s\\n' 'DUPLICATE_VIDEO_GUARD_STAGED_PASS=PASS' 'LIVE_COMPOSE_UNCHANGED=PASS' 'LIVE_POSTS_UNCHANGED=PASS'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
