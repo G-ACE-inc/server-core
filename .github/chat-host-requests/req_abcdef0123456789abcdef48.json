@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/71"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport subprocess,json,pathlib,sys\ndef run(a,timeout=30):\n p=subprocess.run(a,capture_output=True,text=True,timeout=timeout)\n if p.returncode:raise RuntimeError(\"HOST_READ_FAILED_\"+a[0])\n return p.stdout.strip()\nd=json.loads(pathlib.Path(\"deploy/state/startless-pr71-deploy-20261122.json\").read_text())\nassert d[\"state\"]==\"VERIFIED\" and d[\"scope\"]==\"common public-navigation adapter only\"\nnew=d[\"new_image\"]\nassert run([\"docker\",\"inspect\",\"-f\",\"{{.Image}}\",\"deploy-gaybbs-1\"])==new\nassert run([\"docker\",\"inspect\",\"-f\",\"{{.State.Running}}\",\"deploy-gaybbs-1\"])==\"true\"\nassert run([\"docker\",\"image\",\"inspect\",\"-f\",\"{{.Id}}\",\"gace-tgtumbler-gaybbs:local\"])==new\nassert run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"sha256sum\",\"/app/gaybbs.mjs\"]).split()[0]==d[\"new_bundle_sha256\"]\nassert run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"stat\",\"-c\",\"%u:%g:%a\",\"/app/gaybbs.mjs\"])==\"1000:1000:600\"\nassert run([\"docker\",\"inspect\",\"-f\",\"{{.State.Running}}\",\"deploy-postgres-1\"])==\"true\"\nassert run([\"systemctl\",\"--user\",\"is-active\",\"gace-userbot-verify.service\"])==\"active\"\njs='const fs=require(\"fs\");const s=fs.readFileSync(\"/app/gaybbs.mjs\",\"utf8\");const i=s.indexOf(\"function publicNavigationButton(\");const j=s.indexOf(\"function callbackStartlessPayload(\",i);const fn=new Function(\"STARTLESS_BOT\",\"STARTLESS_PREFIX\",\"startlessPayload\",s.slice(i,j)+\";return publicNavigationButton\")(\"GayBBS_bot\",\"gdm:\",u=>u.endsWith(\"?start=search\")?\"search\":null);const assert=require(\"assert/strict\");assert.equal(fn({text:\"search\",url:\"https://t.me/GayBBS_bot?start=search\"}).callback_data,\"gdm:search\");assert.throws(()=>fn({text:\"unknown\",url:\"https://t.me/GayBBS_bot?start=bad\"}),/STARTLESS_REPEATED_START_LINK_FORBIDDEN/);assert.equal(fn({text:\"first\",url:\"https://t.me/GayBBS_bot?start=gate_abc\"}).url,\"https://t.me/GayBBS_bot?start=gate_abc\");console.log(\"ACTIVE_STARTLESS_BEHAVIOR=PASS\")'\nassert run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"node\",\"-e\",js])==\"ACTIVE_STARTLESS_BEHAVIOR=PASS\"\nr=subprocess.run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",\"-1002373696859\",\"--topic-id\",\"1695\"],capture_output=True,text=True,timeout=125)\nassert r.returncode==0,\"USERBOT_IPC_READBACK_FAILURE\"\ndocs=[json.loads(x.split(\"=\",1)[1]) for x in r.stdout.splitlines() if x.startswith(\"USERBOT_TOPIC_AUDIT=\")]\nassert len(docs)==1 and docs[0].get(\"status\")==\"PASS\"\nout={\"live_image_matches_stage\":True,\"bundle_sha_matches\":True,\"bundle_owner\":\"1000:1000\",\"bundle_mode\":\"600\",\"active_callback_cases\":True,\"db_running\":True,\"userbot_active\":True,\"resident_topic_audit\":True}\np=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/68/comments\",\"-f\",\"body=STARTLESS_INDEPENDENT_LIVE_READBACK=\"+json.dumps(out,separators=(\",\",\":\"))],capture_output=True,text=True,timeout=45)\nassert p.returncode==0\nprint(\"STARTLESS_LIVE_READBACK_INDEPENDENT_PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
