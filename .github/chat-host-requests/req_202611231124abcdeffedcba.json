@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7077544438"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nconst e=process.env;\nconst db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\ntry{\n const q=await db.query(\"SELECT l.buyer_user_id,l.seller_user_id,l.delivery_key,l.kind FROM videobot_stars_ledger l WHERE l.listing_id=(SELECT listing_id FROM videobot_post_receipts WHERE paid_message_id=$1)\",[4691]);\n if(q.rowCount<1)process.exitCode=61;\n else{\n  const paid=q.rows.filter(x=>x.kind==='paid');\n  const refunds=q.rows.filter(x=>x.kind==='refunded');\n  const buyers=[...new Set(paid.map(x=>String(x.buyer_user_id)))];\n  if(buyers.length>1)process.exitCode=71;\n  else if(buyers.length===1 && buyers[0]===String(paid[0].seller_user_id))process.exitCode=72;\n  else if(buyers.length===1 && buyers[0]==='788044853')process.exitCode=73;\n  else if(buyers.length===1)process.exitCode=74;\n  else process.exitCode=75;\n }\n}catch(e){console.error('TEST_BUYER_DIAG_SQL_CODE='+String(e.code??'OTHER').slice(0,8));process.exitCode=79}\nfinally{await db.end()}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
