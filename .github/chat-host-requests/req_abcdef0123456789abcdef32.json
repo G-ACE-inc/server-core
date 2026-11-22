@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/68"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport subprocess,json,sys\ndef run(a):\n p=subprocess.run(a,capture_output=True,text=True,timeout=20)\n if p.returncode:raise RuntimeError(\"COMMAND_READ_FAILED:\"+a[0])\n return p.stdout.strip()\ninfo={\"head\":run([\"git\",\"rev-parse\",\"HEAD\"]),\"branch\":run([\"git\",\"branch\",\"--show-current\"]),\"remote\":run([\"git\",\"remote\",\"get-url\",\"origin\"]).replace(\"https://\",\"https://\").split(\"@\")[-1],\"dirty_files\":len(run([\"git\",\"status\",\"--porcelain\"]).splitlines()),\"bot_sha\":run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"sha256sum\",\"/app/gaybbs.mjs\"]).split()[0],\"container_image\":run([\"docker\",\"inspect\",\"-f\",\"{{.Config.Image}}\",\"deploy-gaybbs-1\"]),\"container_started\":run([\"docker\",\"inspect\",\"-f\",\"{{.State.StartedAt}}\",\"deploy-gaybbs-1\"])}\nb=\"STARTLESS_ACTUAL_HOST_CHECKOUT=\"+json.dumps(info,separators=(\",\",\":\"))\np=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/68/comments\",\"-f\",\"body=\"+b],capture_output=True,text=True,timeout=40)\nif p.returncode:sys.exit(73)\nprint(\"ACTUAL_CHECKOUT_AND_DEPLOYMENT_ID_RECORDED=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
