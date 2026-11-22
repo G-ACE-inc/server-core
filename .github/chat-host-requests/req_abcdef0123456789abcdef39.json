@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/71"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nfrom pathlib import Path\nimport hashlib,subprocess,sys,os\nstage=Path(\"deploy/state/startless-pr71-stage\")\nif stage.exists():sys.exit(60)\nold=subprocess.run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"cat\",\"/app/gaybbs.mjs\"],capture_output=True,timeout=35)\nif old.returncode:sys.exit(61)\nsource=old.stdout.decode()\nif hashlib.sha256(old.stdout).hexdigest()!=\"ae1efae7152d3ae8c161e1a06bfb6f0bc6278e44483eeeaf6ad20432b44e5443\":sys.exit(62)\nbefore='''function publicNavigationButton(button2) {\n  if (!button2.url || button2.copy_text) return button2;\n  const payload = startlessPayload(button2.url);\n  if (payload) return { ...button2, url: void 0, callback_data: STARTLESS_PREFIX + payload };\n  if (button2.url === \"https://t.me/CreateVdobot?start=creator\")\n    return { ...button2, url: \"https://t.me/CreateVdobot\" };\n  return button2;\n}'''\nafter='''function publicNavigationButton(button2) {\n  if (!button2.url) return button2;\n  const payload = startlessPayload(button2.url);\n  if (payload) {\n    if (button2.copy_text || button2.callback_data)\n      throw Error(\"STARTLESS_BUTTON_TRANSPORT_CONFLICT\");\n    return { ...button2, url: void 0, callback_data: STARTLESS_PREFIX + payload };\n  }\n  let u;\n  try { u = new URL(button2.url); } catch {}\n  if (u && u.protocol === \"https:\" && [\"t.me\", \"telegram.me\"].includes(u.hostname) &&\n      u.pathname.toLowerCase() === \"/\" + STARTLESS_BOT.toLowerCase() &&\n      u.searchParams.has(\"start\")) {\n    const value = u.searchParams.get(\"start\");\n    if (!u.hash && u.searchParams.size === 1 && value &&\n        /^(?:gate|online)_[A-Za-z0-9_-]{1,64}$/.test(value)) return button2;\n    throw Error(\"STARTLESS_REPEATED_START_LINK_FORBIDDEN\");\n  }\n  if (button2.url === \"https://t.me/CreateVdobot?start=creator\")\n    return { ...button2, url: \"https://t.me/CreateVdobot\" };\n  return button2;\n}'''\nif source.count(before)!=1:sys.exit(63)\nchanged=source.replace(before,after)\nif len(changed)-len(source)!=len(after)-len(before):sys.exit(64)\nstage.mkdir(parents=True,mode=0o700)\nf=stage/\"gaybbs.mjs\"\nwith os.fdopen(os.open(f,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600),\"wb\") as out:\n out.write(changed.encode());out.flush();os.fsync(out.fileno())\np=subprocess.run([\"node\",\"--check\",str(f)],capture_output=True,text=True,timeout=30)\nif p.returncode:sys.exit(65)\ncheck='''const fs=require(\"fs\");const s=fs.readFileSync(process.argv[1],\"utf8\");\nconst begin=s.indexOf(\"function publicNavigationButton(\"),end=s.indexOf(\"function callbackStartlessPayload(\",begin);\nif(begin<0||end<begin)process.exit(80);\nconst fn=new Function(\"STARTLESS_BOT\",\"STARTLESS_PREFIX\",\"startlessPayload\",s.slice(begin,end)+\";return publicNavigationButton\")\n(\"GayBBS_bot\",\"gdm:\",u=>u.endsWith(\"?start=search\")?\"search\":null);\nconst assert=require(\"node:assert/strict\");\nassert.equal(fn({text:\"test\",url:\"https://t.me/GayBBS_bot?start=search\"}).callback_data,\"gdm:search\");\nassert.equal(fn({text:\"test\",url:\"https://t.me/GayBBS_bot?start=gate_123\"}).url,\"https://t.me/GayBBS_bot?start=gate_123\");\nassert.throws(()=>fn({text:\"test\",url:\"https://t.me/GayBBS_bot?start=unknown\"}),/STARTLESS_REPEATED_START_LINK_FORBIDDEN/);\nassert.equal(fn({text:\"test\",url:\"https://t.me/CreateVdobot?start=creator\"}).url,\"https://t.me/CreateVdobot\");\nconsole.log(\"STARTLESS_HOTFIX_ISOLATED_RUNTIME_TEST=PASS\");'''\np=subprocess.run([\"node\",\"-e\",check,str(f)],capture_output=True,text=True,timeout=30)\nif p.returncode:sys.exit(66)\nprint(\"STARTLESS_PR71_EXACT_COMPILED_PATCH_STAGE_AND_SYNTAX=PASS\")\nprint(\"STARTLESS_HOTFIX_ISOLATED_RUNTIME_TEST=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
