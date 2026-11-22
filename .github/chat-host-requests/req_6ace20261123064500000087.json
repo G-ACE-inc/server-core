@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "live_existing_startless_transport_exact_message_audit",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nimport json,subprocess,sys\ntargets=[(-1003770334893,x) for x in (4,18,783)]+[(-1002373696859,x) for x in (1695,4291,1724,1723,4672,1)]\nfor chat,topic in targets:\n p=subprocess.run([sys.executable,\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",str(chat),\"--topic-id\",str(topic)],capture_output=True,text=True,timeout=125)\n if p.returncode:\n  print(\"STARTLESS_RESULT\",topic,\"AUDIT_FAILED\");continue\n rows=[json.loads(x.split(\"=\",1)[1]) for x in p.stdout.splitlines() if x.startswith(\"USERBOT_TOPIC_AUDIT=\")]\n if len(rows)!=1 or len(rows[0].get(\"rows\",[]))!=1:\n  print(\"STARTLESS_RESULT\",topic,\"INCONCLUSIVE\");continue\n r=rows[0][\"rows\"][0].get(\"migration\")\n if not r:\n  print(\"STARTLESS_RESULT\",topic,\"NO_MIGRATION_RESULT\");continue\n print(\"STARTLESS_RESULT\",topic,r[\"message_id\"],r[\"transport\"])\nPY\necho STARTLESS_VIDEO_CATEGORY_TRANSPORT_READBACK_COMPLETE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
