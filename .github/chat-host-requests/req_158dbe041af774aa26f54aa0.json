@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7072217832"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || exit 61\nspec=\"$(docker exec -w /opt/videobot \"$cid\" node --input-type=module -e '\nimport pg from \"pg\";import {readFileSync} from \"node:fs\";\nconst e=process.env;\nconst pw=readFileSync(\"/run/secrets/videobot_db_password\",\"utf8\").trim();\nconst db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:pw,max:1,connectionTimeoutMillis:5000});\ntry{\nconst q=await db.query(\"SELECT b.free_message_ids,b.paid_message_id,b.topic_id,l.price_stars FROM videobot_post_receipts a JOIN videobot_listings l ON l.listing_id=a.listing_id JOIN videobot_post_receipts b ON b.listing_id=l.listing_id AND b.revision=l.revision WHERE a.paid_message_id=4691 AND a.free_message_ids=ARRAY[4689,4690]::bigint[] AND b.status=$1\",[\"sent\"]);\nif(q.rowCount!==1)process.exitCode=71;\nelse {\nconst r=q.rows[0];const ids=[...r.free_message_ids,r.paid_message_id].map(Number);\nif(ids.length!==3||ids.some(v=>!Number.isSafeInteger(v)||v<=0))process.exitCode=72;\nelse console.log(JSON.stringify({ids,thread:Number(r.topic_id),price:Number(r.price_stars)}));\n}\n}catch{process.exitCode=79;}finally{await db.end()}\n')\" || exit 62\nGACE_SPEC=\"$spec\" python3 -B - <<'PY'\nimport asyncio,json,os,pathlib,stat,uuid,sys\nroot=pathlib.Path(\"/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\")\nsocket=root/\"deploy/secrets/userbot_verify.sock\"\nif not socket.is_socket() or socket.stat().st_uid!=os.getuid() or stat.S_IMODE(socket.stat().st_mode)!=0o600:sys.exit(63)\ninfo=json.loads(os.environ[\"GACE_SPEC\"])\nif set(info)!={\"ids\",\"thread\",\"price\"}:sys.exit(64)\nif not (isinstance(info[\"ids\"],list) and len(info[\"ids\"])==3 and len(set(info[\"ids\"]))==3):sys.exit(65)\nasync def call(ids,thread):\n    reader,writer=await asyncio.wait_for(asyncio.open_unix_connection(str(socket)),5)\n    try:\n        key=uuid.uuid4().hex\n        req={\"request_id\":key,\"action\":\"video_sale_readback\",\"chat_id\":-1002373696859,\n             \"thread_id\":thread,\"message_ids\":ids}\n        writer.write((json.dumps(req)+\"\\n\").encode());await writer.drain()\n        data=await asyncio.wait_for(reader.readline(),40)\n        result=json.loads(data)\n        if result.get(\"status\")!=\"PASS\" or result.get(\"request_id\")!=key:raise RuntimeError(\"READBACK_RESULT_INVALID\")\n        return result\n    finally:\n        writer.close();await writer.wait_closed()\ntry:\n    new=asyncio.run(call(info[\"ids\"],info[\"thread\"]))\n    print(\"USERBOT_NEW_FREE_NATIVE_ALBUM=\"+str(new.get(\"free_album_grouped\")))\n    print(\"USERBOT_NEW_NATIVE_PAID_MEDIA=\"+str(new.get(\"paid_media_native\")))\n    print(\"USERBOT_NEW_TOPIC_CORRECT=\"+str(new.get(\"target_topic_confirmed\")))\n    if not new.get(\"free_album_grouped\"):sys.exit(71)\n    if not new.get(\"paid_media_native\"):sys.exit(72)\n    if new.get(\"paid_stars\")!=info[\"price\"]:sys.exit(73)\n    if not new.get(\"target_topic_confirmed\"):sys.exit(74)\n    print(\"USERBOT_TELEGRAM_NATIVE_VIDEO_TRIPLE=PASS\")\nexcept Exception:\n    sys.exit(78)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
