@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "video_general_topic_send_diagnostic",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nimport json\nfrom pathlib import Path\npath=Path('deploy/state/missing-normal-topic-buttons-20261122/video/1.json')\nprint('VIDEO_GENERAL_LEDGER_PRESENT=',path.is_file())\nif path.is_file():\n obj=json.loads(path.read_text())\n print('VIDEO_GENERAL_STATE=',obj.get('state','UNKNOWN'))\n print('VIDEO_GENERAL_ERROR_CODE=',obj.get('error_code','NONE'))\nPY\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei 'postgres' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 61\ndocker exec \"$pg\" sh -c 'psql -X -q -U \"$POSTGRES_USER\" -d gaybbs -At -F \"|\" -c \"SELECT chat_id,message_thread_id,state,COALESCE(message_id,0),pinned FROM topic_dm_entry_pins WHERE chat_id=-1002373696859 AND message_thread_id=1;\"'\npython3 scripts/userbot_topic_audit_client.py --chat-id -1002373696859 --page 1\necho VIDEO_GENERAL_SEND_DIAGNOSTIC_COMPLETE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
