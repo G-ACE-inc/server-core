@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/68"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 61\npython3 - <<'PY'\nimport json,subprocess,sys\nfrom pathlib import Path\np=Path(\"deploy/state/startless-recover-missing-topic4291-20261122-retry1.json\")\nif not p.is_file():sys.exit(62)\nx=json.loads(p.read_text())\nif x.get(\"state\")!=\"VERIFIED\" or x.get(\"missing_original_id\")!=4633 or not isinstance(x.get(\"message_id\"),int):sys.exit(63)\nmid=x[\"message_id\"]\nq=\"SELECT message_id,state,pinned FROM topic_dm_entry_pins WHERE chat_id=-1002373696859 AND message_thread_id=4291\"\nr=subprocess.run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-X\",\"-q\",\"-v\",\"ON_ERROR_STOP=1\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",q],capture_output=True,text=True,timeout=30)\nif r.returncode or r.stdout.strip()!=f\"{mid}|published|t\":sys.exit(64)\na=subprocess.run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",\"-1002373696859\",\"--topic-id\",\"4291\"],capture_output=True,text=True,timeout=125)\nif a.returncode:sys.exit(65)\nd=[json.loads(z.split(\"=\",1)[1]) for z in a.stdout.splitlines() if z.startswith(\"USERBOT_TOPIC_AUDIT=\")]\nif len(d)!=1 or len(d[0].get(\"rows\",[]))!=1:sys.exit(66)\nrow=d[0][\"rows\"][0]\nif row.get(\"post_button\")!=\"PRESENT\" or mid not in row.get(\"pin_message_ids\",[])+row.get(\"history_message_ids\",[]):sys.exit(67)\nq=\"SELECT (SELECT count(*) FROM startless_public_post_migrations WHERE state='applied')::text||'|'||(SELECT count(*) FROM startless_public_post_migrations WHERE state='uncertain')\"\nr=subprocess.run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-X\",\"-q\",\"-v\",\"ON_ERROR_STOP=1\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",q],capture_output=True,text=True,timeout=30)\nif r.returncode or r.stdout.strip()!=\"104|11\":sys.exit(68)\nprint(\"TOPIC4291_NEW_CALLBACK_PIN=VERIFIED;OLD_MISSING_POST_UNTOUCHED=PASS;MIGRATION=104_APPLIED_11_UNCERTAIN\")\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
