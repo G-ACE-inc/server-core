@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6#issuecomment-7076896529"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nconst e=process.env;\nconst pw=readFileSync('/run/secrets/videobot_db_password','utf8').trim();\nconst token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\nconst db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:pw,max:1,connectionTimeoutMillis:5000});\nconst stage={done:[]};\ntry{\n const {rows}=await db.query(\"SELECT l.thumbnail_file_id,l.sample_file_id,b.free_message_ids,b.paid_message_id,b.topic_id FROM videobot_post_receipts b JOIN videobot_listings l ON l.listing_id=b.listing_id AND l.revision=b.revision WHERE b.paid_message_id=4691 AND b.free_message_ids=ARRAY[4689,4690]::bigint[] AND b.status='sent'\");\n if(rows.length!==1)process.exit(61);\n const r=rows[0];\n if(!r.thumbnail_file_id||!r.sample_file_id||Number(r.paid_message_id)!==4691||Number(r.topic_id)<1)process.exit(62);\n const targets=[\n  {message_id:4689,type:'photo',file:r.thumbnail_file_id},\n  {message_id:4690,type:'video',file:r.sample_file_id}\n ];\n for(let i=0;i<targets.length;i++){\n  const t=targets[i];\n  const params={chat_id:-1002373696859,message_id:t.message_id,media:{type:t.type,media:t.file,has_spoiler:true}};\n  const res=await fetch('https://api.telegram.org/bot'+token+'/editMessageMedia',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(params),signal:AbortSignal.timeout(30000)});\n  const response=await res.json().catch(()=>null);\n  if(response?.ok===true && response.result?.message_id===t.message_id && response.result?.has_media_spoiler===true){\n   stage.done.push(t.message_id);continue;\n  }\n  if(res.status===400 && String(response?.description).toLowerCase()==='bad request: message is not modified'){\n   stage.done.push(t.message_id);continue;\n  }\n  console.error('SPOILER_EDIT_REJECTED_STEP='+i+';DONE='+stage.done.length+';HTTP='+res.status);\n  process.exit(70+i);\n }\n console.log('EXISTING_FREE_TWO_SPOILERS_APPLIED_OR_ALREADY_CURRENT=PASS');\n console.log('PAID_MESSAGE_4691_UNTOUCHED=PASS');\n}catch(err){console.error('SPOILER_EDIT_EXCEPTION;DONE='+stage.done.length);process.exitCode=75}\nfinally{await db.end()}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
