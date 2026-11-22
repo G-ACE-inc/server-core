@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/417faf35464a1654df2d5d43cd6c8e31b2df5b5d"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nstage=\"$root/.releases/video-sale-payment-form-417faf35\"\nunit=gace-userbot-verify.service\ntarget=\"$root/scripts/userbot_resident_ipc.py\"\nsock=\"$root/deploy/secrets/userbot_verify.sock\"\nsession=\"$root/deploy/secrets/userbot_verify.session\"\ntest \"$(systemctl --user is-active \"$unit\")\" = active || exit 61\ntest \"$(systemctl --user is-enabled \"$unit\")\" = enabled || exit 62\ntest -S \"$sock\" && test \"$(stat -c %a \"$sock\")\" = 600 || exit 63\ntest ! -L \"$session\" && test -f \"$session\" && test \"$(stat -c %a \"$session\")\" = 600 || exit 64\ntest -s \"$stage/userbot_resident_ipc.py\" || exit 65\ntest -x \"$root/deploy/.userbot-venv/bin/python\" || exit 66\nbefore_inode=\"$(stat -c '%d:%i' \"$session\")\"\npython3 -B - \"$stage/userbot_resident_ipc.py\" <<'PY'\nimport ast,sys\ns=open(sys.argv[1]).read();ast.parse(s)\nif s.count('async def _video_sale_payment_form(')!=1 or s.count('async def _video_sale_readback(')!=1:sys.exit(67)\nif not all(k in s for k in ('GetPaymentFormRequest','InputInvoiceMessage','VIDEO_SALE_LOCK_NOT_VERIFIED')):sys.exit(68)\nPY\n\"$root/deploy/.userbot-venv/bin/python\" -B \"$root/scripts/userbot_test_client.py\" health | grep -Fq 'USERBOT_TEST_RESULT=PASS' || exit 69\ntest ! -e \"$stage/backup-before-quote.py\" || exit 70\ncp -p \"$target\" \"$stage/backup-before-quote.py\" || exit 71\narmed=NO\nrollback(){ cp -p \"$stage/backup-before-quote.py\" \"$target\" || true;systemctl --user restart \"$unit\" || true; }\ntrap 'if test \"$armed\" = YES;then rollback;fi' EXIT\ncp -p \"$stage/userbot_resident_ipc.py\" \"$target\" || exit 72\narmed=YES\nsystemctl --user restart \"$unit\" || exit 73\nready=NO\nfor i in 1 2 3 4 5 6 7 8;do\n if test \"$(systemctl --user is-active \"$unit\" 2>/dev/null)\" = active && test -S \"$sock\";then ready=YES;break;fi\n sleep 2\ndone\ntest \"$ready\" = YES || exit 74\ntest \"$(stat -c '%d:%i' \"$session\")\" = \"$before_inode\" && test \"$(stat -c %a \"$session\")\" = 600 || exit 75\ntest \"$(stat -c %a \"$sock\")\" = 600 || exit 76\n\"$root/deploy/.userbot-venv/bin/python\" -B \"$root/scripts/userbot_test_client.py\" health | grep -Fq 'USERBOT_TEST_RESULT=PASS' || exit 77\narmed=NO\necho RESIDENT_USERBOT_PAYMENT_FORM_READ_ONLY_DEPLOY=PASS\necho RESIDENT_USERBOT_SESSION_PRESERVED=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
