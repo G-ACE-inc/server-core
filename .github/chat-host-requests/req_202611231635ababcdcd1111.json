@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7077544438"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport {readFileSync} from 'node:fs';import {setDefaultResultOrder} from 'node:dns';import {setDefaultAutoSelectFamily} from 'node:net';\nimport {createCreatorTelegramFetch} from '/opt/videobot/src/runtime/creatorEgress.mjs';\nsetDefaultResultOrder('ipv4first');setDefaultAutoSelectFamily(false);\nconst out=createCreatorTelegramFetch(),e=process.env;\ntry{\n const token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\n const response=await out.fetch((e.VIDEOBOT_LOCAL_API_URL??'https://api.telegram.org')+'/bot'+token+'/getChatMember',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({chat_id:-1002373696859,user_id:788044853}),signal:AbortSignal.timeout(30000)});\n const j=await response.json();\n if(j?.ok!==true)process.exitCode=61;\n else if(j.result?.status==='creator')process.exitCode=71;\n else if(j.result?.status==='administrator')process.exitCode=72;\n else if(j.result?.status==='member')process.exitCode=73;\n else process.exitCode=74;\n}catch{process.exitCode=79}finally{await out.close()}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
