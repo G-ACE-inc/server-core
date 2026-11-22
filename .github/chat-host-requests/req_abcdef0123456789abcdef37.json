@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/71"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport subprocess,json,sys\ndef get(a):\n p=subprocess.run(a,capture_output=True,text=True,timeout=25)\n if p.returncode:raise RuntimeError(\"READ_FAILED_\"+a[0])\n return p.stdout.strip()\ninfo=json.loads(get([\"docker\",\"inspect\",\"deploy-gaybbs-1\"]))[0]\nconfig=info[\"Config\"]\nmounts=info.get(\"Mounts\",[])\ncompose=json.loads(get([\"docker\",\"compose\",\"-f\",\"deploy/gserver-compose.yaml\",\"config\",\"--format\",\"json\"]))\nservice=compose.get(\"services\",{}).get(\"gaybbs\",{})\nresult={\"container_image\":config.get(\"Image\"),\"image_id\":info.get(\"Image\"),\"command\":config.get(\"Cmd\"),\"entrypoint\":config.get(\"Entrypoint\"),\"working_dir\":config.get(\"WorkingDir\"),\"mount_destinations\":[m.get(\"Destination\") for m in mounts],\"compose_image\":service.get(\"image\"),\"compose_build\":bool(service.get(\"build\")),\"compose_entrypoint\":service.get(\"entrypoint\"),\"compose_command\":service.get(\"command\"),\"compose_service_count\":len(compose.get(\"services\",{}))}\np=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/68/comments\",\"-f\",\"body=STARTLESS_BOT_DEPLOYMENT_PREFLIGHT=\"+json.dumps(result,ensure_ascii=False,separators=(\",\",\":\"))],capture_output=True,text=True,timeout=45)\nif p.returncode:sys.exit(70)\nprint(\"BOT_DEPLOYMENT_PRECHECK_READ_ONLY=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
