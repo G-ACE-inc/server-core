@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7072256893"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\nspec=\"$(docker exec -w /opt/videobot \"$cid\" node --input-type=module -e '\nimport pg from \"pg\";import {readFileSync} from \"node:fs\";\nconst e=process.env,p=readFileSync(\"/run/secrets/videobot_db_password\",\"utf8\").trim();\nconst db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,database:e.VIDEOBOT_DB_NAME,user:e.VIDEOBOT_DB_USER,password:p,max:1,connectionTimeoutMillis:5000});\ntry {const q=await db.query(\"SELECT b.free_message_ids,b.paid_message_id,b.topic_id,l.price_stars FROM videobot_post_receipts a JOIN videobot_listings l ON l.listing_id=a.listing_id JOIN videobot_post_receipts b ON b.listing_id=l.listing_id AND b.revision=l.revision WHERE a.paid_message_id=4691 AND a.free_message_ids=ARRAY[4689,4690]::bigint[] AND b.status=$1\",[\"sent\"]);\nif(q.rowCount!==1)process.exitCode=70;\nelse{const r=q.rows[0];console.log(JSON.stringify({ids:[...r.free_message_ids,r.paid_message_id].map(Number),thread:Number(r.topic_id),price:Number(r.price_stars)}));}\n}catch{process.exitCode=79}finally{await db.end()}\n')\" || exit 62\nGACE_SPEC=\"$spec\" python3 -B - <<'PY'\nimport asyncio,json,os,pathlib,uuid,sys\ndata=json.loads(os.environ[\"GACE_SPEC\"])\nsock=pathlib.Path(\"/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/deploy/secrets/userbot_verify.sock\")\nasync def read(ids):\n r,w=await asyncio.open_unix_connection(str(sock))\n try:\n  k=uuid.uuid4().hex\n  q={\"request_id\":k,\"action\":\"video_sale_readback\",\"chat_id\":-1002373696859,\n     \"thread_id\":data[\"thread\"],\"message_ids\":ids}\n  w.write((json.dumps(q)+\"\\n\").encode());await w.drain()\n  answer=json.loads(await asyncio.wait_for(r.readline(),40))\n  if answer.get(\"request_id\")!=k or answer.get(\"status\")!=\"PASS\":raise RuntimeError(\"READBACK_INVALID\")\n  return answer\n finally:w.close();await w.wait_closed()\ntry:\n new=asyncio.run(read(data[\"ids\"]))\n old=asyncio.run(read([4689,4690,4691]))\n if not (new[\"free_album_grouped\"] and new[\"paid_media_native\"] and new[\"paid_stars\"]==data[\"price\"]):sys.exit(71)\n if not (old[\"free_album_grouped\"] and old[\"paid_media_native\"]):sys.exit(72)\n if new.get(\"public_captions_clean\") is not True:sys.exit(73)\n if old.get(\"public_captions_clean\") is not True:sys.exit(74)\n if new.get(\"preview_for_reader\") is not True:sys.exit(75)\n if new.get(\"free_media_types\")!=[\"MessageMediaPhoto\",\"MessageMediaDocument\"]:sys.exit(76)\n if new.get(\"free_spoiler_flags\")!=[True,True]:sys.exit(81)\n if old.get(\"free_spoiler_flags\")!=[True,True]:sys.exit(82)\n if new.get(\"free_caption_present\") is not False:sys.exit(83)\n if new.get(\"paid_caption_present\") is not True:sys.exit(84)\n if new.get(\"target_topic_confirmed\") is not True or old.get(\"target_topic_confirmed\") is not True:sys.exit(85)\n print(\"VIDEO_NATIVE_ALBUM_BOTH_SPOILERS=PASS\")\n print(\"VIDEO_NATIVE_STARS_LOCK_AND_PREVIEW=PASS\")\n print(\"VIDEO_PAID_CAPTION_ONLY=PASS\")\n sys.exit(0)\nexcept Exception:sys.exit(79)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
