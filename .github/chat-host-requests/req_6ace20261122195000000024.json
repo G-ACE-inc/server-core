@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "resident_userbot_surgical_activation_dryrun",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npg=\"$(docker ps --format '{{.Names}}' | grep -Ei 'postgres' || true)\"\ntest \"$(printf '%s\\n' \"$pg\" | sed '/^$/d' | wc -l)\" -eq 1 || exit 61\nprintf 'PROFILE_TOPIC_DB_PANEL_BEGIN\\n'\ndocker exec \"$pg\" sh -c 'psql -X -U \"$POSTGRES_USER\" -d gaybbs -At -F \"|\" -c \"\nSELECT panel_id,chat_id,message_thread_id,panel_type,state,COALESCE(message_id,0),pinned,(verified_at IS NOT NULL)\nFROM board_menu_panels\nWHERE (chat_id=-1003847210571 AND message_thread_id=48)\nOR (chat_id=-1002373696859 AND message_thread_id=1613)\nOR (chat_id=-1003770334893 AND message_thread_id=210)\nORDER BY chat_id,panel_type;\"'\nprintf 'PROFILE_TOPIC_DB_PANEL_END\\n'\nprintf 'PROFILE_TOPIC_EXISTING_PINS_BEGIN\\n'\ndocker exec \"$pg\" sh -c 'psql -X -U \"$POSTGRES_USER\" -d gaybbs -At -F \"|\" -c \"\nSELECT chat_id,message_thread_id,state,COALESCE(message_id,0),pinned\nFROM topic_dm_entry_pins\nWHERE (chat_id=-1003847210571 AND message_thread_id=48)\nOR (chat_id=-1002373696859 AND message_thread_id=1613)\nOR (chat_id=-1003770334893 AND message_thread_id=210); \"'\nprintf 'PROFILE_TOPIC_EXISTING_PINS_END\\n'\nprintf 'PROFILE_TOPIC_DB_ROUTES_BEGIN\\n'\ndocker exec \"$pg\" sh -c 'psql -X -U \"$POSTGRES_USER\" -d gaybbs -At -F \"|\" -c \"\nSELECT board_key,purpose,chat_id,message_thread_id,enabled,(verified_at IS NOT NULL)\nFROM posting_topics\nWHERE (chat_id=-1003847210571 AND message_thread_id=48)\nOR (chat_id=-1002373696859 AND message_thread_id=1613)\nOR (chat_id=-1003770334893 AND message_thread_id=210); \"'\nprintf 'PROFILE_TOPIC_DB_ROUTES_END\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
