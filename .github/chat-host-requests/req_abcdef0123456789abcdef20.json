@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/68"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport json,subprocess,sys\nfrom pathlib import Path\nchat=-1002373696859\nfor topic,old,title in ((4672,4697,\"サブスク\"),(1,4703,\"お知らせ\")):\n f=Path(f\"deploy/state/startless-recover-missing-topic{topic}-20261122.json\")\n if f.exists():sys.exit(60)\n sql=f\"\"\"SELECT p.message_id,p.state,p.pinned, (SELECT count(*) FROM posting_topics t WHERE t.chat_id=p.chat_id AND t.message_thread_id=p.message_thread_id AND t.purpose='link') AS link_blocks,(SELECT count(*) FROM board_menu_panels b WHERE b.chat_id=p.chat_id AND b.message_thread_id=p.message_thread_id AND b.panel_type='general_guide') AS guide_blocks FROM topic_dm_entry_pins p WHERE p.chat_id={chat} AND p.message_thread_id={topic}\"\"\"\n db=subprocess.run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-X\",\"-q\",\"-v\",\"ON_ERROR_STOP=1\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",sql],capture_output=True,text=True,timeout=30)\n if db.returncode or db.stdout.strip()!=f\"{old}|published|t|0|0\":sys.exit(61)\n u=subprocess.run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",str(chat),\"--topic-id\",str(topic)],capture_output=True,text=True,timeout=125)\n if u.returncode:sys.exit(62)\n d=[json.loads(z.split(\"=\",1)[1]) for z in u.stdout.splitlines() if z.startswith(\"USERBOT_TOPIC_AUDIT=\")]\n if len(d)!=1 or len(d[0].get(\"rows\",[]))!=1:sys.exit(63)\n row=d[0][\"rows\"][0]\n if title not in row.get(\"title\",\"\") or row[\"topic_id\"]!=topic:sys.exit(64)\n if row.get(\"post_button\")!=\"ABSENT\" or row.get(\"pin_state\")!=\"ABSENT_FROM_PINS\" or row.get(\"history_inspected\",0)<1:sys.exit(65)\n if (row.get(\"migration\") or {})!={\"message_id\":old,\"transport\":\"NOT_FOUND\"}:sys.exit(66)\nprint(\"TWO_ENTRY_ONLY_RESTORE_PREFLIGHT=PASS\")\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
