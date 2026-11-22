@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/68"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\npython3 - <<'PY'\nimport subprocess,sys\nq=\"\"\"SELECT p.message_thread_id,p.message_id,p.state,p.pinned,COALESCE((SELECT COUNT(*) FROM posting_topics t WHERE t.chat_id=p.chat_id AND t.message_thread_id=p.message_thread_id AND t.enabled=TRUE AND t.verified_at IS NOT NULL AND t.verified_by IS NOT NULL),0) AS destinations FROM topic_dm_entry_pins p WHERE p.chat_id=-1002373696859 AND p.message_thread_id IN (4291,4672,1) ORDER BY CASE p.message_thread_id WHEN 4291 THEN 1 WHEN 4672 THEN 2 WHEN 1 THEN 3 END\"\"\"\nr=subprocess.run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-X\",\"-v\",\"ON_ERROR_STOP=1\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-At\",\"-F\",\"|\",\"-c\",q],capture_output=True,text=True,timeout=30)\nif r.returncode:sys.exit(60)\na=[line.split(\"|\") for line in r.stdout.splitlines() if line.strip()]\nif len(a)!=3:sys.exit(61)\nexpected=[(4291,4633),(4672,4697),(1,4703)]\nmask=0\nfor i,row in enumerate(a):\n topic,mid,state,pinned,count=row\n if (int(topic),int(mid))!=expected[i] or state!=\"published\" or pinned!=\"t\":sys.exit(62)\n if count==\"1\":mask|=(1<<i)\n elif count!=\"0\":sys.exit(63)\nprint(\"VERIFIED_DESTINATION_ROUTE_MASK=\"+str(mask))\nsys.exit(100+mask)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
