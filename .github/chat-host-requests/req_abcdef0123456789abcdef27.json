@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/66"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport json,subprocess,os,sys,time\nfrom pathlib import Path\nbase=Path(\"deploy/state\")\nCHAT=-1002373696859\nfiles={\n4291:base/\"startless-recover-missing-topic4291-20261122-retry1.json\",\n4672:base/\"startless-recover-missing-topic4672-20261122.json\",\n}\ndef run(args,input=None,timeout=110):\n return subprocess.run(args,input=input,text=True,capture_output=True,timeout=timeout)\ndef query(sql):\n p=run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-X\",\"-q\",\"-v\",\"ON_ERROR_STOP=1\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",sql],timeout=30)\n if p.returncode:raise RuntimeError(\"DB_COMMAND_FAILED\")\n return p.stdout.strip()\ndef audit(topic):\n p=run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",str(CHAT),\"--topic-id\",str(topic)],timeout=125)\n if p.returncode:raise RuntimeError(\"RESIDENT_AUDIT_FAILED\")\n docs=[json.loads(x.split(\"=\",1)[1]) for x in p.stdout.splitlines() if x.startswith(\"USERBOT_TOPIC_AUDIT=\")]\n if len(docs)!=1 or len(docs[0].get(\"rows\",[]))!=1:raise RuntimeError(\"AUDIT_SHAPE\")\n return docs[0][\"rows\"][0]\ndef persist(path,obj,first=False):\n p=path if first else path.with_suffix(\".next\")\n with os.fdopen(os.open(p,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),\"w\") as f:\n  json.dump(obj,f,ensure_ascii=False,sort_keys=True);f.flush();os.fsync(f.fileno())\n if not first:os.replace(p,path)\ndef call_bot(task):\n node=r\"\"\"\n'use strict';\nconst fs=require('node:fs'),https=require('node:https');\nconst token=fs.readFileSync(process.env.BOT_TOKEN_FILE||'/run/secrets/bot_token','utf8').trim();\nconst t=__TASK_JSON__;\nconst agent=new https.Agent({keepAlive:false,family:4,timeout:20000});\nfunction api(method,data){return new Promise((resolve,reject)=>{\n const body=JSON.stringify(data);\n const req=https.request({hostname:'api.telegram.org',path:'/bot'+token+'/'+method,method:'POST',agent,timeout:25000,headers:{'content-type':'application/json','content-length':Buffer.byteLength(body)}},res=>{\n let s='';res.on('data',c=>{if(s.length<16000)s+=c});res.on('end',()=>{try{const x=JSON.parse(s);resolve(x.ok===true?{ok:true,result:x.result}:{ok:false,code:x.error_code})}catch{reject(Error('RESPONSE_INVALID'))}})});\n req.on('error',()=>reject(Error('TRANSPORT_UNCERTAIN')));req.on('timeout',()=>req.destroy(Error('TIMEOUT_UNCERTAIN')));req.end(body);\n})}\n(async()=>{\n const me=await api('getMe',{});\n if(!me.ok||me.result.username?.toLowerCase()!=='gaybbs_bot'||me.result.id===8086265383)throw Error('BOT_IDENTITY_INVALID');\n const edit=await api('editMessageText',{chat_id:t.chat,message_id:t.message_id,text:'このトピックには投稿メニューボタンを設置していません。'});\n if(!edit.ok){console.log(JSON.stringify({state:'EDIT_REJECTED',code:edit.code}));process.exitCode=2;return;}\n const pin=await api('unpinChatMessage',{chat_id:t.chat,message_id:t.message_id});\n console.log(JSON.stringify({state:pin.ok?'BUTTON_REMOVED_UNPINNED':'BUTTON_REMOVED_UNPIN_UNCONFIRMED',code:pin.ok?null:pin.code}));\n if(!pin.ok)process.exitCode=3;\n})().catch(e=>{console.log(JSON.stringify({state:'UNKNOWN',code:String(e.message||'UNKNOWN').replace(/[^A-Z_]/g,'').slice(0,50)}));process.exitCode=4});\n\"\"\"\n p=run([\"docker\",\"exec\",\"-i\",\"deploy-gaybbs-1\",\"node\",\"-\"],input=node.replace(\"__TASK_JSON__\",json.dumps(task)),timeout=90)\n try:\n  a=[json.loads(x) for x in p.stdout.splitlines() if x.startswith(\"{\")]\n  return p.returncode,a[0] if len(a)==1 else {\"state\":\"UNKNOWN\"}\n except:return p.returncode,{\"state\":\"UNKNOWN\"}\nif run([\"systemctl\",\"--user\",\"is-active\",\"gace-userbot-verify.service\"]).stdout.strip()!=\"active\":raise SystemExit(60)\nif run([\"docker\",\"inspect\",\"-f\",\"{{.State.Running}}\",\"deploy-gaybbs-1\"]).stdout.strip()!=\"true\":raise SystemExit(61)\nfor topic,source in files.items():\n old=json.loads(source.read_text())\n if old.get(\"state\")!=\"VERIFIED\":raise SystemExit(62)\n mid=old.get(\"message_id\")\n if not isinstance(mid,int) or mid<1:raise SystemExit(63)\n f=base/f\"startless-recover-missing-topic{topic}-20261122-withdrawn.json\"\n if f.exists():raise SystemExit(64)\n if query(f\"SELECT message_id,state,pinned FROM topic_dm_entry_pins WHERE chat_id={CHAT} AND message_thread_id={topic}\")!=f\"{mid}|published|t\":raise SystemExit(65)\n row=audit(topic)\n if row.get(\"post_button\")!=\"PRESENT\" or mid not in row.get(\"pin_message_ids\",[])+row.get(\"history_message_ids\",[]):raise SystemExit(66)\n persist(f,{\"state\":\"WITHDRAWAL_ATTEMPTING\",\"topic_id\":topic,\"message_id\":mid,\"source\":\"new_post_only\"},first=True)\n code,result=call_bot({\"chat\":CHAT,\"message_id\":mid})\n state=result.get(\"state\",\"UNKNOWN\")\n if code or state!=\"BUTTON_REMOVED_UNPINNED\":\n  persist(f,{\"state\":state,\"topic_id\":topic,\"message_id\":mid})\n  raise SystemExit(67)\n changed=query(f\"UPDATE topic_dm_entry_pins SET state='needs_reconcile',pinned=FALSE,updated_at=NOW() WHERE chat_id={CHAT} AND message_thread_id={topic} AND message_id={mid} AND state='published' AND pinned=TRUE RETURNING message_id\")\n if changed!=str(mid):\n  persist(f,{\"state\":\"DB_DISABLE_UNCONFIRMED\",\"topic_id\":topic,\"message_id\":mid})\n  raise SystemExit(68)\n persist(f,{\"state\":\"DISABLED_BY_MASTER\",\"topic_id\":topic,\"message_id\":mid,\"new_post_retained\":True,\"inline_keyboard_removed\":True,\"unpinned\":True})\n for i in range(3):\n  row=audit(topic)\n  if row.get(\"post_button\")==\"ABSENT\" and mid not in row.get(\"pin_message_ids\",[]):\n   persist(f,{\"state\":\"VERIFIED_DISABLED_BY_MASTER\",\"topic_id\":topic,\"message_id\":mid,\"new_post_retained\":True,\"inline_keyboard_removed\":True,\"unpinned\":True})\n   break\n  if i<2:time.sleep(2)\n else:raise SystemExit(69)\n print(f\"VIDEO_TOPIC_{topic}_EXTRA_BUTTON_REMOVED=VERIFIED\")\nif run([\"systemctl\",\"--user\",\"is-active\",\"gace-userbot-verify.service\"]).stdout.strip()!=\"active\":raise SystemExit(70)\nprint(\"NO_ORIGINAL_MESSAGES_DELETED=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
