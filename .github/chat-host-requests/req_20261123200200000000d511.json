@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ntag=gace-createvdobot-paidlock-ack-20261123\ncompose=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/deploy/compose.videobot.poll.yaml\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(docker image inspect \"$tag\" --format '{{.Id}}')\" || exit 62\ngrep -Eq '^[[:space:]]*image:[[:space:]]*gace-createvdobot-paidlock-ack-20261123[[:space:]]*$' \"$compose\" || exit 63\ndocker exec \"$cid\" node --input-type=module <<'JS'\nimport {readFileSync} from 'node:fs';\nimport {createHash} from 'node:crypto';\nconst p='/opt/videobot/src/telegram/paidListingPublisher.mjs';\nconst b=readFileSync(p);\nconst s=b.toString();\nconst anchors=[\"telegramApi('sendPaidMedia',paid)\",\"nativePaid=paidResult?.paid_media\",\"nativePaid.star_count !== listing.priceStars\",\"paidResult.chat?.id !== topic.chatId\",\"store.recordPaid(key,paidResult.message_id)\"];\nfor(const a of anchors)if(!s.includes(a))throw Error('PAID_LOCK_RUNTIME_MISSING');\nconst sha=createHash('sha1').update(Buffer.from('blob '+b.length+'\\0')).update(b).digest('hex');\nconsole.log('PAID_LOCK_ACTIVE_PUBLISHER_BLOB='+sha);\nJS\ntest \"$(docker ps --format '{{.Names}}' | grep -c '^gace-createvdobot-videobot-poll-1$')\" = 1 || exit 64\necho \"PAID_LOCK_RUNTIME_READBACK=PASS\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
