@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7077085116"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nconst e=process.env,db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\ntry {\n const q=await db.query(\"SELECT l.sample_duration_seconds,l.sample_file_id=l.paid_video_file_id AS sample_is_main,l.sample_file_id=l.thumbnail_file_id AS sample_is_thumbnail FROM videobot_post_receipts a JOIN videobot_listings l ON l.listing_id=a.listing_id WHERE a.paid_message_id=4691 AND a.free_message_ids=ARRAY[4689,4690]::bigint[]\");\n if(q.rowCount!==1)process.exit(61);\n const r=q.rows[0],secs=Number(r.sample_duration_seconds);\n if(r.sample_is_main===true)process.exit(32);\n if(r.sample_is_thumbnail===true)process.exit(33);\n if(!Number.isFinite(secs)||secs<=0)process.exit(34);\n if(secs>30)process.exit(31);\n console.log('OLD_VIDEO_SAMPLE_RECORD_DURATION_WITHIN_30_SECONDS=PASS');\n}catch{process.exitCode=70}finally{await db.end()}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
