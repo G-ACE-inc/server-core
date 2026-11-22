@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/a7a10a8b428951461fa0834efce48f75b5e11595"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 61\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nimport {createCreatorTelegramFetch} from '/opt/videobot/src/runtime/creatorEgress.mjs';\nimport {createTelegramBotApi} from '/opt/videobot/src/telegram/botApi.mjs';\nsetDefaultResultOrder('ipv4first');setDefaultAutoSelectFamily(false);\nconst e=process.env,pw=readFileSync('/run/secrets/videobot_db_password','utf8').trim();\nconst token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\nconst db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:pw,max:1,connectionTimeoutMillis:5000});\nconst network=createCreatorTelegramFetch();\nconst api=createTelegramBotApi({token,fetchImpl:network.fetch,timeoutMs:25000});\nconst fail=c=>{throw Object.assign(new Error(c),{code:c})};\ntry{\n const q=await db.query(\"SELECT b.delivery_key,b.free_message_ids,b.paid_message_id,b.topic_id,l.thumbnail_file_id,l.sample_file_id,l.paid_video_file_id,l.title,l.description,l.price_stars,l.status AS listing_status FROM videobot_post_receipts a JOIN videobot_listings l ON l.listing_id=a.listing_id JOIN videobot_post_receipts b ON b.listing_id=a.listing_id AND b.revision=l.revision WHERE a.paid_message_id=4691 AND a.free_message_ids=ARRAY[4689,4690]::bigint[] AND b.status='sent'\");\n if(q.rowCount!==1)fail('TARGET_RECEIPT_NOT_UNIQUE');\n const r=q.rows[0],ids=r.free_message_ids.map(Number),paid=Number(r.paid_message_id),thread=Number(r.topic_id),chatId=-1002373696859;\n if(ids.length!==2||ids.some(v=>!Number.isSafeInteger(v)||v<=0)||paid<=0||ids.includes(paid))fail('POSTING_IDS_INVALID');\n if(!['published','paused'].includes(r.listing_status)||thread!==Number(e.VIDEOBOT_VIDEO_SALE_THREAD_ID))fail('TOPIC_AND_STATUS_NOT_VERIFIED');\n if(!r.thumbnail_file_id||!r.sample_file_id||!r.paid_video_file_id||!r.title||!Number.isSafeInteger(r.price_stars))fail('MEDIA_SOURCE_NOT_VERIFIED');\n const me=await api('getMe',{});\n if(String(me?.username||'').toLowerCase()!=='createvdobot')fail('BOT_IDENTITY_MISMATCH');\n const media=[\n  {type:'photo',media:r.thumbnail_file_id,caption:'',has_spoiler:true},\n  {type:'video',media:r.sample_file_id,supports_streaming:true,has_spoiler:true}\n ];\n for(let i=0;i<2;i++){\n  const result=await api('editMessageMedia',{chat_id:chatId,message_id:ids[i],media:media[i]});\n  if(result?.message_id!==ids[i]||result?.chat?.id!==chatId||\n     (result.message_thread_id!=null&&result.message_thread_id!==thread)||\n     !result.media_group_id)fail('ALBUM_EDIT_NOT_CONFIRMED_'+i);\n  if(result.has_media_spoiler!==true)fail('ALBUM_SPOILER_NOT_CONFIRMED_'+i);\n  console.log('ALBUM_FREE_MEDIA_EDITED_AND_CONFIRMED_'+i+'=PASS');\n }\n console.log('NATIVE_PAID_VIDEO_AND_BUYER_RECEIPTS_UNCHANGED=PASS');\n console.log('NO_REPOST_OR_DELETE=PASS');\n}catch(err){\n console.error('VISIBLE_FREE_ALBUM_REPAIR='+String(err.code||'SAFE_STOP'));\n process.exitCode=1;\n}finally{await network.close();await db.end();}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
