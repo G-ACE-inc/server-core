@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6#issuecomment-7071978244"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\npath=/var/lib/videobot/media-work/replacements/legacy-4689-4691\ndocker exec \"$cid\" sh -c 'p=/var/lib/videobot/media-work/replacements/legacy-4689-4691\nif test ! -d \"$p\";then exit 81;fi\nif test -f \"$p/delete-4690.ack\" && test -f \"$p/delete-4689.ack\";then exit 0;fi\nif test -f \"$p/delete-4690.intent\" && test ! -f \"$p/delete-4690.ack\";then exit 84;fi\nif test -f \"$p/delete-4689.ack\";then exit 83;fi\nif test -f \"$p/delete-4689.intent\";then exit 82;fi\nexit 85'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
