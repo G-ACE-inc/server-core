@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/71"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"deploy/state/startless-pr71-stage\"\ntest -s \"$stage/gaybbs.mjs\"\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = sha256:4d4ab3395ce4c250dc40ca179bbac7598d149288cac2381b54e11e7a719b6f5c\ntest \"$(docker exec deploy-gaybbs-1 stat -c '%u:%g' /app/gaybbs.mjs)\" = \"1000:1000\"\ntest \"$(docker exec deploy-gaybbs-1 stat -c '%a' /app/gaybbs.mjs)\" = \"600\"\ntest \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:local)\" = sha256:4d4ab3395ce4c250dc40ca179bbac7598d149288cac2381b54e11e7a719b6f5c\ntest ! -e \"$stage/Dockerfile.uid\"\nprintf 'FROM gace-tgtumbler-gaybbs:before-startless-pr71-20261122\\nCOPY --chown=1000:1000 --chmod=600 gaybbs.mjs /app/gaybbs.mjs\\nRUN test -r /app/gaybbs.mjs && node --check /app/gaybbs.mjs\\n' > \"$stage/Dockerfile.uid\"\ndocker build --no-cache -q -t gace-tgtumbler-gaybbs:startless-pr71-uid1000-20261122 -f \"$stage/Dockerfile.uid\" \"$stage\" >/dev/null\ntest \"$(docker image inspect -f '{{.Config.User}}' gace-tgtumbler-gaybbs:startless-pr71-uid1000-20261122)\" = node\ntest \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:startless-pr71-uid1000-20261122)\" != \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:local)\"\necho \"STARTLESS_PATCHED_IMAGE_OWNER_AND_NODE_CHECK=PASS\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
