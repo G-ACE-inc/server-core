@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "existing_resident_userbot_live_topic_buttons_readback",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\npython3 - <<'PY'\nimport json,subprocess,sys\nfrom pathlib import Path\np=subprocess.run([sys.executable,\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",\"-1002373696859\",\"--page\",\"0\"],capture_output=True,text=True,timeout=110)\nif p.returncode:raise SystemExit(61)\na=[json.loads(x.split(\"=\",1)[1]) for x in p.stdout.splitlines() if x.startswith(\"USERBOT_TOPIC_AUDIT=\")]\nif len(a)!=1:raise SystemExit(62)\nrows={int(x[\"topic_id\"]):x for x in a[0][\"rows\"]}\nroot=Path(\"deploy/state/topic-creator-missing-20261122\")\nfor topic in (1695,4640):\n file=root/(str(topic)+\".json\")\n if not file.exists():raise SystemExit(63)\n ledger=json.loads(file.read_text())\n item=rows.get(topic)\n if not item or ledger.get(\"state\")!=\"PUBLISHED\":raise SystemExit(64)\n message_id=ledger.get(\"message_id\")\n if (item.get(\"post_button\")!=\"PRESENT\" or\n     \"creator\" not in item.get(\"button_types\",[]) or\n     message_id not in item.get(\"history_message_ids\",[])):\n  raise SystemExit(65)\n print(f\"CREATOR_BUTTON_LIVE_VERIFIED_TOPIC={topic} MESSAGE_ID={message_id}\")\nprint(\"CREATOR_BUTTONS_USERBOT_READBACK=PASS\")\nPY\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
