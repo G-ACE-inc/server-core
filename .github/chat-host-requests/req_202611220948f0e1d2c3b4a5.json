@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6#issuecomment-7077210864"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nnew=create-videobot:duplicate-guard-87ee908e-stage\ntest -n \"$(docker images -q \"$new\")\" || exit 60\ndocker run --rm --network none -w /opt/videobot --entrypoint node \"$new\" --input-type=module -e '\nimport {publishVideoListing} from \"./src/telegram/paidListingPublisher.mjs\";\nimport {createPostgresPostingReceiptStore} from \"./src/sales/pgPostingReceipts.mjs\";\nlet phase=0,events=0;\nconst listing={id:\"sale001\",sellerId:\"user1\",revision:2,title:\"Test\",thumbnail:{fileId:\"photo001\"},sample:{fileId:\"sample001\",durationSeconds:30},paidVideo:{fileId:\"paid001\"},priceStars:10,rightsVerified:true,adultConsentVerified:true,ownerConfirmedPublish:true,feeTermsAccepted:true,managementFeeBps:3000};\nconst store={read:async()=>null,claim:async()=>{events++;return {claimed:true}},findOtherDelivery:async()=>({key:\"sale001:1\",status:\"sent\"}),recordFree:async()=>{},recordPaid:async()=>{},markUnknown:async()=>{}};\ntry {\n phase=1;\n await publishVideoListing({listing,store,getVerifiedVideoTopic:async()=>({id:1,purpose:\"video_sale\",board:\"video_chat\",enabled:true,verified:true,chatId:-100123,threadId:1,title:\"Sale\"}),telegramApi:async()=>{events++}});\n process.exitCode=80;\n} catch(e) {\n if(e.message===\"VIDEO_EXISTING_PUBLICATION_REQUIRES_EDIT\"&&events===0)phase=2;\n else if(e.message.includes(\"fee agreement\"))process.exitCode=81;\n else if(e.message.includes(\"sample\"))process.exitCode=82;\n else if(e.message.includes(\"topic\"))process.exitCode=83;\n else process.exitCode=84;\n}\nif(phase===2){\n const db=createPostgresPostingReceiptStore({query:async(sql)=>({rows:[{delivery_key:\"sale001:1\",status:\"sent\"}]})});\n if(typeof db.findOtherDelivery!==\"function\")process.exitCode=85;\n else{\n  const other=await db.findOtherDelivery({listingId:\"sale001\",key:\"sale001:2\"});\n  if(other?.key===\"sale001:1\")console.log(\"DUPLICATE_STAGE_MOCK_PASS=PASS\");\n  else process.exitCode=86;\n }\n}\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
