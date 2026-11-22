@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "startless_unknown_existing_post_details_read_only",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\necho STARTLESS_UNKNOWN_KIND_COUNTS\ndocker exec deploy-postgres-1 sh -c 'psql -X -q -U \"$POSTGRES_USER\" -d gaybbs -At -F \"|\" -c \"SELECT kind,state,COUNT(*) FROM startless_public_post_migrations GROUP BY kind,state ORDER BY kind,state;\"'\necho STARTLESS_UNKNOWN_ROWS_BEGIN\ndocker exec deploy-postgres-1 sh -c 'psql -X -q -U \"$POSTGRES_USER\" -d gaybbs -At -F \"|\" -c \"SELECT kind,identity,chat_id,message_id FROM startless_public_post_migrations WHERE state=chr(117)||chr(110)||chr(99)||chr(101)||chr(114)||chr(116)||chr(97)||chr(105)||chr(110) ORDER BY kind,chat_id,message_id;\"'\necho STARTLESS_UNKNOWN_ROWS_END\necho STARTLESS_ALL_POSTS_PENDING\ndocker exec deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs /app/refreshStartlessExistingPosts.mjs --dry-run || test \"$?\" -eq 2"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
