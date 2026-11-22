@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6#issuecomment-7071978244"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\ndocker exec \"$cid\" node --input-type=module -e '\nimport pg from \"pg\";import {readFileSync} from \"node:fs\";\nconst e=process.env,pw=readFileSync(\"/run/secrets/videobot_db_password\",\"utf8\").trim();\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:pw,connectionTimeoutMillis:5000,max:1});\ntry{\n const q=await pool.query(\"SELECT r.delivery_key,r.listing_id,r.revision,r.topic_id,r.status,r.free_message_ids,r.paid_message_id,l.seller_user_id,l.revision AS listing_revision,l.status AS listing_status,l.price_stars,l.title,l.description,l.thumbnail_file_id,l.sample_file_id,l.paid_video_file_id,l.rights_verified,l.adult_consent_verified,l.fee_terms_accepted_at,l.management_fee_bps FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id WHERE r.paid_message_id=4691 AND r.free_message_ids=ARRAY[4689,4690]::bigint[]\");\n if(q.rowCount!==1)process.exitCode=71;\n else{const x=q.rows[0];if(x.status!==\"sent\"||![\"published\",\"paused\"].includes(x.listing_status))process.exitCode=72;\n else if(x.listing_revision!==x.revision+1||!x.seller_user_id||!x.title||!Number.isSafeInteger(x.price_stars)||x.price_stars<1||x.price_stars>25000)process.exitCode=73;\n else if(!x.thumbnail_file_id||!x.sample_file_id||!x.paid_video_file_id||x.rights_verified!==true||x.adult_consent_verified!==true||!x.fee_terms_accepted_at||x.management_fee_bps!==3000)process.exitCode=74;\n else{const p=await pool.query(\"SELECT COUNT(*)::integer AS n FROM videobot_stars_ledger WHERE delivery_key=$1 AND kind=$2\",[x.delivery_key,\"paid\"]);if(p.rows[0].n>0)process.exitCode=75;\n else{const t=e.VIDEOBOT_VIDEO_SALE_THREAD_ID;if(!t||Number(t)!==Number(x.topic_id))process.exitCode=76;else process.exitCode=0;}}}\n}catch{process.exitCode=79}finally{await pool.end()}\n'\necho REPLACEMENT_SOURCE_METADATA_ELIGIBLE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
