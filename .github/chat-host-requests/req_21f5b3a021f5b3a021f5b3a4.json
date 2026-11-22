@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 61\ntest -S \"$root/deploy/secrets/userbot_verify.sock\" || exit 62\npython3 -B - <<'PY'\nimport asyncio,json,uuid,sys\nfrom pathlib import Path\nsock=Path(\"/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot/deploy/secrets/userbot_verify.sock\")\nasync def query():\n r,w=await asyncio.wait_for(asyncio.open_unix_connection(str(sock)),5)\n try:\n  request_id=uuid.uuid4().hex\n  q={\"request_id\":request_id,\"action\":\"video_sale_readback\",\"chat_id\":-1002373696859,\n     \"thread_id\":4650,\"message_ids\":[4689,4690,4691]}\n  w.write((json.dumps(q)+\"\\n\").encode());await w.drain()\n  data=await asyncio.wait_for(r.readline(),45)\n  if not data:sys.exit(64)\n  answer=json.loads(data)\n  if answer.get(\"request_id\")!=request_id:sys.exit(65)\n  if answer.get(\"status\")!=\"PASS\":sys.exit(66)\n  if \"free_spoiler_flags\" not in answer:sys.exit(67)\n  if \"free_caption_present\" not in answer:sys.exit(68)\n  if answer.get(\"free_media_types\")!=[\"MessageMediaPhoto\",\"MessageMediaDocument\"]:sys.exit(69)\n  if answer.get(\"free_spoiler_flags\")==[True,True]:sys.exit(81)\n  if answer.get(\"free_spoiler_flags\")==[False,False]:sys.exit(0)\n  if answer.get(\"free_spoiler_flags\")==[True,False]:sys.exit(82)\n  if answer.get(\"free_spoiler_flags\")==[False,True]:sys.exit(83)\n  sys.exit(84)\n finally:w.close();await w.wait_closed()\ntry:asyncio.run(query())\nexcept TimeoutError:sys.exit(70)\nexcept ConnectionError:sys.exit(71)\nexcept json.JSONDecodeError:sys.exit(72)\nexcept Exception:sys.exit(79)\nPY\necho RESIDENT_FREE_ALBUM_SPOILER=NONE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
