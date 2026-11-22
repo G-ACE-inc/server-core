@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ncompose=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/deploy/compose.videobot.poll.yaml\ntag=gace-createvdobot-paidlock-ack-20261123\ntest -f \"$compose\" && test ! -L \"$compose\" || { echo COMPOSE_INVALID; exit 70; }\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 71\noriginal=\"$(docker inspect \"$cid\" --format '{{.Image}}')\"\nstaged=\"$(docker image inspect \"$tag\" --format '{{.Id}}')\" || exit 72\ntest \"$original\" != \"$staged\" || { echo IMAGE_ALREADY_ACTIVE; exit 73; }\npython3 - \"$compose\" <<'PY'\nfrom pathlib import Path\nimport sys,re\ntext=Path(sys.argv[1]).read_text()\npattern=r'(?m)^[ \\t]*image:[ \\t]*create-videobot:video-sale-1695-receipt-fixed[ \\t]*$'\nif len(re.findall(pattern,text))!=1:raise SystemExit('COMPOSE_BASE_IMAGE_NOT_EXACT')\nPY\nbackup=\"$compose.before-paidlock-ack-20261123\"\ntest ! -e \"$backup\" || { echo BACKUP_ALREADY_PRESENT; exit 74; }\ncp -p \"$compose\" \"$backup\"\nactivated=0\nrollback(){\n  code=$?\n  if test \"$activated\" = 1; then\n    cp -p \"$backup\" \"$compose\"\n    docker compose -f \"$compose\" -p gace-createvdobot up -d --no-deps --force-recreate videobot-poll >/dev/null || true\n  fi\n  exit \"$code\"\n}\ntrap rollback ERR\npython3 - \"$compose\" <<'PY'\nfrom pathlib import Path\nimport re,sys,os\np=Path(sys.argv[1]);s=p.read_text()\npattern=r'(?m)^([ \\t]*image:[ \\t]*)create-videobot:video-sale-1695-receipt-fixed([ \\t]*)$'\nns,n=re.subn(pattern,r'\\1gace-createvdobot-paidlock-ack-20261123\\2',s)\nif n!=1:raise SystemExit('COMPOSE_EXPECTED_EXACTLY_ONE')\ntmp=p.with_name(p.name+'.paidlock-stage')\nwith open(tmp,'x') as f:\n f.write(ns);f.flush();os.fsync(f.fileno())\nos.chmod(tmp,p.stat().st_mode & 0o777)\nos.replace(tmp,p)\nPY\nactivated=1\ndocker compose -f \"$compose\" -p gace-createvdobot config --quiet\ndocker compose -f \"$compose\" -p gace-createvdobot up -d --no-deps --force-recreate videobot-poll >/dev/null\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$staged\"\ndocker exec \"$cid\" node --input-type=module -e 'import {publishVideoListing} from \"/opt/videobot/src/telegram/paidListingPublisher.mjs\"; if(typeof publishVideoListing!==\"function\")process.exit(2);'\ntest \"$(docker ps --format '{{.Names}}' | grep -c '^gace-createvdobot-videobot-poll-1$')\" = 1\ntrap - ERR\necho \"PAIDLOCK_ACK_GUARD_DEPLOYED=PASS\"\necho \"PAIDLOCK_ACTIVE_IMAGE=$staged\"\necho \"PAIDLOCK_PREVIOUS_IMAGE=$original\"\necho \"PAIDLOCK_COMPOSE_BACKUP=$backup\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
