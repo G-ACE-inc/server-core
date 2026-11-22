@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/71"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport json,subprocess,sys\ndef val(cmd):\n p=subprocess.run(cmd,capture_output=True,text=True,timeout=30)\n return p.stdout.strip() if p.returncode==0 else \"FAILED\"\nnames=[\"gace-tgtumbler-gaybbs:local\",\"gace-tgtumbler-gaybbs:before-startless-pr71-20261122\",\"gace-tgtumbler-gaybbs:startless-pr71-20261122\"]\ninfo={\"image_tags\":{x:val([\"docker\",\"image\",\"inspect\",\"-f\",\"{{.Id}}\",x]) for x in names},\n\"bot_image\":val([\"docker\",\"inspect\",\"-f\",\"{{.Image}}\",\"deploy-gaybbs-1\"]),\n\"bot_running\":val([\"docker\",\"inspect\",\"-f\",\"{{.State.Running}}\",\"deploy-gaybbs-1\"]),\n\"bot_status\":val([\"docker\",\"inspect\",\"-f\",\"{{.State.Status}}\",\"deploy-gaybbs-1\"]),\n\"bot_restarts\":val([\"docker\",\"inspect\",\"-f\",\"{{.RestartCount}}\",\"deploy-gaybbs-1\"]),\n\"postgres_running\":val([\"docker\",\"inspect\",\"-f\",\"{{.State.Running}}\",\"deploy-postgres-1\"]),\n\"userbot_active\":val([\"systemctl\",\"--user\",\"is-active\",\"gace-userbot-verify.service\"])}\np=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/68/comments\",\"-f\",\"body=STARTLESS_BOT_ROLLBACK_RUNTIME_OBSERVATION=\"+json.dumps(info,separators=(\",\",\":\"))],capture_output=True,text=True,timeout=45)\nif p.returncode:sys.exit(60)\nprint(\"STARTLESS_ROLLBACK_RUNTIME_OBSERVATION=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
