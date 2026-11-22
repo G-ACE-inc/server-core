@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nstage=\"$root/.releases/5aff60b6371f422120398212-album-id-stage\"\nold=create-videobot:before-album-id-5aff60b6\nnew=create-videobot:album-id-5aff60b6-tested\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\ntest -f \"$root/deploy/compose.videobot.poll.yaml\" || exit 63\ntest ! -e \"$stage\" && test -z \"$(docker images -q \"$new\")\" || exit 64\nmkdir -p \"$stage/src/telegram\" \"$stage/test\"\ndocker cp \"$cid:/opt/videobot/src/telegram/paidListingPublisher.mjs\" \"$stage/src/telegram/paidListingPublisher.mjs\" || exit 65\nexport GACE_ALBUM_STAGE=\"$stage\"\npython3 -B - <<'PY'\nfrom pathlib import Path\nimport os\np=Path(os.environ['GACE_ALBUM_STAGE'])/'src/telegram/paidListingPublisher.mjs'\ns=p.read_text()\nold=\"\"\"      if (!Array.isArray(preview) || preview.length !== 2 ||\n          preview.some(m=>!Number.isSafeInteger(m?.message_id)||m.message_id<=0))\n        throw new Error('free album acknowledgment invalid');\"\"\"\nnew=\"\"\"      if (!Array.isArray(preview) || preview.length !== 2 ||\n          preview.some(m=>!Number.isSafeInteger(m?.message_id)||m.message_id<=0) ||\n          preview[0].message_id === preview[1].message_id ||\n          typeof preview[0].media_group_id !== 'string' ||\n          !preview[0].media_group_id ||\n          preview[0].media_group_id !== preview[1].media_group_id)\n        throw new Error('free album acknowledgment invalid: media_group_id mismatch');\"\"\"\nif s.count(old)!=1:raise SystemExit(66)\np.write_text(s.replace(old,new))\nPY\ncat > \"$stage/test/album-readback.test.mjs\" <<'JS'\nimport test from 'node:test';\nimport assert from 'node:assert/strict';\nimport {publishVideoListing} from '../src/telegram/paidListingPublisher.mjs';\nconst listing={id:'album_check',sellerId:'123456',revision:1,title:'album test',priceStars:10,\n  thumbnail:{fileId:'photo001'},sample:{fileId:'sample001'},paidVideo:{fileId:'video001'},\n  rightsVerified:true,adultConsentVerified:true,ownerConfirmedPublish:true,\n  feeTermsAccepted:true,managementFeeBps:3000};\nfunction ports(bad=false){\n let row=null;const calls=[];\n const store={\n  async claim(){if(row)return {claimed:false};row={status:'sending',freeMessageIds:null};return {claimed:true};},\n  async read(){return row;},\n  async recordFree(key,ids){row.freeMessageIds=ids;},\n  async recordPaid(key,id){row.paidMessageId=id;row.status='sent';},\n  async markUnknown(){row.status='needs_reconcile';}\n };\n return {listing,store,calls,getVerifiedVideoTopic:async()=>({id:4650,chatId:-1002373696859,threadId:4650,board:'video_chat',purpose:'video_sale',enabled:true,verified:true,title:'paid video'}),\n  telegramApi:async(method,params)=>{calls.push(method);if(method==='sendMediaGroup'){\n    assert.equal(params.media.length,2);assert.deepEqual(params.media.map(x=>x.has_spoiler),[true,true]);\n    return [{message_id:100,media_group_id:'album_100'},\n      {message_id:101,media_group_id:bad?'album_OTHER':'album_100'}];\n  }assert.equal(method,'sendPaidMedia');assert.equal(params.star_count,10);return {message_id:102};}};\n}\ntest('shared native album id and Stars post complete once',async()=>{\n const p=ports();const result=await publishVideoListing(p);\n assert.equal(result.paidMessageId,102);\n assert.deepEqual(p.calls,['sendMediaGroup','sendPaidMedia']);\n assert.equal((await publishVideoListing(p)).alreadySent,true);\n assert.equal(p.calls.length,2);\n});\ntest('broken native album readback locks receipt without paid send or replay',async()=>{\n const p=ports(true);\n await assert.rejects(()=>publishVideoListing(p),/media_group_id mismatch/);\n assert.deepEqual(p.calls,['sendMediaGroup']);\n assert.equal((await p.store.read()).status,'needs_reconcile');\n await assert.rejects(()=>publishVideoListing(p),/PUBLISH_NEEDS_RECONCILE/);\n assert.equal(p.calls.length,1);\n});\nJS\ncat > \"$stage/Dockerfile\" <<'EOF'\nFROM create-videobot:before-album-id-5aff60b6\nUSER root\nCOPY --chown=node:node src/telegram/paidListingPublisher.mjs /opt/videobot/src/telegram/paidListingPublisher.mjs\nCOPY --chown=node:node test/album-readback.test.mjs /opt/videobot/test/album-readback.test.mjs\nUSER node\nEOF\ndocker tag \"$(docker inspect \"$cid\" --format '{{.Image}}')\" \"$old\" || exit 67\ndocker build --network none --pull=false -t \"$new\" \"$stage\" >/dev/null || exit 68\ndocker run --rm --network none --entrypoint node \"$new\" --check /opt/videobot/src/telegram/paidListingPublisher.mjs || exit 69\ndocker run --rm --network none -w /opt/videobot --entrypoint node \"$new\" --test test/album-readback.test.mjs > \"$stage/test-results.log\" 2>&1 || exit 70\ngrep -q 'pass 2' \"$stage/test-results.log\" || exit 71\ngrep -q 'fail 0' \"$stage/test-results.log\" || exit 72\necho VIDEO_ALBUM_ID_STAGE=PASS\necho VIDEO_ALBUM_ID_TESTS=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
