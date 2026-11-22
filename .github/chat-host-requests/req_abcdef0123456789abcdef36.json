@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/70"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport subprocess,json,sys\nfrom scripts.userbot_topic_entry_audit import MIGRATION_MESSAGE_IDS\ntarget={-1003847210571:\"area\",-1002373696859:\"video\",-1003770334893:\"category\"}\nif subprocess.run([\"systemctl\",\"--user\",\"is-active\",\"gace-userbot-verify.service\"],capture_output=True,text=True).stdout.strip()!=\"active\":sys.exit(60)\nrows=[]\nfor (chat,topic),mid in MIGRATION_MESSAGE_IDS.items():\n if chat not in target:sys.exit(61)\n p=subprocess.run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",str(chat),\"--topic-id\",str(topic)],capture_output=True,text=True,timeout=125)\n if p.returncode:sys.exit(62)\n docs=[json.loads(x.split(\"=\",1)[1]) for x in p.stdout.splitlines() if x.startswith(\"USERBOT_TOPIC_AUDIT=\")]\n if len(docs)!=1 or len(docs[0].get(\"rows\",[]))!=1:sys.exit(63)\n row=docs[0][\"rows\"][0]\n if row.get(\"topic_id\")!=topic or row.get(\"migration\",{}).get(\"message_id\")!=mid:sys.exit(64)\n rows.append({\"board\":target[chat],\"topic\":topic,\"message_id\":mid,\n \"transport\":row[\"migration\"][\"transport\"],\"present_button\":row.get(\"post_button\"),\"pin_state\":row.get(\"pin_state\")})\nbody=\"STARTLESS_EXACT_21_OLD_MESSAGE_TRANSPORT_AUDIT=\"+json.dumps(rows,ensure_ascii=False,separators=(\",\",\":\"))\nr=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/68/comments\",\"-f\",\"body=\"+body],capture_output=True,text=True,timeout=45)\nif r.returncode:sys.exit(65)\nprint(\"OLD_START_TRANSPORT_21_READ_ONLY_AUDIT=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
