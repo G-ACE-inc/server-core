@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "general_two_forum_userbot_readback",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nimport json,subprocess,sys\nfrom pathlib import Path\nfor group,chat in (('video',-1002373696859),('category',-1003770334893)):\n path=Path('deploy/state/general-topic-button-recovery-20261122')/(group+'.json')\n if not path.exists():raise SystemExit(61)\n record=json.loads(path.read_text())\n if record.get('state')!='PUBLISHED':raise SystemExit(62)\n mid=record.get('message_id')\n if type(mid) is not int or mid<1:raise SystemExit(63)\n p=subprocess.run([sys.executable,'scripts/userbot_topic_audit_client.py','--chat-id',str(chat),'--topic-id','1'],capture_output=True,text=True,timeout=115)\n if p.returncode:raise SystemExit(64)\n rs=[json.loads(x.split('=',1)[1]) for x in p.stdout.splitlines() if x.startswith('USERBOT_TOPIC_AUDIT=')]\n if len(rs)!=1 or len(rs[0].get('rows',[]))!=1:raise SystemExit(65)\n item=rs[0]['rows'][0]\n if item.get('post_button')!='PRESENT' or 'normal' not in item.get('button_types',[]) or mid not in item.get('history_message_ids',[])+item.get('pin_message_ids',[]):\n  raise SystemExit(66)\n print('GENERAL_TOPIC_LIVE_VERIFIED='+group+':'+str(mid))\nprint('GENERAL_TWO_FORUM_TOPICS_LIVE_VERIFIED=PASS')\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
