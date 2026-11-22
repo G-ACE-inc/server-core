@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/68"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport json,subprocess,sys,os\nfrom pathlib import Path\nf=Path(\"deploy/state/startless-recover-missing-topic4291-20261122.json\")\nif not f.exists() or json.loads(f.read_text()).get(\"state\")!=\"CLAIM_NOT_CONFIRMED\":sys.exit(60)\nu=subprocess.run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",\"-1002373696859\",\"--topic-id\",\"4291\"],capture_output=True,text=True,timeout=125)\nif u.returncode:sys.exit(61)\ndocs=[json.loads(x.split(\"=\",1)[1]) for x in u.stdout.splitlines() if x.startswith(\"USERBOT_TOPIC_AUDIT=\")]\nif len(docs)!=1 or len(docs[0].get(\"rows\",[]))!=1:sys.exit(62)\nrow=docs[0][\"rows\"][0]\nif row.get(\"post_button\")!=\"ABSENT\" or (row.get(\"migration\") or {}).get(\"transport\")!=\"NOT_FOUND\":sys.exit(63)\ndef db(query):\n p=subprocess.run([\"docker\",\"exec\",\"deploy-postgres-1\",\"psql\",\"-X\",\"-q\",\"-v\",\"ON_ERROR_STOP=1\",\"-U\",\"gace\",\"-d\",\"gaybbs\",\"-Atc\",query],capture_output=True,text=True,timeout=30)\n if p.returncode:sys.exit(64)\n return p.stdout.strip()\nold=\"SELECT state,COALESCE(message_id,0),pinned FROM topic_dm_entry_pins WHERE chat_id=-1002373696859 AND message_thread_id=4291\"\nif db(old)!=\"publishing|4633|f\":sys.exit(65)\nr=db(\"UPDATE topic_dm_entry_pins SET state='published',pinned=TRUE,updated_at=NOW() WHERE chat_id=-1002373696859 AND message_thread_id=4291 AND message_id=4633 AND state='publishing' RETURNING message_id\")\nif r!=\"4633\":sys.exit(66)\nif db(old)!=\"published|4633|t\":sys.exit(67)\nrecord=json.loads(f.read_text())\nrecord[\"state\"]=\"RECOVERED_NO_SEND\"\ntmp=f.with_suffix(\".next\")\nwith os.fdopen(os.open(tmp,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),\"w\") as h:\n json.dump(record,h,sort_keys=True);h.flush();os.fsync(h.fileno())\nos.replace(tmp,f)\nprint(\"TOPIC4291_PUBLISHING_CLAIM_RESTORED=PASS;TELEGRAM_SEND=NOT_ATTEMPTED\")\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
