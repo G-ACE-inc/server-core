@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7073331140"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 60\npython3 -B - <<'PY'\nfrom pathlib import Path\nroot=Path('/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot')\nsources=[]\nfor p in root.rglob('*.py'):\n try:s=p.read_text()\n except Exception:continue\n if 'video_sale_payment_form' in s:\n  sources.append((p,s))\nif not sources:raise SystemExit(61)\nhas_get=any(('get_messages(' in s or 'get_messages (' in s) for p,s in sources)\nhas_paid=any('MessageMediaPaid' in s or 'messageMediaPaid' in s for p,s in sources)\nhas_preview=any('MessageExtendedMediaPreview' in s or 'messageExtendedMediaPreview' in s for p,s in sources)\nhas_invoice=any('GetPaymentFormRequest' in s for p,s in sources)\nhas_purchased=any('not_purchased' in s for p,s in sources)\nif has_get and has_paid and has_preview and has_invoice and has_purchased:raise SystemExit(0)\nif not has_get:raise SystemExit(71)\nif not has_paid:raise SystemExit(72)\nif not has_preview:raise SystemExit(73)\nif not has_invoice:raise SystemExit(74)\nif not has_purchased:raise SystemExit(75)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
