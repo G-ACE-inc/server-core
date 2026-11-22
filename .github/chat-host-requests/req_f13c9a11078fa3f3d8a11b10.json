@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/295952abf36dee983b7974073794ad66d7f889e5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nstage=\"$root/.releases/video-sale-readback-295952ab\"\ntest -f \"$stage/userbot_resident_ipc.py\" || exit 61\npython3 -B - \"$stage/userbot_resident_ipc.py\" <<'PY'\nfrom pathlib import Path\nimport sys\np=Path(sys.argv[1]);s=p.read_text()\nstart='async def process_request(client: Any, request: Any) -> dict[str, Any]:\\n    if not isinstance(request, dict):\\n        raise ValueError(\"REQUEST_SHAPE_INVALID\")'\nif s.count(start)!=1:sys.exit(62)\nif s.count('\"topic_entry_audit\"})')!=1:sys.exit(63)\ns=s.replace('\"topic_entry_audit\"})','\"topic_entry_audit\", \"video_sale_readback\"})')\ns=s.replace(start,start+'\\n    if request.get(\"action\") == \"video_sale_readback\":\\n        return await _video_sale_readback(client,request)')\ns+='''\nasync def _video_sale_readback(client, request):\n    if (set(request) != {\"request_id\",\"action\",\"chat_id\",\"thread_id\",\"message_ids\"}\n            or not isinstance(request.get(\"request_id\"),str)\n            or not REQUEST_ID.fullmatch(request[\"request_id\"])):\n        raise ValueError(\"REQUEST_SHAPE_INVALID\")\n    chat_id, thread_id, ids = request[\"chat_id\"],request[\"thread_id\"],request[\"message_ids\"]\n    if chat_id != -1002373696859 or type(thread_id) is not int or not 1 <= thread_id <= 2147483647:\n        raise ValueError(\"VIDEO_SALE_TARGET_INVALID\")\n    if (type(ids) is not list or len(ids)!=3 or\n            any(type(x) is not int or not 1 <= x <= 2147483647 for x in ids)\n            or len(set(ids))!=3):\n        raise ValueError(\"VIDEO_SALE_IDS_INVALID\")\n    if not await client.is_user_authorized():\n        raise RuntimeError(\"RESIDENT_USERBOT_NOT_AUTHORIZED\")\n    bot=await client.get_entity(\"CreateVdobot\")\n    if getattr(bot,\"bot\",False) is not True or type(getattr(bot,\"id\",None)) is not int:\n        raise RuntimeError(\"VIDEO_SALE_BOT_INVALID\")\n    try:\n        messages=await client.get_messages(chat_id,ids=ids)\n    except ValueError:\n        dialogs=await client.get_dialogs(limit=500)\n        ent=next((d.entity for d in dialogs if d.id==chat_id),None)\n        if ent is None:raise RuntimeError(\"VIDEO_SALE_NOT_JOINED\")\n        messages=await client.get_messages(ent,ids=ids)\n    if (not isinstance(messages,list) or len(messages)!=3 or\n            any(m is None or m.id!=ids[i] or m.sender_id!=bot.id for i,m in enumerate(messages))):\n        raise RuntimeError(\"VIDEO_SALE_MESSAGES_NOT_VERIFIED\")\n    def topic(m):\n        r=getattr(m,\"reply_to\",None)\n        return getattr(r,\"reply_to_top_id\",None)==thread_id or getattr(r,\"reply_to_msg_id\",None)==thread_id\n    g=getattr(messages[0],\"grouped_id\",None)\n    grouped=type(g) is int and g>0 and g==getattr(messages[1],\"grouped_id\",None)\n    media=getattr(messages[2],\"media\",None)\n    kind=type(media).__name__\n    paid=kind==\"MessageMediaPaidMedia\"\n    amount=getattr(media,\"stars_amount\",None) if paid else None\n    return {\"request_id\":request[\"request_id\"],\"action\":\"video_sale_readback\",\"status\":\"PASS\",\n            \"free_album_grouped\":grouped,\"paid_media_native\":paid,\n            \"paid_stars\":amount if type(amount) is int and 1<=amount<=25000 else None,\n            \"target_topic_confirmed\":all(topic(m) for m in messages),\n            \"paid_media_type\":kind[:64]}\n'''\np.write_text(s)\nPY\npython3 -B - \"$stage/userbot_resident_ipc.py\" <<'PY'\nfrom pathlib import Path\nimport ast,sys\nast.parse(Path(sys.argv[1]).read_text())\nPY\nPYTHONPATH=\"$stage:$root/scripts\" python3 -B - <<'PY'\nimport asyncio\nfrom types import SimpleNamespace as N\nfrom userbot_resident_ipc import process_request\nclass Client:\n    async def is_user_authorized(self):return True\n    async def get_entity(self,name):assert name==\"CreateVdobot\";return N(bot=True,id=6000)\n    async def get_messages(self,chat_id,ids):\n        assert chat_id==-1002373696859\n        p=N(reply_to_top_id=4650,reply_to_msg_id=None)\n        paid=type(\"MessageMediaPaidMedia\",(),{\"stars_amount\":10})()\n        return [N(id=ids[0],sender_id=6000,grouped_id=123,reply_to=p,media=None),\n                N(id=ids[1],sender_id=6000,grouped_id=123,reply_to=p,media=None),\n                N(id=ids[2],sender_id=6000,grouped_id=None,reply_to=p,media=paid)]\nc=Client()\nq={\"request_id\":\"mock-1\",\"action\":\"video_sale_readback\",\"chat_id\":-1002373696859,\n    \"thread_id\":4650,\"message_ids\":[10,11,12]}\nv=asyncio.run(process_request(c,q))\nassert v[\"status\"]==\"PASS\" and v[\"free_album_grouped\"] and v[\"paid_media_native\"] and v[\"paid_stars\"]==10 and v[\"target_topic_confirmed\"]\nfor bad in [{\"message_ids\":[10,10,12]},{\"chat_id\":-100123},{\"thread_id\":0}]:\n    import copy\n    u={**q,**bad}\n    try:asyncio.run(process_request(c,u))\n    except ValueError:continue\n    raise AssertionError(\"invalid request unexpectedly accepted\")\nPY\necho VIDEO_READBACK_PATCH_STAGE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
