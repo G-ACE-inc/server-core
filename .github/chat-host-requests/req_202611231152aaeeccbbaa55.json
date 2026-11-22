@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7077544438"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nimport {setDefaultResultOrder} from 'node:dns';import {setDefaultAutoSelectFamily} from 'node:net';\nimport {createCreatorTelegramFetch} from '/opt/videobot/src/runtime/creatorEgress.mjs';\nsetDefaultResultOrder('ipv4first');setDefaultAutoSelectFamily(false);\nconst outbound=createCreatorTelegramFetch(),e=process.env;\nconst db=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\ntry{\n const rows=(await db.query(\"SELECT l.telegram_transaction_id,l.buyer_user_id,l.stars,l.delivery_key FROM videobot_stars_ledger l WHERE l.listing_id=(SELECT listing_id FROM videobot_post_receipts WHERE paid_message_id=$1) AND l.kind=$2\",[4691,'paid'])).rows;\n if(!rows.length)process.exitCode=61;\n else{\n  const token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\n  const base=e.VIDEOBOT_LOCAL_API_URL??'https://api.telegram.org';\n  const transactions=[];\n  let complete=false;\n  for(let i=0;i<3;i++){\n   const response=await outbound.fetch(base+'/bot'+token+'/getStarTransactions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({offset:i*100,limit:100}),signal:AbortSignal.timeout(30000)});\n   const j=await response.json();\n   if(j?.ok!==true||!Array.isArray(j.result?.transactions)){process.exitCode=62;break}\n   transactions.push(...j.result.transactions);\n   if(j.result.transactions.length<100){complete=true;break}\n  }\n  if(!process.exitCode){\n   const matches=rows.map(x=>transactions.filter(t=>t.id===x.telegram_transaction_id&&t.amount===Number(x.stars)&&t.source?.type==='user'&&t.source?.transaction_type==='paid_media_payment'&&String(t.source?.user?.id)===String(x.buyer_user_id)&&t.source?.paid_media_payload===x.delivery_key).length);\n   if(matches.some(n=>n>1))process.exitCode=71;\n   else if(matches.every(n=>n===1))console.log('OFFICIAL_STARS_TRANSACTIONS_MATCH_LEDGER=PASS');\n   else if(complete)process.exitCode=72;\n   else process.exitCode=73;\n  }\n }\n}catch(e){console.error('STARS_RECONCILIATION_ERROR_CLASS='+String(e?.code??'OTHER').slice(0,12));process.exitCode=79}\nfinally{await outbound.close();await db.end()}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
