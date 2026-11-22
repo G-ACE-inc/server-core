@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/295952abf36dee983b7974073794ad66d7f889e5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/TGtumbler/GateApp-Bot\nstage=\"$root/.releases/video-sale-readback-295952ab\"\ntarget=\"$root/scripts/userbot_resident_ipc.py\"\nsocket=\"$root/deploy/secrets/userbot_verify.sock\"\nsession=\"$root/deploy/secrets/userbot_verify.session\"\nunit=gace-userbot-verify.service\ntest \"$(systemctl --user is-active \"$unit\")\" = active || exit 61\ntest \"$(systemctl --user is-enabled \"$unit\")\" = enabled || exit 62\ntest -S \"$socket\" && test -s \"$stage/userbot_resident_ipc.py\" || exit 63\ntest ! -L \"$session\" && test -f \"$session\" && test \"$(stat -c %a \"$session\")\" = 600 || exit 64\nbefore_session=\"$(stat -c '%d:%i' \"$session\")\"\nPYTHONPATH=\"$stage:$root/scripts\" python3 -B - <<'PY'\nimport asyncio\nfrom types import SimpleNamespace as N\nfrom userbot_resident_ipc import process_request\np=N(reply_to_top_id=4650)\nclass C:\n async def is_user_authorized(self):return True\n async def get_entity(self,n):return N(bot=True,id=777)\n async def get_messages(self,chat_id,ids):\n  paid=type(\"MessageMediaPaidMedia\",(),{\"stars_amount\":10})()\n  return [N(id=ids[0],sender_id=777,grouped_id=8,reply_to=p,media=None),N(id=ids[1],sender_id=777,grouped_id=8,reply_to=p,media=None),N(id=ids[2],sender_id=777,grouped_id=None,reply_to=p,media=paid)]\nx=asyncio.run(process_request(C(),{\"request_id\":\"last-check\",\"action\":\"video_sale_readback\",\"chat_id\":-1002373696859,\"thread_id\":4650,\"message_ids\":[11,12,13]}))\nassert x[\"status\"]==\"PASS\" and x[\"free_album_grouped\"] and x[\"paid_media_native\"] and x[\"paid_stars\"]==10\nPY\npython3 -B \"$root/scripts/userbot_test_client.py\" health | grep -Fq 'USERBOT_TEST_RESULT=PASS' || exit 66\ntest \"$(stat -c %a \"$socket\")\" = 600 || exit 67\ncp -p \"$target\" \"$stage/original-active-before-video-readback.py\"\narmed=NO\nrollback(){ cp -p \"$stage/original-active-before-video-readback.py\" \"$target\" || true;systemctl --user restart \"$unit\" || true; }\ntrap 'if test \"$armed\" = YES;then rollback;fi' EXIT\ncp -p \"$stage/userbot_resident_ipc.py\" \"$target\" || exit 68\narmed=YES\nsystemctl --user restart \"$unit\" || exit 69\nup=NO\nfor i in 1 2 3 4 5 6 7 8 9 10;do\n if test \"$(systemctl --user is-active \"$unit\" 2>/dev/null)\" = active && test -S \"$socket\";then up=YES;break;fi\n sleep 2\ndone\ntest \"$up\" = YES || exit 70\ntest \"$(stat -c %a \"$session\")\" = 600 && test \"$(stat -c '%d:%i' \"$session\")\" = \"$before_session\" || exit 71\ntest \"$(stat -c %a \"$socket\")\" = 600 || exit 72\npython3 -B \"$root/scripts/userbot_test_client.py\" health | grep -Fq 'USERBOT_TEST_RESULT=PASS' || exit 73\ntest \"$(systemctl --user is-enabled \"$unit\")\" = enabled || exit 74\narmed=NO\necho RESIDENT_USERBOT_VIDEO_READBACK_DEPLOY=PASS\necho RESIDENT_USERBOT_SESSION_INODE_UNCHANGED=PASS\necho RESIDENT_USERBOT_HEALTH_AFTER_RESTART=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
