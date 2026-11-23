@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/8"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nstage=\"$root/.releases/8e35800be335a61d8910b066d2130a05a8dcf9a8/video-dualmode-three-way-stage\"\ntest -f \"$stage/overlay.py\" || exit 30\nif output=\"$(python3 -B \"$stage/overlay.py\" \"$stage\" 2>&1)\"; then exit 0;fi\ncase \"$output\" in\n *publish-params*) exit 41;;\n *publish-mode*) exit 42;;\n *publish-paid-start*) exit 43;;\n *publish-paid-end*) exit 44;;\n *publish-claim*) exit 45;;\n *publish-invoice*) exit 46;;\n *wiring-imports*) exit 47;;\n *wiring-store*) exit 48;;\n *wiring-publisher*) exit 49;;\n *wiring-handler*) exit 50;;\n *wiring-return*) exit 51;;\n *migration-022*) exit 52;;\n *poller-migration-count*) exit 53;;\n *\"stage file absent/conflicted\"*) exit 54;;\n *\"unresolved merge conflict\"*) exit 55;;\n *SyntaxError*) exit 56;;\n *) exit 57;;\nesac\n"
+  }
+}
