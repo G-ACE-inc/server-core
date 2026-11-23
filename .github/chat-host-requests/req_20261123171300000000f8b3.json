@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/74"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport sys\ns=Path('/tmp/video-two-topic-apply.err').read_text(errors='replace').lower()\npatterns=[(41,\"message can't be edited\"),(42,\"message to edit not found\"),(43,\"message is not modified\"),(44,\"message can't be pinned\"),(45,\"message not found\"),(46,\"message_thread_id\"),(47,\"message thread not found\"),(48,\"button_data_invalid\"),(49,\"chat not found\"),(50,\"reply_markup_invalid\"),(51,\"message is too old\"),(52,\"message can not be edited\"),(53,\"bot was blocked\"),(54,\"message identifier is not specified\"),(55,\"not enough rights\"),(56,\"wrong message identifier\"),(57,\"button\"),(58,\"telegramerror\")]\nfor code,term in patterns:\n if term in s:sys.exit(code)\nsys.exit(59)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
