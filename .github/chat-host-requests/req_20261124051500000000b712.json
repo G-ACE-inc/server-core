@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nwork=\"$repo/.worktrees/video-two-topic-20261124\"\ntest -d \"$work\"\ncd \"$repo\"\ngit fetch --no-tags origin fix/video-chat-two-topic-pinned-doorways-20261123\ntest \"$(git rev-parse FETCH_HEAD)\" = \"f1713507115c0f075c64e242d3532899158c811c\"\ngit -C \"$work\" checkout --detach f1713507115c0f075c64e242d3532899158c811c\ncd \"$work\"\ndocker build -q -f artifacts/bot/deploy/Dockerfile.gaybbs -t gace-video-two-topic-pins:20261124 .\ncid=\"$(docker create gace-video-two-topic-pins:20261124)\"\ntrap 'docker rm -f \"$cid\" >/dev/null 2>&1 || true' EXIT\nmkdir -p \"$repo/deploy/state/video-two-topic-20261124\"\ndocker cp \"$cid:/app/repairTwoVideoChatPinnedEntries.mjs\" \"$repo/deploy/state/video-two-topic-20261124/repair.mjs\"\ndocker exec -i deploy-gaybbs-1 node --check --input-type=module - < \"$repo/deploy/state/video-two-topic-20261124/repair.mjs\"\ndocker exec -i deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs --input-type=module - < \"$repo/deploy/state/video-two-topic-20261124/repair.mjs\"\necho TWO_VIDEO_PIN_PREFLIGHT_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
