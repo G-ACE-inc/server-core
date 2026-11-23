@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/73"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"deploy/state/help-rich-manual-20261123\"\ntest ! -e \"$stage\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-postgres-1)\" = true\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs|cut -d' ' -f1)\" = f5c3b09b915031b94c1b2c9ab86b5c4af74a52bc73256dfc758920d714fb3106\nmkdir -m 700 \"$stage\"\ngh api repos/seigo-gace/GateApp-Bot/actions/artifacts/14784021998 --jq '.workflow_run.head_sha' | grep -qx '7b24187988d1ec3f38afead7786fed018b8eb42a'\ngh run download 45097745650 -R seigo-gace/GateApp-Bot -n gaybbs-profile-bundle -D \"$stage\" >/dev/null\ntest -s \"$stage/gaybbs.mjs\"\npython3 - <<'PY'\nimport pathlib,subprocess,hashlib,re,json,sys\nstage=pathlib.Path(\"deploy/state/help-rich-manual-20261123\")\nnew=(stage/\"gaybbs.mjs\").read_text()\np=subprocess.run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"cat\",\"/app/gaybbs.mjs\"],capture_output=True,timeout=50)\nif p.returncode:sys.exit(60)\nold=p.stdout.decode()\ndef chapters(s):\n markers=list(re.finditer(r\"^// src/[^\\n]+$\",s,re.M))\n return {m.group(0)[3:]:(m.start(),markers[i+1].start() if i+1<len(markers) else len(s)) for i,m in enumerate(markers)}\nbefore=chapters(old);after=chapters(new)\nwanted=\"src/bot/operationHelpHandlers.ts\"\nif len(before)<100 or set(before)!=set(after) or len(before)!=len(after):sys.exit(61)\nif wanted not in before or wanted not in after:sys.exit(62)\nif hashlib.sha256(p.stdout).hexdigest()!=\"f5c3b09b915031b94c1b2c9ab86b5c4af74a52bc73256dfc758920d714fb3106\":sys.exit(63)\na,b=before[wanted];c,d=after[wanted]\nhelp_new=new[c:d]\nhelp_old=old[a:b]\nif help_new==help_old or 'HTML' not in help_new:sys.exit(64)\nfor v in [\"➔\",\"プロフ\",\"<b>\",\"<code>\",\"この機能を開く\",\"startCompactProfileEditor(ctx)\"]:\n if v not in help_new:sys.exit(65)\nout=old[:a]+help_new+old[b:]\nmixed=chapters(out)\nchanged=sorted(name for name in before if old[slice(*before[name])]!=out[slice(*mixed[name])])\nif changed!=[wanted]:sys.exit(66)\nfor v in [\"STARTLESS_REPEATED_START_LINK_FORBIDDEN\",\"startCompactProfileEditor(ctx)\",\"registerOperationHelpHandlers\"]:\n if v not in out:sys.exit(67)\n(stage/\"gaybbs-target-only.mjs\").write_text(out)\nobj={\"state\":\"STAGED\",\"source_pr\":73,\"source_sha\":\"7b24187988d1ec3f38afead7786fed018b8eb42a\",\"old_sha\":hashlib.sha256(p.stdout).hexdigest(),\"new_sha\":hashlib.sha256(out.encode()).hexdigest(),\"changed_chapters\":changed,\"other_chapters_identical\":True}\n(stage/\"checkpoint.json\").write_text(json.dumps(obj))\nprint(\"GAYBBS_RICH_MANUAL_TARGET_ONLY_STAGE=PASS\")\nPY\nnode --check \"$stage/gaybbs-target-only.mjs\"\necho GAYBBS_RICH_MANUAL_SYNTAX_AND_SCOPE=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
