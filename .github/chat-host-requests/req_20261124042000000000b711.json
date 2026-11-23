@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/75"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport subprocess,json,sys\nfor i,(chat,topic) in enumerate([(-1002373696859,1605),(-1003770334893,4)]):\n p=subprocess.run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",str(chat),\"--topic-id\",str(topic)],capture_output=True,text=True,timeout=125)\n if p.returncode:sys.exit(80+i)\n line=next((s[len(\"USERBOT_TOPIC_AUDIT=\"):] for s in p.stdout.splitlines() if s.startswith(\"USERBOT_TOPIC_AUDIT={\")),None)\n if not line:sys.exit(82+i)\n row=json.loads(line)[\"rows\"][0]\n ids=row.get(\"history_message_ids\",[])\n types=row.get(\"button_types\",[])\n if i==0:\n  if len(ids)==1 and types==[\"normal\"]:print(\"VIDEO_HISTORY_REPAIR_CANDIDATE\");continue\n  if row.get(\"post_button\")==\"PRESENT\" and \"normal\" in types:sys.exit(84)\n  sys.exit(85)\n if row.get(\"pin_state\")==\"PRESENT\" and \"normal\" in types:print(\"GAY_PIN_VERIFIED\");continue\n if len(ids)==1 and types==[\"normal\"]:sys.exit(86)\n sys.exit(87)\nprint(\"VIDEO_CANDIDATE_AND_GAY_PIN_READY\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
