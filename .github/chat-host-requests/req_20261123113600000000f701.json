@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\npg=deploy-postgres-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest \"$(docker inspect \"$pg\" --format '{{.State.Running}}')\" = true || exit 62\nsql=\"SELECT r.paid_message_id,r.listing_id,r.revision,r.topic_id,r.status,l.status,l.price_stars,l.rights_verified,l.adult_consent_verified,l.management_fee_bps,(l.fee_terms_accepted_at IS NOT NULL) AS fee_accepted, (l.paid_video_file_id IS NOT NULL) AS paid_file_ready, (l.sample_file_id IS NOT NULL AND l.thumbnail_file_id IS NOT NULL) AS previews_ready FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id WHERE r.paid_message_id IN (4691,4701) ORDER BY r.paid_message_id;\"\ndocker exec -e \"SQL=$sql\" \"$pg\" sh -c 'psql -X -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d videobot -At -F \"|\" -c \"$SQL\"'\ndocker exec \"$cid\" node --input-type=module -e 'console.log(\"LIVE_TOPIC_THREAD_ID=\"+process.env.VIDEOBOT_VIDEO_SALE_THREAD_ID);console.log(\"LIVE_TOPIC_TITLE_PRESENT=\"+Boolean(process.env.VIDEOBOT_VIDEO_SALE_TOPIC_TITLE));console.log(\"API_TARGET=\"+(process.env.VIDEOBOT_LOCAL_API_URL?\"local\":\"official\"));'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
