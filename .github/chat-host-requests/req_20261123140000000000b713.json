@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/74"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 - <<'PY'\nimport subprocess,sys,re\ndb=next((x for x in subprocess.check_output([\"docker\",\"ps\",\"--format\",\"{{.Names}}\"],text=True).splitlines() if re.search(r\"postgres|database|db-[0-9]\",x,re.I)),None)\nif not db:sys.exit(81)\nsql=\"\"\"SELECT chat_id,message_thread_id,title,verified_by FROM posting_topics\nWHERE chat_id IN (-1002373696859,-1003770334893)\nAND enabled=TRUE AND verified_at IS NOT NULL\nAND (title ILIKE '%ビデオ%' OR message_thread_id=1695)\nORDER BY chat_id,message_thread_id\"\"\"\np=subprocess.run([\"docker\",\"exec\",db,\"sh\",\"-c\",'psql -qAt -F \"|\" -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"$1\"',\"sh\",sql],text=True,capture_output=True)\nif p.returncode:sys.exit(82)\nrows=[line.split(\"|\") for line in p.stdout.splitlines() if line.strip()]\nv=[r for r in rows if r[0]==\"-1002373696859\" and r[1]==\"1695\"]\ng=[r for r in rows if r[0]==\"-1003770334893\" and \"ビデオ\" in r[2] and \"チャット\" in r[2] and \"専用\" in r[2]]\nif len(v)!=1:sys.exit(83)\nif len(g)!=1:sys.exit(84)\nif any(len(r)!=4 or not r[3].isdigit() for r in v+g):sys.exit(85)\nprint(\"TWO_VERIFIED_VIDEO_TOPIC_TARGETS=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
