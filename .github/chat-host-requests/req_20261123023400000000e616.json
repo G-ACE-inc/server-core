@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "production_independent_readback",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/73"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=deploy/state/help-rich-manual-20261123\ntest -s deploy/state/help-rich-manual-live-20261123.json\ntest -s \"$stage/checkpoint.json\"\ntarget_sha=\"$(python3 -c 'import json;print(json.load(open(\"deploy/state/help-rich-manual-20261123/checkpoint.json\"))[\"new_sha\"])')\"\ntest \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs|cut -d' ' -f1)\" = \"$target_sha\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(docker inspect -f '{{.State.Restarting}}' deploy-gaybbs-1)\" = false\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-postgres-1)\" = true\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ndocker exec deploy-gaybbs-1 node -e '\nconst s=require(\"fs\").readFileSync(\"/app/gaybbs.mjs\",\"utf8\");\nconst a=s.indexOf(\"function registerOperationHelpHandlers(\"),b=s.indexOf(\"// src/\",a+8),t=s.slice(a,b<0?s.length:b);\nconst h=s.indexOf(\"// src/bot/operationHelpHandlers.ts\"),j=s.indexOf(\"// src/\",h+7),section=s.slice(h,j<0?s.length:j);\nconst needed=[\"sectionText\",\"HTML\",\"profile\",\"room\",\"announcement\",\"link\",\"search\",\"help:open:\",\"help:home:\"];\nfor(const k of needed)if(!section.includes(k))process.exit(71);\nif(!t.includes(\"startCompactProfileEditor\"))process.exit(72);\nif(!s.includes(\"STARTLESS_REPEATED_START_LINK_FORBIDDEN\"))process.exit(73);\nif(section.length<5000)process.exit(74);\nconsole.log(\"GAYBBS_HELP_LIVE_RICH_AND_FIVE_TOPICS=PASS\");\n'\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled\npython3 -B scripts/userbot_test_client.py health >/dev/null\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\necho GAYBBS_HELP_INDEPENDENT_READBACK=PASS\necho USERBOT_RESIDENT_IPC_HEALTH=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
