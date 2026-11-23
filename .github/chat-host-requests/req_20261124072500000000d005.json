@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nimage=create-videobot:video-topic-cleanup-fe666ea3\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 31\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(docker image inspect create-videobot:video-dualmode-button-download-dc4578de --format '{{.Id}}')\" || exit 32\ntest -n \"$(docker image inspect \"$image\" --format '{{.Id}}')\" || exit 33\ngetenv(){ docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n \"s/^$1=//p\" | head -n 1; }\ndbhost=\"$(getenv VIDEOBOT_DB_HOST)\"\ndbuser=\"$(getenv VIDEOBOT_DB_USER)\"\ndbname=\"$(getenv VIDEOBOT_DB_NAME)\"\ntokenfile=\"$(getenv VIDEOBOT_TELEGRAM_TOKEN_FILE)\"\ntest -n \"$dbhost\" && test -n \"$dbuser\" && test \"$dbname\" = videobot && test \"$tokenfile\" = /run/secrets/videobot_telegram_token || exit 34\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 35\ndocker run --rm --network \"container:$cid\" --volumes-from \"$cid\" --entrypoint node \\\n -e \"VIDEOBOT_DB_HOST=$dbhost\" -e \"VIDEOBOT_DB_USER=$dbuser\" \\\n -e \"VIDEOBOT_DB_NAME=$dbname\" -e \"VIDEOBOT_TELEGRAM_TOKEN_FILE=$tokenfile\" \\\n \"$image\" /opt/videobot/src/operations/runDuplicateVideoCleanup.mjs || exit 36\necho VIDEO_DUPLICATE_CLEANUP_TELEGRAM_ACK_PASS\n"
+  }
+}
