@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/72"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport json,subprocess,pathlib,re,sys\nledger=pathlib.Path(\"deploy/state/help-profile-deploy-20261123.json\")\nd=json.loads(ledger.read_text()) if ledger.is_file() else {}\ndef run(a,timeout=40):\n p=subprocess.run(a,capture_output=True,text=True,timeout=timeout)\n return p.stdout.strip() if p.returncode==0 else \"READ_FAILED\"\nraw=subprocess.run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"cat\",\"/app/gaybbs.mjs\"],capture_output=True,timeout=55)\ncode=raw.stdout.decode() if raw.returncode==0 else \"\"\ndef part(module):\n marker=\"// \"+module\n a=code.find(marker)\n if a<0:return \"\"\n b=code.find(\"\\n// src/\",a+4)\n return code[a:] if b<0 else code[a:b]\nhelp=part(\"src/bot/operationHelpHandlers.ts\");entry=part(\"src/gaybbsBot.ts\")\nflags={\"ledger_state\":d.get(\"state\"),\"live_image_match\":run([\"docker\",\"inspect\",\"-f\",\"{{.Image}}\",\"deploy-gaybbs-1\"])==d.get(\"new_image\"),\n\"local_image_match\":run([\"docker\",\"image\",\"inspect\",\"-f\",\"{{.Id}}\",\"gace-tgtumbler-gaybbs:local\"])==d.get(\"new_image\"),\n\"live_bundle_match\":run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"sha256sum\",\"/app/gaybbs.mjs\"]).split()[0]==d.get(\"new_sha\"),\n\"bundle_owner\":run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"stat\",\"-c\",\"%u:%g:%a\",\"/app/gaybbs.mjs\"]),\n\"db_running\":run([\"docker\",\"inspect\",\"-f\",\"{{.State.Running}}\",\"deploy-postgres-1\"]),\n\"userbot_active\":run([\"systemctl\",\"--user\",\"is-active\",\"gace-userbot-verify.service\"]),\n\"help_module_found\":bool(help),\"entry_module_found\":bool(entry),\n\"help_current_compact\":(\"startCompactProfileEditor(ctx)\" in help),\n\"help_old_profile_absent\":(\"startProfileEditor(ctx)\" not in help),\n\"help_return_full_menu\":(\"editMessageToDmPostingMenu(ctx,ctx.from.id)\" in help),\n\"entry_current_compact\":(\"startCompactProfileEditor(ctx)\" in entry),\n\"entry_old_pf_intercept\":(\"bot.action(/^pf:/\" in entry),\n\"entry_intercept_before_old_handler\":entry.find(\"bot.action(/^pf:/\")<entry.find(\"registerProfileHandlers(bot)\") if entry else False,\n\"entry_legacy_command\":('bot.command(\"profile\"' in entry),\n\"startless_guard_preserved\":(\"STARTLESS_REPEATED_START_LINK_FORBIDDEN\" in code),\n\"help_open\":(\"help:open:\" in help)}\nb=\"HELP_PROFILE_READBACK_FAILED_ASSERT_DIAGNOSTIC=\"+json.dumps(flags,separators=(\",\",\":\"))\nr=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/72/comments\",\"-f\",\"body=\"+b],capture_output=True,text=True,timeout=45)\nif r.returncode:sys.exit(70)\nprint(\"HELP_PROFILE_BOOLEAN_DIAGNOSTIC_RECORDED=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
