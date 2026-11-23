@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/8"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nstage=\"$root/.releases/8e35800be335a61d8910b066d2130a05a8dcf9a8/video-dualmode-three-way-stage\"\nhead=ca6bad63b6671fbad95ac31a6947195c8d952a3f\nbaseline=create-videobot:dualmode-runtime-baseline-ca6bad63\nnew=create-videobot:video-dualmode-staged-ca6bad63\nrunning=\"$(docker inspect \"$cid\" --format '{{.Image}}')\" || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 62\ntest \"$(sha256sum \"$stage/live/src/telegram/creatorWiring.mjs\" | cut -d' ' -f1)\" = \"$(docker exec \"$cid\" sha256sum /opt/videobot/src/telegram/creatorWiring.mjs | cut -d' ' -f1)\" || exit 63\nif test -z \"$(docker images -q \"$baseline\")\";then docker tag \"$running\" \"$baseline\" || exit 64;else test \"$(docker image inspect \"$baseline\" --format '{{.Id}}')\" = \"$running\" || exit 65;fi\ntest -z \"$(docker images -q \"$new\")\" || exit 66\ngit -C \"$repo\" fetch --no-tags origin feat/video-paidmedia-invoice-dual-mode-20261124 >/dev/null 2>&1 || exit 67\ntest \"$(git -C \"$repo\" rev-parse FETCH_HEAD)\" = \"$head\" || exit 68\nmkdir -p \"$stage/test\"\nfor p in test/videoInvoiceSales.test.mjs test/paidListingPublisher.test.mjs test/creatorBot.test.mjs test/creatorWiring.test.mjs test/creatorMigrate.test.mjs test/pgPostingReceipts.test.mjs test/pgStarsLedger.test.mjs;do\n git -C \"$repo\" show \"$head:$p\" > \"$stage/$p\" || exit 69\ndone\n{\necho \"FROM $baseline\"\necho 'USER root'\nfor p in src/telegram/paidListingPublisher.mjs src/telegram/creatorBot.mjs src/telegram/creatorWiring.mjs src/sales/pgPostingReceipts.mjs src/sales/pgStarsLedger.mjs src/runtime/creatorMigrate.mjs src/runtime/creatorPollingMain.mjs src/telegram/videoInvoiceSales.mjs src/sales/pgVideoInvoiceOrders.mjs sql/022_video_invoice_fallback.sql;do\n echo \"COPY --chown=node:node merged/$p /opt/videobot/$p\"\ndone\necho 'USER node'\n} > \"$stage/Dockerfile\"\ndocker build --network none --pull=false -t \"$new\" \"$stage\" >/dev/null || exit 70\ndocker run --rm --network none --entrypoint node \"$new\" --input-type=module -e \"import('/opt/videobot/src/telegram/creatorWiring.mjs').then(()=>console.log('DUALMODE_IMPORT_PASS'))\" >/dev/null || exit 71\ndocker run --rm --network none -v \"$stage/test:/opt/videobot/test:ro\" -w /opt/videobot --entrypoint node \"$new\" --test test/videoInvoiceSales.test.mjs > \"$stage/new-invoice-tests.log\" 2>&1 || exit 72\ntests='test/paidListingPublisher.test.mjs test/creatorBot.test.mjs test/creatorWiring.test.mjs test/creatorMigrate.test.mjs test/pgPostingReceipts.test.mjs test/pgStarsLedger.test.mjs'\ndocker run --rm --network none -v \"$stage/test:/opt/videobot/test:ro\" -w /opt/videobot --entrypoint node \"$new\" --test $tests > \"$stage/candidate-tests.log\" 2>&1 || true\ndocker run --rm --network none -v \"$stage/test:/opt/videobot/test:ro\" -w /opt/videobot --entrypoint node \"$baseline\" --test $tests > \"$stage/baseline-tests.log\" 2>&1 || true\npython3 -B - \"$stage\" <<'PY'\nfrom pathlib import Path\nimport re,sys\nr=Path(sys.argv[1])\ndef failed(path):\n s=path.read_text(errors='replace')\n if '# tests ' not in s:raise ValueError('test runner missing')\n return set(re.findall(r'(?m)^not ok \\d+ - ([^\\n]+)$',s))\nif failed(r/'candidate-tests.log')-failed(r/'baseline-tests.log'):sys.exit(73)\nprint('VIDEO_DUALMODE_CANDIDATE_NO_NEW_FAILURES=PASS')\nPY\necho VIDEO_DUALMODE_STAGE_IMAGE_TEST_PASS\n"
+  }
+}
