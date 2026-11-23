@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/8"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ns=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/.releases/8e35800be335a61d8910b066d2130a05a8dcf9a8/video-dualmode-three-way-stage/invoice-publisher-only.log\npython3 -B - \"$s\" <<'PY'\nfrom pathlib import Path\nimport sys,re\ns=Path(sys.argv[1]).read_text(errors='replace')\nstart=s.find(\"not ok\")\ncut=s[start:start+4500].lower()\nterms=[\"error:\", \"failuretype\", \"expected\", \"actual\", \"assertionerror\",\n\"strict\", \"uncaught\", \"video\", \"invoice\", \"sample\", \"getme\", \"attachment\",\n\"invalid\", \"unexpected\", \"readonly\", \"received\", \"native\", \"payment\"]\nmask=sum(1<<i for i,v in enumerate(terms) if v in cut)\nsys.exit(30+(mask%200))\nPY"
+  }
+}
