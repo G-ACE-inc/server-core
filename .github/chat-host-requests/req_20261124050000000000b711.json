@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nlog=/tmp/video-two-build-20261124.log\ntest -s \"$log\" || exit 71\nif grep -q 'ERR_PNPM_OUTDATED_LOCKFILE' \"$log\"; then exit 91; fi\nif grep -q 'ERR_PNPM_FETCH' \"$log\"; then exit 92; fi\nif grep -q 'ERR_PNPM_NO_MATCHING_VERSION' \"$log\"; then exit 93; fi\nif grep -q 'ERR_PNPM_UNSUPPORTED_ENGINE' \"$log\"; then exit 94; fi\nif grep -q 'ERR_PNPM_WORKSPACE_PKG_NOT_FOUND' \"$log\"; then exit 95; fi\nif grep -Eiq 'Unable to find|could not find|package.json|ENOENT|not found' \"$log\"; then exit 96; fi\nif grep -Eiq 'corepack|signature|npm registry|TLS|certificate' \"$log\"; then exit 97; fi\nif grep -Eiq 'ERR_PNPM|pnpm install' \"$log\"; then exit 98; fi\nexit 99"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
