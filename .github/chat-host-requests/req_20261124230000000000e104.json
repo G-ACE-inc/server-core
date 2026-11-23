@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\ncid=gace-createvdobot-videobot-poll-1\nhead=fd5f32aa47e3c8559fe252244919bd736a267119\nstage=/home/gace/.local/share/gace-create-videobot/reissue-invoice-$head\nbase=create-videobot:video-dualmode-button-download-dc4578de\nnew=create-videobot:reissue-invoice-$head\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 31\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(docker image inspect \"$base\" --format '{{.Id}}')\" || exit 32\ngit -C \"$repo\" fetch --no-tags origin feat/reissue-video-invoice-preserve-existing-buyer-20261124 >/dev/null 2>&1 || exit 33\ntest \"$(git -C \"$repo\" rev-parse FETCH_HEAD)\" = \"$head\" || exit 34\ntest -z \"$(docker images -q \"$new\")\" || exit 35\nmkdir -p \"$stage/src/runtime\" \"$stage/src/sales\" \"$stage/src/telegram\" \"$stage/src/operations\" \"$stage/sql\" \"$stage/test\"\nfor file in src/telegram/videoInvoiceSales.mjs src/sales/pgVideoInvoiceOrders.mjs src/operations/reissueVideoInvoiceOffer.mjs src/operations/runReissuedVideoInvoice.mjs sql/023_video_legacy_purchaser_entitlement.sql test/videoInvoiceSales.test.mjs;do\n git -C \"$repo\" show \"$head:$file\" > \"$stage/$file\" || exit 36\ndone\ndocker cp \"$cid:/opt/videobot/src/runtime/creatorMigrate.mjs\" \"$stage/src/runtime/creatorMigrate.mjs\" >/dev/null || exit 37\ndocker cp \"$cid:/opt/videobot/src/runtime/creatorPollingMain.mjs\" \"$stage/src/runtime/creatorPollingMain.mjs\" >/dev/null || exit 38\npython3 -B - \"$stage\" <<'PY'\nfrom pathlib import Path\nimport sys\nr=Path(sys.argv[1]);m=r/'src/runtime/creatorMigrate.mjs';s=m.read_text()\na=\"'022_video_invoice_fallback.sql'\"\nif s.count(a)!=1 or '023_video_legacy_purchaser_entitlement.sql' in s:sys.exit(39)\ns=s.replace(a,a+\",\\n '023_video_legacy_purchaser_entitlement.sql'\")\nm.write_text(s)\np=r/'src/runtime/creatorPollingMain.mjs';s=p.read_text()\nimport re\nmatch=re.search(r\"schema\\.migrations\\s*!==\\s*([0-9]+)\",s)\nif match is None or int(match.group(1)) not in (21,22):sys.exit(40)\np.write_text(s[:match.start(1)]+\"23\"+s[match.end(1):])\nPY\ncat > \"$stage/Dockerfile\" <<'EOF'\nFROM create-videobot:video-dualmode-button-download-dc4578de\nUSER root\nCOPY --chown=node:node src/telegram/videoInvoiceSales.mjs /opt/videobot/src/telegram/videoInvoiceSales.mjs\nCOPY --chown=node:node src/sales/pgVideoInvoiceOrders.mjs /opt/videobot/src/sales/pgVideoInvoiceOrders.mjs\nCOPY --chown=node:node src/runtime/creatorMigrate.mjs /opt/videobot/src/runtime/creatorMigrate.mjs\nCOPY --chown=node:node src/runtime/creatorPollingMain.mjs /opt/videobot/src/runtime/creatorPollingMain.mjs\nCOPY --chown=node:node src/operations/ /opt/videobot/src/operations/\nCOPY --chown=node:node sql/023_video_legacy_purchaser_entitlement.sql /opt/videobot/sql/023_video_legacy_purchaser_entitlement.sql\nCOPY --chown=node:node test/videoInvoiceSales.test.mjs /opt/videobot/test/videoInvoiceSales.test.mjs\nUSER node\nEOF\ndocker build --network none --pull=false -t \"$new\" \"$stage\" >/dev/null || exit 41\nfor f in /opt/videobot/src/telegram/videoInvoiceSales.mjs /opt/videobot/src/sales/pgVideoInvoiceOrders.mjs /opt/videobot/src/runtime/creatorMigrate.mjs /opt/videobot/src/runtime/creatorPollingMain.mjs /opt/videobot/src/operations/runReissuedVideoInvoice.mjs;do\n docker run --rm --network none --entrypoint node \"$new\" --check \"$f\" >/dev/null || exit 42\ndone\ndocker run --rm --network none -w /opt/videobot --entrypoint node \"$new\" --test test/videoInvoiceSales.test.mjs >/dev/null || exit 43\necho REISSUE_INVOICE_LEGACY_BUYER_IMAGE_READY_PASS\n"
+  }
+}
