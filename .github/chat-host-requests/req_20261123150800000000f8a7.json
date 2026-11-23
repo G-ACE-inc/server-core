@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/74"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nbranch=\"fix/video-chat-two-topic-pinned-doorways-20261123\"\ngit fetch --no-tags origin \"$branch\"\nhead=\"$(git rev-parse FETCH_HEAD)\"\ntest \"$head\" = \"c770c2cad65bbd881561e1e85e79a6a38f3b7743\"\nworktree=\"$PWD/.worktrees/video-two-topic-doorway-20261123\"\nif test ! -d \"$worktree\"; then mkdir -p \"$PWD/.worktrees\"; git worktree add --detach \"$worktree\" \"$head\"; fi\ngit -C \"$worktree\" checkout --detach \"$head\"\ntest -z \"$(git -C \"$worktree\" status --porcelain --untracked-files=all)\"\nbase=\"$(docker inspect deploy-gaybbs-1 --format '{{.Image}}')\"\ndocker image inspect \"$base\" >/dev/null\ndocker tag \"$base\" gace-local-gaybbs-base:20261123\npython3 - \"$worktree/artifacts/bot/deploy/Dockerfile.gaybbs\" <<'PY'\nimport pathlib,sys\np=pathlib.Path(sys.argv[1])\ns=p.read_text().replace(\"WORKDIR /src\\nRUN corepack enable\",\"WORKDIR /src\\nUSER root\\nRUN corepack enable\",1)\npathlib.Path(\"/tmp/Dockerfile.gaybbs-video-repair\").write_text(s)\nPY\ndocker build --network host --pull=false --build-arg \"NODE_IMAGE=gace-local-gaybbs-base:20261123\" -t gace-gaybbs-video-doorway-repair:20261123 -f /tmp/Dockerfile.gaybbs-video-repair \"$worktree\" >/tmp/video-two-topic-build.log 2>&1 || { tail -n 80 /tmp/video-two-topic-build.log >&2; exit 66; }\ntest -n \"$(docker image inspect gace-gaybbs-video-doorway-repair:20261123 --format '{{.Id}}')\"\necho TWO_TOPIC_IMAGE_BUILD=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
