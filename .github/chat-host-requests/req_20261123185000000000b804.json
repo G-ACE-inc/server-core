@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/8"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nbase=b44c2d73d4e7acbd00ed4f96c41c2fedeb494c4c\nhead=8e35800be335a61d8910b066d2130a05a8dcf9a8\nrelease=\"$root/.releases/$head/video-dualmode-three-way-stage\"\ntest -d \"$repo/.git\" && test -f \"$root/deploy/compose.videobot.poll.yaml\" || exit 31\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 32\ngit -C \"$repo\" fetch --no-tags origin feat/video-paidmedia-invoice-dual-mode-20261124 >/dev/null 2>&1 || exit 33\ntest \"$(git -C \"$repo\" rev-parse FETCH_HEAD)\" = \"$head\" || exit 34\ntest ! -e \"$release\" || exit 35\nmkdir -p \"$release/live\" \"$release/base\" \"$release/new\" \"$release/merged\"\nmask=0\nbit=1\nfor p in src/telegram/paidListingPublisher.mjs src/telegram/creatorBot.mjs src/telegram/creatorWiring.mjs src/sales/pgPostingReceipts.mjs src/sales/pgStarsLedger.mjs src/runtime/creatorMigrate.mjs src/runtime/creatorPollingMain.mjs;do\n mkdir -p \"$release/live/$(dirname \"$p\")\" \"$release/base/$(dirname \"$p\")\" \"$release/new/$(dirname \"$p\")\" \"$release/merged/$(dirname \"$p\")\"\n docker cp \"$cid:/opt/videobot/$p\" \"$release/live/$p\" >/dev/null || exit 36\n git -C \"$repo\" show \"$base:$p\" > \"$release/base/$p\" || exit 37\n git -C \"$repo\" show \"$head:$p\" > \"$release/new/$p\" || exit 38\n rc=0\n git merge-file -p -L LIVE -L BASE -L PR8 \"$release/live/$p\" \"$release/base/$p\" \"$release/new/$p\" > \"$release/merged/$p\" || rc=$?\n if test \"$rc\" -gt 0;then mask=$((mask+bit));fi\n bit=$((bit*2))\ndone\nfor p in src/telegram/videoInvoiceSales.mjs src/sales/pgVideoInvoiceOrders.mjs sql/022_video_invoice_fallback.sql;do\n mkdir -p \"$release/merged/$(dirname \"$p\")\"\n git -C \"$repo\" show \"$head:$p\" > \"$release/merged/$p\" || exit 39\ndone\nexit $((100+mask))\n"
+  }
+}
