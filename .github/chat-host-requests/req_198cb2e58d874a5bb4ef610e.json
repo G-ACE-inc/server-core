@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 41\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';\nimport pg from 'pg';\nimport {readPrivateToken} from './src/runtime/config.mjs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nconst e=process.env;\nconst p=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,\n database:e.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1});\nconst net=createCreatorTelegramFetch();\ntry{\n const buyer=(await p.query(\"SELECT DISTINCT x.buyer_user_id FROM videobot_stars_ledger x JOIN videobot_listings old ON old.listing_id=x.listing_id JOIN videobot_listings newer ON newer.seller_user_id=old.seller_user_id AND newer.paid_video_file_id=old.paid_video_file_id WHERE x.kind='paid' AND newer.listing_id='v26nov24invoice'\")).rows;\n if(buyer.length!==1)throw Error('BUYER_COUNT_UNVERIFIED');\n const rows=(await p.query(\"SELECT r.listing_id,r.sale_mode,r.status AS receipt_status,l.status AS listing_status,r.free_message_ids,r.paid_message_id,r.topic_id,l.seller_user_id,l.paid_video_file_id FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id WHERE r.sale_mode IN ('paid_media','invoice') ORDER BY r.updated_at DESC\")).rows;\n const newest=rows.find(x=>x.listing_id==='v26nov24invoice');\n const orig=rows.filter(x=>x.sale_mode==='paid_media');\n const same=orig.every(x=>x.paid_video_file_id===newest?.paid_video_file_id && x.seller_user_id===newest?.seller_user_id && x.topic_id===newest?.topic_id);\n const bought=(await p.query(\"SELECT DISTINCT listing_id FROM videobot_stars_ledger WHERE kind='paid'\")).rows.map(x=>x.listing_id);\n console.log('POSTINGS='+JSON.stringify({invoice:!!newest,invoiceSent:newest?.receipt_status==='sent',oldCount:orig.length,allOldMatchingCurrentVideo:same,oldWithPurchaser:orig.filter(x=>bought.includes(x.listing_id)).length,oldWithoutPurchaser:orig.filter(x=>!bought.includes(x.listing_id)).length,allOldComplete:orig.every(x=>x.free_message_ids?.length===2 && x.paid_message_id!=null)}));\n const prior=(await p.query(\"SELECT status,delivered_message_id FROM videobot_video_legacy_deliveries WHERE buyer_user_id=$1 AND delivery_key='v26nov24invoice:1'\",[buyer[0].buyer_user_id])).rows;\n console.log('BUYER_LEGACY_STATE='+JSON.stringify({status:prior[0]?.status??null,ackMessageExists:prior[0]?.delivered_message_id!=null}));\n const token=readPrivateToken(e.VIDEOBOT_TELEGRAM_TOKEN_FILE);\n const response=await net.fetch('https://api.telegram.org/bot'+token+'/getChat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({chat_id:Number(buyer[0].buyer_user_id)}),signal:AbortSignal.timeout(18000),redirect:'error'});\n const data=await response.json();\n const raw=String(data.description??'').toLowerCase();\n let reason='other';if(data.ok)reason='available';else if(raw.includes('chat not found'))reason='chat_not_found';else if(raw.includes('bot was blocked'))reason='blocked';else if(raw.includes('forbidden'))reason='forbidden';\n console.log('BUYER_DM_READONLY='+JSON.stringify({ok:data.ok===true,code:data.error_code??null,reason}));\n}finally{await net.close();await p.end()}\nNODE\n"
+  }
+}
