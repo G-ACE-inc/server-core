@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/75"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 - <<'PY'\nimport json,re,subprocess,pathlib,sys\ndb=next(x for x in subprocess.check_output([\"docker\",\"ps\",\"--format\",\"{{.Names}}\"],text=True).splitlines() if re.search(r\"postgres|database|db-[0-9]\",x,re.I))\nsql=\"\"\"SELECT message_id FROM topic_dm_entry_pins WHERE chat_id=-1002373696859\nAND message_thread_id=1605 AND state='published' AND pinned=TRUE AND token_hash IS NOT NULL\"\"\"\np=subprocess.run([\"docker\",\"exec\",db,\"sh\",\"-c\",'psql -qAt -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"$1\"',\"sh\",sql],capture_output=True,text=True)\nif p.returncode:sys.exit(91)\nids=p.stdout.splitlines()\nif len(ids)!=1 or not ids[0].isdigit():sys.exit(92)\nmid=int(ids[0])\nline=next(x for x in pathlib.Path('/tmp/video-topic-userbot-audit.out').read_text().splitlines() if x.startswith('USERBOT_TOPIC_AUDIT='))\nrow=json.loads(line.split('=',1)[1])['rows'][0]\nif mid not in row.get('history_message_ids',[]):sys.exit(93)\nif 'normal' not in row.get('button_types',[]):sys.exit(94)\nif row.get('pin_state')=='PRESENT':sys.exit(95)\nprint('EXACT_VIDEO_POST_ID_CONFIRMED_BY_DB_AND_USERBOT=PASS')\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
