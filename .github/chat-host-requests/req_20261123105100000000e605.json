@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 61\ndocker exec -i \"$cid\" node --input-type=module <<'JS'\nimport {readFileSync,readdirSync} from 'node:fs';\nimport {join} from 'node:path';\nimport {createHash} from 'node:crypto';\nconst root='/opt/videobot/src';\nconst all=[], calls=[];\nfunction walk(p) {\n for (const e of readdirSync(p,{withFileTypes:true})) {\n  const file=join(p,e.name);\n  if(e.isDirectory())walk(file);\n  else if(e.isFile()&&file.endsWith('.mjs')){\n   const data=readFileSync(file);\n   const source=data.toString();\n   const sha=createHash('sha1').update(Buffer.from('blob '+data.length+'\\0')).update(data).digest('hex');\n   all.push({p:file.slice(root.length+1),sha});\n   const lines=source.split('\\n');\n   for(let i=0;i<lines.length;i++)if(/sendPaidMedia|sendVideo|sendMediaGroup|copyMessage|forwardMessage|paid_video_file_id|paidVideo\\.fileId|paidMedia\\.paid_media|nativePaid/.test(lines[i]))calls.push({p:file.slice(root.length+1),line:i+1,code:lines[i].trim().slice(0,125)});\n  }\n }\n}\nwalk(root);\nconsole.log('TOTAL_SOURCE_MODULES='+all.length);\nconsole.log('RELEVANT_CALLS='+calls.length);\nfor(const v of calls)console.log(JSON.stringify(v));\nconst must=['telegram/paidListingPublisher.mjs','telegram/paidMedia.mjs','telegram/freeAlbum.mjs','telegram/creatorWizard.mjs','telegram/creatorWiring.mjs','telegram/creatorBot.mjs','sales/pgPostingReceipts.mjs','sales/pgStarsLedger.mjs'];\nfor(const path of must){const f=all.find(x=>x.p===path);console.log('CRITICAL_MODULE '+path+' '+(f?.sha||'MISSING'));}\nJS\ndocker inspect \"$cid\" --format 'CONTAINER_RUNNING={{.State.Running}} IMAGE={{.Config.Image}}'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
