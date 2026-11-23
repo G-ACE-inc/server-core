@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 30\ndocker exec -i \"$cid\" node --input-type=module <<'NODE'\nimport {readFileSync} from 'node:fs';\nimport pg from 'pg';\nconst pool=new pg.Pool({\n host:process.env.VIDEOBOT_DB_HOST,\n user:process.env.VIDEOBOT_DB_USER,\n database:process.env.VIDEOBOT_DB_NAME,\n password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),\n max:1,connectionTimeoutMillis:4500\n});\nlet code=100;\ntry{\n const {rows:[r]}=await pool.query(`\n SELECT\n (SELECT count(*) FROM videobot_post_receipts) AS receipt_count,\n (SELECT count(*) FROM videobot_post_receipts WHERE status='sent') AS posted_count,\n (SELECT count(*) FROM videobot_post_receipts WHERE sale_mode='invoice' AND status='sent') AS invoice_count,\n (SELECT count(*) FROM videobot_video_invoice_orders WHERE telegram_payment_charge_id IS NOT NULL) AS invoice_paid,\n (SELECT count(*) FROM videobot_stars_ledger WHERE kind='paid') AS ledger_paid,\n (SELECT count(*) FROM videobot_post_receipts WHERE topic_id=4672) AS topic4672_count,\n (SELECT count(*) FROM videobot_post_receipts WHERE topic_id=4640) AS topic4640_count\n `);\n if(Number(r.receipt_count)>0)code+=1;\n if(Number(r.posted_count)>0)code+=2;\n if(Number(r.invoice_count)>0)code+=4;\n if(Number(r.invoice_paid)>0)code+=8;\n if(Number(r.ledger_paid)>0)code+=16;\n if(Number(r.receipt_count)>1)code+=32;\n if(Number(r.topic4672_count)>0)code+=64;\n if(Number(r.topic4640_count)>0)code+=128;\n}finally{await pool.end()}\nprocess.exit(code);\nNODE"
+  }
+}
