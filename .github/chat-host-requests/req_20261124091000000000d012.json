@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\ncid=gace-createvdobot-videobot-poll-1\nhead=1335675775afe352a3f9564460bf6feca1c64787\nstage=/home/gace/.local/share/gace-create-videobot/video-topic-cleanup-fe666ea3/shared\nbase=create-videobot:video-topic-cleanup-fe666ea3\nimage=create-videobot:video-topic-cleanup-shared-13356757\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 31\ntest -n \"$(docker image inspect \"$base\" --format '{{.Id}}')\" || exit 32\ngit -C \"$repo\" fetch --no-tags origin fix/cleanup-duplicate-video-paid-topic-20261124 >/dev/null 2>&1 || exit 33\ntest \"$(git -C \"$repo\" rev-parse FETCH_HEAD)\" = \"$head\" || exit 34\nmkdir -p \"$stage\"\ngit -C \"$repo\" show \"$head:src/operations/cleanupDuplicateVideoOffers.mjs\" > \"$stage/cleanupDuplicateVideoOffers.mjs\" || exit 35\ncat > \"$stage/Dockerfile\" <<'EOF'\nFROM create-videobot:video-topic-cleanup-fe666ea3\nUSER root\nCOPY --chown=node:node cleanupDuplicateVideoOffers.mjs /opt/videobot/src/operations/cleanupDuplicateVideoOffers.mjs\nUSER node\nEOF\ndocker build --network none --pull=false -t \"$image\" \"$stage\" >/dev/null || exit 36\ndocker run --rm --network none --entrypoint node \"$image\" --check /opt/videobot/src/operations/cleanupDuplicateVideoOffers.mjs >/dev/null || exit 37\necho VIDEO_CLEANUP_SHARED_ALBUM_FIX_STAGE_PASS\n"
+  }
+}
