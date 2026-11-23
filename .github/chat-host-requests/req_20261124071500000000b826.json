@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/8"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ndest=/mnt/g/Gserver/CreateVdobot/media-work\ntest -d /mnt/g || exit 31\nmountpoint -q /mnt/g || exit 32\ntest \"$(df -Pm /mnt/g | tail -1 | awk '{print $4}')\" -ge 5120 || exit 33\ntest ! -L /mnt/g/Gserver && test ! -L /mnt/g/Gserver/CreateVdobot && test ! -L \"$dest\" || exit 34\nmkdir -p \"$dest\" || exit 35\ntest -d \"$dest\" && test -w \"$dest\" || exit 36\ndocker run --rm --network none -v \"$dest:/var/lib/videobot/media-work:rw\" --entrypoint node create-videobot:video-dualmode-button-download-dc4578de -e \"const f=require('fs'),p='/var/lib/videobot/media-work/.gace-dualmode-write-probe';f.writeFileSync(p,'ok',{flag:'wx',mode:0o600});if(f.readFileSync(p,'utf8')!=='ok')process.exit(1);f.unlinkSync(p)\" >/dev/null || exit 37\necho G_DRIVE_VIDEO_WORK_DISK_BACKED_BIND_TEST_PASS\n"
+  }
+}
