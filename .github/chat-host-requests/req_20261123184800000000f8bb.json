@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/75"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 70\npython3 scripts/userbot_topic_audit_client.py --chat-id -1002373696859 --topic-id 1605 >/tmp/video-topic-userbot-final.out 2>/tmp/video-topic-userbot-final.err || exit 71\npython3 scripts/userbot_topic_audit_client.py --chat-id -1003770334893 --topic-id 4 >/tmp/gay-topic-userbot-final.out 2>/tmp/gay-topic-userbot-final.err || exit 72\npython3 - <<'PY'\nimport json,pathlib,sys\nfor path,topic in [('/tmp/video-topic-userbot-final.out',1605),('/tmp/gay-topic-userbot-final.out',4)]:\n line=next((x for x in pathlib.Path(path).read_text().splitlines() if x.startswith('USERBOT_TOPIC_AUDIT=')),None)\n if not line:sys.exit(73)\n doc=json.loads(line.split('=',1)[1])\n rows=doc.get('rows') or []\n if doc.get('status')!='PASS' or len(rows)!=1 or rows[0].get('topic_id')!=topic:sys.exit(74)\n row=rows[0]\n if row.get('pin_state')!='PRESENT':sys.exit(75 if topic==1605 else 76)\n if 'normal' not in row.get('button_types',[]):sys.exit(77 if topic==1605 else 78)\n if 'INTERNAL_CALLBACK' not in row.get('pin_transports',[]):sys.exit(79 if topic==1605 else 80)\nprint('BOTH_TOPIC_USERBOT_PIN_CALLBACKS=PASS')\nPY\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 81\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled || exit 82"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
