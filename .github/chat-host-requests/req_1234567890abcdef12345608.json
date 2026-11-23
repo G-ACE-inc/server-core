@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/72"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport subprocess,re,json,sys\np=subprocess.run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"cat\",\"/app/gaybbs.mjs\"],capture_output=True,timeout=50)\nif p.returncode:sys.exit(60)\ns=p.stdout.decode()\ndef part(name):\n a=s.find(\"// \"+name)\n if a<0:return \"\"\n b=s.find(\"\\n// src/\",a+5)\n return s[a:] if b<0 else s[a:b]\nhelp=part(\"src/bot/operationHelpHandlers.ts\")\nentry=part(\"src/gaybbsBot.ts\")\ndef around(s,needle):\n i=s.find(needle)\n return s[max(0,i-110):min(len(s),i+180)] if i>=0 else \"ABSENT\"\nout={\"help_return_snippet\":around(help,\"editMessageToDmPostingMenu\"),\"entry_legacy_pf_snippet\":around(entry,\"pf:\"),\"entry_profile_command_snippet\":around(entry,'command(\"profile\"'),\"entry_compact_snippet\":around(entry,\"startCompactProfileEditor\"),\"entry_len\":len(entry),\"entry_profile_uses_total\":entry.count(\"profile\"),\"live_all_compact_mentions\":s.count(\"startCompactProfileEditor\")}\nb=\"HELP_PROFILE_COMPILED_SYMBOL_SPELLING=\"+json.dumps(out,ensure_ascii=False,separators=(\",\",\":\"))\nq=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/72/comments\",\"-f\",\"body=\"+b],capture_output=True,text=True,timeout=45)\nif q.returncode:sys.exit(61)\nprint(\"COMPILED_SYMBOL_DIAGNOSTIC_SAVED=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
