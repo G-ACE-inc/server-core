@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/8"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nnew=create-videobot:video-dualmode-button-download-dc4578de\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(docker image inspect \"$new\" --format '{{.Id}}')\" || exit 62\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 63\ndocker logs \"$cid\" 2>&1 | grep -Fq 'CREATOR_DM_POLL_READY=PASS' || exit 64\ndocker logs \"$cid\" 2>&1 | grep -Fq 'STICKER_SHOP_HTTP_READY=PASS' || exit 65\ndocker exec \"$cid\" grep -Fq \"protect_content:false\" /opt/videobot/src/telegram/videoInvoiceSales.mjs || exit 66\ndocker exec \"$cid\" grep -Fq \"sendInvoice\" /opt/videobot/src/telegram/videoInvoiceSales.mjs || exit 67\ndocker exec \"$cid\" grep -Fq \"videoOfferLink\" /opt/videobot/src/telegram/paidListingPublisher.mjs || exit 68\ndocker exec \"$cid\" grep -Fq \"sendPaidMedia\" /opt/videobot/src/telegram/paidListingPublisher.mjs || exit 69\ndocker exec \"$cid\" grep -Fq \"invoice\" /opt/videobot/src/sales/pgPostingReceipts.mjs || exit 70\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport assert from 'node:assert/strict';\nimport {readFileSync} from 'node:fs';\nimport pg from 'pg';\nimport {videoOfferLink} from './src/telegram/videoInvoiceSales.mjs';\nassert.equal(videoOfferLink('CreateVdobot','listing1',1),\n  'https://t.me/CreateVdobot?start=vid_listing1_r1');\nconst pass=readFileSync('/run/secrets/videobot_db_password','utf8').trim();\nconst pool=new pg.Pool({\n  host:process.env.VIDEOBOT_DB_HOST,\n  user:process.env.VIDEOBOT_DB_USER,\n  database:process.env.VIDEOBOT_DB_NAME,\n  password:pass,connectionTimeoutMillis:4500,max:1\n});\ntry{\n  const {rows}=await pool.query(`SELECT\n    to_regclass('public.videobot_video_invoice_orders') IS NOT NULL AS invoice_table,\n    EXISTS(SELECT 1 FROM information_schema.columns\n      WHERE table_schema='public' AND table_name='videobot_post_receipts' AND column_name='sale_mode') AS sale_mode,\n    to_regclass('public.videobot_stars_ledger') IS NOT NULL AS ledger`);\n  assert.equal(rows.length,1);\n  assert.deepEqual(rows[0],{invoice_table:true,sale_mode:true,ledger:true});\n}finally{await pool.end();}\nconsole.log('VIDEO_INVOICE_DATABASE_READBACK_PASS');\nNODE\necho VIDEO_DUALMODE_INVOICE_DOWNLOAD_PRODUCTION_READBACK_PASS\n"
+  }
+}
