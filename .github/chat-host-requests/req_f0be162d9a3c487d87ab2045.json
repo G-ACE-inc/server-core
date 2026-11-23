@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/blob/feat/reissue-video-invoice-preserve-existing-buyer-20261124/sql/019_creator_terms_version.sql"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 41\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';\nimport pg from 'pg';\nconst env=process.env;\nif(env.VIDEOBOT_DB_NAME!=='videobot')throw Error('VIDEO_DB_OWNER_UNVERIFIED');\nconst pool=new pg.Pool({host:env.VIDEOBOT_DB_HOST,user:env.VIDEOBOT_DB_USER,\n database:env.VIDEOBOT_DB_NAME,\n password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),\n max:1,connectionTimeoutMillis:4500});\nconst client=await pool.connect();let committed=false;\ntry{\n const target=(await client.query(\"SELECT current_database() AS db,current_schema() AS schema\")).rows[0];\n if(target.db!=='videobot'||target.schema!=='public')throw Error('VIDEO_DB_SCHEMA_UNVERIFIED');\n const before=(await client.query(\"SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='videobot_listings' AND column_name IN ('creator_terms_version','creator_terms_url') ORDER BY column_name\")).rows;\n console.log('TERMS_COLUMNS_BEFORE='+before.length);\n await client.query('BEGIN');\n await client.query(\"ALTER TABLE videobot_listings ADD COLUMN IF NOT EXISTS creator_terms_version TEXT NULL CHECK (creator_terms_version IS NULL OR char_length(creator_terms_version) BETWEEN 1 AND 32), ADD COLUMN IF NOT EXISTS creator_terms_url TEXT NULL CHECK (creator_terms_url IS NULL OR char_length(creator_terms_url) BETWEEN 1 AND 512)\");\n await client.query('COMMIT');committed=true;\n const after=(await client.query(\"SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='videobot_listings' AND column_name IN ('creator_terms_version','creator_terms_url') ORDER BY column_name\")).rows;\n if(after.length!==2)throw Error('VIDEO_TERMS_SCHEMA_NOT_VERIFIED');\n console.log('TERMS_COLUMNS_AFTER='+after.length);\n const old=(await client.query(\"SELECT COUNT(*)::int n FROM videobot_stars_ledger WHERE kind='paid'\")).rows[0].n;\n console.log('HISTORICAL_VIDEO_PAID_ROWS='+old);\n const newRow=(await client.query(\"SELECT COUNT(*)::int n FROM videobot_listings WHERE listing_id='v26nov24invoice'\")).rows[0].n;\n console.log('REISSUE_LISTING_ROW_COUNT='+newRow);\n}finally{if(!committed)await client.query('ROLLBACK').catch(()=>{});client.release();await pool.end();}\nNODE\n"
+  }
+}
