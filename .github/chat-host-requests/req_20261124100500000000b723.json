@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(systemctl --user is-enabled gace-userbot-verify.service)\" = enabled\ntest -f scripts/userbot_topic_audit_client.py\npython3 scripts/userbot_topic_audit_client.py --chat-id -1002373696859 --topic-id 1605 > /tmp/video_chat_1605_audit_20261124.json\npython3 scripts/userbot_topic_audit_client.py --chat-id -1003770334893 --topic-id 4 > /tmp/gay_chat_4_audit_20261124.json\npython3 - <<'PY'\nimport json\nfor f,topic in [(\"/tmp/video_chat_1605_audit_20261124.json\",1605),(\"/tmp/gay_chat_4_audit_20261124.json\",4)]:\n raw=open(f).read().strip().split(\"=\",1)\n if len(raw)!=2 or raw[0]!=\"USERBOT_TOPIC_AUDIT\":raise SystemExit(62)\n obj=json.loads(raw[1])\n if obj.get(\"status\")!=\"PASS\" or len(obj.get(\"rows\",[]))!=1:raise SystemExit(63)\n row=obj[\"rows\"][0]\n if int(row.get(\"topic_id\",-1))!=topic:raise SystemExit(64)\n print(\"TOPIC_VERIFIED\",topic,str(row.get(\"title\",\"\"))[:100],str(row.get(\"post_button\",\"\"))[:30])\nPY\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\necho TWO_TARGET_USERBOT_READONLY_PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
