@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 41\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';\nimport pg from 'pg';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {readPrivateToken} from './src/runtime/config.mjs';\nimport {createGateOwner} from './owner/gateOwner.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {videoOfferLink} from './src/telegram/videoInvoiceSales.mjs';\nconst e=process.env;\nif(e.VIDEOBOT_DB_NAME!=='videobot'||e.VIDEO_SALE_MODE!=='invoice')throw Error('VIDEO_RUNTIME_OWNER_OR_MODE_UNVERIFIED');\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:4500});\nconst net=createCreatorTelegramFetch();\ntry{\n const row=(await pool.query(\"SELECT l.listing_id,l.revision,l.price_stars,l.seller_user_id,l.status listing_status,r.sale_mode,r.status receipt_status,r.free_message_ids,r.paid_message_id,r.topic_id FROM videobot_listings l JOIN videobot_post_receipts r ON l.listing_id=r.listing_id WHERE r.delivery_key='v26nov24invoice:1'\")).rows[0];\n if(!row||row.listing_status!=='published'||row.sale_mode!=='invoice'||row.receipt_status!=='sent'||row.free_message_ids?.length!==2||!row.paid_message_id||Number(row.paid_message_id)===Number(row.free_message_ids[1]))throw Error('CURRENT_POST_RECEIPT_NOT_SEPARATE');\n const api=createTelegramBotApi({token:readPrivateToken(e.VIDEOBOT_TELEGRAM_TOKEN_FILE),fetchImpl:net.fetch,timeoutMs:25000});\n const gate=await createGateOwner({pool,telegramApi:api});\n const topic=await gate.getVerifiedVideoTopic({purpose:'video_sale',sellerId:String(row.seller_user_id),listingId:row.listing_id});\n if(topic?.verified!==true||topic?.purpose!=='video_sale'||topic?.board!=='video_chat'||topic?.enabled!==true||topic?.threadId!==Number(row.topic_id)||!Number.isSafeInteger(topic.chatId)||topic.chatId>=0)throw Error('VIDEO_TOPIC_UNVERIFIED');\n const me=await api('getMe',{});\n const url=videoOfferLink(me.username,row.listing_id,Number(row.revision));\n const text='⭐ 本編を購入（'+row.price_stars+' Stars）';\n const sampleId=Number(row.free_message_ids[1]);\n const token=readPrivateToken(e.VIDEOBOT_TELEGRAM_TOKEN_FILE);\n const resp=await net.fetch('https://api.telegram.org/bot'+token+'/editMessageReplyMarkup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({chat_id:topic.chatId,message_id:sampleId,reply_markup:{inline_keyboard:[[{text,url}]]}}),signal:AbortSignal.timeout(25000),redirect:'error'});\n const data=await resp.json();\n const reply=data.result;\n let kind='OTHER';\n const raw=String(data?.description??'').toLowerCase();\n if(data.ok===true)kind='SUCCESS';\n else if(raw.includes('message is not modified'))kind='ALREADY_MODIFIED';\n else if(raw.includes('message to edit not found')||raw.includes('message to be edited not found'))kind='NOT_FOUND';\n else if(raw.includes(\"can't be edited\")||raw.includes('cannot be edited'))kind='EDIT_NOT_SUPPORTED';\n else if(raw.includes('message_id_invalid'))kind='INVALID_MESSAGE_ID';\n else if(raw.includes('reply markup'))kind='REPLY_MARKUP_REJECTED';\n const found=reply?.reply_markup?.inline_keyboard?.[0]?.[0];\n const verified=kind==='SUCCESS'&&reply?.message_id===sampleId&&found?.text===text&&found?.url===url&&!!reply?.media_group_id;\n console.log('ALBUM_INLINE_BUTTON='+JSON.stringify({responseOk:data.ok===true,http:resp.status,reason:kind,albumMember:!!reply?.media_group_id,markupMatches:found?.text===text&&found?.url===url,verified}));\n if(!verified)throw Error('ALBUM_INLINE_BUTTON_NOT_VERIFIED');\n}finally{await net.close();await pool.end()}\nNODE\n"
+  }
+}
