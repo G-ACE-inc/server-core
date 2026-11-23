@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nprintf 'ACTIVE_IMAGE=%s\\n' \"$(docker inspect \"$cid\" --format '{{.Config.Image}}')\"\nprintf 'ACTIVE_RUNNING=%s\\n' \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\"\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';import pg from 'pg';\nconst e=process.env;const p=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,\ndatabase:e.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1});\ntry{\nconst a=(await p.query(\"SELECT to_regclass('videobot_rich_offer_receipts') IS NOT NULL AS table_exists, (SELECT count(*)::int FROM videobot_stars_ledger WHERE kind='paid') AS paid_count\")).rows[0];\nconsole.log('AFTER_FAILED_DEPLOY='+JSON.stringify(a));\n}finally{await p.end()}\nNODE\nprintf 'READY_CODE_MARKERS:'\ndocker logs \"$cid\" 2>&1 | grep -Eo '(CREATOR_DM_POLL_READY=PASS|STICKER_SHOP_HTTP_READY=PASS|CREATOR_MIGRATION_[A-Z_]+|VIDEO_[A-Z_]+_READY=PASS)' | sort -u | tr '\\n' ' '\nprintf '\\n'\n"
+  }
+}
