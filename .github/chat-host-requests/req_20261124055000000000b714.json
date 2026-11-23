@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nlog=/tmp/video-two-build-v2.log\ntest -s \"$log\" || exit 71\nif grep -qi 'ERR_PNPM_OUTDATED_LOCKFILE' \"$log\"; then exit 101; fi\nif grep -Eqi 'Cannot find matching keyid|corepack|signature' \"$log\"; then exit 102; fi\nif grep -Eqi 'ERR_PNPM_FETCH|ERR_PNPM_NO_MATCHING_VERSION' \"$log\"; then exit 103; fi\nif grep -Eqi 'ERR_PNPM|pnpm.*ERROR' \"$log\"; then exit 104; fi\nif grep -Eqi 'Could not resolve|No matching export|Cannot resolve' \"$log\"; then exit 105; fi\nif grep -Eqi 'No such file or directory|ENOENT|not found' \"$log\"; then exit 106; fi\nif grep -Eqi 'Cannot find module|ERR_MODULE_NOT_FOUND' \"$log\"; then exit 107; fi\nif grep -Eqi 'docker.*COPY|failed to calculate checksum|not found in context' \"$log\"; then exit 108; fi\nif grep -Eqi 'ERROR.*RUN npm install -g pnpm' \"$log\"; then exit 109; fi\nif grep -Eqi 'ERROR.*RUN pnpm install' \"$log\"; then exit 110; fi\nif grep -Eqi 'ERROR.*RUN pnpm --dir.*build' \"$log\"; then exit 111; fi\nexit 112"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
