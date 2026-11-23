@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\npg=deploy-postgres-1\ntest \"$(docker inspect \"$pg\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 61\nsql=\"SELECT CASE WHEN COUNT(*)=1 THEN 'PAID_ONLY_FOUND' ELSE 'PAID_ONLY_MISSING' END,coalesce(max(r.paid_message_id),0),coalesce(max(l.price_stars),0),coalesce(max(r.status),'missing'),coalesce(max(l.status),'missing'),coalesce(max((l.seller_user_id=788044853)::int),-1),coalesce((SELECT count(*) FROM videobot_stars_ledger t WHERE t.delivery_key='singlepaid4714_20261123:1' AND t.kind='paid'),0) FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id WHERE r.listing_id='singlepaid4714_20261123';\"\ndocker exec -e \"SQL=$sql\" \"$pg\" sh -c 'psql -X -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d videobot -At -F \"|\" -c \"$SQL\"'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
