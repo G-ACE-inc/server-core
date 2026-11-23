@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "read_only_runtime_diagnosis",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 41\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';\nimport pg from 'pg';\nconst env=process.env;\nconst pool=new pg.Pool({host:env.VIDEOBOT_DB_HOST,user:env.VIDEOBOT_DB_USER,database:env.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1});\ntry{\n const s=(await pool.query(\"SELECT current_schema() s,current_setting('search_path') p,current_database() d\")).rows[0];\n console.log('DB_TARGET='+JSON.stringify(s));\n const cols=(await pool.query(\"SELECT table_schema,table_name,column_name FROM information_schema.columns WHERE table_name='videobot_listings' AND column_name IN ('creator_terms_version','creator_terms_url','paid_video_file_size_bytes') ORDER BY table_schema,column_name\")).rows;\n console.log('ALL_LISTING_COLUMN_MATCHES='+JSON.stringify(cols));\n const rows=(await pool.query(\"SELECT table_schema,COUNT(*)::int n FROM information_schema.columns WHERE table_name='videobot_listings' GROUP BY table_schema\")).rows;\n console.log('LISTING_TABLE_SCHEMAS='+JSON.stringify(rows));\n for(const file of ['sql/019_creator_terms_version.sql','sql/023_video_legacy_purchaser_entitlement.sql']){\n  const s=fs.readFileSync('/opt/videobot/'+file,'utf8');\n  console.log('LIVE_MIGRATION='+JSON.stringify({file,present:s.length>20,hasCreatorTerms:s.includes('ADD COLUMN IF NOT EXISTS creator_terms_version')}));\n }\n const receipt=(await pool.query(\"SELECT sale_mode,status,COUNT(*)::int AS n FROM videobot_post_receipts GROUP BY sale_mode,status ORDER BY sale_mode,status\")).rows;\n console.log('SALES_RECEIPT_COUNTS='+JSON.stringify(receipt));\n}finally{await pool.end()}\nNODE\n"
+  }
+}
