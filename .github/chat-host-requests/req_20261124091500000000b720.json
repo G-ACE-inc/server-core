@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\npython3 - <<'PY'\nfrom pathlib import Path\np=Path('/tmp/gace_two_video_topic_pins_20261124.py')\ns=p.read_text()\nold=\"\"\"    AND title ~ 'ビデオ.?チャット'\"\"\"\nnew=\"\"\"    AND ((chat_id=-1002373696859 AND message_thread_id=1695)\n      OR (chat_id=-1003770334893 AND title ~ '(ビデオ|[Vv]ideo)' AND title ~ '(チャット|[Cc]hat)'))\"\"\"\nassert s.count(old)==1\ns=s.replace(old,new)\np.write_text(s)\nPY\npython3 -m py_compile /tmp/gace_two_video_topic_pins_20261124.py\npython3 /tmp/gace_two_video_topic_pins_20261124.py"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
