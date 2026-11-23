@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "EXISTING",
+    "implementation_context": "fresh_official_stars_upload_preflight",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ndocker ps --format '{{.Names}}' >/dev/null || exit 72\nfound=0\nfor p in /mnt/g /mnt/G /mnt/gdrive /media/g /home/gace/Project/Gserver/storage; do\n  if test -d \"$p\"; then\n    candidate=\"$(find \"$p\" -maxdepth 7 -type f -size +1300M -size -2000M -print -quit 2>/dev/null || true)\"\n    if test -n \"$candidate\"; then found=1; break; fi\n  fi\ndone\nif test \"$found\" = 1; then echo ORIGINAL_LARGE_VIDEO_PRESENT; exit 0; else echo ORIGINAL_LARGE_VIDEO_NOT_FOUND_IN_SCANNED_ROOTS; exit 71; fi"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
