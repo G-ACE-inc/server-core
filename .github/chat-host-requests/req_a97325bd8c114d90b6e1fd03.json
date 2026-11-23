@@ -1,0 +1,33 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot",
+      "sha": "b69612c64c22af1540b7294625658ebffa946270"
+    },
+    "command": "set -eu\nsha=9b1075b02564b5996904659ef48dadd178f87a13\nbase=create-videobot:invoice-only-9b1075b0\nnew=create-videobot:invoice-only-receipts-9b1075b0\nstage=/home/gace/.local/share/gace-create-videobot/invoice-only-receipts-9b1075b0\ntest \"$(git rev-parse HEAD)\" = b69612c64c22af1540b7294625658ebffa946270 || exit 41\ngit cat-file -e \"$sha:src/sales/pgPostingReceipts.mjs\" || exit 42\ntest -n \"$(docker image inspect \"$base\" --format '{{.Id}}')\" || exit 43\nmkdir -p \"$stage/src/sales\"\ngit show \"$sha:src/sales/pgPostingReceipts.mjs\" > \"$stage/src/sales/pgPostingReceipts.mjs\" || exit 44\ncat > \"$stage/Dockerfile\" <<'EOF'\nFROM create-videobot:invoice-only-9b1075b0\nCOPY --chown=node:node src/sales/pgPostingReceipts.mjs /opt/videobot/src/sales/pgPostingReceipts.mjs\nEOF\ndocker build --pull=false --network=none -t \"$new\" -f \"$stage/Dockerfile\" \"$stage\" >/dev/null || exit 45\nsrc=\"$(sha256sum \"$stage/src/sales/pgPostingReceipts.mjs\" | cut -d' ' -f1)\"\nlive=\"$(docker run --rm --network none --entrypoint sha256sum \"$new\" /opt/videobot/src/sales/pgPostingReceipts.mjs | cut -d' ' -f1)\"\ntest \"$src\" = \"$live\" || exit 46\nout=\"$(mktemp)\"\ntrap 'rm -f \"$out\"' EXIT\nif ! docker run --rm --network none --entrypoint node \"$new\" --test test/paidListingPublisher.test.mjs test/pgPostingReceipts.test.mjs test/videoInvoiceSales.test.mjs >\"$out\" 2>&1;then\n grep -A 22 -B 2 '^not ok' \"$out\" | head -130 || true\n tail -n 12 \"$out\"\n exit 47\nfi\ntail -n 10 \"$out\"\necho INVOICE_ONLY_IMAGE_AND_POST_RECEIPT_TEST_PASS\n"
+  }
+}
