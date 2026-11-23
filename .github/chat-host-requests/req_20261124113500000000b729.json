@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\npython3 - <<'PY'\nimport json,subprocess,sys\ndb=[s for s in subprocess.check_output(['docker','ps','--format','{{.Names}}'],text=True).splitlines() if s.startswith('deploy-') and ('postgres' in s or s.endswith('-db-1'))]\nassert len(db)==1\nsql=\"\"\"SELECT COALESCE(json_agg(row_to_json(t)),'[]'::json) FROM\n (SELECT chat_id,message_thread_id,message_id,state,pinned,(token_hash IS NOT NULL) has_token\n FROM topic_dm_entry_pins WHERE\n (chat_id=-1002373696859 AND message_thread_id=1605) OR\n (chat_id=-1003770334893 AND message_thread_id=4)) t;\"\"\"\nout=subprocess.check_output(['docker','exec','-i',db[0],'sh','-lc','psql -X -q -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -A -t'],input=sql,text=True)\nrows=json.loads(out)\nfor i,(chat,topic,path) in enumerate([(-1002373696859,1605,'/tmp/video_chat_1605_audit_20261124.json'),(-1003770334893,4,'/tmp/gay_chat_4_audit_20261124.json')]):\n matches=[r for r in rows if int(r['chat_id'])==chat and int(r['message_thread_id'])==topic]\n if len(matches)!=1:sys.exit(60+i)\n m=matches[0]\n d=json.loads(open(path).read().split('=',1)[1])['rows'][0]\n if m['state']!='published' or m['pinned'] is not True or not m['has_token']:sys.exit(62+i)\n if int(m['message_id']) not in [int(v) for v in d['history_message_ids']]:sys.exit(64+i)\n if 'normal' not in d['button_types']:sys.exit(66+i)\n if d['pin_state']!='ABSENT_FROM_PINS':sys.exit(68+i)\nprint('EXACT_EXISTING_BOT_ENTRY_REPIN_ELIGIBLE=2')\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
