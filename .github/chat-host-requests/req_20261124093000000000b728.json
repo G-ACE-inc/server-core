@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/78"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nstage=\"$(mktemp -d /tmp/gaybbs-video-repin-XXXXXX)\"\ntrap 'rm -rf \"$stage\"' EXIT\ndocker cp deploy-gaybbs-1:/app/repairTwoVideoChatPinnedEntries.mjs \"$stage/base.mjs\"\npython3 - \"$stage/base.mjs\" \"$stage/fixed.mjs\" <<'PY'\nimport pathlib,re,sys\nsrc=pathlib.Path(sys.argv[1]).read_text()\npat=r'callback_data\\s*:\\s*buttonCallback\\s*,\\s*style\\s*:\\s*[\"\\']primary[\"\\']'\nif len(re.findall(pat,src))!=3:sys.exit(81)\nout=re.sub(pat,'url: \"https://t.me/GayBBS_bot?start=p_\" + token',src)\nneedle=r'console\\.log\\([\"\\']VIDEO_ENTRY_FIXED[\"\\']\\s*,'\nif len(re.findall(needle,out))!=1:sys.exit(82)\naddition=\"\"\"try {\n  await bot.telegram.pinChatMessage(t.chatId,result.messageId,{disable_notification:true});\n} catch(e) {\n  const response=e?.response;\n  if(response?.error_code!==400||!/already pinned/i.test(response?.description??\"\"))throw e;\n}\n\"\"\"\nout=re.sub(needle,lambda m:addition+m.group(),out)\nif len(re.findall(r'await bot\\.telegram\\.pinChatMessage\\(t\\.chatId,result\\.messageId',out))!=1:sys.exit(83)\npathlib.Path(sys.argv[2]).write_text(out)\nPY\ndocker exec -i deploy-gaybbs-1 node --check --input-type=module - < \"$stage/fixed.mjs\"\ndocker exec -i -e VIDEO_TWO_TOPIC_ENTRY_APPLY=enabled -e VIDEO_TWO_TOPIC_RECOVER_GAY_ONLY=disabled deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs --input-type=module - < \"$stage/fixed.mjs\"\necho TWO_TOPIC_DIRECT_DM_REPIN=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
