@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "protect existing purchased video and verify deletable duplicate same-file offers",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 30\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport {readFileSync} from 'node:fs';\nimport pg from 'pg';\nimport {readPrivateToken} from './src/runtime/config.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nsetDefaultResultOrder('ipv4first');setDefaultAutoSelectFamily(false);\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:4500});\nconst net=createCreatorTelegramFetch();\nconst api=createTelegramBotApi({token:readPrivateToken(process.env.VIDEOBOT_TELEGRAM_TOKEN_FILE),fetchImpl:net.fetch,timeoutMs:20000});\nlet mask=0;\ntry{\n const rows=(await pool.query(`SELECT r.delivery_key,r.status,r.topic_id,r.paid_message_id,r.free_message_ids,r.sale_mode,l.paid_video_file_id,l.title,l.price_stars,l.seller_user_id,\n EXTRACT(EPOCH FROM (NOW()-r.updated_at)) AS age_seconds\n FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id\n WHERE r.status='sent' ORDER BY r.updated_at ASC`)).rows;\n const paidKeys=new Set((await pool.query(\"SELECT DISTINCT delivery_key FROM videobot_stars_ledger WHERE kind='paid' AND delivery_key IS NOT NULL\")).rows.map(r=>r.delivery_key));\n const paid=rows.filter(r=>paidKeys.has(r.delivery_key));\n if(paid.length!==1||!Number.isSafeInteger(Number(paid[0].paid_message_id)))throw Error('PAID_POST_AMBIGUOUS');\n const selected=paid[0];\n const duplicates=rows.filter(r=>r.delivery_key!==selected.delivery_key&&r.topic_id===selected.topic_id&&r.seller_user_id===selected.seller_user_id&&r.title===selected.title&&r.price_stars===selected.price_stars&&r.paid_video_file_id===selected.paid_video_file_id&&!paidKeys.has(r.delivery_key));\n if(duplicates.length<1||duplicates.length>15)throw Error('DUPLICATE_COUNT_UNSAFE');\n const invoicePaid=(await pool.query(\"SELECT COUNT(*)::int AS count FROM videobot_video_invoice_orders WHERE telegram_payment_charge_id IS NOT NULL\")).rows[0].count;\n if(invoicePaid!==0)throw Error('INVOICE_PURCHASERS_PRESENT');\n const ids=[selected.paid_message_id,...selected.free_message_ids].map(Number);\n const removeIds=duplicates.flatMap(r=>[r.paid_message_id,...(r.free_message_ids??[])].map(Number));\n if(ids.length!==3||new Set(ids).size!==3||removeIds.length!==duplicates.length*3||new Set(removeIds).size!==removeIds.length||removeIds.some(id=>ids.includes(id)||!Number.isSafeInteger(id)||id<=0))throw Error('MESSAGE_COLLISION');\n if(duplicates.some(r=>Number(r.age_seconds)>46*3600))throw Error('OLD_MESSAGES_CANNOT_DELETE');\n mask|=1;\n const chatId=-1002373696859;\n if(process.env.VIDEOBOT_VIDEO_SALE_THREAD_ID!==String(selected.topic_id))throw Error('TOPIC_CONFIGURATION_CHANGED');\n const me=await api('getMe',{});\n if(me?.is_bot!==true||me?.username?.toLowerCase()!=='createvdobot')throw Error('BOT_IDENTITY_CHANGED');\n const chat=await api('getChat',{chat_id:chatId});\n if(chat?.id!==chatId||chat?.is_forum!==true)throw Error('GROUP_NOT_VERIFIED');\n const member=await api('getChatMember',{chat_id:chatId,user_id:me.id});\n if(!['administrator','creator'].includes(member?.status)||member?.status==='administrator'&&member.can_delete_messages!==true)throw Error('DELETE_RIGHTS_UNVERIFIED');\n mask|=2;\n if(selected.sale_mode==='paid_media')mask|=4;\n if(duplicates.length>=2)mask|=8;\n if(Number(selected.paid_message_id)===4718)mask|=16;\n mask|=32;\n}finally{await net.close();await pool.end()}\nprocess.exit(mask);\nNODE"
+  }
+}
