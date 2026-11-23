@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\npython3 - <<'PY'\nimport json,sys\nfor p,tid in [('/tmp/video_chat_1605_audit_20261124.json',1605),('/tmp/gay_chat_4_audit_20261124.json',4)]:\n d=json.loads(open(p).read().split('=',1)[1])['rows'][0]\n if d['topic_id']!=tid:sys.exit(60)\n if d['post_button']=='PRESENT':sys.exit(61 if tid==1605 else 62)\n if d['post_button']!='ABSENT':sys.exit(63 if tid==1605 else 64)\n if d['pin_state'] not in ('ABSENT_FROM_PINS',):sys.exit(65 if tid==1605 else 66)\n if d['history_inspected']<1:sys.exit(67)\nprint('TWO_EXACT_TOPICS_HAVE_NO_POSTING_ENTRY')\nPY\ndb=\"$(docker ps --format '{{.Names}}' | grep -E '^deploy-.*(postgres|db).*' | head -1)\"\ncount=\"$(docker exec \"$db\" sh -lc 'psql -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -Atqc \"SELECT count(*) FROM topic_dm_entry_pins WHERE (chat_id=-1002373696859 AND message_thread_id=1605) OR (chat_id=-1003770334893 AND message_thread_id=4);\"')\"\ntest \"$count\" = \"0\" || exit 68\necho BOTH_PIN_LEDGER_ABSENT=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
