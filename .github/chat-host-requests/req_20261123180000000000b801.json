@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "native dual-mode video sale PR8 pre-production runtime preflight",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/8"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nmask=0\nif test \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true; then mask=$((mask+1)); fi\nif test -d \"$repo/.git\"; then mask=$((mask+2)); fi\nif test -f \"$root/deploy/compose.videobot.poll.yaml\"; then mask=$((mask+4)); fi\nif docker exec \"$cid\" test -f /opt/videobot/src/telegram/creatorWiring.mjs 2>/dev/null; then mask=$((mask+8)); fi\nif docker exec \"$cid\" grep -Fq getVerifiedVideoTopic /opt/videobot/owner/gateOwner.mjs 2>/dev/null; then mask=$((mask+16)); fi\nif test \"$(df -Pm \"$root\" | tail -1 | awk '{print $4}')\" -gt 500; then mask=$((mask+32)); fi\nif docker exec \"$cid\" node --version >/dev/null 2>&1; then mask=$((mask+64)); fi\nexit $((100+mask))\n"
+  }
+}
