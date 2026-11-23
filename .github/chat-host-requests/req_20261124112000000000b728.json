@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\npython3 - <<'PY'\nimport subprocess,json,sys\nps=subprocess.run(['docker','ps','--format','{{.Names}}'],capture_output=True,text=True,check=True)\ndb=[s for s in ps.stdout.splitlines() if s.startswith('deploy-') and ('postgres' in s or s.endswith('-db-1'))]\nassert len(db)==1\nquery=\"\"\"SELECT COALESCE(json_agg(row_to_json(t)),'[]'::json) FROM (\n SELECT chat_id,message_thread_id,state,pinned,message_id,\n  (token_hash IS NOT NULL) AS has_token\n FROM topic_dm_entry_pins WHERE\n  (chat_id=-1002373696859 AND message_thread_id=1605)\n  OR (chat_id=-1003770334893 AND message_thread_id=4)) t;\"\"\"\np=subprocess.run(['docker','exec','-i',db[0],'sh','-lc','psql -X -q -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -A -t'],\n input=query,capture_output=True,text=True,check=True)\nrows=json.loads(p.stdout.strip())\ncode=30\nfor i,chat in enumerate((-1002373696859,-1003770334893)):\n r=[z for z in rows if int(z['chat_id'])==chat]\n if len(r)>1:sys.exit(90)\n if not r:continue\n code+=1<<i\n if r[0]['state']=='published':code+=1<<(i+2)\n if r[0]['message_id'] is not None:code+=1<<(i+4)\n if r[0]['pinned'] is True:code+=1<<(i+6)\nsys.exit(code)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
