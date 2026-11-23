@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 60\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport {readFileSync} from 'node:fs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport pg from 'pg';\nimport {readPrivateToken} from '/opt/videobot/src/runtime/config.mjs';\nimport {createTelegramBotApi} from '/opt/videobot/src/telegram/botApi.mjs';\nimport {createCreatorTelegramFetch} from '/opt/videobot/src/runtime/creatorEgress.mjs';\nimport {createGateOwner} from '/opt/videobot/owner/gateOwner.mjs';\nimport {createPostgresListingStore} from '/opt/videobot/src/sales/pgListings.mjs';\nimport {createPostgresPostingReceiptStore} from '/opt/videobot/src/sales/pgPostingReceipts.mjs';\nimport {publishVideoListing} from '/opt/videobot/src/telegram/paidListingPublisher.mjs';\nconst env=process.env;\nconst listingId='starsrepair4701_20261123';\nconst originalPaidMessage=4701;\nconst dburl=env.VIDEOBOT_DATABASE_URL_FILE\n ? readPrivateToken(env.VIDEOBOT_DATABASE_URL_FILE)\n : 'postgresql://'+encodeURIComponent(env.VIDEOBOT_DB_USER)+':'+encodeURIComponent(readFileSync(env.VIDEOBOT_DB_PASSWORD_FILE,'utf8').trim())+'@'+env.VIDEOBOT_DB_HOST+':5432/videobot';\nconst pool=new pg.Pool({connectionString:dburl,max:2,connectionTimeoutMillis:5000});\nconst outbound=createCreatorTelegramFetch(globalThis.fetch);\nconst api=createTelegramBotApi({token:readPrivateToken(env.VIDEOBOT_TELEGRAM_TOKEN_FILE),fetchImpl:outbound.fetch,timeoutMs:25000,baseUrl:env.VIDEOBOT_LOCAL_API_URL??'https://api.telegram.org'});\ntry{\n const prior=await pool.query(\"SELECT l.* FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id WHERE r.paid_message_id=$1 AND r.status='sent'\",[originalPaidMessage]);\n if(prior.rowCount!==1)throw Error('ORIGINAL_VERIFIED_RECEIPT_MISSING');\n const l=prior.rows[0];\n if(l.status!=='published'||l.price_stars!==10||\n    !l.rights_verified||!l.adult_consent_verified||!l.fee_terms_accepted_at||\n    l.management_fee_bps!==3000||!l.paid_video_file_id||!l.thumbnail_file_id||!l.sample_file_id)\n   throw Error('ORIGINAL_SALE_RIGHTS_OR_PRICE_CHANGED');\n if(Number(env.VIDEOBOT_VIDEO_SALE_THREAD_ID)!==1695)throw Error('ORIGINAL_TOPIC_CHANGED');\n const store=createPostgresPostingReceiptStore(pool);\n const priorReceipt=await store.read(listingId+':1');\n if(priorReceipt){\n  if(priorReceipt.status==='sent'){\n   console.log('IDEMPOTENT_ALREADY_SENT=YES');\n   console.log('PAID_MESSAGE_ID='+priorReceipt.paidMessageId);\n   process.exitCode=0;\n  } else {throw Error('PREVIOUS_ATTEMPT_REQUIRES_RECONCILIATION');}\n } else {\n  const added=await pool.query(\n    \"INSERT INTO videobot_listings (listing_id,seller_user_id,revision,title,description,price_stars,price_mode,thumbnail_file_id,sample_file_id,sample_duration_seconds,paid_video_file_id,rights_verified,adult_consent_verified,fee_terms_accepted_at,management_fee_bps,fee_policy_id,status) SELECT $1,seller_user_id,1,title,description,price_stars,price_mode,thumbnail_file_id,sample_file_id,sample_duration_seconds,paid_video_file_id,rights_verified,adult_consent_verified,fee_terms_accepted_at,management_fee_bps,fee_policy_id,'ready' FROM videobot_listings WHERE listing_id=$2 AND status='published' AND price_stars=10 AND rights_verified=TRUE AND adult_consent_verified=TRUE AND fee_terms_accepted_at IS NOT NULL AND management_fee_bps=3000 ON CONFLICT(listing_id) DO NOTHING RETURNING listing_id\",\n    [listingId,l.listing_id]);\n  const listings=createPostgresListingStore(pool);\n  const candidate=await listings.getOwned(Number(l.seller_user_id),listingId);\n  if(!candidate||candidate.status!=='ready'||candidate.revision!==1||\n     candidate.paidVideo?.fileId!==l.paid_video_file_id ||\n     candidate.thumbnail?.fileId!==l.thumbnail_file_id ||\n     candidate.sample?.fileId!==l.sample_file_id)\n    throw Error('REPAIR_LISTING_NOT_EXACT_OR_ALREADY_MODIFIED');\n  const owner=await createGateOwner({telegramApi:api,pool,env});\n  const topic=await owner.getVerifiedVideoTopic();\n  if(topic.chatId!==-1002373696859||topic.threadId!==1695||\n     topic.purpose!=='video_sale'||topic.verified!==true)\n    throw Error('PUBLISH_TOPIC_NOT_VERIFIED');\n  console.log('PREFLIGHT_NATIVE_PAID_MEDIA_OK=YES');\n  const receipt=await publishVideoListing({\n   listing:{...candidate,ownerConfirmedPublish:true,feeTermsAccepted:true},\n   getVerifiedVideoTopic:owner.getVerifiedVideoTopic,\n   verifyMembership:owner.verifyMembership,\n   verifyReview:owner.verifyReview,\n   verifyRelease:owner.verifyRelease,\n   store,telegramApi:api\n  });\n  if(receipt.posted!==true||!Number.isSafeInteger(receipt.paidMessageId))\n    throw Error('NATIVE_PAID_MEDIA_ACK_NOT_VERIFIED');\n  const committed=await pool.query(\"UPDATE videobot_listings SET status='published',revision=revision+1,updated_at=NOW() WHERE listing_id=$1 AND revision=1 AND status='ready' AND EXISTS (SELECT 1 FROM videobot_post_receipts r WHERE r.delivery_key=$2 AND r.status='sent' AND r.paid_message_id=$3) RETURNING listing_id\",[listingId,listingId+':1',receipt.paidMessageId]);if(committed.rowCount!==1)throw Error('PUBLISH_READBACK_STATE_TRANSITION_FAILED');\n  const readback=await store.read(listingId+':1');\n  const current=await listings.getOwned(Number(l.seller_user_id),listingId);\n  if(readback?.status!=='sent'||readback?.paidMessageId!==receipt.paidMessageId||current?.status!=='published')\n    throw Error('PAID_POST_READBACK_NOT_CONFIRMED');\n  console.log('NATIVE_STARS_PAID_POST=PASS');\n  console.log('NEW_PAID_MESSAGE_ID='+receipt.paidMessageId);\n  console.log('NEW_FREE_MESSAGE_IDS='+receipt.freeMessageIds.join(','));\n  console.log('EXISTING_4691_4701_UNTOUCHED=YES');\n }\n}catch(error){\n console.error('STARS_REPAIR_STATE=FAIL '+String(error?.message??'unknown').replace(/https?:\\/\\/\\S+/g,'[redacted]').slice(0,140));\n process.exitCode=75;\n}finally{await pool.end().catch(()=>{});await outbound.close().catch(()=>{});}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
