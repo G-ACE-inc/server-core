@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ndocker ps --format '{{.Names}}' | grep -Fx 'deploy-gaybbs-1' >/dev/null\ndocker exec -i deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs -e '(async()=>{const fs=require(\"node:fs\"); const path=process.env.BOT_TOKEN_FILE; const token=(path?fs.readFileSync(path,\"utf8\").trim():process.env.BOT_TOKEN);if(!token)process.exit(42);const base=\"https://api.telegram.org/bot\"+token+\"/\";const chatIds=[-1003847210571,-1002373696859,-1003770334893];const scopes=[{type:\"default\"},{type:\"all_private_chats\"},{type:\"all_group_chats\"},{type:\"all_chat_administrators\"},...chatIds.flatMap(chat_id=>[{type:\"chat\",chat_id},{type:\"chat_administrators\",chat_id}])];async function call(method,p){const r=await fetch(base+method,{method:\"POST\",headers:{\"content-type\":\"application/json\"},body:JSON.stringify(p)});const d=await r.json();if(!d.ok)throw Error(method+\":\"+d.error_code);return d.result;}const me=await call(\"getMe\",{});if(me.username?.toLowerCase()!==\"gaybbs_bot\")throw Error(\"WRONG_BOT\");let done=0;for(const scope of scopes){for(const language_code of [\"\",\"ja\",\"en\"]){await call(\"setMyCommands\",{commands:[],scope,language_code});const after=await call(\"getMyCommands\",{scope,language_code});if(after.length)throw Error(\"COMMANDS_REMAIN:\"+scope.type+\":\"+language_code);done++;}}console.log(JSON.stringify({bot:me.username,scopes:scopes.length,cleared:done,command_readback:\"PASS\"}));})();'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
