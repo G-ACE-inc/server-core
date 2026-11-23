@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';import pg from 'pg';\nimport {readPrivateToken} from './src/runtime/config.mjs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createGateOwner} from './owner/gateOwner.mjs';\nconst e=process.env,net=createCreatorTelegramFetch();\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1});\ntry{\nconst api=createTelegramBotApi({token:readPrivateToken(e.VIDEOBOT_TELEGRAM_TOKEN_FILE),fetchImpl:net.fetch,timeoutMs:20000});\nconst seller=(await pool.query(\"SELECT seller_user_id FROM videobot_listings WHERE listing_id='v26nov24invoice' AND status='published'\")).rows[0];\nif(!seller)throw Error('NEW_PUBLICATION_MISSING');\nconst owner=await createGateOwner({pool,telegramApi:api});\nconst topic=await owner.getVerifiedVideoTopic({purpose:'video_sale',sellerId:String(seller.seller_user_id),listingId:'v26nov24invoice'});\nif(!topic?.verified||topic?.purpose!=='video_sale'||topic?.board!=='video_chat'||!Number.isSafeInteger(topic.chatId))throw Error('TARGET_NOT_VERIFIED');\nconst identity=await api('getMe',{});\nconst membership=await api('getChatMember',{chat_id:topic.chatId,user_id:identity.id});\nconsole.log('BOT_MODERATION='+JSON.stringify({status:membership.status,canDelete:membership.can_delete_messages===true,canPost:membership.can_post_messages===true}));\nconst old=(await pool.query(\"SELECT r.updated_at,r.status FROM videobot_post_receipts r WHERE r.sale_mode='paid_media' AND r.status='sent' ORDER BY r.updated_at\")).rows;\nconsole.log('OLD_POST_AGE='+JSON.stringify({n:old.length,atLeastOneOlderThan48h:old.some(x=>Date.now()-new Date(x.updated_at).getTime()>48*3600*1000)}));\n}finally{await net.close();await pool.end();}\nNODE\n"
+  }
+}
