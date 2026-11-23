@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/72"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"deploy/state/help-compact-profile-stage-20261123\"\ntest ! -e \"$stage\"\nmkdir -m 700 \"$stage\"\ngh run download 45090429326 -R seigo-gace/GateApp-Bot -n gaybbs-profile-bundle -D \"$stage\" >/dev/null\ntest -s \"$stage/gaybbs.mjs\"\npython3 - <<'PY'\nimport pathlib,subprocess,hashlib,difflib,json,sys\nstage=pathlib.Path(\"deploy/state/help-compact-profile-stage-20261123/gaybbs.mjs\")\nnew=stage.read_text()\np=subprocess.run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"cat\",\"/app/gaybbs.mjs\"],capture_output=True,timeout=50)\nif p.returncode:sys.exit(60)\nold=p.stdout.decode()\ndef chapters(s):\n sections={}\n positions=[]\n import re\n for m in re.finditer(r\"^// (?:src|artifacts/bot/src)/[^\\n]+$\",s,re.M):positions.append((m.start(),m.group(0)[3:]))\n for i,(start,name) in enumerate(positions):\n  sections[name]=s[start:(positions[i+1][0] if i+1<len(positions) else len(s))]\n return sections\nold_ch=chapters(old);new_ch=chapters(new)\nchanged=sorted(x for x in (set(old_ch)|set(new_ch)) if old_ch.get(x)!=new_ch.get(x))\nobj={\"current_sha256\":hashlib.sha256(p.stdout).hexdigest(),\"artifact_sha256\":hashlib.sha256(new.encode()).hexdigest(),\"current_bytes\":len(p.stdout),\"artifact_bytes\":len(new.encode()),\"chapter_count_before\":len(old_ch),\"chapter_count_after\":len(new_ch),\"changed_chapters\":changed[:80],\"changed_total\":len(changed),\"artifact_has_current_profile_route\":'startCompactProfileEditor(ctx)' in new,\"artifact_has_current_help_details\":'【どんな機能？】' in new,\"artifact_has_startless_guard\":'STARTLESS_REPEATED_START_LINK_FORBIDDEN' in new}\nb=\"HELP_COMPACT_ARTIFACT_DEPLOY_PREFLIGHT=\"+json.dumps(obj,ensure_ascii=False,separators=(\",\",\":\"))\nr=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/72/comments\",\"-f\",\"body=\"+b],capture_output=True,text=True,timeout=45)\nif r.returncode:sys.exit(61)\nprint(\"HELP_COMPACT_ARTIFACT_RUNTIME_DIFF_RECORDED=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
