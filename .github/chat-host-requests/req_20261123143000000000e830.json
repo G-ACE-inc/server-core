@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true || exit 60\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'JS'\nimport {readPrivateToken} from '/opt/videobot/src/runtime/config.mjs';\nimport {createTelegramBotApi} from '/opt/videobot/src/telegram/botApi.mjs';\nimport {createCreatorTelegramFetch} from '/opt/videobot/src/runtime/creatorEgress.mjs';\nconst e=process.env,net=createCreatorTelegramFetch();\ntry{\n const api=createTelegramBotApi({token:readPrivateToken(e.VIDEOBOT_TELEGRAM_TOKEN_FILE),fetchImpl:net.fetch,timeoutMs:25000,baseUrl:e.VIDEOBOT_LOCAL_API_URL??'https://api.telegram.org'});\n const c=await api('getChat',{chat_id:-1002373696859});\n console.log('VIDEO_CHAT_TYPE='+c.type);\n console.log('IS_FORUM='+Boolean(c.is_forum));\n console.log('CAN_SEND_PAID_MEDIA_PRESENT='+Object.hasOwn(c,'can_send_paid_media'));\n console.log('CAN_SEND_PAID_MEDIA='+String(c.can_send_paid_media));\n console.log('HAS_PROTECTED_CONTENT='+Boolean(c.has_protected_content));\n console.log('VIDEO_SALE_THREAD_CONFIG='+String(e.VIDEOBOT_VIDEO_SALE_THREAD_ID??'missing'));\n}finally{await net.close()}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
