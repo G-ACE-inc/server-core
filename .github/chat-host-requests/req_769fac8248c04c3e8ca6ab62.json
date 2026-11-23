@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 41\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';\nimport pg from 'pg';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {readPrivateToken} from './src/runtime/config.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createVideoInvoiceSalesFlow} from './src/telegram/videoInvoiceSales.mjs';\nimport {createPostgresVideoInvoiceStore} from './src/sales/pgVideoInvoiceOrders.mjs';\nconst e=process.env;\nif(e.VIDEOBOT_DB_NAME!=='videobot')throw Error('VIDEO_BUYER_DB_OWNER_MISMATCH');\nconst pool=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,\n database:e.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1});\nconst net=createCreatorTelegramFetch();\ntry{\n const reissue=(await pool.query(\"SELECT l.status,r.sale_mode,r.status receipt_status FROM videobot_listings l JOIN videobot_post_receipts r ON l.listing_id=r.listing_id WHERE l.listing_id='v26nov24invoice'\")).rows;\n if(reissue.length!==1||reissue[0].status!=='published'||reissue[0].sale_mode!=='invoice'||reissue[0].receipt_status!=='sent')throw Error('NEW_INVOICE_OFFER_NOT_VERIFIED');\n const buyer=(await pool.query(\"SELECT DISTINCT p.buyer_user_id FROM videobot_stars_ledger p JOIN videobot_listings old ON old.listing_id=p.listing_id JOIN videobot_listings newer ON newer.seller_user_id=old.seller_user_id AND newer.paid_video_file_id=old.paid_video_file_id WHERE p.kind='paid' AND newer.listing_id='v26nov24invoice'\")).rows;\n if(buyer.length!==1)throw Error('HISTORIC_BUYER_CARDINALITY_UNVERIFIED');\n const buyerId=Number(buyer[0].buyer_user_id);\n if(!Number.isSafeInteger(buyerId)||buyerId<=0)throw Error('HISTORIC_BUYER_ID_INVALID');\n const store=createPostgresVideoInvoiceStore(pool);\n const original=createTelegramBotApi({token:readPrivateToken(e.VIDEOBOT_TELEGRAM_TOKEN_FILE),fetchImpl:net.fetch,timeoutMs:25000});\n const api=async(method,params)=>{if(method!=='sendVideo'||params?.chat_id!==buyerId||params?.protect_content!==false)throw Error('HISTORIC_BUYER_ONLY_VIDEO_DELIVERY_ALLOWED');return original(method,params)};\n const old=(await pool.query(\"SELECT COUNT(*)::int n FROM videobot_stars_ledger WHERE kind='paid'\")).rows[0].n;\n const result=await createVideoInvoiceSalesFlow({api,store}).purchase(buyerId,'v26nov24invoice',1);\n const state=(await pool.query(\"SELECT status,delivered_message_id FROM videobot_video_legacy_deliveries WHERE delivery_key='v26nov24invoice:1' AND buyer_user_id=$1\",[buyerId])).rows[0];\n const newPaid=(await pool.query(\"SELECT COUNT(*)::int n FROM videobot_stars_ledger WHERE kind='paid'\")).rows[0].n;\n console.log('LEGACY_BUYER_RESULT='+JSON.stringify({alreadyPurchased:result.alreadyPurchased===true,delivered:result.delivered===true,deliveryUnknown:result.deliveryUnknown===true,state:state?.status??null,hasDeliveryMessage:state?.delivered_message_id!=null,ledgerUnchanged:old===newPaid}));\n if(result.alreadyPurchased!==true||result.delivered!==true||state?.status!=='delivered'||state?.delivered_message_id==null||old!==newPaid)throw Error('LEGACY_BUYER_FULL_VIDEO_NOT_VERIFIED_KEEP_OLD_POST');\n}finally{await net.close();await pool.end()}\nNODE\n"
+  }
+}
