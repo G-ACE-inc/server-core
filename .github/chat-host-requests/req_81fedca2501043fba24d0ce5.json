@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nnew=create-videobot:invoice-only-9b1075b0\ntest -n \"$(docker image inspect \"$new\" --format '{{.Id}}')\" || exit 41\nout=\"$(mktemp)\"\ntrap 'rm -f \"$out\"' EXIT\nset +e\ndocker run --rm --network none --entrypoint node \"$new\" --test test/paidListingPublisher.test.mjs test/pgPostingReceipts.test.mjs test/videoInvoiceSales.test.mjs >\"$out\" 2>&1\nrc=$?\nset -e\nprintf 'INVOICE_IMAGE_TEST_EXIT=%s\\n' \"$rc\"\nif test \"$rc\" -ne 0;then\n grep -A 20 -B 2 '^not ok' \"$out\" | head -110 || true\n tail -n 12 \"$out\"\n exit 48\nfi\necho INVOICE_IMAGE_TEST_PASS\n"
+  }
+}
