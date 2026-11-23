@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 30\ndocker exec -i \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';import pg from 'pg';\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:4500});\ntry{\n const res=await pool.query(`SELECT r.*,l.seller_user_id,l.title,l.price_stars,l.status listing_status,l.paid_video_file_id,\n l.thumbnail_file_id,l.sample_file_id,l.sample_duration_seconds,l.rights_verified,l.adult_consent_verified,\n l.fee_terms_accepted_at,l.management_fee_bps,l.fee_policy_id\n FROM videobot_post_receipts r JOIN videobot_listings l USING(listing_id)\n WHERE r.delivery_key IN\n (SELECT DISTINCT delivery_key FROM videobot_stars_ledger WHERE kind='paid')`);\n const paid=(await pool.query(\"SELECT COUNT(DISTINCT buyer_user_id)::int AS buyers,COUNT(*)::int AS payments FROM videobot_stars_ledger WHERE kind='paid'\")).rows[0];\n const all=(await pool.query(\"SELECT COUNT(*)::int AS n FROM videobot_post_receipts WHERE status='sent'\")).rows[0];\n const o=(await pool.query(\"SELECT COUNT(*)::int AS n FROM videobot_video_invoice_orders WHERE telegram_payment_charge_id IS NOT NULL\")).rows[0];\n const cols=(await pool.query(\"SELECT column_name FROM information_schema.columns WHERE table_name='videobot_listings' AND table_schema='public'\")).rows.map(r=>r.column_name);\n if(res.rows.length!==1)process.exit(31);\n let code=0;\n const row=res.rows[0];\n if(paid.buyers===1)code|=1;\n if(paid.payments>0)code|=2;\n if(all.n===1)code|=4;\n if(all.n>1)code|=8;\n if(o.n===0)code|=16;\n if(row.rights_verified===true&&row.adult_consent_verified===true)code|=32;\n if(row.fee_terms_accepted_at!=null&&Number(row.management_fee_bps)===3000)code|=64;\n if(row.paid_video_file_id&&row.sample_file_id&&row.thumbnail_file_id&&Number(row.sample_duration_seconds)<=30&&row.sample_file_id!==row.paid_video_file_id)code|=128;\n process.exitCode=code;\n}finally{await pool.end()}\nNODE"
+  }
+}
