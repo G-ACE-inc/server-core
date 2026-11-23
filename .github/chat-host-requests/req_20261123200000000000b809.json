@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/8"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nrepo=/home/gace/Project/Gserver/projects/TGtumbler/create-videobot\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nhead=cb57a97b304e9585097904916192135cdfb9296b\nstage=\"$root/.releases/8e35800be335a61d8910b066d2130a05a8dcf9a8/video-dualmode-three-way-stage\"\ntest -d \"$stage/live\" && test -d \"$stage/merged\" || exit 31\ngit -C \"$repo\" fetch --no-tags origin feat/video-paidmedia-invoice-dual-mode-20261124 >/dev/null 2>&1 || exit 32\ntest \"$(git -C \"$repo\" rev-parse FETCH_HEAD)\" = \"$head\" || exit 33\ngit -C \"$repo\" show \"$head:scripts/stage_video_invoice_overlay.py\" > \"$stage/overlay.py\" || exit 34\npython3 -B \"$stage/overlay.py\" \"$stage\" || exit 35\nfor p in src/telegram/paidListingPublisher.mjs src/telegram/creatorBot.mjs src/telegram/creatorWiring.mjs src/sales/pgPostingReceipts.mjs src/sales/pgStarsLedger.mjs src/runtime/creatorMigrate.mjs src/runtime/creatorPollingMain.mjs src/telegram/videoInvoiceSales.mjs src/sales/pgVideoInvoiceOrders.mjs; do\n  docker run --rm --network none -v \"$stage/merged:/mnt:ro\" --entrypoint node create-videobot:local-poll --check \"/mnt/$p\" >/dev/null || exit 36\ndone\ntest -s \"$stage/merged/sql/022_video_invoice_fallback.sql\" || exit 37\necho VIDEO_DUALMODE_STAGE_PARSE_PASS\n"
+  }
+}
