@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/72"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest -s deploy/state/help-compact-final-20261123/gaybbs.mjs\ntest ! -e deploy/state/help-compact-final-20261123/gaybbs-target-only.mjs\npython3 - <<'PY'\nimport pathlib,subprocess,hashlib,re,json,sys\nstage=pathlib.Path(\"deploy/state/help-compact-final-20261123\")\nnew=(stage/\"gaybbs.mjs\").read_text()\np=subprocess.run([\"docker\",\"exec\",\"deploy-gaybbs-1\",\"cat\",\"/app/gaybbs.mjs\"],capture_output=True,timeout=50)\nif p.returncode:sys.exit(60)\nold=p.stdout.decode()\ndef chapters(s):\n markers=list(re.finditer(r\"^// src/[^\\n]+$\",s,re.M))\n return {m.group(0)[3:]:(m.start(),markers[i+1].start() if i+1<len(markers) else len(s)) for i,m in enumerate(markers)}\nbefore=chapters(old);after=chapters(new)\nwanted=(\"src/bot/operationHelpHandlers.ts\",\"src/gaybbsBot.ts\")\nif len(before)<100 or len(before)!=len(after) or set(before)!=set(after):sys.exit(61)\nfor name in wanted:\n if name not in before or name not in after:sys.exit(62)\nout=old\nfor name in wanted:\n start,end=chapters(out)[name];first,last=after[name]\n out=out[:start]+new[first:last]+out[end:]\nmix=chapters(out)\nchanged=sorted(name for name in before if old[slice(*before[name])]!=out[slice(*mix[name])])\nif changed!=sorted(wanted):sys.exit(63)\nif \"STARTLESS_REPEATED_START_LINK_FORBIDDEN\" not in out:sys.exit(64)\nfor phrase in (\"startCompactProfileEditor(ctx)\",\"registerOperationHelpHandlers\",\"help:open:\",\"sectionText\"):\n if phrase not in out:sys.exit(65)\noldhelp=old[slice(*before[\"src/bot/operationHelpHandlers.ts\"])]\nnewhelp=out[slice(*mix[\"src/bot/operationHelpHandlers.ts\"])]\nif \"startProfileEditor(ctx)\" not in oldhelp or \"startProfileEditor(ctx)\" in newhelp:sys.exit(66)\n(stage/\"gaybbs-target-only.mjs\").write_text(out)\nobj={\"current_sha256\":hashlib.sha256(p.stdout).hexdigest(),\"new_artifact_sha256\":hashlib.sha256(new.encode()).hexdigest(),\"target_only_sha256\":hashlib.sha256(out.encode()).hexdigest(),\"changed_chapters\":changed,\"all_other_chapters_byte_identical\":True,\"current_size\":len(old),\"candidate_size\":len(out),\"profile_route_old_removed\":True,\"includes_no_repeat_start_guard\":True}\nr=subprocess.run([\"gh\",\"api\",\"repos/seigo-gace/GateApp-Bot/issues/72/comments\",\"-f\",\"body=HELP_PROFILE_TARGET_ONLY_STAGE=\"+json.dumps(obj,ensure_ascii=False,separators=(\",\",\":\"))],capture_output=True,text=True,timeout=45)\nif r.returncode:sys.exit(67)\nprint(\"HELP_PROFILE_TARGET_ONLY_BUNDLE_STAGED=PASS\")\nPY\ndocker exec -i deploy-gaybbs-1 node --check --input-type=module - < deploy/state/help-compact-final-20261123/gaybbs-target-only.mjs\necho \"HELP_PROFILE_PATCHED_RUNTIME_SYNTAX=PASS\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
