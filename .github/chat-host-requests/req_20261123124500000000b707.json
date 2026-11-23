@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/74"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nbranch=\"fix/video-chat-two-topic-pinned-doorways-20261123\"\ngit fetch --no-tags origin \"$branch\"\nhead=\"$(git rev-parse FETCH_HEAD)\"\ntest \"$head\" = \"ff6a2059d7110eafc137ad7bdd73990e9d39c7dd\"\nworktree=\"$PWD/.worktrees/video-two-topic-doorway-20261123\"\nif test ! -d \"$worktree\"; then\n mkdir -p \"$PWD/.worktrees\"\n git worktree add --detach \"$worktree\" \"$head\"\nfi\ntest \"$(git -C \"$worktree\" rev-parse HEAD)\" = \"$head\"\ntest -z \"$(git -C \"$worktree\" status --porcelain --untracked-files=all)\"\ndocker build --progress=plain -t gace-gaybbs-video-doorway-repair:20261123 -f \"$worktree/artifacts/bot/deploy/Dockerfile.gaybbs\" \"$worktree\"\ncontainer=\"$(docker create gace-gaybbs-video-doorway-repair:20261123)\"\ntrap 'docker rm \"$container\" >/dev/null 2>&1 || true' EXIT\ndocker cp \"$container:/app/repairTwoVideoChatPinnedEntries.mjs\" \"$worktree/.worktreescript.mjs\"\ndocker cp \"$worktree/.worktreescript.mjs\" deploy-gaybbs-1:/app/repairTwoVideoChatPinnedEntries.mjs\nrm \"$worktree/.worktreescript.mjs\"\ndocker exec deploy-gaybbs-1 node --check /app/repairTwoVideoChatPinnedEntries.mjs\ndocker exec deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs /app/repairTwoVideoChatPinnedEntries.mjs\necho VIDEO_TOPIC_PREFLIGHT=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
