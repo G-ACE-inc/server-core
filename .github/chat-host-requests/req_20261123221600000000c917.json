@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "purpose_cu_aligned": true,
+    "cu_verified": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\npg=deploy-postgres-1\nsql=\"SELECT CASE WHEN COUNT(*)=1 AND max(r.paid_message_id)=4718 AND max(r.status)='sent' AND max(l.status)='published' AND max(l.price_stars)=10 THEN 'DIRECT_NATIVE_4718_READBACK_PASS' ELSE 'DIRECT_NATIVE_4718_READBACK_FAIL' END FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id WHERE r.listing_id='directpaidprotected_20261123';\"\nout=\"$(docker exec -e \"SQL=$sql\" \"$pg\" sh -c 'psql -X -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d videobot -At -c \"$SQL\"')\";echo \"$out\";test \"$out\" = DIRECT_NATIVE_4718_READBACK_PASS\nsql2=\"SELECT COUNT(*) FROM videobot_post_receipts WHERE paid_message_id IN (4691,4701,4714,4715,4717) AND status='sent';\"\nout2=\"$(docker exec -e \"SQL=$sql2\" \"$pg\" sh -c 'psql -X -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d videobot -At -c \"$SQL\"')\";echo \"ORIGINAL_PAID_POST_RECEIPTS=$out2\";test \"$out2\" = 5\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
