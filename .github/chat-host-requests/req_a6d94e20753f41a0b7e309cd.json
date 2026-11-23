@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 41\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';\nimport pg from 'pg';\nimport {readPrivateToken} from './src/runtime/config.mjs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createGateOwner} from './owner/gateOwner.mjs';\nconst e=process.env;if(e.VIDEOBOT_DB_NAME!=='videobot')throw Error('DATABASE_OWNER_NOT_VERIFIED');\nconst p=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1});\nconst net=createCreatorTelegramFetch();\ntry {\n const api=createTelegramBotApi({token:readPrivateToken(e.VIDEOBOT_TELEGRAM_TOKEN_FILE),fetchImpl:net.fetch,timeoutMs:25000});\n const latest=(await p.query(\"SELECT r.delivery_key,r.topic_id,r.status receipt_status,r.sale_mode,l.status listing_status,l.seller_user_id,l.paid_video_file_id FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id WHERE r.delivery_key='v26nov24invoice:1'\")).rows[0];\n if(!latest||latest.receipt_status!=='sent'||latest.sale_mode!=='invoice'||latest.listing_status!=='published')throw Error('NEW_OFFER_NOT_VERIFIED');\n const purchaseKeys=(await p.query(\"SELECT DISTINCT delivery_key FROM videobot_stars_ledger WHERE kind='paid' AND delivery_key IS NOT NULL\")).rows.map(x=>x.delivery_key);\n if(purchaseKeys.length!==1)throw Error('PAID_KEYS_AMBIGUOUS');\n const buyerStatus=(await p.query(\"SELECT status FROM videobot_video_legacy_deliveries WHERE delivery_key='v26nov24invoice:1'\")).rows;\n if(buyerStatus.length!==1||!['delivery_unknown','delivered'].includes(buyerStatus[0].status))throw Error('BUYER_RIGHTS_RECONCILIATION_PENDING');\n const source=(await p.query(\"SELECT r.delivery_key,r.listing_id,r.topic_id,r.status,r.free_message_ids,r.paid_message_id,l.seller_user_id,l.paid_video_file_id FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id WHERE r.sale_mode='paid_media' AND r.status='sent' ORDER BY r.delivery_key\")).rows;\n if(source.length!==6)throw Error('OLD_OFFER_COUNT_CHANGED');\n if(!source.some(x=>x.delivery_key===purchaseKeys[0]))throw Error('PURCHASED_OLD_OFFER_MISSING');\n if(source.some(x=>x.topic_id!==latest.topic_id||x.seller_user_id!==latest.seller_user_id||x.paid_video_file_id!==latest.paid_video_file_id||x.free_message_ids?.length!==2||!x.paid_message_id))throw Error('OLD_OFFER_OWNER_OR_MEDIA_MISMATCH');\n const owner=await createGateOwner({pool:p,telegramApi:api});\n const topic=await owner.getVerifiedVideoTopic({purpose:'video_sale',sellerId:String(latest.seller_user_id),listingId:'v26nov24invoice'});\n if(topic?.verified!==true||topic?.purpose!=='video_sale'||topic?.board!=='video_chat'||topic?.threadId!==Number(latest.topic_id)||!Number.isSafeInteger(topic.chatId)||topic.chatId>=0)throw Error('TELEGRAM_TOPIC_OWNER_UNVERIFIED');\n const targets=source.filter(x=>!purchaseKeys.includes(x.delivery_key));\n if(targets.length!==source.length-1)throw Error('NONPURCHASED_COUNT_UNEXPECTED');\n let removed=0,kept=1,fullyDeleted=0,failures=0;\n for(const item of targets){\n   let ok=true;\n   const ids=[Number(item.paid_message_id),...item.free_message_ids.map(Number).reverse()];\n   for(const messageId of ids){\n     try{\n       const result=await api('deleteMessage',{chat_id:topic.chatId,message_id:messageId});\n       if(result!==true){ok=false;failures++;console.log('OLD_DELETE='+JSON.stringify({key:item.delivery_key,state:'ack_unknown'}));break}\n       removed++;\n     }catch{\n       ok=false;failures++;console.log('OLD_DELETE='+JSON.stringify({key:item.delivery_key,state:'failed_or_unknown'}));break;\n     }\n   }\n   if(ok){\n     fullyDeleted++;\n     // Historic delivery receipt and financial ledger never removed.\n     const siblingPurchases=purchaseKeys.some(k=>k.startsWith(item.listing_id+':'));\n     if(!siblingPurchases){\n       await p.query(\"UPDATE videobot_listings SET status='removed',updated_at=NOW() WHERE listing_id=$1 AND status='published'\",[item.listing_id]);\n     }\n   }\n }\n const afterPaid=(await p.query(\"SELECT COUNT(*)::int n FROM videobot_stars_ledger WHERE kind='paid'\")).rows[0].n;\n const preserve=(await p.query(\"SELECT COUNT(*)::int n FROM videobot_post_receipts WHERE delivery_key=$1 AND status='sent' AND sale_mode='paid_media'\",[purchaseKeys[0]])).rows[0].n;\n if(afterPaid<1||preserve!==1)throw Error('PAID_BUYER_HISTORY_LOST');\n console.log('CLEANUP='+JSON.stringify({preservedPurchasedPosts:kept,nonPurchasedOldPosts:targets.length,fullyDeleted,deletedMessagesAck:removed,failedTargets:failures,historyPreserved:true}));\n}finally{await net.close();await p.end()}\nNODE\n"
+  }
+}
