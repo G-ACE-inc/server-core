@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/73"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=deploy/state/help-rich-manual-20261123\ntest -s \"$stage/checkpoint.json\"\ntest -s \"$stage/build-checkpoint.json\"\ntest ! -e deploy/state/help-rich-manual-live-20261123.json\nold_sha=\"$(python3 -c 'import json;print(json.load(open(\"deploy/state/help-rich-manual-20261123/checkpoint.json\"))[\"old_sha\"])')\"\nnew_sha=\"$(python3 -c 'import json;print(json.load(open(\"deploy/state/help-rich-manual-20261123/checkpoint.json\"))[\"new_sha\"])')\"\nold_image=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:before-help-rich-manual-20261123)\"\nnew_image=\"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:help-rich-manual-20261123)\"\ntest \"$old_image\" != \"$new_image\"\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$old_image\"\ntest \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:local)\" = \"$old_image\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs|cut -d' ' -f1)\" = \"$old_sha\"\ntest \"$(sha256sum \"$stage/gaybbs-target-only.mjs\"|cut -d' ' -f1)\" = \"$new_sha\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-postgres-1)\" = true\nrollback(){ docker image tag gace-tgtumbler-gaybbs:before-help-rich-manual-20261123 gace-tgtumbler-gaybbs:local; docker compose -f deploy/gserver-compose.yaml up -d --no-deps --no-build --force-recreate gaybbs >/dev/null || true; }\ndocker image tag gace-tgtumbler-gaybbs:help-rich-manual-20261123 gace-tgtumbler-gaybbs:local\nif ! docker compose -f deploy/gserver-compose.yaml up -d --no-deps --no-build --force-recreate gaybbs >/dev/null;then rollback;exit 70;fi\nsleep 5\nif test \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" != \"$new_image\" ||\n test \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" != true ||\n test \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d' ' -f1)\" != \"$new_sha\" ||\n test \"$(docker inspect -f '{{.State.Restarting}}' deploy-gaybbs-1)\" != false ||\n test \"$(systemctl --user is-active gace-userbot-verify.service)\" != active ||\n test \"$(docker inspect -f '{{.State.Running}}' deploy-postgres-1)\" != true;then rollback;exit 71;fi\ntest \"$(docker exec deploy-gaybbs-1 stat -c '%u:%g:%a' /app/gaybbs.mjs)\" = \"1000:1000:600\" || { rollback;exit 72; }\nif ! docker exec deploy-gaybbs-1 node -e 'const s=require(\"fs\").readFileSync(\"/app/gaybbs.mjs\",\"utf8\");const a=s.indexOf(\"function registerOperationHelpHandlers(\");const b=s.indexOf(\"// src/\",a+8);const x=s.slice(a,b<0?s.length:b);if(!s.includes(\"STARTLESS_REPEATED_START_LINK_FORBIDDEN\")||!x.includes(\"startCompactProfileEditor\")||!s.includes(\"HTML\"))process.exit(77);';then rollback;exit 73;fi\nprintf '{\"state\":\"VERIFIED\",\"old_image\":\"%s\",\"new_image\":\"%s\",\"old_sha\":\"%s\",\"new_sha\":\"%s\",\"source_pr\":73,\"scope\":\"operationHelpHandlers only\"}\\n' \"$old_image\" \"$new_image\" \"$old_sha\" \"$new_sha\" > deploy/state/help-rich-manual-live-20261123.json\necho GAYBBS_RICH_HELP_LIVE_DEPLOY_AND_ROLLBACK_GUARD=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
