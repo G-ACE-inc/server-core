@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/66"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport subprocess,json,re,pathlib,os,sys\nout={}\nfor group,chat in [('video',-1002373696859),('gay',-1003770334893)]:\n matches=[]\n for page in range(8):\n  p=subprocess.run(['python3','scripts/userbot_topic_audit_client.py','--chat-id',str(chat),'--page',str(page)],capture_output=True,text=True,timeout=125)\n  if p.returncode:\n   sys.exit(61 if group=='video' else 62)\n  lines=[v.split('=',1)[1] for v in p.stdout.splitlines() if v.startswith('USERBOT_TOPIC_AUDIT=')]\n  if len(lines)!=1:sys.exit(63)\n  data=json.loads(lines[0])\n  for row in data['rows']:\n   title=row.get('title','')\n   if re.search(r'ビデオ.{0,3}(チャット|chat)|video.?chat|ビデチャ|ビデオ通話|VC専用',title,re.I):\n    matches.append(row)\n  if not data.get('has_more'):break\n if len(matches)!=1:sys.exit((70 if group=='video' else 80)+min(len(matches),9))\n out[group]=matches[0]\nbase=pathlib.Path('deploy/state/video-two-topic-20261123')\nbase.mkdir(parents=True,exist_ok=True)\ntarget=base/'audited-chat-topics.json'\nfd=os.open(target,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)\nwith os.fdopen(fd,'w') as f:json.dump(out,f,ensure_ascii=False)\nprint('TWO_VIDEO_CHAT_TOPICS_AUDITED=PASS')\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
