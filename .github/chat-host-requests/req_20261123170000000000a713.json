@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "independent Stars lock video test runtime readiness categorization",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\n# Exit code 10 local Bot API missing, 20 large MP4 missing, 30 both missing.\napi=0; media=0\nif (pgrep -af '[/]telegram-bot-api' | grep -q .) || (docker ps --format '{{.Names}}' | grep -q 'telegram-bot-api'); then api=1; fi\nif find /mnt/g /mnt/G /home/gace/Project/Gserver -type f -iname '*.mp4' -size +1000M -print -quit 2>/dev/null | grep -q .; then media=1; fi\nif [ \"$api\" -eq 0 ] && [ \"$media\" -eq 0 ]; then exit 30; fi\nif [ \"$api\" -eq 0 ]; then exit 10; fi\nif [ \"$media\" -eq 0 ]; then exit 20; fi\nprintf 'LOCAL_API_AND_LARGE_MP4_PRESENT\\n'\n"
+  }
+}
