@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/77"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nsystemctl --user is-active gace-userbot-verify.service | grep -qx active || exit 71\nsystemctl --user is-enabled gace-userbot-verify.service | grep -qx enabled || exit 72\npython3 - <<'PY'\nimport asyncio,sys\nsys.path.insert(0,\"scripts\")\ntry:\n from userbot_topic_audit_client import inspect\nexcept Exception:\n sys.exit(81)\nasync def check():\n for i,(chat,topic) in enumerate([(-1002373696859,1605),(-1003770334893,4)]):\n  try:r=await inspect(chat,-topic)\n  except Exception as e:\n   z=str(e)\n   if \"IPC_NOT_AVAILABLE\" in z:sys.exit(82)\n   if \"IPC_PERMISSIONS\" in z:sys.exit(83)\n   if \"IPC_FAILURE\" in z:sys.exit(84+i)\n   sys.exit(86+i)\n  rows=r.get(\"rows\")\n  if not isinstance(rows,list) or len(rows)!=1 or rows[0].get(\"topic_id\")!=topic:sys.exit(88+i)\n  row=rows[0]\n  if row.get(\"pin_state\")!=\"PRESENT\":sys.exit(90+i)\n  if \"REPEATED_START_DEEPLINK\" not in row.get(\"pin_transports\",[]):sys.exit(92+i)\nasyncio.run(check())\nPY\nsystemctl --user is-active gace-userbot-verify.service | grep -qx active || exit 73\necho TWO_TOPIC_USERBOT_URL_VERIFY=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
