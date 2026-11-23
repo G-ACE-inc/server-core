@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/09801bdbe50a5be88e43380143ff65c0385cf13b"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nlog=deploy/state/video-two-topic-20261123/build-classify.log\nif grep -Eq 'pnpm install' \"$log\"; then exit 81; fi\nif grep -Eq 'corepack prepare' \"$log\"; then exit 82; fi\nif grep -Eq 'build:gaybbs|pnpm --dir' \"$log\"; then exit 83; fi\nif grep -Eq 'npm install' \"$log\"; then exit 84; fi\nif grep -Eq 'COPY .*' \"$log\"; then exit 85; fi\nexit 86"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
