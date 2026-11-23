@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/8"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nstage=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed/.releases/8e35800be335a61d8910b066d2130a05a8dcf9a8/video-dualmode-three-way-stage\npython3 -B - \"$stage\" <<'PY'\nfrom pathlib import Path\nimport re,sys\ns=(Path(sys.argv[1])/'live/src/runtime/creatorPollingMain.mjs').read_text()\ntests=[\n 'schema.migrations!==21',\n 'schema.migrations !== 21',\n 'schema.migrations !==21',\n 'schema.migrations!==22',\n 'schema.migrations' in s and re.search(r'schema\\.migrations\\s*!==\\s*[0-9]+',s) is not None,\n 'schema.migrations' in s and re.search(r'schema\\.migrations\\s*<\\s*[0-9]+',s) is not None,\n 'const schema=await applySchema({pool});',\n 'CREATOR_POLL_SCHEMA_INCOMPLETE',\n]\nmask=0\nfor i,test in enumerate(tests):\n if (test in s) if isinstance(test,str) else bool(test):mask|=1<<i\nsys.exit(mask)\nPY\n"
+  }
+}
