@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/9"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ndocker exec -i gace-createvdobot-videobot-poll-1 node --input-type=module <<'NODE'\nimport fs from 'node:fs';import pg from 'pg';\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1});\nlet m=0;\ntry{\nconst rows=(await pool.query(\"SELECT r.delivery_key,r.topic_id,r.paid_message_id,r.free_message_ids,l.title,l.price_stars,l.seller_user_id,l.paid_video_file_id FROM videobot_post_receipts r JOIN videobot_listings l USING(listing_id) WHERE r.status='sent'\")).rows;\nconst keys=new Set((await pool.query(\"SELECT DISTINCT delivery_key FROM videobot_stars_ledger WHERE kind='paid' AND delivery_key IS NOT NULL\")).rows.map(x=>x.delivery_key));\nconst kept=rows.filter(x=>keys.has(x.delivery_key));\nif(kept.length!==1)process.exitCode=91;\nelse{\n const keep=kept[0],key=x=>String(x),eq=(a,b)=>key(a)===key(b);\n const dup=rows.filter(x=>x.delivery_key!==keep.delivery_key&&eq(x.topic_id,keep.topic_id)&&eq(x.seller_user_id,keep.seller_user_id)&&x.title===keep.title&&eq(x.price_stars,keep.price_stars)&&x.paid_video_file_id===keep.paid_video_file_id&&!keys.has(x.delivery_key));\n const ids=x=>[x.paid_message_id,...(x.free_message_ids??[])].map(Number);\n const k=ids(keep),d=dup.flatMap(ids);\n if(k.length===3)m|=1;\n if(new Set(k).size===3)m|=2;\n if(d.length===dup.length*3)m|=4;\n if(new Set(d).size===d.length)m|=8;\n if(d.some(x=>k.includes(x)))m|=16;\n if(d.every(x=>Number.isSafeInteger(x)&&x>0))m|=32;\n if(dup.some(x=>k.includes(Number(x.paid_message_id))))m|=64;\n process.exitCode=m;\n}\n}finally{await pool.end()}\nNODE"
+  }
+}
