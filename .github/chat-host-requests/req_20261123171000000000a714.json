@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "official paid media separate fresh-upload runtime preflight",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nprintf 'BOT_API_BINARY='; (command -v telegram-bot-api || true)\nprintf 'BOT_API_IMAGE='; (docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'telegram-bot-api|aiogram/telegram-bot-api' | head -n 1 || true)\nprintf 'BOT_API_CONTAINER='; (docker ps -a --format '{{.Names}}' | grep -E 'telegram-bot-api' | head -n 2 || true)\nprintf 'CREATOR_CONTAINER='; (docker ps --format '{{.Names}}' | grep -E 'createvdobot.*poll|videobot-poll' | head -n 2 || true)\nprintf 'CREDENTIAL_NAMES_PRESENT='; (env | cut -d= -f1 | grep -E '^(TELEGRAM_API_ID|TELEGRAM_API_HASH|TG_API_ID|TG_API_HASH)$' | tr '\\n' ',' || true); echo\nprintf 'ORIGINAL_VIDEO_CANDIDATE_BYTES='; (find /mnt/g /mnt/G /home/gace/Project/Gserver -type f -iname '*.mp4' -size +1000M -printf '%s\\n' 2>/dev/null | head -n 3 | tr '\\n' ',' || true); echo\nprintf 'LOCAL_COMPOSE_EXISTS='; (test -f deploy/compose.videobot.local-media.yaml && echo yes || echo no)\n"
+  }
+}
