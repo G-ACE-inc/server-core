@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 41\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';\nimport pg from 'pg';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {readPrivateToken} from './src/runtime/config.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {videoOfferLink} from './src/telegram/videoInvoiceSales.mjs';\nconst e=process.env;if(e.VIDEOBOT_DB_NAME!=='videobot'||e.VIDEO_SALE_MODE!=='invoice')throw Error('VIDEO_OWNER_OR_MODE_NOT_VERIFIED');\nconst p=new pg.Pool({host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:4500});\nconst net=createCreatorTelegramFetch();\ntry {\nconst row=(await p.query(\"SELECT l.listing_id,l.revision,l.title,l.description,l.price_stars,l.seller_user_id,l.thumbnail_file_id,l.sample_file_id,l.paid_video_file_id,l.status,r.sale_mode,r.status receipt_status FROM videobot_listings l JOIN videobot_post_receipts r ON l.listing_id=r.listing_id WHERE l.listing_id='v26nov24invoice'\")).rows[0];\nif(!row||row.status!=='published'||row.sale_mode!=='invoice'||row.receipt_status!=='sent'||row.thumbnail_file_id===row.paid_video_file_id||row.sample_file_id===row.paid_video_file_id)throw Error('CURRENT_PRODUCT_NOT_VERIFIED');\nconst token=readPrivateToken(e.VIDEOBOT_TELEGRAM_TOKEN_FILE);\nconst api=createTelegramBotApi({token,fetchImpl:net.fetch,timeoutMs:25000});\nconst sellerId=Number(row.seller_user_id);\nif(!Number.isSafeInteger(sellerId)||sellerId<=0)throw Error('SELLER_INVALID');\nconst chat=await api('getChat',{chat_id:sellerId});\nif(chat?.type!=='private'||chat?.id!==sellerId)throw Error('SELLER_PRIVATE_DM_NOT_VERIFIED');\nconst me=await api('getMe',{});\nconst url=videoOfferLink(me.username,row.listing_id,Number(row.revision));\nconst button='⭐ '+row.price_stars+' Starsで本編を購入';\nconst request={\n chat_id:sellerId,\n rich_message:{blocks:[\n  {type:'collage',blocks:[\n   {type:'photo',photo:{type:'photo',media:row.thumbnail_file_id,has_spoiler:true}},\n   {type:'video',video:{type:'video',media:row.sample_file_id,has_spoiler:true}}\n  ]},\n  {type:'paragraph',text:row.title+(row.description?'\\n'+row.description:'')}\n ]},\n reply_markup:{inline_keyboard:[[{text:button,url}]]}\n};\nconst resp=await net.fetch('https://api.telegram.org/bot'+token+'/sendRichMessage',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(request),signal:AbortSignal.timeout(25000),redirect:'error'});\nconst data=await resp.json();\nconst r=data.result,answer=r?.reply_markup?.inline_keyboard?.[0]?.[0];\nconst blocks=r?.rich_message?.blocks??[];\nconst collage=Array.isArray(blocks)?blocks.find(x=>x.type==='collage'):null;\nconst echoTypes=Array.isArray(collage?.blocks)?collage.blocks.map(x=>x.type):[];\nconst single=r?.message_id>0&&r?.chat?.id===sellerId&&!r?.media_group_id;\nconst buttonMatches=answer?.url===url&&answer?.text===button;\nconst valid=data.ok===true&&single&&buttonMatches&&echoTypes.includes('photo')&&echoTypes.includes('video');\nlet cleanup='NOT_SENT';\nif(data.ok===true&&single){\n try{cleanup=(await api('deleteMessage',{chat_id:sellerId,message_id:r.message_id}))===true?'CONFIRMED':'UNKNOWN'}catch{cleanup='FAILED'}\n}\nlet reason='OTHER';\nif(data.ok===true)reason='OK';\nelse {\n const desc=String(data?.description??'').toLowerCase();\n if(desc.includes('method not found'))reason='NO_METHOD';\n else if(desc.includes('rich'))reason='RICH_NOT_SUPPORTED';\n else if(desc.includes('media'))reason='MEDIA_UNAVAILABLE';\n else if(desc.includes('chat not found'))reason='DM_UNAVAILABLE';\n else if(desc.includes('not enough rights'))reason='RIGHTS';\n}\nconsole.log('RICH_COLLAGE_PRIVATE_PROBE='+JSON.stringify({http:resp.status,responseOk:data.ok===true,reason,singleMessage:single,albumLikeBlocks:echoTypes,inlinePurchaseButton:buttonMatches,verified:valid,cleanup}));\nif(!valid||cleanup!=='CONFIRMED')throw Error('RICH_COLLAGE_PROBE_NOT_VERIFIED');\n}finally{await net.close();await p.end();}\nNODE"
+  }
+}
