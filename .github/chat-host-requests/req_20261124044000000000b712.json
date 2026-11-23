@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/75"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 - <<'PY'\nimport subprocess,json,sys\nchat,topic=-1002373696859,1605\np=subprocess.run([\"python3\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",str(chat),\"--topic-id\",str(topic)],capture_output=True,text=True,timeout=125)\nif p.returncode:sys.exit(71)\nline=next((s[len(\"USERBOT_TOPIC_AUDIT=\"):] for s in p.stdout.splitlines() if s.startswith(\"USERBOT_TOPIC_AUDIT={\")),None)\nif not line:sys.exit(72)\nrow=json.loads(line)[\"rows\"][0]\nids=row.get(\"history_message_ids\",[])\nif row.get(\"topic_id\")!=topic or len(ids)!=1 or row.get(\"button_types\")!=[\"normal\"]:sys.exit(73)\nmid=ids[0]\nif type(mid) is not int or mid<=0:sys.exit(74)\nscript=\"\"\"import {readFileSync} from 'node:fs';\nconst f=process.env.BOT_TOKEN_FILE;\nif(!f?.startsWith('/run/secrets/'))process.exit(31);\nconst token=readFileSync(f,'utf8').trim();\nif(!/^[0-9]{7,15}:[A-Za-z0-9_-]{30,100}$/.test(token))process.exit(32);\nconst target=JSON.parse(process.argv[1]);\nconst response=await fetch('https://api.telegram.org/bot'+token+'/pinChatMessage',{\n method:'POST',headers:{'Content-Type':'application/json'},\n body:JSON.stringify({chat_id:target.chat,message_id:target.message,disable_notification:true})\n});\nconst body=await response.json();\nif(body.ok!==true){console.error('TELEGRAM_PIN_API_REJECTED',body.error_code);process.exit(33);}\nconsole.log('VIDEO_EXISTING_MESSAGE_PIN_REQUEST=PASS');\n\"\"\"\nr=subprocess.run([\"docker\",\"exec\",\"-i\",\"deploy-gaybbs-1\",\"node\",\"--input-type=module\",\"-e\",script,json.dumps({\"chat\":chat,\"message\":mid})],capture_output=True,text=True,timeout=45)\nif r.returncode:\n print(\"VIDEO_EXISTING_PIN_FAILED\",r.returncode)\n sys.exit(75)\nprint(\"VIDEO_EXISTING_MESSAGE_PIN_API_PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
