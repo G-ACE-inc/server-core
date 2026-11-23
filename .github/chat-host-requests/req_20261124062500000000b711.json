@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nwork=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot/.worktrees/video-two-topic-operator-20261124\"\ntest -d \"$work\"\ncd \"$work\"\nlog=\"/tmp/gace-two-video-docker-diagnosis.log\"\nif docker build --progress=plain --target build -f artifacts/bot/deploy/Dockerfile.gaybbs -t gace-two-video-topic-operator:20261124 . > \"$log\" 2>&1; then echo BUILDER_OK; exit 0; fi\nif grep -Eiq 'ERR_PNPM_FETCH|network|timeout|TLS|certificate|ECONN|ENOTFOUND' \"$log\"; then exit 71; fi\nif grep -Eiq 'could not resolve|Could not resolve|ERROR.*resolve|Cannot find module' \"$log\"; then exit 72; fi\nif grep -Eiq 'no space left|disk quota' \"$log\"; then exit 73; fi\nif grep -Eiq 'failed to solve|pull access denied|manifest unknown|image.*not found' \"$log\"; then exit 74; fi\nif grep -Eiq 'Syntax error|TS[0-9]{4}|ERROR.*[.]ts' \"$log\"; then exit 75; fi\nexit 76"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
