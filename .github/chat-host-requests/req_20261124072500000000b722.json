@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "adopted_main_implementation",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/77"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nrepo=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ncd \"$repo\"\nsha=\"a62696833bba035ed5b237410a5cd0da7cc0a3f7\"\ngit fetch --no-tags origin \"$sha\"\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$sha\" || exit 71\nmkdir -p .worktrees\nstage=\"$repo/.worktrees/video-pin-url-20261124\"\nif test -e \"$stage\"; then\n  test \"$(git -C \"$stage\" rev-parse HEAD)\" = \"$sha\" || exit 72\n  test -z \"$(git -C \"$stage\" status --porcelain)\" || exit 73\nelse\n  git worktree add --detach \"$stage\" \"$sha\"\nfi\ncd \"$stage\"\ntest \"$(grep -c 'topicEntryDirectDmUrl(token)' artifacts/bot/src/services/topicDmEntry.ts)\" -ge 3 || exit 74\ndocker build --pull=false -f artifacts/bot/deploy/Dockerfile.gaybbs -t gace-gaybbs-pin-url:a626968 .\ndocker image inspect gace-gaybbs-pin-url:a626968 >/dev/null\necho NEW_MENU_PIN_IMAGE_BUILT=PASS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
