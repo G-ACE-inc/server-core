@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nold=create-videobot:invoice-only-receipts-9b1075b0\nnew=create-videobot:rich-collage-077996f4\nstage=/home/gace/.local/share/gace-create-videobot/rich-collage-077996f4\nsha=077996f4afc1517cef3529bbf9084c434f7a86cb\ntest \"$(git rev-parse HEAD)\" = b69612c64c22af1540b7294625658ebffa946270 || exit 41\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 42\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(docker image inspect \"$old\" --format '{{.Id}}')\" || exit 43\ngit fetch origin refs/heads/feat/reissue-video-invoice-preserve-existing-buyer-20261124 >/dev/null 2>&1 || exit 44\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$sha\" || exit 45\nmkdir -p \"$stage\"\nfor p in src/telegram/botApi.mjs src/telegram/richListingPublisher.mjs src/sales/pgRichVideoReceipts.mjs src/sales/pgVideoInvoiceOrders.mjs src/sales/pgListings.mjs src/telegram/creatorWiring.mjs src/telegram/videoInvoiceSales.mjs src/runtime/creatorMigrate.mjs src/operations/replaceInvoiceAlbumWithRich.mjs src/operations/runRichInvoiceReplacement.mjs sql/024_video_rich_offer_receipts.sql test/richListingPublisher.test.mjs test/creatorWiring.test.mjs;do\n mkdir -p \"$stage/$(dirname \"$p\")\"\n git show \"$sha:$p\" > \"$stage/$p\" || exit 46\ndone\ncat > \"$stage/Dockerfile\" <<'EOF'\nFROM create-videobot:invoice-only-receipts-9b1075b0\nCOPY --chown=node:node src/telegram/botApi.mjs /opt/videobot/src/telegram/botApi.mjs\nCOPY --chown=node:node src/telegram/richListingPublisher.mjs /opt/videobot/src/telegram/richListingPublisher.mjs\nCOPY --chown=node:node src/sales/pgRichVideoReceipts.mjs /opt/videobot/src/sales/pgRichVideoReceipts.mjs\nCOPY --chown=node:node src/sales/pgVideoInvoiceOrders.mjs /opt/videobot/src/sales/pgVideoInvoiceOrders.mjs\nCOPY --chown=node:node src/sales/pgListings.mjs /opt/videobot/src/sales/pgListings.mjs\nCOPY --chown=node:node src/telegram/creatorWiring.mjs /opt/videobot/src/telegram/creatorWiring.mjs\nCOPY --chown=node:node src/telegram/videoInvoiceSales.mjs /opt/videobot/src/telegram/videoInvoiceSales.mjs\nCOPY --chown=node:node src/runtime/creatorMigrate.mjs /opt/videobot/src/runtime/creatorMigrate.mjs\nCOPY --chown=node:node src/operations/replaceInvoiceAlbumWithRich.mjs /opt/videobot/src/operations/replaceInvoiceAlbumWithRich.mjs\nCOPY --chown=node:node src/operations/runRichInvoiceReplacement.mjs /opt/videobot/src/operations/runRichInvoiceReplacement.mjs\nCOPY --chown=node:node sql/024_video_rich_offer_receipts.sql /opt/videobot/sql/024_video_rich_offer_receipts.sql\nCOPY --chown=node:node test/richListingPublisher.test.mjs /opt/videobot/test/richListingPublisher.test.mjs\nCOPY --chown=node:node test/creatorWiring.test.mjs /opt/videobot/test/creatorWiring.test.mjs\nEOF\ndocker build --pull=false --network=none -t \"$new\" -f \"$stage/Dockerfile\" \"$stage\" >/dev/null || exit 47\nfor p in src/telegram/botApi.mjs src/telegram/richListingPublisher.mjs src/sales/pgRichVideoReceipts.mjs src/sales/pgVideoInvoiceOrders.mjs src/sales/pgListings.mjs src/telegram/creatorWiring.mjs src/telegram/videoInvoiceSales.mjs src/runtime/creatorMigrate.mjs src/operations/replaceInvoiceAlbumWithRich.mjs src/operations/runRichInvoiceReplacement.mjs sql/024_video_rich_offer_receipts.sql;do\n a=\"$(sha256sum \"$stage/$p\" | cut -d' ' -f1)\"\n b=\"$(docker run --rm --network none --entrypoint sha256sum \"$new\" \"/opt/videobot/$p\" | cut -d' ' -f1)\"\n test \"$a\" = \"$b\" || exit 48\ndone\ndocker run --rm --network none --entrypoint node \"$new\" --test test/richListingPublisher.test.mjs test/videoInvoiceSales.test.mjs test/pgPostingReceipts.test.mjs test/creatorWiring.test.mjs >/dev/null || exit 49\nfor p in src/telegram/menuPanel.mjs src/telegram/stickerSales.mjs src/telegram/stickerWizard.mjs src/sales/pgUnifiedStarsSales.mjs owner/gateOwner.mjs;do\n a=\"$(docker run --rm --network none --entrypoint sha256sum \"$old\" \"/opt/videobot/$p\" | cut -d' ' -f1)\"\n b=\"$(docker run --rm --network none --entrypoint sha256sum \"$new\" \"/opt/videobot/$p\" | cut -d' ' -f1)\"\n test \"$a\" = \"$b\" || exit 50\ndone\necho RICH_VIDEO_IMAGE_SOURCE_AND_UNIT_PASS\n"
+  }
+}
