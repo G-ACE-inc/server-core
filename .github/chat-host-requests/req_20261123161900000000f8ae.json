@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/74"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 - <<'PY'\nimport json,subprocess,pathlib,sys\no=json.loads(subprocess.check_output([\"docker\",\"inspect\",\"deploy-gaybbs-1\"],text=True))[0]\nlabels=o.get(\"Config\",{}).get(\"Labels\") or {}\nproject=labels.get(\"com.docker.compose.project\")\nservice=labels.get(\"com.docker.compose.service\")\nwork=labels.get(\"com.docker.compose.project.working_dir\")\nfiles=labels.get(\"com.docker.compose.project.config_files\",\"\").split(\",\")\nif project!=\"deploy\" or service!=\"gaybbs\" or not work or not pathlib.Path(work).is_dir():sys.exit(70)\nif not files or any(not pathlib.Path(x).is_file() for x in files):sys.exit(71)\ncmd=[\"docker\",\"compose\"]\nfor f in files:cmd+=[\"-f\",f]\ncmd+=[\"config\",\"--services\"]\np=subprocess.run(cmd,cwd=work,capture_output=True,text=True)\nif p.returncode or \"gaybbs\" not in p.stdout.split():sys.exit(72)\nsubprocess.run([\"docker\",\"image\",\"inspect\",\"gace-gaybbs-video-doorway-repair:20261123\"],check=True,stdout=subprocess.DEVNULL)\nprint(\"GAYBBS_COMPOSE_AND_NEW_IMAGE=VERIFIED\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
