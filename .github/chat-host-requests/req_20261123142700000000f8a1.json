@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/74"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 - <<'PY'\nimport subprocess,re,sys\ndb=next(x for x in subprocess.check_output([\"docker\",\"ps\",\"--format\",\"{{.Names}}\"],text=True).splitlines() if re.search(r\"postgres|database|db-[0-9]\",x,re.I))\nsql=\"\"\"SELECT t.chat_id,t.message_thread_id,t.title,coalesce(p.state,'absent'),coalesce(p.pinned::text,'null'),coalesce(p.message_id::text,'null')\nFROM posting_topics t LEFT JOIN topic_dm_entry_pins p\nON p.chat_id=t.chat_id AND p.message_thread_id=t.message_thread_id\nWHERE t.chat_id IN(-1002373696859,-1003770334893) AND t.enabled=TRUE\nAND t.verified_at IS NOT NULL AND (t.title ILIKE '%チャット%' OR t.title ILIKE '%見せ合い%')\nORDER BY t.chat_id\"\"\"\np=subprocess.run([\"docker\",\"exec\",db,\"sh\",\"-c\",'psql -qAt -F \"|\" -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"$1\"',\"sh\",sql],capture_output=True,text=True)\nif p.returncode:sys.exit(190)\nrs=[x.split(\"|\") for x in p.stdout.splitlines() if x.strip()]\nif len(rs)!=2:sys.exit(191)\nrs.sort(key=lambda x:int(x[0]))\nif rs[0][0]!=\"-1003770334893\" or rs[1][0]!=\"-1002373696859\":sys.exit(192)\ndef status(x):\n s=x[3]\n return 0 if s==\"absent\" else 1 if s==\"published\" and x[4]==\"true\" and x[5]!=\"null\" else 2 if s==\"verified\" and x[5]==\"null\" else 3\n# output categorical only\ngay,video=rs\nif \"チャット\" in gay[2]:sys.exit(200+status(video)*4+status(gay))\nsys.exit(220+status(video)*4+status(gay))\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
