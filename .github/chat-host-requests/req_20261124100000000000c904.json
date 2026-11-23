@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ndocker exec -i \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';import pg from 'pg';\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:4500});\nlet m=0;\ntry{\n const {rows:[x]}=await pool.query(`\n WITH protected AS (\n SELECT r.* ,l.paid_video_file_id,l.title,l.price_stars,l.seller_user_id\n FROM videobot_post_receipts r JOIN videobot_listings l USING (listing_id)\n WHERE r.delivery_key IN (SELECT DISTINCT delivery_key FROM videobot_stars_ledger WHERE kind='paid' AND delivery_key IS NOT NULL)\n ), duplicates AS (\n SELECT r.*,l.paid_video_file_id,l.title,l.price_stars,l.seller_user_id\n FROM videobot_post_receipts r JOIN videobot_listings l USING (listing_id)\n WHERE NOT EXISTS (SELECT 1 FROM videobot_stars_ledger p WHERE p.kind='paid' AND p.delivery_key=r.delivery_key)\n )\n SELECT\n (SELECT COUNT(*) FROM protected WHERE paid_message_id=4718 AND status='sent') exact_protected,\n (SELECT COUNT(*) FROM duplicates WHERE status='sent') posted_duplicates,\n (SELECT COUNT(*) FROM duplicates d JOIN protected p ON d.topic_id=p.topic_id AND d.status='sent') same_topic,\n (SELECT COUNT(*) FROM duplicates d JOIN protected p ON d.paid_video_file_id=p.paid_video_file_id AND d.status='sent') same_file,\n (SELECT COUNT(*) FROM duplicates d JOIN protected p ON d.title=p.title AND d.price_stars=p.price_stars AND d.seller_user_id=p.seller_user_id AND d.status='sent') same_product_title,\n (SELECT COUNT(*) FROM duplicates WHERE status='sent' AND free_message_ids IS NOT NULL AND paid_message_id IS NOT NULL) complete_duplicate_receipts,\n (SELECT COUNT(*) FROM duplicates WHERE status='sent' AND updated_at>NOW()-interval '47 hours') recent_duplicates,\n (SELECT COUNT(DISTINCT buyer_user_id) FROM videobot_stars_ledger WHERE kind='paid' AND delivery_key IN (SELECT delivery_key FROM protected)) paid_buyers\n `);\n const n=k=>Number(x[k]);\n if(n('exact_protected')===1)m|=1;\n if(n('posted_duplicates')>0)m|=2;\n if(n('posted_duplicates')===n('same_topic'))m|=4;\n if(n('posted_duplicates')===n('same_file'))m|=8;\n if(n('posted_duplicates')===n('same_product_title'))m|=16;\n if(n('posted_duplicates')===n('complete_duplicate_receipts'))m|=32;\n if(n('posted_duplicates')===n('recent_duplicates'))m|=64;\n if(n('paid_buyers')>0)m|=128;\n}finally{await pool.end()}\nprocess.exit(m);\nNODE"
+  }
+}
