@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/75"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "python3 - <<'PY'\nimport json,re,subprocess,sys\nnames=subprocess.check_output([\"docker\",\"ps\",\"--format\",\"{{.Names}}\"],text=True).splitlines()\ndb=next((x for x in names if re.search(r\"postgres|database|db-[0-9]\",x,re.I)),None)\nif not db:sys.exit(80)\nsql=\"\"\"SELECT chat_id,message_thread_id,state,pinned,message_id,token_hash\nFROM topic_dm_entry_pins\nWHERE (chat_id=-1002373696859 AND message_thread_id=1605)\nOR (chat_id=-1003770334893 AND message_thread_id=4)\nORDER BY chat_id,message_thread_id\"\"\"\nq=subprocess.run([\"docker\",\"exec\",db,\"sh\",\"-c\",'psql -qAt -F \"|\" -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"$1\"',\"sh\",sql],capture_output=True,text=True)\nif q.returncode:sys.exit(81)\nrows=[line.split(\"|\") for line in q.stdout.splitlines() if line.strip()]\nif len(rows)!=2:sys.exit(82)\ntargets={(-1002373696859,1605),(-1003770334893,4)}\nactual=set()\nfor r in rows:\n if len(r)!=6:sys.exit(83)\n cid,tid,state,pinned,msg,hashval=r\n actual.add((int(cid),int(tid)))\n if state!=\"published\" or pinned!=\"t\" and pinned!=\"true\":sys.exit(84)\n if not msg.isdigit() or int(msg)<=0 or not re.fullmatch(r\"[a-f0-9]{64}\",hashval):sys.exit(85)\nif actual!=targets:sys.exit(86)\ns=json.loads(subprocess.check_output([\"docker\",\"inspect\",\"deploy-gaybbs-1\"],text=True))[0]\nif not s.get(\"State\",{}).get(\"Running\"):sys.exit(87)\nprint(\"TWO_TOPIC_PINS_AND_MENU_TOKENS_DB_READBACK=PASS\")\nprint(\"GAYBBS_RUNTIME_RUNNING=PASS\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
