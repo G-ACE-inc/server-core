@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/commit/09801bdbe50a5be88e43380143ff65c0385cf13b"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=\"$PWD/deploy/state/video-two-topic-20261123\"\ntest -s \"$stage/repair-two-video-topics.mjs\"\nset +e\ndocker exec -i deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs --input-type=module - < \"$stage/repair-two-video-topics.mjs\" > \"$stage/dry-run.log\" 2>&1\nstatus=$?\nset -e\nif test \"$status\" -eq 0; then exit 0; fi\nif test \"$status\" -ge 51 && test \"$status\" -le 59; then exit \"$status\"; fi\nif grep -Eqi '(does not exist|relation .*does not exist|column .*does not exist)' \"$stage/dry-run.log\"; then exit 71; fi\nif grep -Eqi '(ERR_MODULE_NOT_FOUND|Cannot find package|Cannot find module)' \"$stage/dry-run.log\"; then exit 72; fi\nif grep -Eqi '(Token|401: Unauthorized|BOT_IDENTITY)' \"$stage/dry-run.log\"; then exit 73; fi\nif grep -Eqi '(ENOTFOUND|ETIMEDOUT|ECONNREFUSED|EAI_AGAIN)' \"$stage/dry-run.log\"; then exit 74; fi\nexit 79"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
