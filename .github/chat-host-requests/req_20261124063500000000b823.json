@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/8"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nstage=\"$root/.releases/8e35800be335a61d8910b066d2130a05a8dcf9a8/video-dualmode-three-way-stage\"\ncompose=\"$root/deploy/compose.videobot.poll.yaml\"\nnew=create-videobot:video-dualmode-button-download-dc4578de\nold=create-videobot:pre-video-dualmode-dc4578de\ntest -f \"$compose\" && test -n \"$(docker images -q \"$new\")\" || exit 61\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 62\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 63\ntest -z \"$(docker images -q \"$old\")\" || exit 64\ngrep -Eq '^# fail 0' \"$stage/final/final-tests.log\" || exit 65\ngrep -Eq '^# fail 0' \"$stage/downloadfix/invoice-tests.log\" || exit 66\nrunning=\"$(docker inspect \"$cid\" --format '{{.Image}}')\"\nif docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -q '^VIDEO_SALE_MODE=paid_media$';then exit 67;fi\nexport VIDEOBOT_TELEGRAM_TOKEN_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_telegram_token\"}}{{.Source}}{{end}}{{end}}')\"\nexport VIDEOBOT_DB_PASSWORD_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/run/secrets/videobot_db_password\"}}{{.Source}}{{end}}{{end}}')\"\nexport VIDEOBOT_STICKER_PIN_STATE_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/var/lib/videobot/sticker-entry\"}}{{.Source}}{{end}}{{end}}')\"\nexport VIDEOBOT_VIDEO_WORK_SOURCE=\"$(docker inspect \"$cid\" --format '{{range .Mounts}}{{if eq .Destination \"/var/lib/videobot/media-work\"}}{{.Source}}{{end}}{{end}}')\"\nexport GSERVER_POSTGRES_USER=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^VIDEOBOT_DB_USER=//p' | head -n 1)\"\nexport VIDEOBOT_SHOP_PUBLIC_URL=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^VIDEOBOT_SHOP_PUBLIC_URL=//p' | head -n 1)\"\nexport CREATEVDOBOT_TERMS_URL=\"$(docker inspect \"$cid\" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^CREATEVDOBOT_TERMS_URL=//p' | head -n 1)\"\nexport GSERVER_POSTGRES_NETWORK=\"$(docker inspect \"$cid\" --format '{{range $name, $net := .NetworkSettings.Networks}}{{println $name}}{{end}}' | head -n 1)\"\ntest -n \"$VIDEOBOT_TELEGRAM_TOKEN_SOURCE\" && test -n \"$VIDEOBOT_DB_PASSWORD_SOURCE\" && test -n \"$VIDEOBOT_STICKER_PIN_STATE_SOURCE\" && test -n \"$VIDEOBOT_VIDEO_WORK_SOURCE\" && test -n \"$GSERVER_POSTGRES_USER\" && test -n \"$GSERVER_POSTGRES_NETWORK\" || exit 68\ndocker compose -p gace-createvdobot -f \"$compose\" config --quiet || exit 69\npreserved=\"src/telegram/menuPanel.mjs src/telegram/creatorUi.mjs src/telegram/stickerSales.mjs src/telegram/stickerWizard.mjs src/sales/pgUnifiedStarsSales.mjs owner/gateOwner.mjs\"\nfor p in $preserved;do docker exec \"$cid\" sha256sum \"/opt/videobot/$p\" || exit 70;done | sort > \"$stage/final/preserved-before.sha256\"\ndocker tag \"$running\" \"$old\" || exit 71\narmed=NO\nrollback(){\n docker tag \"$old\" create-videobot:local-poll >/dev/null 2>&1 || true\n docker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null 2>&1 || true\n}\ntrap 'if test \"$armed\" = YES;then rollback;fi' EXIT\ndocker tag \"$new\" create-videobot:local-poll || exit 72\narmed=YES\ndocker compose -p gace-createvdobot -f \"$compose\" up -d --no-build --force-recreate videobot-poll >/dev/null || exit 73\nready=NO\nfor n in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18;do\n if test \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" = true && docker logs \"$cid\" 2>&1 | grep -Fq 'CREATOR_DM_POLL_READY=PASS' && docker logs \"$cid\" 2>&1 | grep -Fq 'STICKER_SHOP_HTTP_READY=PASS';then ready=YES;break;fi\n sleep 2\ndone\ntest \"$ready\" = YES || exit 74\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 75\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(docker image inspect \"$new\" --format '{{.Id}}')\" || exit 76\nfor p in $preserved;do docker exec \"$cid\" sha256sum \"/opt/videobot/$p\" || exit 77;done | sort > \"$stage/final/preserved-after.sha256\"\ncmp -s \"$stage/final/preserved-before.sha256\" \"$stage/final/preserved-after.sha256\" || exit 78\ndocker exec \"$cid\" node --check /opt/videobot/src/telegram/videoInvoiceSales.mjs >/dev/null || exit 79\ndocker exec \"$cid\" node --input-type=module -e \"Promise.all([import('/opt/videobot/src/telegram/videoInvoiceSales.mjs'),import('/opt/videobot/src/sales/pgVideoInvoiceOrders.mjs')]).then(()=>console.log('VIDEO_INVOICE_LIVE_IMPORT_PASS'))\" >/dev/null || exit 80\narmed=NO\ntrap - EXIT\necho VIDEO_DUALMODE_INVOICE_DOWNLOAD_PRODUCTION_READY_PASS\n"
+  }
+}
