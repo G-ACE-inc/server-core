@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "remove only verified unpurchased duplicate same-video posts while protecting native Stars buyers",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 30\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport {readFileSync,appendFileSync,mkdirSync} from 'node:fs';\nimport pg from 'pg';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {readPrivateToken} from './src/runtime/config.mjs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nsetDefaultResultOrder('ipv4first');setDefaultAutoSelectFamily(false);\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:4500});\nconst net=createCreatorTelegramFetch(),api=createTelegramBotApi({token:readPrivateToken(process.env.VIDEOBOT_TELEGRAM_TOKEN_FILE),fetchImpl:net.fetch,timeoutMs:25000});\nlet outcome=0;\nconst audit='/var/lib/videobot/media-work/sale-duplicate-cleanup-20261123.jsonl';\ntry{\n const rows=(await pool.query(`SELECT r.delivery_key,r.status,r.topic_id,r.paid_message_id,r.free_message_ids,r.sale_mode,l.paid_video_file_id,l.title,l.price_stars,l.seller_user_id,EXTRACT(EPOCH FROM (NOW()-r.updated_at)) AS age_seconds FROM videobot_post_receipts r JOIN videobot_listings l USING (listing_id) WHERE r.status='sent' ORDER BY r.updated_at ASC`)).rows;\n const paidKeys=new Set((await pool.query(\"SELECT DISTINCT delivery_key FROM videobot_stars_ledger WHERE kind='paid' AND delivery_key IS NOT NULL\")).rows.map(x=>x.delivery_key));\n const protectedRows=rows.filter(x=>paidKeys.has(x.delivery_key));\n if(protectedRows.length!==1)throw Error('PROTECTED_COUNT');\n const protectedRow=protectedRows[0];\n const duplicates=rows.filter(x=>x.delivery_key!==protectedRow.delivery_key&&\n x.topic_id===protectedRow.topic_id&&x.seller_user_id===protectedRow.seller_user_id&&\n x.title===protectedRow.title&&x.price_stars===protectedRow.price_stars&&\n x.paid_video_file_id===protectedRow.paid_video_file_id&&!paidKeys.has(x.delivery_key));\n if(duplicates.length<1||duplicates.length>15)throw Error('DUPLICATE_COUNT');\n const invoicePaid=(await pool.query(\"SELECT COUNT(*)::int AS n FROM videobot_video_invoice_orders WHERE telegram_payment_charge_id IS NOT NULL\")).rows[0].n;\n if(invoicePaid!==0||duplicates.some(x=>Number(x.age_seconds)>46*3600))throw Error('PURCHASE_OR_AGE');\n const protectedIds=[protectedRow.paid_message_id,...(protectedRow.free_message_ids??[])].map(Number);\n const candidates=duplicates.flatMap(x=>[x.paid_message_id,...(x.free_message_ids??[])].map(Number));\n if(protectedIds.length!==3||new Set(protectedIds).size!==3||candidates.length!==duplicates.length*3||\n new Set(candidates).size!==candidates.length||candidates.some(n=>!Number.isSafeInteger(n)||n<=0||protectedIds.includes(n)))throw Error('MESSAGE_COLLISION');\n if(Number(process.env.VIDEOBOT_VIDEO_SALE_THREAD_ID)!==Number(protectedRow.topic_id))throw Error('TARGET_TOPIC_CHANGED');\n const chatId=-1002373696859;\n const me=await api('getMe',{}),chat=await api('getChat',{chat_id:chatId});\n if(me?.is_bot!==true||me.username?.toLowerCase()!=='createvdobot'||chat?.id!==chatId||chat.is_forum!==true)throw Error('TARGET_BOT_CHANGED');\n const own=await api('getChatMember',{chat_id:chatId,user_id:me.id});\n if(!['creator','administrator'].includes(own?.status)||own.status==='administrator'&&own.can_delete_messages!==true)throw Error('DELETE_RIGHTS');\n const purchased=(await pool.query(\"SELECT COUNT(*)::int AS n FROM videobot_stars_ledger WHERE kind='paid' AND delivery_key=$1\",[protectedRow.delivery_key])).rows[0].n;\n if(purchased<1)throw Error('PURCHASE_GUARD');\n const dir='/var/lib/videobot/media-work';\n mkdirSync(dir,{recursive:true});\n let deleted=0;\n for(const entry of duplicates){\n  for(const id of [entry.paid_message_id,...entry.free_message_ids].map(Number)){\n   if(protectedIds.includes(id))throw Error('PROTECTED_MESSAGE');\n   // This is the existing sales Bot's own posted receipt, in the verified topic.\n   const response=await api('deleteMessage',{chat_id:chatId,message_id:id});\n   if(response!==true)throw Error('TELEGRAM_DELETE_NOT_ACKNOWLEDGED');\n   appendFileSync(audit,JSON.stringify({at:new Date().toISOString(),delivery_key:entry.delivery_key,\n    message_id:id,result:'telegram_delete_ack',protected_delivery_key:protectedRow.delivery_key})+'\\n',{mode:0o600});\n   deleted++;\n  }\n }\n outcome=deleted===candidates.length?0:90;\n}catch(err){\n const code=['PROTECTED_COUNT','DUPLICATE_COUNT','PURCHASE_OR_AGE','MESSAGE_COLLISION','TARGET_TOPIC_CHANGED','TARGET_BOT_CHANGED','DELETE_RIGHTS','PURCHASE_GUARD','PROTECTED_MESSAGE','TELEGRAM_DELETE_NOT_ACKNOWLEDGED','Telegram API request failed'];\n const i=code.findIndex(x=>String(err?.message??'').includes(x));\n outcome=i<0?89:60+i;\n}finally{await net.close();await pool.end()}\nprocess.exit(outcome);\nNODE"
+  }
+}
