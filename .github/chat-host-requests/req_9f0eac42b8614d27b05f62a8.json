@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "read_only_runtime_diagnosis",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 41\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport fs from 'node:fs';\nimport pg from 'pg';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nimport {readPrivateToken} from './src/runtime/config.mjs';\nconst env=process.env;\nconst pool=new pg.Pool({host:env.VIDEOBOT_DB_HOST,user:env.VIDEOBOT_DB_USER,database:env.VIDEOBOT_DB_NAME,password:fs.readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:4500});\nconst net=createCreatorTelegramFetch();\ntry{\n const cols=(await pool.query(\"SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='videobot_listings' AND column_name IN ('creator_terms_version','creator_terms_url','paid_video_file_size_bytes') ORDER BY column_name\")).rows.map(x=>x.column_name);\n console.log('SCHEMA_COLUMNS_PRESENT='+JSON.stringify(cols));\n const list=(await pool.query(\"SELECT DISTINCT l.paid_video_file_id FROM videobot_listings l JOIN videobot_post_receipts r ON r.listing_id=l.listing_id WHERE r.sale_mode='paid_media' AND r.status='sent' AND l.paid_video_file_id IS NOT NULL LIMIT 6\")).rows;\n console.log('DISTINCT_PAID_VIDEO_FILE_REFS='+list.length);\n const token=readPrivateToken(env.VIDEOBOT_TELEGRAM_TOKEN_FILE);\n for(let i=0;i<list.length;i++){\n  try{\n   const response=await net.fetch('https://api.telegram.org/bot'+token+'/getFile',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({file_id:list[i].paid_video_file_id}),signal:AbortSignal.timeout(25000),redirect:'error'});\n   const reply=await response.json();\n   let reason='OTHER_UNCLASSIFIED';\n   const desc=String(reply?.description??'').toLowerCase();\n   if(/too big|file.*large|size/.test(desc))reason='FILE_TOO_BIG';\n   else if(/wrong file identifier|file_id|file identifier|not found/.test(desc))reason='INVALID_OR_UNKNOWN_FILE_ID';\n   else if(/bad request/.test(desc))reason='BAD_REQUEST_OTHER';\n   else if(reply?.ok===true)reason='SUCCESS';\n   console.log('GETFILE_DIAG='+JSON.stringify({index:i,status:response.status,telegramCode:reply?.error_code??null,reason,fileSize:reply?.ok===true?reply.result?.file_size??null:null}));\n  }catch(e){console.log('GETFILE_DIAG='+JSON.stringify({index:i,reason:'TRANSPORT_ERROR',errorName:e?.name??'Error'}));}\n }\n}finally{await pool.end();await net.close()}\nNODE\nif mountpoint -q /mnt/g; then\n  printf 'LOCAL_VIDEO_SOURCE_MOUNT=YES\\n'\n  find /mnt/g/Gserver/CreateVdobot -type f -iname '*.mp4' -printf '%s\\n' 2>/dev/null | sort -nr | head -15 | awk '{print \"LOCAL_MP4_BYTES=\"$0}'\nelse printf 'LOCAL_VIDEO_SOURCE_MOUNT=NO\\n';fi\n"
+  }
+}
