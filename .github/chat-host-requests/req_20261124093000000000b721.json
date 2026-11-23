@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/7"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\npython3 - <<'PY'\nimport pathlib,sys\ns=pathlib.Path('/tmp/gace_two_video_topic_pins_20261124.py').read_text()\ns=s.split('for index,r in enumerate(selected):')[0]\ntry: exec(compile(s,'operator_preflight','exec'),{'__name__':'__main__'})\nexcept Exception as e:\n msg=str(e)\n if 'TARGET_NOT_UNIQUE:-1002373696859' in msg:sys.exit(61)\n if 'TARGET_NOT_UNIQUE:-1003770334893' in msg:sys.exit(62)\n if 'TARGET_EXCLUDED' in msg:sys.exit(63)\n if 'AMBIGUOUS_PRIOR_SEND' in msg:sys.exit(64)\n if 'EXISTING_MESSAGE_RECONCILE_REQUIRED' in msg:sys.exit(65)\n if 'SUBPROCESS_FAILED' in msg:sys.exit(66)\n if 'WRONG_BOT' in msg:sys.exit(67)\n if 'NOT_ADMIN' in msg:sys.exit(68)\n if 'CANNOT_PIN' in msg:sys.exit(69)\n if 'TELEGRAM_REJECTED' in msg:sys.exit(70)\n sys.exit(71)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
