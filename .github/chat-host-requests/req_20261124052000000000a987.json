@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/2b91dd7c13980b4c9ea27a52b149b3472fde04a1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nrelease=\"$root/.releases/fb2f26a6a9a7811213891f715ad6c225b5a6f00a/preview-montage-v2\"\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(cat \"$release/base-image\")\" || exit 61\ngit show fb2f26a6a9a7811213891f715ad6c225b5a6f00a:sql/023_video_preview_montage.sql > \"$release/montage.sql\"\nexport RELEASE=\"$release\"\npython3 - <<'PY'\nfrom pathlib import Path\nimport os,re\nr=Path(os.environ['RELEASE'])\np=r/'patch/src/runtime/creatorMigrate.mjs'\ns=p.read_text()\nnames=re.findall(r\"'(\\d{3}_[^']+\\.sql)'\",s)\nnew=[n for n in names if 'preview_montage' in n]\nif len(new)!=1:raise SystemExit(62)\n(r/'patch/sql').mkdir(exist_ok=True)\n(r/'patch/sql'/new[0]).write_text((r/'montage.sql').read_text())\np=r/'live/src/runtime/creatorPollingMain.mjs'\ns=p.read_text()\ns,n=re.subn(r'schema\\.migrations!==\\d+',f'schema.migrations!=={len(names)}',s)\nif n!=1:raise SystemExit(63)\n(r/'patch/src/runtime/creatorPollingMain.mjs').write_text(s)\nprint('MIGRATIONS',len(names))\nfor p in (r/'patch').rglob('*.mjs'):\n if re.search(r'^<<<<<<< ',p.read_text(),re.M):raise SystemExit(64)\nPY\nold=create-videobot:montage-v2-baseline\nnew=create-videobot:montage-v2-candidate\ndocker tag \"$(cat \"$release/base-image\")\" \"$old\"\n{ printf 'FROM %s\\nUSER root\\n' \"$old\"; cd \"$release\"; find patch -type f | sort | while read -r f;do printf 'COPY --chown=node:node %s /opt/videobot/%s\\n' \"$f\" \"${f#patch/}\";done;echo 'USER node'; } > \"$release/Dockerfile\"\ndocker build --pull=false --network none -t \"$new\" \"$release\" >/dev/null || exit 65\nfind \"$release/patch\" -name '*.mjs' | while read -r f;do docker run --rm --network none --entrypoint node \"$new\" --check \"/opt/videobot/${f#\"$release/patch/\"}\" || exit 66;done\ndocker run --rm --network none -i --entrypoint node \"$new\" --input-type=module <<'JS'\nimport assert from 'node:assert/strict';\nimport {mkdtemp,rm,stat} from 'node:fs/promises';\nimport {join} from 'node:path';\nimport {tmpdir} from 'node:os';\nimport {execFile} from 'node:child_process';\nimport {promisify} from 'node:util';\nimport {prepareMissingPreviewAssets} from '/opt/videobot/src/sales/autoPreview.mjs';\nimport {buildFreeAlbumRequest} from '/opt/videobot/src/telegram/freeAlbum.mjs';\nimport {menuPage} from '/opt/videobot/src/telegram/menuPanel.mjs';\nconst dir=await mkdtemp(join(tmpdir(),'montage-'));\nconst run=promisify(execFile);\ntry{\n const source=join(dir,'source.mp4');\n await run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=96x64:rate=10','-f','lavfi','-i','sine=frequency=440:sample_rate=48000','-t','80','-c:v','libx264','-threads','1','-pix_fmt','yuv420p','-c:a','aac',source],{timeout:120000});\n const r=await prepareMissingPreviewAssets({sourcePath:source,thumbnailOutputPath:join(dir,'first.jpg'),secondThumbnailOutputPath:join(dir,'second.jpg'),sampleOutputPath:join(dir,'sample.mp4')});\n assert.ok(Math.abs(r.sample.durationSeconds-60)<0.15);\n assert.notEqual(r.thumbnail.path,r.secondThumbnail.path);\n for(const p of [r.thumbnail.path,r.secondThumbnail.path,r.sample.path])assert.ok((await stat(p)).size>0);\n const {stdout}=await run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name','-of','json',r.sample.path]);\n const streams=JSON.parse(stdout).streams;assert.ok(streams.some(x=>x.codec_type==='video'&&x.codec_name==='h264'));assert.ok(streams.some(x=>x.codec_type==='audio'&&x.codec_name==='aac'));\n const album=buildFreeAlbumRequest({chatId:1,thumbnailFileId:'photo001',secondThumbnailFileId:'photo002',sampleFileId:'sample001',caption:'test'});\n assert.deepEqual(album.media.map(x=>x.type),['photo','photo','video']);\n assert.equal(album.media[2].supports_streaming,true);\n assert.equal(menuPage('home').reply_markup.inline_keyboard.flat().length,5);\n console.log('REAL_FFMPEG_2_PHOTOS_1_VIDEO_AND_MENU=PASS');\n}finally{await rm(dir,{recursive:true,force:true});}\nJS\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(cat \"$release/base-image\")\" || exit 67\necho MONTAGE_CANDIDATE_BUILD_AND_MEDIA_TEST=PASS\n"
+  }
+}
