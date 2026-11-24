@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7145061717"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nstage=\"$HOME/.local/share/gace-create-videobot/menu-recovery-4decbe6-20261125\"\nif test -f \"$stage/terms-public-check.html\";then\n python3 - \"$stage/terms-public-check.html\" <<'PY'\nimport sys,html,re,hashlib,unicodedata\nfrom html.parser import HTMLParser\nclass Text(HTMLParser):\n def __init__(self): super().__init__(); self.parts=[]\n def handle_data(self,s): self.parts.append(s)\nraw=open(sys.argv[1],'rb').read()\np=Text(); p.feed(raw.decode('utf-8','replace'))\ns=unicodedata.normalize('NFKC',' '.join(p.parts))\nprint('TERMS_HTTP_BODY_BYTES='+str(len(raw)))\nprint('TERMS_HTTP_BODY_SHA256='+hashlib.sha256(raw).hexdigest())\nfor marker in ['CreateVdobot','利用規約','販売約款','規約バージョン','1.0','Telegram Stars','第1条','第2条','第3条']:\n print('TERM_MARKER '+marker+'='+str(marker.casefold() in s.casefold()))\nprint('TERMS_TITLE='+re.sub(r'<[^>]*>','',re.search(r'<title[^>]*>(.*?)</title>',raw.decode('utf-8','replace'),re.I|re.S).group(1))[:150] if re.search(r'<title[^>]*>(.*?)</title>',raw.decode('utf-8','replace'),re.I|re.S) else 'NO_HTML_TITLE')\nPY\nelse echo TERMS_HTTP_BODY_NOT_AVAILABLE;fi\ngate=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nif test -f \"$gate/scripts/userbot_test_client.py\";then\n echo RESIDENT_CLIENT_INTERFACE\n grep -nE 'add_argument|socket|ALLOWED|choices=|def main' \"$gate/scripts/userbot_test_client.py\" | head -n 70 || true\nfi\nif test -f \"$gate/scripts/userbot_resident_ipc.py\";then\n echo RESIDENT_IPC_INTERFACE\n grep -nE 'SOCKET|socket_path|allowlist|ALLOWED|createvdobot|CreateVdobot|click|video_menu' \"$gate/scripts/userbot_resident_ipc.py\" | head -n 60 || true\nfi\n"
+  }
+}
