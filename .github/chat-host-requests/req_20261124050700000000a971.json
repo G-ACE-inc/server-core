@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/fb2f26a6a9a7811213891f715ad6c225b5a6f00a"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ndocker inspect \"$cid\" --format 'running={{.State.Running}} restart={{.RestartCount}} image={{.Image}} started={{.State.StartedAt}}'\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest \"$(docker ps --filter label=com.docker.compose.project=gace-createvdobot --filter label=com.docker.compose.service=videobot-poll -q | wc -l)\" -eq 1 || exit 62\ndocker logs --since 30m \"$cid\" 2>&1 | tail -n 100 | sed -E 's/[0-9]{6,}:[A-Za-z0-9_-]{20,}/[REDACTED]/g' > /tmp/createvdobot-menu-diagnostic.log\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport {readFileSync} from 'node:fs';\nimport {menuPage} from './src/telegram/menuPanel.mjs';\nconst panel=menuPage('home');\nconsole.log('MENU_KEYS',JSON.stringify(panel.reply_markup.inline_keyboard.map(r=>r.map(b=>({text:b.text,data:b.callback_data??null})))));\nconst token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\nconst root=process.env.VIDEOBOT_BOT_API_BASE_URL||process.env.TELEGRAM_BOT_API_BASE_URL||'https://api.telegram.org';\nconst base=/^https:\\/\\/api.telegram.org$|^http:\\/\\/telegram-bot-api:8081$/.test(root)?root:'https://api.telegram.org';\nfor(const method of ['getMe','getWebhookInfo']){\n const r=await fetch(base+'/bot'+token+'/'+method,{signal:AbortSignal.timeout(10000)});\n const j=await r.json();console.log(method,JSON.stringify({ok:j.ok,code:j.error_code,bot:j.result?.username,webhook:!!j.result?.url,pending:j.result?.pending_update_count}));\n}\nJS\ndocker logs \"$cid\" 2>&1 | grep -Fq 'CREATOR_DM_POLL_READY=PASS' || exit 63\necho MENU_RUNTIME_STATIC_READY\npython3 - <<'PY'\nfrom pathlib import Path\nimport re\ns=Path('/tmp/createvdobot-menu-diagnostic.log').read_text()\nfor key in ['409','429','401','403','error','ERROR','FAIL','ECONNREFUSED','timeout','STALE','QUARANTINE','poll','callback']:\n print(key, len(re.findall(re.escape(key),s,re.I)))\nfor line in s.splitlines():\n if re.search(r'ERROR|FAIL|409|429|QUARANTINE|exception',line,re.I):\n  print(re.sub(r'\\b[0-9]{6,}\\b','[ID]',line)[:300])\nPY\n"
+  }
+}
