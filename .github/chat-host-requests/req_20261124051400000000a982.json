@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/2b91dd7c13980b4c9ea27a52b149b3472fde04a1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nrelease=\"$root/.releases/fb2f26a6a9a7811213891f715ad6c225b5a6f00a/preview-montage-v2\"\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(cat \"$release/base-image\")\" || exit 61\npython3 - \"$release\" <<'PY'\nimport sys,re\nfrom pathlib import Path\np=Path(sys.argv[1])\nfor f in (p/'patch').rglob('*.mjs'):\n s=f.read_text()\n for m in re.finditer(r'^<<<<<<< [^\\n]*\\n(.*?)^\\|\\|\\|\\|\\|\\|\\| [^\\n]*\\n(.*?)^=======\\n(.*?)^>>>>>>> [^\\n]*\\n',s,re.M|re.S):\n  print('CONFLICT',f.relative_to(p/'patch'))\n  for k,v in zip(('LIVE','BASE','NEW'),m.groups()):print(k+'\\n'+v)\nfor rel in ['src/runtime/creatorMigrate.mjs','src/runtime/creatorPollingMain.mjs','src/telegram/creatorWizard.mjs','src/telegram/creatorUi.mjs','src/sales/pgListings.mjs','src/telegram/paidListingPublisher.mjs','src/sales/pgPostingReceipts.mjs','src/telegram/mediaProcessor.mjs']:\n print('LIVE ANCHORS',rel)\n for i,l in enumerate((p/'live'/rel).read_text().splitlines()):\n  if re.search(r'\\b(?:migrations|sampleDuration|freeMessageIds|secondFileId|thumbnailOutputPath|prepared|prepareMissingPreviews|sampleMessageId|needs_reconcile|pendingVideoDraft|valid=|durationSeconds|sendMediaGroup|previewMessageId|recordFree)\\b',l):print(str(i+1)+': '+l)\nPY\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1});\ntry{\n const c=await pool.query(\"SELECT conrelid::regclass::text AS tab,conname,pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid IN ('videobot_listings'::regclass,'videobot_post_receipts'::regclass) AND contype='c' ORDER BY tab,conname\");\n console.log('DB_CONSTRAINTS',JSON.stringify(c.rows));\n const s=await pool.query(\"SELECT s.state->>'publishing' AS publishing,s.state->'pendingVideoDraft'->>'listingId' AS pending_listing,s.state->'pendingVideoDraft'->>'revision' AS pending_revision,s.state->'draft'->>'mode' AS draft_mode,l.status AS known_listing_status,l.revision AS known_listing_revision FROM videobot_creator_sessions s JOIN videobot_listings l ON l.seller_user_id=s.owner_user_id WHERE l.listing_id=$1\",['v26nov24invoice']);\n const v=s.rows[0];console.log('SESSION_RECONCILE',JSON.stringify({...v,pending_listing:v?.pending_listing===null?null:(v?.pending_listing==='v26nov24invoice'?'KNOWN_LISTING':'OTHER_LISTING')}));\n const p=await pool.query(\"SELECT status,sale_mode,cardinality(free_message_ids) AS free_count,paid_message_id IS NOT NULL AS paid FROM videobot_post_receipts WHERE delivery_key=$1\",['v26nov24invoice:1']);\n console.log('KNOWN_RECEIPT',JSON.stringify(p.rows));\n}finally{await pool.end()}\nJS\n"
+  }
+}
