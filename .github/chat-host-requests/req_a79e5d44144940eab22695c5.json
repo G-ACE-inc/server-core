@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nstage=/home/gace/.local/share/gace-create-videobot/newpost-fcb0676\ntest -s \"$stage/introduced.fail\" || exit 61\nVIDEO_STAGE=\"$stage\" python3 - <<'PY'\nimport os,re,sys\nfrom pathlib import Path\nroot=Path(os.environ['VIDEO_STAGE'])\nintroduced=[x.strip() for x in (root/'introduced.fail').read_text().splitlines() if x.strip()]\nnames=[\n ('creatorWizard.test.mjs',60),\n ('creatorUi.test.mjs',145),\n ('creatorBot.test.mjs',185),\n ('videoInvoiceSales.test.mjs',215),\n ('paidListingPublisher.test.mjs',235)]\nfor filename,base in names:\n text=(root/'test'/filename).read_text()\n titles=re.findall(r\"test\\(['\\\"]([^'\\\"]+)\",text)\n for i,title in enumerate(titles):\n  if title in introduced:\n   code=base+i\n   if code>250:raise SystemExit(251)\n   raise SystemExit(code)\nraise SystemExit(252)\nPY\n"
+  }
+}
