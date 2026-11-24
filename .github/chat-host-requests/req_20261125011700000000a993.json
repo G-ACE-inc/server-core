@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/18d286432566f52684166c3e10fc7cd97bced342",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\nbase=21b7ac80a6a8b2b030458e8426d1f94d6675c870\ntarget=18d286432566f52684166c3e10fc7cd97bced342\nstage=/home/gace/.local/share/gace-create-videobot/editor-nav-18d2864\ncheckout=\"$(git rev-parse --show-toplevel)\"\ncase \"$(git -C \"$checkout\" remote get-url origin)\" in *seigo-gace/create-videobot*) ;; *) exit 62;; esac\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\nmkdir -p \"$stage\"\nimage=\"$(docker inspect \"$cid\" --format '{{.Image}}')\"\nprintf '%s\\n' \"$image\" > \"$stage/base-image\"\ngit -C \"$checkout\" fetch --no-tags origin \"$target\"\ntest \"$(git -C \"$checkout\" rev-parse FETCH_HEAD)\" = \"$target\"\nfiles=\"src/telegram/creatorUi.mjs src/telegram/creatorWizard.mjs src/telegram/creatorBot.mjs src/sales/pgListings.mjs\"\nfor f in $files;do\n for d in live base new patch;do mkdir -p \"$stage/$d/$(dirname \"$f\")\";done\n docker cp \"$cid:/opt/videobot/$f\" \"$stage/live/$f\"\n git -C \"$checkout\" show \"$base:$f\" > \"$stage/base/$f\"\n git -C \"$checkout\" show \"$target:$f\" > \"$stage/new/$f\"\n if ! git merge-file -p --diff3 \"$stage/live/$f\" \"$stage/base/$f\" \"$stage/new/$f\" > \"$stage/patch/$f\";then\n   echo \"EDITOR_CONFLICT=$f\"\n fi\ndone\npython3 - \"$stage\" <<'PY'\nimport re,sys\nfrom pathlib import Path\nr=Path(sys.argv[1])\nbad=False\nfor p in (r/'patch').rglob('*.mjs'):\n s=p.read_text()\n for m in re.finditer(r'^<<<<<<< [^\\n]*\\n(.*?)^\\|\\|\\|\\|\\|\\|\\| [^\\n]*\\n(.*?)^=======\\n(.*?)^>>>>>>> [^\\n]*\\n',s,re.M|re.S):\n  bad=True\n  print('CONFLICT',p.relative_to(r/'patch'))\n  for k,v in zip(('LIVE','BASE','NEW'),m.groups()):print(k+'\\n'+v)\nif bad:raise SystemExit(72)\nPY\nold=create-videobot:editor-nav-baseline-18d2864\nnew=create-videobot:editor-nav-candidate-18d2864\ndocker tag \"$image\" \"$old\"\n{ printf 'FROM %s\\nUSER root\\n' \"$old\";for f in $files;do printf 'COPY --chown=node:node patch/%s /opt/videobot/%s\\n' \"$f\" \"$f\";done;echo 'USER node'; } > \"$stage/Dockerfile\"\ndocker build --pull=false --network none -t \"$new\" \"$stage\" >/dev/null\nfor f in $files;do docker run --rm --network none --entrypoint node \"$new\" --check \"/opt/videobot/$f\";done\necho EDITOR_NAV_CANDIDATE=PASS\n"
+  }
+}
