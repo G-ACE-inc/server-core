@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/21b7ac80a6a8b2b030458e8426d1f94d6675c870"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1});\ntry{\n const q=await pool.query(\"SELECT s.state,s.revision,s.screen_message_id,s.owner_user_id FROM videobot_creator_sessions s JOIN videobot_listings l ON l.seller_user_id=s.owner_user_id WHERE l.listing_id=$1\",['v26nov24invoice']);\n if(q.rows.length!==1)process.exit(62);\n const {state,owner_user_id}=q.rows[0];\n const ref=state.pendingVideoDraft??(state.draft?.listingId?{listingId:state.draft.listingId,revision:state.draft.revision}:null);\n console.log('SESSION',JSON.stringify({screen:state.screen,publishing:state.publishing,reference:!!ref,mode:state.draft?.mode,revision:ref?.revision}));\n if(state.publishing!=='needs_reconcile')process.exit(65);\n if(!ref)process.exit(66);\n const r=await pool.query(\"SELECT l.status,l.revision, r.status AS receipt_status,r.revision AS receipt_revision,r.paid_message_id IS NOT NULL AS paid,cardinality(r.free_message_ids) AS free_count FROM videobot_listings l LEFT JOIN videobot_post_receipts r ON r.listing_id=l.listing_id AND r.revision=$3 WHERE l.seller_user_id=$1 AND l.listing_id=$2\",[owner_user_id,ref.listingId,ref.revision]);\n console.log('EXACT_REF',JSON.stringify(r.rows));\n const u=await pool.query(\"SELECT count(*)::int AS n FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id WHERE l.seller_user_id=$1 AND r.status<>'sent'\",[owner_user_id]);\n console.log('UNRESOLVED_RECEIPTS',u.rows[0].n);\n const v=r.rows[0];\n if(v?.status==='published'&&v.receipt_status==='sent'&&v.paid&&[2,3].includes(v.free_count)&&u.rows[0].n===0)process.exit(73);\n if(u.rows[0].n===0)process.exit(74);\n process.exit(75);\n}finally{await pool.end()}\nJS\n"
+  }
+}
