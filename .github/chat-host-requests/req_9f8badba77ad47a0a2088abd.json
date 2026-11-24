@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nstage=/home/gace/.local/share/gace-create-videobot/newpost-fcb0676\ntest -s \"$stage/new.tap\" || exit 61\nVIDEO_STAGE=\"$stage\" python3 - <<'PY'\nimport os,re\nfrom pathlib import Path\ntext=(Path(os.environ['VIDEO_STAGE'])/'new.tap').read_text()\npattern=r'(?m)^not ok \\d+ - creator DM callback/standard input/price flow uses one existing screen and revision.*?(?=^# Subtest:|\\Z)'\nm=re.search(pattern,text,re.DOTALL|re.MULTILINE)\nif not m:raise SystemExit(62)\nblock=m.group(0)\nstack=re.search(r'TestContext\\.<anonymous> \\(file:[^\\n]*creatorWizard\\.test\\.mjs:(\\d+):',block)\nif not stack:raise SystemExit(63)\nline=int(stack.group(1))\nif not 56<=line<=81:raise SystemExit(64)\nraise SystemExit(line)\nPY\n"
+  }
+}
