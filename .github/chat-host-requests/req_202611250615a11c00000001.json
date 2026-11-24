@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/11",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nhead=8f374cc9854c12b03a39d6048c8b2242ac5f67ca\nbase=86dd6e2fb96f5632bafc18b358669e900998586a\ncid=gace-createvdobot-videobot-poll-1\nroot=\"$(git rev-parse --show-toplevel)\"\ncd \"$root\"\norigin=\"$(git config --get remote.origin.url)\"\ncase \"$origin\" in *seigo-gace/create-videobot|*seigo-gace/create-videobot.git) ;; *) echo WRONG_REPOSITORY; exit 21;; esac\nprintf 'LOCAL_HEAD='; git rev-parse HEAD\nprintf 'LOCAL_BRANCH='; git branch --show-current\nprintf 'LOCAL_DIRTY_FILES='; git status --porcelain | wc -l\ntest \"$(docker inspect --format '{{.State.Running}}' \"$cid\")\" = true\nprintf 'LIVE_IMAGE='; docker inspect --format '{{.Image}}' \"$cid\"\nprintf 'RUNNING_POLLERS='; docker ps --filter label=com.docker.compose.service=videobot-poll --format '{{.Names}}' | wc -l\ngit fetch --no-tags origin \"$head\"\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$head\"\ngit cat-file -e \"$base^{commit}\"\necho SOURCE_RUNTIME_COMPARISON_BEGIN\ngit ls-tree -r --name-only \"$head\" src sql | while IFS= read -r f; do\n  target=\"$(git show \"$head:$f\" | sha256sum | cut -d' ' -f1)\"\n  if git cat-file -e \"$base:$f\" 2>/dev/null; then old=\"$(git show \"$base:$f\" | sha256sum | cut -d' ' -f1)\"; else old=ABSENT; fi\n  if live=\"$(docker exec \"$cid\" sha256sum \"/opt/videobot/$f\" 2>/dev/null | cut -d' ' -f1)\"; then\n    if test \"$live\" = \"$target\"; then state=TARGET; elif test \"$live\" = \"$old\"; then state=BASE; else state=DIVERGED; fi\n  else state=MISSING; fi\n  if test \"$state\" != TARGET || test \"$target\" != \"$old\"; then printf '%s %s\\n' \"$state\" \"$f\"; fi\ndone\necho SOURCE_RUNTIME_COMPARISON_END\necho PRECHECK_COMPLETE_NO_RESTART_NO_DATABASE_WRITE\n"
+  }
+}
