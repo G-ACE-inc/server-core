@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/fb2f26a6a9a7811213891f715ad6c225b5a6f00a"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntarget=fb2f26a6a9a7811213891f715ad6c225b5a6f00a\nbase=d6d490c68b3e44790a90f13b727d425815b865e1\ncheckout=\"$(git rev-parse --show-toplevel)\"\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nrelease=\"$root/.releases/$target/preview-montage-v2\"\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ntest ! -e \"$release\" || exit 62\nmkdir -p \"$release\"/{live,base,new,patch}\nimage=\"$(docker inspect \"$cid\" --format '{{.Image}}')\"\nprintf '%s\\n' \"$image\" > \"$release/base-image\"\nprintf '%s\\n' \"$(docker inspect \"$cid\" --format '{{.Config.Image}}')\" > \"$release/base-tag\"\ngit -C \"$checkout\" fetch --no-tags origin \"$target\" || exit 63\ntest \"$(git -C \"$checkout\" rev-parse FETCH_HEAD)\" = \"$target\" || exit 64\nfiles=\"src/sales/sampleMedia.mjs src/sales/autoPreview.mjs src/telegram/mediaProcessor.mjs src/telegram/freeAlbum.mjs src/telegram/paidListingPublisher.mjs src/telegram/creatorUi.mjs src/telegram/creatorWizard.mjs src/sales/pgListings.mjs src/sales/pgPostingReceipts.mjs src/runtime/creatorMigrate.mjs\"\nfor f in $files;do\n for d in live base new patch;do mkdir -p \"$release/$d/$(dirname \"$f\")\";done\n docker cp \"$cid:/opt/videobot/$f\" \"$release/live/$f\"\n git -C \"$checkout\" show \"$base:$f\" > \"$release/base/$f\"\n git -C \"$checkout\" show \"$target:$f\" > \"$release/new/$f\"\n git merge-file -p --diff3 \"$release/live/$f\" \"$release/base/$f\" \"$release/new/$f\" > \"$release/patch/$f\" || test \"$?\" -lt 128\ndone\ndocker cp \"$cid:/opt/videobot/src/runtime/creatorPollingMain.mjs\" \"$release/live/src/runtime/creatorPollingMain.mjs\"\nexport RELEASE=\"$release\"\npython3 - <<'PY'\nfrom pathlib import Path\nimport os,re\nroot=Path(os.environ['RELEASE'])\nconflict=re.compile(r'^<<<<<<< [^\\n]*\\n(.*?)^\\|\\|\\|\\|\\|\\|\\| [^\\n]*\\n(.*?)^=======\\n(.*?)^>>>>>>> [^\\n]*\\n',re.M|re.S)\nunresolved=[]\nfor p in (root/'patch').rglob('*.mjs'):\n rel=str(p.relative_to(root/'patch'))\n def solve(m):\n  live,base,new=m.groups()\n  def exact(old,new_text):\n   if live.count(old)!=1:raise ValueError(rel+' anchor')\n   return live.replace(old,new_text)\n  try:\n   if rel.endswith('/mediaProcessor.mjs') and 'if(draft.thumbnail&&draft.sample)return {};' in live and 'secondFileId' in new:\n    return exact('if(draft.thumbnail&&draft.sample)return {};','if(draft.thumbnail?.secondFileId&&draft.sample)return {};')\n   if rel.endswith('/paidListingPublisher.mjs'):\n    if 'sampleFileId:listing.sample.fileId,caption' in live and 'secondThumbnailFileId' in new:\n     return exact('sampleFileId:listing.sample.fileId','secondThumbnailFileId:listing.thumbnail.secondFileId, sampleFileId:listing.sample.fileId')\n    if 'sampleMessageId=preview?.[1]' in live and 'sendMessage' in live and 'preview?.at(-1)' in new:\n     return exact('sampleMessageId=preview?.[1]','sampleMessageId=preview?.at(-1)')\n   if rel.endswith('/creatorUi.mjs') and \"const missing=['thumbnail','sample','paidVideo','title','priceStars'].filter(k=>!draft[k]);\" in live and 'secondFileId' in new:\n    return exact(\"filter(k=>!draft[k]);\",\"filter(k=>!draft[k]||(k==='thumbnail'&&!draft.thumbnail.secondFileId));\")\n   if rel.endswith('/creatorWizard.mjs') and 'const nativeThumbnail=' in live and 'const nativeThumbnail=' in base and not new.strip():\n    return ''\n   if rel.endswith('/pgListings.mjs'):\n    if 'draft.sample.durationSeconds>30' in live and 'durationSeconds>60.1' in new:\n     return exact(\"draft.sample.durationSeconds>30))throw new Error('sample longer than 30 seconds')\",\"draft.sample.durationSeconds>60.1))throw new Error('sample longer than 60.1 seconds')\")\n    if \"draft.feeTermsAccepted===true,draft.description??''\" in live and 'draft.thumbnail?.secondFileId' in new:\n     return exact(\"draft.feeTermsAccepted===true,draft.description??''\",\"draft.feeTermsAccepted===true,draft.description??'',draft.thumbnail?.secondFileId??null\")\n    if 'INSERT INTO videobot_listings' in live and 'second_thumbnail_file_id' in new:\n     return exact(\"description,status) VALUES\",\"description,second_thumbnail_file_id,status) VALUES\").replace(\"$13,'draft'\",\"$13,$14,'draft'\")\n    if 'UPDATE videobot_listings SET' in live and 'second_thumbnail_file_id' in new:\n     return exact('description=$14,revision','description=$14,second_thumbnail_file_id=$15,revision')\n   if rel.endswith('/creatorMigrate.mjs') and '023_video_legacy_purchaser_entitlement.sql' in live and '023_video_preview_montage.sql' in new:\n    return exact(\"'023_video_legacy_purchaser_entitlement.sql'\",\"'023_video_legacy_purchaser_entitlement.sql',\\n '024_video_preview_montage.sql'\")\n  except ValueError:pass\n  unresolved.append(rel)\n  return m.group()\n s=conflict.sub(solve,p.read_text())\n p.write_text(s)\nfor rel in unresolved:print('UNRESOLVED',rel)\npoll=(root/'live/src/runtime/creatorPollingMain.mjs').read_text()\nfor line in poll.splitlines():\n if 'schema.migrations' in line or 'applySchema' in line or 'applyCreatorSchema' in line:print('POLL_SCHEMA',line.strip())\nif unresolved:raise SystemExit(72)\nfor p in (root/'patch').rglob('*.mjs'):\n if re.search(r'^<<<<<<< ',p.read_text(),re.M):raise SystemExit(73)\nprint('KNOWN_LIVE_CONFLICTS_RESOLVED')\nPY\n"
+  }
+}
