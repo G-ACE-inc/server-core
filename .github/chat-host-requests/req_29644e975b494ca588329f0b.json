@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nstage=/home/gace/.local/share/gace-create-videobot/newpost-fcb0676\ntest -s \"$stage/creatorWizard.mjs.source\" && test -s \"$stage/src/telegram/creatorWizard.mjs\" || exit 60\nVIDEO_STAGE=\"$stage\" python3 - <<'PY'\nfrom pathlib import Path\nimport os\nr=Path(os.environ['VIDEO_STAGE'])\nw=(r/'src/telegram/creatorWizard.mjs').read_text()\nn=(r/'creatorWizard.mjs.source').read_text()\nu=(r/'src/telegram/creatorUi.mjs').read_text()\nv=(r/'creatorUi.mjs.source').read_text()\nchecks=[\n (w,\"    const previousScreenId=\"),\n (w,\"    const result=await screenTransport.show\"),\n (n,\"    // Do not try to edit a former media-group item\"),\n (w,\"    if(owned.status==='published'||owned.status==='paused')\"),\n (w,\"    const draft=openCreatorEditor\"),\n (w,\"    if(/^menu:listing\"),\n (w,\"    if(code==='menu:manage')\"),\n (w,\"      if((parts[1]==='price'||parts[1]==='open')\"),\n (w,\"      if(parts[1]==='back'\"),\n (u,\"  for(const [index,item] of items.entries())\"),\n (u,\"  const btn=\"),\n (v,\"  for(const item of items)\")\n]\nfor i,(text,needle) in enumerate(checks,1):\n if text.count(needle)!=1:raise SystemExit(70+i)\nprint('VIDEO_NEWPOST_PATCH_ANCHORS_COMPLETE=PASS')\nPY\n"
+  }
+}
