@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\nprintf 'ACTIVE_IMAGE='\ndocker inspect \"$cid\" --format '{{.Config.Image}}'\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport pg from 'pg'; import {readFileSync} from 'node:fs';\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,\n database:process.env.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),\n max:1,connectionTimeoutMillis:5000});\ntry {\n const owners=await pool.query('SELECT seller_user_id FROM videobot_listings WHERE listing_id=$1',['v26nov24invoice']);\n if(owners.rows.length!==1)throw Error('OWNER_ANCHOR_UNKNOWN');\n const owner=owners.rows[0].seller_user_id;\n const listings=await pool.query(\n  `SELECT l.listing_id,l.revision,l.status,l.title,l.created_at,\n    (SELECT COUNT(*)::int FROM videobot_stars_ledger s WHERE s.listing_id=l.listing_id AND s.kind='paid') AS paid_count,\n    (SELECT COUNT(*)::int FROM videobot_video_invoice_orders o WHERE o.listing_id=l.listing_id AND o.status IN ('paid','delivering','delivered','delivery_unknown')) AS invoice_paid_count,\n    (SELECT COUNT(*)::int FROM videobot_video_invoice_orders o WHERE o.listing_id=l.listing_id) AS invoice_order_count,\n    (SELECT COUNT(*)::int FROM videobot_post_receipts r WHERE r.listing_id=l.listing_id AND r.status='sent') AS public_receipt_count,\n    (SELECT COUNT(*)::int FROM videobot_post_receipts r WHERE r.listing_id=l.listing_id) AS receipt_count,\n    (SELECT COALESCE(array_agg(r.paid_message_id) FILTER(WHERE r.paid_message_id IS NOT NULL),ARRAY[]::bigint[]) FROM videobot_post_receipts r WHERE r.listing_id=l.listing_id) AS post_ids\n    FROM videobot_listings l WHERE l.seller_user_id=$1 ORDER BY l.created_at DESC LIMIT 30`,[owner]);\n const sessions=await pool.query('SELECT revision,state FROM videobot_creator_sessions WHERE owner_user_id=$1',[owner]);\n const sameTitle=await pool.query(\n  `SELECT COUNT(*)::int AS n FROM videobot_listings WHERE seller_user_id=$1 AND title=(SELECT title FROM videobot_listings WHERE listing_id=$2)`,\n  [owner,'v26nov24invoice']);\n const l=listings.rows.map((r,i)=>({item:i+1,id:r.listing_id,rev:r.revision,status:r.status,title:r.title,\n   paid:Number(r.paid_count),invoicePaid:Number(r.invoice_paid_count),invoiceOrders:Number(r.invoice_order_count),\n   publicReceipts:Number(r.public_receipt_count),receipts:Number(r.receipt_count),\n   postedMessages:(r.post_ids??[]).map(Number),created:r.created_at}));\n const state=sessions.rows[0]?.state??{};\n console.log('VIDEO_OWNER_LISTING_CLASSIFICATION='+JSON.stringify({\n    totalFetched:l.length,sameTitleAsAnchored:Number(sameTitle.rows[0].n),\n    rows:l,session:{revision:sessions.rows[0]?.revision??null,screen:state.screen??null,\n     draftMode:state.draft?.mode??null,hasDraftVideo:!!state.draft?.paidVideo,\n     pendingDraft:!!state.pendingVideoDraft,publishing:state.publishing??null,\n     hasAlbum:!!state.albumMessageId}}));\n}finally{await pool.end()}\nJS"
+  }
+}
