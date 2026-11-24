@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || { echo VIDEO_REPLACEMENT_POLLER_DOWN; exit 61; }\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,\n database:process.env.VIDEOBOT_DB_NAME,\n password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),\n max:1,connectionTimeoutMillis:4500});\ntry{\n const schema=await pool.query(\"SELECT to_regclass('public.videobot_rich_offer_receipts') IS NOT NULL AS available\");\n if(schema.rows[0]?.available!==true)throw Error('RICH_RECEIPTS_MISSING');\n const receipt=await pool.query(\"SELECT status,sale_mode,paid_message_id FROM videobot_post_receipts WHERE delivery_key=$1\",['v26nov24invoice:1']);\n if(receipt.rows.length!==1||receipt.rows[0].status!=='sent'||receipt.rows[0].sale_mode!=='invoice'||!Number(receipt.rows[0].paid_message_id))\n  throw Error('ORIGINAL_INVOICE_RECEIPT_NOT_ACTIVE');\n const rich=await pool.query(\"SELECT status,message_id FROM videobot_rich_offer_receipts WHERE delivery_key=$1\",['v26nov24invoice:1']);\n if(rich.rows.length!==0)throw Error('RICH_REPLACEMENT_ALREADY_CLAIMED');\n console.log('VIDEO_REPLACEMENT_SCHEMA_AND_ORIGINAL_RECEIPT=READY');\n}finally{await pool.end()}\nJS"
+  }
+}
