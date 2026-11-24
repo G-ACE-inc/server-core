@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nimport json\nfrom pathlib import Path\nrid='req_0fd2a889dc3a4d57ba9adeb6'\np=Path('/home/gace/.local/state/gserver-terminal/results')/(rid+'.json')\nif not p.is_file():\n print('VIDEO_PRIOR_DEPLOY_LEDGER=ABSENT')\nelse:\n try:\n  x=json.loads(p.read_text())\n  state=x.get('state')\n  r=x.get('result',{})\n  if state=='COMPLETED' and r.get('state')=='PASS' and r.get('exit_code')==0:\n   print('VIDEO_PRIOR_DEPLOY_LEDGER=COMPLETED_PASS')\n  elif state=='COMPLETED':print('VIDEO_PRIOR_DEPLOY_LEDGER=COMPLETED_FAIL')\n  else:print('VIDEO_PRIOR_DEPLOY_LEDGER=OTHER')\n except Exception:print('VIDEO_PRIOR_DEPLOY_LEDGER=UNREADABLE')\nPY\ncid=gace-createvdobot-videobot-poll-1\nif test \"$(docker inspect \"$cid\" --format '{{.State.Running}}' 2>/dev/null)\" != true;then\n echo VIDEO_POLLER_STATE=NOT_RUNNING\nelse\n image=\"$(docker inspect \"$cid\" --format '{{.Config.Image}}')\"\n case \"$image\" in\n create-videobot:newpost-reconcile-21b7ac80) echo VIDEO_ACTIVE_IMAGE=RECONCILED;;\n create-videobot:newpost-slim-fcb0676) echo VIDEO_ACTIVE_IMAGE=PRIOR_SLIM;;\n *) echo VIDEO_ACTIVE_IMAGE=OTHER;;\n esac\nfi\n"
+  }
+}
