@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7145043085"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ntag=create-videobot:menu-recovery-4decbe6\nstage=\"$HOME/.local/share/gace-create-videobot/menu-recovery-4decbe6-20261125\"\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(docker image inspect \"$tag\" --format '{{.Id}}')\"\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\ndocker inspect \"$cid\" --format 'state={{.State.Status}} restarts={{.RestartCount}} image={{.Image}} started={{.State.StartedAt}}'\ndocker exec -i -w /opt/videobot \"$cid\" sh -c 'while IFS= read -r f;do sha256sum \"$f\" || exit 1;done' < \"$stage/runtime-files.txt\" > \"$stage/readback.sha\"\ndiff -u \"$stage/expected.sha\" \"$stage/readback.sha\"\necho RUNTIME_CODE_MATCHES_TESTED_HEAD\ndocker exec \"$cid\" node -e 'console.log(\"TERMS_CONFIGURED=\"+Boolean(process.env.CREATEVDOBOT_TERMS_URL));console.log(\"TERMS_CANONICAL=\"+(process.env.CREATEVDOBOT_TERMS_URL===\"https://tgtumbler-docs.pages.dev/createvdobot-terms.html\"));console.log(\"INVOICE_MODE=\"+(process.env.VIDEO_SALE_MODE===\"invoice\"))'\ndocker logs --tail 80 \"$cid\" 2>&1 | grep -E 'READY=|CREATOR_DM_UPDATES_HANDLED=|CREATOR_UPDATES_QUARANTINED=|CREATOR_PUBLISHED_TERMS_URL_REQUIRED|Error:' || true\necho USERBOT_SERVICE_STATE\nsystemctl --user is-active gace-userbot-verify.service || true\nsystemctl --user is-enabled gace-userbot-verify.service || true\n# Only examine the existing resident test interface, never session contents.\ngate=\"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nif test -d \"$gate/scripts\";then find \"$gate/scripts\" -maxdepth 1 -type f -iname '*userbot*' -printf '%f\\n';fi\necho USERBOT_SOCKET_CANDIDATES\nif test -d \"${XDG_RUNTIME_DIR:-/run/user/$(id -u)}\";then find \"${XDG_RUNTIME_DIR:-/run/user/$(id -u)}\" -maxdepth 2 -type s -iname '*userbot*' -printf '%f\\n';fi\necho INDEPENDENT_RUNTIME_READBACK_PASS\nset -eu\ntarget=req_202611250625b11c00000007\nroot=\nfor p in /home/gace/Project/server-core /home/gace/Project/Gserver/server-core /home/gace/Project/Gserver/repository /home/gace/server-core /home/gace/Project/Gserver/projects/server-core; do\n if test -f \"$p/scripts/servercore_host_output_private_artifact_publish.py\"; then root=\"$p\"; break; fi\ndone\nif test -z \"$root\"; then\n script=\"$(find /home/gace/Project -maxdepth 7 -type f -name servercore_host_output_private_artifact_publish.py -print -quit 2>/dev/null)\"\n if test -n \"$script\"; then root=\"${script%/scripts/servercore_host_output_private_artifact_publish.py}\"; fi\nfi\ntest -n \"$root\" || exit 61\ncd \"$root\"\npython3 -B scripts/servercore_host_output_private_artifact_publish.py \"$target\" --writer-ledger --writer-dir \"$HOME/.local/state/gserver-terminal/results\""
+  }
+}
