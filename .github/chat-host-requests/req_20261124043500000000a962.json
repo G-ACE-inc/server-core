@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/fb2f26a6a9a7811213891f715ad6c225b5a6f00a"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\nroot=/home/gace/.local/share/gace-create-videobot/native-sticker-c8c50d420c0b9b5d447a1fc87ef3d9e1ec7aceed\nrelease=\"$root/.releases/fb2f26a6a9a7811213891f715ad6c225b5a6f00a/preview-montage-v1\"\ntest -d \"$release/patch\" || exit 80\nn=0\nfor f in src/sales/sampleMedia.mjs src/sales/autoPreview.mjs src/telegram/mediaProcessor.mjs src/telegram/freeAlbum.mjs src/telegram/paidListingPublisher.mjs src/telegram/creatorUi.mjs src/telegram/creatorWizard.mjs src/sales/pgListings.mjs src/sales/pgPostingReceipts.mjs src/runtime/creatorMigrate.mjs;do\n n=$((n+1))\n if test -f \"$release/patch/$f\" && grep -q '^<<<<<<< ' \"$release/patch/$f\";then\n   printf 'CONFLICT %s\\n' \"$f\"\n   exit \"$((80+n))\"\n fi\ndone\nexit 99\n"
+  }
+}
