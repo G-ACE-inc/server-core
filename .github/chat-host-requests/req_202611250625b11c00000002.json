@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/11"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ndocker inspect \"$cid\" --format 'state={{.State.Status}} running={{.State.Running}} restarts={{.RestartCount}} image={{.Image}} tag={{.Config.Image}} started={{.State.StartedAt}} exit={{.State.ExitCode}}'\ndocker ps -a --filter label=com.docker.compose.service=videobot-poll --format '{{.Names}} {{.Status}}'\necho LOGS_BEGIN\ndocker logs --tail 200 \"$cid\" 2>&1 | sed -E 's/[0-9]{6,}:[A-Za-z0-9_-]{20,}/[REDACTED]/g' | cut -c1-300\necho LOGS_END\nif test \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true; then\n docker exec \"$cid\" sh -c 'cd /opt/videobot && for f in src/runtime/creatorPollingMain.mjs src/runtime/creatorMigrate.mjs src/telegram/creatorWizard.mjs src/telegram/creatorUi.mjs src/telegram/creatorBot.mjs src/telegram/menuPanel.mjs src/telegram/creatorWiring.mjs; do sha256sum \"$f\"; done'\nfi\nstage=\"$HOME/.local/share/gace-create-videobot/opus-8f374cc-stage-20261125\"\nif test -f \"$stage/build.log\"; then tail -n 20 \"$stage/build.log\"; fi\nif test -f \"$stage/new.tap\"; then tail -n 25 \"$stage/new.tap\"; fi\necho LOCAL_CHECKOUT\ngit rev-parse HEAD\ngit status --short\n"
+  }
+}
