@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/fb2f26a6a9a7811213891f715ad6c225b5a6f00a"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\ntry{\n const r=await pool.query(\"SELECT to_regclass('videobot_owner_update_jobs') IS NOT NULL AS jobs,to_regclass('videobot_creator_sessions') IS NOT NULL AS sessions,to_regclass('videobot_webhook_updates') IS NOT NULL AS webhook\");\n console.log('SCHEMA',JSON.stringify(r.rows[0]));\n console.log('OWNER_JOBS_ENV',process.env.VIDEOBOT_OWNER_JOBS==='YES');\n if(!r.rows[0].jobs){process.exit(76);}\n const c=await pool.query(\"SELECT column_name FROM information_schema.columns WHERE table_name='videobot_owner_update_jobs' ORDER BY ordinal_position\");\n console.log('COLUMNS',JSON.stringify(c.rows));\n const q=await pool.query(\"SELECT status,count(*)::int AS n FROM videobot_owner_update_jobs WHERE owner_id=$1 GROUP BY status\",[(await pool.query(\"SELECT seller_user_id FROM videobot_listings WHERE listing_id='v26nov24invoice'\")).rows[0]?.seller_user_id]);\n console.log('OWNER_COUNTS',JSON.stringify(q.rows));\n const m=await pool.query(\"SELECT count(*)::int AS n FROM videobot_owner_update_jobs WHERE owner_id=$1 AND status='queued' AND ((payload->'callback_query'->>'data') LIKE 'menu:%' OR (payload->'message'->>'text') LIKE '/start%')\",[(await pool.query(\"SELECT seller_user_id FROM videobot_listings WHERE listing_id='v26nov24invoice'\")).rows[0]?.seller_user_id]);\n console.log('MENU_QUEUED',m.rows[0].n);\n if(q.rows.some(x=>x.status==='needs_reconcile')&&m.rows[0].n>0)process.exitCode=73;\n else if(q.rows.some(x=>x.status==='needs_reconcile'))process.exitCode=74;\n}catch(e){console.log('DB_ERROR_CODE',e.code??'unknown');process.exitCode=e.code==='42P01'?76:e.code==='42703'?77:79;}\nfinally{await pool.end()}\nJS\n"
+  }
+}
