@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7144930204"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ndocker inspect \"$cid\" --format 'user={{.Config.User}} state={{.State.Status}} image={{.Image}} restarts={{.RestartCount}}'\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nconst u=process.env.CREATEVDOBOT_TERMS_URL??'';\nconst valid=/^https:\\/\\/[A-Za-z0-9.-]+\\/[A-Za-z0-9/_-]+\\.html$/.test(u);\nconsole.log(JSON.stringify({termsConfigured:!!u,termsValidSyntax:valid,termsUrl:valid?u:null,termsMatchesCanonical:u==='https://tgtumbler-docs.pages.dev/createvdobot-terms.html',ownerJobs:process.env.VIDEOBOT_OWNER_JOBS==='YES'}));\nconst p=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\ntry {\n const q=await p.query(\"SELECT status,count(*)::integer AS n FROM videobot_owner_update_jobs GROUP BY status ORDER BY status\");\n console.log('OWNER_JOB_COUNTS '+JSON.stringify(q.rows));\n const v=await p.query(\"SELECT status,count(*)::integer AS n FROM videobot_webhook_updates GROUP BY status ORDER BY status\");\n console.log('UPDATE_COUNTS '+JSON.stringify(v.rows));\n} finally {await p.end();}\nJS\nstage=\"$HOME/.local/share/gace-create-videobot/opus-8f374cc-stage-20261125\"\nstat -c '%a %n' \"$stage/merged/src\" \"$stage/merged/src/runtime\" \"$stage/merged/src/telegram\" \"$stage/merged/src/runtime/creatorPollingMain.mjs\"\ndocker image inspect create-videobot:opus-8f374cc-stage --format 'candidate_user={{.Config.User}}'\ndocker run --rm --network none --entrypoint sh create-videobot:opus-8f374cc-stage -c 'id; ls -ld /opt/videobot/src /opt/videobot/src/runtime /opt/videobot/src/runtime/config.mjs; test -r /opt/videobot/src/runtime/config.mjs && echo CONFIG_READABLE || echo CONFIG_UNREADABLE'\n"
+  }
+}
