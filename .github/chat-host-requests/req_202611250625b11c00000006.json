@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/4decbe64ed36b7df70e25154e48c26b93f5afc28"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nhead=4decbe64ed36b7df70e25154e48c26b93f5afc28\nbase=86dd6e2fb96f5632bafc18b358669e900998586a\ncid=gace-createvdobot-videobot-poll-1\noldid=sha256:44b7f6c83af3ef1d1cbba4f02caee10b39f63f6ddc2608d897a8386c2eb3a5d5\nstage=\"$HOME/.local/share/gace-create-videobot/menu-recovery-4decbe6-20261125\"\ntag=create-videobot:menu-recovery-4decbe6\nrollback=create-videobot:rollback-menu-recovery-4decbe6\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$oldid\"\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\ntest ! -e \"$stage\"\ngit fetch --no-tags origin \"$head\"\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$head\"\nmkdir -p \"$stage\"/{candidate,overlay}\ngit archive \"$head\" src sql test package.json | tar -xf - -C \"$stage/candidate\"\ngit diff --name-only \"$base\" \"$head\" -- src sql > \"$stage/changed.txt\"\ntest \"$(wc -l < \"$stage/changed.txt\")\" -eq 6\nwhile IFS= read -r f; do\n  mkdir -p \"$stage/overlay/$(dirname \"$f\")\"\n  cp \"$stage/candidate/$f\" \"$stage/overlay/$f\"\ndone < \"$stage/changed.txt\"\n# Only tracked application source in the isolated overlay: correct its file/directory modes.\nfind \"$stage/overlay\" -type d -exec chmod 755 {} +\nfind \"$stage/overlay\" -type f -exec chmod 644 {} +\nfind \"$stage/candidate/test\" -type d -exec chmod 755 {} +\nfind \"$stage/candidate/test\" -type f -exec chmod 644 {} +\ndocker tag \"$oldid\" \"$rollback\"\nprintf 'FROM %s\\nCOPY overlay/src/ /opt/videobot/src/\\n' \"$rollback\" > \"$stage/Dockerfile\"\ndocker build --pull=false --network none -t \"$tag\" \"$stage\" > \"$stage/build.log\" 2>&1 || { tail -n 40 \"$stage/build.log\"; exit 68; }\ngit ls-tree -r --name-only \"$head\" src sql > \"$stage/runtime-files.txt\"\n(cd \"$stage/candidate\"; xargs sha256sum < \"$stage/runtime-files.txt\") > \"$stage/expected.sha\"\ndocker run --rm -i --network none --entrypoint sh -w /opt/videobot \"$tag\" -c 'while IFS= read -r f; do sha256sum \"$f\" || exit 1; done' < \"$stage/runtime-files.txt\" > \"$stage/actual.sha\"\ndiff -u \"$stage/expected.sha\" \"$stage/actual.sha\"\necho ALL_SOURCE_AND_SQL_READABLE_BY_RUNTIME_USER_AND_MATCH_HEAD\ndocker run --rm --network none --entrypoint node -w /opt/videobot -v \"$stage/candidate/test:/opt/videobot/test:ro\" \"$tag\" --test test/creatorBot.test.mjs test/creatorMigrate.test.mjs test/creatorPollingStartup.test.mjs test/creatorSourceIntegration.test.mjs test/creatorUi.test.mjs test/creatorWizard.test.mjs test/creatorOwnerUpdateJobs.test.mjs test/videoInvoiceSales.test.mjs test/paidListingPublisher.test.mjs > \"$stage/new.tap\" 2>&1 || { tail -n 100 \"$stage/new.tap\"; exit 69; }\ntail -n 15 \"$stage/new.tap\"\ngrep -F 'missing terms URL and legacy confirmation never terminate navigation or publish' \"$stage/new.tap\" | grep '^ok '\nprintf 'STAGED_IMAGE='; docker image inspect \"$tag\" --format '{{.Id}}'\necho MENU_RECOVERY_STAGE_TESTS_PASS_NO_DEPLOY\n"
+  }
+}
