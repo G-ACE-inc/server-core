@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7145875994"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\ncid=gace-createvdobot-videobot-poll-1\ntag=create-videobot:body-edit-93281ac\nstage=\"$HOME/.local/share/gace-create-videobot/body-edit-93281ac-20261125\"\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(docker image inspect \"$tag\" --format '{{.Id}}')\"\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\ntest \"$(docker ps --filter label=com.docker.compose.service=videobot-poll --format '{{.Names}}' | wc -l)\" -eq 1\ndocker inspect \"$cid\" --format 'running={{.State.Running}} restarts={{.RestartCount}}'\ndocker exec -i -w /opt/videobot \"$cid\" sh -c 'while IFS= read -r f;do sha256sum \"$f\" || exit 1;done' < \"$stage/runtime-files.txt\" > \"$stage/readback.sha\"\ndiff -u \"$stage/expected.sha\" \"$stage/readback.sha\"\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport assert from 'node:assert/strict';\nimport {openCreatorEditor,editCreatorDraft,creatorEditorPanel,myVideosPanel} from './src/telegram/creatorUi.mjs';\nlet draft=openCreatorEditor({sellerId:'fixture1'});\ndraft=editCreatorDraft(draft,{type:'captionTitle',text:'検証用タイトル'});\ndraft=editCreatorDraft(draft,{type:'paidVideo',media:{fileId:'fixture_video_001'}});\nconst panel=creatorEditorPanel(draft,3);\nassert.deepEqual(panel.entities.map(e=>e.url.split('ved_')[1]),['title_r3','description_r3','price_r3','thumbnail_r3','sample_r3','paidVideo_r3']);\nassert.equal(panel.reply_markup.inline_keyboard.length,1);\nassert.deepEqual(panel.reply_markup.inline_keyboard[0].map(b=>b.text),['✅ 投稿する','❌ キャンセル']);\nfor(const e of panel.entities)assert.match(panel.text.slice(e.offset,e.offset+e.length),/^［(?:編集|未登録)］$/);\nassert.match(panel.text,/変更したい項目の［編集］をタップして修正できます。/);\nconst existing=openCreatorEditor({sellerId:'fixture1',existing:{id:'fixture_listing',sellerId:'fixture1',revision:1,title:'検証用タイトル',paidVideo:{fileId:'fixture_video_001'},priceStars:100}});\nconst edit=creatorEditorPanel(existing,4);\nassert.equal(edit.entities.length,6);\nassert.equal(edit.reply_markup.inline_keyboard.length,1);\nassert.ok(edit.reply_markup.inline_keyboard[0].some(b=>b.callback_data==='edit:save|r4'));\nassert.ok(edit.reply_markup.inline_keyboard.flat().every(b=>!b.callback_data.startsWith('entry:register')));\nconst list=myVideosPanel({sellerId:'fixture1',listings:[{id:'fixture_listing',sellerId:'fixture1',title:'検証用タイトル',status:'draft'}],revision:5});\nassert.equal(list.entities.length,1);\nassert.equal(list.text.slice(list.entities[0].offset,list.entities[0].offset+list.entities[0].length),'［編集］');\nassert.equal(list.reply_markup.inline_keyboard.length,1);\nconsole.log('LIVE_CREATE_BODY_LINKS_6=PASS');\nconsole.log('LIVE_EDIT_BODY_LINKS_6=PASS');\nconsole.log('LIVE_LIST_BODY_LINKS=PASS');\nconsole.log('NO_INLINE_FIELD_EDIT_BUTTONS=PASS');\nJS\necho BODY_LINK_INDEPENDENT_RUNTIME_READBACK_PASS\nset -eu\ntarget=req_202611250706a11c00000003\nroot=\nfor p in /home/gace/Project/server-core /home/gace/Project/Gserver/server-core /home/gace/Project/Gserver/repository /home/gace/server-core /home/gace/Project/Gserver/projects/server-core; do\n if test -f \"$p/scripts/servercore_host_output_private_artifact_publish.py\"; then root=\"$p\"; break; fi\ndone\nif test -z \"$root\"; then\n script=\"$(find /home/gace/Project -maxdepth 7 -type f -name servercore_host_output_private_artifact_publish.py -print -quit 2>/dev/null)\"\n if test -n \"$script\"; then root=\"${script%/scripts/servercore_host_output_private_artifact_publish.py}\"; fi\nfi\ntest -n \"$root\" || exit 61\ncd \"$root\"\npython3 -B scripts/servercore_host_output_private_artifact_publish.py \"$target\" --writer-ledger --writer-dir \"$HOME/.local/state/gserver-terminal/results\""
+  }
+}
