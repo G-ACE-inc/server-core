@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/11",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nhead=8f374cc9854c12b03a39d6048c8b2242ac5f67ca\nbase=86dd6e2fb96f5632bafc18b358669e900998586a\ncid=gace-createvdobot-videobot-poll-1\noldid=sha256:44b7f6c83af3ef1d1cbba4f02caee10b39f63f6ddc2608d897a8386c2eb3a5d5\nstage=\"$HOME/.local/share/gace-create-videobot/opus-8f374cc-stage-20261125\"\nnewtag=create-videobot:opus-8f374cc-stage\nrollbacktag=create-videobot:rollback-opus-8f374cc\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$oldid\"\ntest \"$(docker ps --filter label=com.docker.compose.service=videobot-poll --format '{{.Names}}' | wc -l)\" -eq 1\ntest ! -e \"$stage\"\nmkdir -p \"$stage\"/{candidate,live,base,merged}\ngit cat-file -e \"$head^{commit}\"\ngit cat-file -e \"$base^{commit}\"\ngit archive \"$head\" src sql test package.json | tar -xf - -C \"$stage/candidate\"\ngit diff --name-only \"$base\" \"$head\" -- src sql > \"$stage/changed.txt\"\ntest \"$(wc -l < \"$stage/changed.txt\")\" -eq 6\nconflicts=0\nwhile IFS= read -r f; do\n  mkdir -p \"$stage/live/$(dirname \"$f\")\" \"$stage/base/$(dirname \"$f\")\" \"$stage/merged/$(dirname \"$f\")\"\n  docker cp \"$cid:/opt/videobot/$f\" \"$stage/live/$f\"\n  git show \"$base:$f\" > \"$stage/base/$f\"\n  if cmp -s \"$stage/live/$f\" \"$stage/base/$f\"; then\n    cp \"$stage/candidate/$f\" \"$stage/merged/$f\"\n    echo \"DIRECT $f\"\n  elif cmp -s \"$stage/live/$f\" \"$stage/candidate/$f\"; then\n    cp \"$stage/live/$f\" \"$stage/merged/$f\"\n    echo \"ALREADY $f\"\n  elif git merge-file -p -L live -L base -L candidate \"$stage/live/$f\" \"$stage/base/$f\" \"$stage/candidate/$f\" > \"$stage/merged/$f\"; then\n    echo \"MERGED $f\"\n    diff -u \"$stage/candidate/$f\" \"$stage/merged/$f\" || test \"$?\" -eq 1\n  else\n    echo \"CONFLICT $f\"\n    diff -u \"$stage/base/$f\" \"$stage/live/$f\" || test \"$?\" -eq 1\n    grep -n -A 18 -B 8 '^<<<<<<<' \"$stage/merged/$f\" || true\n    conflicts=$((conflicts+1))\n  fi\ndone < \"$stage/changed.txt\"\ntest \"$conflicts\" -eq 0 || exit 67\ndocker tag \"$oldid\" \"$rollbacktag\"\nprintf 'FROM %s\\nCOPY merged/src/ /opt/videobot/src/\\n' \"$rollbacktag\" > \"$stage/Dockerfile\"\ndocker build --pull=false --network none -t \"$newtag\" \"$stage\" > \"$stage/build.log\" 2>&1 || { tail -n 50 \"$stage/build.log\"; exit 68; }\nwhile IFS= read -r f; do\n  test \"$(sha256sum \"$stage/merged/$f\" | cut -d' ' -f1)\" = \"$(docker run --rm --network none --entrypoint sha256sum \"$newtag\" \"/opt/videobot/$f\" | cut -d' ' -f1)\"\ndone < \"$stage/changed.txt\"\ndocker run --rm --network none --entrypoint node -w /opt/videobot -v \"$stage/candidate/test:/opt/videobot/test:ro\" \"$newtag\" --test test/creatorBot.test.mjs test/creatorMigrate.test.mjs test/creatorPollingStartup.test.mjs test/creatorSourceIntegration.test.mjs test/creatorUi.test.mjs test/creatorWizard.test.mjs test/videoRealFfmpeg.test.mjs test/videoInvoiceSales.test.mjs test/paidListingPublisher.test.mjs > \"$stage/new.tap\" 2>&1 || { tail -n 80 \"$stage/new.tap\"; exit 69; }\ntail -n 12 \"$stage/new.tap\"\nprintf 'STAGED_IMAGE='; docker image inspect \"$newtag\" --format '{{.Id}}'\necho OPUS_STAGE_AND_SELECTED_TESTS_PASS_NO_LIVE_RESTART\n"
+  }
+}
