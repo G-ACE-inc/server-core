@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/2b730a878c9414efcd99673219f8a9ff58a4c2f4",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 60\ndocker exec -i \"$cid\" node --input-type=module - <<'JS'\nimport {readFileSync} from 'node:fs';\nconst root='/opt/videobot/';\nconst load=p=>readFileSync(root+p,'utf8');\nconst ui=load('src/telegram/creatorUi.mjs');\nconst wizard=load('src/telegram/creatorWizard.mjs');\nconst processor=load('src/telegram/mediaProcessor.mjs');\nconst preview=load('src/sales/autoPreview.mjs');\nconst sample=load('src/sales/sampleMedia.mjs');\nconst results={\n oldDeepLink:ui.includes('start=ved_'),\n consentAction:ui.includes('同意して登録する'),\n sampleMontage:sample.includes('prepareAutomaticSampleVideo'),\n previewConnected:preview.includes('prepareAutomaticSampleVideo'),\n secondThumbnailConnected:processor.includes('secondThumbnailOutputPath'),\n fieldPanel:wizard.includes('creatorFieldPanel(draft,value,rev)')\n};\nconsole.log(JSON.stringify(results));\nif(!results.sampleMontage||!results.previewConnected||!results.secondThumbnailConnected)process.exitCode=71;\nelse if(results.oldDeepLink||!results.consentAction)process.exitCode=72;\nJS\n"
+  }
+}
