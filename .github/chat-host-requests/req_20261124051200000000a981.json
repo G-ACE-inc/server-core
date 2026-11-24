@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/3efec7ea7fc98752e5d1c7a8efea9510b8006181"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 61\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nimport {menuPage} from './src/telegram/menuPanel.mjs';\nimport {createTelegramBotApi} from './src/telegram/botApi.mjs';\nimport {createCreatorTelegramFetch} from './src/runtime/creatorEgress.mjs';\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\nconst out=createCreatorTelegramFetch(fetch);\nconst api=createTelegramBotApi({token:readFileSync('/run/secrets/videobot_telegram_token','utf8').trim(),fetchImpl:out.fetch,timeoutMs:20000,baseUrl:process.env.VIDEOBOT_LOCAL_API_URL??'https://api.telegram.org'});\nconst client=await pool.connect();\ntry{\n await client.query('BEGIN');\n const q=await client.query(\"SELECT s.owner_user_id,s.revision,s.state FROM videobot_creator_sessions s JOIN videobot_listings l ON l.seller_user_id=s.owner_user_id WHERE l.listing_id=$1 FOR UPDATE OF s\",['v26nov24invoice']);\n if(q.rows.length!==1)throw Error('OWNER_SESSION_NOT_UNIQUE');\n const row=q.rows[0],owner=Number(row.owner_user_id),rev=Number(row.revision);\n if(!Number.isSafeInteger(owner)||owner<=0||!Number.isSafeInteger(rev))throw Error('OWNER_SESSION_INVALID');\n const panel=menuPage('home');\n const sent=await api('sendMessage',{chat_id:owner,text:panel.text,reply_markup:panel.reply_markup,disable_notification:true});\n if(sent?.chat?.id!==owner||sent?.chat?.type!=='private'||!Number.isSafeInteger(sent.message_id)||sent.text!==panel.text||JSON.stringify(sent.reply_markup?.inline_keyboard.map(r=>r.map(x=>x.text)))!==JSON.stringify(panel.reply_markup.inline_keyboard.map(r=>r.map(x=>x.text))))throw Error('MENU_SEND_ACK_UNVERIFIED');\n const state={...row.state,screen:'home',waiting:null};\n const result=await client.query(\"UPDATE videobot_creator_sessions SET revision=$2,screen_message_id=$3,state=$4::jsonb,updated_at=NOW() WHERE owner_user_id=$1 AND revision=$5 RETURNING revision,screen_message_id,state->>'publishing' AS publishing\",[owner,rev+1,sent.message_id,JSON.stringify(state),rev]);\n if(result.rowCount!==1||Number(result.rows[0].screen_message_id)!==sent.message_id||result.rows[0].publishing!==(row.state.publishing??null))throw Error('MENU_SESSION_READBACK_FAILED');\n await client.query('COMMIT');\n console.log('OWNER_MENU_TELEGRAM_SEND_AND_SESSION_READBACK=PASS');\n}catch(e){await client.query('ROLLBACK').catch(()=>{});console.log('MENU_RECOVERY_ERROR',String(e.message).replace(/[0-9]{6,}:[A-Za-z0-9_-]{20,}/g,'[REDACTED]').slice(0,200));process.exitCode=70;}\nfinally{client.release();await pool.end();await out.close();}\nJS\n"
+  }
+}
