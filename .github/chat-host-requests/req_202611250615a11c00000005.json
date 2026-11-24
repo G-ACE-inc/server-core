@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7144756828",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nhead=8f374cc9854c12b03a39d6048c8b2242ac5f67ca\nlocalhead=f7cdc3b06c2e53f4d302f088daa39a5b449f7bdd\ntest \"$(git rev-parse HEAD)\" = \"$localhead\"\necho LOCAL_BRANCH_HISTORY\ngit log -8 --format='%h %ad %s' --date=iso-strict\necho LOCAL_WORKTREE_STATUS\ngit status --short\necho LOCAL_HEAD_VS_PR11\ngit diff --stat \"$head\" \"$localhead\" -- src sql test docs deploy\necho LOCAL_WORKTREE_VS_PR11\ngit diff --stat \"$head\" -- src sql test docs deploy\necho LOCAL_ONLY_COMMITS\ngit log --oneline \"$head..$localhead\" --max-count=20\necho LOCAL_UNCOMMITTED_DIFF\ngit diff -- src sql test docs deploy\ngit diff --cached -- src sql test docs deploy\necho LOCAL_HEAD_VS_PR11_RUNTIME_DIFF\ngit diff \"$head\" \"$localhead\" -- src/telegram/creatorUi.mjs src/telegram/creatorWizard.mjs src/runtime/creatorMigrate.mjs src/runtime/creatorPollingMain.mjs src/sales/pgListings.mjs src/telegram/creatorBot.mjs\n"
+  }
+}
