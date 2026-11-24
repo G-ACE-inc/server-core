@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/2b91dd7c13980b4c9ea27a52b149b3472fde04a1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ndocker inspect \"$cid\" --format 'running={{.State.Running}} restart={{.RestartCount}} image={{.Config.Image}} started={{.State.StartedAt}}'\ndocker logs --since 45m --tail 150 \"$cid\" 2>&1 | sed -E 's/[0-9]{6,}:[A-Za-z0-9_-]{20,}/[REDACTED]/g' | head -c 20000\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport pg from 'pg';import {readFileSync} from 'node:fs';\nimport {menuPage} from './src/telegram/menuPanel.mjs';\nconst pool=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\ntry{\n const s=await pool.query(\"SELECT s.revision,s.state->>'publishing' AS publishing,s.state->>'screen' AS screen,s.state->>'waiting' AS waiting,s.updated_at FROM videobot_creator_sessions s JOIN videobot_listings l ON l.seller_user_id=s.owner_user_id WHERE l.listing_id=$1\",['v26nov24invoice']);\n console.log('SESSION',JSON.stringify(s.rows));\n const cols=await pool.query(\"SELECT table_name,column_name FROM information_schema.columns WHERE table_name IN ('videobot_webhook_updates','videobot_poll_cursor','videobot_poll_quarantine') ORDER BY table_name,ordinal_position\");\n console.log('COLUMNS',JSON.stringify(cols.rows));\n const q=await pool.query(\"SELECT status,count(*)::int AS n,max(updated_at) AS latest FROM videobot_webhook_updates GROUP BY status\");\n console.log('WEBHOOK_COUNTS',JSON.stringify(q.rows));\n console.log('MENU',JSON.stringify(menuPage('home').reply_markup.inline_keyboard.map(r=>r.map(x=>x.text))));\n const token=readFileSync('/run/secrets/videobot_telegram_token','utf8').trim();\n const base=process.env.VIDEOBOT_LOCAL_API_URL??'https://api.telegram.org';\n console.log('BOT_API_MODE',base==='http://telegram-bot-api:8081'?'local':'remote');\n for(const method of ['getMe','getWebhookInfo']){\n try{\n const j=await fetch(base+'/bot'+token+'/'+method,{signal:AbortSignal.timeout(12000)}).then(r=>r.json());\n console.log(method,JSON.stringify({ok:j.ok,code:j.error_code,webhook:!!j.result?.url,pending:j.result?.pending_update_count,bot:j.result?.username}));\n }catch(e){console.log('BOT_API_ERROR',e.name,e.cause?.code??'none')}\n }\n}catch(e){console.log('DB_ERROR',e.code??'none',e.message?.slice(0,120));process.exitCode=79;}\nfinally{await pool.end()}\nJS\n"
+  }
+}
