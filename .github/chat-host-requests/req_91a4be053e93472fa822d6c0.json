@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/10",
+    "rule_plane_read": true
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\npython3 - <<'PY'\nimport json,sys\nfrom pathlib import Path\np=Path('/home/gace/.local/state/gserver-terminal/results/req_4a28b1ef0c954bcdb56308e1.json')\nif not p.is_file(): sys.exit(61)\nr=json.loads(p.read_text())\nif r.get('state')!='PASS' or r.get('exit_code')!=0: sys.exit(62)\ntext=r.get('stdout')\nif not isinstance(text,str) or 'VIDEO_EXISTING_MESSAGE_EDIT_EXIT=0' not in text or 'VIDEO_EXISTING_MESSAGE_INPLACE_UPDATE=PASS' not in text: sys.exit(63)\nresult_lines=[ln.split('=',1)[1] for ln in text.splitlines() if ln.startswith('VIDEO_EXISTING_MESSAGE_EDIT=')]\nif len(result_lines)!=1: sys.exit(64)\nout=json.loads(result_lines[0])\nfor key in ('edited','oneMessageCollageVerified','captionVerified','oneTapCallbackVerified','ledgerUnchanged','freePreviewFullyRemoved'):\n if out.get(key) is not True: sys.exit(65)\nif out.get('listingId')!='v26nov24invoice' or not isinstance(out.get('originalPurchaseMessageId'),int) or out['originalPurchaseMessageId']<1: sys.exit(66)\nif not isinstance(out.get('previousBuyerTransactions'),int) or out['previousBuyerTransactions']<1: sys.exit(67)\nremoved=out.get('removed')\nif not isinstance(removed,list) or len(removed)!=2 or not all(x.get('deleted') is True for x in removed): sys.exit(68)\nprint('VIDEO_EXISTING_RICH_EDIT_DURABLE_READBACK=PASS')\nprint('VIDEO_TWO_OLD_PREVIEW_MESSAGES_REMOVED=PASS')\nprint('VIDEO_LEGACY_BUYER_LEDGER_PRESERVED=PASS')\nPY\ncid=gace-createvdobot-videobot-poll-1\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true || exit 69\ntest \"$(docker inspect \"$cid\" --format '{{.Config.Image}}')\" = create-videobot:inplace-6f682c32 || exit 70\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$(docker image inspect create-videobot:inplace-6f682c32 --format '{{.Id}}')\" || exit 71\necho VIDEO_ACTIVE_IMAGE_AND_POLLER_READBACK=PASS\n"
+  }
+}
