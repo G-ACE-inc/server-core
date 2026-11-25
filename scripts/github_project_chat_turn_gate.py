@@ -192,7 +192,8 @@ def next_agent_action(state):
         if state.get("stop_reason") == "MASTER_INTERRUPT" and evaluate(state) == "PASS":
             return "AWAIT_MASTER"
         remaining = state.get("remaining_actions")
-        if isinstance(remaining, list) and remaining:
+        if (isinstance(remaining, list) and remaining
+                and all(isinstance(a, str) and a.strip() for a in remaining)):
             return remaining[0]
         if state.get("stop_reason") == "VERIFIED_COMPLETE" and evaluate(state) == "PASS":
             return "MISSION_ACCEPTED"

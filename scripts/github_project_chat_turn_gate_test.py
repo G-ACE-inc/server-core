@@ -9,6 +9,12 @@ gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
 
 class DecisionTests(unittest.TestCase):
+    def test_invalid_stop_backlog_never_becomes_a_tool_action(self):
+        for backlog in ([None], [False], [""], ["Valid action", None], "Action"):
+            state = dict(phase="STOP", stop_reason="ALL_ACTIONS_BLOCKED", remaining_actions=backlog)
+            with self.subTest(backlog=backlog):
+                self.assertEqual(gate.next_agent_action(state), "RECHECK_STOP_EVIDENCE")
+
     def test_unrepairable_dependency_does_not_block_available_original_work(self):
         state = dict(phase="FAILURE", failed_step="Protected provider change",
                      failure_evidence="actual provider change requires owner decision",
