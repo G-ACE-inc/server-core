@@ -143,8 +143,8 @@ def evaluate(state):
                 return "STOP_RUNNABLE_ACTIONS_INVENTORY_NOT_VERIFIED"
             if not evidence_locator(state.get("stop_evidence")):
                 return "STOP_EVIDENCE_NOT_VERIFIED"
-        # A protected Master-only boundary is not a vague handoff. The AI must
-        # have prepared one executable instruction and recorded its evidence.
+        # Prepare an evidence-backed Master decision, not technical debugging
+        # or command selection pushed onto a nontechnical user.
         if reason == "MASTER_ONLY_ACTION":
             if state.get("master_action_ready") is not True:
                 return "STOP_MASTER_ACTION_NOT_READY"
@@ -178,12 +178,15 @@ def next_agent_action(state):
         remaining = [a for a in actions if isinstance(a, str) and a.strip() and a not in completed]
         if remaining:
             return remaining[0]
-        if actions and evaluate(state) == "PASS":
+        if evaluate(state) == "PASS":
             # Dependency recovery is not the original outcome. Preserve the
             # caller's existing ordered Mission backlog rather than choosing
             # another recovery task or treating this receipt as completion.
             original_remaining = state.get("remaining_actions", [])
-            return original_remaining[0] if original_remaining else "CONTINUE_OWNED_CU"
+            if original_remaining:
+                return original_remaining[0]
+            if actions:
+                return "CONTINUE_OWNED_CU"
         return "INSPECT_FAILURE_EVIDENCE"
     if phase == "STOP":
         if state.get("stop_reason") == "MASTER_INTERRUPT" and evaluate(state) == "PASS":
@@ -193,6 +196,11 @@ def next_agent_action(state):
             return remaining[0]
         if state.get("stop_reason") == "VERIFIED_COMPLETE" and evaluate(state) == "PASS":
             return "MISSION_ACCEPTED"
+        if evaluate(state) == "PASS":
+            if state.get("stop_reason") == "MASTER_ONLY_ACTION":
+                return "AWAIT_MASTER_DECISION"
+            if state.get("stop_reason") == "ALL_ACTIONS_BLOCKED":
+                return "REPORT_BLOCKER_WITH_EVIDENCE"
         return "RECHECK_STOP_EVIDENCE"
     if phase == "START":
         return "CONTINUE_OWNED_CU" if evaluate(state) == "PASS" else "RECHECK_CURRENT_AND_DESIGN"

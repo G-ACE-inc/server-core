@@ -15,7 +15,7 @@ Masterへの手動コマンド引継ぎは、Workspace §6に定める直接実�
 
 ## 2. Master Interface
 
-Masterの通常操作は次だけとする。
+通常はAIが既存の実行経路で操作・検証・結果回収まで行う。例外的に手動引継ぎが不可避であると確認した場合だけ、Masterの操作を次に限定する。
 
 1. AIが提示した完成Code BlockをそのままCopy & Pasteする。
 2. 実行結果を加工せず返す。
@@ -54,7 +54,7 @@ POST_VALIDATION_COMMAND_MUTATION=0
 FINAL_COMMAND_REVIEW=PASS
 ```
 
-1項目でも満たせないCommandはMasterへ提示しない。不要確認の削減、Command単純化、既存検証済みHelper / Script、別Executorへ再Routingする。
+1項目でも満たせないCommandはMasterへ提示しない。AIがCommandを修正・単純化し、既存検証済みHelper / Script又は利用可能な認可済み実行経路を選ぶ。外部AIへの委任・起動はこの失敗から自動で許可されず、既存の個別許可境界に従う。
 
 ## 4. Exact Command Syntax Validation Hard Gate
 
@@ -70,7 +70,7 @@ Masterへ表示する**完成Code Blockの実体そのもの**を、対象Shell�
 
 `System.Management.Automation.Language.Parser`等のParse-only検査でParse Error 0件を確認する。
 
-Parserを利用できない場合、複数制御構文、複雑なQuote / Escape、Script相当のCommandをMasterへ発行しない。検証済みHelper / Script、より単純なCommand、別Executorへ再Routingする。
+Parserを利用できない場合、複数制御構文、複雑なQuote / Escape、Script相当のCommandをMasterへ発行しない。AIが既存検証済みHelper / Script、より単純なCommand又は既存の認可済み実行経路を選ぶ。手動提示の検証不能を通常のAI実行へ拡張せず、独立した許可済み作業を続ける。外部AIへの無許可委任は行わない。
 
 ### Exact Body Invariant
 

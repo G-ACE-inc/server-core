@@ -200,6 +200,20 @@ Keep the active task across turns using the already verified execution tuple: `P
 
 Before executing an AI-authored server command, apply the lightweight AI-only self-check in `docs/COMMAND_ROUTINE.md`; it never requests routine Master confirmation or suspends the development CU.
 
+### Bounded blockers and a nontechnical Master
+
+Apply an existing protection to the operation and effect it actually owns, not the whole Mission. A rule must identify a concrete protected asset/effect and applicable authority; vague "safety", a generic production label, an optional record failure, or a hypothetical permission problem is not a new stop condition. Preserve real authentication, Secret, irreversible-data, public-exposure and cost/intent boundaries. Do not introduce a new approval receipt, per-turn audit or global gate to resolve a local defect.
+
+| Actual condition | AI-owned response | Master involvement |
+|---|---|---|
+| Wrong path/branch, syntax, dirty overlap, test failure, recoverable transport issue | Inspect the specific result, correct the owned operation or use an authorized alternative; verify and resume original work | No command/SHA/log selection or repeat permission request |
+| A protected effect needs a new product/impact decision or actual authority | Prepare the concrete protected choice; hold only that operation and continue independent work | One understandable intent/impact choice, not technical debugging |
+| All original permitted work is blocked by actual missing tools/authority | Preserve request/result evidence, explain the exact blocker and minimum resume condition | Only the indispensable account-owner action or prepared protected decision |
+
+Master supplies purpose, product decisions and explicitly protected choices. AI owns locating existing assets, command construction, ordinary repair/testing, result recovery, implementation choices and authorized reflection. Prepare a reviewable protected choice before asking; do not ask Master to debug, select a tool/command/branch/SHA, assemble JSON or repeat prior approval. Never satisfy this convenience goal by bypassing a real denial, weakening protected data handling or starting an unauthorized AI.
+
+The existing Agent Loop must select among execute, observe existing result, recover, resume original work, await a prepared protected decision and report an evidenced blocker. A ready decision/blocker receipt is not a reason to recheck itself forever. When a failed protected dependency has no repair this executor may perform but the original Mission has independent runnable work, select that work. Unknown evidence remains unknown; a tool/helper supplies bounded next-step advice, not an autonomous native-CHAT response hook.
+
 ### Purpose preservation during GPT CHAT execution
 
 Keep three things distinct in the existing owning Current and retained context: **Master's requested outcome and acceptance**, **the current implementation unit**, and **a temporary dependency/blocker**. Do not rename the outcome to match the latest investigation, tool, repair, PR or test. The approved scope/acceptance changes only with Master's explicit intent; a status question, correction or newly discovered defect does not authorize narrowing it.
