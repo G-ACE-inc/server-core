@@ -85,8 +85,9 @@ def validate_command(command):
             "syntax_only": True, "dispatch_authorized": False}
 
 
-def python_command(source):
-    check_python(source)
+def python_command(source, *, validate=True):
+    if validate:
+        check_python(source)
     delimiter = "GACE_PY_" + hashlib.sha256(source.encode()).hexdigest()[:16]
     while delimiter in source.splitlines():
         delimiter += "_"
@@ -110,7 +111,10 @@ def assemble_request(draft, command_file, output_directory, language):
     source = Path(command_file).read_text(encoding="utf-8")
     if language not in {"python", "bash"}:
         raise ValueError("COMMAND_LANGUAGE_INVALID")
-    command = python_command(source) if language == "python" else source
+    free_gserver = (data["bounded_host_request"].get("command_id") == "host.command"
+                    and data["bounded_host_request"].get("host_target") == "gserver")
+    command = (python_command(source, validate=not free_gserver)
+               if language == "python" else source)
     data["bounded_host_request"]["command"] = command
     # Validate with the actual selector, but retain source_context as a planning
     # input. Only Actions may emit its trusted wrapped/preflight representation.
