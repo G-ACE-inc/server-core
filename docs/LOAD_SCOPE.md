@@ -36,7 +36,7 @@ Treat Tool B, TGserver and other capability inspections as dependencies of the c
 
 For GPT app CHAT formal Master reports, follow Rule #17's Master-facing communication contract. Its execution loop, continuation and capacity-safe handoff belong to Work Routine §6; this router adds no independent procedure. Do not apply this CHAT/Notion procedure to server AI, default-load GPT_CHAT rules into SERVER_AI or bulk-read other server-core authority at task start.
 
-同一Taskで一度確認済みの安定Authority全文は通常、変更・矛盾・情報不足が無い限り再読込しない。GPTアプリCHATの開発進行はWork Routine §6に一本化し、毎ターンのRule Plane全文読込を独立した前提条件としない。読み込んだ事実だけで適用PASSにせず、選択したAction・継続・終了判断へ照合する。ただし開発の各ターンでは関連するGitHub Project/IssueのCurrentと対象HEAD/PR/CI等の変化を軽量に再同期し、対象変更・新規Gate・競合時だけ必要なAuthority/Source範囲を再取得する。古い履歴・別Project・GPT CHAT拡張RuleをSERVER_AIへまとめて渡さない。
+同一Taskで一度確認済みの安定Authority全文は通常、変更・矛盾・情報不足が無い限り再読込しない。GPTアプリCHATの開発進行はWork Routine §6に一本化し、毎ターンのRule Plane全文読込を独立した前提条件としない。読み込んだ事実だけで適用PASSにせず、選択したAction・継続・終了判断へ照合する。各ターンでは保持済みCurrent・対象HEAD/PR/CIと新しい指示・取得結果を照合する。外部への再取得は、新規Task/CU、文脈欠落、変更通知、対象・ownerの変更、新規Gate、競合又は影響ある変更前の現物照合に必要な範囲だけとし、ターンが変わったこと自体を再取得の理由にしない。古い履歴・別Project・GPT CHAT拡張RuleをSERVER_AIへまとめて渡さない。
 
 対象CUが分かっている場合、全ProjectのIssue本文を列挙しない。既存GitHub connectorでは対象Currentを直接一度読む。ローカルの`gh`を利用できる場合は、既存`python3 scripts/gace_project_current_recovery.py --project-id PVT_kwHODOQFoM4BEJII --issue-url https://github.com/G-ACE-inc/server-core/issues/15 --include-body`で指定Issueだけの本文・更新時刻・ハッシュを同時取得できる（例はControl #15。実作業では所有CUの正確なURLを使う）。Project登録を全ページ照合し、未登録は`SELECTED_ISSUE_NOT_REGISTERED`として拒否する。返された本文を同じ判断のために再取得せず、更新・矛盾・実行時の独立照合が必要な場合だけ読み直す。ツールの存在や登録一致は実行権限を付与しない。通常CHATにこのCLIやHost操作を必須化しない。
 
