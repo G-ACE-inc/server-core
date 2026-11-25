@@ -1,0 +1,20 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "host_target": "gserver",
+    "repository": "seigo-gace/G-ACEserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "0000000000000000000000000000000000000000",
+    "command": "set -eu\ncid=$(docker ps --filter label=com.docker.compose.service=videobot-poll --format '{{.ID}}')\nif [ -z \"$cid\" ] || [ \"$(printf '%s\\n' \"$cid\" | wc -l)\" -ne 1 ]; then printf 'SINGLE_POLLER_NOT_CONFIRMED\\n'; exit 72; fi\ndocker exec \"$cid\" node -e 'const fs=require(\"node:fs\"),e=process.env;const p=e.VIDEOBOT_DATABASE_URL_FILE||e.VIDEOBOT_DB_PASSWORD_FILE;const o={ownerQueueEnabled:e.VIDEOBOT_OWNER_JOBS===\"YES\",connectionKind:e.VIDEOBOT_DATABASE_URL_FILE?\"database_url\":\"database_password\",mountPathValid:typeof p===\"string\"&&p.startsWith(\"/run/secrets/\")};if(o.mountPathValid){try{const s=fs.statSync(p);Object.assign(o,{regularFile:s.isFile(),privateMode:(s.mode&63)===0,appSizeRange:s.size>=12&&s.size<=4096,genericSizeRange:s.size>=20&&s.size<=4096})}catch(err){o.statError=err.code||\"UNKNOWN\"}}console.log(JSON.stringify(o))'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
