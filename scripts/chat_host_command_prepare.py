@@ -111,6 +111,7 @@ def assemble_request(draft, command_file, output_directory, language):
     source = Path(command_file).read_text(encoding="utf-8")
     if language not in {"python", "bash"}:
         raise ValueError("COMMAND_LANGUAGE_INVALID")
+    # Assembly is serialization for Gserver; Contabo keeps optional syntax checks.
     free_gserver = (data["bounded_host_request"].get("command_id") == "host.command"
                     and data["bounded_host_request"].get("host_target") == "gserver")
     command = (python_command(source, validate=not free_gserver)

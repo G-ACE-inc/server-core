@@ -46,6 +46,13 @@ class DeliveryTests(unittest.TestCase):
         sink.accept_record(record, result_dir=self.root / "sink")
         return True
 
+    def _headers(self, request):
+        body = json.dumps(request).encode()
+        signature = hmac.new(self.key, b"delivery.1000." + body, hashlib.sha256).digest()
+        return {"x-gace-destination": "gserver-bounded-host", "webhook-id": "delivery",
+                "webhook-timestamp": "1000", "webhook-signature":
+                "v1," + base64.b64encode(signature).decode()}
+
     def deliver(self, *, request=None, bad_signature=False, report=None, execute=None):
         body = json.dumps(request or self.request).encode()
         signature = hmac.new(self.key, b"delivery.1000." + body, hashlib.sha256).digest()
@@ -108,13 +115,32 @@ class DeliveryTests(unittest.TestCase):
             self.deliver()
         self.assertEqual(self.executions, 0)
 
+    def test_preflight_failure_does_not_leave_running_receipt(self):
+        def preflight(request, root):
+            raise target.GserverTargetError("GSERVER_REPO_SHA_MISMATCH")
+
+        with self.assertRaisesRegex(target.GserverTargetError, "REPO_SHA_MISMATCH"):
+            target.receive_delivery(
+                self._headers(self.request), json.dumps(self.request).encode(),
+                contract=self.contract, delivery_key=self.key, root=self.root,
+                result_dir=self.root / "writer", lock_path=self.root / "lock",
+                execute=self.execute, preflight=preflight, report=self.report,
+                now=1000,
+            )
+        self.assertFalse((self.root / "writer").exists())
+        self.assertEqual(self.executions, 0)
+
     def test_sink_rejects_tampered_evidence(self):
         record = target.sink_record(self.execute(self.request, self.root), self.request)
-        for field in ("stdout_sha256", "dispatcher_sha", "repo_sha"):
+        for field in ("stdout_sha256", "dispatcher_sha"):
             bad = copy.deepcopy(record)
             bad["target_evidence"][field] = "f" * (64 if field.endswith("256") else 40)
             with self.subTest(field=field), self.assertRaises(sink.SinkError):
                 sink.accept_record(bad, result_dir=self.root / "sink")
+        bad = copy.deepcopy(record)
+        bad["target_evidence"]["repo_sha"] = "invalid"
+        with self.assertRaises(sink.SinkError):
+            sink.accept_record(bad, result_dir=self.root / "sink")
 
 
 if __name__ == "__main__":
