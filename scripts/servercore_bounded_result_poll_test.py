@@ -157,6 +157,56 @@ class TerminalOutputTests(unittest.TestCase):
         self.assertIn("CHAT_NEXT_ACTION=INSPECT_FAILURE_EVIDENCE_AND_REPLAN", output)
 
 
+class GserverFreeTerminalCorrelationTests(unittest.TestCase):
+    def record(self):
+        actual = "c" * 40
+        command_sha = "d" * 64
+        return {
+            "request_id": "req_" + "a" * 24,
+            "command_id": "host.command",
+            "expected_sha": "b" * 40,
+            "host_sha": actual,
+            "state": "PASS",
+            "exit_code": 0,
+            "target_evidence": {
+                "host_target": "gserver",
+                "repository": "seigo-gace/G-ACEserver",
+                "repo_sha": actual,
+                "host_sha": actual,
+                "dispatcher_sha": "b" * 40,
+                "command_sha256": command_sha,
+                "stdout_sha256": "e" * 64,
+                "stderr_sha256": "f" * 64,
+            },
+        }
+
+    def test_stale_request_repo_sha_does_not_reject_actual_gserver_result(self):
+        code, verdict = poll.evaluate(
+            self.record(), "req_" + "a" * 24, "host.command", "b" * 40,
+            host_target="gserver", repo_sha="0" * 40,
+            command_sha256="d" * 64,
+        )
+        self.assertEqual((code, verdict), (0, "OK"))
+
+    def test_actual_result_sha_or_command_tampering_still_fails(self):
+        for field, value in (("host_sha", "9" * 40),
+                             ("command_sha256", "9" * 64)):
+            record = self.record()
+            if field == "host_sha":
+                record["target_evidence"][field] = value
+            else:
+                record["target_evidence"][field] = value
+            with self.subTest(field=field):
+                self.assertEqual(
+                    poll.evaluate(
+                        record, "req_" + "a" * 24, "host.command", "b" * 40,
+                        host_target="gserver", repo_sha="0" * 40,
+                        command_sha256="d" * 64,
+                    )[1],
+                    "TARGET_EVIDENCE_MISMATCH",
+                )
+
+
 class PendingRequestTests(unittest.TestCase):
     """Exercise the real CLI loop without network calls or wall-clock sleeps."""
 
