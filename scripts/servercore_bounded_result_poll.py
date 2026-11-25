@@ -71,11 +71,15 @@ def evaluate(record, request_id, command_id, expected_sha, *, host_target=None,
         evidence = record.get("target_evidence")
         if not isinstance(evidence, dict):
             return 3, "TARGET_EVIDENCE_MISSING"
+        actual_repo_sha = evidence.get("repo_sha")
+        actual_host_sha = record.get("host_sha")
         if (host_target != "gserver" or evidence.get("host_target") != host_target
                 or evidence.get("repository") != "seigo-gace/G-ACEserver"
                 or evidence.get("dispatcher_sha") != expected_sha
                 or record.get("expected_sha") != expected_sha
-                or evidence.get("repo_sha") != repo_sha or record.get("host_sha") != repo_sha
+                or not SHA.fullmatch(str(actual_repo_sha or ""))
+                or not SHA.fullmatch(str(actual_host_sha or ""))
+                or actual_repo_sha != actual_host_sha
                 or evidence.get("command_sha256") != command_sha256):
             return 3, "TARGET_EVIDENCE_MISMATCH"
         for stream in ("stdout", "stderr"):
