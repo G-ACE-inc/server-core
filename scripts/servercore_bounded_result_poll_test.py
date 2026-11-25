@@ -206,6 +206,33 @@ class GserverFreeTerminalCorrelationTests(unittest.TestCase):
                     "TARGET_EVIDENCE_MISMATCH",
                 )
 
+    def test_gserver_command_failure_does_not_invent_source_drift(self):
+        record = self.record()
+        record.update(state="FAIL", exit_code=23, stdout="", stderr="actual command error")
+        _, verdict = poll.evaluate(
+            record, record["request_id"], "host.command", "b" * 40,
+            host_target="gserver", repo_sha="0" * 40, command_sha256="d" * 64)
+        self.assertEqual(verdict, "OK")
+        expected = ("HOST_OPERATION_FAILED", "INSPECT_FAILURE_EVIDENCE_AND_REPLAN")
+        self.assertEqual(poll.continuation_observation(record, verdict), expected)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            poll.emit(record, {"html_url": "https://github.com/G-ACE-inc/server-core/issues/351"}, verdict)
+        self.assertIn("CHAT_NEXT_ACTION=" + expected[1], output.getvalue())
+        self.assertNotIn("HOST_SOURCE_SHA_MISMATCH", output.getvalue())
+        with tempfile.TemporaryDirectory() as tmp:
+            receipt = Path(tmp) / "observation.json"
+            poll.write_observation(receipt, record["request_id"], record, verdict=verdict)
+            saved = json.loads(receipt.read_text())
+            self.assertEqual((saved["observation"], saved["next_action"]), expected)
+            self.assertTrue(saved["result_verified"])
+
+    def test_gserver_explicit_failure_hint_is_preserved(self):
+        record = self.record()
+        record.update(state="FAIL", exit_code=74, diagnostic_hint="CHAT_SOURCE_SHA_MISMATCH")
+        self.assertEqual(poll.continuation_observation(record, "OK")[0], "HOST_SOURCE_CONTEXT_STALE")
+        self.assertEqual(poll.continuation_observation(record, "CORRELATION_FAILED")[0], "CORRELATION_FAILED")
+
 
 class PendingRequestTests(unittest.TestCase):
     """Exercise the real CLI loop without network calls or wall-clock sleeps."""

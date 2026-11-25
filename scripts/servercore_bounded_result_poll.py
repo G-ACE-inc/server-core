@@ -115,7 +115,11 @@ def continuation_observation(record, verdict):
             return "HOST_SOURCE_CONTEXT_INVALID", "CHECK_TARGET_WORKDIR_AND_SOURCE_FILES"
         host_sha = record.get("host_sha")
         expected_sha = record.get("expected_sha")
-        if (isinstance(host_sha, str) and isinstance(expected_sha, str)
+        evidence = record.get("target_evidence")
+        # Target receipts identify Gserver in host_sha, but server-core in
+        # expected_sha/dispatcher_sha. Their difference is not source drift.
+        target_receipt = isinstance(evidence, dict) and evidence.get("host_target") == "gserver"
+        if (not target_receipt and isinstance(host_sha, str) and isinstance(expected_sha, str)
                 and re.fullmatch(r"[a-f0-9]{40}", host_sha)
                 and re.fullmatch(r"[a-f0-9]{40}", expected_sha)
                 and host_sha != expected_sha):
