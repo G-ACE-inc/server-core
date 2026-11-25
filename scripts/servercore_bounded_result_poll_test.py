@@ -172,7 +172,6 @@ class GserverFreeTerminalCorrelationTests(unittest.TestCase):
                 "host_target": "gserver",
                 "repository": "seigo-gace/G-ACEserver",
                 "repo_sha": actual,
-                "host_sha": actual,
                 "dispatcher_sha": "b" * 40,
                 "command_sha256": command_sha,
                 "stdout_sha256": "e" * 64,
@@ -190,10 +189,11 @@ class GserverFreeTerminalCorrelationTests(unittest.TestCase):
 
     def test_actual_result_sha_or_command_tampering_still_fails(self):
         for field, value in (("host_sha", "9" * 40),
+                             ("repo_sha", "9" * 40),
                              ("command_sha256", "9" * 64)):
             record = self.record()
             if field == "host_sha":
-                record["target_evidence"][field] = value
+                record[field] = value
             else:
                 record["target_evidence"][field] = value
             with self.subTest(field=field):

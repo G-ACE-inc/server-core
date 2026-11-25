@@ -79,7 +79,6 @@ def evaluate(record, request_id, command_id, expected_sha, *, host_target=None,
                 or record.get("expected_sha") != expected_sha
                 or not SHA.fullmatch(str(actual_repo_sha or ""))
                 or not SHA.fullmatch(str(actual_host_sha or ""))
-                or evidence.get("host_sha") != actual_host_sha
                 or actual_repo_sha != actual_host_sha
                 or evidence.get("command_sha256") != command_sha256):
             return 3, "TARGET_EVIDENCE_MISMATCH"
