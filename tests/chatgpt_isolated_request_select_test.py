@@ -18,27 +18,33 @@ BASE = {"bounded_host_request": {"enabled": True, "command_id": "project.git_hea
         "gitops_request": {"enabled": False}, "source_reflect_request": {"enabled": False}}
 
 class IsolatedRequests(unittest.TestCase):
-    def test_gserver_project_context_uses_registered_workspace_checkout(self):
+    def test_gserver_planning_context_never_rewrites_free_command(self):
         source = {**BASE, "bounded_host_request": {
             "enabled": True, "command_id": "host.command", "host_target": "gserver",
             "repository": "seigo-gace/G-ACEserver", "expected_sha": "a" * 40,
             "repo_sha": "b" * 40, "command": "pwd; git rev-parse HEAD",
-            "project_context": {"repository": "seigo-gace/GateApp-Bot", "sha": "c" * 40}}}
+            "project_context": {"repository": "../ignored", "sha": "bad"},
+            "source_context": {"workdir": "/ignored"},
+            "source_preflight": True}}
         prepared = m.prepare_data(source)["bounded_host_request"]
+        self.assertEqual(prepared["command"], "pwd; git rev-parse HEAD")
         self.assertNotIn("project_context", prepared)
-        self.assertIn("gserver_project_terminal.py", prepared["command"])
-        self.assertIn("seigo-gace/GateApp-Bot", prepared["command"])
-        self.assertIn("pwd; git rev-parse HEAD", prepared["command"])
-        source["bounded_host_request"]["project_context"] = {
-            "repository": "seigo-gace/create-videobot"}
-        source["bounded_host_request"]["command"] = "pwd; git rev-parse HEAD"
-        unpinned = m.prepare_data(source)["bounded_host_request"]["command"]
-        self.assertIn("seigo-gace/create-videobot", unpinned)
-        self.assertNotIn("--sha", unpinned)
-        source["bounded_host_request"]["project_context"] = {
-            "repository": "../invalid", "sha": "c" * 40}
-        with self.assertRaisesRegex(ValueError, "PROJECT_CONTEXT_INVALID"):
-            m.prepare_data(source)
+        self.assertNotIn("source_context", prepared)
+        self.assertNotIn("source_preflight", prepared)
+
+    def test_gserver_syntax_and_production_words_reach_real_host(self):
+        for command in ("if then", "docker compose up -d",
+                        "sudo systemctl restart example"):
+            source = {**BASE, "bounded_host_request": {
+                "enabled": True, "command_id": "host.command",
+                "host_target": "gserver",
+                "repository": "seigo-gace/G-ACEserver",
+                "expected_sha": "a" * 40, "repo_sha": "b" * 40,
+                "command": command}}
+            with self.subTest(command=command):
+                self.assertEqual(
+                    m.prepare_data(source)["bounded_host_request"]["command"],
+                    command)
 
     def test_long_unicode_request_is_not_rejected_by_legacy_8k_limit(self):
         source = {**BASE, "bounded_host_request": {
