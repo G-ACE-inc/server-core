@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7148425655"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ndocker inspect \"$cid\" --format 'state={{.State.Status}} restarts={{.RestartCount}} image={{.Image}} tag={{.Config.Image}}'\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nconst p=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\nconst c=await p.connect();\ntry {\n await c.query('BEGIN READ ONLY');\n const q=async(label,sql,params=[])=>{const r=await c.query(sql,params);console.log(label+' '+JSON.stringify(r.rows));};\n console.log('TERMS_CONFIGURED='+Boolean(process.env.CREATEVDOBOT_TERMS_URL));console.log('INVOICE_MODE='+ (process.env.VIDEO_SALE_MODE==='invoice'));\n await q('DATABASE_STATUS', \"SELECT current_database() AS db, (SELECT count(*) FROM videobot_listings) AS listings,(SELECT count(*) FROM videobot_creator_sessions) AS sessions,(SELECT count(*) FROM videobot_owner_update_jobs) AS jobs,(SELECT count(*) FROM videobot_webhook_updates) AS updates\");\n await q('RECENT_LISTINGS',`SELECT left(md5(l.seller_user_id::text),10) AS owner_ref,left(md5(l.listing_id),10) AS ref,l.status,l.revision,l.created_at,l.updated_at,l.second_thumbnail_file_id IS NOT NULL AS two_thumbnails,l.sample_duration_seconds,l.fee_terms_accepted_at IS NOT NULL AS terms_accepted,(SELECT count(*) FROM videobot_post_receipts r WHERE r.listing_id=l.listing_id) AS receipts,(SELECT count(*) FROM videobot_post_receipts r WHERE r.listing_id=l.listing_id AND r.status='sent') AS sent_receipts FROM videobot_listings l ORDER BY created_at DESC LIMIT 20`);\n await q('RECENT_SESSIONS',`SELECT left(md5(owner_user_id::text),10) AS owner_ref,revision,state->>'screen' AS screen,state->>'publishing' AS publishing,state->'pendingVideoDraft'->>'revision' AS pending_revision,left(md5(state->'pendingVideoDraft'->>'listingId'),10) AS pending_ref,state->'draft'->>'mode' AS draft_mode,updated_at FROM videobot_creator_sessions ORDER BY updated_at DESC LIMIT 12`);\n await q('RECENT_RECEIPTS',`SELECT left(md5(r.listing_id),10) AS ref,r.revision,r.status,r.sale_mode,cardinality(r.free_message_ids) AS free_count,r.paid_message_id IS NOT NULL AS offer_recorded FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id ORDER BY l.created_at DESC,r.revision DESC LIMIT 20`);\n await q('RECENT_REGISTRATION_EVENTS',`SELECT left(md5(j.owner_id::text),10) AS owner_ref,j.status,j.created_at,j.updated_at,split_part(j.payload->'callback_query'->>'data','|',1) AS action,w.status AS receipt_status FROM videobot_owner_update_jobs j LEFT JOIN videobot_webhook_updates w USING(update_id) WHERE j.payload->'callback_query'->>'data' ~ '^(review:|entry:register|menu:listing)' ORDER BY j.update_id DESC LIMIT 25`);\n await c.query('ROLLBACK');\n}finally{c.release();await p.end()}\nJS\n\n# Report only connectivity and content markers from the existing canonical terms URL.\nurl=https://tgtumbler-docs.pages.dev/createvdobot-terms.html\ntmp=\"$(mktemp)\"\ntrap 'rm -f \"$tmp\"' EXIT\nif curl -fsSL --connect-timeout 5 --max-time 15 \"$url\" -o \"$tmp\";then\n printf 'TERMS_BODY_BYTES=';wc -c < \"$tmp\"\n grep -qi 'CreateVdobot' \"$tmp\" && echo TERMS_NAME_PRESENT || true\n grep -q '規約' \"$tmp\" && echo TERMS_BODY_PRESENT || true\nelse echo TERMS_HTTP_UNAVAILABLE;fi\n"
+  }
+}
