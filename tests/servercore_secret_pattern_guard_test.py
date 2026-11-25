@@ -25,6 +25,8 @@ class SecretPatternGuardTests(unittest.TestCase):
             "token=" + "source_token" + "(",
             "gateway_token=" + "os.environ.get" + "(",
             "secret=" + "os.environ.get" + "(",
+            assignment("token", "base64.urlsafe_b64encode", "("),
+            assignment("secret", "secrets.token_urlsafe", "("),
         ]
         for sample in samples:
             self.assertEqual(guard.classify_grep_line(line(sample)), "code", sample)
