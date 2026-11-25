@@ -273,8 +273,9 @@ class IsolatedRequests(unittest.TestCase):
         self.assertNotIn("gitops_request", prepared)
         self.assertNotIn("source_reflect_request", prepared)
         self.assertNotIn("project_context", prepared["bounded_host_request"])
-        self.assertIn("create-videobot", prepared["bounded_host_request"]["command"])
-        self.assertIn("printf TERMINAL_READONLY_OK", prepared["bounded_host_request"]["command"])
+        self.assertNotIn("create-videobot", prepared["bounded_host_request"]["command"])
+        self.assertEqual(prepared["bounded_host_request"]["command"],
+                         "printf TERMINAL_READONLY_OK\\n")
         one_side = copy.deepcopy(minimal)
         one_side["gitops_request"] = {"enabled": False}
         self.assertIs(m.prepare_data(one_side)["gitops_request"]["enabled"], False)
