@@ -44,12 +44,11 @@ router = (ROOT / "docs/LOAD_SCOPE.md").read_text(encoding="utf-8")
 for token in (
     "## 6. Development Routine",
     "### GPT CHAT-only evidence integrity and completion contract",
-    "This contract reduces context drift but cannot prove that a client applied it",
-    "The three-turn or any other turn count is not a permission to discard the rule",
-    "After every tool result, update the tuple",
-    "If any tuple field is unknown, stale, conflicting or missing",
+    "Reuse verified rule/Current/source information when unchanged",
+    "Refresh only a missing or materially changed fact",
+    "no external hook intercepting ordinary ChatGPT replies is asserted",
     "PROFILE=#17",
-    "At the start of every GPT CHAT turn",
+    "does not impose a new external read, checklist, receipt or formal report on every turn",
     "### GPT CHAT-only per-turn re-anchor and anti-drift loop",
     "Never claim that a command, test, CI run, Host readback, Runtime check, user test, approval or record was performed",
     "Test doubles are allowed only when explicitly identified as test-only",
@@ -217,6 +216,14 @@ assert "## 6. Development Routine" in routine
 assert "**Continue after results:**" in routine
 assert "execute the next feasible action if one remains" in routine
 assert "**Capacity-safe continuity:**" in routine
+for obsolete in (
+    "At the start of every GPT CHAT turn",
+    "After every tool result, update the tuple",
+    "Mark the work incomplete and stop as requested",
+):
+    assert obsolete not in routine, obsolete
+assert "Do not infer such a limit merely from elapsed thinking time" in routine
+assert "a large module/operation count" in routine
 assert "MASTER TERMINAL COMMAND CONTRACT" in command_contract
 assert "Fetch the COMPLETE canonical Issue #17 body" not in router
 assert "fetch complete Rule Plane #17 body" not in readme

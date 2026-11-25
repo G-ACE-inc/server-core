@@ -145,7 +145,7 @@ This register distinguishes an **entrypoint source** from an **effective runtime
 
 | Consumer | Intended source / only owner | Current evidence boundary | Next proof required |
 |---|---|---|---|
-| GPT CHAT | Manifest -> Issue #17 -> Project/owning Issue Current; conditional server-core shared contract | GitHub connector can explicitly read manifest and #17; automatic per-turn integration is NOT_VERIFIED | Fresh issue/Current loading on a new CHAT turn, with version/readback |
+| GPT CHAT | Manifest -> Issue #17 -> Project/owning Issue Current; conditional server-core shared contract | GitHub connector can explicitly read manifest and #17; automatic client integration is NOT_VERIFIED | Load on new task/CU or context loss; retain verified state and refresh only materially changed facts under Work Routine §6 |
 | SERVER_AI / delegated Host worker | README -> LOAD_SCOPE -> manifest -> Issue #16 -> owning Current -> conditional server-core | Source routing documented; Host-local automatic load is NOT_VERIFIED | Exact Host source/config and real session load trace, excluding #17 |
 | Cursor Composer | User Global + workspace `.cursor/rules/*.mdc`, selecting SERVER_AI #16 | PR39 validates symlink or inactive-stub source contract; Composer-reported CU2 local changes are not independent live readback | Fresh Active Rules/Global precedence and exact installed file hashes |
 | VS Code Codex | Repo `AGENTS.md`, any verified actual configuration, SERVER_AI #16 | Repository adapter source exists; effective issue fetch and applicable global config are NOT_VERIFIED | New-session loaded instruction trace for owning repo |

@@ -46,7 +46,37 @@ class DecisionTests(unittest.TestCase):
                      completed_actions=["Inspect traceback"])
         self.assertEqual(gate.next_agent_action(state), "Repair source")
         self.assertEqual(gate.next_agent_action({**state, "completed_actions": [
-            "Inspect traceback", "Repair source", "Retest"]}), "REASSESS_FAILURE_AND_DESIGN")
+            "Inspect traceback", "Repair source", "Retest"]}), "INSPECT_FAILURE_EVIDENCE")
+
+    def test_start_reuses_canonical_rule_read_without_legacy_full_read_flag(self):
+        state = dict(phase="START", profile="GPT_CHAT", manifest_verified=True,
+                     rule_plane_read=True, current_verified=True, purpose_verified=True,
+                     cu_verified=True, purpose_cu_aligned=True, source_evidence="github://run/1")
+        self.assertEqual(gate.evaluate(state), "PASS")
+        self.assertEqual(gate.evaluate({**state, "rule_full_read": False}), "PASS")
+        for invalid in (False, None, "true"):
+            self.assertEqual(gate.evaluate({**state, "rule_plane_read": invalid, "rule_full_read": True}),
+                             "START_RULE_PLANE_READ_NOT_VERIFIED")
+
+    def test_verified_recovery_returns_to_owned_work_without_design_reload(self):
+        state = dict(phase="FAILURE", failed_step="Manifest search internal error",
+                     failure_evidence="tool transport error",
+                     independent_actions=["Read known manifest path"],
+                     completed_actions=["Read known manifest path"],
+                     next_action="Read known manifest path",
+                     next_action_evidence="https://github.com/G-ACE-inc/server-core/issues/40")
+        self.assertEqual(gate.evaluate(state), "PASS")
+        self.assertEqual(gate.next_agent_action(state), "CONTINUE_OWNED_CU")
+        self.assertEqual(gate.next_agent_action({**state, "next_action_evidence": ""}),
+                         "INSPECT_FAILURE_EVIDENCE")
+        self.assertEqual(gate.next_agent_action({**state, "completed_actions": []}),
+                         "Read known manifest path")
+
+    def test_master_interrupt_overrides_runnable_actions(self):
+        state = dict(phase="STOP", stop_reason="MASTER_INTERRUPT",
+                     stop_evidence="Master explicitly said stop", remaining_actions=["Edit source"])
+        self.assertEqual(gate.evaluate(state), "PASS")
+        self.assertEqual(gate.next_agent_action(state), "AWAIT_MASTER")
 
     def test_next_action_keeps_unfinished_mission_moving(self):
         self.assertEqual(gate.next_agent_action(dict(
