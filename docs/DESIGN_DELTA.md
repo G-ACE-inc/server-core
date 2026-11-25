@@ -1277,3 +1277,13 @@ existing Asteraserver tunnel is not edited.
 Rollback: revert this admission commit before disabling the Gserver-only
 Receiver, Gateway destination and result overlay. Preserve existing Contabo
 targets, requests, results, services and unrelated Provider configuration.
+
+## 2026-11-26 — CU40: remove conflicting CHAT continuation requirements
+
+Master explicitly commissioned an audit and improvement of contradictory rules after repeated read-success/no-implementation replies. Work Routine §6 remains the sole development procedure. Its older per-turn external read/output checklist is replaced with retention of verified state and refresh of changed/missing facts. The capacity paragraph now distinguishes actual platform/context limits from elapsed thinking time, full-Mission size or spending a turn on reads. Preserve real limits, safe handoff and all protected-effect approval boundaries.
+
+Rule #17's duplicate evidence and re-anchor procedures are to be replaced with a link to §6, preserving its profile, domain, provider, delegation and explicit approval boundaries. docs/GPT_CHAT_PROJECT_AGENT_DESIGN.md records the audit and acceptance cases; docs/GITHUB_PROJECT_RULE_PLANE.md aligns the loading example with change-driven refresh. No new profile, service, schema or response-interception gate is introduced.
+
+Existing decision-gate corrections: prefer canonical rule_plane_read with legacy rule_full_read fallback; completed evidence-verified failure actions return CONTINUE_OWNED_CU; a verified Master interrupt takes precedence over remaining runnable actions. Real design/permission failures and invalid completion claims remain denied. This does not install Draft PR #337 or assert that normal GPT final replies invoke the gate.
+
+Verification: canonical/legacy/false receipts, completed recovery vs missing evidence, Master interrupt, existing design/continuation/rule-plane tests and exact PR CI. Native GPT behavior remains a separate, unverified acceptance: the quoted conversation is failure evidence, not a trace proving one unique cause. Rollback: revert this commit and restore only edited #17 sections from the captured pre-change body after checking concurrent edits.

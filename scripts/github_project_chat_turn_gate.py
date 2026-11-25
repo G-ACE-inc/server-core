@@ -71,10 +71,14 @@ def evaluate(state):
     if phase not in PHASES:
         return "GATE_PHASE_INVALID"
     if phase == "START":
-        for k in ("manifest_verified", "rule_full_read", "current_verified",
+        for k in ("manifest_verified", "current_verified",
                   "purpose_verified", "cu_verified"):
             if state.get(k) is not True:
                 return "START_" + k.upper() + "_NOT_VERIFIED"
+        # Current receipts use rule_plane_read. Retain the old spelling only
+        # as a fallback; an explicit current-field denial must never be hidden.
+        if state.get("rule_plane_read", state.get("rule_full_read")) is not True:
+            return "START_RULE_PLANE_READ_NOT_VERIFIED"
         if state.get("profile") != "GPT_CHAT":
             return "START_PROFILE_MISMATCH"
         if state.get("purpose_cu_aligned") is not True:
@@ -168,8 +172,12 @@ def next_agent_action(state):
         completed = state.get("completed_actions")
         completed = completed if isinstance(completed, list) else []
         remaining = [a for a in actions if isinstance(a, str) and a.strip() and a not in completed]
-        return remaining[0] if remaining else "REASSESS_FAILURE_AND_DESIGN"
+        if remaining:
+            return remaining[0]
+        return "CONTINUE_OWNED_CU" if actions and evaluate(state) == "PASS" else "INSPECT_FAILURE_EVIDENCE"
     if phase == "STOP":
+        if state.get("stop_reason") == "MASTER_INTERRUPT" and evaluate(state) == "PASS":
+            return "AWAIT_MASTER"
         remaining = state.get("remaining_actions")
         if isinstance(remaining, list) and remaining:
             return remaining[0]
