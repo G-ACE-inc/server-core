@@ -9,6 +9,44 @@ gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
 
 class DecisionTests(unittest.TestCase):
+    def test_invalid_stop_backlog_never_becomes_a_tool_action(self):
+        for backlog in ([None], [False], [""], ["Valid action", None], "Action"):
+            state = dict(phase="STOP", stop_reason="ALL_ACTIONS_BLOCKED", remaining_actions=backlog)
+            with self.subTest(backlog=backlog):
+                self.assertEqual(gate.next_agent_action(state), "RECHECK_STOP_EVIDENCE")
+
+    def test_unrepairable_dependency_does_not_block_available_original_work(self):
+        state = dict(phase="FAILURE", failed_step="Protected provider change",
+                     failure_evidence="actual provider change requires owner decision",
+                     independent_actions=[], completed_actions=[],
+                     remaining_actions=["Implement independent original feature"])
+        self.assertEqual(gate.evaluate(state), "PASS")
+        self.assertEqual(gate.next_agent_action(state), "Implement independent original feature")
+        self.assertEqual(gate.next_agent_action({**state, "remaining_actions": []}),
+                         "INSPECT_FAILURE_EVIDENCE")
+        self.assertEqual(gate.next_agent_action({**state, "remaining_actions": [None]}),
+                         "INSPECT_FAILURE_EVIDENCE")
+
+    def test_ready_master_decision_and_actual_blocker_do_not_recheck_forever(self):
+        base = dict(phase="STOP", stop_evidence="https://github.com/G-ACE-inc/server-core/issues/40",
+                    remaining_actions=[], same_cu_actions_reviewed=True,
+                    mission_acceptance_verified=False)
+        decision = dict(base, stop_reason="MASTER_ONLY_ACTION",
+                        next_action_decision="MASTER_ONLY_ACTION_REQUIRED", master_action_ready=True,
+                        master_action_evidence="https://github.com/G-ACE-inc/server-core/pull/373")
+        self.assertEqual(gate.evaluate(decision), "PASS")
+        self.assertEqual(gate.next_agent_action(decision), "AWAIT_MASTER_DECISION")
+        self.assertEqual(gate.next_agent_action({**decision, "master_action_ready": False}),
+                         "RECHECK_STOP_EVIDENCE")
+        self.assertEqual(gate.next_agent_action({**decision, "remaining_actions": ["Implement independent feature"]}),
+                         "Implement independent feature")
+        blocked = dict(base, stop_reason="ALL_ACTIONS_BLOCKED", next_action_decision="NO_RUNNABLE_ACTIONS",
+                       runnable_actions_inventory_verified=True)
+        self.assertEqual(gate.evaluate(blocked), "PASS")
+        self.assertEqual(gate.next_agent_action(blocked), "REPORT_BLOCKER_WITH_EVIDENCE")
+        self.assertEqual(gate.next_agent_action({**blocked, "runnable_actions_inventory_verified": False}),
+                         "RECHECK_STOP_EVIDENCE")
+
     def test_recovered_dependency_resumes_original_implementation(self):
         state = dict(phase="FAILURE", failed_step="Read Manifest",
                      failure_evidence="transport error",

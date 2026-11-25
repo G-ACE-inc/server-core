@@ -30,6 +30,16 @@ Master提示の会話では、ManifestやSource取得に成功した後も「容
 
 回帰例：Manifestの読取復旧→Libraryの未接続操作の実装を選択。読取・復旧・CIの成功だけで9モジュール/79操作の完了を認めない。元作業を残したSTOPと、残作業を空にしただけの未検証完了を拒否する。試験内のLibrary操作名は判定用fixtureであり、Tumblrの実コードの実装証拠ではない。意味的な作業対応、通常GPTの実継続、全経路への適用は別途実証が必要。
 
+## 2026-11-26 操作単位の保護・非技術者負担・Loop不足の監査（CU40）
+
+対象は§6、#17、COMMAND_ROUTINE、MASTER_TERMINAL_COMMAND、Host route、既存decision gateと呼出し箇所。SERVER_CORE_PROTOCOLの認証・Secret・不可逆変更・公開・費用・提供元所有の保護は変更しない。実害と無関係な一律承認や全体停止へ拡張せず、保留する操作・残る独立作業を区別する。手順の正本は§6のBounded blockersであり、各文書へ別の停止手順を増設しない。
+
+確認した不足：既存gateは、FAILUREでその場の障害修復がないと、元の許可済み残作業があってもINSPECT_FAILURE_EVIDENCEへ戻った。有効なMASTER_ONLY_ACTION／ALL_ACTIONS_BLOCKEDでもRECHECK_STOP_EVIDENCEへ戻った。既存receipt検査は維持して、前者を元の独立作業、後者をAWAIT_MASTER_DECISION／REPORT_BLOCKER_WITH_EVIDENCEへ進める。これらの表示は実際の権限付与や人間承認を作らない。
+
+手順の矛盾：Host route冒頭のproject_contextによる作業先選択は、Gserverの自由Shell実装と不一致だったためcdへ訂正。手動コマンド契約の「Masterの通常操作」と、検証失敗後の無条件な「別Executorへ再Routing」を訂正し、既存実行経路でAIが修正する責務と外部AIの個別許可を維持する。手動コマンドの構文検査はユーザーに壊れたコマンドを渡さない保護として残す。
+
+機械検証は、元作業の継続、真の判断待ち、実作業が尽きた場合の報告、証拠不足の拒否、Master中断を両方向で試す。新しい常駐AI・承認票・schema・Workflow・Host権限は追加しない。既存helperは観測から次操作を選ぶ部品であり、通常GPTの次Tool呼出しや任意のソース修正を自動実行するランタイムではない。呼出し側の判断・実行・観測の連鎖と実CHATの受入は、Source/CIと区別する。
+
 ## 1. 開発目的・完成の姿
 通常のGPTアプリCHATから、既存のGitHub Project/Repository/Actionsとserver-coreの共通Hostターミナルを介し、Cursor、Codex、IDE内Agentのように**登録済みProjectの開発Change Unit (CU)を継続遂行**する。Rule記述だけで継続を期待するのでなく、実際の状態保存・結果観測・再判断・再実行の連鎖を組み立てる。Masterは要求・製品上の採否を行い、通常のコマンド・実装・テスト・CI・マージの技術判断はCHATへ委任する。
 
