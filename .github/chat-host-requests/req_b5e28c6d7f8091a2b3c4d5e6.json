@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "telegram_bot_settings_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED",
+    "implementation_context": "createvdobot_no_command_official_api_cleanup",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/issues/6"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ntarget=''\ncount=0\nwhile IFS= read -r name; do\n  [ -n \"$name\" ] || continue\n  if docker exec \"$name\" sh -c 'test -n \"${VIDEOBOT_TELEGRAM_TOKEN_FILE:-}\" && test -f \"$VIDEOBOT_TELEGRAM_TOKEN_FILE\" && command -v node >/dev/null' >/dev/null 2>&1; then\n    target=\"$name\"\n    count=$((count+1))\n  fi\ndone <<EOF\n$(docker ps --format '{{.Names}}' | grep -Ei '(videobot|creator)' || true)\nEOF\nif [ \"$count\" -ne 1 ]; then\n  echo CREATOR_CONTAINER_IDENTITY_NOT_UNIQUE\n  exit 72\nfi\ndocker exec -i \"$target\" node --input-type=module - <<'JS'\nimport {readFileSync} from 'node:fs';\nimport {setDefaultResultOrder} from 'node:dns';\nimport {setDefaultAutoSelectFamily} from 'node:net';\nsetDefaultResultOrder('ipv4first');\nsetDefaultAutoSelectFamily(false);\nconst tokenPath=process.env.VIDEOBOT_TELEGRAM_TOKEN_FILE;\nconst base=process.env.VIDEOBOT_LOCAL_API_URL||'https://api.telegram.org';\nif(typeof tokenPath!=='string'||!tokenPath.startsWith('/run/secrets/')||\n  !['https://api.telegram.org','http://telegram-bot-api:8081'].includes(base))\n  throw Error('CREATOR_RUNTIME_SECRET_OR_ENDPOINT_INVALID');\nconst token=readFileSync(tokenPath,'utf8').trim();\nif(!/^\\d+:[A-Za-z0-9_-]{30,}$/.test(token))throw Error('CREATOR_TOKEN_FORMAT_INVALID');\nasync function call(method,params={}){\n const response=await fetch(base+'/bot'+token+'/'+method,{\n  method:'POST',headers:{'content-type':'application/json'},\n  body:JSON.stringify(params),signal:AbortSignal.timeout(25000),redirect:'error'\n });\n if(response.status!==200)throw Error('CREATOR_BOT_API_STATUS_ERROR');\n const result=await response.json();\n if(result?.ok!==true)throw Error('CREATOR_BOT_API_RESULT_ERROR');\n return result.result;\n}\ntry{\n const me=await call('getMe');\n if(me?.is_bot!==true || String(me.username||'').toLowerCase()!=='createvdobot')\n  throw Error('CREATOR_BOT_IDENTITY_MISMATCH');\n const languages=['','ja','en'];\n const scopes=['default','all_private_chats','all_group_chats','all_chat_administrators'];\n let cleared=0;\n for(const type of scopes){\n  for(const language_code of languages){\n   const p={scope:{type},language_code};\n   await call('deleteMyCommands',p);\n   const commands=await call('getMyCommands',p);\n   if(!Array.isArray(commands)||commands.length!==0)\n    throw Error('CREATOR_COMMAND_READBACK_NOT_EMPTY');\n   cleared++;\n  }\n }\n await call('setChatMenuButton',{menu_button:{type:'default'}});\n const menu=await call('getChatMenuButton');\n if(!menu||!['default','commands'].includes(menu.type))\n  throw Error('CREATOR_MENU_RESET_NOT_VERIFIED');\n console.log('CREATOR_COMMAND_REGISTRATIONS_CLEARED='+cleared);\n console.log('CREATOR_MENU_SETTING='+menu.type);\n console.log('CREATOR_NO_COMMAND_READBACK=PASS');\n}catch(e){console.error(String(e.message||'CREATOR_COMMAND_CLEANUP_FAILED').replace(/[^A-Z0-9_]/g,'_'));process.exitCode=1;}\nJS"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
