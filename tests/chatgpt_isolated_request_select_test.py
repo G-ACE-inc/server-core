@@ -242,6 +242,12 @@ class IsolatedRequests(unittest.TestCase):
         self.assertIn("cancel-in-progress: false", workflow)
         self.assertNotIn("github.sha || 'legacy'", workflow)
         self.assertNotIn("DEBUGAI_CF_ACCESS_CLIENT_ID", workflow)
+        self.assertIn("CHAT_START_GATE=GSERVER_FREE_TERMINAL", workflow)
+        self.assertIn('.bounded_host_request.host_target == "gserver"', workflow)
+        free_branch = workflow.index('if [[ "$free_gserver" == "true" ]]')
+        semantic_gate = workflow.index("github_project_chat_turn_gate.py")
+        self.assertGreaterEqual(free_branch, 0)
+        self.assertGreater(semantic_gate, free_branch)
 
     def test_receipt_and_effect_admission(self):
         with tempfile.TemporaryDirectory() as d:
