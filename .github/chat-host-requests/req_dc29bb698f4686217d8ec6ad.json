@@ -1,0 +1,20 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "host_target": "gserver",
+    "repository": "seigo-gace/G-ACEserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "0000000000000000000000000000000000000000",
+    "command": "printf 'GACE_GSERVER_TERMINAL_USABLE\\n'\nhostname -s\ngit -C /home/gace/server-core rev-parse --short HEAD\ngit -C /home/gace/Project/Gserver/repository rev-parse --short HEAD\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
