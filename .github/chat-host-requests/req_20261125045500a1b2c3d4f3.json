@@ -1,0 +1,20 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "host_target": "gserver",
+    "repository": "seigo-gace/G-ACEserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "0000000000000000000000000000000000000000",
+    "command": "set -eu\ndocker inspect --format '{{.Config.Image}} {{.State.Running}} {{.RestartCount}}' gace-createvdobot-videobot-poll-1\ndocker exec -i gace-createvdobot-videobot-poll-1 node --input-type=module <<'NODE'\nimport {mkdtemp,readFile,rm} from 'node:fs/promises';\nimport {tmpdir} from 'node:os';\nimport {join} from 'node:path';\nimport {execFile} from 'node:child_process';\nimport {promisify} from 'node:util';\nimport {createHash} from 'node:crypto';\nimport {prepareMissingPreviewAssets} from '/opt/videobot/src/sales/autoPreview.mjs';\nimport {planAutomaticSample} from '/opt/videobot/src/sales/sampleMedia.mjs';\nconst exec=promisify(execFile),root=await mkdtemp(join(tmpdir(),'synthetic-preview-'));\nlet boundedCalls=0;\nconst run=(cmd,args,opts)=>{\n if(cmd==='ffmpeg'&&args.includes('-filter_complex')&&args.some(x=>x.includes('concat=n=4'))){\n  args=args.flatMap(x=>x==='-i'?['-threads','1',x]:x==='libx264'?[x,'-threads:v','1']:[x]);boundedCalls++;\n }\n return exec(cmd,args,opts);\n};\nconst hash=b=>createHash('sha256').update(b).digest('hex');\ntry {\n const input=join(root,'synthetic.mp4'),a=join(root,'a.jpg'),b=join(root,'b.jpg'),out=join(root,'sample.mp4');\n await exec('ffmpeg',['-nostdin','-v','error','-f','lavfi','-i','testsrc2=size=160x90:rate=10','-t','120','-c:v','libx264','-threads','1','-pix_fmt','yuv420p',input],{timeout:90000});\n const original=hash(await readFile(input));\n const result=await prepareMissingPreviewAssets({sourcePath:input,thumbnailOutputPath:a,secondThumbnailOutputPath:b,sampleOutputPath:out,run});\n const media=await readFile(out),first=await readFile(a),second=await readFile(b);\n const {stdout}=await exec('ffprobe',['-v','error','-show_entries','format=duration:stream=codec_name','-of','json',out]);\n const evidence={boundedCalls,plan:planAutomaticSample(120),duration:result.sample.durationSeconds,thumbnailCount:2,distinctImages:hash(first)!==hash(second),size:media.length,fastStart:media.indexOf('moov')>0&&media.indexOf('moov')<media.indexOf('mdat'),sourceUnchanged:original===hash(await readFile(input)),probe:JSON.parse(stdout)};\n console.log(JSON.stringify(evidence));\n if(boundedCalls!==1||Math.abs(evidence.duration-60)>0.15||!evidence.distinctImages||!evidence.fastStart||!evidence.sourceUnchanged||media.length>20000000)throw Error('synthetic preview verification failed');\n} finally {await rm(root,{recursive:true,force:true});}\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
