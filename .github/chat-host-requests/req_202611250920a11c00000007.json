@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/commit/3aa14d5359b5984bee7281a54b9a7eeab0596a31"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -euo pipefail\nhead=3aa14d5359b5984bee7281a54b9a7eeab0596a31\nbase=93281acdb54ce49bdd03a9a612223a40a8b61212\ncid=gace-createvdobot-videobot-poll-1\noldtag=create-videobot:body-edit-93281ac\noldid=\"$(docker image inspect \"$oldtag\" --format '{{.Id}}')\"\ntest \"$(docker inspect \"$cid\" --format '{{.Image}}')\" = \"$oldid\"\ntest \"$(docker inspect \"$cid\" --format '{{.State.Running}}')\" = true\nstage=\"$HOME/.local/share/gace-create-videobot/registration-state-3aa14d5-20261125\"\ntag=create-videobot:registration-state-3aa14d5\ntest ! -e \"$stage\"\ngit fetch --no-tags origin \"$head\"\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$head\"\nmkdir -p \"$stage\"/{candidate,overlay}\ngit archive \"$head\" src sql test package.json | tar -xf - -C \"$stage/candidate\"\ngit diff --name-only \"$base\" \"$head\" -- src sql > \"$stage/changed.txt\"\nprintf '%s\\n' src/sales/pgListings.mjs src/telegram/creatorUi.mjs src/telegram/creatorWizard.mjs | diff - \"$stage/changed.txt\"\nwhile IFS= read -r f; do\n test \"$(git show \"$base:$f\" | sha256sum | cut -d' ' -f1)\" = \"$(docker exec \"$cid\" sha256sum \"/opt/videobot/$f\" | cut -d' ' -f1)\"\n mkdir -p \"$stage/overlay/$(dirname \"$f\")\"\n cp \"$stage/candidate/$f\" \"$stage/overlay/$f\"\ndone < \"$stage/changed.txt\"\nfind \"$stage/overlay\" \"$stage/candidate/test\" -type d -exec chmod 755 {} +\nfind \"$stage/overlay\" \"$stage/candidate/test\" -type f -exec chmod 644 {} +\nprintf 'FROM %s\\nCOPY overlay/src/ /opt/videobot/src/\\n' \"$oldtag\" > \"$stage/Dockerfile\"\ndocker build --pull=false --network none -t \"$tag\" \"$stage\" > \"$stage/build.log\" 2>&1 || { tail -n 40 \"$stage/build.log\"; exit 68; }\ngit ls-tree -r --name-only \"$head\" src sql > \"$stage/runtime-files.txt\"\n(cd \"$stage/candidate\"; xargs sha256sum < \"$stage/runtime-files.txt\") > \"$stage/expected.sha\"\ndocker run --rm -i --network none --entrypoint sh -w /opt/videobot \"$tag\" -c 'while IFS= read -r f; do sha256sum \"$f\" || exit 1; done' < \"$stage/runtime-files.txt\" > \"$stage/actual.sha\"\ndiff -u \"$stage/expected.sha\" \"$stage/actual.sha\"\ndocker run --rm --network none --entrypoint node -w /opt/videobot -v \"$stage/candidate/test:/opt/videobot/test:ro\" \"$tag\" --test test/pgListings.test.mjs test/creatorUi.test.mjs test/creatorWizard.test.mjs test/creatorBot.test.mjs test/creatorSourceIntegration.test.mjs test/creatorScreenTransport.test.mjs > \"$stage/new.tap\" 2>&1 || { tail -n 100 \"$stage/new.tap\"; exit 69; }\ntail -n 15 \"$stage/new.tap\"\ngrep -F 'legacy orphaned session can open a genuinely new entry while old receipt remains unknown' \"$stage/new.tap\" | grep '^ok '\ngrep -F 'an unresolved same-file registration cannot create another row or call publication' \"$stage/new.tap\" | grep '^ok '\necho REGISTRATION_STATE_STAGE_AND_TESTS_PASS\n"
+  }
+}
