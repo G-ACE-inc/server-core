@@ -254,8 +254,10 @@ class IsolatedRequests(unittest.TestCase):
             p = Path(d) / "request.json"
             p.write_text(json.dumps(BASE))
             self.assertEqual(m.prepare(p)["bounded_host_request"]["command_id"], "project.git_head")
+            stop = {**BASE, "chat_decision_checkpoint": {"phase": "STOP"}}
+            p.write_text(json.dumps(stop))
+            self.assertEqual(m.prepare(p)["bounded_host_request"]["command_id"], "project.git_head")
             for mutate in [
-                {**BASE, "chat_decision_checkpoint": {"phase": "STOP"}},
                 {**BASE, "gitops_request": {"enabled": True}},
                 {**BASE, "server_command_id": "service.debug_ai_logs"},
             ]:

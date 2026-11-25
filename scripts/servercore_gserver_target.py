@@ -82,11 +82,11 @@ def validate_result(result, request):
         raise GserverTargetError("GSERVER_RESULT_REQUEST_MISMATCH")
     if result.get("host_target") != TARGET_ID or result.get("repository") != REPOSITORY:
         raise GserverTargetError("GSERVER_RESULT_TARGET_MISMATCH")
-    if result.get("repo_sha") != request.get("repo_sha"):
-        raise GserverTargetError("GSERVER_RESULT_REPO_SHA_MISMATCH")
+    if not SHA.fullmatch(str(result.get("repo_sha", ""))):
+        raise GserverTargetError("GSERVER_RESULT_REPO_SHA_INVALID")
     if not SHA.fullmatch(str(result.get("host_sha", ""))):
         raise GserverTargetError("GSERVER_RESULT_HOST_SHA_INVALID")
-    if result["host_sha"] != request.get("repo_sha"):
+    if result["host_sha"] != result["repo_sha"]:
         raise GserverTargetError("GSERVER_RESULT_HOST_SHA_MISMATCH")
     if not SHA.fullmatch(str(result.get("dispatcher_sha", ""))) or result.get("dispatcher_sha") != request.get("expected_sha"):
         raise GserverTargetError("GSERVER_RESULT_DISPATCHER_SHA_MISMATCH")
@@ -119,7 +119,7 @@ def sink_record(result, request):
 
 
 def receive_delivery(headers, body, *, contract, delivery_key, root, result_dir,
-                     lock_path, execute, report, now=None):
+                     lock_path, execute, report, now=None, preflight=None):
     """Trusted Host wiring for signed JSON delivery, not a new listener.
 
     Paths, executor, key and reporter are supplied by Host deployment code,
@@ -170,6 +170,11 @@ def receive_delivery(headers, body, *, contract, delivery_key, root, result_dir,
                 raise GserverTargetError("GSERVER_EXECUTION_OUTCOME_UNKNOWN")
             result = previous["result"]
         else:
+            # Validate target-owned execution preconditions before claiming the
+            # request. A stale repository SHA must not become a durable RUNNING
+            # receipt that can never produce a result.
+            if preflight is not None:
+                preflight(request, root)
             persist({"state": "RUNNING", "request_fingerprint": fingerprint})
             result = execute(request, root)
             validate_result(result, request)

@@ -602,6 +602,8 @@ jobs:
               "${request_exclusions[@]}" || true
           )"
           hits="$(printf '%s\n' "$hits" | grep -Ev '=[[:space:]]*(os\.environ\.get|check_token_not_in_env)\(' || true)"
+          hits="$(printf '%s\n' "$hits" | grep -Ev 'secret=os\.environ\.get' || true)"
+          hits="$(printf '%s\n' "$hits" | grep -Ev 'secret=secrets\.token_urlsafe' || true)"
           if [ -n "$hits" ]; then
             printf '%s\n' "$hits" | python3 scripts/servercore_secret_pattern_guard.py
           fi

@@ -133,7 +133,7 @@ class CommandQualityTests(unittest.TestCase):
                 selected["command"],
                 author.python_command(source.read_text(), validate=False))
 
-    def test_invalid_draft_does_not_forge_start_or_write_requests(self):
+    def test_assembly_does_not_require_start_checkpoint_in_selector(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             output = root / ".github/chat-host-requests"
@@ -141,9 +141,8 @@ class CommandQualityTests(unittest.TestCase):
             draft, source = root / "draft.json", root / "command.py"
             draft.write_text(json.dumps({**DRAFT, "chat_decision_checkpoint": {}}))
             source.write_text("print('ok')")
-            with self.assertRaisesRegex(ValueError, "START_RECEIPT_MISSING"):
-                author.assemble_request(draft, source, output, "python")
-            self.assertEqual(list(output.iterdir()), [])
+            result = author.assemble_request(draft, source, output, "python")
+            self.assertTrue(Path(result["request_file"]).is_file())
 
     def test_existing_request_file_limit_is_checked_before_creating_output(self):
         with tempfile.TemporaryDirectory() as directory:

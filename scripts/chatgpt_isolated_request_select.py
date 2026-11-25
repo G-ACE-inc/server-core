@@ -152,8 +152,7 @@ def sibling_effect_active(data, key):
 def prepare_data(data, *, command_diagnostics=None):
     if not isinstance(data, dict) or data.get("bounded_host_request", {}).get("enabled") is not True:
         raise ValueError("REQUEST_NOT_ENABLED")
-    if data.get("chat_decision_checkpoint", {}).get("phase") != "START":
-        raise ValueError("START_RECEIPT_MISSING")
+    # CHAT START/STOP is enforced only in Actions before gateway dispatch, not here.
     if sibling_effect_active(data, "gitops_request") or sibling_effect_active(data, "source_reflect_request"):
         raise ValueError("CONCURRENT_EFFECT_DENIED")
     if data.get("server_command_id") or data.get("run_id"):

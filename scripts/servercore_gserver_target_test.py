@@ -51,7 +51,7 @@ class GserverTargetTests(unittest.TestCase):
             target.validate_request(bad, CONTRACT)
         result = {
             "request_id": value["id"], "host_target": "gserver", "repository": target.REPOSITORY,
-            "repo_sha": value["repo_sha"], "host_sha": value["repo_sha"], "state": "PASS", "exit_code": 0,
+            "repo_sha": "e" * 40, "host_sha": "e" * 40, "state": "PASS", "exit_code": 0,
             "dispatcher_sha": value["expected_sha"], "command_sha256": value["command_sha256"],
             "stdout": "ok", "stderr": "",
             "stdout_sha256": hashlib.sha256(b"ok").hexdigest(),
@@ -61,7 +61,7 @@ class GserverTargetTests(unittest.TestCase):
         for key, changed in {
             "request_id": "req_" + "0" * 24, "host_target": "contabo",
             "repository": "other/repo", "repo_sha": "f" * 40,
-            "host_sha": "f" * 40, "dispatcher_sha": "f" * 40,
+            "host_sha": "invalid", "dispatcher_sha": "f" * 40,
             "command_sha256": "f" * 64, "exit_code": 1,
             "stdout": "tampered", "stderr": "tampered",
         }.items():

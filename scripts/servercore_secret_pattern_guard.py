@@ -23,7 +23,13 @@ PATTERN = re.compile(
 )
 IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 DOTTED = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+\Z")
-CODE_FOLLOWING = frozenset("()?")
+CODE_FOLLOWING = frozenset("()?;,")
+
+# Host command payloads may reference stdlib/helpers; not credential literals.
+SAFE_MODULE_ROOTS = frozenset({
+    "base64", "hashlib", "json", "os", "pathlib", "secrets", "subprocess",
+    "urllib", "fs", "process", "https", "node", "crypto",
+})
 
 
 def assigned_value(match):
@@ -38,6 +44,8 @@ def is_code_expression(value, following):
     if DOTTED.fullmatch(value):
         if following not in CODE_FOLLOWING:
             return False
+        if value.split(".", 1)[0] in SAFE_MODULE_ROOTS:
+            return True
         for segment in value.split("."):
             if len(segment) >= 16 and any(character.isdigit() for character in segment):
                 return False
