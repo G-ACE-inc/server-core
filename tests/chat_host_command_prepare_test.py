@@ -114,6 +114,25 @@ class CommandQualityTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "HOST_COMMAND_.*SYNTAX_INVALID"):
                     prepare(path)
 
+    def test_gserver_request_assembly_preserves_interpreter_errors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / ".github/chat-host-requests"
+            output.mkdir(parents=True)
+            draft, source = root / "draft.json", root / "command.py"
+            data = copy.deepcopy(DRAFT)
+            data["bounded_host_request"].update({
+                "repository": "seigo-gace/G-ACEserver",
+                "host_target": "gserver",
+            })
+            draft.write_text(json.dumps(data))
+            source.write_text("print('unterminated)")
+            result = author.assemble_request(draft, source, output, "python")
+            selected = prepare(Path(result["request_file"]))["bounded_host_request"]
+            self.assertEqual(
+                selected["command"],
+                author.python_command(source.read_text(), validate=False))
+
     def test_invalid_draft_does_not_forge_start_or_write_requests(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
