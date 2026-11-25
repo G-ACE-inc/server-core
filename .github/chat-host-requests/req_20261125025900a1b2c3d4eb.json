@@ -1,0 +1,20 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "host_target": "gserver",
+    "repository": "seigo-gace/G-ACEserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "0000000000000000000000000000000000000000",
+    "command": "set -eu\ncid=$(docker ps --filter label=com.docker.compose.service=videobot-poll --format '{{.ID}}')\nif [ -z \"$cid\" ] || [ \"$(printf '%s\\n' \"$cid\" | wc -l)\" -ne 1 ]; then printf 'SINGLE_POLLER_NOT_CONFIRMED\\n'; exit 72; fi\ndocker inspect --format 'running={{.State.Running}} restart_count={{.RestartCount}} started={{.State.StartedAt}} image={{.Config.Image}}' \"$cid\"\ndocker logs --since 24h --tail 20000 \"$cid\" 2>&1 | awk '/^CREATOR_OWNER_JOB_NEEDS_RECONCILE=YES$/ {unknown++} /^CREATOR_DM_UPDATES_HANDLED=[0-9]+$/ {split($0,a,\"=\");accepted+=a[2]} /^CREATOR_UPDATES_QUARANTINED=[0-9]+$/ {split($0,a,\"=\");quarantined+=a[2]} /^CREATOR_POLL_RUNTIME_FAILED$/ {failed++} /^CREATOR_DM_POLL_READY=PASS$/ {ready++} END {printf \"owner_job_unknown=%d accepted=%d quarantined=%d runtime_failed=%d ready=%d\\n\",unknown,accepted,quarantined,failed,ready}'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
