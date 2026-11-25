@@ -1,0 +1,20 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "host_target": "gserver",
+    "repository": "seigo-gace/G-ACEserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "0000000000000000000000000000000000000000",
+    "command": "set -eu\ncid=$(docker ps --filter label=com.docker.compose.service=videobot-poll --format '{{.ID}}')\nif [ -z \"$cid\" ] || [ \"$(printf '%s\\n' \"$cid\" | wc -l)\" -ne 1 ]; then printf 'SINGLE_POLLER_NOT_CONFIRMED\\n'; exit 72; fi\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module <<'NODE'\nimport pg from 'pg';\nimport {readPrivateToken} from './src/runtime/config.mjs';\nconst e=process.env;\nconst options=e.VIDEOBOT_DATABASE_URL_FILE?{connectionString:readPrivateToken(e.VIDEOBOT_DATABASE_URL_FILE)}:{host:e.VIDEOBOT_DB_HOST,user:e.VIDEOBOT_DB_USER,database:e.VIDEOBOT_DB_NAME,password:readPrivateToken(e.VIDEOBOT_DB_PASSWORD_FILE)};\nconst pool=new pg.Pool({...options,max:1,connectionTimeoutMillis:5000});\nlet client;\ntry {\n client=await pool.connect();\n await client.query('BEGIN READ ONLY');\n await client.query(\"SET LOCAL statement_timeout='5s'\");\n const queries={\n  jobs:\"SELECT status,count(*)::int AS n FROM videobot_owner_update_jobs GROUP BY status ORDER BY status\",\n  blocked:\"SELECT count(*)::int AS n,count(DISTINCT q.owner_id)::int AS owners FROM videobot_owner_update_jobs q WHERE q.status='queued' AND EXISTS(SELECT 1 FROM videobot_owner_update_jobs p WHERE p.owner_id=q.owner_id AND p.update_id<q.update_id AND p.status='needs_reconcile')\",\n  receipts:\"SELECT j.status AS job_status,coalesce(w.status,'missing') AS receipt_status,count(*)::int AS n FROM videobot_owner_update_jobs j LEFT JOIN videobot_webhook_updates w USING(update_id) WHERE j.status IN ('running','needs_reconcile') GROUP BY 1,2 ORDER BY 1,2\",\n  sessions:\"SELECT coalesce(state->>'publishing','none') AS publishing,count(*)::int AS n FROM videobot_creator_sessions GROUP BY 1 ORDER BY 1\"\n };\n for(const [k,sql] of Object.entries(queries)){const r=await client.query(sql); console.log(k+'='+JSON.stringify(r.rows));}\n await client.query('ROLLBACK');\n} catch(err) {console.log('DIAGNOSTIC_FAILED='+(/^[0-9A-Z]{5}$/.test(err?.code??'')?err.code:'UNKNOWN'));process.exitCode=1;}\nfinally {client?.release();await pool.end();}\nNODE\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
