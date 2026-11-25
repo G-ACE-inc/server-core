@@ -200,6 +200,18 @@ Keep the active task across turns using the already verified execution tuple: `P
 
 Before executing an AI-authored server command, apply the lightweight AI-only self-check in `docs/COMMAND_ROUTINE.md`; it never requests routine Master confirmation or suspends the development CU.
 
+### Purpose preservation during GPT CHAT execution
+
+Keep three things distinct in the existing owning Current and retained context: **Master's requested outcome and acceptance**, **the current implementation unit**, and **a temporary dependency/blocker**. Do not rename the outcome to match the latest investigation, tool, repair, PR or test. The approved scope/acceptance changes only with Master's explicit intent; a status question, correction or newly discovered defect does not authorize narrowing it.
+
+Select work by its contribution to an unmet acceptance condition of the original request. Before a meaningful change of direction, identify internally which condition the action advances and what evidence it should produce. Use already verified information; do not turn this comparison into a per-command form, mandatory re-fetch, new tracker or report template. If the action neither advances that condition nor removes a demonstrated dependency, choose relevant work instead. Do not replace product work with optional infrastructure improvement, documentation, tool installation, repeated audits or expanded testing merely because those are easier to execute.
+
+When a real dependency must be repaired, retain the **original next action** and the minimum evidence that permits returning to it. After recovery, resume that original work in the same turn when feasible. Use the existing ordered `remaining_actions` for original unfinished work; `independent_actions`/`completed_actions` describe the failure-handling work and must not erase the original backlog. Existing checkpoint advice preserves the original next action when supplied; omitted context remains unknown rather than a fabricated Mission.
+
+Compare results with the original acceptance, not the number of actions, files, commits or passing tests. A dependency PASS, design table, source test or PR merge proves only its own result. If original acceptance remains open, continue its next permitted action; do not announce the whole request complete. Small implementation units preserve full acceptance rather than reduce it. Do not broaden the Mission indefinitely after its requested outcome is verified, and do not execute obsolete requests that Master explicitly discarded.
+
+Example: for an approved 9-module/79-operation implementation, Manifest access, mapping, CI repair or Host recovery can be necessary steps. They do not become substitute deliverables. After access/recovery, return to an actual missing operation, implement and verify it, then proceed to the remaining original acceptance. An explicit separate request to repair the common rules, as in this CU, is its own authorized outcome; it does not authorize silently implementing another Project's feature backlog.
+
 ### Mission / Change Unit pre-dispatch (same Current for GPT CHAT and SERVER_AI)
 
 The single mutable authority for a task's mission is **GitHub Project #1 Current plus the owning Project/CU Current**. This document owns the stable Work Routine, **not** another copy of the task's changing status. Use the selected executor profile (#17 for GPT CHAT; #16 for SERVER_AI), never both as default context.

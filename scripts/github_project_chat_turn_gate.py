@@ -90,6 +90,10 @@ def evaluate(state):
             return "START_" + design_out
         return "PASS"
     if phase == "FAILURE":
+        if "remaining_actions" in state:
+            remaining = state["remaining_actions"]
+            if not isinstance(remaining, list) or any(not isinstance(a, str) or not a.strip() for a in remaining):
+                return "FAILURE_REMAINING_ACTIONS_INVALID"
         if not all(isinstance(state.get(k), str) and state[k].strip()
                    for k in ("failed_step", "failure_evidence")):
             return "FAILURE_EVIDENCE_MISSING"
@@ -174,7 +178,13 @@ def next_agent_action(state):
         remaining = [a for a in actions if isinstance(a, str) and a.strip() and a not in completed]
         if remaining:
             return remaining[0]
-        return "CONTINUE_OWNED_CU" if actions and evaluate(state) == "PASS" else "INSPECT_FAILURE_EVIDENCE"
+        if actions and evaluate(state) == "PASS":
+            # Dependency recovery is not the original outcome. Preserve the
+            # caller's existing ordered Mission backlog rather than choosing
+            # another recovery task or treating this receipt as completion.
+            original_remaining = state.get("remaining_actions", [])
+            return original_remaining[0] if original_remaining else "CONTINUE_OWNED_CU"
+        return "INSPECT_FAILURE_EVIDENCE"
     if phase == "STOP":
         if state.get("stop_reason") == "MASTER_INTERRUPT" and evaluate(state) == "PASS":
             return "AWAIT_MASTER"

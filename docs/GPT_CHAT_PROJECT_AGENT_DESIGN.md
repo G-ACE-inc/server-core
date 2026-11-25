@@ -22,6 +22,14 @@ Master提示の会話では、ManifestやSource取得に成功した後も「容
 
 機械検査が及ぶのは実際にその関数／Workflowを呼ぶ経路のみ。通常GPTの最終回答を横取りするHookは存在確認できていない。新しい強制ゲート、常駐AI、Workflow、権限は作らない。今回の変更はTumblrの79操作そのものの実装ではない。上位のプラットフォーム指示、アプリ側制限や他CHATの古い文脈は本Repositoryから変更できない。
 
+## 2026-11-26 目的のすり替え防止（CU40）
+
+元の成果・受入条件、現在の実装単位、一時的な依存障害を区別する。Work Routine §6のPurpose preservationが判断手順の正本であり、元のCurrentにある未達条件を進める作業を選ぶ。実証された依存だけを最小限修復し、その後は元操作へ戻る。任意の基盤改善、テスト拡大、記録等を代わりの目的にしない。目的が達成された後の無関係な継続も許可しない。
+
+既存checkpoint項目を使う。`independent_actions`/`completed_actions`は障害対応、`remaining_actions`は元依頼の未達作業を表す。証拠付きで障害対応を終えたら、既存decision gateは元作業の先頭を返す。未指定なら推測せず従来のCONTINUE_OWNED_CU、証拠不備なら調査へ戻る。新しいProject field、schema、常駐AI、毎操作の承認票は作らない。
+
+回帰例：Manifestの読取復旧→Libraryの未接続操作の実装を選択。読取・復旧・CIの成功だけで9モジュール/79操作の完了を認めない。元作業を残したSTOPと、残作業を空にしただけの未検証完了を拒否する。試験内のLibrary操作名は判定用fixtureであり、Tumblrの実コードの実装証拠ではない。意味的な作業対応、通常GPTの実継続、全経路への適用は別途実証が必要。
+
 ## 1. 開発目的・完成の姿
 通常のGPTアプリCHATから、既存のGitHub Project/Repository/Actionsとserver-coreの共通Hostターミナルを介し、Cursor、Codex、IDE内Agentのように**登録済みProjectの開発Change Unit (CU)を継続遂行**する。Rule記述だけで継続を期待するのでなく、実際の状態保存・結果観測・再判断・再実行の連鎖を組み立てる。Masterは要求・製品上の採否を行い、通常のコマンド・実装・テスト・CI・マージの技術判断はCHATへ委任する。
 

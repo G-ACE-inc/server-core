@@ -9,6 +9,39 @@ gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
 
 class DecisionTests(unittest.TestCase):
+    def test_recovered_dependency_resumes_original_implementation(self):
+        state = dict(phase="FAILURE", failed_step="Read Manifest",
+                     failure_evidence="transport error",
+                     independent_actions=["Read known Manifest path"],
+                     completed_actions=["Read known Manifest path"],
+                     next_action="Read known Manifest path",
+                     next_action_evidence="https://github.com/G-ACE-inc/server-core/issues/40",
+                     remaining_actions=["Implement original Library operation", "Verify original Library acceptance"],
+                     mission_acceptance_verified=False)
+        self.assertEqual(gate.evaluate(state), "PASS")
+        self.assertEqual(gate.next_agent_action(state), "Implement original Library operation")
+        self.assertEqual(gate.next_agent_action({**state, "completed_actions": []}),
+                         "Read known Manifest path")
+        self.assertEqual(gate.next_agent_action({**state, "next_action_evidence": ""}),
+                         "INSPECT_FAILURE_EVIDENCE")
+        for invalid in (None, "Implement feature", [""], [False]):
+            with self.subTest(invalid=invalid):
+                self.assertEqual(gate.evaluate({**state, "remaining_actions": invalid}),
+                                 "FAILURE_REMAINING_ACTIONS_INVALID")
+                self.assertEqual(gate.next_agent_action({**state, "remaining_actions": invalid}),
+                                 "INSPECT_FAILURE_EVIDENCE")
+
+    def test_dependency_pass_does_not_complete_original_mission(self):
+        state = dict(phase="STOP", stop_reason="VERIFIED_COMPLETE",
+                     stop_evidence="https://github.com/G-ACE-inc/server-core/pull/372",
+                     remaining_actions=["Implement original Library operation"],
+                     same_cu_actions_reviewed=True, next_action_decision="MISSION_ACCEPTED",
+                     completion_verified=True, mission_acceptance_verified=False)
+        self.assertEqual(gate.evaluate(state), "STOP_RUNNABLE_ACTIONS_REMAIN")
+        self.assertEqual(gate.next_agent_action(state), "Implement original Library operation")
+        self.assertEqual(gate.evaluate({**state, "remaining_actions": []}),
+                         "STOP_MISSION_ACCEPTANCE_UNVERIFIED")
+
     def test_start(self):
         good = dict(phase="START", profile="GPT_CHAT",
                     manifest_verified=True, rule_full_read=True,
