@@ -186,6 +186,12 @@ This is a per-turn rule for the GPT CHAT Agent Loop. It exists because a multi-t
 
 **Final response boundary (GPT CHAT only):** 最終回答は、今回の依頼の受入条件を実証した完了、Masterの明示的な停止／中断、残る実行可能作業もない具体的な阻害要因／必要承認、又は実際のツール・環境・容量限界による未完引継ぎの場合に限る。保護操作の承認待ちはその操作だけに適用する。未完で終了する場合は、依頼の未達条件、実際に試した経路と結果又は確認した能力不足、検討した許可済み代替が使えない理由、再開に必要な最小の条件を短く伝える。既存Current／PR等の証拠を使い、新しい終了承認票や毎操作の記録義務は作らない。「今回はここまで」「次に続ける」だけは阻害要因ではない。進捗を伝える必要があるだけなら非終端の更新として伝え、作業を続ける。プラットフォームの上位指示・実際の実行制限は守るが、Rule Planeを「回答直前だけの参考」として実行判断から除外しない。文書はCHATの送信を機械的に禁止できず、Source／CI成功だけで実CHATの継続改善を証明したことにはならない。
 
+**読取障害から元作業へ戻る:** 検索の内部エラー又は検索結果0件を、既知ファイルの不存在・Repository全体の利用不可・Host停止・権限不足と解釈しない。Manifest等の正確なRepository/pathが既知なら、既存のfile取得又はContents APIで直接読む。通常の通信・内部エラーの場合だけ、同じ認可範囲で実際に利用可能な別の既存読取経路を確認する。認証・権限・安全性による拒否は迂回しない。成功した結果はそのターンで再利用し、検索や接続試験を繰り返さない。
+
+**復旧後の実行:** 読取・接続が復旧したら、停止していた元依頼の未達条件と照合し、既存request／Runの有無・結果を確認した上で、次の許可済み操作を同じターンで実行する。「こちらでは取得できた」「停止する必要はない」「続行できる」という報告だけでは行動依頼を終えない。既存の結果不明操作を新しいIDで再実行せず、実結果を回収する。Masterが破棄した古い要求は再実行しない。
+
+**停止理由の具体化:** 行動依頼に対して停止が必要なら、未達条件、実際に使えなかった能力又は失敗した操作、その応答、確認済み代替が使えない理由、必要な最小条件を簡潔に示す。ツールから返されていない「本番操作拒否」「権限不足」「内部エラー」を理由として作らない。承認は既存の明示的境界に該当する操作だけについて求め、既に承認された通常作業の再承認を求めない。
+
 ### Master approval and delegated technical authority (single shared contract)
 
 - **Master decides intent and protected impact:** product purpose, requirements, priorities, user-visible behavior, material scope/architecture changes, new or materially increased spend/provider/model use, irreversible protected data changes, substantial security/credential or permission expansion, external/customer/public exposure, and explicit canonical Master-only gates. Present actual outcome, user impact, cost/risk, reversibility and the recommended option; never ask Master to make an implementation choice.
