@@ -1,0 +1,20 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "88aa4fc7268992a2143122e60cb7bef8385c8a23",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "0000000000000000000000000000000000000000",
+    "command": "printf GPT_GSERVER_FREE_TERMINAL_MAIN_PASS\\n",
+    "host_target": "gserver"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
