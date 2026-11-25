@@ -1,0 +1,32 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "implementation_context": "proposed_pr_staging",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/create-videobot/pull/11"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/create-videobot"
+    },
+    "command": "set -eu\ncid=gace-createvdobot-videobot-poll-1\ndocker inspect \"$cid\" --format 'state={{.State.Status}} restarts={{.RestartCount}} image={{.Image}} tag={{.Config.Image}}'\ndocker exec -i -w /opt/videobot \"$cid\" node --input-type=module - <<'JS'\nimport pg from 'pg';\nimport {readFileSync} from 'node:fs';\nconst p=new pg.Pool({host:process.env.VIDEOBOT_DB_HOST,user:process.env.VIDEOBOT_DB_USER,database:process.env.VIDEOBOT_DB_NAME,password:readFileSync('/run/secrets/videobot_db_password','utf8').trim(),max:1,connectionTimeoutMillis:5000});\nconst c=await p.connect();\ntry {\n await c.query('BEGIN READ ONLY');\n const q=async(label,sql,params=[])=>{const r=await c.query(sql,params);console.log(label+' '+JSON.stringify(r.rows));};\n console.log('TERMS_CONFIGURED='+Boolean(process.env.CREATEVDOBOT_TERMS_URL));console.log('INVOICE_MODE='+ (process.env.VIDEO_SALE_MODE==='invoice'));\n await q('MASTER_SESSION',\"SELECT revision,state->>'screen' AS screen,state->>'publishing' AS publishing,state->'pendingVideoDraft'->>'revision' AS pending_revision, state->'pendingVideoDraft' IS NOT NULL AS pending, state->'draft'->>'mode' AS draft_mode,updated_at FROM videobot_creator_sessions WHERE owner_user_id=$1\",[788044853]);\n await q('MASTER_RECENT_LISTINGS',`SELECT left(md5(l.listing_id),10) AS ref,l.status,l.revision,l.created_at,l.updated_at,l.second_thumbnail_file_id IS NOT NULL AS two_thumbnails,l.sample_duration_seconds,l.fee_terms_accepted_at IS NOT NULL AS terms_accepted,(SELECT count(*) FROM videobot_post_receipts r WHERE r.listing_id=l.listing_id) AS receipts,(SELECT count(*) FROM videobot_post_receipts r WHERE r.listing_id=l.listing_id AND r.status='sent') AS sent_receipts FROM videobot_listings l WHERE seller_user_id=$1 ORDER BY created_at DESC LIMIT 15`,[788044853]);\n await q('MASTER_RECEIPTS',`SELECT left(md5(r.listing_id),10) AS ref,r.revision,r.status,r.sale_mode,cardinality(r.free_message_ids) AS free_count,r.paid_message_id IS NOT NULL AS offer_recorded FROM videobot_post_receipts r JOIN videobot_listings l ON l.listing_id=r.listing_id WHERE l.seller_user_id=$1 ORDER BY l.created_at DESC,r.revision DESC LIMIT 20`,[788044853]);\n await q('OWNER_QUEUE', \"SELECT status, count(*)::int AS n FROM videobot_owner_update_jobs WHERE owner_id=$1 GROUP BY status\",[788044853]);\n await q('RECENT_OWNER_EVENTS',`SELECT j.update_id,j.status,j.job_kind,j.created_at,j.updated_at,CASE WHEN j.payload->'callback_query'->>'data' ~ '^(review:|entry:|menu:)' THEN split_part(j.payload->'callback_query'->>'data','|',1) ELSE 'other' END AS action,w.status AS receipt_status FROM videobot_owner_update_jobs j LEFT JOIN videobot_webhook_updates w USING(update_id) WHERE j.owner_id=$1 ORDER BY j.update_id DESC LIMIT 30`,[788044853]);\n await c.query('ROLLBACK');\n}finally{c.release();await p.end()}\nJS\ndocker logs --since 3h \"$cid\" 2>&1 | grep -E 'Error:|READY=|CREATOR_.*(QUARANTIN|FAIL|ERROR|RECONCIL)' | sed -E 's/[0-9]{6,}:[A-Za-z0-9_-]{20,}/[REDACTED]/g' | cut -c1-200 | tail -n 40 || true\n"
+  }
+}
