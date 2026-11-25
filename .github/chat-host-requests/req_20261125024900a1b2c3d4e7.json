@@ -1,0 +1,20 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "host_target": "gserver",
+    "repository": "seigo-gace/G-ACEserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "0000000000000000000000000000000000000000",
+    "command": "set -eu\ncid=$(docker ps --filter label=com.docker.compose.service=videobot-poll --format '{{.ID}}')\nif [ \"$cid\" != \"9ee9843ecb1e\" ]; then printf 'POLLER_CHANGED\\n'; exit 72; fi\ndocker exec \"$cid\" node -e 'const fs=require(\"node:fs\"),path=require(\"node:path\"),crypto=require(\"node:crypto\");const root=\"/opt/videobot\";function hash(kind,b){return crypto.createHash(\"sha1\").update(kind+\" \"+b.length+\"\\0\").update(b).digest(\"hex\")}function entry(p){let s=fs.lstatSync(p);if(s.isDirectory()){const list=fs.readdirSync(p,{withFileTypes:true});list.sort((a,b)=>Buffer.compare(Buffer.from(a.name+(a.isDirectory()?\"/\":\"\")),Buffer.from(b.name+(b.isDirectory()?\"/\":\"\"))));const chunks=[];for(const item of list){const v=entry(path.join(p,item.name));chunks.push(Buffer.from(v.mode+\" \"+item.name+\"\\0\"),Buffer.from(v.hash,\"hex\"))}return {mode:\"40000\",hash:hash(\"tree\",Buffer.concat(chunks))}}if(s.isSymbolicLink())return {mode:\"120000\",hash:hash(\"blob\",Buffer.from(fs.readlinkSync(p)))};if(!s.isFile())throw Error(\"UNSUPPORTED_FILE_TYPE\");return {mode:s.mode&0o111?\"100755\":\"100644\",hash:hash(\"blob\",fs.readFileSync(p))}}for(const p of [\"src\",\"owner\",\"sql\",\"web\",\"package.json\",\"src/sales/pgListings.mjs\"]){const v=entry(path.join(root,p));console.log(v.hash+\" \"+p)}'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
