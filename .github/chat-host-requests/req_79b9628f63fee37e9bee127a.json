@@ -1,0 +1,21 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "reason": "Verify merged Gserver pure free-command path"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "expected_sha": "79b9628f63fee37e9bee127acac789b3cad3aa18",
+    "repository": "seigo-gace/G-ACEserver",
+    "repo_sha": "0000000000000000000000000000000000000000",
+    "command": "printf GPT_GSERVER_FREE_TERMINAL_MAIN_PASS\\n",
+    "host_target": "gserver"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
