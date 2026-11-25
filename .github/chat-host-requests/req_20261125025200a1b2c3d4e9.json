@@ -1,0 +1,20 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "host_target": "gserver",
+    "repository": "seigo-gace/G-ACEserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "0000000000000000000000000000000000000000",
+    "command": "set -eu\ncid=$(docker ps --filter label=com.docker.compose.service=videobot-poll --format '{{.ID}}')\nif [ \"$cid\" != \"9ee9843ecb1e\" ]; then printf 'POLLER_CHANGED\\n'; exit 72; fi\ndocker exec \"$cid\" node -e 'const fs=require(\"node:fs\"),path=require(\"node:path\"),crypto=require(\"node:crypto\");const root=\"/opt/videobot\";function walk(rel){const p=path.join(root,rel),st=fs.lstatSync(p);if(st.isDirectory()){for(const n of fs.readdirSync(p).sort())walk(path.join(rel,n));return}if(!st.isFile()&&!st.isSymbolicLink())return;try{const b=st.isSymbolicLink()?Buffer.from(fs.readlinkSync(p)):fs.readFileSync(p);console.log(crypto.createHash(\"sha1\").update(\"blob \"+b.length+\"\\0\").update(b).digest(\"hex\")+\" \"+rel)}catch(e){console.log(\"UNREADABLE \"+rel+\" \"+e.code)}}for(const p of [\"src\",\"owner\",\"sql\"])walk(p)'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  }
+}
