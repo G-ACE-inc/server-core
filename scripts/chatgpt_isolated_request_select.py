@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Use a new, commit-unique CHAT request as a workspace-only Actions target."""
 import json
+import hashlib
 import shlex
 import re
 import subprocess
@@ -158,45 +159,64 @@ def prepare_data(data, *, command_diagnostics=None):
     if data.get("server_command_id") or data.get("run_id"):
         raise ValueError("OTHER_COMMAND_DENIED")
     bounded = data["bounded_host_request"]
-    if "project_context" in bounded:
-        context = bounded.pop("project_context")
-        if (bounded.get("host_target") != "gserver" or
-                bounded.get("repository") != "seigo-gace/G-ACEserver" or
-                not isinstance(context, dict) or
-                not {"repository"} <= set(context) <= {"repository", "sha"} or
-                not isinstance(context["repository"], str) or
-                not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", context["repository"]) or
-                any(part in {".", ".."} for part in context["repository"].split("/")) or
-                ("sha" in context and
-                 (not isinstance(context["sha"], str) or
-                  not re.fullmatch(r"[a-f0-9]{40}", context["sha"])))):
-            raise ValueError("PROJECT_CONTEXT_INVALID")
-        original = bounded.get("command")
-        if not isinstance(original, str) or not original.strip():
-            raise ValueError("PROJECT_COMMAND_INVALID")
-        helper = "/home/gace/Project/Gserver/repository/scripts/gserver_project_terminal.py"
-        argv = [helper, "--repository", context["repository"]]
-        if "sha" in context:
-            argv += ["--sha", context["sha"]]
-        bounded["command"] = "python3 -B " + " ".join(map(shlex.quote, argv + [original]))
-    if "source_preflight" in bounded:
-        raise ValueError("SOURCE_PREFLIGHT_INTERNAL_ONLY")
-    if "source_context" in bounded:
-        data["bounded_host_request"] = bounded = bind_source_context(
-            bounded, bounded["source_context"])
-        # Source context is a planning input; Host receives only freeform
-        # command, repo, and both authenticated independent SHA pins.
+    free_gserver = (bounded.get("command_id") == "host.command"
+                    and bounded.get("host_target") == "gserver")
+    if free_gserver:
+        # Gserver is a pure authenticated Terminal. Planning hints never
+        # rewrite the command or become Project/Git/production policy.
+        bounded.pop("project_context", None)
         bounded.pop("source_context", None)
-        bounded["source_preflight"] = True
-    # The dispatcher and target checkout are the same for server-core itself.
-    # Reject contradictory pins before enqueuing a doomed Host operation.
-    if bounded.get("command_id") == "host.command" and bounded.get("repository") == "G-ACE-inc/server-core":
-        if bounded.get("expected_sha") != bounded.get("repo_sha"):
-            raise ValueError("SERVER_CORE_HOST_SHA_PINS_CONFLICT")
-    if bounded.get("command_id") == "host.command":
-        evidence = validate_command(bounded.get("command"))
+        bounded.pop("source_preflight", None)
+        command = bounded.get("command")
+        if not isinstance(command, str) or not command or "\x00" in command:
+            raise ValueError("HOST_COMMAND_TEXT_INVALID")
         if command_diagnostics is not None:
-            command_diagnostics.update(evidence)
+            command_diagnostics.update({
+                "command_sha256": hashlib.sha256(command.encode()).hexdigest(),
+                "syntax_only": False,
+                "dispatch_authorized": False,
+                "terminal_mode": "FREE",
+            })
+    else:
+        if "project_context" in bounded:
+            context = bounded.pop("project_context")
+            if (bounded.get("host_target") != "gserver" or
+                    bounded.get("repository") != "seigo-gace/G-ACEserver" or
+                    not isinstance(context, dict) or
+                    not {"repository"} <= set(context) <= {"repository", "sha"} or
+                    not isinstance(context["repository"], str) or
+                    not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", context["repository"]) or
+                    any(part in {".", ".."} for part in context["repository"].split("/")) or
+                    ("sha" in context and
+                     (not isinstance(context["sha"], str) or
+                      not re.fullmatch(r"[a-f0-9]{40}", context["sha"])))):
+                raise ValueError("PROJECT_CONTEXT_INVALID")
+            original = bounded.get("command")
+            if not isinstance(original, str) or not original.strip():
+                raise ValueError("PROJECT_COMMAND_INVALID")
+            helper = "/home/gace/Project/Gserver/repository/scripts/gserver_project_terminal.py"
+            argv = [helper, "--repository", context["repository"]]
+            if "sha" in context:
+                argv += ["--sha", context["sha"]]
+            bounded["command"] = "python3 -B " + " ".join(map(shlex.quote, argv + [original]))
+        if "source_preflight" in bounded:
+            raise ValueError("SOURCE_PREFLIGHT_INTERNAL_ONLY")
+        if "source_context" in bounded:
+            data["bounded_host_request"] = bounded = bind_source_context(
+                bounded, bounded["source_context"])
+            # Source context is a planning input; Host receives only freeform
+            # command, repo, and both authenticated independent SHA pins.
+            bounded.pop("source_context", None)
+            bounded["source_preflight"] = True
+        # The dispatcher and target checkout are the same for server-core itself.
+        # Reject contradictory pins before enqueuing a doomed Host operation.
+        if bounded.get("command_id") == "host.command" and bounded.get("repository") == "G-ACE-inc/server-core":
+            if bounded.get("expected_sha") != bounded.get("repo_sha"):
+                raise ValueError("SERVER_CORE_HOST_SHA_PINS_CONFLICT")
+        if bounded.get("command_id") == "host.command":
+            evidence = validate_command(bounded.get("command"))
+            if command_diagnostics is not None:
+                command_diagnostics.update(evidence)
     return data
 
 def main():

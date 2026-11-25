@@ -2,7 +2,7 @@
 
 **Profile scope:** 下記のServerTerminal/Actions送信手順はGPTアプリCHAT用。直接依頼されたSERVER_AIは通常のローカルeditor/shell/testを使用する。実行先・破損防止・Secret非表示の確認は共有するが、Actions要求・START/receipt・Master向けコマンド形式をローカル実行の条件にしない。
 
-通常の開発実行は、CHAT自身がShellコマンドを作成して既存の `host.command` から実行する。対象Repo・作業ディレクトリ・実行先・現在のSHAを確認し、既存のGitHub Actions → Gateway → Receiver → Hostを使用する。Masterに技術判断やコマンド選択を求めない。
+通常の実行は、CHAT自身が完成したShellコマンドを作成して既存の `host.command` から実行する。Gserver targetは純粋なフリーコマンド方式であり、Project登録、Git SHA、clean/dirty、本番/開発、コマンドの意味をTerminalが判定しない。対象Repoや作業ディレクトリはShell本文で`cd`して選び、既存のGitHub Actions → Gateway → Receiver → Hostを使用する。Masterに技術判断やコマンド選択を求めない。
 
 実行直前にAI自身が一度だけ確認する。
 1. **破損**：意図しない削除・上書き・他者の作業への影響がないか。
@@ -15,6 +15,6 @@ Masterへコマンドを渡す例外的な場合だけ `docs/MASTER_TERMINAL_COM
 
 生成時はShell文字列の多重連結を避け、Python本文を`.py`、Shell本文を`.sh`へ書き、既存の要求draftと`python3 scripts/chat_host_command_prepare.py --command-file <file> --language python --request-draft <draft.json> --output-directory .github/chat-host-requests`で組み立てられる。Pythonは実行せずcompileし、本文を展開しないquoted heredocへ変換する。要求ファイル名は`req_<24桁hex>.json`を自動生成し、JSONの改行・引用符はserializerへ任せる。draftのCurrent/SHA/START根拠は実際に確認したものを渡し、ツールは承認receiptや権限を作らない。draftなしならコマンドの構文確認だけを行い、要求は作成しない。
 
-既存Selectorも最終本文を`bash -n`と、認識可能なquoted Python heredocのcompileで検査する。未閉鎖heredocの警告も拒否する。動的生成、inline `-c`、任意の複雑なShell内Pythonは全面解析せず、診断の`python_coverage`とparser versionを確認する。構文成功は実行先・SHAの鮮度・必要ファイル・コマンドの安全性・Runtime成功を証明しない。Source依存操作は既存`source_context`を使用し、失敗時は元の要求/Runと固定診断コードから修正する。SERVER_AI自身の通常VS実行へHost経路を強制しない。
+Gserver targetではSelectorとrequest assemblyは本文を変更せず、Shell/Python構文エラーも実Hostの実行結果として返す。`project_context`、`source_context`、`source_preflight`はGserverの実行ポリシーにしない。Gserver以外の既存targetでは、既存Selectorも最終本文を`bash -n`と、認識可能なquoted Python heredocのcompileで検査する。未閉鎖heredocの警告も拒否する。動的生成、inline `-c`、任意の複雑なShell内Pythonは全面解析せず、診断の`python_coverage`とparser versionを確認する。構文成功は実行先・SHAの鮮度・必要ファイル・コマンドの安全性・Runtime成功を証明しない。Source依存操作は既存`source_context`を使用し、失敗時は元の要求/Runと固定診断コードから修正する。SERVER_AI自身の通常VS実行へHost経路を強制しない。
 
 2026-10-17の調査では、保存済み100要求の構文が正常でも、稼働Gatewayの秘匿置換・4000文字sliceを適用すると18本文が変わり11件が構文不正になった。生成と伝送を分けて検証し、エンコード等で秘匿処理を回避しない。登録済み内部配送先の正確なdata配送はGateway incident #28の設定・Source・実機証拠で別途確認する。ログの秘匿処理は維持し、credential値をコマンドへ埋め込まない。
