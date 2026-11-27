@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nstage=deploy/state/notice-pr81-ce50d5e1\ntest -s \"$stage/gaybbs.mjs\"\ntest -s \"$stage/live-before.mjs\"\necho '84823483e18e89e00572c59a19038c2aff623171b8fe187c2675d92548e5c407  '\"$stage/gaybbs.mjs\" | sha256sum -c -\ntest \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d' ' -f1)\" = \"$(sha256sum \"$stage/live-before.mjs\" | cut -d' ' -f1)\"\nold_image=\"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\"\ntest \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:local)\" = \"$old_image\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\nexport stage old_image\npython3 - <<'PY'\nimport pathlib,re,hashlib,json,os,collections\np=pathlib.Path(os.environ[\"stage\"]);old=(p/\"live-before.mjs\").read_bytes();new=(p/\"gaybbs.mjs\").read_bytes()\nallow={\"src/\"+n for n in \"bot/noticeInteractions.ts bot/postingHandlers.ts db/migrate.ts gaybbsBot.ts services/announcementApplications.ts services/announcementNotifications.ts services/noticeEditor.ts services/publicPostRepository.ts services/publishService.ts services/telegramDispatcher.ts\".split()}\ndef parts(b):\n    m=list(re.finditer(rb\"^// src/[^\\r\\n]+$\",b,re.M));counts=collections.Counter();keys=[]\n    if len(m)<10:raise SystemExit(\"NOTICE_CHAPTER_MARKERS_MISSING\")\n    for x in m:\n        n=x.group()[3:].decode();counts[n]+=1;keys.append((n,counts[n]))\n    return b[:m[0].start()],keys,{k:b[x.start():(m[i+1].start() if i+1<len(m) else len(b))] for i,(k,x) in enumerate(zip(keys,m))}\na,ak,am=parts(old);b,bk,bm=parts(new)\nchanged=sorted(k for k in set(am)|set(bm) if am.get(k)!=bm.get(k))\noutside=sorted(k for k in changed if k[0] not in allow)\nsameorder=[k for k in ak if k[0] not in allow]==[k for k in bk if k[0] not in allow]\nscope=not outside and a==b and sameorder\nobj={\"source_sha\":\"ce50d5e1b755b374b7527d895e2fd7246f565cfc\",\"old_image\":os.environ[\"old_image\"],\"old_sha\":hashlib.sha256(old).hexdigest(),\"new_sha\":hashlib.sha256(new).hexdigest(),\"changed_chapters\":changed,\"outside_notice\":outside,\"prefix_equal\":a==b,\"non_notice_order_equal\":sameorder,\"scope_verified\":scope,\"old_sections\":len(ak),\"new_sections\":len(bk)}\n(p/\"checkpoint.json\").write_text(json.dumps(obj,indent=2))\nprint(json.dumps(obj))\nPY\nprintf '%s\\n' 'FROM gace-tgtumbler-gaybbs:local' 'USER root' 'COPY --chown=node:node --chmod=600 gaybbs.mjs /app/gaybbs.mjs' 'USER node' > \"$stage/Dockerfile\"\ndocker build --network none --pull=false -q -f \"$stage/Dockerfile\" -t gace-tgtumbler-gaybbs:notice-offline-ce50d5e1 \"$stage\"\ndocker run --rm --network none --entrypoint node gace-tgtumbler-gaybbs:notice-offline-ce50d5e1 --check /app/gaybbs.mjs\ntest \"$(docker run --rm --network none --entrypoint sha256sum gace-tgtumbler-gaybbs:notice-offline-ce50d5e1 /app/gaybbs.mjs | cut -d' ' -f1)\" = 84823483e18e89e00572c59a19038c2aff623171b8fe187c2675d92548e5c407\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$old_image\"\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\necho NOTICE_OFFLINE_IMAGE_STAGED=PASS\ndocker image inspect -f 'NOTICE_CANDIDATE_IMAGE={{.Id}}' gace-tgtumbler-gaybbs:notice-offline-ce50d5e1\npython3 -c 'import json;assert json.load(open(\"deploy/state/notice-pr81-ce50d5e1/checkpoint.json\"))[\"scope_verified\"],\"NOTICE_SCOPE_REVIEW_REQUIRED\"'\necho NOTICE_SCOPE_VERIFIED=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
