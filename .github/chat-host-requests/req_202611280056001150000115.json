@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7222640915"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89\"\npython3 -B - <<'PY'\nimport subprocess,hashlib,json\nfor c in (\"debug-ai-debug-ai-1\",\"debug-ai-sandbox-runner-1\"):\n s=subprocess.run([\"docker\",\"inspect\",\"--format\",\"{{.State.Status}} {{.Image}}\",c],capture_output=True,text=True,timeout=5)\n print(c,\"STATE\",s.stdout.strip(),s.returncode)\n if s.returncode==0 and s.stdout.startswith(\"running\"):\n  for p in (\"server/workflow.js\",\"server/control/invocation-compiler.js\"):\n   a=hashlib.sha256(open(p,\"rb\").read()).hexdigest()\n   b=subprocess.run([\"docker\",\"exec\",c,\"node\",\"-e\",'const fs=require(\"node:fs\"),c=require(\"node:crypto\");console.log(c.createHash(\"sha256\").update(fs.readFileSync(process.argv[1])).digest(\"hex\"))',\"/app/\"+p],capture_output=True,text=True,timeout=5)\n   print(c,p,\"MATCH\" if b.returncode==0 and a==b.stdout.strip() else \"MISMATCH\")\nprint(\"BUILD_PROCESSES\",subprocess.check_output([\"ps\",\"-eo\",\"comm\"],text=True).splitlines().count(\"docker\"),flush=True)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
