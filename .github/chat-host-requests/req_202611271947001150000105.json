@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7216041215"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "ebf9e0897afe94a02e61263df3b7109f4e48c34b",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"ebf9e0897afe94a02e61263df3b7109f4e48c34b\"\npython3 -B - <<'PY'\nimport json,urllib.request,datetime\nbase=\"http://127.0.0.1:8787\"\ns=json.load(urllib.request.urlopen(base+\"/v1/investigation-benchmark/status/realdebug_030c71fab13b4726b5222b3f523b2900\",timeout=10))\nprint(\"BENCHMARK\",json.dumps({k:s.get(k) for k in (\"benchmark_id\",\"state\",\"active_in_process\",\"interrupted\",\"error_code\",\"started_at\",\"current\",\"summary\",\"results\")},ensure_ascii=False))\nrid=(s.get(\"current\") or {}).get(\"run_id\")\nif rid:\n d=json.load(urllib.request.urlopen(base+\"/v1/status/\"+rid,timeout=10))[\"durable\"]\n print(\"RUN\",json.dumps({k:d.get(k) for k in (\"job_status\",\"active_in_process\",\"workflow_cursor\",\"last_execution_error\",\"last_execution_failure\",\"role_invocations\")},ensure_ascii=False))\nprint(\"OBSERVED_AT\",datetime.datetime.now(datetime.timezone.utc).isoformat())\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
