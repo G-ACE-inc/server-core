@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/blob/main/docs/WORKSPACE_SHARED_SECRETS.md"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "command": "set -eu\ncd /home/admin1/projects/ai-core\npython3 -B - <<'PY'\nimport json\nfrom pathlib import Path\nfrom urllib.request import Request, build_opener, ProxyHandler, HTTPRedirectHandler\nfrom urllib.error import HTTPError\nclass NoRedirect(HTTPRedirectHandler):\n    def redirect_request(self,*args,**kwargs):\n        return None\nopener=build_opener(ProxyHandler({}),NoRedirect())\ntoken=Path('/home/admin1/.config/libral-vault/internal-token').read_text().strip()\nbase='http://127.0.0.1:8791/internal/v1/'\nheaders={'Authorization':'Bearer '+token,'Content-Type':'application/json'}\nwith opener.open(Request(base+'health',headers=headers),timeout=10) as r:\n    print('VAULT_HEALTH',r.status)\npayload={'secret_id':'openrouter-api-key','consumer':'ai-core','url':'https://openrouter.ai/api/v1/key','method':'GET','secret_header':'authorization','secret_prefix':'Bearer '}\ntry:\n    with opener.open(Request(base+'actions/http',headers=headers,data=json.dumps(payload).encode()),timeout=25) as r:\n        provider=json.load(r)['provider']\n        print('PROVIDER_HTTP',provider['status'])\n        if provider['status']==200:\n            data=json.loads(provider['body']).get('data',{})\n            print('KEY_STATUS',json.dumps({k:data[k] for k in ('limit','limit_remaining','usage','limit_reset','is_free_tier') if k in data}))\nexcept HTTPError as e:\n    try:\n        err=json.load(e).get('error',{})\n        err=err.get('code','UNKNOWN') if isinstance(err,dict) else 'UNKNOWN'\n    except (ValueError,TypeError):\n        err='UNKNOWN'\n    allowed={'HTTP_ORIGIN_NOT_ALLOWED','VAULT_SECRET_NOT_FOUND','VAULT_ACCESS_DENIED','VAULT_SECRET_EXPIRED','INTERNAL_AUTHENTICATION_FAILED','UPSTREAM_TIMEOUT','UPSTREAM_REQUEST_FAILED'}\n    print('VAULT_HTTP',e.code,'ERROR',err if err in allowed else 'OTHER')\nPY\n"
+  }
+}
