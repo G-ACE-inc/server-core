@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7222500465"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "ebf9e0897afe94a02e61263df3b7109f4e48c34b",
+    "command": "set -eu\ndocker exec -i debug-ai-debug-ai-1 node - <<'NODE'\nconst fs=require(\"node:fs\"),path=require(\"node:path\"),{decodeEnvelope}=require(\"/app/orchestrator/durable-primitives.js\"),{RuntimeEvidenceStore}=require(\"/app/server/runtime-evidence.js\");\nconst store=new RuntimeEvidenceStore(\"/app/runtime\");\nconst ids=[\"run_mwyug9t6_1bf371e77e\",\"run_mwyw55et_8fc58ab3bb\",\"run_mwyvc8ve_8a1457c11b\"];\nconst root=\"/app/runtime/durable/durable/run-state-v2\";\nfor(const id of ids){const p=path.join(root,id+\".json\");const d=fs.existsSync(p)?decodeEnvelope(fs.readFileSync(p),{expectedSchema:\"run-state/v2\"}):null;\nconst a=store.list(id,{types:[\"analysis\"],limit:1})[0]?.payload;\nconsole.log(JSON.stringify({id,durable:d?.job_status,analysis_present:!!a,diagnosis_status:a?.diagnosis?.diagnosis_status,review:a?.external_hypothesis_review?.json?.verdict||a?.local_hypothesis_review?.json?.verdict,red:a?.deterministic_verification?.checks?.filter(c=>c.executed&&c.status===\"FAIL\").length}));}\nconst active=fs.readdirSync(root).filter(x=>/^run_.*[.]json$/.test(x)).map(f=>decodeEnvelope(fs.readFileSync(path.join(root,f)),{expectedSchema:\"run-state/v2\"})).filter(x=>![\"DONE\",\"BLOCKED\",\"FAILED\",\"CANCELLED\",\"PAUSED\"].includes(x.job_status));\nconsole.log(\"ACTIVE\",JSON.stringify(active.map(x=>({run_id:x.run_id,project_id:x.project_id,job_status:x.job_status,project_dir:x.project_dir}))));\nNODE\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
