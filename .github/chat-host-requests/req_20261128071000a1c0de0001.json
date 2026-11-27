@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "command": "set -eu\nroot=/home/admin1/projects/ai-core\nregistered=\"$root/.worktrees/source-import-20261013\"\nprintf 'CORE_HEAD='; git -C \"$root\" rev-parse HEAD\nprintf 'REGISTERED_HEAD='; git -C \"$registered\" rev-parse HEAD\nprintf 'MODEL_DIR='; realpath \"$root/models\"\ntest -d \"$root/models\"\ndf -B1 --output=size,avail,target \"$root/models\"\nprintf 'MODEL_FILES\\n'; find \"$root/models\" -maxdepth 1 -type f -name '*.gguf' -printf '%f %s\\n'\nprintf 'BACKEND_IMAGES\\n'; docker ps -a --filter name=ai-qwen3 --filter name=ai-coder --format '{{.Names}} {{.Image}} {{.Status}}'\nprintf 'TOOLS\\n'; command -v curl; command -v sha256sum\n"
+  }
+}
