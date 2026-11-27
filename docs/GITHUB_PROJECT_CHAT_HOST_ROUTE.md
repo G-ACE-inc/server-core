@@ -1,10 +1,10 @@
 # GPT CHAT 共通ServerTerminal入口
 
-## 結果返却先と容量（2026-11-12）
+## 結果返却先と容量（2026-11-28 切替準備）
 
-`operations/github-project-bounded-host.json` の `result_return` が共通Terminal結果の返却先を定める。現在の専用先は [Issue #351](https://github.com/G-ACE-inc/server-core/issues/351)。Project/Control Current の Issue #10 は結果を受け付けない（GitHubのコメント上限2500件に到達）。Actionsの依頼送信前に登録先のコメント数・open/locked状態を確認し、登録上限2400件以上、closed/locked、GitHub API不通の場合は依頼を送らず固定エラーを出す。SinkとActionsは同じ登録先を読む。既存の未公開Host結果は元request IDの台帳から返却し、元コマンドを再実行しない。
+`operations/github-project-bounded-host.json` の `result_return` が共通Terminal結果の返却先を定める。Issue #351 は2026-11-28 JSTに登録上限2,400件へ到達した。新しい専用先 [Issue #376](https://github.com/G-ACE-inc/server-core/issues/376) は空で作成済みで、Source契約を切替準備中。Project/Control Current の Issue #10 もGitHubのコメント上限2500件に到達済み。Actionsの依頼送信前に登録先のコメント数・open/locked状態を確認し、登録上限2400件以上、closed/locked、GitHub API不通の場合は依頼を送らず固定エラーを出す。SinkとActionsは同じ登録先を読む。Source契約の変更だけで実Hostが切り替わったとは判定しない。既存の未公開Host結果は元request IDの台帳から扱い、元コマンドを再実行しない。
 
-次回の容量切替は、空の専用結果Issueを作成し、契約の `issue_number` を更新し、Sink・Actions双方を同じSourceに揃えてから新規依頼を再開する。切替前には新規依頼を止め、旧Issueの未公開結果と台帳を突き合わせる。障害時の復旧は新規送信を止めて直前の契約値へ戻す。ただし満杯のIssue #10へ戻しても投稿は回復しないため、台帳を保護し、書き込み可能な専用Issueを再登録する。公開Issueには結果の本文やSecretを貼らない。
+切替前には新規依頼を止め、旧Issueの未公開結果とHost台帳をrequest IDごとに突き合わせる。実行済みPASSは結果だけを回収し、実行前エラーは再送しない。Host Sinkに保存された未公開FAILを廃棄する場合は、Sink publisherを停止してから `scripts/servercore_result_discard.py --result-dir <保護された結果ディレクトリ> --request-id <正確なID>` でDRY_RUNを確認し、同じ引数に `--apply` を付ける。元JSONは削除せず `discarded.reason` と時刻を追記し、publisherは以後そのIDを公開再試行しない。成功・公開済み・未知状態は拒否する。対象IDと理由は所有Currentにも残し、Host実行やGateway replayは行わない。稼働中サービスの停止・Source反映・再起動は別の本番変更として事前確認する。切替後はSink・Actions・Issue #376の一致と新規requestの相関を読戻してから通常運用へ戻す。障害時は新規送信を止め、保護台帳を維持して原因を確認する。満杯の #351/#10 へ契約を戻しても投稿は回復しない。公開Issueには結果本文やSecretを貼らない。
 
 ## 普段の使い方（GPT CHAT）
 

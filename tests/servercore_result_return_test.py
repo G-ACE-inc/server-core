@@ -332,6 +332,22 @@ class SinkTests(unittest.TestCase):
         sink.accept_record(rec(state="RETRYABLE", exit_code=1, host_sha=""), result_dir=self.dir)
         self.assertEqual(sink.pending_ids(self.dir), [])
 
+    def test_discard_unpublished_failure_keeps_evidence_and_prevents_publish(self):
+        sink.accept_record(rec(state="FAIL", exit_code=75), result_dir=self.dir)
+        self.assertIn(RID, sink.pending_ids(self.dir))
+        disposition = sink.discard_failed_record(RID, result_dir=self.dir)
+        self.assertEqual(disposition["reason"], "OWNER_DISCARD_FAILED_RESULT")
+        self.assertEqual(sink.pending_ids(self.dir), [])
+        self.assertEqual(sink.read_record(RID, self.dir)["exit_code"], 75)
+        self.assertIsNone(sink.publish_record(RID, result_dir=self.dir,
+                                              runner=lambda *_args, **_kwargs: self.fail("network called")))
+        self.assertEqual(sink.discard_failed_record(RID, result_dir=self.dir), disposition)
+
+    def test_discard_rejects_success_and_published_records(self):
+        sink.accept_record(rec(), result_dir=self.dir)
+        with self.assertRaisesRegex(sink.SinkError, "DISCARD_NOT_UNPUBLISHED_FAILURE"):
+            sink.discard_failed_record(RID, result_dir=self.dir)
+
     def test_durable_publish_retry_backoff_never_abandons_result(self):
         self.assertEqual([sink.publisher_retry_seconds(n) for n in (1, 2, 3, 40, 41, 500)],
                          [15, 30, 60, 300, 300, 300])

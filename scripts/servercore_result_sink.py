@@ -370,7 +370,7 @@ def current_publish_target():
 
 def publish_record(request_id, *, result_dir=None, runner=_gh, now=None, writer_dir=HOST_WRITER_RESULT_DIR):
     record = read_record(request_id, result_dir)
-    if not record or record.get("state") not in TERMINAL or record.get("published"):
+    if not record or record.get("state") not in TERMINAL or record.get("published") or record.get("discarded"):
         return None
     # The Source may have fast-forwarded since this process started. Read the
     # canonical contract per receipt, so an Issue rotation does not require a
@@ -401,9 +401,31 @@ def pending_ids(result_dir=None):
                 data = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, ValueError):
                 continue
-            if data.get("state") in TERMINAL and not data.get("published") and REQ_ID.fullmatch(path.stem):
+            if (data.get("state") in TERMINAL and not data.get("published")
+                    and not data.get("discarded") and REQ_ID.fullmatch(path.stem)):
                 ids.append(path.stem)
     return ids
+
+
+def discard_failed_record(request_id, *, result_dir=None, now=None):
+    """Retire one unpublished failed receipt without erasing its evidence.
+
+    The publisher service must be stopped before an operator invokes this from
+    another process; the in-process lock alone cannot serialize a live POST.
+    """
+    with _LOCK:
+        record = read_record(request_id, result_dir)
+        if not record or record.get("request_id") != request_id:
+            raise SinkError("DISCARD_RECORD_NOT_FOUND")
+        if record.get("state") != "FAIL" or record.get("published"):
+            raise SinkError("DISCARD_NOT_UNPUBLISHED_FAILURE")
+        if record.get("discarded"):
+            return record["discarded"]
+        disposition = {"reason": "OWNER_DISCARD_FAILED_RESULT",
+                       "at": (now or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")}
+        record["discarded"] = disposition
+        _write(record_path(request_id, result_dir), record)
+        return disposition
 
 
 def publisher_retry_seconds(failure_count, interval=15):
