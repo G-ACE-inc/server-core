@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/commit/ac0a3c19c1670055711e2548f7da59e79310400e"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "0d11477f61837c3da7da42393daa1bf04b01088e",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"0d11477f61837c3da7da42393daa1bf04b01088e\"\ngit fetch --no-tags origin refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\ntest \"$(git rev-parse FETCH_HEAD)\" = \"ac0a3c19c1670055711e2548f7da59e79310400e\"\npython3 -B - <<'PY'\nimport subprocess,json\nsource=subprocess.check_output([\"git\",\"show\",\"ac0a3c19c1670055711e2548f7da59e79310400e:server/control/role-prompt-evidence.js\"],text=True)\nnode=r'''\nconst fs=require(\"node:fs\"),path=require(\"node:path\"),assert=require(\"node:assert/strict\"),Module=require(\"node:module\");\nconst root=\"/app\",runId=\"run_mwyq6tsz_e40f80d39b\",repo=\"/workspace/debug-ai/.verification/real-debug/realdebug_6d6055e23feb47868406cc577b8958ca/L1-01\";\nconst w=require(root+\"/server/workflow.js\"),{RuntimeEvidenceStore}=require(root+\"/server/runtime-evidence.js\"),{initialInvestigationEvidence}=require(root+\"/server/control/read-only-tool-runtime.js\"),{registerEvidenceList,evidenceIds}=require(root+\"/server/control/evidence-registry.js\");\nconst {repositorySnapshotId}=require(root+\"/server/control/repository-snapshot.js\");\nconst {decodeEnvelope}=require(root+\"/orchestrator/durable-primitives.js\");\nconst dr=root+\"/runtime/durable/durable/workflow-data/\"+runId;\nlet input=null;for(const f of fs.readdirSync(dr).filter(x=>/^wd_.*\\.json$/.test(x))){const o=decodeEnvelope(fs.readFileSync(path.join(dr,f)),{expectedSchema:\"workflow-data/v1\"});if(o.kind===\"INPUT_MANIFEST\"){if(input)throw Error(\"INPUT_AMBIGUOUS\");input=o.payload;}}\nassert.ok(input);\nconst snap=repositorySnapshotId(repo,{allowMissingGitMarker:true});assert.equal(snap,\"tree_c4dbc9931d60b730d7caf2a431e5a608d0000736ee6d83d320853196ff2cb84c\");\nconst store=new RuntimeEvidenceStore(root+\"/runtime\"),verification=store.list(runId,{types:[\"deterministic_verification\"],limit:1})[0]?.payload;\nassert.ok(verification&&Array.isArray(verification.checks));const checks=verification.checks;\nconst dap=store.list(runId,{types:[\"dap_hint\"],limit:1})[0]?.payload||null;\nconst initial=w.addBoundedTestDependencyEvidence(repo,initialInvestigationEvidence(repo,{request:input.raw_request||input.failure?.message,failure:input.failure,checks}));\nconst records=registerEvidenceList(\"LOCAL_RUNTIME\",[...input.local_evidence,...checks.map(w.reviewableVerificationCheck),...initial.records]),ids=evidenceIds(records),views=w.evidencePromptView(records);\nconst task=JSON.stringify({task:input.raw_request,failure:input.failure,evidence:views,initial_scope:{...initial.scope,repository_revision:snap,known_evidence_ids:ids},dap_hint:dap});\nconst old={task,step:1,previous_progress:{},registered_evidence_ids:ids,registered_evidence:views,evidence:views};\nconst filename=root+\"/server/control/role-prompt-evidence.js\",m=new Module(filename,module);m.filename=filename;m.paths=Module._nodeModulePaths(path.dirname(filename));m._compile(fs.readFileSync(0,\"utf8\"),filename);\nconst projected=m.exports.projectRolePrompt({task,step:1,previousProgress:{},evidence:ids,views,structuredTask:true});\nassert.deepEqual(projected.registered_evidence,views);\nconst reconstructed={...projected.task};for(const field of m.exports.GROUPS){if(reconstructed[field]?.registered_evidence_refs)reconstructed[field]=reconstructed[field].registered_evidence_refs.map(id=>views.find(v=>v.evidence_id===id));}\nassert.deepEqual(reconstructed,JSON.parse(task));\nconst before=Buffer.byteLength(JSON.stringify(old)),after=Buffer.byteLength(JSON.stringify(projected));\nconsole.log(\"ACTUAL_FIXTURE_PROMPT_RECONSTRUCTION \"+JSON.stringify({run_id:runId,record_count:views.length,old_user_bytes:before,new_user_bytes:after,saved_bytes:before-after,exact_reconstruction:true,source_revision_match:true,dap_hint_present:!!dap,measurement:\"reconstructed from real recorded reproduction and unchanged fixture; no new model invocation\"}));\n'''\nsubprocess.run([\"docker\",\"exec\",\"-i\",\"debug-ai-debug-ai-1\",\"node\",\"-e\",node],input=source,text=True,check=True)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
