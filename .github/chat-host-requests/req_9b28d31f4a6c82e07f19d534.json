@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/376#issuecomment-7227923719"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -eu\ncd /home/admin1/projects/debug-ai\ntest \"$(git rev-parse HEAD)\" = a6a84876ab8ff9a81503ac15d1a3285e50634e1e\nfor c in debug-ai-sandbox-runner-1 debug-ai-debug-ai-1; do\n  test \"$(docker inspect --format '{{.State.Running}}' \"$c\")\" = true\n  for p in server/workflow.js server/control/real-debug-benchmark.js server/adapters/external-review.js server/adapters/external-review-quota.js server/control/invocation-compiler.js server/control/role-output-validator.js; do\n    test \"$(sha256sum \"$p\" | cut -d' ' -f1)\" = \"$(docker exec \"$c\" sha256sum \"/app/$p\" | cut -d' ' -f1)\"\n  done\ndone\npython3 -B - <<'PY'\nimport json,urllib.request\nbase=\"http://127.0.0.1:8787\"\ndef get(path):\n    with urllib.request.urlopen(base+path,timeout=10) as response:\n        return json.load(response)\nassert get(\"/health\")[\"ok\"]\nold=get(\"/v1/investigation-benchmark/status/realdebug_6cf69ffdd7f641cba693aa2e9783c9aa\")\nassert old[\"state\"]==\"PAUSED\" and not old[\"active_in_process\"]\nwith open(\"scripts/real-debug-corpus.json\") as f:\n    corpus=json.load(f)\nids=[c[\"id\"] for c in corpus[\"cases\"]]\nassert len(ids)==len(set(ids))==50\nassert all(sum(c[\"level\"]==l for c in corpus[\"cases\"])==10 for l in range(1,6))\nrequest=urllib.request.Request(base+\"/v1/investigation-benchmark/start\",data=json.dumps({\"suite\":\"real-debug\",\"case_ids\":ids}).encode(),headers={\"Content-Type\":\"application/json\"})\nwith urllib.request.urlopen(request,timeout=20) as response:\n    result=json.load(response)\n    assert response.status==202 and result[\"total\"]==50\n    print(\"START_ACCEPTED\",json.dumps(result),flush=True)\ns=get(\"/v1/investigation-benchmark/status/\"+result[\"benchmark_id\"])\nassert s[\"case_ids\"]==ids and s[\"summary\"][\"total\"]==50\nprint(\"FRESH_FIFTY_READBACK\",json.dumps({k:s.get(k) for k in (\"benchmark_id\",\"state\",\"active_in_process\",\"current\",\"summary\")}),flush=True)\nPY\n"
+  }
+}
