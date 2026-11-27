@@ -1,0 +1,35 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7211865593"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "e80730fe023768ff79310f0cda3c0bb7af15236d",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"e80730fe023768ff79310f0cda3c0bb7af15236d\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\npython3 -B - <<'PY'\nimport subprocess,json,hashlib,pathlib\npaths=subprocess.check_output([\"git\",\"ls-files\",\"-z\",\"--\",\"server\",\"orchestrator\",\"bin\",\"mcp\",\"scripts\",\"docs\",\"package.json\"]).decode().strip(\"\\0\").split(\"\\0\")\nfiles={p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest() for p in paths}\nfor name in (\"debug-ai-debug-ai-1\",\"debug-ai-sandbox-runner-1\"):\n code='const fs=require(\"node:fs\"),c=require(\"node:crypto\");const e=JSON.parse(fs.readFileSync(0,\"utf8\"));const bad=Object.keys(e).filter(p=>{try{return c.createHash(\"sha256\").update(fs.readFileSync(\"/app/\"+p)).digest(\"hex\")!==e[p]}catch{return true}});console.log(JSON.stringify({files:Object.keys(e).length,mismatches:bad}));if(bad.length)process.exitCode=1'\n p=subprocess.run([\"docker\",\"exec\",\"-i\",name,\"node\",\"-e\",code],input=json.dumps(files),text=True,capture_output=True)\n print(\"PARITY \"+name+\" \"+p.stdout.strip())\n if p.returncode:raise SystemExit(p.returncode)\n print(\"IMAGE \"+name+\" \"+subprocess.check_output([\"docker\",\"inspect\",\"--format\",\"{{.Image}}\",name],text=True).strip())\nPY\ndocker exec debug-ai-debug-ai-1 node -e 'const {repositorySnapshotId}=require(\"/app/server/control/repository-snapshot.js\");const {snapshotInventory}=require(\"/app/server/control/sandbox-runtime.js\");const p=\"/workspace/debug-ai\";const id=repositorySnapshotId(p);const i=snapshotInventory(p);console.log(\"LIVE_SNAPSHOT=\"+id.split(\"_\")[0]+\" LIVE_INVENTORY_FILES=\"+i.files);'\npython3 -B - <<'PY'\nimport subprocess, json, re, selectors, time, os\nc=subprocess.Popen([\"docker\",\"exec\",\"-i\",\"debug-ai-debug-ai-1\",\"node\",\"/app/bin/debugai-mcp.mjs\"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)\nsel=selectors.DefaultSelector();sel.register(c.stdout,selectors.EVENT_READ)\nbuf=b\"\"\ndef send(o):\n c.stdin.write((json.dumps(o)+\"\\n\").encode());c.stdin.flush()\ndef call(i,m,p):\n global buf\n send(dict(jsonrpc=\"2.0\",id=i,method=m,params=p))\n deadline=time.monotonic()+12\n while time.monotonic()<deadline:\n  while b\"\\n\" in buf:\n   line,buf=buf.split(b\"\\n\",1)\n   try: v=json.loads(line)\n   except ValueError: continue\n   if v.get(\"id\")==i:\n    if \"error\" in v: raise RuntimeError(\"MCP_RPC_ERROR\")\n    return v[\"result\"]\n  if sel.select(max(0,deadline-time.monotonic())):\n   chunk=os.read(c.stdout.fileno(),65536)\n   if not chunk: raise RuntimeError(\"MCP_EOF\")\n   buf+=chunk\n raise RuntimeError(\"MCP_TIMEOUT\")\ndef tool(i,name,args):\n o=call(i,\"tools/call\",{\"name\":name,\"arguments\":args})\n data=json.loads(o[\"content\"][0][\"text\"])\n if o.get(\"isError\") or data.get(\"exit_code\")!=0:\n  print(\"TOOL_FAILED=\"+name+\" \"+str(data.get(\"error\",data.get(\"exit_code\")))[:200]);raise SystemExit(4)\n return data[\"result\"]\ndef find_run(o):\n if isinstance(o,dict):\n  for k,v in o.items():\n   if k==\"run_id\" and isinstance(v,str) and re.fullmatch(r\"run_[a-zA-Z0-9_-]+\",v):return v\n   r=find_run(v)\n   if r:return r\n if isinstance(o,list):\n  for v in o:\n   r=find_run(v)\n   if r:return r\n return None\ndef states(o):\n out={}\n if isinstance(o,dict):\n  for k in (\"state\",\"status\",\"phase\",\"stage\",\"role\",\"execution_mode\",\"role_execution_mode\"):\n   v=o.get(k)\n   if isinstance(v,str) and re.fullmatch(r\"[a-zA-Z0-9_.-]{1,80}\",v):out[k]=v\n  for k in (\"run\",\"result\",\"summary\",\"workflow\",\"progress\",\"analysis\"):\n   if isinstance(o.get(k),dict):out.update({k+\".\"+a:b for a,b in states(o[k]).items()})\n return out\ntry:\n init=call(1,\"initialize\",{\"protocolVersion\":\"2025-03-26\",\"capabilities\":{},\"clientInfo\":{\"name\":\"debugai-live-qualification\",\"version\":\"1\"}})\n send({\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"})\n names=[t[\"name\"] for t in call(2,\"tools/list\",{})[\"tools\"]]\n assert len(names)==13 and all(n in names for n in (\"debugai_health\",\"debugai_start\",\"debugai_status\",\"debugai_inspect\"))\n print(\"MCP_TOOLS=\"+str(len(names)))\n tool(3,\"debugai_health\",{});print(\"MCP_HEALTH=PASS\")\n # Probe observed missing run error, without reading any user payload.\n import urllib.request,urllib.error\n for endpoint in (\"status\",\"inspect\"):\n  try: urllib.request.urlopen(\"http://127.0.0.1:8787/v1/\"+endpoint+\"/run_mvrnydib_f5e96251e5\",timeout=5)\n  except urllib.error.HTTPError as e:\n   o=json.loads(e.read())\n   print(\"MISSING_RUN_\"+endpoint.upper()+\" HTTP=\"+str(e.code)+\" \"+json.dumps({k:o.get(k) for k in (\"error\",\"code\")}))\n start=tool(4,\"debugai_start\",{\"repo\":\"/workspace/debug-ai\",\"request\":\"Investigate the observed HTTP 400 missing-run error classification: RunAuthority raises RUN_NOT_FOUND but the HTTP safeErrorCode reports generic ERROR. Inspect current code and tests, identify the actual cause and propose minimal regression-tested correction that preserves existing retention, authorization, and error redaction contracts. Analysis and candidate planning only; do not apply any patch. Use existing local model Gate roles.\"})\n rid=find_run(start)\n if not rid: print(\"START_KEYS=\"+str(list(start) if isinstance(start,dict) else type(start)));raise SystemExit(5)\n print(\"REAL_RUN_ID=\"+rid)\n print(\"MCP_START=\"+json.dumps(states(start)))\n for i,name in ((5,\"debugai_status\"),(6,\"debugai_inspect\")):\n  o=tool(i,name,{\"run_id\":rid}); print(name.upper()+\"=\"+json.dumps(states(o))); run=o.get(\"run\",o); d=o.get(\"durable\") or run.get(\"durable\") or {}; print(\"DURABLE=\"+json.dumps({k:d.get(k) for k in (\"job_status\",\"active_in_process\",\"workflow_cursor\",\"role_invocations\",\"last_execution_error\")})[:12000])\nfinally:\n c.terminate()\n try:c.wait(timeout=3)\n except subprocess.TimeoutExpired:c.kill();c.wait()\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
