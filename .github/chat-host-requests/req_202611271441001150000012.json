@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7210844096"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "4b06a39ebdb8a99d5544b27c8a52f33ad8e42440",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\npython3 -B - <<'PY'\nimport subprocess,json,hashlib\nfrom pathlib import Path\nfiles=subprocess.check_output([\"git\",\"ls-files\",\"-z\",\"--\",\"server\",\"orchestrator\",\"bin\",\"mcp\",\"scripts\",\"docs\",\"package.json\"]).decode().split(\"\\0\")\nfiles=[p for p in files if p and Path(p).is_file()]\nexpected={p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in files}\nprobe=\"const fs=require('node:fs'),crypto=require('node:crypto');let x=JSON.parse(fs.readFileSync(0,'utf8'));let out={};for(const p of Object.keys(x)){try{out[p]=crypto.createHash('sha256').update(fs.readFileSync('/app/'+p)).digest('hex')}catch{out[p]=null}}console.log(JSON.stringify(out));\"\nfor service in (\"debug-ai\",\"sandbox-runner\"):\n cid=subprocess.check_output([\"docker\",\"compose\",\"ps\",\"--quiet\",service],text=True).strip()\n assert cid\n actual=json.loads(subprocess.check_output([\"docker\",\"exec\",\"-i\",cid,\"node\",\"-e\",probe],input=json.dumps(expected),text=True))\n mismatch=[p for p,v in expected.items() if actual.get(p)!=v]\n print(\"RUNTIME_SOURCE_PARITY \"+service+\" \"+str(len(expected)-len(mismatch))+\"/\"+str(len(expected)))\n if mismatch: print(\"MISMATCH_PATHS \"+json.dumps(mismatch));raise SystemExit(5)\n inspect=json.loads(subprocess.check_output([\"docker\",\"inspect\",cid],text=True))[0]\n assert inspect[\"State\"][\"Running\"]\n print(\"RUNTIME_RUNNING \"+service+\" \"+inspect[\"Image\"])\n if service==\"debug-ai\":\n  e=dict(s.split(\"=\",1) for s in inspect[\"Config\"][\"Env\"] if \"=\" in s)\n  assert e.get(\"DEBUG_AI_ROLE_EXECUTION_MODE\")==\"six_role\"\n  assert e.get(\"DEBUG_AI_CORE_GATE_DISPATCH_MODE\")==\"model_gates\"\n  print(\"RUNTIME_ROLE_MODE=six_role GATE_MODE=model_gates\")\nPY\ndocker exec -i -w /app debug-ai-debug-ai-1 node - <<'NODE'\nconst {createAiCoreAdapter}=require(\"./server/adapters/ai-core.js\");\nconst e=process.env;\n(async()=>{\n const core=createAiCoreAdapter({runtimeContextTokens:e.DEBUG_AI_CORE_CONTEXT_TOKENS,requireRuntimeContextQualification:true,dispatchMode:e.DEBUG_AI_CORE_GATE_DISPATCH_MODE,modelGateBaseUrls:{coder:e.DEBUG_AI_CORE_GATE_CODER_URL,qwen3:e.DEBUG_AI_CORE_GATE_QWEN3_URL,granite:e.DEBUG_AI_CORE_GATE_GRANITE_URL,ministral:e.DEBUG_AI_CORE_GATE_MINISTRAL_URL}});\n for(const role of [\"code_scout\",\"causal_scout\",\"researcher\",\"local_reviewer\"]){\n  const x=await core.preflightRoleGate(role,{probeTimeoutMs:3000});\n  console.log(\"GATE \"+role+\" IDENTITY_MATCH \"+x.model);\n }\n const r=await fetch(\"http://127.0.0.1:8787/health\",{signal:AbortSignal.timeout(5000)});\n const h=await r.json();if(!r.ok||!h.ok||h.service!==\"debug-ai\")throw Error(\"HEALTH_FAIL\");\n console.log(\"HEALTH=200\");\n})().catch(()=>{console.log(\"RUNTIME_QUALIFICATION_FAILED\");process.exitCode=1});\nNODE\nprintf 'EXACT_RUNTIME_QUALIFICATION=PASS\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
