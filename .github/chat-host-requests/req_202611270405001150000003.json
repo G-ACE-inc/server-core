@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_REPOSITORY",
+    "implementation_context": "existing_debugai_runtime",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "70689ec0fdb9201742625d5d8a0054feeb31320d",
+    "command": "set -eu\nfor f in server/workflow.js server/adapters/ai-core.js server/role-modules/index.js; do\n  if test -f \"$f\" && docker exec debug-ai-debug-ai-1 test -f \"/app/$f\"; then\n    left=$(sha256sum \"$f\" | cut -d' ' -f1)\n    right=$(docker exec debug-ai-debug-ai-1 sha256sum \"/app/$f\" | cut -d' ' -f1)\n    if test \"$left\" = \"$right\"; then printf 'SOURCE_PARITY %s MATCH\\n' \"$f\"; else printf 'SOURCE_PARITY %s MISMATCH\\n' \"$f\"; fi\n  else printf 'SOURCE_PARITY %s ABSENT\\n' \"$f\"; fi\ndone\ndocker exec -i -w /app debug-ai-debug-ai-1 node - <<'NODE'\nconst {createAiCoreAdapter}=require(\"./server/adapters/ai-core.js\");\nconst e=process.env;\nconst roles=[\"code_scout\",\"causal_scout\",\"researcher\",\"local_reviewer\"];\n(async()=>{\n  const core=createAiCoreAdapter({runtimeContextTokens:e.DEBUG_AI_CORE_CONTEXT_TOKENS,requireRuntimeContextQualification:true,dispatchMode:e.DEBUG_AI_CORE_GATE_DISPATCH_MODE,modelGateBaseUrls:{coder:e.DEBUG_AI_CORE_GATE_CODER_URL,qwen3:e.DEBUG_AI_CORE_GATE_QWEN3_URL,granite:e.DEBUG_AI_CORE_GATE_GRANITE_URL,ministral:e.DEBUG_AI_CORE_GATE_MINISTRAL_URL}});\n  for(const role of roles){\n    try{\n      const x=await core.preflightRoleGate(role,{probeTimeoutMs:3000});\n      console.log(\"GATE \"+role+\" IDENTITY_MATCH \"+x.model);\n    }catch(err){console.log(\"GATE \"+role+\" FAIL \"+(/^[A-Z0-9_]+$/.test(err?.code||\"\")?err.code:\"ERROR\"));}\n  }\n  for(const route of [\"status\",\"inspect\"]){\n    try{\n      const res=await fetch(\"http://127.0.0.1:8787/v1/\"+route+\"/run_mvrnydib_f5e96251e5\",{signal:AbortSignal.timeout(4000)});\n      const body=await res.json();\n      const classification=res.ok?\"FOUND\":body?.error===\"RUN_NOT_FOUND\"?\"RUN_NOT_FOUND\":body?.error===\"RUN_AUTHORITY_REQUIRED\"?\"RUN_AUTHORITY_REQUIRED\":\"OTHER\";\n      console.log(\"ARCHIVED_RUN_\"+route.toUpperCase()+\" \"+res.status+\" \"+classification);\n    }catch{console.log(\"ARCHIVED_RUN_\"+route.toUpperCase()+\" TRANSPORT_ERROR\");}\n  }\n})().catch(()=>{console.log(\"PREFLIGHT_CONFIGURATION_FAILED\");process.exitCode=1});\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
