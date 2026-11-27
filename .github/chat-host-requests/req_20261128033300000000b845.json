@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d' ' -f1)\" = 22c930f364bcec223a0a3ddca9d04dbadf74d1bc4cffe4d08494ef8e1a4311b7\ndocker exec -i deploy-gaybbs-1 node --input-type=module <<'JS'\nimport fs from 'node:fs';\nimport https from 'node:https';\nconst token=fs.readFileSync(process.env.BOT_TOKEN_FILE,'utf8').trim();\nasync function pending(){\n const a=await new Promise(resolve=>{\n const r=https.get('https://api.telegram.org/bot'+token+'/getWebhookInfo',{family:4,timeout:10000},res=>{\n let s='';res.on('data',c=>s+=c);res.on('end',()=>{try{const j=JSON.parse(s);resolve(j.ok&&!j.result.url?j.result.pending_update_count:null)}catch{resolve(null)}});\n });r.on('timeout',()=>r.destroy());r.on('error',()=>resolve(null));});\n if(!Number.isInteger(a))throw Error('QUEUE_READ_FAILED');\n return a;\n}\nconst first=await pending();console.log('PENDING_FIRST='+first);\nfor(let i=0;i<6;i++){\n if(await pending()===0){console.log('QUEUE_DRAINED=PASS');process.exit(0);}\n await new Promise(r=>setTimeout(r,3000));\n}\nconsole.log('PENDING_LAST='+await pending());\nJS\ndocker inspect -f 'RUNNING={{.State.Running}} RESTARTS={{.RestartCount}}' deploy-gaybbs-1\ndocker logs --since 5m --tail 1000 deploy-gaybbs-1 2>&1 | python3 -c 'import sys,re,collections\ns=sys.stdin.read()\nfor k in [\"GAYBBS_BOT_READY\",\"GAYBBS_FATAL\",\"GAYBBS_ERROR\",\"409:\",\"401:\",\"429:\",\"FetchError\",\"AbortError\",\"TimeoutError\",\"ETELEGRAM\",\"ETIMEDOUT\",\"ECONNRESET\",\"ECONNREFUSED\",\"deleteWebhook\",\"getUpdates\"]: print(\"LOG_COUNT\",k,s.count(k))\nfor k,v in sorted(collections.Counter(re.findall(r\"\\[GAYBBS_ERROR\\]\\s+(\\w+)\\s+(\\w+)\",s)).items()): print(\"BOT_ERROR\",*k,v)'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
