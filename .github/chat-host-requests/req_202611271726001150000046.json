@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/actions/runs/45965358206"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "e80730fe023768ff79310f0cda3c0bb7af15236d",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"e80730fe023768ff79310f0cda3c0bb7af15236d\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ngit fetch --no-tags origin refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\ntest \"$(git rev-parse FETCH_HEAD)\" = \"0d11477f61837c3da7da42393daa1bf04b01088e\"\ngit merge-base --is-ancestor \"e80730fe023768ff79310f0cda3c0bb7af15236d\" \"0d11477f61837c3da7da42393daa1bf04b01088e\"\npython3 -B - <<'PY'\nimport subprocess,json,urllib.request\ncode='const fs=require(\"node:fs\"),path=require(\"node:path\"),{RepoPolicy}=require(\"/app/server/repo-policy.js\"); const p=new RepoPolicy().assertRepo(\"/workspace/debug-ai\"),d=path.join(p,\".verification\");if(fs.existsSync(d)){const s=fs.lstatSync(d);if(!s.isDirectory()||s.isSymbolicLink()||fs.realpathSync(d)!==d)throw Error(\"VERIFICATION_SCOPE_UNSAFE\");fs.accessSync(d,fs.constants.W_OK);}else fs.accessSync(p,fs.constants.W_OK);const root=\"/app/runtime/authority/durable/run\";console.log(JSON.stringify({parent:p,verification_writable:true,run_ids:fs.readdirSync(root).filter(f=>/^run_[A-Za-z0-9_]+[.]json$/.test(f)).map(f=>f.slice(0,-5))}));'\ndata=json.loads(subprocess.check_output([\"docker\",\"exec\",\"debug-ai-debug-ai-1\",\"node\",\"-e\",code],text=True))\nactive=[];unknown=[]\nfor rid in data.pop(\"run_ids\"):\n try:\n  r=json.load(urllib.request.urlopen(\"http://127.0.0.1:8787/v1/status/\"+rid,timeout=3));d=r.get(\"durable\") or {}\n  if d.get(\"active_in_process\") or d.get(\"job_status\") in (\"RUNNING\",\"RETRY_WAIT\",\"QUEUED\"):active.append({\"id\":rid,\"job\":d.get(\"job_status\")})\n except Exception as e:unknown.append({\"id\":rid,\"error\":type(e).__name__})\nprint(\"PREFLIGHT \"+json.dumps({**data,\"active\":active,\"unknown_count\":len(unknown)}))\nif active or unknown:raise SystemExit(3)\nPY\ngit diff --name-only --no-renames \"e80730fe023768ff79310f0cda3c0bb7af15236d\" \"0d11477f61837c3da7da42393daa1bf04b01088e\"\ntest \"$(git rev-parse HEAD)\" = \"e80730fe023768ff79310f0cda3c0bb7af15236d\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
