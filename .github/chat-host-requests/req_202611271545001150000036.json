@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/actions/runs/45953479953"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "4b06a39ebdb8a99d5544b27c8a52f33ad8e42440",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\"\ntest \"$(git branch --show-current)\" = \"fix/debugai-scout-diagnosis-handoff-20261016\"\ntest \"$(git remote get-url origin)\" = \"https://github.com/seigo-gace/debug-ai.git\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ndocker exec -i -w /app debug-ai-debug-ai-1 node - <<'NODE'\nconst fs=require(\"node:fs\"),path=require(\"node:path\"),dir=\"/app/runtime/durable/run-state-v2\";let active=0,errors=0;\nif(fs.existsSync(dir))for(const f of fs.readdirSync(dir)){if(!f.endsWith(\".json\"))continue;try{const s=JSON.parse(fs.readFileSync(path.join(dir,f),\"utf8\"));if(![\"DONE\",\"CANCELLED\",\"BLOCKED\",\"FAILED\"].includes(s.job_status))active++;}catch{errors++;}}\nconsole.log(\"DURABLE_ACTIVE=\"+active+\" READ_ERRORS=\"+errors);if(active||errors)process.exitCode=3;\nNODE\ngit fetch --no-tags origin \"refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\"\ntest \"$(git rev-parse FETCH_HEAD)\" = \"e80730fe023768ff79310f0cda3c0bb7af15236d\"\ngit merge-base --is-ancestor \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\" \"e80730fe023768ff79310f0cda3c0bb7af15236d\"\npython3 -B - <<'PY'\nimport subprocess,sys,json,hashlib\nsys.path.insert(0,\"/home/admin1/server-core/scripts\")\nfrom servercore_service_deploy_admission import inspect_host,REGISTRY\nold=\"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\";head=\"e80730fe023768ff79310f0cda3c0bb7af15236d\";expected=[\"docs/CURRENT_SOURCE_QUALIFICATION.md\",\"ops/tests/fixtures/gitops-delegation-fixture.cjs\",\"ops/tests/gitops-standing-delegation.test.cjs\",\"orchestrator/patch-core.js\",\"orchestrator/source-scope.js\",\"server/control/read-only-tool-runtime-base.js\",\"server/control/repository-snapshot.js\",\"server/control/sandbox-runtime.js\",\"server/tests/repository-snapshot-fallback.test.cjs\",\"server/tests/sandbox-snapshot-integrity.test.cjs\",\"server/tests/source-search-coverage.test.cjs\"]\nactual=sorted(subprocess.check_output([\"git\",\"diff\",\"--name-only\",\"--no-renames\",old,head],text=True).splitlines())\nif actual!=expected:raise SystemExit(\"EXACT_SCOPE_MISMATCH\")\nregistry=json.loads(REGISTRY.read_text())\nfor service in (\"debug-ai\",\"sandbox-runner\"):\n a=inspect_host(registry,\"seigo-gace/debug-ai\",old,service)\n target=subprocess.check_output([\"git\",\"show\",head+\":\"+a[\"compose_file\"]])\n if hashlib.sha256(target).hexdigest()!=a[\"compose_digest\"]:raise SystemExit(\"COMPOSE_DIGEST_MISMATCH\")\nprint(\"EXACT_REVIEWED_SCOPE=PASS\")\nPY\ngit -c core.hooksPath=/dev/null merge --ff-only \"e80730fe023768ff79310f0cda3c0bb7af15236d\"\ntest \"$(git rev-parse HEAD)\" = \"e80730fe023768ff79310f0cda3c0bb7af15236d\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ntest \"$(stat -c %a server/tests/server-command-tool-runtime.test.cjs)\" = 644\nfor service in debug-ai sandbox-runner; do\n python3 -B /home/admin1/server-core/scripts/servercore_registered_service_deploy.py --repository seigo-gace/debug-ai --target-sha \"e80730fe023768ff79310f0cda3c0bb7af15236d\" --service \"$service\"\ndone\nprintf 'EXACT_SOURCE_PREPARED=%s\\n' \"$(git rev-parse HEAD)\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
