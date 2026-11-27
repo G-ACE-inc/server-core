@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 -B scripts/userbot_test_client.py health || true\ndocker exec -i deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs --input-type=module <<'JS'\nimport fs from 'node:fs';\nimport https from 'node:https';\nconst token=fs.readFileSync(process.env.BOT_TOKEN_FILE,'utf8').trim();\nasync function call(method){\n return new Promise(resolve=>{\n  const req=https.get('https://api.telegram.org/bot'+token+'/'+method,{family:4,timeout:12000},res=>{\n   let s='';res.on('data',c=>s+=c);res.on('end',()=>{try{const j=JSON.parse(s);resolve({http:res.statusCode,ok:j.ok===true,result:j.result});}catch{resolve({http:res.statusCode,ok:false});}});\n  });req.on('timeout',()=>req.destroy());req.on('error',e=>resolve({ok:false,error:e.code||'NETWORK_ERROR'}));\n });\n}\nconst me=await call('getMe'),w=await call('getWebhookInfo');\nconsole.log('BOT_API_IDENTITY',JSON.stringify({ok:me.ok,http:me.http,error:me.error,expected:me.result?.username?.toLowerCase()==='gaybbs_bot'}));\nconsole.log('BOT_API_UPDATES',JSON.stringify({ok:w.ok,http:w.http,error:w.error,webhook:!!w.result?.url,pending:w.result?.pending_update_count,last_error:!!w.result?.last_error_date,allowed:w.result?.allowed_updates}));\nJS\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atqc \"\nSELECT 'db_sessions',state,COALESCE(wait_event_type,''),COALESCE(wait_event,''),count(*) FROM pg_stat_activity WHERE datname='gaybbs' AND pid<>pg_backend_pid() GROUP BY state,wait_event_type,wait_event;\nSELECT 'notice_drafts',step,count(*) FROM public_post_drafts WHERE module='announcement' AND data->>'kind' IN ('announcement','preview') GROUP BY step;\n\"\ndocker logs --tail 500 deploy-gaybbs-1 2>&1 | python3 -c 'import sys,re,collections\ns=sys.stdin.read()\nfor k,v in sorted(collections.Counter(re.findall(r\"\\[GAYBBS_ERROR\\]\\s+(\\w+)\\s+(\\w+)\",s)).items()):print(\"BOT_ERROR\",*k,v)\nfor k in [\"GAYBBS_BOT_READY\",\"POST_PUBLICATION_FAILED\",\"GAYBBS_WORKER_CHECK_FAILED\",\"BUG_REPORT_DELIVERY_WORKER_FAILED\",\"409:\",\"401:\",\"429:\",\"Bad Request\",\"ETELEGRAM\",\"ETIMEDOUT\",\"ECONNRESET\",\"ECONNREFUSED\"]:print(\"LOG_COUNT\",k,s.count(k))'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
