@@ -1,0 +1,18 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\numask 077\ndir=\"$HOME/.local/state/gserver-terminal/results\"\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\ngh api repos/G-ACE-inc/server-core/tarball/c7ac87aa620a632987ab222350f2d43af46e7e2f > \"$tmp/source.tar.gz\"\ntar -xzf \"$tmp/source.tar.gz\" -C \"$tmp\" --strip-components=1\ncd \"$tmp\"\nfor rid in req_202611271752000000002108 req_202611271852000000002109; do\n test -r \"$dir/$rid.json\"\n python3 -B scripts/servercore_host_output_private_artifact_publish.py \"$rid\" --writer-ledger --writer-dir \"$dir\"\ndone\n"
+  }
+}
