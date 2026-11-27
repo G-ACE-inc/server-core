@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/blob/a6a84876ab8ff9a81503ac15d1a3285e50634e1e/server/control/real-debug-benchmark.js"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ntest \"$(docker inspect --format '{{.State.Running}}' debug-ai-debug-ai-1)\" = false\npython3 -B - <<'PY'\nimport io,json,re,subprocess,tarfile\ncontainer=\"debug-ai-debug-ai-1\"\nbid=\"realdebug_6cf69ffdd7f641cba693aa2e9783c9aa\"\ndef records(path):\n    raw=subprocess.check_output([\"docker\",\"cp\",container+\":\"+path,\"-\"])\n    with tarfile.open(fileobj=io.BytesIO(raw)) as a:\n        return [json.load(a.extractfile(m)) for m in a.getmembers() if m.isfile() and m.name.endswith(\".json\")]\nstates=[r[\"payload\"] for r in records(\"/app/runtime/durable/durable/run-state-v2\") if r.get(\"payload\",{}).get(\"schema\")==\"run-state/v2\"]\nactive=[s for s in states if s.get(\"job_status\") in (\"QUEUED\",\"RUNNING\",\"RETRY_WAIT\",\"PAUSED\")]\ncp=sorted([r for r in records(\"/app/runtime/\"+bid) if r.get(\"type\")==\"real_debug_benchmark\"],key=lambda r:r.get(\"created_at\",0))[-1][\"payload\"]\nassert cp[\"benchmark_id\"]==bid and cp[\"schema\"]==\"debugai.real-debug-benchmark/v1\"\nfor s in active:\n    case=cp[\"current\"][\"case_id\"]\n    assert s[\"run_id\"]==cp[\"current\"][\"run_id\"] and s[\"project_id\"]==\"debugai-real-debug-\"+case\n    assert s[\"project_dir\"].endswith(\"/debug-ai/.verification/real-debug/\"+bid+\"/\"+case)\nassert len(active)<=1\nprint(\"ONLY_INTERRUPTED_BENCHMARK_CHILD; OWNER_CHECKPOINT_MATCH; NO_UNRELATED_ACTIVE_RUN\")\nPY\n"
+  }
+}
