@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/blob/f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89/server/control/real-debug-benchmark.js"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89",
+    "command": "set -eu\npython3 -B - <<'PY'\nimport json,urllib.request,urllib.error\nbase=\"http://127.0.0.1:8787\"\ndef get(path):\n    with urllib.request.urlopen(base+path,timeout=10) as r:\n        return json.load(r)\nassert get(\"/health\")[\"ok\"]\ncorpus=json.load(open(\"scripts/real-debug-corpus.json\"))\nids=[c[\"id\"] for c in corpus[\"cases\"]]\nassert len(ids)==len(set(ids))==50\nassert all(sum(c[\"level\"]==l for c in corpus[\"cases\"])==10 for l in range(1,6))\nold=get(\"/v1/investigation-benchmark/status/realdebug_030c71fab13b4726b5222b3f523b2900\")\nif old.get(\"active_in_process\"):\n    assert old[\"case_ids\"]==ids\n    print(\"EXISTING_FIFTY_ACTIVE\",json.dumps({k:old.get(k) for k in (\"benchmark_id\",\"state\",\"current\",\"summary\",\"active_in_process\")}),flush=True)\nelse:\n    req=urllib.request.Request(base+\"/v1/investigation-benchmark/start\",data=json.dumps({\"suite\":\"real-debug\",\"case_ids\":ids}).encode(),headers={\"Content-Type\":\"application/json\"})\n    try:\n        with urllib.request.urlopen(req,timeout=20) as r:\n            result=json.load(r)\n            print(\"FRESH_START_HTTP\",r.status,json.dumps(result),flush=True)\n            assert r.status==202 and result[\"total\"]==50 and result[\"corpus_digest\"]==old[\"corpus_digest\"]\n    except urllib.error.HTTPError as e:\n        print(\"START_HTTP_ERROR\",e.code,e.read(2048).decode(),flush=True)\n        raise\n    s=get(\"/v1/investigation-benchmark/status/\"+result[\"benchmark_id\"])\n    assert s[\"case_ids\"]==ids and s[\"summary\"][\"total\"]==50\n    print(\"FIFTY_CASE_READBACK\",json.dumps({k:s.get(k) for k in (\"benchmark_id\",\"state\",\"current\",\"summary\",\"active_in_process\")}),flush=True)\nPY\n"
+  }
+}
