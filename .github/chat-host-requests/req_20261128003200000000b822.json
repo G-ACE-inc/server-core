@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nbase=\"$HOME/Project/Gserver\"\nmatches=()\nwhile IFS= read -r -d '' p; do\n  d=\"${p%/scripts/servercore_host_output_private_artifact_publish.py}\"\n  origin=\"$(git -C \"$d\" remote get-url origin 2>/dev/null | sed -E 's#\\.git$##; s#^git@github.com:#https://github.com/#' || true)\"\n  if [[ \"$origin\" == 'https://github.com/G-ACE-inc/server-core' ]] && [[ -z \"$(git -C \"$d\" status --porcelain -- scripts/servercore_host_output_private_artifact_publish.py)\" ]]; then matches+=(\"$d\"); fi\ndone < <(find \"$base\" -maxdepth 6 -type f -path '*/scripts/servercore_host_output_private_artifact_publish.py' -not -path '*/.worktrees/*' -not -path '*/node_modules/*' -print0)\nif [[ ${#matches[@]} -ne 1 ]]; then echo \"NOTICE_OUTPUT_HELPER_MATCHES=${#matches[@]}\"; exit 65; fi\ncd \"${matches[0]}\"\npython3 -B scripts/servercore_host_output_private_artifact_publish.py req_20261128003000000000b821 --writer-ledger --writer-dir \"$HOME/.local/state/gserver-terminal/results\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
