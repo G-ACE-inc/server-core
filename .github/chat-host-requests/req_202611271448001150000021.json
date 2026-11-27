@@ -1,0 +1,35 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7210918570"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "4b06a39ebdb8a99d5544b27c8a52f33ad8e42440",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\"\npython3 -B - <<'PY'\nimport json,urllib.request\nrid=\"run_mwyk50r3_a94e384027\"\nfor endpoint in (\"status\",\"inspect\"):\n o=json.load(urllib.request.urlopen(\"http://127.0.0.1:8787/v1/\"+endpoint+\"/\"+rid,timeout=5))\n run=o.get(\"run\",o)\n print(endpoint.upper()+\" \"+json.dumps({k:run.get(k) for k in (\"run_id\",\"id\",\"state\",\"status\",\"phase\",\"stage\",\"role\",\"updated_at\") if k in run}))\n print(endpoint.upper()+\"_KEYS \"+json.dumps(sorted(o.keys())))\n for k in (\"role_results\",\"roles\",\"work_items\",\"stages\",\"steps\",\"progress\",\"continuation\",\"diagnosis\",\"analysis\",\"candidate\",\"strict_completion\"):\n  v=o.get(k,run.get(k))\n  if isinstance(v,dict):\n   print(k.upper()+\" \"+json.dumps({a:b for a,b in v.items() if a in (\"state\",\"status\",\"role\",\"phase\",\"stage\",\"completed\",\"completed_roles\",\"pending_roles\",\"active_role\",\"next_role\") and isinstance(b,(str,int,bool,list))}))\n  elif isinstance(v,list):\n   print(k.upper()+\"_COUNT=\"+str(len(v)))\nPY\ntest \"$(stat -c %a server/tests/server-command-tool-runtime.test.cjs)\" = 644\ncurl -fsS -o /dev/null http://127.0.0.1:8787/health\nprintf 'HEALTH_AND_HOST_MODE=PASS\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
