@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7215944017"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "84584d87736593837837388d9e5d25fa8795b4db",
+    "command": "set -eu\nold=84584d87736593837837388d9e5d25fa8795b4db\nnew=ebf9e0897afe94a02e61263df3b7109f4e48c34b\ntest \"$(git rev-parse HEAD)\" = \"$old\"\ntest \"$(git branch --show-current)\" = \"fix/debugai-scout-diagnosis-handoff-20261016\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ndocker exec debug-ai-debug-ai-1 node -e 'const fs=require(\"node:fs\"),p=require(\"node:path\"),d=\"/app/runtime/durable/durable/run-state-v2\",{decodeEnvelope}=require(\"/app/orchestrator/durable-primitives.js\");const all=fs.readdirSync(d).filter(x=>/^run_.*[.]json$/.test(x)).map(f=>decodeEnvelope(fs.readFileSync(p.join(d,f)),{expectedSchema:\"run-state/v2\"}));const active=all.filter(x=>![\"DONE\",\"BLOCKED\",\"FAILED\",\"CANCELLED\",\"PAUSED\"].includes(x.job_status));if(active.some(x=>x.run_id!==\"run_mwytb5d9_cf1d2b2ecd\"||x.project_id!==\"debugai-real-debug-L1-01\"))throw Error(\"UNRELATED_RUN_ACTIVE\");console.log(\"ONLY_SUPERSEDED_TEST_OR_IDLE\",JSON.stringify(active.map(x=>({run_id:x.run_id,job_status:x.job_status,project_id:x.project_id}))));'\ndocker exec debug-ai-sandbox-runner-1 node -e 'const fs=require(\"node:fs\"),p=require(\"node:path\"),d=\"/sandbox-jobs/jobs\";for(const x of fs.readdirSync(d)){if(/^JOB_/.test(x)&&fs.existsSync(p.join(d,x,\"request.json\"))&&!fs.existsSync(p.join(d,x,\"result.json\")))throw Error(\"SANDBOX_JOB_PENDING\");}console.log(\"SANDBOX_IDLE=PASS\")'\ngit fetch --no-tags origin refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\ntest \"$(git rev-parse FETCH_HEAD)\" = \"$new\"\ngit merge-base --is-ancestor \"$old\" \"$new\"\npython3 -B - <<'PY'\nimport subprocess,sys,json,hashlib\nsys.path.insert(0,\"/home/admin1/server-core/scripts\")\nfrom servercore_service_deploy_admission import inspect_host,REGISTRY\nold=\"84584d87736593837837388d9e5d25fa8795b4db\";new=\"ebf9e0897afe94a02e61263df3b7109f4e48c34b\"\nexpected=sorted([\"server/workflow.js\",\"server/tests/workflow-researcher-e-horizontal.test.cjs\"])\nactual=sorted(subprocess.check_output([\"git\",\"diff\",\"--name-only\",\"--no-renames\",old,new],text=True).splitlines())\nassert actual==expected,actual\nregistry=json.loads(REGISTRY.read_text())\nfor service in (\"debug-ai\",\"sandbox-runner\"):\n a=inspect_host(registry,\"seigo-gace/debug-ai\",old,service)\n assert hashlib.sha256(subprocess.check_output([\"git\",\"show\",new+\":\"+a[\"compose_file\"]])).hexdigest()==a[\"compose_digest\"]\nprint(\"EXACT_SCOPE_AND_REGISTERED_SERVICES=PASS\")\nPY\ngit merge --ff-only \"$new\"\ntest \"$(git rev-parse HEAD)\" = \"$new\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
