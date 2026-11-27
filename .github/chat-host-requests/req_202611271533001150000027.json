@@ -1,0 +1,35 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7211600825"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "4b06a39ebdb8a99d5544b27c8a52f33ad8e42440",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\"\ndocker exec -i -w /app debug-ai-debug-ai-1 node - <<'NODE'\nconst path=require(\"node:path\"),fs=require(\"node:fs\");\nconst {RepoPolicy}=require(\"./server/repo-policy.js\"),{repositorySnapshotId}=require(\"./server/control/repository-snapshot.js\");\nconst repo=new RepoPolicy().assertRepo(\"/workspace/debug-ai\");\ntry{repositorySnapshotId(repo,{allowMissingGitMarker:true});console.log(\"SNAPSHOT=PASS\")}\ncatch(e){const m=String(e.cause?.message||\"\").match(/^REPOSITORY_SNAPSHOT_SYMLINK_TRAVERSAL:(.+)$/);if(!m)throw Error(\"SNAPSHOT_CHANGED\");\nconst rel=m[1],p=path.resolve(repo,rel);if(!/^[A-Za-z0-9._\\/-]+$/.test(rel)||!p.startsWith(repo+\"/\")||/(^|\\/)(\\.env(?:\\.|$)|secrets?(?:\\/|$))|\\.(?:pem|key|p12|pfx)$/.test(rel))throw Error(\"PATH_PROTECTED\");\nconsole.log(\"LINK_RELATIVE_PATH=\"+rel);console.log(\"LINK_KIND=\"+(fs.lstatSync(p).isSymbolicLink()?\"SYMLINK\":\"OTHER\"));\n}\nNODE\npython3 -B - <<'PY'\nimport subprocess,os,json\nfrom pathlib import Path\nroot=Path.cwd()\nfor p in subprocess.check_output([\"git\",\"ls-files\",\"-z\"],text=True).split(\"\\0\"):\n if p and (root/p).is_symlink():print(\"TRACKED_LINK \"+p)\nfor p in sorted(root.iterdir()):\n if p.is_symlink():print(\"ROOT_LINK \"+p.name+\" TRACKED=\"+str(subprocess.run([\"git\",\"ls-files\",\"--error-unmatch\",\"--\",p.name],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0)+\" IGNORED=\"+str(subprocess.run([\"git\",\"check-ignore\",\"-q\",\"--\",p.name]).returncode==0))\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
