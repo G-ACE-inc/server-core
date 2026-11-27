@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "30357dffcbb972acd58cda2b54ff279294cee3ce",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nwt=\"$(pwd -P)/.worktrees/notice-live-20261127\"\ntest -d \"$wt\"\ntest -z \"$(git -C \"$wt\" status --porcelain)\" || { echo NOTICE_WORKTREE_DIRTY; exit 46; }\ntest \"$(git -C \"$wt\" remote get-url origin | sed -E 's#\\.git$##; s#^git@github.com:#https://github.com/#')\" = 'https://github.com/seigo-gace/GateApp-Bot' || { echo NOTICE_ORIGIN_MISMATCH; exit 47; }\ngit -C \"$wt\" fetch origin fix/notice-live-adopted-20261127\ntarget=ce50d5e1b755b374b7527d895e2fd7246f565cfc\ntest \"$(git -C \"$wt\" rev-parse FETCH_HEAD)\" = \"$target\" || { echo NOTICE_REMOTE_HEAD_MISMATCH; exit 45; }\ngit -C \"$wt\" merge-base --is-ancestor HEAD \"$target\" || { echo NOTICE_WORKTREE_DIVERGED; exit 46; }\ngit -C \"$wt\" merge --ff-only \"$target\"\ntest \"$(git -C \"$wt\" rev-parse HEAD)\" = \"$target\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\necho NOTICE_SOURCE_SHA=\"$target\"\ntag=gace-tgtumbler-gaybbs:notice-stage-ce50d5e1\ndocker build --pull=false --progress=plain -f \"$wt/artifacts/bot/deploy/Dockerfile.gaybbs\" -t \"$tag\" \"$wt\" || { echo NOTICE_DOCKER_BUILD_FAILED; exit 51; }\ndocker image inspect -f 'NOTICE_IMAGE_ID={{.Id}} USER={{.Config.User}}' \"$tag\"\ntest \"$(docker image inspect -f '{{.Config.User}}' \"$tag\")\" = node\ndocker run --rm --network none --entrypoint node \"$tag\" --check /app/gaybbs.mjs\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\necho NOTICE_PR81_IMAGE_STAGED=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
