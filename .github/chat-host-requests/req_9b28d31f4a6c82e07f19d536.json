@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/376#issuecomment-7227935283"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -eu\ncd /home/admin1/projects/debug-ai\ntest \"$(git rev-parse HEAD)\" = a6a84876ab8ff9a81503ac15d1a3285e50634e1e\npython3 -B - <<'PY'\nimport json,subprocess,urllib.request\nbase=\"http://127.0.0.1:8787\"\nold=\"realdebug_6cf69ffdd7f641cba693aa2e9783c9aa\"\nids=json.loads(subprocess.check_output([\"docker\",\"exec\",\"debug-ai-debug-ai-1\",\"node\",\"-e\",\"const fs=require('node:fs');console.log(JSON.stringify(fs.readdirSync('/app/runtime').filter(x=>/^realdebug_[a-f0-9]{32}$/.test(x))))\"],text=True))\nfor bid in ids:\n    if bid==old: continue\n    try:\n        with urllib.request.urlopen(base+\"/v1/investigation-benchmark/status/\"+bid,timeout=5) as r: s=json.load(r)\n    except Exception: continue\n    if s.get(\"active_in_process\"):\n        assert s[\"summary\"][\"total\"]==50\n        print(\"ACTIVE_FIFTY\",json.dumps({k:s.get(k) for k in (\"benchmark_id\",\"state\",\"active_in_process\",\"current\",\"summary\",\"started_at\",\"updated_at\")}),flush=True)\n        break\nelse:\n    raise SystemExit(\"NO_ACTIVE_FIFTY\")\nPY\n"
+  }
+}
