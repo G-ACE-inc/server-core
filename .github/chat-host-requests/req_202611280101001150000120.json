@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7222714951"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89",
+    "command": "set -eu\ndocker exec -i debug-ai-debug-ai-1 node - <<'NODE'\nconst {RuntimeEvidenceStore}=require(\"/app/server/runtime-evidence.js\");\nconst store=new RuntimeEvidenceStore(\"/app/runtime\"),id=\"run_mwyug9t6_1bf371e77e\";\n(async()=>{const r=await(await fetch(\"http://127.0.0.1:8787/v1/status/\"+id)).json();console.log(JSON.stringify({state:r.state,durable:r.durable?.job_status}));const records=store.list(id,{types:[\"ai_invocation\",\"patch_candidate\",\"candidate_verification\",\"preapproval_refix_attempt\",\"preapproval_refix_result\"],limit:64});const latest=records.filter(x=>x.type!==\"ai_invocation\"||x.payload.role===\"patch_engineer\").slice(0,8);for(const r of latest){const p=r.payload;console.log(JSON.stringify({type:r.type,payload:r.type===\"ai_invocation\"?{role:p.role,phase:p.phase,elapsed_ms:p.elapsed_ms,failure_code:p.failure_code,invocation_id:p.invocation_id,started_at:p.started_at,telemetry:p.telemetry}:p}));}})().catch(e=>{console.error(e.name,e.message);process.exitCode=1});\nNODE\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
