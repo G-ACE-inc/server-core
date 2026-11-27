@@ -1,0 +1,35 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7210895170"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "4b06a39ebdb8a99d5544b27c8a52f33ad8e42440",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\"\np=server/tests/server-command-tool-runtime.test.cjs\ntest \"$(git ls-files --stage -- \"$p\" | cut -d' ' -f1)\" = 100644\ntest \"$(sha256sum \"$p\" | cut -d' ' -f1)\" = bcf4e7766c4183549a542016e107608749716d19dc7256b3070b5d38b75b454a\ntest \"$(git hash-object \"$p\")\" = \"$(git rev-parse \"HEAD:$p\")\"\ntest ! -L \"$p\"\nchmod 0644 \"$p\"\ntest \"$(stat -c %a \"$p\")\" = 644\ntest -z \"$(git status --porcelain --untracked-files=all)\"\nprintf 'HOST_PUBLIC_TEST_MODE=644\\nTRACKED_CONTENT_UNCHANGED=PASS\\n'\npython3 -B - <<'PY'\nimport subprocess,json\nc=subprocess.run([\"docker\",\"exec\",\"debug-ai-debug-ai-1\",\"node\",\"-e\",\"const fs=require('node:fs'); const d='/app/runtime/durable/run-state-v2';const rows=fs.existsSync(d)?fs.readdirSync(d).filter(x=>x.endsWith('.json')).map(x=>{try{return JSON.parse(fs.readFileSync(d+'/'+x,'utf8'))}catch{return {status:'UNREADABLE'}}}):[];console.log(JSON.stringify(rows.map(x=>({id:x.run_id||x.id||null,status:x.status||x.state||null}))))\"],capture_output=True,text=True,check=True)\nrows=json.loads(c.stdout); print(\"DURABLE_STATE_COUNTS=\"+json.dumps({str(k):sum(x['status']==k for x in rows) for k in set(x['status'] for x in rows)}))\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
