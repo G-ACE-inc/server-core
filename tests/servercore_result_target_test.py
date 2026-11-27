@@ -14,7 +14,7 @@ class ResultTargetTests(unittest.TestCase):
     def test_registered_issue_and_ceiling_are_valid(self):
         value = target.load_target()
         self.assertEqual(value["repository"], target.OWNER)
-        self.assertEqual(value["issue_number"], 351)
+        self.assertEqual(value["issue_number"], 376)
         self.assertEqual(value["dispatch_comment_ceiling"], 2400)
 
     def test_invalid_target_denied(self):
@@ -32,7 +32,7 @@ class ResultTargetTests(unittest.TestCase):
 
         def response(comments, *, locked=False, state="open"):
             def runner(args, **_kwargs):
-                self.assertEqual(args[-1], "repos/G-ACE-inc/server-core/issues/351")
+                self.assertEqual(args[-1], "repos/G-ACE-inc/server-core/issues/376")
                 return SimpleNamespace(returncode=0, stdout=json.dumps({
                     "comments": comments, "locked": locked, "state": state}))
             return runner
