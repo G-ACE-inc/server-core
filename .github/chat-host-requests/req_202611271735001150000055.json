@@ -1,0 +1,35 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7213678672"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "0d11477f61837c3da7da42393daa1bf04b01088e",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"0d11477f61837c3da7da42393daa1bf04b01088e\"\npython3 -B - <<'PY'\nimport subprocess,json,hashlib,pathlib,urllib.request\npaths=subprocess.check_output([\"git\",\"ls-files\",\"-z\",\"--\",\"server\",\"orchestrator\",\"bin\",\"mcp\",\"scripts\",\"docs\",\"package.json\"]).decode().strip(\"\\0\").split(\"\\0\")\nfiles={p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest() for p in paths}\nfor name in (\"debug-ai-debug-ai-1\",\"debug-ai-sandbox-runner-1\"):\n code='const fs=require(\"node:fs\"),c=require(\"node:crypto\");const e=JSON.parse(fs.readFileSync(0,\"utf8\"));const bad=Object.keys(e).filter(p=>{try{return c.createHash(\"sha256\").update(fs.readFileSync(\"/app/\"+p)).digest(\"hex\")!==e[p]}catch{return true}});console.log(JSON.stringify({files:Object.keys(e).length,mismatches:bad}));if(bad.length)process.exitCode=1'\n p=subprocess.run([\"docker\",\"exec\",\"-i\",name,\"node\",\"-e\",code],input=json.dumps(files),text=True,capture_output=True)\n print(\"PARITY \"+name+\" \"+p.stdout.strip(),flush=True)\n if p.returncode:raise SystemExit(p.returncode)\nreq=urllib.request.Request(\"http://127.0.0.1:8787/v1/investigation-benchmark/start\",data=json.dumps({\"suite\":\"real-debug\"}).encode(),headers={\"content-type\":\"application/json\"},method=\"POST\")\nwith urllib.request.urlopen(req,timeout=15) as resp:\n o=json.load(resp)\n assert resp.status==202 and o.get(\"total\")==50 and o.get(\"state\")==\"RUNNING\"\n print(\"BENCHMARK_ACCEPTED \"+json.dumps(o),flush=True)\n rid=o[\"benchmark_id\"]\n status=json.load(urllib.request.urlopen(\"http://127.0.0.1:8787/v1/investigation-benchmark/status/\"+rid,timeout=5))\n print(\"BENCHMARK_STATUS \"+json.dumps({k:status.get(k) for k in (\"benchmark_id\",\"state\",\"current\",\"summary\",\"active_in_process\",\"error_code\")}),flush=True)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
