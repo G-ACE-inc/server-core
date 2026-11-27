@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/actions/runs/45968899668"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "0d11477f61837c3da7da42393daa1bf04b01088e",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"0d11477f61837c3da7da42393daa1bf04b01088e\"\ntest \"$(git branch --show-current)\" = \"fix/debugai-scout-diagnosis-handoff-20261016\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\npython3 -B - <<'PY'\nimport subprocess,json,urllib.request\nurl=\"http://127.0.0.1:8787/v1/investigation-benchmark/status/realdebug_6d6055e23feb47868406cc577b8958ca\"\ns=json.load(urllib.request.urlopen(url,timeout=8)); current=s.get(\"current\") or {}; rid=current.get(\"run_id\")\ncode='const fs=require(\"node:fs\"),p=require(\"node:path\"),d=\"/app/runtime/durable/durable/run-state-v2\",{decodeEnvelope}=require(\"/app/orchestrator/durable-primitives.js\");const all=fs.readdirSync(d).filter(x=>/^run_.*[.]json$/.test(x)).map(f=>decodeEnvelope(fs.readFileSync(p.join(d,f)),{expectedSchema:\"run-state/v2\"}));console.log(JSON.stringify(all.filter(x=>![\"DONE\",\"BLOCKED\",\"FAILED\",\"CANCELLED\",\"PAUSED\"].includes(x.job_status)).map(x=>({run_id:x.run_id,project_id:x.project_id,job_status:x.job_status}))));'\nactive=json.loads(subprocess.check_output([\"docker\",\"exec\",\"debug-ai-debug-ai-1\",\"node\",\"-e\",code],text=True))\nif any(x[\"run_id\"]!=rid or not x[\"project_id\"].startswith(\"debugai-real-debug-\") for x in active):raise SystemExit(\"OTHER_ACTIVE_RUN\")\nif current and current.get(\"phase\")!=\"ANALYSIS\":raise SystemExit(\"BENCHMARK_PATCH_OR_GRADE_IN_PROGRESS\")\nprint(\"TEST_CHECKPOINT \"+json.dumps({\"current\":current,\"summary\":s.get(\"summary\"),\"active\":active}))\nPY\ngit fetch --no-tags origin refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\ntest \"$(git rev-parse FETCH_HEAD)\" = \"2a5775e6d0dddb5e95797a74a3dc29afc761be8f\"\ngit merge-base --is-ancestor \"0d11477f61837c3da7da42393daa1bf04b01088e\" \"2a5775e6d0dddb5e95797a74a3dc29afc761be8f\"\npython3 -B - <<'PY'\nimport subprocess,sys,json,hashlib\nsys.path.insert(0,\"/home/admin1/server-core/scripts\")\nfrom servercore_service_deploy_admission import inspect_host,REGISTRY\nexpected=sorted([\"docs/CURRENT_SOURCE_QUALIFICATION.md\",\"server/adapters/ai-core.js\",\"server/control/invocation-compiler.js\",\"server/control/role-prompt-evidence.js\",\"server/role-modules/index.js\",\"server/tests/role-prompt-evidence.test.cjs\",\"server/tests/workflow-diagnoser-horizontal-continuation.test.cjs\",\"server/workflow.js\"])\nactual=sorted(subprocess.check_output([\"git\",\"diff\",\"--name-only\",\"--no-renames\",\"0d11477f61837c3da7da42393daa1bf04b01088e\",\"2a5775e6d0dddb5e95797a74a3dc29afc761be8f\"],text=True).splitlines())\nif actual!=expected:raise SystemExit(\"EXACT_SCOPE_MISMATCH\")\nregistry=json.loads(REGISTRY.read_text())\nfor service in (\"debug-ai\",\"sandbox-runner\"):\n a=inspect_host(registry,\"seigo-gace/debug-ai\",\"0d11477f61837c3da7da42393daa1bf04b01088e\",service)\n if hashlib.sha256(subprocess.check_output([\"git\",\"show\",\"2a5775e6d0dddb5e95797a74a3dc29afc761be8f:\"+a[\"compose_file\"]])).hexdigest()!=a[\"compose_digest\"]:raise SystemExit(\"COMPOSE_DIGEST_MISMATCH\")\nprint(\"EXACT_SCOPE_AND_REGISTERED_SERVICES=PASS\")\nPY\ntest \"$(git rev-parse HEAD)\" = \"0d11477f61837c3da7da42393daa1bf04b01088e\"\ngit merge --ff-only \"2a5775e6d0dddb5e95797a74a3dc29afc761be8f\"\ntest \"$(git rev-parse HEAD)\" = \"2a5775e6d0dddb5e95797a74a3dc29afc761be8f\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\nfor service in debug-ai sandbox-runner; do\n python3 -B /home/admin1/server-core/scripts/servercore_registered_service_deploy.py --repository seigo-gace/debug-ai --target-sha \"2a5775e6d0dddb5e95797a74a3dc29afc761be8f\" --service \"$service\"\ndone\nprintf 'EXACT_SOURCE_PREPARED=%s\\n' \"$(git rev-parse HEAD)\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
