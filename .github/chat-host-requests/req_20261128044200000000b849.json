@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nroot=\"$(pwd -P)\"\nwt=\"$root/.worktrees/notice-live-20261127\"\nrepo=seigo-gace/GateApp-Bot\ntarget=e23680447166fa8ed12ec4c6e01ee249d48edc5d\nstage=\"$root/deploy/state/reliability-pr81-e2368044/userbot\"\nservice=gace-userbot-verify.service\ntest \"$(gh api repos/$repo/pulls/81 --jq '.head.sha')\" = \"$target\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:reliability-e2368044)\"\ntest \"$(systemctl --user show -p WorkingDirectory --value \"$service\")\" = \"$root\"\nsystemctl --user is-active --quiet \"$service\"\nsystemctl --user is-enabled --quiet \"$service\"\npython3 -B scripts/userbot_test_client.py health\ntest \"$(git hash-object scripts/userbot_resident_ipc.py)\" = b206fa8c1e13837771486d8ed13c9eaf1e66e9e2\ntest \"$(git hash-object scripts/userbot_test_client.py)\" = 95207d02bc9827e42ca9037d0cc069f0319caa44\ntest ! -e \"$stage\"\nmkdir -m 700 \"$stage\"\ngit -C \"$wt\" fetch origin refs/heads/fix/notice-live-adopted-20261127\ntest \"$(git -C \"$wt\" rev-parse FETCH_HEAD)\" = \"$target\"\nfor f in userbot_resident_ipc.py userbot_test_client.py; do\n git -C \"$wt\" show \"$target:scripts/$f\" > \"$stage/$f.new\"\n cp -p \"scripts/$f\" \"$stage/$f.old\"\n python3 -B - \"$stage/$f.new\" <<'PY'\nimport pathlib,sys\np=pathlib.Path(sys.argv[1]);compile(p.read_bytes(),str(p),'exec')\nPY\ndone\ntest \"$(git hash-object \"$stage/userbot_resident_ipc.py.new\")\" = 364f9f33eb76e9e86ebf2bab988d005f96e47446\ntest \"$(git hash-object \"$stage/userbot_test_client.py.new\")\" = 12b091eb061e8d674e1ed74e7af947c5768564d2\nchanged=0\nactivated=0\nrestore(){\n rc=$?\n trap - EXIT\n if test \"$changed\" = 1 && test \"$activated\" != 1; then\n  for f in userbot_resident_ipc.py userbot_test_client.py; do\n   cp -p \"$stage/$f.old\" \"scripts/$f\"\n  done\n  systemctl --user restart \"$service\"\n  echo USERBOT_CODE_ROLLBACK\n fi\n exit \"$rc\"\n}\ntrap restore EXIT\nchanged=1\nfor f in userbot_resident_ipc.py userbot_test_client.py; do\n install -m \"$(stat -c '%a' \"scripts/$f\")\" \"$stage/$f.new\" \"scripts/$f\"\ndone\nsystemctl --user restart \"$service\"\nready=0\nfor i in $(seq 1 20); do\n if systemctl --user is-active --quiet \"$service\" && python3 -B scripts/userbot_test_client.py health; then ready=1; break; fi\n sleep 2\ndone\ntest \"$ready\" = 1\nsystemctl --user is-enabled --quiet \"$service\"\nactivated=1\necho USERBOT_CODE_ACTIVATION=PASS\npython3 -B scripts/userbot_test_client.py help_button_burst_smoke\npython3 -B scripts/userbot_test_client.py bot_start_menu\nsystemctl --user is-active --quiet \"$service\"\npython3 -B scripts/userbot_test_client.py health\necho GAYBBS_LIVE_BUTTON_BURST=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
