@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/376#issuecomment-7225710531"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "command": "set -eu\npython3 -B - <<'PY'\nimport json,urllib.request,datetime\nbase=\"http://127.0.0.1:8787\"\ndef get(p):\n    with urllib.request.urlopen(base+p,timeout=10) as r:\n        return json.load(r)\nbid=\"realdebug_6cf69ffdd7f641cba693aa2e9783c9aa\"\ns=get(\"/v1/investigation-benchmark/status/\"+bid)\nprint(\"OBSERVED_AT\",datetime.datetime.now(datetime.timezone.utc).isoformat())\nprint(\"BENCHMARK\",json.dumps({k:s.get(k) for k in (\"benchmark_id\",\"state\",\"active_in_process\",\"interrupted\",\"error_code\",\"started_at\",\"updated_at\",\"finished_at\",\"current\",\"summary\")}))\nprint(\"CASES\",json.dumps([{k:x.get(k) for k in (\"id\",\"level\",\"state\",\"duration_ms\",\"run_id\",\"analysis_state\",\"analysis_step\",\"repair_pass\",\"review_pass\",\"public_red\",\"public_green\",\"holdout_green\",\"error_code\")} for x in s.get(\"results\",[])]))\nrid=(s.get(\"current\") or {}).get(\"run_id\")\nif rid:\n    d=get(\"/v1/status/\"+rid).get(\"durable\",{})\n    print(\"CURRENT_RUN\",json.dumps({k:d.get(k) for k in (\"job_status\",\"active_in_process\",\"workflow_cursor\",\"last_execution_error\",\"last_execution_failure\",\"role_invocations\")}))\nPY\n"
+  }
+}
