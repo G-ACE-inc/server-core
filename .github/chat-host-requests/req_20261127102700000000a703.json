@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "notice_pr81_current_source_checkout",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/81"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\" || exit 31\ntest \"$(pwd -P)\" = \"$(git rev-parse --show-toplevel)\" || exit 32\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active || exit 33\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true || exit 34\nroot=\"$(pwd -P)\"\nif test ! -d .worktrees;then mkdir .worktrees || exit 35;fi\ntest \"$(realpath .worktrees)\" = \"$root/.worktrees\" || exit 36\ngit fetch --no-tags origin 4d64a4de50a87daa892c47d5760573c7fb8e1ec6 >/dev/null 2>&1 || exit 37\ntest \"$(git rev-parse FETCH_HEAD)\" = 4d64a4de50a87daa892c47d5760573c7fb8e1ec6 || exit 38\nwt=\"$root/.worktrees/notice-live-20261127\"\nif test ! -d \"$wt\";then git worktree add --detach \"$wt\" 4d64a4de50a87daa892c47d5760573c7fb8e1ec6 >/dev/null 2>&1 || exit 39\nelse\n test -z \"$(git -C \"$wt\" status --porcelain)\" || exit 40\n git -C \"$wt\" checkout --detach 4d64a4de50a87daa892c47d5760573c7fb8e1ec6 >/dev/null 2>&1 || exit 41\nfi\ntest \"$(git -C \"$wt\" rev-parse HEAD)\" = 4d64a4de50a87daa892c47d5760573c7fb8e1ec6 || exit 42\ntest -z \"$(git -C \"$wt\" status --porcelain)\" || exit 43\ntest \"$(realpath \"$wt\")\" = \"$root/.worktrees/notice-live-20261127\" || exit 44\necho NOTICE_LATEST_SOURCE_IN_CANONICAL_PARENT=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
