@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7215372861"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "84584d87736593837837388d9e5d25fa8795b4db",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"84584d87736593837837388d9e5d25fa8795b4db\"\npython3 -B - <<'PY'\nimport subprocess,hashlib,json,urllib.request\nfor c in (\"debug-ai-debug-ai-1\",\"debug-ai-sandbox-runner-1\"):\n for p in (\"server/adapters/ai-core.js\",\"server/workflow.js\"):\n  expected=hashlib.sha256(open(p,\"rb\").read()).hexdigest()\n  actual=subprocess.check_output([\"docker\",\"exec\",c,\"node\",\"-e\",'const fs=require(\"node:fs\"),c=require(\"node:crypto\");console.log(c.createHash(\"sha256\").update(fs.readFileSync(process.argv[1])).digest(\"hex\"))',\"/app/\"+p],text=True).strip()\n  assert expected==actual,(c,p)\nbase=\"http://127.0.0.1:8787\"\nold=json.load(urllib.request.urlopen(base+\"/v1/investigation-benchmark/status/realdebug_c1b095a42e93445ebce96fd4864c7bfb\",timeout=10))\nassert not old.get(\"active_in_process\"),\"OLD_BENCHMARK_ACTIVE\"\nreq=urllib.request.Request(base+\"/v1/investigation-benchmark/start\",data=json.dumps({\"suite\":\"real-debug\",\"case_ids\":[\"L1-01\"]}).encode(),headers={\"Content-Type\":\"application/json\"})\nwith urllib.request.urlopen(req,timeout=20) as resp:\n result=json.load(resp)\n print(\"FRESH_START_HTTP\",resp.status,json.dumps(result),flush=True)\n assert resp.status==202 and result[\"corpus_digest\"]==old[\"corpus_digest\"] and result[\"total\"]==1\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
