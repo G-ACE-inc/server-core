@@ -1,0 +1,23 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "project_context": {
+      "repository": "seigo-gace/debug-ai"
+    },
+    "command": "set -eu\ncurl --fail-with-body --silent --show-error --max-time 15 http://127.0.0.1:8787/health\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
