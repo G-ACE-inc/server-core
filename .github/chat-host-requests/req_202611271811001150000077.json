@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7214312032"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2a5775e6d0dddb5e95797a74a3dc29afc761be8f",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"2a5775e6d0dddb5e95797a74a3dc29afc761be8f\"\npython3 -B /home/admin1/server-core/scripts/servercore_host_output_private_artifact_publish.py req_202611271810001150000076 --writer-ledger\ndocker exec -i debug-ai-debug-ai-1 node - <<'NODE'\n\nconst fs=require(\"node:fs\"),path=require(\"node:path\"),assert=require(\"node:assert/strict\"),Module=require(\"node:module\");\nconst root=\"/app\",runId=\"run_mwyq6tsz_e40f80d39b\",repo=\"/workspace/debug-ai/.verification/real-debug/realdebug_6d6055e23feb47868406cc577b8958ca/L1-01\";\nconst w=require(root+\"/server/workflow.js\"),{RuntimeEvidenceStore}=require(root+\"/server/runtime-evidence.js\"),{initialInvestigationEvidence}=require(root+\"/server/control/read-only-tool-runtime.js\"),{registerEvidenceList,evidenceIds}=require(root+\"/server/control/evidence-registry.js\");\nconst {repositorySnapshotId}=require(root+\"/server/control/repository-snapshot.js\");\nconst {decodeEnvelope}=require(root+\"/orchestrator/durable-primitives.js\");\nconst dr=root+\"/runtime/durable/durable/workflow-data/\"+runId;\nlet input=null;for(const f of fs.readdirSync(dr).filter(x=>/^wd_.*\\.json$/.test(x))){const o=decodeEnvelope(fs.readFileSync(path.join(dr,f)),{expectedSchema:\"workflow-data/v1\"});if(o.kind===\"INPUT_MANIFEST\"){if(input)throw Error(\"INPUT_AMBIGUOUS\");input=o.payload;}}\nassert.ok(input);\nconst snap=repositorySnapshotId(repo,{allowMissingGitMarker:true});assert.equal(snap,\"tree_c4dbc9931d60b730d7caf2a431e5a608d0000736ee6d83d320853196ff2cb84c\");\nconst store=new RuntimeEvidenceStore(root+\"/runtime\"),verification=store.list(runId,{types:[\"deterministic_verification\"],limit:1})[0]?.payload;\nassert.ok(verification&&Array.isArray(verification.checks));const checks=verification.checks;\nconst dap=store.list(runId,{types:[\"dap_hint\"],limit:1})[0]?.payload||null;\nconst initial=w.addBoundedTestDependencyEvidence(repo,initialInvestigationEvidence(repo,{request:input.raw_request||input.failure?.message,failure:input.failure,checks}));\nconst records=registerEvidenceList(\"LOCAL_RUNTIME\",[...input.local_evidence,...checks.map(w.reviewableVerificationCheck),...initial.records]),ids=evidenceIds(records),views=w.evidencePromptView(records);\nconst task=JSON.stringify({task:input.raw_request,failure:input.failure,evidence:views,initial_scope:{...initial.scope,repository_revision:snap,known_evidence_ids:ids},dap_hint:dap});\n\nconst {projectRolePrompt}=require(root+\"/server/control/role-prompt-evidence.js\"),{compileInvocation}=require(root+\"/server/control/invocation-compiler.js\");\nconst p=JSON.stringify(projectRolePrompt({task,step:1,previousProgress:{},evidence:ids,views,structuredTask:true}));\nfor(const role of [\"code_scout\",\"causal_scout\"]){\n const system=\"Role: \"+role+\". Continue ONLY the same assigned work item using a bounded JSON response. status=CONTINUE requires progress.evidence_refs and progress.remaining_work. status=COMPLETE requires the original role's full canonical output under result. status=BLOCKED requires reason. Do not invent evidence; preserve role-specific permissions. No tool execution or mutation in this opt-in interface.\";\n const a=compileInvocation(role,{task:p,extraSystem:system,outputEnvelope:\"ROLE_WORK_ITEM_V1\"});\n const b=compileInvocation(role,{task:input.raw_request,extraSystem:system,outputEnvelope:\"ROLE_WORK_ITEM_V1\"});\n console.log(\"SKILL_SELECTION_COMPARISON\",JSON.stringify({role,user_bytes:Buffer.byteLength(p),full_wrapper_skill_ids:a.selected_skill_ids,raw_task_skill_ids:b.selected_skill_ids,full_system_bytes:Buffer.byteLength(a.system),raw_task_system_bytes:Buffer.byteLength(b.system),note:\"offline candidate comparison; raw-task-only selection is not adopted or proven to preserve accuracy\"}));\n}\n\nNODE\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
