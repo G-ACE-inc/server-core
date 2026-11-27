@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nroot=\"$(pwd -P)\"\nwt=\"$root/.worktrees/notice-live-20261127\"\nbase=17ab2b2c4d78e5dfea9fe0040249b249a6a592bc\ntarget=e23680447166fa8ed12ec4c6e01ee249d48edc5d\ntest \"$(git hash-object scripts/userbot_resident_ipc.py)\" = d1e04d169d47d4f746f922b5bfe0c1439c847a44\ntest \"$(git hash-object scripts/userbot_test_client.py)\" = 347742ef01c34ecd6328c5d510100a1382bf56f8\ngit -C \"$wt\" fetch origin refs/heads/fix/notice-live-adopted-20261127\ntest \"$(git -C \"$wt\" rev-parse FETCH_HEAD)\" = \"$target\"\ntmp=$(mktemp -d)\ncleanup(){ rm -f \"$tmp/userbot_resident_ipc.py\" \"$tmp/userbot_test_client.py\"; rmdir \"$tmp\"; }\ntrap cleanup EXIT\nfor f in userbot_resident_ipc.py userbot_test_client.py; do\n git -C \"$wt\" show \"$base:scripts/$f\" > \"$tmp/$f\"\n printf 'SOURCE_DIFF_BEGIN %s\\n' \"$f\"\n rc=0\n git diff --no-index --no-ext-diff -- \"$tmp/$f\" \"scripts/$f\" || rc=$?\n test \"$rc\" -le 1\n printf 'SOURCE_DIFF_END %s\\n' \"$f\"\ndone\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
