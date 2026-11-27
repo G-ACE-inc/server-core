@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7222651996"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ndocker exec debug-ai-debug-ai-1 node -e 'const fs=require(\"node:fs\"),p=require(\"node:path\"),d=\"/app/runtime/durable/durable/run-state-v2\",{decodeEnvelope}=require(\"/app/orchestrator/durable-primitives.js\");const active=fs.readdirSync(d).filter(x=>/^run_.*[.]json$/.test(x)).map(f=>decodeEnvelope(fs.readFileSync(p.join(d,f)),{expectedSchema:\"run-state/v2\"})).filter(x=>![\"DONE\",\"BLOCKED\",\"FAILED\",\"CANCELLED\",\"PAUSED\"].includes(x.job_status));if(active.length>1||active.some(x=>!/^debugai-real-debug-L[1-5]-[0-9]{2}$/.test(x.project_id)||x.project_dir!==\"/workspace/debug-ai/.verification/real-debug/realdebug_030c71fab13b4726b5222b3f523b2900/\"+x.project_id.slice(\"debugai-real-debug-\".length)))throw Error(\"UNRELATED_RUN_ACTIVE\");'\npython3 -B /home/admin1/server-core/scripts/servercore_registered_service_deploy.py --repository seigo-gace/debug-ai --target-sha \"f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89\" --service debug-ai --apply\npython3 -B - <<'PY'\nimport subprocess,hashlib,urllib.request\nfor c in (\"debug-ai-debug-ai-1\",\"debug-ai-sandbox-runner-1\"):\n for path in (\"server/adapters/ai-core.js\",\"server/workflow.js\",\"server/control/invocation-compiler.js\"):\n  a=hashlib.sha256(open(path,\"rb\").read()).hexdigest()\n  b=subprocess.check_output([\"docker\",\"exec\",c,\"node\",\"-e\",'const fs=require(\"node:fs\"),c=require(\"node:crypto\");console.log(c.createHash(\"sha256\").update(fs.readFileSync(process.argv[1])).digest(\"hex\"))',\"/app/\"+path],text=True).strip()\n  assert a==b,(c,path)\n print(\"EXACT_MATCH\",c)\nassert urllib.request.urlopen(\"http://127.0.0.1:8787/health\",timeout=10).status==200\nprint(\"HEALTH=PASS\")\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
