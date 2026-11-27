@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_REPOSITORY",
+    "implementation_context": "existing_debugai_runtime_exact_sha_deploy_preflight",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41#issuecomment-7209543039"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "70689ec0fdb9201742625d5d8a0054feeb31320d",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"70689ec0fdb9201742625d5d8a0054feeb31320d\"\ntest \"$(git branch --show-current)\" = \"fix/debugai-scout-diagnosis-handoff-20261016\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ntest \"$(git ls-remote origin refs/heads/fix/debugai-scout-diagnosis-handoff-20261016 | cut -f1)\" = \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\"\nprintf 'SOURCE_PREFLIGHT=PASS\\n'\npython3 -B - <<'PY'\nimport sys,json,hashlib,os\nfrom pathlib import Path\nsys.path.insert(0,\"/home/admin1/server-core/scripts\")\nfrom servercore_service_deploy_admission import inspect_host,REGISTRY\nfor service in (\"debug-ai\",\"sandbox-runner\"):\n    a=inspect_host(json.loads(REGISTRY.read_text()),\"seigo-gace/debug-ai\",\"70689ec0fdb9201742625d5d8a0054feeb31320d\",service)\n    print(\"REGISTERED_SERVICE_PREFLIGHT \"+service+\" PASS\")\np=Path(\".env\")\nif p.is_symlink() or not p.is_file():\n    print(\"ROLE_CONFIG_FILE=NOT_REGULAR\");sys.exit(2)\nlines=p.read_text().splitlines()\nmatches=[s for s in lines if s.lstrip().startswith(\"DEBUG_AI_ROLE_EXECUTION_MODE=\")]\nprint(\"ROLE_MODE_KEY_COUNT=\"+str(len(matches)))\nprint(\"ROLE_MODE_VALID=\"+str(all(s.split(\"=\",1)[1].strip().strip(chr(34)+chr(39)) in (\"legacy\",\"six_role\",\"\") for s in matches)))\nPY\ndocker exec -i -w /app debug-ai-debug-ai-1 node - <<'NODE'\nconst fs=require(\"node:fs\"),path=require(\"node:path\");\nconst dir=\"/app/runtime/durable/run-state-v2\";\nlet counts={},errors=0;\nif(fs.existsSync(dir))for(const f of fs.readdirSync(dir)){\n if(!f.endsWith(\".json\"))continue;\n try{const state=JSON.parse(fs.readFileSync(path.join(dir,f),\"utf8\"));const s=state.job_status;counts[s]=(counts[s]||0)+1;}catch{errors++;}\n}\nconst active=Object.entries(counts).filter(([s])=>![\"DONE\",\"CANCELLED\",\"BLOCKED\",\"FAILED\"].includes(s)).reduce((n,[,v])=>n+v,0);\nconsole.log(\"DURABLE_ACTIVE=\"+active+\" READ_ERRORS=\"+errors);\nif(active||errors)process.exitCode=3;\nNODE\nprintf 'DEPLOY_PRECHECK_COMPLETE\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
