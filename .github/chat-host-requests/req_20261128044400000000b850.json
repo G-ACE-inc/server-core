@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nroot=\"$(pwd -P)\"\nservice=gace-userbot-verify.service\nprintf 'USERBOT_WORKDIR_MATCH=%s\\n' \"$(test \"$(systemctl --user show -p WorkingDirectory --value \"$service\")\" = \"$root\" && echo yes || echo no)\"\nsystemctl --user is-active --quiet \"$service\"\npython3 -B scripts/userbot_test_client.py health\nfor f in userbot_resident_ipc.py userbot_test_client.py; do\n printf 'LIVE_BLOB %s %s\\n' \"$f\" \"$(git hash-object \"scripts/$f\")\"\n git log -1 --format='SOURCE_COMMIT %H' -- \"scripts/$f\"\n git status --porcelain -- \"scripts/$f\"\ndone\nprintf 'ROOT_HEAD=%s\\n' \"$(git rev-parse HEAD)\"\nprintf 'BURST_STAGE_EXISTS=%s\\n' \"$(test -d deploy/state/reliability-pr81-e2368044/userbot && echo yes || echo no)\"\nprintf 'BOT_IMAGE_MATCH=%s\\n' \"$(test \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:reliability-e2368044)\" && echo yes || echo no)\"\ncd /home/gace/server-core\npython3 -B scripts/servercore_host_output_private_artifact_publish.py req_20261128044000000000b848 --writer-ledger --writer-dir \"$HOME/.local/state/gserver-terminal/results\"\npython3 -B scripts/servercore_host_output_private_artifact_publish.py req_20261128044200000000b849 --writer-ledger --writer-dir \"$HOME/.local/state/gserver-terminal/results\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
