@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/commit/e80730fe023768ff79310f0cda3c0bb7af15236d"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "4b06a39ebdb8a99d5544b27c8a52f33ad8e42440",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\"\ngit fetch --no-tags origin \"refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\"\ntest \"$(git rev-parse FETCH_HEAD)\" = \"e80730fe023768ff79310f0cda3c0bb7af15236d\"\ngit merge-base --is-ancestor \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\" \"e80730fe023768ff79310f0cda3c0bb7af15236d\"\npython3 -B - <<'PY'\nimport subprocess,json\nhead=\"e80730fe023768ff79310f0cda3c0bb7af15236d\"\npaths=[\"orchestrator/source-scope.js\",\"server/control/repository-snapshot.js\",\"server/control/sandbox-runtime.js\"]\nsrc={p:subprocess.check_output([\"git\",\"show\",head+\":\"+p],text=True) for p in paths}\nnode=r'''\nconst fs=require(\"node:fs\"),path=require(\"node:path\"),Module=require(\"node:module\");\nconst src=JSON.parse(fs.readFileSync(0,\"utf8\")),loaded={};\nfunction load(rel){\n if(loaded[rel])return loaded[rel];\n const file=\"/app/\"+rel,m=new Module(file,module);\n m.filename=file;m.paths=Module._nodeModulePaths(path.dirname(file));\n const requireOriginal=m.require.bind(m);\n m.require=(name)=>name===\"../../orchestrator/source-scope.js\"?load(\"orchestrator/source-scope.js\"):requireOriginal(name);\n m._compile(src[rel],file);\n return loaded[rel]=m.exports;\n}\nconst {RepoPolicy}=require(\"/app/server/repo-policy.js\");\nconst repo=new RepoPolicy().assertRepo(\"/workspace/debug-ai\");\nconst report=(label,e)=>{const c=e.cause||e,msg=String(c.message||\"\");console.log(label+\" \"+JSON.stringify({code:String(e.message||\"\").split(\":\")[0],cause_code:c.code||null,cause_kind:msg.split(\":\")[0].slice(0,100)}));};\ntry{const x=load(\"server/control/repository-snapshot.js\").repositorySnapshotId(repo,{allowMissingGitMarker:true});console.log(\"CANDIDATE_SNAPSHOT=PASS \"+x.split(\"_\")[0]);}\ncatch(e){report(\"CANDIDATE_SNAPSHOT=FAIL\",e);process.exitCode=4;}\ntry{const m=load(\"server/control/sandbox-runtime.js\").snapshotInventory(repo,{requiredPaths:[\"package.json\",\"server/http.js\"]});console.log(\"CANDIDATE_SANDBOX_INVENTORY=PASS \"+JSON.stringify({files:m.files,bytes:m.bytes,excluded_parent:m.exclusions.filter(e=>[\".worktrees\",\".verification\",\".debugai-input\"].includes(e.path)).map(e=>e.path),completeness:m.completeness}));}\ncatch(e){report(\"CANDIDATE_SANDBOX_INVENTORY=FAIL\",e);process.exitCode=5;}\n'''\nsubprocess.run([\"docker\",\"exec\",\"-i\",\"-w\",\"/app\",\"debug-ai-debug-ai-1\",\"node\",\"-e\",node],input=json.dumps(src),text=True,check=True)\nPY\ntest \"$(git rev-parse HEAD)\" = \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\"\nprintf 'RUNNING_SOURCE_UNCHANGED=PASS\\n'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
