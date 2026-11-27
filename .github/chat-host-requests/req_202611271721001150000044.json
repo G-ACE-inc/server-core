@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/commit/f376c4aa57d393e37626648fba3d0d4cf2f36edf"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "e80730fe023768ff79310f0cda3c0bb7af15236d",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"e80730fe023768ff79310f0cda3c0bb7af15236d\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ngit fetch --no-tags origin refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\ntest \"$(git rev-parse FETCH_HEAD)\" = \"f376c4aa57d393e37626648fba3d0d4cf2f36edf\"\npython3 -B - <<'PY'\nimport json,subprocess,urllib.request\nrid=\"run_mwymf5g4_c4b6e6cd24\"\ntry:\n o=json.load(urllib.request.urlopen(\"http://127.0.0.1:8787/v1/status/\"+rid,timeout=5));d=o.get(\"durable\") or {}\n print(\"PREVIOUS_RUN \"+json.dumps({\"id\":rid,\"state\":o.get(\"state\"),\"job_status\":d.get(\"job_status\"),\"active\":d.get(\"active_in_process\"),\"cursor\":d.get(\"workflow_cursor\"),\"error\":d.get(\"last_execution_error\"),\"last_failure\":d.get(\"last_execution_failure\")})[:6000],flush=True)\nexcept Exception as e: print(\"PREVIOUS_RUN_LOOKUP=\"+type(e).__name__,flush=True)\np={f:subprocess.check_output([\"git\",\"show\",\"f376c4aa57d393e37626648fba3d0d4cf2f36edf:\"+f],text=True) for f in [\"scripts/real-debug-corpus.json\",\"scripts/real-debug-suite.cjs\"]}\nnode=r'''\nconst fs=require(\"node:fs\"),os=require(\"node:os\"),path=require(\"node:path\"),Module=require(\"node:module\");\nconst source=JSON.parse(fs.readFileSync(0,\"utf8\")),m=new Module(\"/app/scripts/real-debug-suite.cjs\",module);m.filename=\"/app/scripts/real-debug-suite.cjs\";m.paths=Module._nodeModulePaths(\"/app/scripts\");const orig=m.require.bind(m);m.require=n=>n===\"./real-debug-corpus.json\"?JSON.parse(source[\"scripts/real-debug-corpus.json\"]):orig(n);m._compile(source[\"scripts/real-debug-suite.cjs\"],m.filename);\nconst {corpus,fixtureCheck}=m.exports;\nlet results=[];for(const c of corpus.cases){const root=fs.mkdtempSync(path.join(os.tmpdir(),\"debugai-oracle-fixture-\"));try{const r=fixtureCheck(c,root);results.push({id:r.id,pass:r.pass,...(!r.pass?{runs:r.runs}:{})});}finally{fs.rmSync(root,{recursive:true,force:true});}}\nconsole.log(\"FIXTURE_QUALIFICATION=\"+JSON.stringify({total:results.length,passed:results.filter(r=>r.pass).length,failed:results.filter(r=>!r.pass)}));if(results.some(r=>!r.pass))process.exitCode=4;\n'''\nsubprocess.run([\"docker\",\"exec\",\"-i\",\"debug-ai-debug-ai-1\",\"node\",\"-e\",node],input=json.dumps(p),text=True,check=True)\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
