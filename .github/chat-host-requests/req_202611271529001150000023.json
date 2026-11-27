@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41#issuecomment-7210941770"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "4b06a39ebdb8a99d5544b27c8a52f33ad8e42440",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\"\npython3 -B - <<'PY'\nimport json,urllib.request,urllib.error\nrid=\"run_mwyk50r3_a94e384027\"\nfor ep in (\"status\",\"inspect\"):\n try:\n  o=json.load(urllib.request.urlopen(\"http://127.0.0.1:8787/v1/\"+ep+\"/\"+rid,timeout=10))\n except urllib.error.HTTPError as e:\n  o=json.loads(e.read());print(ep.upper()+\" HTTP=\"+str(e.code)+\" \"+json.dumps({k:o.get(k) for k in (\"error\",\"code\")}));continue\n run=o.get(\"run\",o)\n d=o.get(\"durable\") or run.get(\"durable\") or {}\n print(ep.upper()+\" \"+json.dumps({k:run.get(k) for k in (\"run_id\",\"state\",\"updated_at\")}))\n print(\"DURABLE \"+json.dumps({k:d.get(k) for k in (\"generation\",\"execution_epoch\",\"job_status\",\"active_in_process\",\"last_execution_error\",\"last_execution_failure\",\"workflow_cursor\",\"role_executions\",\"role_invocations\")},ensure_ascii=False)[:24000])\n if ep==\"inspect\":\n  a=o.get(\"artifacts\") or {}\n  print(\"ARTIFACT_KEYS \"+json.dumps(list(a) if isinstance(a,dict) else type(a).__name__))\n  if isinstance(a,dict):\n   for k in (\"failure\",\"diagnosis\",\"scouts\",\"research\",\"candidate\",\"verification\",\"final\",\"analysis\"):\n    if k in a: print(\"ARTIFACT \"+k+\" \"+json.dumps(a[k],ensure_ascii=False)[:8000])\nPY\ndocker compose ps --status running --services\nprintf 'HOST_TEST_MODE=%s\\n' \"$(stat -c %a server/tests/server-command-tool-runtime.test.cjs)\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
