@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/376#issuecomment-7228115886"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -eu\ncd /home/admin1/projects/debug-ai\ntest \"$(git rev-parse HEAD)\" = a6a84876ab8ff9a81503ac15d1a3285e50634e1e\npython3 -B - <<'PY'\nimport json, urllib.request\nbase=\"http://127.0.0.1:8787\"\nbid=\"realdebug_fcd5c8934718474a8c217f818b0d5366\"\ndef get(path):\n    with urllib.request.urlopen(base+path,timeout=10) as r:\n        return json.load(r)\ndef select(obj,keys):\n    return {k:obj.get(k) for k in keys.split() if k in obj}\ns=get(\"/v1/investigation-benchmark/status/\"+bid)\nassert s[\"benchmark_id\"]==bid and s[\"summary\"][\"total\"]==50\nprint(\"SUITE\",json.dumps(select(s,\"benchmark_id state active_in_process interrupted current summary started_at updated_at pause_reason error_code\")))\nfor row in s.get(\"results\",[]):\n    print(\"CASE\",json.dumps(select(row,\"id level run_id duration_ms stage_timings_ms analysis_state analysis_step role_invocations public_red public_green holdout_green scope_pass source_unchanged repair_pass review_pass cause_accuracy state error_code hypothesis_review local_review\")))\ncur=s.get(\"current\") or {}\nif cur.get(\"run_id\"):\n    r=get(\"/v1/status/\"+cur[\"run_id\"])\n    d=r.get(\"durable\") or {}\n    print(\"CURRENT\",json.dumps(select(d,\"job_status active_in_process workflow_cursor role_invocations last_execution_error started_at updated_at\")))\nPY\n"
+  }
+}
