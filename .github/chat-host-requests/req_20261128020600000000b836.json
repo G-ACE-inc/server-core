@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ndocker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs\ndocker logs --since 60m --tail 3000 deploy-gaybbs-1 2>&1 | python3 -c 'import sys,re,collections\ns=sys.stdin.read()\ncodes=collections.Counter(re.findall(r\"reason:\\s*[\\x27\\x22]([A-Z][A-Z0-9_]{3,100})[\\x27\\x22]\",s))\nfor k,v in sorted(codes.items()): print(\"ERROR_CODE\",k,v)\nfor k in [\"POST_PUBLICATION_FAILED\",\"FEATURE_RELEASE_NOT_VERIFIED\",\"APPLICATION_SOURCE_NOT_OWNED\",\"NOTICE_SOURCE_NOT_OWNED\",\"PUBLISH_NEEDS_RECONCILE\",\"POST_SENT_SOURCE_SYNC_NEEDS_RECONCILE\",\"NOTICE_EDITOR_ERROR_EDIT_FAILED\",\"Bad Request\",\"Forbidden\"]: print(\"LOG_COUNT\",k,s.count(k))'\ndocker exec deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -Atqc \"\nSELECT 'notice_release',enabled,length(source_commit)=40,length(trim(ci_evidence))>0,length(trim(gserver_runtime_evidence))>0,length(trim(telegram_e2e_evidence))>0,approved_by IS NOT NULL FROM gaybbs_feature_release_gates WHERE feature='announcement';\nSELECT 'notice_drafts',step,count(*) FROM public_post_drafts WHERE module='announcement' AND data->>'kind' IN ('announcement','preview') GROUP BY step;\nSELECT 'notice_sources',p.status,count(*) FROM announcement_posts p WHERE kind IN ('announcement','preview') GROUP BY p.status;\nSELECT 'notice_delivery',d.status,count(*) FROM posting_deliveries d JOIN announcement_posts p ON p.announcement_id::text=d.source_id WHERE d.source_type='announcement' AND p.kind IN ('announcement','preview') GROUP BY d.status;\n\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
