@@ -1,0 +1,40 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "gaybbs_notice_existing_runtime_readback_before_fix",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/GateApp-Bot/pull/60"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\necho GAYBBS_NOTICE_READBACK_START\necho git_head=\"$(git rev-parse HEAD)\"\necho dirty_count=\"$(git status --porcelain | wc -l)\"\necho bot_running=\"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\"\necho bot_image=\"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\"\necho bot_bundle_sha=\"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d' ' -f1)\"\necho userbot=\"$(systemctl --user is-active gace-userbot-verify.service)\"\necho db_running=\"$(docker inspect -f '{{.State.Running}}' deploy-postgres-1)\"\npython3 - <<'PY'\nimport pathlib,re\np=pathlib.Path('deploy/state/help-rich-manual-live-20261123.json')\nprint('last_help_receipt_exists='+str(p.is_file()))\nPY\ndocker exec deploy-gaybbs-1 node -e 'const fs=require(\"fs\"),s=fs.readFileSync(\"/app/gaybbs.mjs\",\"utf8\");for(const k of [\"post:announce:kind:\",\"post:announce:dt:clear:\",\"post:announce:joinmenu:\",\"プロフ連携\",\"日時設定\",\"期限設定\",\"announcementSummary\",\"function registerPostingHandlers(\"]){console.log(\"marker_\"+Buffer.from(k).toString(\"hex\").slice(0,16)+\"=\"+s.includes(k));}'\necho GAYBBS_NOTICE_READBACK_END"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
