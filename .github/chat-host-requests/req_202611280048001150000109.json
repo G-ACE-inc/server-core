@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7222470528"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "ebf9e0897afe94a02e61263df3b7109f4e48c34b",
+    "command": "set -eu\npython3 -B - <<'PY'\nimport json,urllib.request\nbase=\"http://127.0.0.1:8787\"\nfor rid in [\"run_mwyug9t6_1bf371e77e\",\"run_mwyvc8ve_8a1457c11b\",\"run_mwyw55et_8fc58ab3bb\",\"run_mwyx1a9r_cd33369e26\",\"run_mwyxsdkl_9a53996931\",\"run_mwyyhhqx_6d4d4e1820\",\"run_mwz09cuj_2b675d29f1\",\"run_mwz45zko_4040be33cb\"]:\n try:\n  o=json.load(urllib.request.urlopen(base+\"/v1/inspect/\"+rid,timeout=8))\n  a=o.get(\"artifacts\",{});v=a.get(\"analysis\",{}).get(\"payload\",{}) if a.get(\"analysis\") else {}\n  print(json.dumps({\"run\":rid,\"keys\":list(a),\"review\":v.get(\"external_hypothesis_review\"),\"local\":v.get(\"local_hypothesis_review\"),\"patch\":a.get(\"patch_packet\",{}).get(\"payload\",{}).get(\"schema\") if a.get(\"patch_packet\") else None,\"failure\":a.get(\"execution_failure\",{}).get(\"payload\") if a.get(\"execution_failure\") else None}))\n except Exception as e: print(rid,type(e).__name__,str(e))\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
