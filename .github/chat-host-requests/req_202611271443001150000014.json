@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7210853411"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "4b06a39ebdb8a99d5544b27c8a52f33ad8e42440",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"4b06a39ebdb8a99d5544b27c8a52f33ad8e42440\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\npython3 -B - <<'PY'\nimport hashlib,subprocess,difflib\nfrom pathlib import Path\np=\"server/tests/server-command-tool-runtime.test.cjs\"\nh=Path(p).read_bytes()\ns=subprocess.check_output([\"docker\",\"exec\",\"debug-ai-sandbox-runner-1\",\"cat\",\"/app/\"+p])\nprint(\"HOST_TEST_SHA256=\"+hashlib.sha256(h).hexdigest())\nprint(\"SANDBOX_TEST_SHA256=\"+hashlib.sha256(s).hexdigest())\nold=subprocess.check_output([\"git\",\"show\",\"70689ec0fdb9201742625d5d8a0054feeb31320d:\"+p])\nprint(\"SANDBOX_MATCH_PREVIOUS=\"+str(s==old))\nprint(\"HOST_MATCH_PREVIOUS=\"+str(h==old))\nfor line in list(difflib.unified_diff(h.decode().splitlines(),s.decode().splitlines(),fromfile=\"host\",tofile=\"sandbox\",n=2))[:100]:\n print(line)\nPY\ndocker exec -i -w /app debug-ai-debug-ai-1 node - <<'NODE'\nconst {createAiCoreAdapter}=require(\"./server/adapters/ai-core.js\");\nconst e=process.env;\n(async()=>{\n const core=createAiCoreAdapter({runtimeContextTokens:e.DEBUG_AI_CORE_CONTEXT_TOKENS,requireRuntimeContextQualification:true,dispatchMode:e.DEBUG_AI_CORE_GATE_DISPATCH_MODE,modelGateBaseUrls:{coder:e.DEBUG_AI_CORE_GATE_CODER_URL,qwen3:e.DEBUG_AI_CORE_GATE_QWEN3_URL,granite:e.DEBUG_AI_CORE_GATE_GRANITE_URL,ministral:e.DEBUG_AI_CORE_GATE_MINISTRAL_URL}});\n for(const role of [\"code_scout\",\"causal_scout\",\"researcher\",\"local_reviewer\"]){const x=await core.preflightRoleGate(role,{probeTimeoutMs:3000});console.log(\"GATE \"+role+\" IDENTITY_MATCH \"+x.model);}\n const r=await fetch(\"http://127.0.0.1:8787/health\",{signal:AbortSignal.timeout(5000)});const h=await r.json();if(!r.ok||!h.ok||h.service!==\"debug-ai\")throw Error(\"HEALTH_FAIL\");console.log(\"HEALTH=200\");\n})().catch(()=>{console.log(\"RUNTIME_QUALIFICATION_FAILED\");process.exitCode=1});\nNODE"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
