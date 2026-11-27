@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nroot=\"$(pwd -P)\"\nwt=\"$root/.worktrees/notice-live-20261127\"\ntarget=b60db57fee09bf525c9ec5747acd8f07e32d7f97\nbase=87e879c0c3cea9da8c02c159790085ba3d934e24\nrepo=seigo-gace/GateApp-Bot\nold_sha=148b6353ac17d5351fd12a07276c15f0c69f575ab8fadc62238e6cc3c5a98681\nnew_sha=83da915b8f48be5ae4577042501d2bf5acd89520a453c3a9b75868cda496a7ee\ntest \"$(git -C \"$wt\" rev-parse HEAD)\" = \"$base\"\ntest -z \"$(git -C \"$wt\" status --porcelain)\"\ngit -C \"$wt\" fetch origin refs/heads/fix/notice-live-adopted-20261127\ntest \"$(git -C \"$wt\" rev-parse FETCH_HEAD)\" = \"$target\"\ngit -C \"$wt\" merge --ff-only \"$target\"\ntest \"$(git -C \"$wt\" rev-parse HEAD)\" = \"$target\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\nold_image=\"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\"\ntest \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:local)\" = \"$old_image\"\ntest \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d' ' -f1)\" = \"$old_sha\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-postgres-1)\" = true\ntest \"$(systemctl --user is-active gace-userbot-verify.service)\" = active\nstage=deploy/state/notice-pr81-b60db57f\ntest ! -e \"$stage\"\nmkdir -m 700 \"$stage\"\ntest \"$(gh run view 46029906817 -R \"$repo\" --json headSha,conclusion --jq '.headSha+\" \"+.conclusion')\" = \"$target success\"\ntest \"$(gh api repos/$repo/actions/artifacts/15212989518 --jq '.workflow_run.head_sha')\" = \"$target\"\ngh run download 46029906817 -R \"$repo\" -n gaybbs-profile-bundle -D \"$stage\"\ntest \"$(sha256sum \"$stage/gaybbs.mjs\" | cut -d' ' -f1)\" = \"$new_sha\"\nprintf '%s\\n' 'FROM gace-tgtumbler-gaybbs:local' 'USER root' 'COPY --chown=node:node --chmod=600 gaybbs.mjs /app/gaybbs.mjs' 'USER node' > \"$stage/Dockerfile\"\ntag=gace-tgtumbler-gaybbs:notice-b60db57f\ndocker build --network none --pull=false -q -t \"$tag\" -f \"$stage/Dockerfile\" \"$stage\"\ndocker run --rm --network none --entrypoint node \"$tag\" --check /app/gaybbs.mjs\ntest \"$(docker run --rm --network none --entrypoint sha256sum \"$tag\" /app/gaybbs.mjs | cut -d' ' -f1)\" = \"$new_sha\"\ntest \"$(docker image inspect -f '{{.Config.User}}' \"$tag\")\" = node\ntest \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\" = \"$old_image\"\nnew_image=\"$(docker image inspect -f '{{.Id}}' \"$tag\")\"\nprintf '{\"source_sha\":\"%s\",\"old_image\":\"%s\",\"old_sha\":\"%s\",\"new_image\":\"%s\",\"new_sha\":\"%s\",\"artifact_run\":46029906817,\"artifact_id\":15212989518}\\n' \"$target\" \"$old_image\" \"$old_sha\" \"$new_image\" \"$new_sha\" > \"$stage/checkpoint.json\"\necho NOTICE_FIX_IMAGE_STAGED=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
