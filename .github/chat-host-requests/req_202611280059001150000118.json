@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7222696484"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89\"\ndocker exec -i debug-ai-debug-ai-1 node - <<'NODE'\nconst fs=require(\"node:fs\"),p=require(\"node:path\"),assert=require(\"node:assert/strict\"),{decodeEnvelope}=require(\"/app/orchestrator/durable-primitives.js\"),{RuntimeEvidenceStore}=require(\"/app/server/runtime-evidence.js\"),{select,payload}=require(\"/app/scripts/real-debug-suite.cjs\"),{exactFixture,requestFor,measuredTest}=require(\"/app/server/control/real-debug-benchmark.js\");\nconst id=\"run_mwyug9t6_1bf371e77e\",oldId=\"realdebug_030c71fab13b4726b5222b3f523b2900\",repo=\"/workspace/debug-ai/.verification/real-debug/\"+oldId+\"/L1-01\",base=\"http://127.0.0.1:8787\";\n(async()=>{\n const store=new RuntimeEvidenceStore(\"/app/runtime\"),c=select(\"L1-01\"),task=requestFor(c,repo);exactFixture(repo,payload(c));\n const previous=await (await fetch(base+\"/v1/investigation-benchmark/status/\"+oldId)).json();\n assert.equal(previous.active_in_process,false);assert.ok(previous.results.some(x=>x.id===c.id&&x.run_id===id&&x.error_code===\"NO_SEMANTIC_PROGRESS\"));\n const run=await (await fetch(base+\"/v1/status/\"+id)).json();assert.equal(run.project_dir,repo);assert.equal(run.state,\"RESOLVING\");assert.equal(run.durable.job_status,\"DONE\");\n const root=\"/app/runtime/durable/durable/run-state-v2\";const active=fs.readdirSync(root).filter(x=>/^run_.*[.]json$/.test(x)).map(f=>decodeEnvelope(fs.readFileSync(p.join(root,f)),{expectedSchema:\"run-state/v2\"})).filter(x=>![\"DONE\",\"BLOCKED\",\"FAILED\",\"CANCELLED\",\"PAUSED\"].includes(x.job_status));assert.equal(active.length,0,\"OTHER_RUN_ACTIVE\");\n const a=store.list(id,{types:[\"analysis\"],limit:1})[0]?.payload;assert.ok(a);assert.equal(a.external_hypothesis_review?.json?.verdict||a.local_hypothesis_review?.json?.verdict,\"PASS\");assert.ok(measuredTest(a.deterministic_verification,c.public_checks,{red:true}));assert.equal(store.list(id,{types:[\"patch_candidate\",\"candidate_verification\"],limit:1}).length,0);\n assert.equal(a.requirement_input.raw_request,task.rawRequest);const before=Date.now();console.log(\"VERIFIED_HISTORICAL_RED_REVIEW_AND_EXACT_FIXTURE\",id,before);\n try{\n const r=await fetch(base+\"/v1/patch-candidate\",{method:\"POST\",headers:{\"content-type\":\"application/json\"},body:JSON.stringify({runId:id,analysis:a,repo,selectedPaths:Object.keys(c.files),context:{requirements:task.failure.requirements},task:task.rawRequest}),signal:AbortSignal.timeout(12000)});console.log(\"HTTP\",r.status,JSON.stringify(await r.json()));assert.equal(r.status,200);\n }catch(e){if(e.name!==\"TimeoutError\")throw e;const calls=store.list(id,{types:[\"ai_invocation\"],limit:32}).map(x=>x.payload).filter(x=>x.role===\"patch_engineer\"&&x.started_at>=before);assert.ok(calls.length,\"NEW_INVOCATION_NOT_OBSERVED\");console.log(\"ACTUAL_PATCH_INVOCATION_PENDING\",JSON.stringify(calls.map(x=>({id:x.invocation_id,phase:x.phase,started_at:x.started_at}))));}\n})().catch(e=>{console.error(e.name,e.message);process.exitCode=1});\nNODE\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
