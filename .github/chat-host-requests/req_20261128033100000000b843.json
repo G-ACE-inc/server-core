@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ncompose=(docker compose -p deploy -f deploy/gserver-compose.yaml)\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d' ' -f1)\" = 22c930f364bcec223a0a3ddca9d04dbadf74d1bc4cffe4d08494ef8e1a4311b7\npg_before=\"$(docker inspect -f '{{.Id}}' deploy-postgres-1)\"\nub_before=\"$(systemctl --user show -p MainPID --value gace-userbot-verify.service)\"\nrestore(){ \"${compose[@]}\" up -d --no-deps --no-build gaybbs >/dev/null; }\ntrap restore EXIT\n\"${compose[@]}\" stop -t 15 gaybbs >/dev/null\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = false\n\"${compose[@]}\" run --rm -T --no-deps --entrypoint node gaybbs --import /app/preload/telegram-ipv4-preload.mjs --input-type=module <<'JS'\nimport fs from 'node:fs';\nimport https from 'node:https';\nconst token=fs.readFileSync(process.env.BOT_TOKEN_FILE,'utf8').trim();\nasync function call(method,payload){\n return new Promise(resolve=>{\n  const body=JSON.stringify(payload);\n  const req=https.request('https://api.telegram.org/bot'+token+'/'+method,{method:'POST',family:4,timeout:12000,headers:{'content-type':'application/json','content-length':Buffer.byteLength(body)}},res=>{\n   let s='';res.on('data',c=>s+=c);res.on('end',()=>{try{const j=JSON.parse(s);resolve({http:res.statusCode,ok:j.ok===true,result:j.result});}catch{resolve({http:res.statusCode,ok:false});}});\n  });req.on('timeout',()=>req.destroy());req.on('error',e=>resolve({ok:false,error:e.code||'NETWORK_ERROR'}));req.end(body);\n });\n}\nconst a=await call('getWebhookInfo',{});\nconsole.log('QUEUE_BEFORE',JSON.stringify({ok:a.ok,pending:a.result?.pending_update_count,webhook:!!a.result?.url}));\nif(!a.ok||a.result?.url)process.exit(2);\n// No offset, no negative offset, no drop_pending_updates, no payload output.\n// Observe one pending item without acknowledging it.\nconst b=await call('getUpdates',{limit:1,timeout:0});\nconsole.log('SINGLE_OWNER_UPDATE_PROBE',JSON.stringify({ok:b.ok,http:b.http,error:b.error,count:Array.isArray(b.result)?b.result.length:null,kind:Array.isArray(b.result)&&b.result.length?Object.keys(b.result[0]).filter(k=>k!=='update_id'):[]}));\nconst c=await call('getWebhookInfo',{});\nconsole.log('QUEUE_AFTER_NONACK_PROBE',JSON.stringify({ok:c.ok,pending:c.result?.pending_update_count}));\nJS\nrestore\ntrap - EXIT\ntest \"$(docker inspect -f '{{.Id}}' deploy-postgres-1)\" = \"$pg_before\"\ntest \"$(systemctl --user show -p MainPID --value gace-userbot-verify.service)\" = \"$ub_before\"\necho DB_AND_USERBOT_UNCHANGED=PASS\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
