@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-7230561508"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\nroot=/home/admin1/projects/ai-core\ncd \"$root/.worktrees/source-import-20261013\"\ntest \"$(git rev-parse HEAD)\" = 2955d7280cef416cc3604f9f5e1565a35a813497\np=\"$root/.worktrees/qwen35-gate-candidate-20261128\"\ntest ! -e \"$p\"\ntest \"$(realpath \"$root/.worktrees\")\" = \"$root/.worktrees\"\ngit fetch --no-tags origin refs/heads/feat/qwen35-gate-candidate-20261128\ntest \"$(git rev-parse FETCH_HEAD)\" = 8ab77594fc87591485440325d22e560260af448e\ngit worktree add --detach \"$p\" 8ab77594fc87591485440325d22e560260af448e\ncd \"$p\"\nprintf 'EXACT_HEAD '; git rev-parse HEAD\nprintf 'DIRTY_STATE\\n'; git status --porcelain\nPYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v\nprintf 'SOURCE_REGRESSION_COMPLETE\\n'\n"
+  }
+}
