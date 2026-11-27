@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7214190407"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2a5775e6d0dddb5e95797a74a3dc29afc761be8f",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"2a5775e6d0dddb5e95797a74a3dc29afc761be8f\"\npython3 -B - <<'PY'\nimport json,urllib.request,urllib.error,subprocess\nbase=\"http://127.0.0.1:8787\"\ndef get(p):\n return json.load(urllib.request.urlopen(base+p,timeout=15))\nold=get(\"/v1/investigation-benchmark/status/realdebug_6d6055e23feb47868406cc577b8958ca\")\ncurrent=old.get(\"current\") or {}\nprint(\"OLD_BENCHMARK\",json.dumps({k:old.get(k) for k in (\"state\",\"interrupted\",\"active_in_process\",\"corpus_digest\",\"current\",\"summary\")}),flush=True)\nif current.get(\"run_id\"):\n r=get(\"/v1/status/\"+current[\"run_id\"])\n d=r.get(\"durable\") or {}\n print(\"OLD_RUN\",json.dumps({k:d.get(k) for k in (\"job_status\",\"active_in_process\",\"workflow_cursor\",\"last_execution_error\",\"role_invocations\")}),flush=True)\nif old.get(\"active_in_process\"):\n print(\"FRESH_NOT_STARTED_OLD_ACTIVE\");raise SystemExit(0)\ncode='const fs=require(\"node:fs\"),p=require(\"node:path\"),d=\"/app/runtime/durable/durable/run-state-v2\",{decodeEnvelope}=require(\"/app/orchestrator/durable-primitives.js\");const all=fs.readdirSync(d).filter(x=>/^run_.*[.]json$/.test(x)).map(f=>decodeEnvelope(fs.readFileSync(p.join(d,f)),{expectedSchema:\"run-state/v2\"}));console.log(JSON.stringify(all.filter(x=>![\"DONE\",\"BLOCKED\",\"FAILED\",\"CANCELLED\",\"PAUSED\"].includes(x.job_status)).map(x=>({run_id:x.run_id,project_id:x.project_id,job_status:x.job_status}))));'\nactive=json.loads(subprocess.check_output([\"docker\",\"exec\",\"debug-ai-debug-ai-1\",\"node\",\"-e\",code],text=True))\nprint(\"ACTIVE\",json.dumps(active),flush=True)\nif active:\n print(\"FRESH_NOT_STARTED_RECOVERY_ACTIVE\");raise SystemExit(0)\nassert old[\"corpus_digest\"]==\"2671ad1f9119054912cd5a5e892a3178f6deaf6b8ce9052243560167e9ba977b\"\nreq=urllib.request.Request(base+\"/v1/investigation-benchmark/start\",data=json.dumps({\"suite\":\"real-debug\",\"case_ids\":[\"L1-01\"]}).encode(),headers={\"Content-Type\":\"application/json\"})\ntry:\n with urllib.request.urlopen(req,timeout=20) as resp:\n  result=json.load(resp);print(\"FRESH_START_HTTP\",resp.status,json.dumps(result),flush=True)\n  assert resp.status==202 and result[\"corpus_digest\"]==old[\"corpus_digest\"] and result[\"total\"]==1\nexcept urllib.error.HTTPError as e:\n print(\"FRESH_START_REJECTED\",e.code,e.read().decode(),flush=True);raise\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
