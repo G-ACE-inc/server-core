@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/blob/f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89/server/control/real-debug-benchmark.js"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89",
+    "command": "set -eu\npython3 -B - <<'PY'\nimport json,urllib.request,subprocess\nbase=\"http://127.0.0.1:8787\"\nbid=\"realdebug_6cf69ffdd7f641cba693aa2e9783c9aa\"\ncontainer=\"debug-ai-debug-ai-1\"\ndef get(p):\n    with urllib.request.urlopen(base+p,timeout=10) as r:\n        return json.load(r)\ns=get(\"/v1/investigation-benchmark/status/\"+bid)\nassert s[\"benchmark_id\"]==bid and s[\"summary\"][\"total\"]==50\nprint(\"BEFORE\",json.dumps({k:s.get(k) for k in (\"benchmark_id\",\"state\",\"active_in_process\",\"current\",\"summary\")}),flush=True)\nif not s.get(\"active_in_process\"):\n    print(\"BENCHMARK_ALREADY_INACTIVE\",flush=True)\nelse:\n    js=\"\"\"const fs=require('node:fs'),p=require('node:path'),d='/app/runtime/durable/durable/run-state-v2',{decodeEnvelope}=require('/app/orchestrator/durable-primitives.js');const root='/workspace/debug-ai/.verification/real-debug/'+process.argv[1]+'/';const active=fs.readdirSync(d).filter(x=>/^run_.*[.]json$/.test(x)).map(f=>decodeEnvelope(fs.readFileSync(p.join(d,f)),{expectedSchema:'run-state/v2'})).filter(x=>!['DONE','BLOCKED','FAILED','CANCELLED','PAUSED'].includes(x.job_status));if(active.some(x=>!x.project_dir||!x.project_dir.startsWith(root)||!/^debugai-real-debug-L[1-5]-[0-9]{2}$/.test(x.project_id)))throw Error('UNRELATED_RUN_ACTIVE');console.log(JSON.stringify(active.map(x=>({run_id:x.run_id,job_status:x.job_status,project_id:x.project_id}))))\"\"\"\n    print(\"ACTIVE_TARGET_RUNS\",subprocess.check_output([\"docker\",\"exec\",container,\"node\",\"-e\",js,bid],text=True).strip(),flush=True)\n    subprocess.run([\"docker\",\"stop\",\"--time\",\"10\",container],check=True)\n    state=subprocess.check_output([\"docker\",\"inspect\",\"--format\",\"{{.State.Running}}\",container],text=True).strip()\n    assert state==\"false\",state\n    print(\"TARGET_PROCESS_STOPPED=true; BENCHMARK_DISPATCH_STOPPED=true; RECORDS_PRESERVED=true; RESTART_NOT_REQUESTED=true\",flush=True)\nPY\n"
+  }
+}
