@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7214089385"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2a5775e6d0dddb5e95797a74a3dc29afc761be8f",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"2a5775e6d0dddb5e95797a74a3dc29afc761be8f\"\ntest \"$(git branch --show-current)\" = \"fix/debugai-scout-diagnosis-handoff-20261016\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\nif docker exec debug-ai-debug-ai-1 node -e 'const fs=require(\"node:fs\");fs.readFileSync(\"/app/server/control/role-prompt-evidence.js\");if(!fs.readFileSync(\"/app/server/control/invocation-compiler.js\",\"utf8\").includes(\"WORK_ITEM_ENVELOPE\"))process.exit(1)' >/dev/null 2>&1; then\n echo \"APP_ALREADY_HAS_CORRECTIONS\"\nelse\n python3 -B - <<'PY'\nimport subprocess,json,urllib.request\nurl=\"http://127.0.0.1:8787/v1/investigation-benchmark/status/realdebug_6d6055e23feb47868406cc577b8958ca\"\ns=json.load(urllib.request.urlopen(url,timeout=8)); current=s.get(\"current\") or {}; rid=current.get(\"run_id\")\ncode='const fs=require(\"node:fs\"),p=require(\"node:path\"),d=\"/app/runtime/durable/durable/run-state-v2\",{decodeEnvelope}=require(\"/app/orchestrator/durable-primitives.js\");const all=fs.readdirSync(d).filter(x=>/^run_.*[.]json$/.test(x)).map(f=>decodeEnvelope(fs.readFileSync(p.join(d,f)),{expectedSchema:\"run-state/v2\"}));console.log(JSON.stringify(all.filter(x=>![\"DONE\",\"BLOCKED\",\"FAILED\",\"CANCELLED\",\"PAUSED\"].includes(x.job_status)).map(x=>({run_id:x.run_id,project_id:x.project_id,job_status:x.job_status}))));'\nactive=json.loads(subprocess.check_output([\"docker\",\"exec\",\"debug-ai-debug-ai-1\",\"node\",\"-e\",code],text=True))\nif any(x[\"run_id\"]!=rid or not x[\"project_id\"].startswith(\"debugai-real-debug-\") for x in active):raise SystemExit(\"OTHER_ACTIVE_RUN\")\nif current and current.get(\"phase\")!=\"ANALYSIS\":raise SystemExit(\"BENCHMARK_PATCH_OR_GRADE_IN_PROGRESS\")\nprint(\"OLD_BENCHMARK_CHECKPOINT_PRESERVED\")\nPY\n python3 -B /home/admin1/server-core/scripts/servercore_registered_service_deploy.py --repository seigo-gace/debug-ai --target-sha \"2a5775e6d0dddb5e95797a74a3dc29afc761be8f\" --service debug-ai --apply\nfi\npython3 -B - <<'PY'\nimport subprocess,hashlib,json,urllib.request\npaths=[\"server/adapters/ai-core.js\",\"server/control/invocation-compiler.js\",\"server/control/role-prompt-evidence.js\",\"server/role-modules/index.js\",\"server/workflow.js\"]\nfor container in (\"debug-ai-debug-ai-1\",\"debug-ai-sandbox-runner-1\"):\n for path in paths:\n  expected=hashlib.sha256(open(path,\"rb\").read()).hexdigest()\n  actual=subprocess.check_output([\"docker\",\"exec\",container,\"node\",\"-e\",'const fs=require(\"node:fs\"),c=require(\"node:crypto\");console.log(c.createHash(\"sha256\").update(fs.readFileSync(process.argv[1])).digest(\"hex\"))',\"/app/\"+path],text=True).strip()\n  if actual!=expected:raise SystemExit(\"PACKAGED_SOURCE_MISMATCH \"+container+\" \"+path)\n print(\"MATCH \"+container+\" \"+str(len(paths)))\nr=urllib.request.urlopen(\"http://127.0.0.1:8787/health\",timeout=10)\nprint(\"HEALTH_HTTP=\"+str(r.status))\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
