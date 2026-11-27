@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7215527830"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "84584d87736593837837388d9e5d25fa8795b4db",
+    "command": "set -eu\ndocker exec -i debug-ai-debug-ai-1 node - <<'NODE'\nconst fs=require(\"node:fs\"),p=require(\"node:path\"),{decodeEnvelope}=require(\"/app/orchestrator/durable-primitives.js\");\nconst rid=\"run_mwytb5d9_cf1d2b2ecd\",base=\"/app/runtime/durable/durable\";\nconst res=awaitable();\nasync function awaitable(){\n const r=await fetch(\"http://127.0.0.1:8787/v1/status/\"+rid);const d=(await r.json()).durable;\n console.log(\"RUN\",JSON.stringify({status:d.job_status,cursor:d.workflow_cursor,active:d.active_in_process,error:d.last_execution_error,invocations:d.role_invocations.map(x=>({role:x.role,phase:x.phase,elapsed_ms:x.elapsed_ms,failure_code:x.failure_code,telemetry:x.telemetry}))}));\n const w=p.join(base,\"work-item\",rid);\n if(fs.existsSync(w))for(const dir of fs.readdirSync(w)){const a=fs.readdirSync(p.join(w,dir)).sort();if(a.length){const r=decodeEnvelope(fs.readFileSync(p.join(w,dir,a.at(-1))),{expectedSchema:\"role-work-item-continuation/v1\"});console.log(\"CHECKPOINT\",JSON.stringify({key:r.key,status:r.status,steps:r.steps,progress:r.progress,result:r.result,reason:r.reason}));}}\n}\nres.catch(e=>{console.error(e.name,e.message);process.exitCode=1});\nNODE\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
