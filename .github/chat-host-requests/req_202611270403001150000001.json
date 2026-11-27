@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "ADOPTED",
+    "design_adoption": "ADOPTED_REPOSITORY",
+    "implementation_context": "existing_debugai_runtime",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "70689ec0fdb9201742625d5d8a0054feeb31320d",
+    "command": "set -eu\nprintf 'DEBUGAI_HEAD='; git rev-parse HEAD\nprintf 'DEBUGAI_BRANCH='; git branch --show-current\nprintf 'DEBUGAI_CLEAN='; if test -z \"$(git status --porcelain --untracked-files=all)\"; then echo YES; else echo NO; fi\nfor name in debug-ai-debug-ai-1 debug-ai-sandbox-runner-1; do\n  if docker inspect \"$name\" >/dev/null 2>&1; then\n    printf '%s=' \"$name\"\n    docker inspect \"$name\" --format '{{.State.Running}} {{.Image}}'\n  else\n    printf '%s=UNAVAILABLE\\n' \"$name\"\n  fi\ndone\nif docker inspect debug-ai-debug-ai-1 >/dev/null 2>&1; then\n  docker inspect debug-ai-debug-ai-1 --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -E '^DEBUG_AI_(ROLE_EXECUTION_MODE|CORE_GATE_DISPATCH_MODE)=' || true\nfi\nprintf 'HTTP_HEALTH='\ncurl --silent --show-error --connect-timeout 3 --max-time 5 -o /dev/null -w '%{http_code}\\n' http://127.0.0.1:8787/health || true\npython3 - <<'PY'\nimport json\nfrom pathlib import Path\np=Path.home()/\".config/debugai-gitops/delegations/policies/dlg_master_debugai_v1.json\"\ntry:\n    policy=json.loads(p.read_text())\n    print(\"POLICY_ENABLED=\"+str(policy.get(\"enabled\") is True))\n    print(\"POLICY_REVOKED=\"+str(policy.get(\"revoked\") is True))\n    for op in (\"deploy\",\"host.command\",\"reflect\"):\n        print(\"POLICY_OPERATION_\"+op+\"=\"+str(op in policy.get(\"allowed_operations\",[])))\n    print(\"POLICY_PR115_BRANCH=\"+str(\"fix/debugai-scout-diagnosis-handoff-20261016\" in policy.get(\"allowed_branches\",[])))\nexcept (OSError,ValueError,TypeError):\n    print(\"POLICY_READBACK=UNAVAILABLE\")\nPY"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
