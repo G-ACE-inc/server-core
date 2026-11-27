@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7222764886"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "f6b8c36315a8bf8dfc5ff91fde3bd8be40ed5c89",
+    "command": "set -eu\ndocker exec -i debug-ai-debug-ai-1 node - <<'NODE'\nconst fs=require(\"node:fs\"),assert=require(\"node:assert/strict\"),{RuntimeEvidenceStore}=require(\"/app/server/runtime-evidence.js\"),{RepoPolicy}=require(\"/app/server/repo-policy.js\"),{PatchService}=require(\"/app/server/patch-service.js\"),{isolatedOperations}=require(\"/app/server/control/sandbox-patch-candidate.js\"),{createSandboxVerificationLane}=require(\"/app/server/control/sandbox-verification.js\"),{select,payload,writeNew}=require(\"/app/scripts/real-debug-suite.cjs\"),{exactFixture,gradePayload,measuredTest}=require(\"/app/server/control/real-debug-benchmark.js\");\nconst id=\"run_mwyug9t6_1bf371e77e\",root=\"/workspace/debug-ai/.verification/real-debug/realdebug_030c71fab13b4726b5222b3f523b2900\",repo=root+\"/L1-01\",grade=root+\"/L1-01-grade\",store=new RuntimeEvidenceStore(\"/app/runtime\"),c=select(\"L1-01\");\n(async()=>{\n const record=store.list(id,{types:[\"patch_candidate\"],limit:1})[0]?.payload;\n if(!record){const calls=store.list(id,{types:[\"ai_invocation\"],limit:64}).map(x=>x.payload).filter(x=>x.started_at>=1795795124934);console.log(\"CANDIDATE_NOT_AVAILABLE\",JSON.stringify(calls.slice(0,2).map(x=>({role:x.role,phase:x.phase,elapsed_ms:x.elapsed_ms,failure_code:x.failure_code,invocation_id:x.invocation_id}))));return;}\n const policy=new RepoPolicy(),candidate=new PatchService({runtimeRoot:\"/app/runtime\",repoPolicy:policy}).load(record.id);assert.equal(candidate.repo,repo);assert.ok(candidate.files.length&&candidate.files.every(f=>Object.hasOwn(c.files,f)));assert.ok(candidate.operations.every(op=>op.type===\"replace\"&&Object.hasOwn(c.files,op.path)));\n const verification=store.list(id,{types:[\"candidate_verification\"],limit:16}).map(x=>x.payload).find(x=>x.patch_candidate_id===candidate.id&&x.patch_candidate_hash===candidate.candidate_hash);assert.ok(verification);\n const original=payload(c);exactFixture(repo,original);const analysis=store.list(id,{types:[\"analysis\"],limit:1})[0]?.payload;assert.ok(measuredTest(analysis.deterministic_verification,c.public_checks,{red:true}));assert.ok(measuredTest(verification,c.public_checks));\n const operations=isolatedOperations(candidate).operations,grading=gradePayload(c,operations);assert.ok(!fs.existsSync(grade),\"GRADE_ALREADY_EXISTS_NO_REPLAY\");\n writeNew(grade,grading);policy.assertRepo(grade);exactFixture(grade,grading);\n const holdout=await createSandboxVerificationLane().collect(grade);exactFixture(repo,original);exactFixture(grade,grading);\n const pass=measuredTest(holdout,c.holdout_checks);\n console.log(\"ACTUAL_REPAIR\",JSON.stringify({id:c.id,run_id:id,candidate_id:candidate.id,candidate_hash:candidate.candidate_hash,public_red:true,public_green:true,holdout_green:pass,original_source_unchanged:true,scope_pass:true,holdout_checks:holdout.checks.map(x=>({status:x.status,exit_code:x.exit_code,executed:x.executed,sandbox:x.sandbox,stdout:x.stdout})),independent_model_review:\"NOT_RUN\"}));assert.ok(pass,\"HOLDOUT_FAILED\");\n})().catch(e=>{console.error(e.name,e.message);process.exitCode=1});\nNODE\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
