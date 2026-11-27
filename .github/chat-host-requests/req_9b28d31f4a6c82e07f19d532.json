@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/actions/runs/46065944321"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -eu\ncd /home/admin1/projects/debug-ai\ntest \"$(git rev-parse HEAD)\" = a6a84876ab8ff9a81503ac15d1a3285e50634e1e\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ntest \"$(docker inspect --format '{{.State.Running}}' debug-ai-sandbox-runner-1)\" = true\nfor p in server/workflow.js server/control/real-debug-benchmark.js server/adapters/external-review.js server/adapters/external-review-quota.js server/control/invocation-compiler.js server/control/role-output-validator.js; do\n  test \"$(sha256sum \"$p\" | cut -d' ' -f1)\" = \"$(docker exec debug-ai-sandbox-runner-1 sha256sum \"/app/$p\" | cut -d' ' -f1)\"\ndone\ntest \"$(docker inspect --format '{{.State.Running}}' debug-ai-debug-ai-1)\" = false\npython3 -B /home/admin1/server-core/scripts/servercore_registered_service_deploy.py --repository seigo-gace/debug-ai --target-sha a6a84876ab8ff9a81503ac15d1a3285e50634e1e --service debug-ai --apply\ntest \"$(docker inspect --format '{{.State.Running}}' debug-ai-debug-ai-1)\" = true\nfor p in server/workflow.js server/control/real-debug-benchmark.js server/adapters/external-review.js server/adapters/external-review-quota.js server/control/invocation-compiler.js server/control/role-output-validator.js; do\n  test \"$(sha256sum \"$p\" | cut -d' ' -f1)\" = \"$(docker exec debug-ai-debug-ai-1 sha256sum \"/app/$p\" | cut -d' ' -f1)\"\ndone\npython3 -B - <<'PY'\nimport json, urllib.request\nbase=\"http://127.0.0.1:8787\"\ndef get(path):\n    with urllib.request.urlopen(base+path,timeout=10) as response:\n        return json.load(response)\nhealth=get(\"/health\")\nassert health[\"ok\"], health\ns=get(\"/v1/investigation-benchmark/status/realdebug_6cf69ffdd7f641cba693aa2e9783c9aa\")\nassert s[\"state\"]==\"PAUSED\" and not s[\"active_in_process\"], s\nassert s[\"pause_reason\"]==\"INTERRUPTED_BENCHMARK_REQUIRES_RESUME\", s\nd=get(\"/v1/status/\"+s[\"current\"][\"run_id\"])[\"durable\"]\nassert d[\"job_status\"]==\"PAUSED\" and not d[\"active_in_process\"], d\nprint(\"PRODUCTION_HEALTH_OK BENCHMARK_AND_CHILD_PAUSED\")\nPY\n"
+  }
+}
