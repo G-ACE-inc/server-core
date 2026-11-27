@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7214312032"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2a5775e6d0dddb5e95797a74a3dc29afc761be8f",
+    "command": "set -eu\ngit rev-parse HEAD\npython3 -B - <<'PY'\nimport json,urllib.request\nbase=\"http://127.0.0.1:8787\"\ndef get(p):\n return json.load(urllib.request.urlopen(base+p,timeout=15))\ns=get(\"/v1/investigation-benchmark/status/realdebug_c1b095a42e93445ebce96fd4864c7bfb\")\nprint(\"BENCHMARK\",json.dumps({k:s.get(k) for k in (\"state\",\"active_in_process\",\"interrupted\",\"current\",\"summary\",\"error_code\")}))\nfor row in s.get(\"results\",[]):\n print(\"ROW\",json.dumps({k:v for k,v in row.items() if k not in (\"role_invocations\",\"diagnosis\")}))\n if row.get(\"diagnosis\"):print(\"DIAGNOSIS\",json.dumps(row[\"diagnosis\"]))\nrid=(s.get(\"current\") or {}).get(\"run_id\") or next((r.get(\"run_id\") for r in s.get(\"results\",[]) if r.get(\"run_id\")),None)\nif rid:\n d=get(\"/v1/status/\"+rid).get(\"durable\") or {}\n print(\"RUN\",json.dumps({k:d.get(k) for k in (\"job_status\",\"active_in_process\",\"workflow_cursor\",\"last_execution_error\",\"last_execution_failure\")}))\n for x in d.get(\"role_invocations\",[]):print(\"ROLE\",json.dumps({k:x.get(k) for k in (\"role\",\"phase\",\"elapsed_ms\",\"queue_wait_ms\",\"failure_code\",\"upstream_http_status\",\"upstream_reported_code\",\"telemetry\")}))\nPY\ndocker exec debug-ai-debug-ai-1 node -e 'const u=process.env.DEBUG_AI_CORE_GATE_CODER_URL;const key=process.env.AI_CORE_API_KEY;(async()=>{for(const p of [\"/internal/handoff/status\",\"/internal/resources/status\"]){const r=await fetch(new URL(p,u),{headers:{authorization:\"Bearer \"+key},signal:AbortSignal.timeout(10000)});console.log(p,r.status,JSON.stringify(await r.json()));}})().catch(e=>{console.error(e.name);process.exitCode=1})'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
