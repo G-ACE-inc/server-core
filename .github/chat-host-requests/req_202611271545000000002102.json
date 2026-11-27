@@ -1,0 +1,18 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nbase=\"$HOME/Project/Gserver\"\nscript=\"$(find \"$base\" -type f -path '*/scripts/servercore_host_output_private_artifact_publish.py' -print -quit 2>/dev/null)\"\ntest -n \"$script\"\ncd \"$(dirname \"$(dirname \"$script\")\")\"\npython3 -B \"$script\" req_202611271545000000002101 --writer-ledger --writer-dir \"$HOME/.local/state/gserver-terminal/results\"\n"
+  }
+}
