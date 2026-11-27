@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7211903485"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "e80730fe023768ff79310f0cda3c0bb7af15236d",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"e80730fe023768ff79310f0cda3c0bb7af15236d\"\npython3 -B - <<'PY'\nimport json,urllib.request,time\nrid=\"run_mwymf5g4_c4b6e6cd24\"\ndeadline=time.monotonic()+45\nwhile True:\n o=json.load(urllib.request.urlopen(\"http://127.0.0.1:8787/v1/status/\"+rid,timeout=5))\n run=o.get(\"run\",o); d=o.get(\"durable\") or run.get(\"durable\") or {}\n cursor=d.get(\"workflow_cursor\") or {}\n if d.get(\"job_status\")!=\"RUNNING\" or cursor.get(\"step_id\")!=\"DETERMINISTIC_VERIFY\" or time.monotonic()>=deadline:break\n time.sleep(5)\nprint(\"RUN \"+json.dumps({\"run_id\":rid,\"state\":run.get(\"state\"),**{k:d.get(k) for k in (\"job_status\",\"generation\",\"active_in_process\",\"workflow_cursor\",\"role_invocations\",\"last_execution_error\",\"last_execution_failure\")}},ensure_ascii=False)[:20000])\nPY\ndocker exec debug-ai-sandbox-runner-1 node -e 'const fs=require(\"node:fs\"),p=require(\"node:path\"),root=\"/sandbox-jobs/jobs\";for(const j of fs.readdirSync(root).filter(x=>/^JOB_/.test(x)).map(x=>({x,m:fs.statSync(p.join(root,x)).mtimeMs})).sort((a,b)=>b.m-a.m).slice(0,4)){const dir=p.join(root,j.x);const names=fs.readdirSync(dir);console.log(JSON.stringify({job:j.x,mtime:j.m,files:names.filter(n=>/^[a-z_-]+[.]json$/.test(n))}));for(const name of [\"request.json\",\"result.json\"]){try{const o=JSON.parse(fs.readFileSync(p.join(dir,name),\"utf8\"));console.log(name+\" \"+JSON.stringify(Object.fromEntries([\"action\",\"pass\",\"code\",\"timed_out\",\"duration_ms\",\"timeout_ms\",\"state\",\"snapshot_qualification\"].filter(k=>k in o).map(k=>[k,o[k]]))))}catch{}}}'"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
