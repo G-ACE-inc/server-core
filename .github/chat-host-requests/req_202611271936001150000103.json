@@ -1,0 +1,36 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/351#issuecomment-7216028688"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "ebf9e0897afe94a02e61263df3b7109f4e48c34b",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"ebf9e0897afe94a02e61263df3b7109f4e48c34b\"\npython3 -B - <<'PY'\nimport json,urllib.request,hashlib,subprocess\nfor c in (\"debug-ai-debug-ai-1\",\"debug-ai-sandbox-runner-1\"):\n for path in (\"server/workflow.js\",\"server/adapters/ai-core.js\"):\n  a=hashlib.sha256(open(path,\"rb\").read()).hexdigest()\n  b=subprocess.check_output([\"docker\",\"exec\",c,\"node\",\"-e\",'const fs=require(\"node:fs\"),c=require(\"node:crypto\");console.log(c.createHash(\"sha256\").update(fs.readFileSync(process.argv[1])).digest(\"hex\"))',\"/app/\"+path],text=True).strip()\n  assert a==b,(c,path)\nbase=\"http://127.0.0.1:8787\"\nassert urllib.request.urlopen(base+\"/health\",timeout=5).status==200\nold=json.load(urllib.request.urlopen(base+\"/v1/investigation-benchmark/status/realdebug_2f5bdaf39b7e448d8cc53a0cbb81534d\",timeout=5))\nassert not old[\"active_in_process\"]\nr=json.load(urllib.request.urlopen(base+\"/v1/status/run_mwytb5d9_cf1d2b2ecd\",timeout=5))[\"durable\"]\nassert not r[\"active_in_process\"] and r[\"job_status\"] in (\"DONE\",\"BLOCKED\",\"FAILED\",\"CANCELLED\"),\"PREVIOUS_TEST_NOT_TERMINAL\"\nprint(\"OLD_TEST\",json.dumps({\"state\":old[\"state\"],\"interrupted\":old.get(\"interrupted\"),\"run_status\":r[\"job_status\"],\"error\":r.get(\"last_execution_error\")}),flush=True)\ncorpus=json.load(open(\"scripts/real-debug-corpus.json\"))\nassert len(corpus[\"cases\"])==50 and all(sum(c[\"level\"]==l for c in corpus[\"cases\"])==10 for l in range(1,6))\nreq=urllib.request.Request(base+\"/v1/investigation-benchmark/start\",data=json.dumps({\"suite\":\"real-debug\",\"case_ids\":[c[\"id\"] for c in corpus[\"cases\"]]}).encode(),headers={\"Content-Type\":\"application/json\"})\nwith urllib.request.urlopen(req,timeout=15) as resp:\n result=json.load(resp);print(\"FRESH_START_HTTP\",resp.status,json.dumps(result),flush=True)\n assert resp.status==202 and result[\"corpus_digest\"]==old[\"corpus_digest\"] and result[\"total\"]==50 and result[\"state\"]==\"RUNNING\"\ns=json.load(urllib.request.urlopen(base+\"/v1/investigation-benchmark/status/\"+result[\"benchmark_id\"],timeout=5))\nassert s[\"case_ids\"]==[c[\"id\"] for c in corpus[\"cases\"]] and s[\"summary\"][\"total\"]==50\nprint(\"FIFTY_CASE_READBACK\",json.dumps({k:s[k] for k in (\"benchmark_id\",\"state\",\"current\",\"summary\",\"active_in_process\")}),flush=True)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
