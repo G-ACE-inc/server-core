@@ -1,0 +1,35 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_NOT_APPLICABLE",
+    "design_adoption": "UNKNOWN",
+    "implementation_context": "not_applicable",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/actions/runs/45965358167"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "e80730fe023768ff79310f0cda3c0bb7af15236d",
+    "command": "set -eu\ntest \"$(git rev-parse HEAD)\" = \"e80730fe023768ff79310f0cda3c0bb7af15236d\"\ntest \"$(git branch --show-current)\" = \"fix/debugai-scout-diagnosis-handoff-20261016\"\ntest \"$(git remote get-url origin)\" = \"https://github.com/seigo-gace/debug-ai.git\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ndocker exec -i debug-ai-debug-ai-1 node - <<'NODE'\nconst fs=require(\"node:fs\"),p=require(\"node:path\"),d=\"/app/runtime/durable/run-state-v2\";const counts={};\nfor(const f of fs.readdirSync(d).filter(x=>/^run_[A-Za-z0-9_]+[.]json$/.test(x))){const s=JSON.parse(fs.readFileSync(p.join(d,f),\"utf8\"));if(s.schema!==\"run-state/v2\"||s.run_id+\".json\"!==f)throw Error(\"STATE_MISMATCH\");counts[s.job_status]=(counts[s.job_status]||0)+1;if(![\"DONE\",\"BLOCKED\",\"FAILED\",\"CANCELLED\",\"PAUSED\"].includes(s.job_status))throw Error(\"ACTIVE_RUN:\"+s.run_id);}\nconsole.log(\"DURABLE_STATE_COUNTS=\"+JSON.stringify(counts));\nNODE\ngit fetch --no-tags origin refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\ntest \"$(git rev-parse FETCH_HEAD)\" = \"0d11477f61837c3da7da42393daa1bf04b01088e\"\ngit merge-base --is-ancestor \"e80730fe023768ff79310f0cda3c0bb7af15236d\" \"0d11477f61837c3da7da42393daa1bf04b01088e\"\npython3 -B - <<'PY'\nimport subprocess,sys,json,hashlib\nsys.path.insert(0,\"/home/admin1/server-core/scripts\")\nfrom servercore_service_deploy_admission import inspect_host,REGISTRY\nexpected=sorted([\"docs/CURRENT_SOURCE_QUALIFICATION.md\",\"scripts/real-debug-corpus.json\",\"scripts/real-debug-suite.cjs\",\"server/control/real-debug-benchmark.js\",\"server/tests/real-debug-benchmark.test.cjs\",\"server/tests/real-debug-suite.test.cjs\",\"server/workflow-observed.js\"])\nactual=sorted(subprocess.check_output([\"git\",\"diff\",\"--name-only\",\"--no-renames\",\"e80730fe023768ff79310f0cda3c0bb7af15236d\",\"0d11477f61837c3da7da42393daa1bf04b01088e\"],text=True).splitlines())\nif actual!=expected:raise SystemExit(\"EXACT_SCOPE_MISMATCH\")\nregistry=json.loads(REGISTRY.read_text())\nfor service in (\"debug-ai\",\"sandbox-runner\"):\n a=inspect_host(registry,\"seigo-gace/debug-ai\",\"e80730fe023768ff79310f0cda3c0bb7af15236d\",service)\n if hashlib.sha256(subprocess.check_output([\"git\",\"show\",\"0d11477f61837c3da7da42393daa1bf04b01088e:\"+a[\"compose_file\"]])).hexdigest()!=a[\"compose_digest\"]:raise SystemExit(\"COMPOSE_DIGEST_MISMATCH\")\nprint(\"SCOPE_PASS\")\nPY\ngit -c core.hooksPath=/dev/null merge --ff-only \"0d11477f61837c3da7da42393daa1bf04b01088e\"\ntest \"$(git rev-parse HEAD)\" = \"0d11477f61837c3da7da42393daa1bf04b01088e\"\ntest -z \"$(git status --porcelain --untracked-files=all)\"\nfor service in debug-ai sandbox-runner; do\n python3 -B /home/admin1/server-core/scripts/servercore_registered_service_deploy.py --repository seigo-gace/debug-ai --target-sha \"0d11477f61837c3da7da42393daa1bf04b01088e\" --service \"$service\"\ndone\nprintf 'EXACT_SOURCE_PREPARED=%s\\n' \"$(git rev-parse HEAD)\""
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
