@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/commit/a47c4b7fe5289b8d1e7a2c104a00fb0dd27bfac5"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -Eeuo pipefail\numask 077\nroot=/home/admin1/projects/ai-core\np=\"$root/.worktrees/qwen35-gate-candidate-20261128\"\ntarget=a47c4b7fe5289b8d1e7a2c104a00fb0dd27bfac5\ntest -z \"$(git -C \"$p\" status --porcelain --untracked-files=all)\"\ngit -C \"$p\" fetch --no-tags origin refs/heads/feat/qwen35-gate-candidate-20261128\ntest \"$(git -C \"$p\" rev-parse FETCH_HEAD)\" = \"$target\"\ngit -C \"$p\" merge-base --is-ancestor HEAD \"$target\"\ngit -C \"$p\" checkout --detach \"$target\"\ncd \"$p\"\nPYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_qwen_distillation.py' -v\nPYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_remote_model_gate.py' -v\necho DISTILLATION_CONTRACT_AND_GATE_TESTS=PASS\npython3 -B - \"$root\" \"$target\" <<'PY'\nimport json,os,pathlib,subprocess,sys,time\nroot=pathlib.Path(sys.argv[1])\nstate=root/'.ai-core'\nassert not state.is_symlink()\nstate.mkdir(mode=0o700,exist_ok=True)\nvenv=state/'distillation-venv'\nassert not venv.is_symlink()\nresult={'head':sys.argv[2],'contract_tests':9,'remote_gate_tests':6,'training_updates':0,'package_state':'NOT_READY'}\nstarted=time.monotonic()\ndeadline=started+100\ndef run(cmd):\n    remain=deadline-time.monotonic()\n    if remain<=1: return 124\n    try:\n        with (state/'distillation-setup.log').open('ab') as log:\n            return subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT,timeout=remain).returncode\n    except subprocess.TimeoutExpired:\n        return 124\ntry:\n    if not (venv/'bin/python').is_file():\n        rc=run([sys.executable,'-m','venv',str(venv)])\n    else: rc=0\n    result['venv_exit']=rc\n    if rc==0:\n        py=str(venv/'bin/python')\n        common=[py,'-m','pip','--isolated','--disable-pip-version-check','install','--no-input','--only-binary=:all:']\n        rc=run(common+['--index-url','https://download.pytorch.org/whl/cpu','torch==2.10.0'])\n        result['torch_install_exit']=rc\n        if rc==0:\n            rc=run(common+['--index-url','https://pypi.org/simple','torch==2.10.0','transformers==5.24.1','peft==0.22.0'])\n            result['libraries_install_exit']=rc\n            if rc==0:\n                rc=run([py,'-m','pip','--isolated','check'])\n                result['pip_check_exit']=rc\n                if rc==0:\n                    probe=subprocess.run([py,'-c','import torch,transformers,peft,json;from transformers import Qwen3_5ForCausalLM;print(json.dumps({\"torch\":torch.__version__,\"transformers\":transformers.__version__,\"peft\":peft.__version__,\"cuda\":torch.cuda.is_available(),\"qwen_class\":Qwen3_5ForCausalLM.__name__}))'],capture_output=True,text=True,timeout=20)\n                    result['import_exit']=probe.returncode\n                    if probe.returncode==0:\n                        result['versions']=json.loads(probe.stdout.splitlines()[-1])\n                        assert result['versions']['cuda'] is False\n                        result['package_state']='CPU_ENV_IMPORT_READY'\nexcept Exception as ex:\n    result['error']=type(ex).__name__\nresult['elapsed_seconds']=round(time.monotonic()-started,2)\nbody='## Qwen LoRA backend exact-source tests and isolated CPU dependency setup\\n\\n```json\\n'+json.dumps(result,indent=2)+'\\n```\\n\\nNo base model replacement, global package installation, provider call, or KB training. CPU speed/weight loading not qualified.'\nsubprocess.run(['gh','issue','comment','1','--repo','seigo-gace/ai-core','--body-file','-'],input=body,text=True,capture_output=True,check=True,timeout=20)\nprint(json.dumps(result))\nif result['package_state']!='CPU_ENV_IMPORT_READY': sys.exit(2)\nPY\n"
+  }
+}
