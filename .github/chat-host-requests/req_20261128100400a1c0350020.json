@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/115"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -Eeuo pipefail\numask 077\np=/home/admin1/projects/debug-ai/.worktrees/deepseek-qwen35-command-20261128\ntest \"$(git -C \"$p\" rev-parse HEAD)\" = 66a19847353fe2ab38c572577f7acbd91837fd3f\ntest -z \"$(git -C \"$p\" status --porcelain)\"\ncid=\"$(docker ps -q --filter label=com.docker.compose.project=debug-ai --filter label=com.docker.compose.service=debug-ai)\"\ntest \"$(printf '%s\\n' \"$cid\" | wc -l)\" -eq 1\ntest -n \"$cid\"\nimage=\"$(docker inspect -f '{{.Image}}' \"$cid\")\"\nmode=COOPERATIVE\ndeepseek=2048\npython3 - <<'PY'\nimport urllib.request\nfor n in (18181,18182,18183,18184,18185,18186):\n with urllib.request.urlopen(f'http://127.0.0.1:{n}/health',timeout=4) as r: assert r.status==200\nprint('SHARED_GATE_HEALTH_6_OF_6')\nPY\ntest \"$(gh api repos/seigo-gace/TGserver --jq '.private')\" = true\nledger=/tmp/debugai-command-orch01-66a19847-cooperative\nif ! mkdir -m 700 \"$ledger\" 2>/dev/null; then\n test -f \"$ledger/exitcode\" || { echo OUTCOME_UNKNOWN_NO_REDISPATCH; exit 1; }\n cat \"$ledger/stdout\" \"$ledger/stderr\"\n printf 'QUALIFICATION_EXIT=%s\\n' \"$(cat \"$ledger/exitcode\")\"\n exit\nfi\ngh api 'repos/seigo-gace/TGserver/contents/.gace-private-input/debugai/orch-01.jsonl?ref=6f6db7c45e0a1d8b7e936fc049d1bbce33aaa602' --jq '.content' | base64 -d > \"$ledger/input.jsonl\"\nprintf '%s  %s\\n' e552609bf61d117c9d3483b1bd05fc0ddcfef23885f9398237c539ed6d5158c8 \"$ledger/input.jsonl\" | sha256sum -c\nchown 1000 \"$ledger/input.jsonl\"\nexport AI_CORE_API_KEY=\"$(docker exec \"$cid\" node -e 'process.stdout.write(process.env.AI_CORE_API_KEY)')\"\ntest \"${#AI_CORE_API_KEY}\" -ge 16\necho 'AUDITED_TRAINING_CASE_DISPATCH=orch-01:COOPERATIVE'\nset +e\ndocker run --rm --network host --read-only --tmpfs /tmp:rw,nosuid,nodev,size=16m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 -v \"$p/server:/app/server:ro\" -v \"$p/orchestrator:/app/orchestrator:ro\" -v \"$p/scripts:/app/scripts:ro\" -v \"$ledger/input.jsonl:/input/orch-01.jsonl:ro\" -e AI_CORE_API_KEY -e DEBUG_AI_CORE_URL=http://127.0.0.1:18185 -e DEBUG_AI_CORE_CONTEXT_TOKENS=8192 -e DEBUG_AI_CORE_GATE_CODER_URL=http://127.0.0.1:18184 -e DEBUG_AI_CORE_GATE_QWEN3_URL=http://127.0.0.1:18182 -e DEBUG_AI_CORE_GATE_GRANITE_URL=http://127.0.0.1:18181 -e DEBUG_AI_CORE_GATE_MINISTRAL_URL=http://127.0.0.1:18183 -e 'DEBUG_AI_COMMAND_MODEL_GATES={\"qwen35\":{\"origin\":\"http://127.0.0.1:18185\",\"model_id\":\"/models/Qwen3.5-4B-Q4_K_M.gguf\",\"runtime_context_tokens\":8192,\"max_output_tokens\":2048},\"deepseek\":{\"origin\":\"http://127.0.0.1:18186\",\"model_id\":\"deepseek/deepseek-v4.1-flash-1017\",\"runtime_context_tokens\":8192,\"max_output_tokens\":4096}}' -e DEBUG_AI_COMMAND_EXTERNAL_QUALIFICATION=true --entrypoint node \"$image\" scripts/qualify-command-module.cjs --training /input/orch-01.jsonl orch-01 \"$mode\" 1024 \"$deepseek\" 170000 > \"$ledger/stdout\" 2> \"$ledger/stderr\"\nrc=$?\nset -e\nprintf '%s\\n' \"$rc\" > \"$ledger/exitcode\"\ncat \"$ledger/stdout\" \"$ledger/stderr\"\nprintf 'QUALIFICATION_EXIT=%s\\n' \"$rc\"\ntest \"$rc\" -eq 0 -o \"$rc\" -eq 2\n"
+  }
+}
