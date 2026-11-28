@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nset +e\ndocker exec deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs /app/backfillExistingRecruitmentCards.mjs --dry-run\nrc=$?\nset -e\nprintf 'DRY_RUN_EXIT=%s\\n' \"$rc\"\ndocker exec -i deploy-postgres-1 psql -X -v ON_ERROR_STOP=1 -U gace -d gaybbs -At <<'SQL'\nBEGIN READ ONLY;\nSELECT json_build_object('state',status,'version',COALESCE(conditions->>'recruitmentUiVersion','legacy'),'count',count(*)) FROM announcement_posts WHERE kind='recruitment' AND room_id IS NULL AND status IN ('published','publishing','sync_error') GROUP BY status,COALESCE(conditions->>'recruitmentUiVersion','legacy') ORDER BY 1::text;\nCOMMIT;\nSQL\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
