@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 -B scripts/userbot_test_client.py health\npython3 -B scripts/userbot_topic_audit_client.py --chat-id -1003847210571 --topic-id 48\ndocker exec -i deploy-postgres-1 sh -c 'exec psql -X -q -U \"$POSTGRES_USER\" -d gaybbs -At -F \"|\" -v ON_ERROR_STOP=1 -f -' <<'SQL'\nSELECT 'PROFILE_PANEL',panel_id,COALESCE(message_id,0),state,pinned FROM board_menu_panels WHERE chat_id=-1003847210571 AND message_thread_id=48 AND panel_type='posting';\nSELECT 'PROFILE_ROUTE',COUNT(*) FROM posting_topics WHERE purpose='profile' AND chat_id=-1003847210571 AND message_thread_id=48 AND enabled=TRUE AND verified_at IS NOT NULL;\nSELECT 'PROFILE_TOKEN_COUNT',COUNT(*) FROM board_menu_entry_tokens t JOIN board_menu_panels p ON p.panel_id=t.panel_id WHERE p.chat_id=-1003847210571 AND p.message_thread_id=48 AND p.panel_type='posting' AND t.feature='profile' AND t.enabled AND t.expires_at>NOW();\nSQL\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
