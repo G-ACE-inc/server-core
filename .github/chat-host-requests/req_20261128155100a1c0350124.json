@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/commit/231a8f47dc9cb566080ba9e69f758ed47885f073",
+    "implementation_context": "not_applicable"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -Eeuo pipefail\numask 077\nroot=/home/admin1/projects/debug-ai\np=\"$root/.worktrees/independent-chat-20261128\"\nsha=231a8f47dc9cb566080ba9e69f758ed47885f073\nbase=sha256:e5802feac280f275c9591757bd76a0b215e711e6a534cd9d3dcdf579fddfb822\ntag=debug-ai-debug-ai:latest\ncandidate=debug-ai-debug-ai:teaching-231a8f47\nbackup=debug-ai-debug-ai:rollback-before-teaching-231a8f47\ncid=\"$(docker ps -q --filter label=com.docker.compose.project=debug-ai --filter label=com.docker.compose.service=debug-ai)\"\ntest -n \"$cid\"\ntest \"$(docker inspect -f '{{.Image}}' \"$cid\")\" = \"$base\"\ntest \"$(docker image inspect -f '{{.Id}}' \"$tag\")\" = \"$base\"\ntest \"$(git -C \"$p\" rev-parse HEAD)\" = 693aa63b750fa54402c5e321af911778cc096baa\ngit -C \"$p\" diff --quiet HEAD -- compose.yaml\nfor x in 'server/chat/index.html cd7f70c' 'server/chat/index.js 2e11c7a' 'server/chat/ui.js 6cf85e6' 'server/main.js 4d94564'; do\n read -r f h <<<\"$x\"; [[ \"$(git -C \"$p\" hash-object \"$f\")\" == \"$h\"* ]] || { echo COMPOSER_CHANGED_SINCE_READ;exit 52; }\ndone\ntest ! -e \"$p/server/command-module/teaching.js\"\ndocker exec \"$cid\" node -e 'const fs=require(\"fs\"),p=\"/app/runtime\";for(const d of [\"chat\",\"durable/run-state-v2\"]){const q=p+\"/\"+d;if(!fs.existsSync(q))continue;for(const n of fs.readdirSync(q).filter(n=>n.endsWith(\".json\"))){const x=JSON.parse(fs.readFileSync(q+\"/\"+n));if(x.turns?.some(t=>t.state===\"running\")||[\"RUNNING\",\"QUEUED\",\"RETRY_WAIT\",\"PAUSED\"].includes(x.job_status)){console.log(\"ACTIVE_OR_PAUSED_RUN\");process.exit(53)}}}'\ntmp=\"$(mktemp -d)\"\nfiles=\"server/chat/index.html server/chat/index.js server/chat/ui.js server/main.js compose.yaml\"\nmkdir \"$tmp/old\" \"$tmp/new\"\nfor f in $files; do mkdir -p \"$tmp/old/$(dirname \"$f\")\";cp -p \"$p/$f\" \"$tmp/old/$f\";done\ncp -p \"$root/.env\" \"$tmp/old/env\"\ngit -C \"$p\" archive \"$sha\" $files server/command-module/teaching.js | tar -x -C \"$tmp/new\"\ndocker exec \"$cid\" node -e 'const x=JSON.parse(process.env.DEBUG_AI_COMMAND_MODEL_GATES);if(!x.qwen35||x.deepseek)process.exit(2);x.deepseek={origin:\"http://127.0.0.1:18186\",model_id:\"deepseek/deepseek-v4.1-flash-1017\",max_output_tokens:1024,runtime_context_tokens:8192};console.log(JSON.stringify(x))' > \"$tmp/gates\"\ncompose(){ docker compose -p debug-ai -f \"$p/compose.yaml\" --env-file \"$root/.env\" --project-directory \"$p\" \"$@\"; }\ndocker image tag \"$base\" \"$backup\"\nrollback(){ rc=$?;trap - ERR;set +e;for f in $files;do cp -p \"$tmp/old/$f\" \"$p/$f\";done;rm -f \"$p/server/command-module/teaching.js\";cp -p \"$tmp/old/env\" \"$root/.env\";docker image tag \"$backup\" \"$tag\";compose up -d --no-deps --no-build --force-recreate debug-ai;rr=$?;echo \"TEACHING_ROLLBACK=$rr\";if test \"$rr\" = 0;then rm -rf \"$tmp\";fi;exit \"$rc\"; }\ntrap rollback ERR\nfor f in $files server/command-module/teaching.js;do cp \"$tmp/new/$f\" \"$p/$f\";done\npython3 - \"$root/.env\" \"$tmp/gates\" <<'PY'\nimport sys,pathlib,re,json,os\np=pathlib.Path(sys.argv[1]);s=p.read_text();g=json.dumps(json.loads(pathlib.Path(sys.argv[2]).read_text()),separators=(',',':'))\nfor k,v in [('DEBUG_AI_COMMAND_MODEL_GATES',\"'\"+g+\"'\"),('DEBUG_AI_COMMAND_EXTERNAL_QUALIFICATION','true')]:\n pat=r'(?m)^'+k+r'=.*$'\n assert len(re.findall(pat,s))<=1\n s=re.sub(pat,lambda m:k+'='+v,s) if re.search(pat,s) else s.rstrip()+'\\n'+k+'='+v+'\\n'\np.write_text(s)\nPY\ncompose config -q\ndocker image tag \"$candidate\" \"$tag\"\ncompose up -d --no-deps --no-build --force-recreate debug-ai\nready=NO\nfor i in $(seq 1 12);do if curl -fsS --max-time 2 http://127.0.0.1:8787/health >/dev/null && test \"$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://127.0.0.1:18788/chat)\" = 401;then ready=YES;break;fi;sleep 2;done\ntest \"$ready\" = YES\ncid=\"$(docker ps -q --filter label=com.docker.compose.project=debug-ai --filter label=com.docker.compose.service=debug-ai)\"\ntest \"$(docker inspect -f '{{.Image}}' \"$cid\")\" = \"$(docker image inspect -f '{{.Id}}' \"$candidate\")\"\ndocker exec \"$cid\" node -e 'const x=JSON.parse(process.env.DEBUG_AI_COMMAND_MODEL_GATES);if(!x.qwen35||!x.deepseek||process.env.DEBUG_AI_COMMAND_EXTERNAL_QUALIFICATION!==\"true\")process.exit(1);console.log(\"TEACHING_MODE_CONFIGURED\")'\ntrap - ERR\nrm -rf \"$tmp\"\necho LIVE_CHAT_TEACHING_DEPLOYMENT_PASS\n"
+  }
+}
