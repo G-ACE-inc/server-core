@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/commit/abb831082d0b858fad0563cce85babf7d5191a99",
+    "implementation_context": "proposed_pr_staging"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -eu\nset -o pipefail\numask 077\np=/home/admin1/projects/debug-ai/.worktrees/independent-chat-20261128\nsha=abb831082d0b858fad0563cce85babf7d5191a99\ngit -C \"$p\" fetch --no-tags origin \"$sha\"\ntest \"$(git -C \"$p\" rev-parse FETCH_HEAD)\" = \"$sha\"\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf -- \"$tmp\"' EXIT\ngit -C \"$p\" archive \"$sha\" server orchestrator | tar -x -C \"$tmp\"\ncat > \"$tmp/probe.cjs\" <<'JS'\nconst fs=require(\"node:fs\"),os=require(\"node:os\"),path=require(\"node:path\"),crypto=require(\"node:crypto\"),http=require(\"node:http\");\nconst {createAiCoreAdapter}=require(\"./server/adapters/ai-core.js\");\nconst {createChatHandler}=require(\"./server/chat/index.js\");\nconst {teachingTopics}=require(\"./server/command-module/teaching.js\");\n(async()=>{\n const gates=JSON.parse(process.env.DEBUG_AI_COMMAND_MODEL_GATES||\"{}\");\n if(!gates.qwen35)throw Error(\"QWEN_NOT_CONFIGURED\");\n gates.deepseek={origin:\"http://127.0.0.1:18186\",model_id:\"deepseek/deepseek-v4.1-flash-1017\",max_output_tokens:1024,runtime_context_tokens:8192};\n const aiCore=createAiCoreAdapter({dispatchMode:\"command_only\",commandModelGates:gates,commandExternalQualification:true,timeoutMs:90000});\n const root=fs.mkdtempSync(path.join(os.tmpdir(),\"real-teaching-\")),token=crypto.randomBytes(24).toString(\"hex\");\n const handler=createChatHandler({aiCore,runtimeRoot:root,token,teachingBudgets:{qwen35:Math.min(1024,gates.qwen35.max_output_tokens),deepseek:1024}});\n const server=http.createServer(async(req,res)=>{if(!await handler(req,res,new URL(req.url,\"http://localhost\")))res.writeHead(404).end();});\n try{\n await new Promise(r=>server.listen(0,\"127.0.0.1\",r));\n const url=\"http://127.0.0.1:\"+server.address().port+\"/chat/api\",headers={Authorization:\"Bearer \"+token,\"Content-Type\":\"application/json\"};\n const topic=\"architecture\",text=teachingTopics().find(x=>x.id===topic).label,turn_id=crypto.randomUUID();\n const res=await fetch(url,{method:\"POST\",headers,body:JSON.stringify({mode:\"teaching\",topic,text,turn_id}),signal:AbortSignal.timeout(225000)});\n const item=await res.json(),t=item.turns?.[0],s=t?.teaching?.stages||[];\n console.log(JSON.stringify({http:res.status,state:t?.state,error:t?.error,stages:s.map(x=>({phase:x.phase,model:x.model,model_id:x.model_id,state:x.state,error:x.error,cost:x.cost})),verdict:t?.teaching?.verdict,verification:t?.teaching?.verification,kb:t?.teaching?.kb_status,cost:t?.teaching?.cost_usd}));\n if(res.status!==200||t?.state!==\"complete\"||!s.some(x=>x.phase===\"teacher_lesson\"&&x.state===\"complete\")||!s.some(x=>x.phase===\"student_attempt\"&&x.state===\"complete\")||!s.some(x=>x.phase===\"teacher_review_1\"&&x.state===\"complete\"))process.exitCode=42;\n else {const read=await(await fetch(url+\"/\"+item.id,{headers})).json();if(read.turns?.[0]?.teaching?.stages?.length!==s.length)process.exitCode=43;}\n }finally{server.closeAllConnections();await new Promise(r=>server.close(r));fs.rmSync(root,{recursive:true,force:true});}\n})().catch(e=>{console.error(e.code||e.name||\"TEACHING_PROBE_ERROR\");process.exitCode=44;});\nJS\ncid=\"$(docker ps -q --filter label=com.docker.compose.project=debug-ai --filter label=com.docker.compose.service=debug-ai)\"\ntest -n \"$cid\"\ntar -C \"$tmp\" -cf - server orchestrator probe.cjs | docker exec -i \"$cid\" sh -c 'set -eu; d=$(mktemp -d); trap \"rm -rf -- \\\"$d\\\"\" EXIT; tar -xf - -C \"$d\"; cd \"$d\"; NODE_PATH=/app/node_modules node probe.cjs'\n"
+  }
+}
