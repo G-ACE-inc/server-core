@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-7232807850"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\numask 077\ncd /home/admin1/projects/ai-core\npython3 -B - <<'PY'\nimport pathlib,subprocess,json,os,time\nroot=pathlib.Path('.ai-core')\nv=root/'distillation-venv'\nassert root.is_dir() and not root.is_symlink() and v.is_dir() and not v.is_symlink()\nassert (v/'bin/python').is_file()\n# Existing partial environment from the failed stdlib venv, no trained assets.\nq=subprocess.run([str(v/'bin/python'),'-m','pip','--version'],capture_output=True,text=True,timeout=3)\nif q.returncode:\n    p=subprocess.run(['virtualenv','--no-download','--no-periodic-update',str(v)],capture_output=True,text=True,timeout=12)\n    rc=p.returncode\nelse: rc=0\nq=subprocess.run([str(v/'bin/python'),'-m','pip','--version'],capture_output=True,text=True,timeout=3)\nreport={'virtualenv_exit':rc,'isolated_pip_ready':q.returncode==0,'environment':str(v),'system_packages_changed':False,'training_updates':0}\nbody='## Existing virtualenv fallback for isolated Qwen training dependencies\\n\\n```json\\n'+json.dumps(report,indent=2)+'\\n```\\n\\nNo global packages or base model replacement.'\nsubprocess.run(['gh','issue','comment','1','--repo','seigo-gace/ai-core','--body-file','-'],input=body,text=True,capture_output=True,check=True,timeout=6)\nprint(json.dumps(report))\nassert rc==0 and q.returncode==0\nPY\n"
+  }
+}
