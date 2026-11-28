@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/commit/b190f6c0d824a419ecb3af2c6f239fb764ee6d23"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -Eeuo pipefail\numask 077\np=/home/admin1/projects/debug-ai/.worktrees/deepseek-qwen35-command-20261128\ntarget=b190f6c0d824a419ecb3af2c6f239fb764ee6d23\ntest -d \"$p\"\ntest -z \"$(git -C \"$p\" status --porcelain --untracked-files=all)\"\ntest \"$(git -C \"$p\" rev-parse --show-toplevel)\" = \"$p\"\ngit -C \"$p\" fetch --no-tags origin refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\ntest \"$(git -C \"$p\" rev-parse FETCH_HEAD)\" = \"$target\"\ngit -C \"$p\" merge-base --is-ancestor HEAD \"$target\"\ngit -C \"$p\" checkout --detach \"$target\"\ntest \"$(git -C \"$p\" rev-parse HEAD)\" = \"$target\"\ncid=\"$(docker ps -q --filter label=com.docker.compose.project=debug-ai --filter label=com.docker.compose.service=debug-ai)\"\ntest \"$(printf '%s\\n' \"$cid\" | wc -l)\" -eq 1\ntest -n \"$cid\"\nimage=\"$(docker inspect -f '{{.Image}}' \"$cid\")\"\npython3 -B - <<'PY'\nimport urllib.request\nwith urllib.request.urlopen('http://127.0.0.1:18185/health',timeout=5) as r:\n    assert r.status==200\nprint('QWEN_HEALTH_PASS')\nPY\nwork=\"$(mktemp -d)\"\ntrap 'rm -rf -- \"$work\"' EXIT\npython3 -B - \"$work/input.jsonl\" <<'PY'\nimport json,sys\np={\"case_id\":\"standalone-development-01\",\"instruction\":\"日本語で回答。開発中の修正を検証し、元の目的を達成するために必要な次の作業と完了条件を示せ。\",\"context\":\"架空の開発状況。CI未実行。ソース修正は済んだが、本番適用は未実施。目的は不具合の修正と再発防止。\",\"evidence\":[{\"evidence_id\":\"e1\",\"observation\":\"ソース変更のコミットは存在する。\"},{\"evidence_id\":\"e2\",\"observation\":\"テスト結果と本番反映の証拠はまだ存在しない。\"}],\"data_class\":\"LOCAL_ONLY\"}\nwith open(sys.argv[1],\"w\",encoding=\"utf-8\") as f:\n    f.write(json.dumps(p,ensure_ascii=False)+\"\\n\")\nPY\nexport AI_CORE_API_KEY=\"$(docker exec \"$cid\" node -e 'process.stdout.write(process.env.AI_CORE_API_KEY)')\"\ntest \"${#AI_CORE_API_KEY}\" -ge 16\nset +e\ndocker run --rm --network host --read-only --tmpfs /tmp:rw,nosuid,nodev,size=16m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 -v \"$p/server:/app/server:ro\" -v \"$p/orchestrator:/app/orchestrator:ro\" -v \"$p/scripts:/app/scripts:ro\" -v \"$work/input.jsonl:/input/task.jsonl:ro\" -e AI_CORE_API_KEY -e 'DEBUG_AI_COMMAND_MODEL_GATES={\"qwen35\":{\"origin\":\"http://127.0.0.1:18185\",\"model_id\":\"/models/Qwen3.5-4B-Q4_K_M.gguf\",\"runtime_context_tokens\":8192,\"max_output_tokens\":2048}}' -e DEBUG_AI_COMMAND_EXTERNAL_QUALIFICATION=false --entrypoint node \"$image\" scripts/qualify-command-module.cjs --local /input/task.jsonl standalone-development-01 QWEN_ONLY 768 0 170000 >\"$work/stdout\" 2>\"$work/stderr\"\nrc=$?\nset -e\nunset AI_CORE_API_KEY\npython3 -B - \"$work\" \"$rc\" \"$target\" <<'PY'\nimport json,sys,pathlib,subprocess\np=pathlib.Path(sys.argv[1])\nrc=int(sys.argv[2])\ntry:\n    d=json.loads(p.joinpath(\"stdout\").read_text())\nexcept (ValueError,OSError):\n    d={}\nreport={\"head\":sys.argv[3],\"exit\":rc,\"state\":d.get(\"state\"),\"reason\":d.get(\"reason\"),\"mode\":d.get(\"mode\"),\"input_split\":d.get(\"input_split\"),\"execution_authority\":d.get(\"execution_authority\"),\"quality_status\":d.get(\"quality_status\"),\"calls\":d.get(\"calls\",[]),\"elapsed_ms\":d.get(\"elapsed_ms\"),\"selected_candidate\":d.get(\"selected_candidate\"),\"external_provider_calls\":0}\nif not d:\n    report[\"stderr_bytes\"]=p.joinpath(\"stderr\").stat().st_size\n    try:\n        error=json.loads(p.joinpath(\"stderr\").read_text())\n        if isinstance(error,dict): report[\"error_code\"]=error.get(\"error_code\")\n    except (ValueError,OSError): pass\nbody=\"## Standalone local decision smoke — synthetic development task, real Qwen inference\\n\\n```json\\n\"+json.dumps(report,ensure_ascii=False,indent=2)+\"\\n```\\n\\nOne local case only, no DeepSeek call, no production deployment, no resumed 50-case suite. Candidate is advisory, not execution evidence.\"\nsubprocess.run([\"gh\",\"issue\",\"comment\",\"41\",\"--repo\",\"seigo-gace/debug-ai\",\"--body-file\",\"-\"],input=body,text=True,capture_output=True,timeout=25,check=True)\nprint(json.dumps({\"state\":report[\"state\"],\"exit\":rc,\"elapsed_ms\":report[\"elapsed_ms\"],\"model_calls\":len(report[\"calls\"]),\"recorded\":True},ensure_ascii=True))\nPY\ntest \"$rc\" -eq 0\n"
+  }
+}
