@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-7233202797"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\ncd /home/admin1/projects/ai-core\npython3 -B - <<'PY'\nimport json,pathlib,subprocess,hashlib\ncid='qwen-cpu-optimizer-qualification-v1-r2'\ns=json.loads(subprocess.check_output(['docker','inspect',cid],text=True,timeout=5))[0]['State']\nout=pathlib.Path('.ai-core/qualification-runs/qwen-cpu-optimizer-qualification-v1/training-result.json')\nr={'running':s['Running'],'state':s['Status'],'exit':s['ExitCode'],'oom_killed':s['OOMKilled'],'result_file_present':out.is_file()}\nif out.is_file():\n    d=json.loads(out.read_text())\n    r.update({k:d.get(k) for k in ('training_scope','teacher_model','optimizer_steps','supervised_tokens','mean_training_loss','production_adopted')})\n    r['adapter_changed']=d.get('adapter_before_sha256')!=d.get('adapter_after_sha256')\n    r['artifact_verified']=all((out.parent/n).is_file() and hashlib.file_digest((out.parent/n).open('rb'),'sha256').hexdigest()==h for n,h in d.get('artifact_sha256',{}).items()) and len(d.get('artifact_sha256',{}))==2\nprint(json.dumps(r))\nPY\n"
+  }
+}
