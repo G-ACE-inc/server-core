@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "G-ACE-inc/server-core"
+    },
+    "command": "set -euo pipefail\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf -- \"$tmp\"' EXIT\nchmod 700 \"$tmp\"\nfor name in servercore_host_output_private_artifact_publish.py servercore_host_output_cipher_inbox.py servercore_host_output_gateway_relay.py servercore_host_output_artifact_assemble.py servercore_host_output_export.py chat_host_observation_gh_restore.py chat_host_observation_artifact_readback.py; do\n gh api -H 'Accept: application/vnd.github.raw+json' \"repos/G-ACE-inc/server-core/contents/scripts/$name?ref=d05a1ae1471d52c8fe76d957ac6c916f22a94b6d\" > \"$tmp/$name\"\ndone\npython3 -B \"$tmp/servercore_host_output_private_artifact_publish.py\" req_20261128082200000000c830 --writer-ledger --writer-dir \"$HOME/.local/state/gserver-terminal/results\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
