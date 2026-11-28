@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-7232796574"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\ncd /home/admin1/projects/ai-core\npython3 -B - <<'PY'\nimport pathlib,shutil,subprocess,json,sys,os\nroot=pathlib.Path('models/Qwen3.5-4B-hf-851bf6e8')\nfiles=[{'name':p.name,'bytes':p.stat().st_size} for p in sorted(root.iterdir()) if p.is_file() and not p.is_symlink()] if root.is_dir() else []\nstate=pathlib.Path('.ai-core')\nlog=state/'distillation-setup.log'\ns=log.read_text(errors='replace')[-8192:] if log.is_file() else ''\nmarkers=[x for x in ('ensurepip is not available','No module named ensurepip','No module named pip','Permission denied','No space left on device','python3-venv','returned non-zero exit status') if x.lower() in s.lower()]\nvenv=state/'distillation-venv/bin/python'\ntools={k:bool(shutil.which(k)) for k in ('uv','pipx','virtualenv','curl','python3','pip3','wget')}\np=subprocess.run([sys.executable,'-m','pip','--version'],capture_output=True,text=True,timeout=4)\nactive=0\nfor d in pathlib.Path('/proc').glob('[0-9]*'):\n    try:\n        cmd=(d/'cmdline').read_bytes()\n        if b'curl\\x00' in cmd and b'Qwen3.5-4B-hf-851bf6e8' in cmd: active+=1\n    except OSError: pass\nr={'checkpoint_files':files,'checkpoint_manifest_present':root.with_name(root.name+'.manifest.json').is_file(),'active_matching_downloads':active,'venv_python_present':venv.is_file(),'venv_log_markers':markers,'system_pip_available':p.returncode==0,'tools':tools,'python_version':sys.version.split()[0]}\n# Query current provider key metadata through the already approved dedicated\n# Vault route. No completion call, no key material or raw provider body output.\ntry:\n    code=\"\"\"import json,http.client,sys\nsys.path.insert(0,'/app')\nfrom runtime.remote_model_gate import read_caller_token\nt=read_caller_token('/run/secrets/ai-core-openrouter-caller')\np={'secret_id':'openrouter-api-key','consumer':'ai-core','url':'https://openrouter.ai/api/v1/key','method':'GET','secret_header':'authorization','secret_prefix':'Bearer ','headers':{'accept':'application/json'}}\nc=http.client.HTTPConnection('127.0.0.1',8791,timeout=8)\nc.request('POST','/internal/v1/actions/http',body=json.dumps(p),headers={'Authorization':'Bearer '+t,'Content-Type':'application/json'})\nx=c.getresponse();b=json.loads(x.read(1024*1024));v=b.get('provider',{})\no={'vault_status':x.status,'provider_status':v.get('status')}\nif x.status==200 and v.get('status')==200:\n d=json.loads(v['body']).get('data',{})\n o.update({k:d.get(k) for k in ('limit','limit_remaining','usage','usage_daily','limit_reset')})\nprint(json.dumps(o))\n\"\"\"\n    q=subprocess.run(['docker','exec','ai-core-model-gate','python3','-c',code],capture_output=True,text=True,timeout=12)\n    r['provider_key_metadata']=json.loads(q.stdout) if q.returncode==0 else {'probe_exit':q.returncode}\nexcept Exception as ex: r['provider_key_metadata']={'error':type(ex).__name__}\nr['provider_completion_calls']=0\nbody='## Distillation failure recovery: existing checkpoint, venv cause and key ledger\\n\\n```json\\n'+json.dumps(r,indent=2)+'\\n```\\n\\nRead-only. No paid completion, no credential output, no new download.'\nsubprocess.run(['gh','issue','comment','1','--repo','seigo-gace/ai-core','--body-file','-'],input=body,text=True,capture_output=True,check=True,timeout=8)\nprint('DISTILLATION_FAILURE_RECOVERY_RECORDED')\nPY\n"
+  }
+}
