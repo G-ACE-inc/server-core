@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/376#issuecomment-7231202080"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -Eeuo pipefail\nroot=/home/admin1/projects/ai-core\np=\"$root/.worktrees/qwen35-gate-candidate-20261128\"\ncd \"$p\"\ntest \"$(git rev-parse HEAD)\" = 327904c559b9a91a24ee436da134811243a4d435\nPYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'\nimport json,os,pathlib,stat,time,sys\nfrom runtime.remote_model_gate import MODEL_ID,read_caller_token,validate_completion,vault_completion,normalize_completion,RemoteGateError\nmarker=pathlib.Path('/tmp/ai-core-deepseek-real-qualification-20261128-0952.json')\ndef record(value):\n temp=marker.with_suffix('.tmp')\n fd=os.open(temp,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)\n with os.fdopen(fd,'w') as f:json.dump(value,f);f.flush();os.fsync(f.fileno())\n os.replace(temp,marker)\n print(json.dumps(value,sort_keys=True),flush=True)\nif marker.exists():\n st=marker.lstat()\n assert stat.S_ISREG(st.st_mode) and st.st_uid==os.getuid() and stat.S_IMODE(st.st_mode)==0o600\n old=json.loads(marker.read_text())\n print('EXISTING_PAID_PROBE_NO_REDISPATCH')\n print(json.dumps(old,sort_keys=True))\n sys.exit(0 if old.get('result')=='PASS' else 1)\ntoken=read_caller_token('/home/admin1/.config/libral-vault/ai-core-token')\nbody=validate_completion({'model':MODEL_ID,'messages':[{'role':'system','content':'Return a JSON object only.'},{'role':'user','content':'This is an artificial connectivity test. Return exactly {\"result\":\"OK\"}.'}],'max_tokens':256,'temperature':0,'stream':False,'response_format':{'type':'json_object'}})\n# The persisted dispatch marker prevents Host retry from issuing another paid request.\nfd=os.open(marker,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)\nwith os.fdopen(fd,'w') as f:json.dump({'result':'OUTCOME_UNKNOWN_NO_REDISPATCH'},f);f.flush();os.fsync(f.fileno())\nstarted=time.monotonic()\ntry:\n out=normalize_completion(vault_completion(token,body))\n content=json.loads(out['choices'][0]['message']['content'])\n ok=content=={'result':'OK'}\n record({'probe':'DEEPSEEK_REAL_VAULT_INFERENCE','result':'PASS' if ok else 'FAIL','model':out['model'],'http_status':200,'content_valid':ok,'elapsed_s':round(time.monotonic()-started,3),'usage':out['usage']})\n sys.exit(0 if ok else 1)\nexcept RemoteGateError as e:\n record({'probe':'DEEPSEEK_REAL_VAULT_INFERENCE','result':'FAIL','code':e.code,'status':e.status,'elapsed_s':round(time.monotonic()-started,3)})\n sys.exit(1)\nexcept (ValueError,TypeError,KeyError):\n record({'probe':'DEEPSEEK_REAL_VAULT_INFERENCE','result':'FAIL','code':'RESPONSE_CONTRACT_INVALID','elapsed_s':round(time.monotonic()-started,3)})\n sys.exit(1)\nPY\n"
+  }
+}
