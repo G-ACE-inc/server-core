@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(docker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d' ' -f1)\" = dbf1e514fe17f532bce3c97ba97031715096dc578b36c9dc7b2687a5dd4c1ee8 || exit 51\ntest \"$(docker exec deploy-gaybbs-1 sha256sum /app/backfillExistingRecruitmentCards.mjs | cut -d' ' -f1)\" = \"$(sha256sum deploy/state/recruit-pr82-7363a913/backfillExistingRecruitmentCards.mjs | cut -d' ' -f1)\" || exit 52\npg_before=\"$(docker inspect -f '{{.Id}}' deploy-postgres-1)\"\nub_before=\"$(systemctl --user show -p MainPID --value gace-userbot-verify.service)\"\ntest \"$ub_before\" != 0\nbefore=\"$(docker exec deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs /app/backfillExistingRecruitmentCards.mjs --dry-run)\"\napplied=\"$(docker exec deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs /app/backfillExistingRecruitmentCards.mjs --apply)\"\nafter=\"$(docker exec deploy-gaybbs-1 node --import /app/preload/telegram-ipv4-preload.mjs /app/backfillExistingRecruitmentCards.mjs --dry-run)\"\ntest \"$(docker inspect -f '{{.Id}}' deploy-postgres-1)\" = \"$pg_before\"\ntest \"$(systemctl --user show -p MainPID --value gace-userbot-verify.service)\" = \"$ub_before\"\npython3 - \"$before\" \"$applied\" \"$after\" <<'PY'\nimport json,sys\nb,a,z=map(json.loads,sys.argv[1:])\nfor x in (b,a,z):\n    assert x[\"unresolved\"]==x[\"uncertain\"]==x[\"nonPublishedUnresolved\"]==0\nassert a[\"updatedSources\"]==a[\"eligibleSources\"]\nassert a[\"updatedReceipts\"]==a[\"eligibleReceipts\"]\nassert z[\"eligibleSources\"]==z[\"eligibleReceipts\"]==0\nassert z[\"alreadyCurrent\"]==z[\"sentReceipts\"]\nprint(f'RECRUITMENT_MIGRATION_PASS sources={z[\"publishedSources\"]} receipts={z[\"sentReceipts\"]} changed_sources={a[\"updatedSources\"]} changed_receipts={a[\"updatedReceipts\"]}')\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
