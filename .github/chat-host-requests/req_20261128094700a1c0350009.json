@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/Libral-Vault/pull/11"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/Libral-Vault",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "3e0c06d81257fbbe8a35f024a5916f3b96f1e95e",
+    "command": "set -Eeuo pipefail\nroot=/home/admin1/projects/libral-vault\ncd \"$root\"\ntest \"$(git rev-parse HEAD)\" = 3e0c06d81257fbbe8a35f024a5916f3b96f1e95e\ntest -z \"$(git status --porcelain --untracked-files=no)\"\nname=libral-vault-libral-vault-1\ntest \"$(docker inspect -f '{{.State.Health.Status}}' \"$name\")\" = healthy\ntest \"$(docker inspect -f '{{ index .Config.Labels \"com.docker.compose.project\" }}' \"$name\")\" = libral-vault\ntest \"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/data/libral-vault\"}}{{.Source}}{{end}}{{end}}' \"$name\")\" = /home/admin1/var/lib/libral-vault\ndocker exec \"$name\" node -e 'const a=process.env.LIBRAL_VAULT_HTTP_ALLOWLIST.split(\",\");if(a.includes(\"https://openrouter.ai\"))process.exit(2);if(a.length<2)process.exit(3);console.log(\"VAULT_EXISTING_PROVIDER_ORIGINS=\"+a.join(\",\"))'\np=\"$root/.worktrees/ai-core-openrouter-consumer-20261128\"\ngit fetch --no-tags origin refs/heads/fix/ai-core-openrouter-consumer-20261128\ntest \"$(git rev-parse FETCH_HEAD)\" = 22fc6d11f40f8f684430dfe1fd4f03cac0f301b0\nif [ ! -d \"$p\" ]; then git worktree add --detach \"$p\" 22fc6d11f40f8f684430dfe1fd4f03cac0f301b0; fi\ncd \"$p\"\ntest \"$(git rev-parse HEAD)\" = 22fc6d11f40f8f684430dfe1fd4f03cac0f301b0\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ndocker build --pull=false --target runtime -t libral-vault:ai-core-openrouter-22fc6d11 .\ndocker run --rm --network none --entrypoint node libral-vault:ai-core-openrouter-22fc6d11 -e 'const s=require(\"fs\").readFileSync(\"dist/src/server.js\",\"utf8\");if(!s.includes(\"LIBRAL_VAULT_AI_CORE_TOKEN_FILE\")||!s.includes(\"AI_CORE_PROVIDER_SCOPE_DENIED\"))process.exit(2);console.log(\"VAULT_AI_CORE_CANDIDATE_SOURCE=PASS\")'\nprintf 'VAULT_CANDIDATE_BUILD=PASS PRODUCTION_UNCHANGED=YES\\n'\n"
+  }
+}
