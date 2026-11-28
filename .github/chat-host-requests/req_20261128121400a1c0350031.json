@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-7232807850"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\numask 077\ncd /home/admin1/projects/ai-core\npython3 -B - <<'PY'\nimport pathlib,hashlib,json,subprocess,os\nroot=pathlib.Path('models/Qwen3.5-4B-hf-851bf6e8')\nname='model.safetensors-00002-of-00002.safetensors'\npart=root/(name+'.part')\nfinal=root/name\nassert root.is_dir() and not root.is_symlink() and not part.is_symlink() and not final.is_symlink()\nassert not final.exists() and part.is_file()\nassert part.stat().st_size==1913456374\nactive=0\nfor d in pathlib.Path('/proc').glob('[0-9]*'):\n    try:\n        c=(d/'cmdline').read_bytes()\n        if c.startswith(b'curl\\x00') and b'Qwen3.5-4B-hf-851bf6e8' in c: active+=1\n    except OSError: pass\nassert active==0\np=subprocess.run(['curl','--fail','--silent','--show-error','--location','--proto','=https','--proto-redir','=https','--connect-timeout','8','--max-time','18','--continue-at','-','--output',str(part),'https://huggingface.co/Qwen/Qwen3.5-4B/resolve/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a/'+name],capture_output=True,timeout=20)\nn=part.stat().st_size\nassert 1913456374<=n<=3990429408\nreport={'name':name,'before':1913456374,'after':n,'total':3990429408,'curl_exit':p.returncode,'state':'BYTES_COMPLETE_PENDING_HASH' if n==3990429408 else 'PARTIAL'}\nbody='## Resume only the remaining Qwen checkpoint shard\\n\\n```json\\n'+json.dumps(report,indent=2)+'\\n```\\n\\nNo prior verified file replaced. A complete byte count still requires SHA-256 verification.'\nsubprocess.run(['gh','issue','comment','1','--repo','seigo-gace/ai-core','--body-file','-'],input=body,text=True,capture_output=True,check=True,timeout=6)\nprint(json.dumps(report))\nPY\n"
+  }
+}
