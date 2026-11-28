@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-7232836565"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\ncd /home/admin1/projects/ai-core\npython3 -B - <<'PY'\nimport pathlib,subprocess,json,sys,re,os\nroot=pathlib.Path('.ai-core')\npy=root/'distillation-venv/bin/python'\nlog=root/'distillation-setup.log'\ns=log.read_text(errors='replace')[-16000:]\n# Record only public package/version and progress lines, never URLs with credentials.\nlines=[x.strip() for x in s.splitlines() if re.match(r'\\s*(Collecting |Downloading |Using cached |ERROR: |WARNING: )',x)]\nlines=[re.sub(r'https?://\\S+','[url]',x)[:250] for x in lines][-25:]\np=subprocess.run([str(py),'-m','pip','cache','dir'],capture_output=True,text=True,timeout=3)\ncfg=json.loads(pathlib.Path('models/Qwen3.5-4B-hf-851bf6e8/config.json').read_text())\ntc=cfg['text_config']\nr={'pip_log':lines,'pip_cache_exists':p.returncode==0,'python':sys.version.split()[0],'config':{k:tc.get(k) for k in ('hidden_size','num_hidden_layers','vocab_size','model_type')},'model_type':cfg.get('model_type')}\nbody='## CPU training dependency recovery — actual pip and model config\\n\\n```json\\n'+json.dumps(r,indent=2)+'\\n```\\n\\nNo training or provider call.'\nsubprocess.run(['gh','issue','comment','1','--repo','seigo-gace/ai-core','--body-file','-'],input=body,text=True,capture_output=True,check=True,timeout=6)\nprint('CPU_TRAINING_DEPENDENCY_RECOVERY_RECORDED')\nPY\n"
+  }
+}
