@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/commit/abb831082d0b858fad0563cce85babf7d5191a99",
+    "implementation_context": "proposed_pr_staging"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -eu\numask 077\np=/home/admin1/projects/debug-ai/.worktrees/independent-chat-20261128\nsha=abb831082d0b858fad0563cce85babf7d5191a99\ngit -C \"$p\" fetch --no-tags origin \"$sha\"\ntest \"$(git -C \"$p\" rev-parse FETCH_HEAD)\" = \"$sha\"\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf -- \"$tmp\"' EXIT\ngit -C \"$p\" archive \"$sha\" server orchestrator | tar -x -C \"$tmp\"\nchmod 755 \"$tmp\"\ncid=\"$(docker ps -q --filter label=com.docker.compose.project=debug-ai --filter label=com.docker.compose.service=debug-ai)\"\ntest -n \"$cid\"\nimage=\"$(docker inspect -f '{{.Image}}' \"$cid\")\"\ndocker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 -v \"$tmp/server:/app/server:ro\" -v \"$tmp/orchestrator:/app/orchestrator:ro\" --entrypoint node \"$image\" --test server/tests/interactive-teaching.test.cjs server/tests/chat.test.cjs server/tests/chat-access.test.cjs\n"
+  }
+}
