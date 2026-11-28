@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-7232818100"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\numask 077\ncd /home/admin1/projects/ai-core\npython3 -B - <<'PY'\nimport pathlib,hashlib,json,subprocess,os\nroot=pathlib.Path('models/Qwen3.5-4B-hf-851bf6e8')\nrev='851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a'\nname='model.safetensors-00002-of-00002.safetensors'\npart=root/(name+'.part');final=root/name\nassert root.is_dir() and not root.is_symlink() and not part.is_symlink() and not final.exists() and not final.is_symlink()\nassert part.stat().st_size==3392230049\np=subprocess.run(['curl','--fail','--silent','--show-error','--location','--proto','=https','--proto-redir','=https','--connect-timeout','5','--max-time','14','--continue-at','-','--output',str(part),'https://huggingface.co/Qwen/Qwen3.5-4B/resolve/'+rev+'/'+name],capture_output=True,timeout=16)\nn=part.stat().st_size\nassert 3392230049<=n<=3990429408\nreport={'bytes':n,'total':3990429408,'curl_exit':p.returncode,'state':'PARTIAL'}\nif n==3990429408:\n    with part.open('rb') as f: digest=hashlib.file_digest(f,'sha256').hexdigest()\n    assert digest=='cb544bd9bfae93dc59b0f22b292f5933573854a7f9b97835c67060d7d910e188'\n    os.rename(part,final)\n    verified={'LICENSE':'bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a','config.json':'ddc63e1c717afa86c865bb5e01313d89d72bb53b97ad4a8a03ba8510c0621670','chat_template.jinja':'a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715','tokenizer_config.json':'316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8','tokenizer.json':'5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42','merges.txt':'a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d','vocab.json':'ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003','model.safetensors.index.json':'cf3f798ee02ba45f9622aa8892a47369ab667d0afbf154ee7c2212de42e6302d','model.safetensors-00001-of-00002.safetensors':'26a93f066e1916adb13453dae5a0c707c0fbc71299ed98779571a907b8e74c61',name:digest}\n    assert set(p.name for p in root.iterdir())==set(verified)\n    assert all(p.is_file() and not p.is_symlink() for p in root.iterdir())\n    manifest=root.with_name(root.name+'.manifest.json')\n    assert not manifest.exists() and not manifest.is_symlink()\n    with manifest.open('x',encoding='utf-8') as f:\n        json.dump({'model':'Qwen/Qwen3.5-4B','revision':rev,'sha256':verified},f,indent=2);f.write('\\n');f.flush();os.fsync(f.fileno())\n    report.update({'state':'CHECKPOINT_ALL_FILES_VERIFIED','verified_files':10,'verified_total_bytes':sum(p.stat().st_size for p in root.iterdir()),'final_shard_sha256':digest})\nbody='## Official Qwen training checkpoint final shard\\n\\n```json\\n'+json.dumps(report,indent=2)+'\\n```\\n\\nThe first nine hashes were verified in comment 7232798198; final shard separately SHA-256 checked. No inference model replaced and no training performed.'\nsubprocess.run(['gh','issue','comment','1','--repo','seigo-gace/ai-core','--body-file','-'],input=body,text=True,capture_output=True,check=True,timeout=6)\nprint(json.dumps(report))\nPY\n"
+  }
+}
