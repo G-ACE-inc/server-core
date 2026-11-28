@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\npython3 -B scripts/userbot_test_client.py health\npython3 -B - <<'PY'\nimport json,subprocess,sys\nids=[49,621,990,991,992,993,994,995,996,997,998,999,104]\nsql=\"SELECT message_thread_id,title,COALESCE(message_id,0),state,pinned FROM topic_dm_entry_pins WHERE chat_id=-1003847210571 AND message_thread_id IN (\"+\",\".join(map(str,ids))+\") ORDER BY message_thread_id; SELECT message_thread_id,panel_type,COALESCE(message_id,0),state FROM board_menu_panels WHERE chat_id=-1003847210571 AND message_thread_id IN (\"+\",\".join(map(str,ids))+\") ORDER BY message_thread_id;\"\np=subprocess.run([\"docker\",\"exec\",\"-i\",\"deploy-postgres-1\",\"sh\",\"-c\",'exec psql -X -q -U \"$POSTGRES_USER\" -d gaybbs -At -F \"|\" -v ON_ERROR_STOP=1 -f -'],input=sql,text=True,capture_output=True,timeout=25)\nif p.returncode: raise RuntimeError(\"DB_READ_FAILED\")\nprint(\"BLOCK_LEDGER_BEGIN\")\nprint(p.stdout,end=\"\")\nprint(\"BLOCK_LEDGER_END\")\nfor tid in ids:\n p=subprocess.run([sys.executable,\"-B\",\"scripts/userbot_topic_audit_client.py\",\"--chat-id\",\"-1003847210571\",\"--topic-id\",str(tid)],text=True,capture_output=True,timeout=100)\n if p.returncode:\n  print(\"BLOCK_AUDIT_FAILED\",tid,flush=True)\n  continue\n rows=[json.loads(x.split(\"=\",1)[1]) for x in p.stdout.splitlines() if x.startswith(\"USERBOT_TOPIC_AUDIT=\")]\n if len(rows)!=1 or rows[0].get(\"chat\")!=\"area\": raise RuntimeError(\"AUDIT_RESULT_INVALID\")\n found=[r for r in rows[0].get(\"rows\",[]) if r.get(\"topic_id\")==tid]\n if len(found)!=1: raise RuntimeError(\"TOPIC_NOT_VERIFIED\")\n r=found[0]\n print(\"BLOCK_AUDIT=\"+json.dumps({k:r.get(k) for k in (\"topic_id\",\"title\",\"post_button\",\"pin_state\",\"pin_message_ids\",\"history_message_ids\",\"button_types\",\"migration\")},ensure_ascii=False),flush=True)\nPY\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
