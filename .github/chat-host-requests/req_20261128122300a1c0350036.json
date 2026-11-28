@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-7232836565"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\numask 077\ncd /home/admin1/projects/ai-core\npython3 -B - <<'PY'\nimport pathlib,urllib.request,urllib.parse,html.parser,hashlib,json,subprocess,os\nroot=pathlib.Path('.ai-core')\nassert root.is_dir() and not root.is_symlink()\ncache=root/'distillation-wheels'\nassert not cache.is_symlink()\ncache.mkdir(mode=0o700,exist_ok=True)\nname='torch-2.10.0+cpu-cp312-cp312-manylinux_2_28_x86_64.whl'\nclass Links(html.parser.HTMLParser):\n    def __init__(self): super().__init__();self.links=[]\n    def handle_starttag(self,tag,attrs):\n        if tag=='a':\n            url=dict(attrs).get('href','')\n            if urllib.parse.unquote(urllib.parse.urlsplit(url).path.rsplit('/',1)[-1])==name:\n                self.links.append(url)\nindex='https://download.pytorch.org/whl/cpu/torch/'\nwith urllib.request.urlopen(index,timeout=5) as response:\n    p=Links();p.feed(response.read(4*1024*1024).decode())\nassert len(p.links)==1\nurl=urllib.parse.urljoin(index,p.links[0])\nu=urllib.parse.urlsplit(url)\nassert u.scheme=='https' and u.hostname in ('download.pytorch.org','download-r2.pytorch.org') and u.fragment.startswith('sha256=') and len(u.fragment)==71\nexpected=u.fragment[7:]\nurl=urllib.parse.urlunsplit(u._replace(fragment=''))\nfinal=cache/name;part=cache/(name+'.part')\nassert not final.is_symlink() and not part.is_symlink()\nbefore=part.stat().st_size if part.is_file() else 0\nif not final.exists():\n    result=subprocess.run(['curl','--fail','--silent','--show-error','--location','--proto','=https','--proto-redir','=https','--connect-timeout','5','--max-time','15','--continue-at','-','--output',str(part),url],capture_output=True,timeout=17)\n    rc=result.returncode\n    if rc==0:\n        with part.open('rb') as f: assert hashlib.file_digest(f,'sha256').hexdigest()==expected\n        os.rename(part,final)\nelse:\n    rc=0\n    with final.open('rb') as f: assert hashlib.file_digest(f,'sha256').hexdigest()==expected\nreport={'wheel':name,'before':before,'bytes':(final if final.exists() else part).stat().st_size if final.exists() or part.exists() else 0,'verified':final.is_file(),'sha256':expected,'curl_exit':rc}\nbody='## CPU PyTorch wheel resumable acquisition\\n\\n```json\\n'+json.dumps(report,indent=2)+'\\n```\\n\\nOfficial index SHA binding; no global install or GPU.'\nsubprocess.run(['gh','issue','comment','1','--repo','seigo-gace/ai-core','--body-file','-'],input=body,text=True,capture_output=True,check=True,timeout=5)\nprint(json.dumps(report))\nPY\n"
+  }
+}
