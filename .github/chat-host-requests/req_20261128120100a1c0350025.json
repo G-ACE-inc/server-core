@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-7232625691"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\ncd /home/admin1/projects/ai-core\npython3 -B - <<'PY'\nimport os, json, pathlib, grp, pwd, shutil, subprocess, urllib.request\nuid=os.getuid()\naccounts=pwd.getpwall()\nprivate=[]\nfor group in grp.getgrall():\n    members={p.pw_uid for p in accounts if p.pw_gid==group.gr_gid}\n    for name in group.gr_mem:\n        try: members.add(pwd.getpwnam(name).pw_uid)\n        except KeyError: members.add(-1)\n    if members=={uid} and group.gr_gid in set(os.getgroups())|{os.getgid()}:\n        private.append(group.gr_gid)\nflags=set()\nfor line in pathlib.Path('/proc/cpuinfo').read_text().splitlines():\n    if line.startswith('flags'):\n        flags=set(line.split(':',1)[1].split());break\ndisk=shutil.disk_usage('models')\nr={'host_uid':uid,'owner_only_current_groups':sorted(private),'setfacl_available':shutil.which('setfacl') is not None,'cpu_flags':{k:k in flags for k in ('avx2','avx512f','avx512_bf16','amx_bf16')},'models_disk_free_bytes':disk.free,'venv_available':__import__('importlib.util').util.find_spec('venv') is not None,'provider_calls':0}\ntry:\n    req=urllib.request.Request('https://huggingface.co/api/models/Qwen/Qwen3.5-4B?blobs=true',headers={'Accept':'application/json'})\n    with urllib.request.urlopen(req,timeout=12) as res:\n        d=json.loads(res.read(1024*1024))\n    assert d.get('id')=='Qwen/Qwen3.5-4B'\n    shards=[{'name':x['rfilename'],'size':x.get('size'),'sha256':(x.get('lfs') or {}).get('sha256')} for x in d.get('siblings',[]) if x.get('rfilename','').endswith('.safetensors')]\n    r['official_checkpoint']={'revision':d['sha'],'shards':shards,'total_bytes':sum(x['size'] or 0 for x in shards),'license':(d.get('cardData') or {}).get('license')}\nexcept Exception as e: r['checkpoint_probe_error']=type(e).__name__\nbody='## Qwen training resource / immutable checkpoint preflight\\n\\n```json\\n'+json.dumps(r,indent=2)+'\\n```\\n\\nRead-only. No package install, model download, secret read, permission change, paid provider call, or training.'\nsubprocess.run(['gh','issue','comment','1','--repo','seigo-gace/ai-core','--body-file','-'],input=body,text=True,capture_output=True,check=True,timeout=25)\nprint('DISTILLATION_RESOURCE_PREFLIGHT_RECORDED')\nPY\n"
+  }
+}
