@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/376#issuecomment-7231234341"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -Eeuo pipefail\nroot=/home/admin1/projects/ai-core\np=\"$root/.worktrees/qwen35-gate-candidate-20261128\"\ncd \"$p\"\ntest \"$(git rev-parse HEAD)\" = 327904c559b9a91a24ee436da134811243a4d435\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ncandidate=ai-core-model-gate:deepseek-candidate-327904c5\nold=ai-core-model-gate:local\nbackup=ai-core-model-gate:qwen35-candidate-f314b8d5\nnewid=\"$(docker image inspect -f '{{.Id}}' \"$candidate\")\"\noldid=\"$(docker image inspect -f '{{.Id}}' \"$backup\")\"\ncurid=\"$(docker inspect -f '{{.Image}}' ai-core-model-gate)\"\nhealth() {\n docker exec ai-core-model-gate python3 -c 'import urllib.request; [urllib.request.urlopen(\"http://127.0.0.1:%d/health\"%n,timeout=3).close() for n in (18181,18182,18183,18184,18185,18186)]'\n}\ncheck_remote() {\n docker exec ai-core-model-gate python3 -c 'import json,os,urllib.request,urllib.error; headers={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]}; base=\"http://127.0.0.1:18186\"; r=json.load(urllib.request.urlopen(urllib.request.Request(base+\"/v1/models\",headers=headers),timeout=6));assert r[\"data\"]==[{\"object\":\"model\",\"id\":\"deepseek/deepseek-v4.1-flash-1017\"}]\ntry:\n urllib.request.urlopen(urllib.request.Request(base+\"/v1/chat/completions\",headers=headers,data=b\"{}\"),timeout=5)\nexcept urllib.error.HTTPError as e:\n assert e.code==403 and json.load(e)[\"error\"][\"code\"]==\"REMOTE_DATA_CLASS_NOT_ADMITTED\"\nelse:\n raise AssertionError(\"REMOTE_DATA_CLASS_NOT_ENFORCED\")\nprint(\"REMOTE_GATE_IDENTITY_AND_DATA_CLASS=PASS\")'\n}\nif [ \"$curid\" = \"$newid\" ]; then health;check_remote;echo DEEPSEEK_GATE_ALREADY_ACTIVE;exit;fi\ntest \"$curid\" = \"$oldid\"\ntest \"$(docker image inspect -f '{{.Id}}' \"$old\")\" = \"$oldid\"\ntest -z \"$(ss -H -lnt 'sport = :18186')\"\nfor n in ai-coder ai-qwen3 ai-granite ai-ministral ai-qwen35; do test \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = false; done\ndocker exec ai-core-model-gate python3 -c 'import json,os,urllib.request; h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]}; get=lambda p:json.load(urllib.request.urlopen(urllib.request.Request(\"http://127.0.0.1:18184\"+p,headers=h),timeout=8)); a=get(\"/internal/handoff/status\"); b=get(\"/internal/resources/status\"); assert not a[\"resident\"] and not any(a[\"active\"].values()) and not a[\"handoff\"] and not a[\"recovery_pending\"] and b[\"queued\"]==0; print(\"IDLE_EXISTING_GATE_CONFIRMED\")'\ntest -f /home/admin1/.config/libral-vault/ai-core-token\ntest \"$(stat -c '%a' /home/admin1/.config/libral-vault/ai-core-token)\" = 600\ntest \"$(docker inspect -f '{{.State.Health.Status}}' libral-vault-libral-vault-1)\" = healthy\nexport AI_CORE_API_KEY=\"$(docker exec ai-core-model-gate sh -c 'printf \"%s\" \"$AI_CORE_API_KEY\"')\"\ntest \"${#AI_CORE_API_KEY}\" -ge 16\ndocker compose -p ai-core-gate -f \"$p/compose.gate.yml\" -f \"$p/compose.gate.openrouter.yml\" --project-directory \"$root\" --env-file \"$root/.env\" config -q\nrollback() {\n rc=$?;trap - ERR;set +e\n echo \"DEEPSEEK_GATE_ACTIVATION_FAILED_EXIT=$rc\"\n docker logs --tail 60 ai-core-model-gate 2>&1 | grep -E 'MODEL_GATE=FAIL|MODEL_GATE_PARENT_BUDGET|MODEL_GATE_MODE' | tail -10\n docker image tag \"$backup\" \"$old\"\n docker compose -p ai-core-gate -f \"$p/compose.gate.yml\" --project-directory \"$root\" --env-file \"$root/.env\" up -d --no-build --force-recreate gate\n for k in $(seq 1 15); do\n  if docker exec ai-core-model-gate python3 -c 'import urllib.request; [urllib.request.urlopen(\"http://127.0.0.1:%d/health\"%n,timeout=3).close() for n in (18181,18182,18183,18184,18185)]' >/dev/null 2>&1; then echo RESTORED_QWEN35_GATE_HEALTH=PASS;break;fi\n  sleep 2\n done\n exit \"$rc\"\n}\ntrap rollback ERR\ndocker image tag \"$candidate\" \"$old\"\ndocker compose -p ai-core-gate -f \"$p/compose.gate.yml\" -f \"$p/compose.gate.openrouter.yml\" --project-directory \"$root\" --env-file \"$root/.env\" up -d --no-build --force-recreate gate\nready=NO\nfor k in $(seq 1 15); do\n if health >/dev/null 2>&1; then ready=YES;break;fi\n sleep 2\ndone\ntest \"$ready\" = YES\nfor f in compose.runtime.yml runtime/model-policy.yaml runtime/model_gate.py runtime/remote_model_gate.py; do\n test \"$(sha256sum \"$f\" | cut -d ' ' -f1)\" = \"$(docker exec ai-core-model-gate sha256sum \"/app/$f\" | cut -d ' ' -f1)\"\ndone\ncheck_remote\ntrap - ERR\necho SHARED_GATE_DEEPSEEK_AND_QWEN35_ACTIVATION=PASS_HEALTH_6_OF_6\n"
+  }
+}
