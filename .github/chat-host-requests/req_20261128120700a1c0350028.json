@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/376#issuecomment-7232764222"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -Eeuo pipefail\numask 077\np=/home/admin1/projects/debug-ai/.worktrees/deepseek-qwen35-command-20261128\ntarget=d708828c831f8b6323c126cc264970623501496a\ntest -d \"$p\"\ntest -z \"$(git -C \"$p\" status --porcelain --untracked-files=all)\"\ngit -C \"$p\" fetch --no-tags origin refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\ntest \"$(git -C \"$p\" rev-parse FETCH_HEAD)\" = \"$target\"\ngit -C \"$p\" merge-base --is-ancestor HEAD \"$target\"\ngit -C \"$p\" checkout --detach \"$target\"\ncid=\"$(docker ps -q --filter label=com.docker.compose.project=debug-ai --filter label=com.docker.compose.service=debug-ai)\"\ntest -n \"$cid\"\ntest \"$(printf '%s\\n' \"$cid\" | wc -l)\" -eq 1\nimage=\"$(docker inspect -f '{{.Image}}' \"$cid\")\"\npython3 -B - <<'PY'\nimport urllib.request\nfor n in (18185,18186):\n    with urllib.request.urlopen('http://127.0.0.1:%d/health'%n,timeout=4) as r: assert r.status==200\nprint('QWEN_AND_TEACHER_GATE_HEALTH_PASS')\nPY\nledger=/tmp/debugai-standalone-teacher-qualification-20261128-v1\nmkdir -m 700 \"$ledger\" || { echo ALREADY_ATTEMPTED_DO_NOT_REDISPATCH; exit 1; }\npython3 -B - \"$ledger/input.jsonl\" <<'PY'\nimport json,sys\n# Newly authored, standalone synthetic qualification; no KB record or private data.\nrow={'id':'standalone-teacher-smoke-01','instruction':'A synthetic project has a source commit but no executed tests and no deployment evidence. The goal is repair and regression prevention. Give a structured Japanese plan preserving the original objective and verifiable completion conditions. Do not claim tests or deployment succeeded.'}\nwith open(sys.argv[1],'w',encoding='utf-8') as f: f.write(json.dumps(row,ensure_ascii=False)+'\\n')\nPY\nexport AI_CORE_API_KEY=\"$(docker exec \"$cid\" node -e 'process.stdout.write(process.env.AI_CORE_API_KEY)')\"\ntest \"${#AI_CORE_API_KEY}\" -ge 16\nset +e\ndocker run --rm --network host --read-only --tmpfs /tmp:rw,nosuid,nodev,size=16m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 -v \"$p/server:/app/server:ro\" -v \"$p/orchestrator:/app/orchestrator:ro\" -v \"$p/scripts:/app/scripts:ro\" -v \"$ledger/input.jsonl:/input/task.jsonl:ro\" -e AI_CORE_API_KEY -e 'DEBUG_AI_COMMAND_MODEL_GATES={\"deepseek\":{\"origin\":\"http://127.0.0.1:18186\",\"model_id\":\"deepseek/deepseek-v4.1-flash-1017\",\"runtime_context_tokens\":8192,\"max_output_tokens\":4096}}' -e DEBUG_AI_COMMAND_EXTERNAL_QUALIFICATION=true --entrypoint node \"$image\" scripts/qualify-command-module.cjs /input/task.jsonl standalone-teacher-smoke-01 DEEPSEEK_ONLY 0 1024 60000 >\"$ledger/stdout\" 2>\"$ledger/stderr\"\nrc=$?\nset -e\nunset AI_CORE_API_KEY\nprintf '%s\\n' \"$rc\" > \"$ledger/exitcode\"\npython3 -B - \"$ledger\" \"$target\" <<'PY'\nimport sys,json,pathlib,subprocess,hashlib\np=pathlib.Path(sys.argv[1])\nraw=(p/'stdout').read_bytes()\ntry: d=json.loads(raw)\nexcept (ValueError,TypeError): d={}\ncalls=[{k:c.get(k) for k in ('model','model_id','status','error_code','telemetry','prompt_digest','output_digest','validation_field','validation_type')} for c in d.get('calls',[])]\nreport={'head':sys.argv[2],'exit':int((p/'exitcode').read_text()),'state':d.get('state'),'reason':d.get('reason'),'elapsed_ms':d.get('elapsed_ms'),'calls':calls,'stdout_sha256':hashlib.sha256(raw).hexdigest(),'stderr_bytes':(p/'stderr').stat().st_size,'training_updates':0,'scope':'ONE_NEW_SYNTHETIC_NON_KB_QUALIFICATION','no_retry':True}\nbody='## DeepSeek standalone Gate qualification — real teacher smoke\\n\\n```json\\n'+json.dumps(report,indent=2)+'\\n```\\n\\nRaw result retained only in protected Host ledger; no KB candidate transmission, no training, no account budget reset.'\nsubprocess.run(['gh','issue','comment','41','--repo','seigo-gace/debug-ai','--body-file','-'],input=body,text=True,capture_output=True,check=True,timeout=20)\nprint(json.dumps(report))\nPY\ntest \"$rc\" -eq 0\n"
+  }
+}
