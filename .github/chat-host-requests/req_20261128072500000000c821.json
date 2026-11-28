@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ntest -f deploy/gserver-compose.yaml\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-gaybbs-1)\" = true\ntest \"$(docker inspect -f '{{.State.Running}}' deploy-postgres-1)\" = true\ntest \"$(docker image inspect -f '{{.Id}}' gace-tgtumbler-gaybbs:local)\" = \"$(docker inspect -f '{{.Image}}' deploy-gaybbs-1)\"\nprintf 'GAYBBS_BUNDLE_SHA='\ndocker exec deploy-gaybbs-1 sha256sum /app/gaybbs.mjs | cut -d ' ' -f1\nprintf 'GATEAPP_CHECKOUT_SHA='\ngit rev-parse HEAD\nprintf 'USERBOT_ACTIVE='\nsystemctl --user is-active gace-userbot-verify.service\nprintf 'USERBOT_ENABLED='\nsystemctl --user is-enabled gace-userbot-verify.service\nprintf 'GSERVER_DEPLOY_PREFLIGHT=PASS\\n'\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
