@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd /home/gace/server-core\npython3 -B scripts/servercore_host_output_private_artifact_publish.py req_20261128100000000000b861 --writer-ledger --writer-dir \"$HOME/.local/state/gserver-terminal/results\"\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\ndocker exec -i deploy-postgres-1 sh -c 'exec psql -X -q -U \"$POSTGRES_USER\" -d gaybbs -At -F \"|\" -v ON_ERROR_STOP=1 -f -' <<'SQL'\nSELECT 'BOARD',message_thread_id,board_key,COALESCE(message_id,0),state FROM topic_board_posts WHERE chat_id=-1003847210571 AND message_thread_id IN (621,990,991,992,993,994,995,996,997,998,999) ORDER BY message_thread_id,board_key;\nSELECT 'ENTRY',message_thread_id,message_id,state,pinned FROM topic_dm_entry_pins WHERE chat_id=-1003847210571 AND message_thread_id IN (621,990,991,992,993,994,995,996,997,998,999) ORDER BY message_thread_id;\nSQL\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
