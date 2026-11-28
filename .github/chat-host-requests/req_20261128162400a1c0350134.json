@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/issues/41#issuecomment-7235558253",
+    "implementation_context": "not_applicable"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -eu\ncid=\"$(docker ps -q --filter label=com.docker.compose.project=debug-ai --filter label=com.docker.compose.service=debug-ai)\"\ntest -n \"$cid\"\ndocker exec \"$cid\" node -e 'const fs=require(\"fs\"),p=\"/app/runtime/chat\";const a=[];for(const n of fs.readdirSync(p).filter(n=>n.endsWith(\".json\"))){const x=JSON.parse(fs.readFileSync(p+\"/\"+n));for(const t of x.turns||[])if(t.error===\"CHAT_STREAM_HTTP\")a.push({updated_at:x.updated_at,state:t.state,error:t.error});}console.log(JSON.stringify(a.slice(-12)));const s=JSON.parse(fs.readFileSync(\"/app/runtime/teaching-batch-20261128-1620/status.json\"));console.log(JSON.stringify({batch:s.status,lessons:s.lessons.map(x=>({topic:x.topic,status:x.status,phase:x.phase,error:x.error,verdict:x.verdict}))}));'\ndocker ps --format '{{.Names}}' | grep -E 'ai-core|qwen' || true\nfor n in $(docker ps --format '{{.Names}}' | grep -E 'ai-core.*(gate|qwen)|qwen.*gate');do printf '%s\\n' \"$n\";docker logs --since 5m --tail 150 \"$n\" 2>&1 | grep -oE 'MODEL_CONCURRENCY_LIMIT|GLOBAL_CONCURRENCY_LIMIT|BACKEND_[A-Z_]+|ADMISSION_[A-Z_]+|HTTP/1.1\" (429|503|502|400|422)|OUT_OF_MEMORY' | sort | uniq -c || true;done\n"
+  }
+}
