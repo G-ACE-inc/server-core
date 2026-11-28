@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/pull/115"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -Eeuo pipefail\nroot=/home/admin1/projects/debug-ai\ncd \"$root\"\ntest \"$(git rev-parse HEAD)\" = a6a84876ab8ff9a81503ac15d1a3285e50634e1e\ntest -z \"$(git status --porcelain --untracked-files=no)\"\ncid=\"$(docker ps -q --filter label=com.docker.compose.project=debug-ai --filter label=com.docker.compose.service=debug-ai)\"\ntest -n \"$cid\"\ntest \"$(printf '%s\\n' \"$cid\" | wc -l)\" = 1\ntest \"$(docker inspect -f '{{.State.Health.Status}}' \"$cid\")\" = healthy\ntest \"$(docker inspect -f '{{.HostConfig.NetworkMode}}' \"$cid\")\" = host\ndocker exec \"$cid\" node -e 'if(process.version!==\"v24.20.0\"||!process.env.AI_CORE_API_KEY||process.env.AI_CORE_API_KEY.length<16)process.exit(2);console.log(\"EXISTING_DEBUGAI_RUNTIME_NODE_AND_CORE_CREDENTIAL=PASS\")'\np=\"$root/.worktrees/deepseek-qwen35-command-20261128\"\ngit fetch --no-tags origin refs/heads/fix/debugai-scout-diagnosis-handoff-20261016\ntest \"$(git rev-parse FETCH_HEAD)\" = 66a19847353fe2ab38c572577f7acbd91837fd3f\nif [ ! -d \"$p\" ]; then git worktree add --detach \"$p\" 66a19847353fe2ab38c572577f7acbd91837fd3f;fi\ntest \"$(git -C \"$p\" rev-parse HEAD)\" = 66a19847353fe2ab38c572577f7acbd91837fd3f\ntest -z \"$(git -C \"$p\" status --porcelain --untracked-files=all)\"\ntest \"$(sha256sum \"$p/package.json\" | cut -d ' ' -f1)\" = \"$(docker exec \"$cid\" sha256sum /app/package.json | cut -d ' ' -f1)\"\nimage=\"$(docker inspect -f '{{.Image}}' \"$cid\")\"\ndocker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=16m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 -v \"$p/server:/app/server:ro\" -v \"$p/orchestrator:/app/orchestrator:ro\" -v \"$p/scripts:/app/scripts:ro\" --entrypoint node \"$image\" --test server/tests/command-module.test.cjs server/tests/command-model-gate.test.cjs\necho DEBUGAI_COMMAND_MODULE_EXACT_SOURCE_TESTS=PASS_PRODUCTION_UNCHANGED\n"
+  }
+}
