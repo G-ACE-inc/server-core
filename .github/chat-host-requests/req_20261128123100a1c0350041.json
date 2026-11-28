@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-7233117456"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\numask 077\ncd /home/admin1/projects/ai-core\np=/home/admin1/projects/ai-core/.worktrees/qwen35-gate-candidate-20261128\ntest \"$(git -C \"$p\" rev-parse HEAD)\" = a47c4b7fe5289b8d1e7a2c104a00fb0dd27bfac5\ntest -z \"$(git -C \"$p\" status --porcelain --untracked-files=all)\"\n.ai-core/distillation-venv/bin/python -B - <<'PY'\nimport sys,os,pathlib,json,subprocess\nsys.path.insert(0,'/home/admin1/projects/ai-core/.worktrees/qwen35-gate-candidate-20261128')\nfrom transformers import AutoTokenizer\nfrom runtime.qwen_distillation import completion_tokens,DistillationError\nroot=pathlib.Path('models/Qwen3.5-4B-hf-851bf6e8')\ntokenizer=AutoTokenizer.from_pretrained(root,local_files_only=True,trust_remote_code=False)\nm=[{'role':'system','content':'検証結果を正確に報告。'},{'role':'user','content':'修正済みだがCI未実行。完了か？'},{'role':'assistant','content':'未完了。CIを実行し、結果を確認する。'}]\nprefix=tokenizer.apply_chat_template(m[:2],tokenize=False,add_generation_prompt=True,enable_thinking=False)\nfull=tokenizer.apply_chat_template(m,tokenize=False,add_generation_prompt=False,enable_thinking=False)\nresult={'fixture':'NEW_LOCAL_SYNTHETIC_NOT_KB_NOT_TEACHER','prefix_matches':full.startswith(prefix),'prefix_tail':repr(prefix[-70:]),'full_tail':repr(full[-120:]),'actual_template_valid':False}\ntry:\n    ids,labels=completion_tokens(tokenizer,m,512)\n    result.update({'actual_template_valid':True,'tokens':len(ids),'supervised_tokens':sum(x!=-100 for x in labels)})\nexcept DistillationError as e: result['template_error']=str(e)\nr=subprocess.run(['systemctl','--user','is-system-running'],capture_output=True,text=True,timeout=3)\nresult['user_systemd_status']=r.stdout.strip()[:40]\nresult['user_systemd_exit']=r.returncode\nresult['mem_available_kib']=next(int(x.split()[1]) for x in pathlib.Path('/proc/meminfo').read_text().splitlines() if x.startswith('MemAvailable:'))\nresult['cpus']=os.cpu_count()\nresult['training_updates']=0\nbody='## Actual Qwen tokenizer and CPU qualification execution preflight\\n\\n```json\\n'+json.dumps(result,ensure_ascii=False,indent=2)+'\\n```\\n\\nNew local synthetic fixture only. No KB data, no teacher label or paid call. No claim of weight update.'\nsubprocess.run(['gh','issue','comment','1','--repo','seigo-gace/ai-core','--body-file','-'],input=body,text=True,capture_output=True,check=True,timeout=5)\nprint(json.dumps(result,ensure_ascii=False))\nPY\n"
+  }
+}
