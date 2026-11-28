@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\ncd \"$HOME/Project/Gserver/projects/TGtumbler/GateApp-Bot\"\nrow=\"$(docker exec -i deploy-postgres-1 psql -X -q -v ON_ERROR_STOP=1 -U gace -d gaybbs -At -F ' ' <<'SQL'\nSELECT t.chat_id,d.telegram_message_id FROM announcement_posts a JOIN posting_deliveries d ON d.source_type='announcement' AND d.source_id=a.announcement_id::text AND d.owner_user_id=a.owner_user_id AND d.status='sent' JOIN posting_topics t ON t.topic_id=d.posting_topic_id AND t.purpose='announcement' AND t.enabled=TRUE AND t.verified_at IS NOT NULL WHERE a.kind='recruitment' AND a.room_id IS NULL AND a.status='sync_error' AND d.telegram_message_id IS NOT NULL;\nSQL\n)\"\ntest \"$(printf '%s\\n' \"$row\" | wc -l)\" = 1\nread -r chat mid extra <<< \"$row\"\ntest -z \"$extra\"\ntest -n \"$chat\" && test -n \"$mid\"\npython=deploy/.userbot-venv/bin/python\n\"$python\" -B scripts/userbot_test_client.py health\n# This existing exact-message probe checks only presence and Bot ownership in the three registered boards.\n# Do not treat the ROOM marker as evidence of recruitment format.\n\"$python\" -B scripts/userbot_test_client.py room_public_readback --chat-id \"$chat\" --message-id \"$mid\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
