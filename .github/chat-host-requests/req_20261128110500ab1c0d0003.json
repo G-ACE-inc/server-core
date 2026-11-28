@@ -1,0 +1,14 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -eu\nprintf 'WINDOWS_FORMAL_AND_AGENT\\n'\npowershell.exe -NoProfile -NonInteractive -Command '$ErrorActionPreference=\"Stop\"; $r=\"F:\\G-ACE-KB\\repo\"; if (Test-Path -LiteralPath $r -PathType Container) { Set-Location -LiteralPath $r; git rev-parse HEAD; git status --short --branch; foreach ($f in @(\"scripts/learning_asset_contract.py\",\"tests/test_learning_asset_contract.py\",\"docs/DESIGN_DELTA.md\",\"docs/PROJECT_TREE.md\",\"scripts/learning_asset_store.py\",\"tests/test_learning_asset_store.py\")) { if (Test-Path -LiteralPath $f -PathType Leaf) { \"$f $((Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash.ToLower())\" } else { \"MISSING $f\" } }; \"DATA_LEARNING_EXISTS=$(Test-Path -LiteralPath F:\\G-ACE-KB\\data\\learning)\"; \"PYTHON\"; Get-Command python,py -ErrorAction SilentlyContinue | Select-Object Name,Source | Format-Table -HideTableHeaders } else { \"FORMAL_REPO_NOT_FOUND\" }; \"CURSOR\"; Get-Command cursor,cursor-agent,agent,composer -ErrorAction SilentlyContinue | Select-Object Name,Source | Format-Table -HideTableHeaders; $zip=\"C:\\Users\\Owner\\Downloads\\debugai_dataset_audited_v0_3.zip\"; if(Test-Path -LiteralPath $zip -PathType Leaf) { \"DATASET_BYTES=$((Get-Item -LiteralPath $zip).Length)\"; \"DATASET_SHA=$((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLower())\" }'\n"
+  }
+}
