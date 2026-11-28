@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/commit/d6d7f9893636a9ca752ea0c2bb7a9d2fa7af32e4",
+    "implementation_context": "proposed_pr_staging"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "G-ACE-inc/server-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "command": "set -eu\ndocker inspect -f '{{.Image}} {{index .Config.Labels \"com.docker.compose.project\"}} {{index .Config.Labels \"com.docker.compose.project.working_dir\"}} {{index .Config.Labels \"com.docker.compose.project.config_files\"}}' ai-core-model-gate\ndocker exec ai-core-model-gate python3 -c 'from runtime.remote_model_gate import validate_completion,MODEL_ID; x=validate_completion(dict(model=MODEL_ID,messages=[dict(role=\"system\",content=\"s\"),dict(role=\"user\",content=\"u\")],max_tokens=32,temperature=0,stream=False,response_format=dict(type=\"json_object\"))); print(\"REASONING\",x.get(\"reasoning\",\"UNSET\"))'\ndocker exec ai-core-model-gate python3 -c 'import os,json,urllib.request;h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]};u=urllib.request.Request(\"http://127.0.0.1:18185/internal/handoff/status\",headers=h);d=json.load(urllib.request.urlopen(u,timeout=5));print(\"COORDINATOR\",json.dumps({k:d.get(k) for k in (\"resident\",\"active\",\"handoff\",\"recovery_pending\",\"queued\")}))'\ndocker exec ai-core-model-gate sha256sum /app/runtime/remote_model_gate.py\n"
+  }
+}
