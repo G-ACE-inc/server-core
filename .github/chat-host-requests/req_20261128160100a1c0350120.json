@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "read_only",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/debug-ai/commit/231a8f47dc9cb566080ba9e69f758ed47885f073",
+    "implementation_context": "proposed_pr_staging"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/debug-ai",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "a6a84876ab8ff9a81503ac15d1a3285e50634e1e",
+    "command": "set -eu\ncid=\"$(docker ps -q --filter label=com.docker.compose.project=debug-ai --filter label=com.docker.compose.service=debug-ai)\"\ntest -n \"$cid\"\ndocker exec \"$cid\" node -e 'const fs=require(\"fs\");let roots=fs.readdirSync(\"/tmp\").filter(n=>n.startsWith(\"real-teaching-\"));let records=[];function scan(p,d){if(d>5)return;for(const e of fs.readdirSync(p,{withFileTypes:true})){const f=p+\"/\"+e.name;if(e.isDirectory())scan(f,d+1);else if(e.name.endsWith(\".json\")){try{let x=JSON.parse(fs.readFileSync(f,\"utf8\"));let turns=Array.isArray(x.turns)?x.turns:[];for(let t of turns)if(t.teaching)records.push({state:t.state,error:t.error,stages:t.teaching.stages?.map(s=>({phase:s.phase,state:s.state,error:s.error,cost:s.cost})),verdict:t.teaching.verdict,cost:t.teaching.cost_usd})}catch{}}}}for(let n of roots)scan(\"/tmp/\"+n,0);console.log(JSON.stringify({probe_directories:roots.length,records}));'\n"
+  }
+}
