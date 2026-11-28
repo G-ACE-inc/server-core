@@ -1,0 +1,25 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "project_context": {
+      "repository": "seigo-gace/GateApp-Bot"
+    },
+    "command": "set -euo pipefail\nf=$(find \"$HOME/Project/Gserver\" -name servercore_host_output_private_artifact_publish.py -print -quit 2>/dev/null)\ntest -n \"$f\" || exit 42\npython3 -B \"$f\" req_20261128072800000000c823 --writer-ledger --writer-dir \"$HOME/.local/state/gserver-terminal/results\"\npython3 -B \"$f\" req_20261128072500000000c821 --writer-ledger --writer-dir \"$HOME/.local/state/gserver-terminal/results\"\n"
+  },
+  "gitops_request": {
+    "enabled": false
+  },
+  "source_reflect_request": {
+    "enabled": false
+  },
+  "server_command_id": "",
+  "run_id": ""
+}
