@@ -1,0 +1,14 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -eu\nroot=/home/gace/Project/Gserver/projects/seigo-gace--gace-dev-kb\ntest -d \"$root\"\ncd \"$root\"\nprintf 'SCRATCH_HEAD='; git rev-parse HEAD 2>/dev/null || true\ngit status --short --branch 2>/dev/null || true\nfor f in scripts/learning_asset_contract.py tests/test_learning_asset_contract.py docs/SCRATCH_FORMAL_PATCH_PROPOSAL.md; do if test -f \"$f\"; then sha256sum \"$f\"; else printf 'MISSING %s\\n' \"$f\"; fi; done\nif test -d /mnt/f/G-ACE-KB/repo; then\n  printf 'FORMAL_REPO\\n'\n  git -C /mnt/f/G-ACE-KB/repo rev-parse HEAD\n  git -C /mnt/f/G-ACE-KB/repo status --short --branch\n  for f in scripts/learning_asset_contract.py tests/test_learning_asset_contract.py; do if test -f \"/mnt/f/G-ACE-KB/repo/$f\"; then sha256sum \"/mnt/f/G-ACE-KB/repo/$f\"; fi; done\nfi\nprintf 'COMPOSER_CLI\\n'\nfor c in cursor-agent agent cursor composer; do command -v \"$c\" || true; done\nprintf 'DATASET_CANDIDATES\\n'\nfor d in \"$root\" /mnt/f/G-ACE-KB /mnt/c/Users; do if test -d \"$d\"; then find \"$d\" -maxdepth 4 -type f -name 'debugai_dataset_audited_v0_3*.zip' -print 2>/dev/null | head -n 10; fi; done\nprintf 'SOURCE_REVIEW\\n'\nfor f in scripts/learning_asset_contract.py tests/test_learning_asset_contract.py docs/SCRATCH_FORMAL_PATCH_PROPOSAL.md; do if test -f \"$f\"; then printf '\\n--- %s ---\\n' \"$f\"; cat \"$f\"; fi; done\n"
+  }
+}
