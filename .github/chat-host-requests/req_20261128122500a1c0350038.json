@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/issues/1#issuecomment-7233027852"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\numask 077\ncd /home/admin1/projects/ai-core\npython3 -B - <<'PY'\nimport pathlib,subprocess,json,hashlib,os\nroot=pathlib.Path('.ai-core');v=root/'distillation-venv';py=str(v/'bin/python')\nwheel=root/'distillation-wheels/torch-2.10.0+cpu-cp312-cp312-manylinux_2_28_x86_64.whl'\nassert v.is_dir() and not v.is_symlink() and wheel.is_file() and not wheel.is_symlink()\nwith wheel.open('rb') as f: assert hashlib.file_digest(f,'sha256').hexdigest()=='ee40b8a4b4b2cf0670c6fd4f35a7ef23871af956fecb238fbf5da15a72650b1d'\nwith (root/'distillation-setup.log').open('ab') as log:\n    try: rc=subprocess.run([py,'-m','pip','--isolated','--disable-pip-version-check','install','--no-index','--no-deps',str(wheel)],stdout=log,stderr=subprocess.STDOUT,timeout=20).returncode\n    except subprocess.TimeoutExpired: rc=124\np=subprocess.run([py,'-c','import torch,json; x=torch.tensor([2.0],requires_grad=True); (x*x).sum().backward(); print(json.dumps({\"torch\":torch.__version__,\"cuda\":torch.cuda.is_available(),\"gradient\":x.grad.item()}))'],capture_output=True,text=True,timeout=6)\nreport={'wheel_install_exit':rc,'cpu_import_exit':p.returncode,'cpu_autograd':json.loads(p.stdout.strip().splitlines()[-1]) if p.returncode==0 else None,'training_updates':0}\nbody='## Install verified CPU PyTorch wheel and test actual CPU autograd\\n\\n```json\\n'+json.dumps(report,indent=2)+'\\n```\\n\\nNo Qwen training claim; this checks CPU engine.'\nsubprocess.run(['gh','issue','comment','1','--repo','seigo-gace/ai-core','--body-file','-'],input=body,text=True,capture_output=True,check=True,timeout=5)\nprint(json.dumps(report))\nPY\n"
+  }
+}
