@@ -1,0 +1,28 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "implementation",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "PROPOSED_PR",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/commit/d6d7f9893636a9ca752ea0c2bb7a9d2fa7af32e4",
+    "implementation_context": "proposed_pr_staging"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -Eeuo pipefail\numask 077\nroot=/home/admin1/projects/ai-core\np=\"$root/.worktrees/qwen35-gate-candidate-20261128\"\ntarget=d6d7f9893636a9ca752ea0c2bb7a9d2fa7af32e4\nbase=ai-core-model-gate:local\nbackup=ai-core-model-gate:rollback-teaching-20261128\ncandidate=ai-core-model-gate:teacher-d6d7f989\noldid=sha256:e23976a1dd5f4bbb6f57629c7a768e980cbb6b0d515347e07d3b50a2f8fd8898\ntest \"$(docker inspect -f '{{.Image}}' ai-core-model-gate)\" = \"$oldid\"\ntest \"$(docker image inspect -f '{{.Id}}' \"$base\")\" = \"$oldid\"\ngit -C \"$p\" fetch --no-tags origin \"$target\"\ntest \"$(git -C \"$p\" rev-parse FETCH_HEAD)\" = \"$target\"\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf -- \"$tmp\"' EXIT\nmkdir \"$tmp/runtime\" \"$tmp/tests\"\ngit -C \"$p\" show \"$target:runtime/remote_model_gate.py\" > \"$tmp/runtime/remote_model_gate.py\"\ngit -C \"$p\" show \"$target:tests/test_remote_model_gate.py\" > \"$tmp/tests/test_remote_model_gate.py\"\ngit -C \"$p\" show \"$target:Dockerfile.gate.refresh\" > \"$tmp/refresh.Dockerfile\"\ngit -C \"$p\" show 40bb3460dec7ef90ae459dbc9e12d1fcea93be1d:runtime/remote_model_gate.py > \"$tmp/old.py\"\ntest \"$(sha256sum \"$tmp/old.py\" | cut -d ' ' -f1)\" = \"$(docker exec ai-core-model-gate sha256sum /app/runtime/remote_model_gate.py | cut -d ' ' -f1)\"\nchmod 755 \"$tmp\" \"$tmp/tests\"; chmod 644 \"$tmp/tests/test_remote_model_gate.py\"\ndocker build --network none --pull=false --build-arg GATE_BASE_IMAGE=\"$base\" --target runtime-only -f \"$tmp/refresh.Dockerfile\" -t \"$candidate\" \"$tmp/runtime\"\ndocker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges -v \"$tmp/tests:/tests:ro\" --entrypoint python3 \"$candidate\" -B -m unittest discover -s /tests -p test_remote_model_gate.py\ncheck_idle() {\n docker exec ai-core-model-gate python3 -c 'import json,os,urllib.request;h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]}; get=lambda p:json.load(urllib.request.urlopen(urllib.request.Request(\"http://127.0.0.1:18185\"+p,headers=h),timeout=5));a=get(\"/internal/handoff/status\");b=get(\"/internal/resources/status\");assert not a[\"resident\"] and not any(a[\"active\"].values()) and not a[\"handoff\"] and not a[\"recovery_pending\"] and b[\"queued\"]==0'\n}\nhealth() { docker exec ai-core-model-gate python3 -c 'import urllib.request;[urllib.request.urlopen(\"http://127.0.0.1:%d/health\"%n,timeout=2).close() for n in (18181,18182,18183,18184,18185,18186)]'; }\nexport AI_CORE_CALLER_FILE_EXPECTED_GID=1000\nexport AI_CORE_API_KEY=\"$(docker exec ai-core-model-gate sh -c 'printf \"%s\" \"$AI_CORE_API_KEY\"')\"\ntest \"${#AI_CORE_API_KEY}\" -ge 16\ncompose() { docker compose -p ai-core-gate -f \"$p/compose.gate.yml\" -f \"$p/compose.gate.openrouter.yml\" --project-directory \"$root\" --env-file \"$root/.env\" \"$@\"; }\ncompose config -q\ncheck_idle\nif docker image inspect \"$backup\" >/dev/null 2>&1; then test \"$(docker image inspect -f '{{.Id}}' \"$backup\")\" = \"$oldid\"; else docker image tag \"$base\" \"$backup\"; fi\nrollback() { rc=$?; trap - ERR; set +e; docker image tag \"$backup\" \"$base\"; compose up -d --no-build --force-recreate gate; echo \"TEACHER_GATE_ROLLBACK_REQUESTED=$rc\"; exit \"$rc\"; }\ntrap rollback ERR\ndocker image tag \"$candidate\" \"$base\"\ncompose up -d --no-build --force-recreate gate\nready=NO\nfor n in $(seq 1 15); do if health >/dev/null 2>&1; then ready=YES;break;fi;sleep 2;done\ntest \"$ready\" = YES\ntest \"$(sha256sum \"$tmp/runtime/remote_model_gate.py\"|cut -d ' ' -f1)\" = \"$(docker exec ai-core-model-gate sha256sum /app/runtime/remote_model_gate.py|cut -d ' ' -f1)\"\ntrap - ERR\necho TEACHER_GATE_REFRESH_PASS_HEALTH_6_OF_6\n"
+  }
+}
