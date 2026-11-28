@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/seigo-gace/ai-core/pull/10"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -eu\nroot=/home/admin1/projects/ai-core\np=\"$root/.worktrees/qwen35-gate-candidate-20261128\"\ncd \"$p\"\ntest \"$(git rev-parse HEAD)\" = 8ab77594fc87591485440325d22e560260af448e\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ngit fetch --no-tags origin refs/heads/feat/qwen35-gate-candidate-20261128\ntest \"$(git rev-parse FETCH_HEAD)\" = f314b8d5af16d49b2687f6f83f1b253e21a3d6eb\ngit checkout --detach f314b8d5af16d49b2687f6f83f1b253e21a3d6eb\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ntest \"$(docker image inspect -f '{{.Id}}' ai-core-model-gate:local)\" = \"$(docker inspect -f '{{.Image}}' ai-core-model-gate)\"\nimage=ai-core-model-gate:qwen35-candidate-f314b8d5\ndocker build --network none --pull=false --build-arg GATE_BASE_IMAGE=ai-core-model-gate:local --target full-refresh -f Dockerfile.gate.refresh -t \"$image\" .\nfor f in compose.runtime.yml runtime/model-policy.yaml runtime/model_gate.py; do\n  test \"$(sha256sum \"$f\" | cut -d ' ' -f1)\" = \"$(docker run --rm --network none --entrypoint sha256sum \"$image\" \"/app/$f\" | cut -d ' ' -f1)\"\ndone\ndocker run --rm --network none --entrypoint python3 \"$image\" -c 'from pathlib import Path; from runtime.model_gate import load_policy,model_specs_from_compose; p=load_policy(Path(\"/app/runtime/model-policy.yaml\")); m=model_specs_from_compose(Path(\"/app/compose.runtime.yml\"),p); assert set(m)=={\"qwen35\",\"qwen3\",\"granite\",\"coder\",\"ministral\"}; assert m[\"qwen35\"][\"gate_port\"]==18185; assert m[\"qwen35\"][\"model_id\"]==\"/models/Qwen3.5-4B-Q4_K_M.gguf\"; assert p[\"max_resident\"]==2 and p[\"max_active\"]==2; print(\"QWEN35_GATE_IMAGE_REGISTRY=PASS\")'\nprintf 'CANDIDATE_IMAGE_ID '; docker image inspect -f '{{.Id}}' \"$image\"\nprintf 'PRODUCTION_GATE_IMAGE_ID '; docker inspect -f '{{.Image}}' ai-core-model-gate\nprintf 'QWEN35_OFFLINE_IMAGE_BUILD_AND_SOURCE_PARITY=PASS\\n'\n"
+  }
+}
