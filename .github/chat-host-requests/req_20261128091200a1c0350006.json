@@ -1,0 +1,27 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START",
+    "profile": "GPT_CHAT",
+    "manifest_verified": true,
+    "rule_full_read": true,
+    "rule_plane_read": true,
+    "rule_plane_profile": "GPT_CHAT",
+    "current_verified": true,
+    "purpose_verified": true,
+    "cu_verified": true,
+    "purpose_cu_aligned": true,
+    "mutation_scope": "routine_fix",
+    "design_status": "DESIGN_VERIFIED",
+    "design_adoption": "ADOPTED_MAIN",
+    "source_design_aligned": true,
+    "source_evidence": "https://github.com/G-ACE-inc/server-core/issues/376#issuecomment-7230704131"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/ai-core",
+    "expected_sha": "5cf73359c98124916d98ac9ad12a0c24e8a82867",
+    "repo_sha": "2955d7280cef416cc3604f9f5e1565a35a813497",
+    "command": "set -Eeuo pipefail\nroot=/home/admin1/projects/ai-core\np=\"$root/.worktrees/qwen35-gate-candidate-20261128\"\ncd \"$p\"\ntest \"$(git rev-parse HEAD)\" = f314b8d5af16d49b2687f6f83f1b253e21a3d6eb\ntest -z \"$(git status --porcelain --untracked-files=all)\"\ntest \"$(sha256sum \"$root/models/Qwen3.5-4B-Q4_K_M.gguf\" | cut -d ' ' -f1)\" = 217002fa8008ef4fc6d548353a3aebef055a96e6ff8e0e2c0953ef8254a89c14\nnew=ai-core-model-gate:qwen35-candidate-f314b8d5\nold=ai-core-model-gate:local\nbackup=ai-core-model-gate:rollback-qwen35-f314b8d5\ndocker image inspect \"$new\" >/dev/null\nold_id=\"$(docker inspect -f '{{.Image}}' ai-core-model-gate)\"\ntest \"$old_id\" = \"$(docker image inspect -f '{{.Id}}' \"$old\")\"\nfor n in ai-coder ai-qwen3 ai-granite ai-ministral; do\n  test \"$(docker inspect -f '{{.State.Running}}' \"$n\")\" = false\ndone\ntest -z \"$(ss -H -lnt 'sport = :18185')\"\nif docker container inspect ai-qwen35 >/dev/null 2>&1; then echo QWEN35_ALREADY_EXISTS_STOP; exit 65; fi\ndocker exec ai-core-model-gate python3 -c 'import os,json,urllib.request; h={\"Authorization\":\"Bearer \"+os.environ[\"AI_CORE_API_KEY\"]}; get=lambda p: json.load(urllib.request.urlopen(urllib.request.Request(\"http://127.0.0.1:18184\"+p,headers=h),timeout=8)); a=get(\"/internal/handoff/status\"); b=get(\"/internal/resources/status\"); assert not a[\"resident\"] and not any(a[\"active\"].values()) and not a[\"handoff\"] and not a[\"recovery_pending\"] and b[\"queued\"]==0; print(\"IDLE_SHARED_GATE_CONFIRMED\")'\ntest -f \"$root/.env\"\nold_compose=\"$(mktemp /tmp/ai-core-qwen35-old-compose.XXXXXX.yml)\"\ngit show 8574e9195086dd3cfa2b5b8f60766e924026413b:compose.gate.yml > \"$old_compose\"\nexport AI_CORE_API_KEY=\"$(docker exec ai-core-model-gate sh -c 'printf \"%s\" \"$AI_CORE_API_KEY\"')\"\ntest \"${#AI_CORE_API_KEY}\" -ge 16\ndocker compose -p ai-core-gate -f \"$p/compose.gate.yml\" --project-directory \"$root\" --env-file \"$root/.env\" config -q\ndocker compose -p ai-core -f \"$p/compose.runtime.yml\" --project-directory \"$root\" config -q\nif docker image inspect \"$backup\" >/dev/null 2>&1; then\n  test \"$(docker image inspect -f '{{.Id}}' \"$backup\")\" = \"$old_id\"\nelse\n  docker image tag \"$old_id\" \"$backup\"\nfi\ndocker compose -p ai-core -f \"$p/compose.runtime.yml\" --project-directory \"$root\" create --no-build --pull never qwen35\ntest \"$(docker inspect -f '{{.State.Running}}' ai-qwen35)\" = false\ntest \"$(docker inspect -f '{{.HostConfig.CgroupParent}}' ai-qwen35)\" = ai-core.slice\ntest \"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/models\"}}{{.Source}}{{end}}{{end}}' ai-qwen35)\" = \"$root/models\"\ntest \"$(docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/run/ai-core-backend\"}}{{.Name}}{{end}}{{end}}' ai-qwen35)\" = ai-core-backend-bus\nrollback() {\n  rc=$?\n  trap - ERR\n  set +e\n  echo \"QWEN35_ACTIVATION_FAILED_EXIT=$rc\"\n  docker image tag \"$backup\" \"$old\"\n  docker compose -p ai-core-gate -f \"$old_compose\" --project-directory \"$root\" --env-file \"$root/.env\" up -d --no-build --force-recreate gate\n  rr=$?\n  healthy=NO\n  if [ \"$rr\" = 0 ]; then\n    for k in 1 2 3 4 5 6 7 8 9 10; do\n      if docker exec ai-core-model-gate python3 -c 'import urllib.request; [urllib.request.urlopen(\"http://127.0.0.1:%d/health\"%p,timeout=2).close() for p in (18181,18182,18183,18184)]' >/dev/null 2>&1; then healthy=YES; break; fi\n      sleep 2\n    done\n  fi\n  printf 'QWEN35_ROLLBACK_RECREATE_EXIT=%s OLD_HEALTH=%s\\n' \"$rr\" \"$healthy\"\n  exit \"$rc\"\n}\ntrap rollback ERR\ndocker image tag \"$new\" \"$old\"\ndocker compose -p ai-core-gate -f \"$p/compose.gate.yml\" --project-directory \"$root\" --env-file \"$root/.env\" up -d --no-build --force-recreate gate\nready=NO\nfor k in 1 2 3 4 5 6 7 8 9 10; do\n  if docker exec ai-core-model-gate python3 -c 'import urllib.request; [urllib.request.urlopen(\"http://127.0.0.1:%d/health\"%p,timeout=2).close() for p in (18181,18182,18183,18184,18185)]' >/dev/null 2>&1; then ready=YES; break; fi\n  sleep 2\ndone\ntest \"$ready\" = YES\nfor f in compose.runtime.yml runtime/model-policy.yaml runtime/model_gate.py; do\n  test \"$(sha256sum \"$f\" | cut -d ' ' -f1)\" = \"$(docker exec ai-core-model-gate sha256sum \"/app/$f\" | cut -d ' ' -f1)\"\ndone\ntrap - ERR\nprintf 'QWEN35_GATE_ACTIVATION=PASS HEALTH=5/5 SOURCE_PARITY=PASS OLD_IMAGE_RETAINED=YES\\n'\ndocker exec -i ai-core-model-gate python3 - qwen35 < scripts/host_uds_inference_probe.py\n"
+  }
+}
