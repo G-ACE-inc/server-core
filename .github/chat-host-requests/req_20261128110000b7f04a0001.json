@@ -1,0 +1,14 @@
+{
+  "chat_decision_checkpoint": {
+    "phase": "START"
+  },
+  "bounded_host_request": {
+    "enabled": true,
+    "command_id": "host.command",
+    "repository": "seigo-gace/G-ACEserver",
+    "host_target": "gserver",
+    "expected_sha": "GITHUB_WORKFLOW_SHA",
+    "repo_sha": "422bca2963b80ac2d051263fa4c35d35d25b0965",
+    "command": "set -eu\ncd /home/gace/Project/Gserver/repository\nprintf 'GSERVER_CHECKOUT\\n'\ngit branch --show-current\ngit rev-parse HEAD\ngit status --short --untracked-files=normal\ngit log -4 --format='%h %s'\nprintf 'KB_PATH_STATE\\n'\nif mountpoint -q /mnt/f; then printf 'F_MOUNTED=YES\\n'; else printf 'F_MOUNTED=NO\\n'; fi\nif test -d /mnt/f/G-ACE-KB; then printf 'F_KB_VISIBLE=YES\\n'; else printf 'F_KB_VISIBLE=NO\\n'; fi\nprintf 'COMPOSER_CLI_AVAILABILITY\\n'\nfor tool in cursor-agent agent cursor; do if command -v \"$tool\" >/dev/null 2>&1; then printf '%s=AVAILABLE\\n' \"$tool\"; fi; done\n"
+  }
+}
